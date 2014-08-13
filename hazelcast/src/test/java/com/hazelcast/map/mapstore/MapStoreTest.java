@@ -1362,18 +1362,19 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapStoreLoad_whenCalledDelete() throws Exception {
+    public void testDelete_whenLoadFails() throws Exception {
         final FailingLoadMapStore mapStore = new FailingLoadMapStore();
 
         final MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(1);
 
         final Config config = new Config();
-        config.getMapConfig("test").setBackupCount(0);
+        config.getMapConfig("testMapStoreLoad_whenCalledDelete").setBackupCount(0);
 
         final TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(1);
 
-        final IMap<Object, Object> map = instanceFactory.newInstances(config)[0].getMap("test");
+        final IMap<Object, Object> map = instanceFactory.newInstances(config)[0]
+                .getMap("testMapStoreLoad_whenCalledDelete");
 
         try {
             map.delete(1);
@@ -1383,18 +1384,21 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testMapStoreLoad_whenCalledRemove() throws Exception {
+    public void testRemove_whenLoadFails() throws Exception {
         final FailingLoadMapStore mapStore = new FailingLoadMapStore();
 
         final MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(1);
 
         final Config config = new Config();
-        config.getMapConfig("test").setBackupCount(0).setMapStoreConfig(mapStoreConfig);
+        config.getMapConfig("testRemove_whenMapStoreFails")
+                .setBackupCount(0)
+                .setMapStoreConfig(mapStoreConfig);
 
         final TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(1);
 
-        final IMap<Object, Object> map = instanceFactory.newInstances(config)[0].getMap("test");
+        final IMap<Object, Object> map = instanceFactory.newInstances(config)[0]
+                .getMap("testRemove_whenMapStoreFails");
 
         map.remove(1);
     }
@@ -2247,41 +2251,13 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
     }
 
-    class FailingLoadMapStore implements MapStore {
-        @Override
-        public void store(Object key, Object value) {
-
-        }
-
-        @Override
-        public void storeAll(Map map) {
-
-        }
-
-        @Override
-        public void delete(Object key) {
-
-        }
-
-        @Override
-        public void deleteAll(Collection keys) {
-
-        }
+    class FailingLoadMapStore extends MapStoreAdapter {
 
         @Override
         public Object load(Object key) {
             throw new IllegalStateException();
         }
 
-        @Override
-        public Map loadAll(Collection keys) {
-            return null;
-        }
-
-        @Override
-        public Set loadAllKeys() {
-            return null;
-        }
     }
 
 

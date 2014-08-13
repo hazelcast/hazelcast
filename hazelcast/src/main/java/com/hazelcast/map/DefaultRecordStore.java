@@ -161,25 +161,30 @@ public class DefaultRecordStore implements RecordStore {
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record == null) {
-            if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
+            MapStoreWrapper store = mapContainer.getStore();
+            if (store != null) {
+                oldValue = store.load(mapService.toObject(dataKey));
                 if (oldValue != null) {
                     removeIndex(dataKey);
                     mapStoreDelete(null, dataKey);
                 }
             }
         } else {
-            oldValue = record.getValue();
-            oldValue = mapService.interceptRemove(name, oldValue);
-            if (oldValue != null) {
-                removeIndex(dataKey);
-                mapStoreDelete(record, dataKey);
-            }
-            // reduce size
-            updateSizeEstimator(-calculateRecordSize(record));
-            deleteRecord(dataKey);
-            cancelAssociatedSchedulers(dataKey);
+            oldValue = removeRecord(dataKey, record);
         }
+        return oldValue;
+    }
+
+    private Object removeRecord(Data dataKey, Record record) {
+        Object oldValue = record.getValue();
+        oldValue = mapService.interceptRemove(name, oldValue);
+        if (oldValue != null) {
+            removeIndex(dataKey);
+            mapStoreDelete(record, dataKey);
+        }
+        updateSizeEstimator(-calculateRecordSize(record));
+        deleteRecord(dataKey);
+        cancelAssociatedSchedulers(dataKey);
         return oldValue;
     }
 
@@ -523,16 +528,7 @@ public class DefaultRecordStore implements RecordStore {
                 mapStoreDelete(null, dataKey);
             }
         } else {
-            oldValue = record.getValue();
-            oldValue = mapService.interceptRemove(name, oldValue);
-            if (oldValue != null) {
-                removeIndex(dataKey);
-                mapStoreDelete(record, dataKey);
-            }
-
-            updateSizeEstimator(-calculateRecordSize(record));
-            deleteRecord(dataKey);
-            cancelAssociatedSchedulers(dataKey);
+            removeRecord(dataKey, record);
         }
         return oldValue != null;
     }
