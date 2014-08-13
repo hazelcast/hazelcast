@@ -26,63 +26,62 @@ import java.util.Properties;
  */
 public final class HazelcastUtil {
 
-    private static final String VERSION;
-    private static final boolean ENTERPRISE;
-    private static final String BUILD;
-    private static final int BUILD_NUMBER;
+    private static String version;
+    private static boolean enterprise;
+    private static String build;
+    private static int buildNumber;
 
     //CHECKSTYLE:OFF
     static {
-        String version = System.getProperty("hazelcast.version", "unknown");
-        String build = System.getProperty("hazelcast.build", "unknown");
-        int buildNumber = 0;
-        if ("unknown".equals(version) || "unknown".equals(build)) {
-            try {
-                final InputStream inRuntimeProperties =
-                        NodeInitializer.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
-                if (inRuntimeProperties != null) {
-                    Properties runtimeProperties = new Properties();
-                    runtimeProperties.load(inRuntimeProperties);
-                    inRuntimeProperties.close();
-                    version = runtimeProperties.getProperty("hazelcast.version");
-                    build = runtimeProperties.getProperty("hazelcast.build");
-                }
-            } catch (Exception ignored) {
-                EmptyStatement.ignore(ignored);
-            }
-        }
-        try {
-            buildNumber = Integer.getInteger("hazelcast.build", -1);
-            if (buildNumber == -1) {
-                buildNumber = Integer.parseInt(build);
-            }
-        } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
-        }
-        VERSION = version;
-        BUILD = build;
-        BUILD_NUMBER = buildNumber;
-        ENTERPRISE = version.endsWith("-ee");
+        init();
     }
+
     //CHECKSTYLE:ON
 
     private HazelcastUtil() {
     }
 
     public static String getVersion() {
-        return VERSION;
+        return version;
     }
 
     public static String getBuild() {
-        return BUILD;
+        return build;
     }
 
     public static int getBuildNumber() {
-        return BUILD_NUMBER;
+        return buildNumber;
     }
 
     public static boolean isEnterprise() {
-        return ENTERPRISE;
+        return enterprise;
+    }
+
+    public static void init() {
+        final InputStream inRuntimeProperties =
+                NodeInitializer.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
+        Properties runtimeProperties = new Properties();
+        try {
+            if (inRuntimeProperties != null) {
+                runtimeProperties.load(inRuntimeProperties);
+                inRuntimeProperties.close();
+            }
+        } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+
+        version = runtimeProperties.getProperty("hazelcast.version");
+        String distribution = runtimeProperties.getProperty("hazelcast.distribution");
+        enterprise = "Hazelcast".equals(distribution) ? false : true;
+
+        // override BUILD_NUMBER with a system property
+        Integer hazelcastBuild = Integer.getInteger("hazelcast.build", -1);
+        if (hazelcastBuild == -1) {
+            build = runtimeProperties.getProperty("hazelcast.build");
+        } else {
+            build = String.valueOf(hazelcastBuild);
+        }
+        buildNumber = Integer.valueOf(build);
     }
 
 }
