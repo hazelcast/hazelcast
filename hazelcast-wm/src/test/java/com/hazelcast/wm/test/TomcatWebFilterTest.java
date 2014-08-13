@@ -30,7 +30,8 @@ import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(Parameterized.class)
+@RunWith(WebTestRunner.class)
+@DelegatedRunWith(Parameterized.class)
 @Category(QuickTest.class)
 public class TomcatWebFilterTest extends AbstractWebFilterTest {
 

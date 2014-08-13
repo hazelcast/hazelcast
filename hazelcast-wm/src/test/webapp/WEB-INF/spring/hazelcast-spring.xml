@@ -15,20 +15,20 @@
   ~ limitations under the License.
   -->
 
-<web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.5"
-         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+<web-app
+        xmlns="http://java.sun.com/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        version="2.5"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 
-    <display-name>demo</display-name>
+    <display-name>Hazelcast-Spring Test</display-name>
+
     <filter>
         <filter-name>hazelcast-filter</filter-name>
-        <filter-class>com.hazelcast.wm.test.TestWebFilter</filter-class>
+        <filter-class>com.hazelcast.web.spring.SpringAwareWebFilter</filter-class>
         <init-param>
             <param-name>map-name</param-name>
             <param-value>default</param-value>
-        </init-param>
-        <init-param>
-            <param-name>sticky-session</param-name>
-            <param-value>false</param-value>
         </init-param>
         <init-param>
             <param-name>debug</param-name>
@@ -40,18 +40,10 @@
         </init-param>
         <init-param>
             <param-name>instance-name</param-name>
-            <param-value>node-2</param-value>
+            <param-value>hazelcast-spring-node</param-value>
         </init-param>
         <init-param>
             <param-name>shutdown-on-destroy</param-name>
-            <param-value>true</param-value>
-        </init-param>
-        <init-param>
-            <param-name>use-client</param-name>
-            <param-value>true</param-value>
-        </init-param>
-        <init-param>
-            <param-name>deferred-write</param-name>
             <param-value>true</param-value>
         </init-param>
         <init-param>
@@ -66,19 +58,48 @@
         <dispatcher>INCLUDE</dispatcher>
         <dispatcher>REQUEST</dispatcher>
     </filter-mapping>
-
-    <servlet>
-      <servlet-name>test-servlet</servlet-name>
-      <servlet-class>com.hazelcast.wm.test.TestServlet</servlet-class>
-      <load-on-startup>1</load-on-startup>
-    </servlet>
-
-    <servlet-mapping>
-      <servlet-name>test-servlet</servlet-name>
-      <url-pattern>/*</url-pattern>
-    </servlet-mapping>
-
     <listener>
         <listener-class>com.hazelcast.web.SessionListener</listener-class>
     </listener>
+
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>
+            /WEB-INF/spring/application-context.xml
+            /WEB-INF/spring/security-context.xml
+        </param-value>
+    </context-param>
+
+    <servlet>
+        <servlet-name>appServlet</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>/WEB-INF/spring/servlet-context.xml</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>appServlet</servlet-name>z
+        <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+
+    <filter>
+        <filter-name>springSecurityFilterChain</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy
+        </filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>springSecurityFilterChain</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+
+    <session-config>
+        <session-timeout>10</session-timeout>
+    </session-config>
+
 </web-app>

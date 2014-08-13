@@ -6,7 +6,6 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.NodeEngine;
 
@@ -19,14 +18,11 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
 
     private MapServiceContext mapServiceContext;
     private NodeEngine nodeEngine;
-    private ILogger logger;
 
     protected MapEventPublishingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
-        this.logger = nodeEngine.getLogger(getClass());
     }
-
 
     private void incrementEventStats(IMapEvent event) {
         final String mapName = event.getName();

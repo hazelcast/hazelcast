@@ -34,7 +34,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(Parameterized.class)
+@RunWith(WebTestRunner.class)
+@DelegatedRunWith(Parameterized.class)
 @Category(QuickTest.class)
 public class JettyWebFilterTest extends AbstractWebFilterTest {
 
