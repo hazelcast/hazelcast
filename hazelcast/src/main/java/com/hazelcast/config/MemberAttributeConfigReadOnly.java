@@ -73,6 +73,11 @@ public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
     }
 
     @Override
+    public void setAttributes(Map<String, Object> attributes) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
     public Map<String, Object> getAttributes() {
         return Collections.unmodifiableMap(super.getAttributes());
     }

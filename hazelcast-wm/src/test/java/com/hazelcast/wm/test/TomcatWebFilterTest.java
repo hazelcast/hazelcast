@@ -16,11 +16,7 @@
 
 package com.hazelcast.wm.test;
 
-import com.hazelcast.test.annotation.QuickTest;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.CookieStore;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.junit.Test;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -28,12 +24,10 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
-
 @RunWith(WebTestRunner.class)
 @DelegatedRunWith(Parameterized.class)
-@Category(QuickTest.class)
-public class TomcatWebFilterTest extends AbstractWebFilterTest {
+@Category(NightlyTest.class)
+public class TomcatWebFilterTest extends WebFilterSlowTests {
 
     @Parameterized.Parameters(name = "Executing: {0}")
     public static Collection<Object[]> parameters() {
@@ -48,25 +42,6 @@ public class TomcatWebFilterTest extends AbstractWebFilterTest {
     public TomcatWebFilterTest(String name, String serverXml1, String serverXml2) {
         super(serverXml1,serverXml2);
     }
-
-    @Test
-    public void test_github_issue_2887() throws Exception
-    {
-        CookieStore cookieStore = new BasicCookieStore();
-        executeRequest("write", serverPort1, cookieStore);
-        executeRequest("read", serverPort2, cookieStore);
-        //expire session only on server2
-        executeRequest("timeout", serverPort2, cookieStore);
-
-        //Wait till session on server2 is expired
-       sleepSeconds(2);
-
-        //send redirect to server2 which has no local session but there is a distributed session.
-        HttpResponse resp = request("redirect", serverPort2, cookieStore);
-
-        assertEquals(302, resp.getStatusLine().getStatusCode());
-    }
-
 
     @Override
     protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception {

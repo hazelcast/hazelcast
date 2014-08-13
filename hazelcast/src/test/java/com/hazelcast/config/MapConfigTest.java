@@ -219,4 +219,20 @@ public class MapConfigTest {
         config.getMapConfig("default").setMapStoreConfig(null);
         assertNotNull(config.getMapConfig("test").getMapStoreConfig());
     }
+
+    /**
+     * Test method for {@link com.hazelcast.config.MapStoreConfig#setWriteBatchSize(int)}.
+     */
+    @Test(expected = java.lang.UnsupportedOperationException.class)
+    public void testReadOnlyMapStoreConfigSetWriteBatchSize() {
+        new MapStoreConfigReadOnly(new MapStoreConfig()).setWriteBatchSize(1);
+    }
+
+    /**
+     * Test method for {@link com.hazelcast.config.MapStoreConfig#setInitialLoadMode(com.hazelcast.config.MapStoreConfig.InitialLoadMode)}
+     */
+    @Test(expected = java.lang.UnsupportedOperationException.class)
+    public void testReadOnlyMapStoreConfigSetInitialLoadMode() {
+        new MapStoreConfigReadOnly(new MapStoreConfig()).setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+    }
 }

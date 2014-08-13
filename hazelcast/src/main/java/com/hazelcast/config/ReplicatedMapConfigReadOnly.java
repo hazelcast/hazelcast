@@ -60,4 +60,8 @@ class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    @Override
+    public ReplicatedMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
 }
