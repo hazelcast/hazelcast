@@ -173,35 +173,6 @@ public class EvictionTest extends HazelcastTestSupport {
         assertNotNull(map.get(key));
     }
 
-    @Test
-    public void testMapWideEviction() throws InterruptedException {
-        final int size = 10000;
-        Config cfg = new Config();
-        final MapConfig mc = cfg.getMapConfig("testMapWideEviction");
-        mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
-        mc.setEvictionPercentage(25);
-        MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
-        msc.setSize(size);
-        mc.setMaxSizeConfig(msc);
-        final int n = 3;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
-        final HazelcastInstance[] instances = factory.newInstances(cfg);
-
-        final IMap map = instances[0].getMap("testMapWideEviction");
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
-        }
-        Thread.sleep(2000);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(map.size() <= (size * n * (100 - mc.getEvictionPercentage()) / 100));
-            }
-        });
-
-    }
-
     // current eviction check period is 1 second.
     // about 30.000 records can be put in one second
     // so the size should be adapted
