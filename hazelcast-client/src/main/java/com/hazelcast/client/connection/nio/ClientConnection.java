@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
-import com.hazelcast.client.RemoveAllListeners;
+import com.hazelcast.client.impl.client.RemoveAllListeners;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;

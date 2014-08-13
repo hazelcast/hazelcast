@@ -16,6 +16,9 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.impl.client.AuthenticationRequest;
+import com.hazelcast.client.impl.client.ClientResponse;
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

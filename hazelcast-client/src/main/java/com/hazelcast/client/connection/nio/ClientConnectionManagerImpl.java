@@ -17,10 +17,10 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.AuthenticationRequest;
-import com.hazelcast.client.ClientPrincipal;
-import com.hazelcast.client.ClientRequest;
-import com.hazelcast.client.ClientResponse;
+import com.hazelcast.client.impl.client.AuthenticationRequest;
+import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;

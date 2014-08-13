@@ -1,12 +1,12 @@
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.ClientResponse;
+import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;

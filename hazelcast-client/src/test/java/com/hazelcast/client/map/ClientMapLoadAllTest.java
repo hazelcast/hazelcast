@@ -1,6 +1,5 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.client.ClientEngineImpl;
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;

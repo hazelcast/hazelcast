@@ -16,10 +16,10 @@
 
 package com.hazelcast.collection.client;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.collection.CollectionEventFilter;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;

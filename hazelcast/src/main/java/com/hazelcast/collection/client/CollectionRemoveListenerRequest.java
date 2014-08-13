@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.client;
 
-import com.hazelcast.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.nio.serialization.PortableReader;
