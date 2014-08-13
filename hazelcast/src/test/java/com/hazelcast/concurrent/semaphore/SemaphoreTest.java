@@ -56,16 +56,53 @@ public class SemaphoreTest extends HazelcastTestSupport {
         assertEquals(semaphore.availablePermits(), 0);
     }
 
-    @Test(expected = IllegalStateException.class, timeout = 30000)
-    public void testAcquire_whenInstanceShutdown() throws InterruptedException {
-        final ISemaphore semaphore = hz.getSemaphore(randomString());
-        Thread thread = new Thread() {
+    @Test(timeout = 30000)
+    public void testAcquire_whenNoPermits() throws InterruptedException {
+        final ISemaphore semaphore = hz.getSemaphore("testAcquire_whenNoPermits");
+        final int numberOfPermits = 10;
+        semaphore.init(numberOfPermits);
+        semaphore.acquire(numberOfPermits);
+        final Thread thread = new Thread() {
             @Override
             public void run() {
-                hz.shutdown();
+                try {
+                    semaphore.acquire();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         };
         thread.start();
+        thread.join(3000);
+        assertTrue(thread.isAlive());
+        assertEquals(0, semaphore.availablePermits());
+    }
+
+    @Test(timeout = 30000)
+    public void testAcquire_whenNoPermits_andSemaphoreDestroyed() throws InterruptedException {
+        final ISemaphore semaphore = hz.getSemaphore("testRelease_whenBlockedAcquireThread");
+        int numberOfPermits = 10;
+        semaphore.init(numberOfPermits);
+        semaphore.acquire(numberOfPermits);
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    semaphore.acquire();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+
+        semaphore.destroy();
+        assertEquals(0, semaphore.availablePermits());
+    }
+
+    @Test(expected = IllegalStateException.class, timeout = 30000)
+    public void testAcquire_whenInstanceShutdown() throws InterruptedException {
+        final ISemaphore semaphore = hz.getSemaphore(randomString());
+        hz.shutdown();
         semaphore.acquire();
     }
 
@@ -94,6 +131,26 @@ public class SemaphoreTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30000)
+    public void testRelease_whenBlockedAcquireThread() throws InterruptedException {
+        final ISemaphore semaphore = hz.getSemaphore("testRelease_whenBlockedAcquireThread");
+        int numberOfPermits = 10;
+        semaphore.init(numberOfPermits);
+        semaphore.acquire(numberOfPermits);
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    semaphore.acquire();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+        semaphore.release();
+        assertEquals(0, semaphore.availablePermits());
+    }
+
+    @Test(timeout = 30000)
     public void testMultipleAcquire() throws InterruptedException {
         final ISemaphore semaphore = hz.getSemaphore(randomString());
         int numberOfPermits = 20;
@@ -104,6 +161,46 @@ public class SemaphoreTest extends HazelcastTestSupport {
             semaphore.acquire(5);
         }
         assertEquals(semaphore.availablePermits(), 0);
+    }
+
+    @Test(timeout = 30000)
+    public void testMultipleAcquire_whenNegative() throws InterruptedException {
+        final ISemaphore semaphore = hz.getSemaphore("testRelease_whenArgumentNegative");
+        int numberOfPermits = 10;
+        semaphore.init(numberOfPermits);
+        try {
+            for (int i = 0; i < numberOfPermits; i += 5) {
+                semaphore.acquire(-5);
+                fail();
+            }
+        } catch (IllegalArgumentException expected) {
+        }
+        assertEquals(10, semaphore.availablePermits());
+
+    }
+
+    @Test(timeout = 30000)
+    public void testMultipleAcquire_whenNotEnoughPermits() throws InterruptedException {
+        final ISemaphore semaphore = hz.getSemaphore("testMultipleAcquire_whenNotEnoughPermits");
+        int numberOfPermits = 10;
+        semaphore.init(numberOfPermits);
+        final Thread thread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    semaphore.acquire(5);
+                    assertEquals(5, semaphore.availablePermits());
+                    semaphore.acquire(6);
+                    assertEquals(5, semaphore.availablePermits());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        thread.start();
+        thread.join(3000);
+        assertTrue(thread.isAlive());
+        assertEquals(5, semaphore.availablePermits());
     }
 
     @Test(timeout = 30000)
@@ -119,6 +216,60 @@ public class SemaphoreTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30000)
+    public void testMultipleRelease_whenNegative() throws InterruptedException {
+        final ISemaphore semaphore = hz.getSemaphore("testRelease_whenArgumentNegative");
+        int numberOfPermits = 10;
+        semaphore.init(numberOfPermits);
+        semaphore.acquire(numberOfPermits);
+        try {
+            for (int i = 0; i < numberOfPermits; i += 5) {
+                semaphore.release(-5);
+                fail();
+            }
+        } catch (IllegalArgumentException expected) {
+        }
+        assertEquals(0, semaphore.availablePermits());
+    }
+
+    @Test(timeout = 30000)
+    public void testMultipleRelease_whenBlockedAcquireThreads() throws InterruptedException {
+        final ISemaphore semaphore = hz.getSemaphore("testRelease_whenBlockedAcquireThread");
+        int numberOfPermits = 10;
+        semaphore.init(numberOfPermits);
+        semaphore.acquire(numberOfPermits);
+        Thread[] threads = new Thread[4];
+        for (int i = 0; i < 4; i++) {
+            threads[i] = new BlockAcquireThread();
+            threads[i].start();
+        }
+        semaphore.release();
+        assertEquals(0, semaphore.availablePermits());
+        semaphore.release();
+        assertEquals(0, semaphore.availablePermits());
+        semaphore.release();
+        assertEquals(0, semaphore.availablePermits());
+        semaphore.release();
+        assertEquals(0, semaphore.availablePermits());
+    }
+
+    private class BlockAcquireThread extends Thread {
+        ISemaphore semaphore;
+
+        BlockAcquireThread() {
+            semaphore = hz.getSemaphore("testRelease_whenBlockedAcquireThread");
+        }
+
+        @Override
+        public void run() {
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test(timeout = 30000)
     public void testDrain() throws InterruptedException {
         final ISemaphore semaphore = hz.getSemaphore(randomString());
         int numberOfPermits = 20;
@@ -128,6 +279,15 @@ public class SemaphoreTest extends HazelcastTestSupport {
         int drainedPermits = semaphore.drainPermits();
         assertEquals(drainedPermits, numberOfPermits - 5);
         assertEquals(semaphore.availablePermits(), 0);
+    }
+
+    @Test(timeout = 30000)
+    public void testDrain_whenNoPermits() throws InterruptedException {
+        final ISemaphore semaphore = hz.getSemaphore("testDrain_whenNoPermits");
+        int numberOfPermits = 10;
+        semaphore.init(numberOfPermits);
+        semaphore.acquire(numberOfPermits);
+        assertEquals(0, semaphore.drainPermits());
     }
 
     @Test(timeout = 30000)
@@ -190,7 +350,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         int numberOfPermits = 10;
         int negativePermits = -5;
 
-        assertTrue(semaphore.init(numberOfPermits));
+        semaphore.init(numberOfPermits);
         for (int i = 0; i < numberOfPermits; i += 5) {
             assertEquals(numberOfPermits - i, semaphore.availablePermits());
             assertEquals(semaphore.tryAcquire(negativePermits), true);
@@ -202,7 +362,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         final ISemaphore semaphore = hz.getSemaphore(randomString());
         int numberOfPermits = 10;
 
-        assertTrue(semaphore.init(numberOfPermits));
+        semaphore.init(numberOfPermits);
         semaphore.acquire(10);
         assertFalse(semaphore.tryAcquire(1));
     }
