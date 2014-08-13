@@ -17,14 +17,12 @@
 package com.hazelcast.wm.test.spring;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.wm.test.JettyServer;
 import com.hazelcast.wm.test.ServletContainer;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.core.session.SessionRegistry;
 
@@ -34,7 +32,7 @@ import java.util.Set;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 public class SpringAwareWebFilterTest extends SpringAwareWebFilterTestSupport {
 
     @Override
