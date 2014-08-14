@@ -133,7 +133,7 @@ public class SocketAcceptor implements Runnable {
                 memberSocketInterceptor.onAccept(socketChannel.socket());
             }
             socketChannel.configureBlocking(false);
-            connectionManager.assignSocketChannel(socketChannel);
+            connectionManager.assignSocketChannel(socketChannel, null);
         } catch (Exception e) {
             log(Level.WARNING, e.getClass().getName() + ": " + e.getMessage(), e);
             IOUtil.closeResource(socketChannel);
