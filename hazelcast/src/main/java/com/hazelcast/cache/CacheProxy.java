@@ -29,7 +29,6 @@ import com.hazelcast.cache.operation.CachePutOperation;
 import com.hazelcast.cache.operation.CacheRemoveOperation;
 import com.hazelcast.cache.operation.CacheReplaceOperation;
 import com.hazelcast.cache.operation.CacheSizeOperationFactory;
-import com.hazelcast.cache.operation.CacheStatisticsOperationFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -65,6 +64,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -84,6 +84,7 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
 
     private HazelcastCacheManager cacheManager = null;
     private CacheLoader<K, V> cacheLoader;
+    private CacheStatistics statistics = new CacheStatistics();
 
     protected CacheProxy(String name, NodeEngine nodeEngine, CacheService service) {
         super(nodeEngine, service);
@@ -449,29 +450,21 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
     @Override
     public CacheStatisticsMXBean getCacheStatisticsMXBean() {
         ensureOpen();
-        final NodeEngine nodeEngine = getNodeEngine();
-        try {
-            final SerializationService serializationService = nodeEngine.getSerializationService();
-            final CacheStatisticsOperationFactory operationFactory = new CacheStatisticsOperationFactory(name);
-            final Map<Integer, Object> results =
-                    nodeEngine.getOperationService().invokeOnAllPartitions(getServiceName(), operationFactory);
+        return new CacheStatisticsMXBeanImpl(this);
+    }
 
-            CacheStatistics total = new CacheStatistics();
-            for (Object result : results.values()) {
-                CacheStatistics stat;
-                if (result instanceof Data) {
-                    stat = serializationService.toObject((Data) result);
-                } else {
-                    stat = (CacheStatistics) result;
-                }
-                if(stat != null){
-                    total = total.acumulate(stat);
-                }
+    public CacheStatistics getCacheStatistics() {
+        final NodeEngine nodeEngine = getNodeEngine();
+        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        final List<Integer> memberPartitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+        statistics.clear();
+        for (Integer partition : memberPartitions) {
+            ICacheRecordStore cache = getService().getCache(name, partition);
+            if (cache != null) {
+                statistics.acumulate(cache.getCacheStats());
             }
-            return new CacheStatisticsMXBeanImpl(total);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
         }
+        return statistics;
     }
 
     @Override
@@ -502,7 +495,7 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         return (V) result;
     }
 
-    public void enableManagement(boolean enabled){
+    public void enableManagement(boolean enabled) {
 //        if(enabled){
 //            getNodeEngine().
 //        }
@@ -640,7 +633,7 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
 
-        for(K key:keys){
+        for (K key : keys) {
             validateConfiguredTypes(false, key);
         }
 
@@ -658,7 +651,7 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
             keysData.add(ss.toData(key));
         }
 
-        OperationFactory operationFactory = new CacheLoadAllOperationFactory(name, keysData,replaceExistingValues);
+        OperationFactory operationFactory = new CacheLoadAllOperationFactory(name, keysData, replaceExistingValues);
         try {
             final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
 

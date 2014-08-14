@@ -193,16 +193,14 @@ public class CacheStatistics implements DataSerializable {
 
     public CacheStatistics acumulate(CacheStatistics other){
         puts.addAndGet(other.getPuts());
-        removals.set(other.getRemovals());
-        expiries.set(other.getExpiries());
-        evictions.set(other.getEvictions());
-
-        hits.set(other.getHits());
-        misses.set(other.getMisses());
-
-        putTimeTakenNanos.set(other.getPutTimeTakenNanos());
-        getTimeTakenNanos.set(other.getGetTimeTakenNanos());
-        removeTimeTakenNanos.set(other.getRemoveTimeTakenNanos());
+        removals.addAndGet(other.getRemovals());
+        expiries.addAndGet(other.getExpiries());
+        evictions.addAndGet(other.getEvictions());
+        hits.addAndGet(other.getHits());
+        misses.addAndGet(other.getMisses());
+        putTimeTakenNanos.addAndGet(other.getPutTimeTakenNanos());
+        getTimeTakenNanos.addAndGet(other.getGetTimeTakenNanos());
+        removeTimeTakenNanos.addAndGet(other.getRemoveTimeTakenNanos());
         return this;
     }
 
