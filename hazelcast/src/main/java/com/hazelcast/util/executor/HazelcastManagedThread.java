@@ -19,7 +19,11 @@ package com.hazelcast.util.executor;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 
 /**
- * @author sozal 7/23/14
+ * Base class for all Hazelcast threads to manage them from a single point.
+ * Concrete classes can customize their behaviours by overriding
+ * {@link com.hazelcast.util.executor.HazelcastManagedThread#beforeRun},
+ * {@link com.hazelcast.util.executor.HazelcastManagedThread#executeRun} and
+ * {@link com.hazelcast.util.executor.HazelcastManagedThread#afterRun} methods.
  */
 public class HazelcastManagedThread extends Thread {
 
@@ -58,18 +62,30 @@ public class HazelcastManagedThread extends Thread {
         }
     }
 
+    /**
+     * Called before inner run method and can be overridden to customize.
+     */
     protected void beforeRun() {
 
     }
 
+    /**
+     * Does the actual run and can be overridden to customize.
+     */
     protected void executeRun() {
         super.run();
     }
 
+    /**
+     * Called after inner run method and can be overridden to customize.
+     */
     protected void afterRun() {
 
     }
 
+    /**
+     * Manages the thread lifecycle and can be overridden to customize if needed.
+     */
     public void run() {
         try {
             beforeRun();
