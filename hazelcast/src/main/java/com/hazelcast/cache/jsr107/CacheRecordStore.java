@@ -182,6 +182,10 @@ public class CacheRecordStore implements ICacheRecordStore {
                     statistics.addPutTimeNano(System.nanoTime() - start);
                 }
             } else {
+                if(isPutSucceed){
+                    statistics.increaseCachePuts(1);
+                    statistics.addPutTimeNano(System.nanoTime() - start);
+                }
                 if (oldValue == null) {
                     statistics.increaseCacheMisses(1);
                 } else {
@@ -289,10 +293,15 @@ public class CacheRecordStore implements ICacheRecordStore {
 
         CacheRecord record = records.get(key);
         boolean isExpired = record != null && record.isExpiredAt(now);
+        int hitCount = 0;
 
         if (record == null || isExpired) {
+            if (isStatisticsEnabled()) {
+                statistics.increaseCacheMisses(1);
+            }
             return false;
         } else {
+            hitCount++;
             if (compare(record.getValue(), value)) {
                 deleteCacheEntry(key);
                 deleteRecord(key);
@@ -316,6 +325,12 @@ public class CacheRecordStore implements ICacheRecordStore {
         if (isStatisticsEnabled()) {
             statistics.increaseCacheRemovals(1);
             statistics.addRemoveTimeNano(System.nanoTime() - start);
+            if (hitCount == 1) {
+                statistics.increaseCacheHits(hitCount);
+            } else {
+                statistics.increaseCacheMisses(1);
+            }
+
         }
         return true;
     }
