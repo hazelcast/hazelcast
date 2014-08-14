@@ -403,7 +403,7 @@ public final class BasicOperationScheduler {
         }
     }
 
-    private final class OperationThread extends Thread {
+    final class OperationThread extends Thread {
 
         private final int threadId;
         private final boolean isPartitionAware;
