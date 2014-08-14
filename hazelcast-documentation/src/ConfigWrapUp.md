@@ -42,7 +42,7 @@ config.getGroupConfig().setName( "MyGroup" ).setPassword( "5551234" );
 ```
    
 
-It has below tags.
+It has below parameters.
 
 
 - `name`: Name of the group to be created.
@@ -63,13 +63,13 @@ This configuration is used to enable/disable Hazelcast Management Center and spe
 
 ```java
 Config config = new Config();
-config.getManagementCenterConfig().setEnabled( "true" ).
-                setUrl( "http://localhost:8080/mancenter" ).
-                setUpdateInterval( "3" );
+config.getManagementCenterConfig().setEnabled( "true" )
+         .setUrl( "http://localhost:8080/mancenter" )
+            .setUpdateInterval( "3" );
 ```
    
 
-It has below attributes and tags.
+It has below parameters.
 
 
 - `enabled`: This attribute should be set to `true` to be enable to run Management Center.
@@ -80,7 +80,7 @@ It has below attributes and tags.
 
 ### `network` Configuration
 
-This configuration is for ???. It has below tags.
+All network related configuration is performed via `network` tag in the XML file or the class `NetworkConfig` when using programmatic configuration. Let's first give the samples for these two approaches. Then we will look at its parameters, which are a lot.
 
 **Declarative:**
 
@@ -126,24 +126,163 @@ This configuration is for ???. It has below tags.
 **Programmatic:**
 
 ```java
-NetworkConfig config = new Config();
+AwsConfig config = new AwsConfig();
+config.setTagKey( "5551234" );
+config.setTagValue( "Node1234" )
+```
+
+It has below parameters which are briefly described in the following subsections.
+
+- port
+- outbound-ports
+- join
+- interfaces
+- ssl
+- socket-interceptor
+- symmetric-encryption
+
+#### `port`
+
+You can specify the ports which Hazelcast will use to communicate between cluster members. Its default value is `5701`. Sample configurations are shown below.
+
+**Declarative:**
+
+```xml
+<network>
+  <port>5701</port>
+</network>
+```
+
+**Programmatic:**
+
+```java
+Config config = new Config();
+config.getNetworkConfig().setPort( 5900 ); 
+config.getNetworkConfig().setPortAutoIncrement( false );
+```
+
+It has below attributes.
+
+- `port-count`: By default, Hazelcast will try 100 ports to bind. Meaning that, if you set the value of port as 5701, as members are joining to the cluster, Hazelcast tries to find ports between 5701 and 5801. You can choose to change the port count in the cases like having large instances on a single machine or willing to have only a few ports to be assigned. The parameter `port-count` is used for this purpose, whose default value is 100.
+
+   ```xml
+<network>
+  <port port-count="20">5781</port>
+</network>
+```
+
+- `auto-increment`: According to the above example, Hazelcast will try to find free ports between 5781 and 5801. Normally, you will not need to change this value, but it will come very handy when needed. You may also want to choose to use only one port. In that case, you can disable the auto-increment feature of `port`, as shown below.
+
+   ```xml
+<network>
+  <port auto-increment="false">5701</port>
+</network>
+```
+
+Naturally, the parameter `port-count` is ignored when the above configuration is made.
+
+#### `outbound ports`
 
 
+By default, Hazelcast lets the system to pick up an ephemeral port during socket bind operation. But security policies/firewalls may require to restrict outbound ports to be used by Hazelcast enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports. Sample configurations are shown below.
 
-- port:
-- outbound-ports:
-- join:
-- interfaces:
-- ssl:
-- socket-interceptor:
-- symmetric-encryption:
-- public-address:
 
-### `partition-group` Tag
+**Declarative:**
+
+```xml
+  <network>
+    <outbound-ports>
+      <!-- ports between 33000 and 35000 -->
+      <ports>33000-35000</ports>
+      <!-- comma separated ports -->
+      <ports>37000,37001,37002,37003</ports> 
+      <ports>38000,38500-38600</ports>
+    </outbound-ports>
+  </network>
+```
+
+**Programmatic:**
+
+```java
+...
+NetworkConfig networkConfig = config.getNetworkConfig();
+// ports between 35000 and 35100
+networkConfig.addOutboundPortDefinition("35000-35100");
+// comma separated ports
+networkConfig.addOutboundPortDefinition("36001, 36002, 36003");
+networkConfig.addOutboundPort(37000);
+networkConfig.addOutboundPort(37001);
+...
+```
+
+***Note:*** *You can use port ranges and/or comma separated ports.*
+
+As you can see in the programmatic configuration, if you want to add only one port you use the method `addOutboundPort`. If a group of ports needs to be added, then the method `addOutboundPortDefinition` is used. 
+
+In the declarative one, the tag `ports` can be used for both (for single and multiple port definitions).
+
+
+#### `join`
+
+This configuration parameter is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: TCP/IP, multicast and AWS (EC2). Below are sample configurations.
+
+**Declarative:**
+
+```xml
+   <network>
+        <join>
+            <multicast enabled="true">
+                <multicast-group>224.2.2.3</multicast-group>
+                <multicast-port>54327</multicast-port>
+            </multicast>
+            <tcp-ip enabled="false">
+                <interface>127.0.0.1</interface>
+            </tcp-ip>
+            <aws enabled="false">
+                <access-key>my-access-key</access-key>
+                <secret-key>my-secret-key</secret-key>
+                <region>us-west-1</region>
+                <host-header>ec2.amazonaws.com</host-header>
+                <security-group-name>hazelcast-sg</security-group-name>
+                <tag-key>type</tag-key>
+                <tag-value>hz-nodes</tag-value>
+            </aws>
+        </join>
+   <network>     
+```
+
+**Programmatic:**
+
+```java
+Config config = new Config();
+NetworkConfig network = config.getNetworkConfig();
+JoinConfig join = network.getJoin();
+join.getMulticastConfig().setEnabled( false );
+join.getTcpIpConfig().addMember( "10.45.67.32" ).addMember( "10.45.67.100" )
+            .setRequiredMember( "192.168.10.100" ).setEnabled( true );
+```
+
+It has below elements and attributes.
+
+- `multicast` 
+	- `enabled`: Specifies whether the multicast discovery is enabled or not. Values can be `true` or `false`.
+	- `multicast-group`: The multicast group IP address. Specify it when you want to create clusters within the same network. Values can be between 224.0.0.0 and 239.255.255.255. Default value is 224.2.2.3
+	- `multicast-port`: The multicast socket port which Hazelcast member listens to and sends discovery messages through it. Default value is 54327.
+	- `multicast-time-to-live`: 
+	- `multicast-timeout-seconds`:
+	- `trusted-interfaces`: 
+	
+- `tcp-ip`
+	- 	
+
+ 
+
+
+#### `partition-group` Tag
 
 This configuration is for ???. It only has the attribute `enabled`.
 
-### `executor-service` Tag
+#### `executor-service` Tag
 
 This configuration is for ???. It has below attributes.
 
@@ -152,7 +291,7 @@ This configuration is for ???. It has below attributes.
 - statistics-enabled:
 
 
-### `queue` Tag
+#### `queue` Tag
 
 This configuration is for ???. It has below attributes.
 
@@ -164,7 +303,7 @@ This configuration is for ???. It has below attributes.
 - queue-store:
 - statistics-enabled:
 
-### `map` Tag
+#### `map` Tag
 
 This configuration is for ???. It has below attributes.
 
@@ -187,7 +326,7 @@ This configuration is for ???. It has below attributes.
 - partition-strategy:
 
 
-### `multimap` Tag
+#### `multimap` Tag
 
 This configuration is for ???. It has below attributes.
 
@@ -199,7 +338,7 @@ This configuration is for ???. It has below attributes.
 - partition-strategy:
 
 
-### `topic` Tag
+#### `topic` Tag
 
 This configuration is for ???. It has below attributes.
 
@@ -208,7 +347,7 @@ This configuration is for ???. It has below attributes.
 - message-listeners:
 
 
-### `list` Tag
+#### `list` Tag
 
 This configuration is for ???. It has below attributes.
 
@@ -219,7 +358,7 @@ This configuration is for ???. It has below attributes.
 - item-listeners:
 - statistics-enabled:
 
-### `set` Tag
+#### `set` Tag
 
 This configuration is for ???. It has below attributes.
 
@@ -233,7 +372,7 @@ This configuration is for ???. It has below attributes.
 
 
 
-### `jobtracker` Tag
+#### `jobtracker` Tag
 
 This configuration is for ???. It has below attributes.
 
@@ -245,7 +384,7 @@ This configuration is for ???. It has below attributes.
 - topology-changed-strategy:
 
 
-### `semaphore` Tag
+#### `semaphore` Tag
 
 This configuration is for ???. It has below attributes.
 
@@ -254,13 +393,13 @@ This configuration is for ???. It has below attributes.
 - async-backup-count:
 
 
-### `serialization` Tag
+#### `serialization` Tag
 
 This configuration is for ???. It has below attributes.
 
 - portable-version:
 
-### `services` Tag
+#### `services` Tag
 
 This configuration is for ???. It only has the attribute `enabled`.
 
