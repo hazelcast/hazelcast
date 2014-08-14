@@ -277,7 +277,7 @@ public class NodeEngineImpl implements NodeEngine {
     @PrivateApi
     public void handlePacket(Packet packet) {
         if (packet.isHeaderSet(Packet.HEADER_OP)) {
-            operationService.receive(packet);
+            operationService.executeOperation(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {

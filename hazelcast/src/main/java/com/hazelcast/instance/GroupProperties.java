@@ -100,7 +100,8 @@ public class GroupProperties {
     public static final String PROP_ENTERPRISE_WAN_REP_QUEUESIZE = "hazelcast.enterprise.wanrep.queuesize";
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
 
-    public final GroupProperty PARTITION_OPERATION_THREAD_COUNT;
+     public final GroupProperty PARTITION_OPERATION_THREAD_COUNT;
+
     public final GroupProperty GENERIC_OPERATION_THREAD_COUNT;
 
     public final GroupProperty EVENT_THREAD_COUNT;
@@ -231,7 +232,7 @@ public class GroupProperties {
 
     public final GroupProperty ENTERPRISE_WAN_REP_QUEUESIZE;
 
-    public final GroupProperty CLIENT_MAX_NO_HEARTBEAT_SECONDS;
+    public final GroupProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS;
 
     /**
      * @param config
@@ -249,6 +250,7 @@ public class GroupProperties {
         EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "5");
         EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EVENT_QUEUE_CAPACITY, "1000000");
         EVENT_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_EVENT_QUEUE_TIMEOUT_MILLIS, "250");
+
         CONNECT_ALL_WAIT_SECONDS = new GroupProperty(config, PROP_CONNECT_ALL_WAIT_SECONDS, "120");
         MEMCACHE_ENABLED = new GroupProperty(config, PROP_MEMCACHE_ENABLED, "true");
         REST_ENABLED = new GroupProperty(config, PROP_REST_ENABLED, "true");
@@ -309,7 +311,7 @@ public class GroupProperties {
         MAP_WRITE_BEHIND_QUEUE_CAPACITY
                 = new GroupProperty(config, PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY, "50000");
         ENTERPRISE_WAN_REP_QUEUESIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_QUEUESIZE, "100000");
-        CLIENT_MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "60");
+        CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "60");
     }
 
     public static class GroupProperty {

@@ -189,6 +189,11 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
+    public void execute(Runnable task, int partitionId) {
+        scheduler.execute(task, partitionId);
+    }
+
+    @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         if (partitionId < 0) {
             throw new IllegalArgumentException("Partition id cannot be negative!");
@@ -206,7 +211,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @PrivateApi
     @Override
-    public void receive(final Packet packet) {
+    public void executeOperation(final Packet packet) {
         scheduler.execute(packet);
     }
 
@@ -452,8 +457,8 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private void ensureNotCallingFromOperationThread() {
-            Thread currentThread = Thread.currentThread();
-            if (currentThread instanceof BasicOperationScheduler.OperationThread) {
+            if (scheduler.isCurrentThreadPartitionAwareOperationThread()) {
+                Thread currentThread = Thread.currentThread();
                 throw new IllegalThreadStateException(currentThread + " cannot make invocation on multiple partitions!");
             }
         }

@@ -27,7 +27,6 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.util.Queue;
-import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -78,12 +77,6 @@ public final class BasicOperationScheduler {
     //and a task gets processed as quickly as possible.
     private final BlockingQueue genericWorkQueue = new LinkedBlockingQueue();
     private final ConcurrentLinkedQueue genericPriorityWorkQueue = new ConcurrentLinkedQueue();
-
-    //The genericOperationRandom is used when a generic operation is scheduled, and a generic OperationThread
-    //needs to be selected.
-    //We could have a look at the ThreadLocalRandom, but it requires java 7. So some kind of reflection
-    //could to the trick to use something less painful.
-    private final Random genericOperationRandom = new Random();
 
     private final ResponseThread responseThread;
 
@@ -184,7 +177,7 @@ public final class BasicOperationScheduler {
         OperationThread operationThread = (OperationThread) currentThread;
         //if the operationThread is a not a partition specific operation thread, then we are not allowed to execute
         //partition specific operations on it.
-        if (!operationThread.isPartitionSpecific) {
+        if (!operationThread.isPartitionAware) {
             return false;
         }
 
@@ -252,6 +245,10 @@ public final class BasicOperationScheduler {
         }
     }
 
+    public void execute(Runnable task, int partitionId) {
+        execute(task, partitionId, false);
+    }
+
     private void executeOnExternalExecutor(Operation op, String executorName) {
         ExecutorService executor = executionService.getExecutor(executorName);
         if (executor == null) {
@@ -265,7 +262,7 @@ public final class BasicOperationScheduler {
             throw new IllegalStateException("UrgentSystemOperation " + op + " can't be executed on a custom "
                     + "executor with name: " + executorName);
         }
-        executor.execute(new LocalOperationProcessor(op));
+        executor.execute(new OperationExecutingRunnable(op));
     }
 
     public void execute(Packet packet) {
@@ -308,6 +305,20 @@ public final class BasicOperationScheduler {
         } else {
             offerWork(workQueue, task);
         }
+    }
+
+    /**
+     * Checks if the calling thread is a partition-aware OperationThread.
+     */
+    public boolean isCurrentThreadPartitionAwareOperationThread() {
+        Thread currentThread = Thread.currentThread();
+
+        if (!(currentThread instanceof OperationThread)) {
+            return false;
+        }
+
+        OperationThread operationThread = (OperationThread) currentThread;
+        return operationThread.isPartitionAware;
     }
 
     private void offerWork(Queue queue, Object task) {
@@ -388,15 +399,15 @@ public final class BasicOperationScheduler {
     final class OperationThread extends Thread {
 
         private final int threadId;
-        private final boolean isPartitionSpecific;
+        private final boolean isPartitionAware;
         private final BlockingQueue workQueue;
         private final Queue priorityWorkQueue;
 
-        public OperationThread(String name, boolean isPartitionSpecific,
+        public OperationThread(String name, boolean isPartitionAware,
                                int threadId, BlockingQueue workQueue, Queue priorityWorkQueue) {
             super(node.threadGroup, name);
             setContextClassLoader(node.getConfigClassLoader());
-            this.isPartitionSpecific = isPartitionSpecific;
+            this.isPartitionAware = isPartitionAware;
             this.workQueue = workQueue;
             this.priorityWorkQueue = priorityWorkQueue;
             this.threadId = threadId;
@@ -508,10 +519,10 @@ public final class BasicOperationScheduler {
     /**
      * Process the operation that has been send locally to this OperationService.
      */
-    private final class LocalOperationProcessor implements Runnable {
+    private final class OperationExecutingRunnable implements Runnable {
         private final Operation op;
 
-        private LocalOperationProcessor(Operation op) {
+        private OperationExecutingRunnable(Operation op) {
             this.op = op;
         }
 
