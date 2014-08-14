@@ -47,18 +47,32 @@ public class ListTest extends HazelcastTestSupport {
 
     @Test
     @ClientCompatibleTest
+    public void testIsEmpty_whenEmpty() {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        List list = instance.getList(randomString());
+        assertTrue(list.isEmpty());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void testIsEmpty_whenNotEmpty() {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        List list = instance.getList(randomString());
+        list.add(randomString());
+        assertFalse(list.isEmpty());
+    }
+
+    @Test
+    @ClientCompatibleTest
     public void testListMethods() throws Exception {
-        Config config = new Config();
         final String name = "defList";
         final int count = 100;
         final int insCount = 2;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-        assertTrue(getList(instances, name).isEmpty());
-        for (int i=0; i<count; i++){
-            assertTrue(getList(instances, name).add("item"+i));
+        final HazelcastInstance[] instances = factory.newInstances();
+        for (int i = 0; i < count; i++) {
+            assertTrue(getList(instances, name).add("item" + i));
         }
-        assertFalse(getList(instances, name).isEmpty());
 
 //        Iterator iter = getList(instances, name).iterator();
 //        int item = 0;
@@ -71,14 +85,14 @@ public class ListTest extends HazelcastTestSupport {
         assertEquals("item0", getList(instances, name).get(0));
         assertEquals(count, getList(instances, name).size());
         getList(instances, name).add(0, "item");
-        assertEquals(count+1, getList(instances, name).size());
+        assertEquals(count + 1, getList(instances, name).size());
         assertEquals("item", getList(instances, name).get(0));
         assertEquals("item0", getList(instances, name).get(1));
         assertTrue(getList(instances, name).remove("item99"));
         assertFalse(getList(instances, name).remove("item99"));
         assertEquals(count, getList(instances, name).size());
-        assertEquals("item",getList(instances, name).set(0, "newItem"));
-        assertEquals("newItem",getList(instances, name).get(0));
+        assertEquals("item", getList(instances, name).set(0, "newItem"));
+        assertEquals("newItem", getList(instances, name).get(0));
 
         getList(instances, name).clear();
         assertEquals(0, getList(instances, name).size());
@@ -91,7 +105,7 @@ public class ListTest extends HazelcastTestSupport {
         assertEquals("item-1", getList(instances, name).get(0));
         assertEquals("item-2", getList(instances, name).get(1));
 
-        assertTrue(getList(instances, name).addAll(1,list));
+        assertTrue(getList(instances, name).addAll(1, list));
         assertEquals("item-1", getList(instances, name).get(0));
         assertEquals("item-1", getList(instances, name).get(1));
         assertEquals("item-2", getList(instances, name).get(2));
@@ -176,7 +190,7 @@ public class ListTest extends HazelcastTestSupport {
             getList(instances, name).add("item" + i);
         }
         for (int i = 0; i < count; i++) {
-            getList(instances, name).remove("item"+i);
+            getList(instances, name).remove("item" + i);
         }
         assertTrue(latchAdd.await(5, TimeUnit.SECONDS));
         assertTrue(latchRemove.await(5, TimeUnit.SECONDS));
@@ -184,7 +198,7 @@ public class ListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAddRemoveList(){
+    public void testAddRemoveList() {
         Config config = new Config();
         final String name = "defList";
 
@@ -205,7 +219,7 @@ public class ListTest extends HazelcastTestSupport {
             assertTrue(l.remove("value1"));
             assertEquals(1, l.size());
             context.commitTransaction();
-        } catch (Exception e){
+        } catch (Exception e) {
             fail(e.getMessage());
             context.rollbackTransaction();
         }
@@ -214,7 +228,7 @@ public class ListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMigration(){
+    public void testMigration() {
         Config config = new Config();
         final String name = "defList";
         config.addListConfig(new ListConfig().setName(name).setBackupCount(1));
@@ -226,8 +240,8 @@ public class ListTest extends HazelcastTestSupport {
 
         IList list = instance1.getList(name);
 
-        for (int i=0; i<100; i++){
-            list.add("item"+i);
+        for (int i = 0; i < 100; i++) {
+            list.add("item" + i);
         }
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
@@ -240,8 +254,8 @@ public class ListTest extends HazelcastTestSupport {
         assertEquals(100, instance3.getList(name).size());
 
         list = instance2.getList(name);
-        for (int i=0; i<100; i++){
-            list.add("item-"+i);
+        for (int i = 0; i < 100; i++) {
+            list.add("item-" + i);
         }
 
         instance2.shutdown();
@@ -256,7 +270,7 @@ public class ListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMaxSize(){
+    public void testMaxSize() {
         Config config = new Config();
         final String name = "defList";
         config.addListConfig(new ListConfig().setName(name).setBackupCount(1).setMaxSize(100));
@@ -269,15 +283,15 @@ public class ListTest extends HazelcastTestSupport {
 
         IList list = instance1.getList(name);
 
-        for (int i=0; i<100; i++){
-            assertTrue(list.add("item"+i));
+        for (int i = 0; i < 100; i++) {
+            assertTrue(list.add("item" + i));
         }
         assertFalse(list.add("item"));
         assertNotNull(list.remove(0));
         assertTrue(list.add("item"));
     }
 
-    private IList getList(HazelcastInstance[] instances, String name){
+    private IList getList(HazelcastInstance[] instances, String name) {
         final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getList(name);
     }
