@@ -47,8 +47,10 @@ public class AwaitOperation extends BaseLockOperation
 
     @Override
     public void beforeRun() throws Exception {
-        LockStoreImpl lockStore = getLockStore();
-        firstRun = lockStore.startAwaiting(key, conditionId, getCallerUuid(), threadId);
+        if (!expired) {
+            LockStoreImpl lockStore = getLockStore();
+            firstRun = lockStore.startAwaiting(key, conditionId, getCallerUuid(), threadId);
+        }
     }
 
     @Override
