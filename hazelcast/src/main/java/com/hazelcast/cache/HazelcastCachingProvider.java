@@ -48,11 +48,16 @@ import java.util.WeakHashMap;
 public class HazelcastCachingProvider implements CachingProvider {
 
     private final static ILogger logger = Logger.getLogger(HazelcastCachingProvider.class);
+    private static HazelcastInstance hazelcastInstance;
 
     private WeakHashMap<ClassLoader, HashMap<URI, CacheManager>> cacheManagers;
 
     public HazelcastCachingProvider() {
         this.cacheManagers = new WeakHashMap<ClassLoader, HashMap<URI, CacheManager>>();
+        if(hazelcastInstance == null){
+            Config config = new XmlConfigBuilder().build();
+            hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+        }
     }
 
     /**
@@ -64,6 +69,8 @@ public class HazelcastCachingProvider implements CachingProvider {
         ClassLoader managerClassLoader = classLoader == null ? getDefaultClassLoader() : classLoader;
         Properties managerProperties = properties == null ? new Properties() : properties;
 
+
+
         HashMap<URI, CacheManager> cacheManagersByURI = cacheManagers.get(managerClassLoader);
 
         if (cacheManagersByURI == null) {
@@ -74,32 +81,7 @@ public class HazelcastCachingProvider implements CachingProvider {
 
         if (cacheManager == null) {
             try {
-
-                Config config = null;
-                if (managerURI.equals(getDefaultURI())) {
-                    config = new Config();
-                } else {
-                    try {
-                        URL url = new URL(managerURI.toString());
-
-                        InputStream in = url.openStream();
-                        if (in == null) {
-                            logger.warning("Having problem opening URL:" + url.toString());
-                        }
-
-                        config = new XmlConfigBuilder(in).build();
-                    } catch (IOException e) {
-                        logger.warning("Error opening URI" + managerURI.toString() + ". Caused by :" + e.getMessage());
-                        config = new Config();
-                    }
-
-                }
-                config.setClassLoader(managerClassLoader);
-
-                //FIXME HZ URI,  MANAGER ETC
-                HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
                 cacheManager = new HazelcastCacheManager(this, hazelcastInstance, managerURI, managerClassLoader, managerProperties);
-
                 cacheManagersByURI.put(managerURI, cacheManager);
 
             } catch (Throwable t) {
@@ -208,7 +190,6 @@ public class HazelcastCachingProvider implements CachingProvider {
         }
         return false;
     }
-
 
     public synchronized void releaseCacheManager(URI uri, ClassLoader classLoader) {
         URI managerURI = uri == null ? getDefaultURI() : uri;

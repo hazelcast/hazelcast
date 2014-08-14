@@ -28,8 +28,10 @@ public class HazelcastCacheManager implements CacheManager {
     private final WeakReference<ClassLoader> classLoaderReference;
     private final Properties properties;
 
-    private volatile boolean closeTriggered=false;
+    private final boolean isDefaultURI;
+    private final boolean isDefaultClassLoader;
 
+    private volatile boolean closeTriggered=false;
 
     public HazelcastCacheManager(HazelcastCachingProvider cachingProvider, HazelcastInstance hazelcastInstance, URI uri, ClassLoader classLoader, Properties properties) {
         if (cachingProvider == null) {
@@ -42,17 +44,14 @@ public class HazelcastCacheManager implements CacheManager {
         }
         this.hazelcastInstance = hazelcastInstance;
 
-        if (uri == null) {
-            throw new NullPointerException("CacheManager URI missing");
-        }
-        this.uri = uri;
+        isDefaultURI = uri == null;
+        this.uri = isDefaultURI ? cachingProvider.getDefaultURI(): uri;
 
-        if (classLoader == null) {
-            throw new NullPointerException("ClassLoader missing");
-        }
-        this.classLoaderReference = new WeakReference<ClassLoader>(classLoader);
+        isDefaultClassLoader = classLoader == null;
+        final ClassLoader _classLoader = isDefaultClassLoader ? cachingProvider.getDefaultClassLoader() : classLoader;
+        this.classLoaderReference = new WeakReference<ClassLoader>(_classLoader);
+
         this.properties = properties == null ? new Properties() : new Properties(properties);
-
     }
 
     @Override
@@ -168,7 +167,7 @@ public class HazelcastCacheManager implements CacheManager {
             final HazelcastInstance hz = hazelcastInstance;
             Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
             for (DistributedObject distributedObject : distributedObjects) {
-                if (distributedObject instanceof ICache) {
+                if (distributedObject instanceof ICache && distributedObject.getName().startsWith(managerPrefix())) {
                     names.add(distributedObject.getName());
                 }
             }
@@ -216,7 +215,7 @@ public class HazelcastCacheManager implements CacheManager {
                     distributedObject.destroy();
                 }
             }
-            hz.shutdown();
+//            hz.shutdown();
             cachingProvider.releaseCacheManager(uri,classLoaderReference.get());
         }
         closeTriggered=true;
@@ -241,6 +240,17 @@ public class HazelcastCacheManager implements CacheManager {
         sb.append("hazelcastInstance=").append(hazelcastInstance);
         sb.append(", cachingProvider=").append(cachingProvider);
         sb.append('}');
+        return sb.toString();
+    }
+
+    private String managerPrefix(){
+        final StringBuilder sb = new StringBuilder("/hazelcast");
+        if(!isDefaultClassLoader){
+            sb.append("/").append(classLoaderReference.get().toString() );
+        }
+        if(!isDefaultURI){
+            sb.append("/").append(uri.toASCIIString() );
+        }
         return sb.toString();
     }
 }
