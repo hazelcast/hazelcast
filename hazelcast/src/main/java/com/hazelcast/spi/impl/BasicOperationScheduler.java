@@ -252,6 +252,10 @@ public final class BasicOperationScheduler {
         }
     }
 
+    public void execute(Runnable task, int partitionId) {
+        execute(task, partitionId, false);
+    }
+
     private void executeOnExternalExecutor(Operation op, String executorName) {
         ExecutorService executor = executionService.getExecutor(executorName);
         if (executor == null) {

@@ -26,26 +26,28 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
+
 import java.io.IOException;
 import java.util.Map;
 
-public class ContainsEntryRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
-
-    Data key;
+/**
+ * The contains requests checks if a value is stored in the multimap. This is a distributed call; meaning that all member in the
+ * cluster are going to process. So it is an expensive calld.
+ */
+public class ContainsRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     Data value;
 
-    public ContainsEntryRequest() {
+    public ContainsRequest() {
     }
 
-    public ContainsEntryRequest(String name, Data key, Data value) {
+    public ContainsRequest(String name, Data value) {
         super(name);
-        this.key = key;
         this.value = value;
     }
 
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.CONTAINS, key, value);
+        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.CONTAINS, null, value);
     }
 
     protected Object reduce(Map<Integer, Object> map) {
@@ -64,34 +66,22 @@ public class ContainsEntryRequest extends MultiMapAllPartitionRequest implements
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
     }
 
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
-        key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);
     }
 
     @Override
     public String getMethodName() {
-        if (key != null && value != null) {
-            return "containsEntry";
-        } else if (key != null) {
-            return "containsKey";
-        }
         return "containsValue";
     }
 
     @Override
     public Object[] getParameters() {
-        if (key != null && value != null) {
-            return new Object[]{key, value};
-        } else if (key != null) {
-            return new Object[]{key};
-        }
         return new Object[]{value};
     }
 }

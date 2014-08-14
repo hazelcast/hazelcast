@@ -77,7 +77,7 @@ public interface OperationService {
      * <p/>
      * This method blocks until the operation completes.
      *
-     * @param serviceName the name of the service.
+     * @param serviceName      the name of the service.
      * @param operationFactory the factory responsible creating operations
      * @return a Map with partitionId as key and outcome of the operation as value.
      * @throws Exception
@@ -90,7 +90,7 @@ public interface OperationService {
      * * <p/>
      * This method blocks until all operations complete.
      *
-     * @param serviceName the name of the service
+     * @param serviceName      the name of the service
      * @param operationFactory the factory responsible creating operations
      * @param partitions       the partitions the operation should be executed on.
      * @return a Map with partitionId as key and outcome of the operation as value.
@@ -114,7 +114,7 @@ public interface OperationService {
      * Sends a response to a remote machine.
      *
      * @param response the response to send.
-     * @param target the address of the target machine
+     * @param target   the address of the target machine
      * @return true if send successfully, false otherwise.
      */
     boolean send(Response response, Address target);
