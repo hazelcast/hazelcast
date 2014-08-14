@@ -39,11 +39,19 @@ public class MapStoreConfigReadOnly extends MapStoreConfig {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
+    public MapStoreConfig setWriteBatchSize(int writeBatchSize) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
     public MapStoreConfig setEnabled(boolean enabled) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     public MapStoreConfig setImplementation(Object implementation) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    public MapStoreConfig setInitialLoadMode(InitialLoadMode initialLoadMode) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
@@ -58,5 +66,4 @@ public class MapStoreConfigReadOnly extends MapStoreConfig {
     public MapStoreConfig setProperties(Properties properties) {
         throw new UnsupportedOperationException("This config is read-only");
     }
-
 }
