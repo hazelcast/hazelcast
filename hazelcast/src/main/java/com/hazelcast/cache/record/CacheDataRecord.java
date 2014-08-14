@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-/**
- * <p>
- *     Hazelcast JSR-107 aka JCache implementation
- * </p>
- * <p>
- *     Missing spec features:
- *     *CacheManager via classLoader
- *     *sync EventListener
- *     *cluster wide dynamic cache configuration
- *
- * </p>
- */
-package com.hazelcast.cache;
+package com.hazelcast.cache.record;
+
+import com.hazelcast.nio.serialization.Data;
+
+class CacheDataRecord extends AbstractCacheRecord<Data> {
+
+    CacheDataRecord(){
+        super();
+    }
+
+    CacheDataRecord(Data key, Data value, long expiryTime) {
+        super(key, value, expiryTime);
+    }
+}

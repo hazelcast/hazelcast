@@ -1,1 +1,1 @@
-com.hazelcast.cache.jsr107.HazelcastCachingProvider
+com.hazelcast.cache.HazelcastCachingProvider
