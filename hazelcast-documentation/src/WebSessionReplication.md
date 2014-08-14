@@ -164,7 +164,7 @@ Here are the steps to setup Hazelcast Session Clustering:
 
 - If Spring based security is used for application, you should use `com.hazelcast.web.spring.SpringAwareWebFilter` instead of `com.hazelcast.web.WebFilter` in your filter definition. 
 
-```
+```xml
 ...
 
 <filter>
