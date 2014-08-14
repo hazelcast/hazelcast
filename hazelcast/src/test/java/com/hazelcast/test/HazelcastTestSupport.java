@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -359,5 +360,34 @@ public abstract class HazelcastTestSupport {
     private static String formatClassAndValue(Object value, String valueString) {
         String className = value == null ? "null" : value.getClass().getName();
         return className + "<" + valueString + ">";
+    }
+
+
+    public abstract class TestThread extends Thread {
+        CountDownLatch startLatch;
+        private volatile Throwable error;
+        protected final Random random = new Random();
+        private volatile boolean stopOnError = true;
+        private volatile boolean stopTest = false;
+
+        public TestThread() {
+            startLatch = new CountDownLatch(1);
+        }
+        @Override
+        public final void run() {
+            try {
+                startLatch.await();
+                doRun();
+            } catch (Throwable t) {
+                if (stopOnError) {
+                    stopTest = true;
+                }
+                t.printStackTrace();
+                this.error = t;
+            }
+        }
+
+        public abstract void doRun() throws Exception;
+
     }
 }
