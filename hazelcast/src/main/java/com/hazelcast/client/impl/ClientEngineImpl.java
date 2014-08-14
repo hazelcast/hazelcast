@@ -48,7 +48,6 @@ import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
@@ -61,7 +60,6 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.InternalOperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionManagerService;
-import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
@@ -72,7 +70,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -90,11 +87,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
      */
     public static final String SERVICE_NAME = "hz:core:clientEngine";
     private static final int ENDPOINT_REMOVE_DELAY_MS = 10;
-    private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
-    private final Executor executor;
 
     private final SerializationService serializationService;
     // client uuid -> member uuid
@@ -110,25 +105,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.serializationService = node.getSerializationService();
         this.nodeEngine = node.nodeEngine;
         this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
-        this.executor = newExecutor();
 
         ClientHeartbeatMonitor heartBeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, this, nodeEngine.getExecutionService(), node.groupProperties);
         heartBeatMonitor.start();
-    }
-
-    private Executor newExecutor() {
-        final ExecutionService executionService = nodeEngine.getExecutionService();
-        int coreSize = Runtime.getRuntime().availableProcessors();
-
-        int threadCount = node.getGroupProperties().CLIENT_ENGINE_THREAD_COUNT.getInteger();
-        if (threadCount <= 0) {
-            threadCount = coreSize * 2;
-        }
-
-        return executionService.register(ExecutionService.CLIENT_EXECUTOR,
-                threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
-                ExecutorType.CONCRETE);
     }
 
     //needed for testing purposes
@@ -142,13 +122,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     public void handlePacket(Packet packet) {
-        int partitionId = packet.getPartitionId();
-        if (partitionId < 0) {
-            executor.execute(new ClientPacketProcessor(packet));
-        } else {
-            InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-            operationService.execute(new ClientPacketProcessor(packet), packet.getPartitionId());
-        }
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        operationService.execute(new ClientPacketProcessor(packet), packet.getPartitionId());
     }
 
     @Override

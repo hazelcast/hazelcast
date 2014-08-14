@@ -184,7 +184,7 @@ public final class BasicOperationScheduler {
         OperationThread operationThread = (OperationThread) currentThread;
         //if the operationThread is a not a partition specific operation thread, then we are not allowed to execute
         //partition specific operations on it.
-        if (!operationThread.isPartitionSpecific) {
+        if (!operationThread.isPartitionAware) {
             return false;
         }
 
@@ -269,7 +269,7 @@ public final class BasicOperationScheduler {
             throw new IllegalStateException("UrgentSystemOperation " + op + " can't be executed on a custom "
                     + "executor with name: " + executorName);
         }
-        executor.execute(new LocalOperationProcessor(op));
+        executor.execute(new OperationExecutingRunnable(op));
     }
 
     public void execute(Packet packet) {
@@ -312,6 +312,20 @@ public final class BasicOperationScheduler {
         } else {
             offerWork(workQueue, task);
         }
+    }
+
+    /**
+     * Checks if the calling thread is a partition-aware OperationThread.
+     */
+    public boolean isCurrentThreadPartitionAwareOperationThread() {
+        Thread currentThread = Thread.currentThread();
+
+        if (!(currentThread instanceof OperationThread)) {
+            return false;
+        }
+
+        OperationThread operationThread = (OperationThread) currentThread;
+        return operationThread.isPartitionAware;
     }
 
     private void offerWork(Queue queue, Object task) {
@@ -389,18 +403,18 @@ public final class BasicOperationScheduler {
         }
     }
 
-    final class OperationThread extends Thread {
+    private final class OperationThread extends Thread {
 
         private final int threadId;
-        private final boolean isPartitionSpecific;
+        private final boolean isPartitionAware;
         private final BlockingQueue workQueue;
         private final Queue priorityWorkQueue;
 
-        public OperationThread(String name, boolean isPartitionSpecific,
+        public OperationThread(String name, boolean isPartitionAware,
                                int threadId, BlockingQueue workQueue, Queue priorityWorkQueue) {
             super(node.threadGroup, name);
             setContextClassLoader(node.getConfigClassLoader());
-            this.isPartitionSpecific = isPartitionSpecific;
+            this.isPartitionAware = isPartitionAware;
             this.workQueue = workQueue;
             this.priorityWorkQueue = priorityWorkQueue;
             this.threadId = threadId;
@@ -512,10 +526,10 @@ public final class BasicOperationScheduler {
     /**
      * Process the operation that has been send locally to this OperationService.
      */
-    private final class LocalOperationProcessor implements Runnable {
+    private final class OperationExecutingRunnable implements Runnable {
         private final Operation op;
 
-        private LocalOperationProcessor(Operation op) {
+        private OperationExecutingRunnable(Operation op) {
             this.op = op;
         }
 

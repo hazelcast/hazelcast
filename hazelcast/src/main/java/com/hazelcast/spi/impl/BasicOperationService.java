@@ -457,8 +457,8 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private void ensureNotCallingFromOperationThread() {
-            Thread currentThread = Thread.currentThread();
-            if (currentThread instanceof BasicOperationScheduler.OperationThread) {
+            if (scheduler.isCurrentThreadPartitionAwareOperationThread()) {
+                Thread currentThread = Thread.currentThread();
                 throw new IllegalThreadStateException(currentThread + " cannot make invocation on multiple partitions!");
             }
         }
