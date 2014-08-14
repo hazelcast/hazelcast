@@ -23,8 +23,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Implementation for {@link com.hazelcast.query.impl.Index}
@@ -42,33 +40,12 @@ public class IndexImpl implements Index {
     private final boolean ordered;
 
     private volatile AttributeType attributeType;
-    private final Lock attributeTypeLock = new ReentrantLock();
 
     public IndexImpl(String attribute, boolean ordered) {
         this.attribute = attribute;
         this.ordered = ordered;
         indexStore = (ordered) ? new SortedIndexStore() : new UnsortedIndexStore();
     }
-
-     /*
-      * ===== SYNCHRONIZATION FOR SEARCHED VALUE CONVERT OPERATION =====
-      *
-      * Without synchronization around attribute type,
-      * Thread-1 can see attribute type as null since there is no added index,
-      * and doesn't convert searched value so uses it as raw (String).
-      * Then this thread may be deactivated,
-      * another thread (Thread-2) may take a change to run for saving an index and updates attribute type.
-      * Then Thread-1 may be activated again and iterates over records on index store.
-      * In this case, Thread-1 didn't convert searched value to expected value type and
-      * iteration over indexed elements can cause class cast exception.
-      * To handle this case, synchronization is implemented with locks around attribute type.
-      *
-      * In addition, all methods converting searched values and saving index can be defined as synchronized and
-      * this technique solves the issue,
-      * but I think this is not an efficient way to making synchronized for all cases
-      * since synchronization is required only when attribute type is null.
-      * Because in that case, there is no metadata to convert searched value.
-      */
 
     @Override
     public void removeEntryIndex(Data indexKey) {
@@ -82,15 +59,8 @@ public class IndexImpl implements Index {
     public void clear() {
         recordValues.clear();
         indexStore.clear();
-        // Take lock or wait before clearing attribute type
-        attributeTypeLock.lock();
-        try {
-            // Clear attribute type
-            attributeType = null;
-        } finally {
-            // Release lock after initializing attribute type
-            attributeTypeLock.unlock();
-        }
+        // Clear attribute type
+        attributeType = null;
     }
 
     ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
@@ -107,19 +77,8 @@ public class IndexImpl implements Index {
          * this causes to class cast exceptions.
          */
         if (attributeType == null) {
-            // Note that, synchronization is required only in cases when attribute type is null
-            // Take lock or wait before initializing attribute type
-            attributeTypeLock.lock();
-            try {
-                // Check again, attribute type may be updated between first check and taking lock
-                if (attributeType == null) {
-                    // Initialize attribute type by using entry index
-                    attributeType = e.getAttributeType(attribute);
-                }
-            } finally {
-                // Release lock after initializing attribute type
-                attributeTypeLock.unlock();
-            }
+            // Initialize attribute type by using entry index
+            attributeType = e.getAttributeType(attribute);
         }
         Data key = e.getIndexKey();
         Comparable oldValue = recordValues.remove(key);
@@ -142,74 +101,50 @@ public class IndexImpl implements Index {
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable[] values) {
-        boolean attributeTypeLocked = lockIfNeeded();
-        try {
-            if (values.length == 1) {
+        if (values.length == 1) {
+            if (attributeType != null) {
                 return indexStore.getRecords(convert(values[0]));
             } else {
+                return new SingleResultSet(null);
+            }
+        } else {
+            MultiResultSet results = new MultiResultSet();
+            if (attributeType != null) {
                 Set<Comparable> convertedValues = new HashSet<Comparable>(values.length);
                 for (Comparable value : values) {
                     convertedValues.add(convert(value));
                 }
-                MultiResultSet results = new MultiResultSet();
                 indexStore.getRecords(results, convertedValues);
-                return results;
             }
-        } finally {
-            if (attributeTypeLocked) {
-                attributeTypeLock.unlock();
-            }
+            return results;
         }
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
-        boolean attributeTypeLocked = lockIfNeeded();
-        try {
+        if (attributeType != null) {
             return indexStore.getRecords(convert(value));
-        } finally {
-            if (attributeTypeLocked) {
-                attributeTypeLock.unlock();
-            }
+        } else {
+            return new SingleResultSet(null);
         }
     }
 
     @Override
     public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
-        boolean attributeTypeLocked = lockIfNeeded();
-        try {
-            MultiResultSet results = new MultiResultSet();
+        MultiResultSet results = new MultiResultSet();
+        if (attributeType != null) {
             indexStore.getSubRecordsBetween(results, convert(from), convert(to));
-            return results;
-        } finally {
-            if (attributeTypeLocked) {
-                attributeTypeLock.unlock();
-            }
         }
+        return results;
     }
 
     @Override
     public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
-        boolean attributeTypeLocked = lockIfNeeded();
-        try {
-            MultiResultSet results = new MultiResultSet();
+        MultiResultSet results = new MultiResultSet();
+        if (attributeType != null) {
             indexStore.getSubRecords(results, comparisonType, convert(searchedValue));
-            return results;
-        } finally {
-            if (attributeTypeLocked) {
-                attributeTypeLock.unlock();
-            }
         }
-    }
-
-    private boolean lockIfNeeded() {
-        // Take lock when attribute type is null since synchronization is required in this cases
-        if (attributeType == null) {
-            attributeTypeLock.lock();
-            return true;
-        } else {
-            return false;
-        }
+        return results;
     }
 
     private Comparable convert(Comparable value) {
