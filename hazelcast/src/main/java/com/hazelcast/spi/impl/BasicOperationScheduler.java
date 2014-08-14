@@ -27,7 +27,6 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.util.Queue;
-import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
