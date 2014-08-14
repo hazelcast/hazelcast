@@ -66,6 +66,7 @@ public class TransactionContextProxy implements TransactionContext {
         this.client = transactionManager.getClient();
         try {
             this.connection = client.getConnectionManager().tryToConnect(null);
+            System.out.println("Transaction started on " + connection);
         } catch (Exception e) {
             throw new HazelcastException("Could not obtain Connection!!!", e);
         }
