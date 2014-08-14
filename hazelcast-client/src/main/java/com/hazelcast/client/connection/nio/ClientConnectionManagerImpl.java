@@ -47,6 +47,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ClientPacket;
 import com.hazelcast.nio.DefaultSocketChannelWrapper;
 import com.hazelcast.nio.IOSelector;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.SocketChannelWrapper;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
@@ -91,8 +92,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final IOSelector inSelector;
     private final IOSelector outSelector;
     private final boolean smartRouting;
-    private volatile ClientConnection ownerConnection = null;
-    private final Object ownerConnectionLock = new Object();
+    private final OwnerConnectionFuture ownerConnectionFuture = new OwnerConnectionFuture();
 
     private final Credentials credentials;
     private volatile ClientPrincipal principal;
@@ -202,49 +202,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
 
     public void markOwnerAddressAsClosed() {
-        synchronized (ownerConnectionLock) {
-            ownerConnection = null;
-        }
-    }
-
-    private Address waitForOwnerConnection() throws RetryableIOException {
-        if (ownerConnection != null) {
-            return ownerConnection.getRemoteEndpoint();
-        }
-
-        synchronized (ownerConnectionLock) {
-            ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
-            int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
-            int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
-            int waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
-
-            while (ownerConnection == null) {
-                try {
-                    ownerConnectionLock.wait(waitTime);
-                } catch (InterruptedException e) {
-                    logger.warning("Wait for owner connection is timed out");
-                    throw new RetryableIOException(e);
-                }
-            }
-            return ownerConnection.getRemoteEndpoint();
-        }
+        ownerConnectionFuture.markAsClosed();
     }
 
     @Override
     public ClientConnection ownerConnection(Address address) throws Exception {
-        final ManagerAuthenticator authenticator = new ManagerAuthenticator();
-        final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
-        ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
-        try {
-            ownerConnection = future.get(5, TimeUnit.SECONDS);
-            synchronized (ownerConnectionLock) {
-                ownerConnectionLock.notifyAll();
-            }
-            return ownerConnection;
-        } catch (Exception e) {
-            future.cancel(true);
-            throw new RetryableIOException(e);
-        }
+        return ownerConnectionFuture.createNew(address);
     }
 
     @Override
@@ -300,7 +263,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             throw new NullPointerException("Address is required!");
         }
         if (!smartRouting) {
-            address = waitForOwnerConnection();
+            address = ownerConnectionFuture.getOrWaitForCreation().getEndPoint();
         }
         ClientConnection clientConnection = connections.get(address);
         if (clientConnection == null) {
@@ -388,20 +351,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         Address endpoint = clientConnection.getRemoteEndpoint();
         if (endpoint != null) {
             connections.remove(clientConnection.getRemoteEndpoint());
-            closeIfOwnerConnection(endpoint);
-        }
-    }
-
-    private void closeIfOwnerConnection(Address endpoint) {
-        final ClientConnection currentOwnerConnection = ownerConnection;
-        if (currentOwnerConnection == null || !currentOwnerConnection.live()) {
-            return;
-        }
-        if (endpoint.equals(currentOwnerConnection.getRemoteEndpoint())) {
-            try {
-                currentOwnerConnection.close();
-            } catch (Exception ignored) {
-            }
+            ownerConnectionFuture.closeIfAddressMatches(endpoint);
         }
     }
 
@@ -596,6 +546,79 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
         }
         return lock;
+    }
+
+    private class OwnerConnectionFuture {
+
+        private final Object ownerConnectionLock = new Object();
+        private volatile ClientConnection ownerConnection;
+
+        private ClientConnection getOrWaitForCreation() throws IOException {
+            ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
+            int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
+            int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+            int waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
+            final ClientConnection currentOwnerConnection = ownerConnection;
+            if (currentOwnerConnection != null) {
+                return currentOwnerConnection;
+            }
+            synchronized (ownerConnectionLock) {
+                long endTime = System.currentTimeMillis() + waitTime;
+                while (ownerConnection == null && endTime > System.currentTimeMillis()) {
+                    try {
+                        ownerConnectionLock.wait(waitTime);
+                    } catch (InterruptedException e) {
+                        throw new IOException(e);
+                    }
+                }
+                if (ownerConnection == null) {
+                    logger.warning("Wait for owner connection is timed out");
+                    throw new IOException("Wait for owner connection is timed out");
+                }
+                return ownerConnection;
+            }
+        }
+
+        private ClientConnection createNew(Address address) throws RetryableIOException {
+            final ManagerAuthenticator authenticator = new ManagerAuthenticator();
+            final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
+            ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
+            try {
+                ClientConnection conn = future.get(5, TimeUnit.SECONDS);
+                synchronized (ownerConnectionLock) {
+                    ownerConnection = conn;
+                    ownerConnectionLock.notifyAll();
+                }
+                return conn;
+            } catch (Exception e) {
+                future.cancel(true);
+                throw new RetryableIOException(e);
+            }
+        }
+
+        private void markAsClosed() {
+            ownerConnection = null;
+        }
+
+        private void closeIfAddressMatches(Address address) {
+            final ClientConnection currentOwnerConnection = ownerConnection;
+            if (currentOwnerConnection == null || !currentOwnerConnection.live()) {
+                return;
+            }
+            if (address.equals(currentOwnerConnection.getRemoteEndpoint())) {
+                close();
+            }
+        }
+
+        private void close() {
+            final ClientConnection currentOwnerConnection = ownerConnection;
+            if (currentOwnerConnection == null) {
+                return;
+            }
+
+            IOUtil.closeResource(currentOwnerConnection);
+            markAsClosed();
+        }
     }
 
 }
