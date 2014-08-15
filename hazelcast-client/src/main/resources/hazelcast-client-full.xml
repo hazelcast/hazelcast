@@ -85,8 +85,7 @@
         </portable-factories>
         <serializers>
             <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
-            <serializer type-class="com.hazelcast.examples.DummyType">com.hazelcast.examples.SerializerFactory
-            </serializer>
+            <serializer type-class="com.hazelcast.examples.DummyType" class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>

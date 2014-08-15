@@ -327,9 +327,10 @@ public abstract class AbstractXmlConfigHelper {
             final String value = getTextContent(child);
             if ("serializer".equals(name)) {
                 SerializerConfig serializerConfig = new SerializerConfig();
-                serializerConfig.setClassName(value);
                 final String typeClassName = getAttribute(child, "type-class");
+                final String className = getAttribute(child, "class-name");
                 serializerConfig.setTypeClassName(typeClassName);
+                serializerConfig.setClassName(className);
                 serializationConfig.addSerializerConfig(serializerConfig);
             } else if ("global-serializer".equals(name)) {
                 GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
