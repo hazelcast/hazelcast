@@ -4,7 +4,7 @@
 
 |Chapter|Section|Description|
 |:-------|:-------|:-----------|
-|[Chapter 1 - Introduction](#introduction)|[Configuring Hazelcast](#configuring-hazelcast)|The section 'Wildcard Configuration' previously placed under 'Configuration` chapter moved to this section with the heading 'Using Wildcard', also the content improved.|
+|[Chapter 1 - Introduction](#introduction)|[Configuring Hazelcast](#configuring-hazelcast)|The section 'Wildcard Configuration' previously placed under Configuration chapter moved to this section with the heading 'Using Wildcard', also the content improved.|
 |[Chapter 3 - Distributed Data Structures](#distributed-data-structures)|[IdGenerator](#idgenerator), [ICountDownLatch](#icountdownlatch), [IAtomicReference](#iatomic-reference)| Added as new sections.|
 ||[MultiMap](#multimap)| Section improved by adding information about how it is implemented and by providing configuration information.|
 ||[Map](#map)|Eviction section improved by adding the detailed policy and parameter explanations. A subsection on how to evict particular map entries added *([Evicting Specific Entries](#evicting-specific-entries))*. Also [Map Overview](#map-overview) and [Backups](#backups) sections enhanced with "how it works" information. Added [Entry Listener](#entry-listener) and [Map Locks](#map-locks) as new sections.|
@@ -16,6 +16,7 @@
 |[Chapter 7 - Transactions](#transactions)|[XA Transactions](#xa-transactions)|Added as a new section.|
 ||[Sample JBoss AS 7 - EAP 6 Web Application Configuration](#sample-JBoss-AS-7-EAP-6-web-application-configuration)| Added as a new section.|
 |[Chapter 8 - Integrated Clustering](#integrated-clustering)|[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Added as a new section (Enterprise Only feature).|
+||[Filter Based Web Session Replication](#filter-based-web-session-replication)|Updated by adding SpringAwareWebFilter related information.
 |[Chapter 9 - Hazelcast JCache Implementation](#hazelcast-jcache-implementation)||Added as a new chapter.|
 |[Chapter 11 - Clients](#clients)|[Java Client](#java-client)|Client configuration related to AWS added and the whole section enhanced.|
 |[Chapter 12 - Serialization](#serialization)||All sections under this chapter re-written and enhanced. Also added HazelcastInstanceAware, Stream & ByteArray Serializer, Serializable & Externalizable sections.|
