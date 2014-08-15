@@ -175,11 +175,11 @@ It has below parameters which are briefly described in the following subsections
 - socket-interceptor
 - symmetric-encryption
 
-#### Public Address
+##### Public Address
 
-???
+It is used to override public address of a node. By default, a node selects its socket address as its public address. But behind a network address translation (NAT), two endpoints (nodes) may not be able to see/access each other. If both nodes set their public addresses to their defined addresses on NAT, then that way they can communicate with each other. In this case, their public addresses are not an address of a local network interface but a virtual address defined by NAT. It is optional to set and useful when you have a private cloud.
 
-#### Port
+##### Port
 
 You can specify the ports which Hazelcast will use to communicate between cluster members. Its default value is `5701`. Sample configurations are shown below.
 
@@ -210,7 +210,7 @@ It has below attributes.
 
 Naturally, the parameter `port-count` is ignored when the above configuration is made.
 
-#### Outbound Ports
+##### Outbound Ports
 
 
 By default, Hazelcast lets the system to pick up an ephemeral port during socket bind operation. But security policies/firewalls may require to restrict outbound ports to be used by Hazelcast enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports. Sample configurations are shown below.
@@ -251,7 +251,7 @@ As you can see in the programmatic configuration, if you want to add only one po
 In the declarative one, the tag `ports` can be used for both (for single and multiple port definitions).
 
 
-#### Join
+##### Join
 
 This configuration parameter is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: TCP/IP, multicast and AWS (EC2). Below are sample configurations.
 
@@ -293,7 +293,7 @@ This configuration parameter is used to enable the Hazelcast instances to form a
 Config config = new Config();
 NetworkConfig network = config.getNetworkConfig();
 JoinConfig join = network.getJoin();
-join.getMulticastConfig().setEnabled( false )
+join.getMulticastConfig().setEnabled( "false" )
             .addTrustedInterface( "192.168.1.102" );
 join.getTcpIpConfig().addMember( "10.45.67.32" ).addMember( "10.45.67.100" )
             .setRequiredMember( "192.168.10.100" ).setEnabled( true );
@@ -318,11 +318,56 @@ It has below elements and attributes.
 	- `enabled`: Specifies whether the EC2 discovery is enabled or not. Values can be `true` or `false`.
 	- `access-key`, `secret-key`: Access and secret keys of your account on EC2.
 	- `region`: The region where your nodes are running. Default value is `us-east-1`. Needs to be specified if the region is other than the default one.
-	- `host-header`: 
-	- `security-group-name`:
-	- `tag-key`:
-	- `tag-value`: 
- 
+	- `host-header`: ???. It is optional.
+	- `security-group-name`:Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast nodes to be within this group. It is optional.
+	- `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast nodes, you can set these parameters as the ones you specified in the EC2 console. They are optional.
+
+##### Interfaces
+
+You can specify which network interfaces that Hazelcast should use. Servers mostly have more than one network interface so you may want to list the valid IPs. Range characters ('\*' and '-') can be used for simplicity. So 10.3.10.\*, for instance, refers to IPs between 10.3.10.0 and 10.3.10.255. Interface 10.3.10.4-18 refers to IPs between 10.3.10.4 and 10.3.10.18 (4 and 18 included). If network interface configuration is enabled (disabled by default) and if Hazelcast cannot find an matching interface, then it will print a message on console and will not start on that node.
+
+**Declarative:**
+
+```xml
+<hazelcast>
+  ...
+  <network>
+    ...
+    <interfaces enabled="true">
+      <interface>10.3.16.*</interface> 
+      <interface>10.3.10.4-18</interface> 
+      <interface>192.168.1.3</interface>         
+    </interfaces>    
+  </network>
+  ...
+</hazelcast> 
+```
+
+**Programmatic:**
+
+```java
+Config config = new Config();
+NetworkConfig network = config.getNetworkConfig();
+InterfacesConfig interface = network.getInterfaces();
+interface.setEnabled( "true" )
+            .addInterface( "192.168.1.3" );
+```
+
+
+
+
+##### SSL
+
+This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
+
+##### Socket Interceptor
+
+This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
+
+##### Symmetric Encryption
+
+This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
+
 
 
 ### Group Configuration
