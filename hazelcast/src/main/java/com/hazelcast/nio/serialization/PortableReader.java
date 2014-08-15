@@ -76,12 +76,40 @@ public interface PortableReader {
 
     ObjectDataInput getRawDataInput() throws IOException;
 
+    /**
+     * Reads an object from a field.
+     *
+     * @param fieldName the name of the field
+     * @return the read object
+     * @throws IOException if serialization fails.
+     */
     <T> T readObject(String fieldName) throws IOException;
 
+    /**
+     * Reads an object array from a field.
+     *
+     * @param fieldName the name of the field
+     * @return the read object array
+     * @throws IOException if serialization fails.
+     */
     <T> T[] readObjectArray(String fieldName,  final Class<T[]> clazz) throws IOException;
 
+    /**
+     * Reads a map from a field into the provided map.
+     *
+     * @param fieldName the name of the field
+     * @param map the map to populate
+     * @throws IOException if serialization fails.
+     */
     <K, V> void readMap(String fieldName, Map<K, V> map) throws IOException;
 
+    /**
+     * Reads a collection from a field into the provided collection.
+     *
+     * @param fieldName the name of the field
+     * @param collection the collection to populate
+     * @throws IOException if serialization fails.
+     */
     <T> void readCollection(String fieldName, Collection<T> collection) throws IOException;
 
 

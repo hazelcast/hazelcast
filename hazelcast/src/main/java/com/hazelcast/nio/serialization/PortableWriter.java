@@ -69,11 +69,42 @@ public interface PortableWriter {
 
     ObjectDataOutput getRawDataOutput() throws IOException;
 
+    /**
+     * Writes an object as a field.
+     *
+     * @param fieldName the name of the field
+     * @param object the object to be written
+     * @throws IOException if serialization fails.
+     */
     <T> void writeObject(String fieldName, T object) throws IOException;
 
+    /**
+     * Writes an object array as a field.
+     *
+     * @param fieldName the name of the field
+     * @param objectArray the object array - if null an empty object array will be written
+     * @throws IOException if serialization fails.
+     */
     <T> void writeObjectArray(String fieldName, T[] objectArray) throws IOException;
 
+    /**
+     * Writes a {@link Map} as a field.
+     *
+     * @param fieldName the name of the field
+     * @param map the {@link Map} - if null an empty map will be written
+     * @param <K> the value type of the key for the {@link java.util.Map}
+     * @param <V> the value type of the value for the {@link java.util.Map}
+     * @throws IOException if serialization fails.
+     */
     <K, V> void writeMap(String fieldName, Map<K, V> map) throws IOException;
 
+    /**
+     * Writes a {@link Collection} as a field.
+     *
+     * @param fieldName the name of the field
+     * @param collection the {@link Collection} - if null, an empty collection will be written
+     * @param <T> the value type of the {@link java.util.Collection}
+     * @throws IOException if serialization fails.
+     */
     <T> void writeCollection(String fieldName, Collection<T> collection) throws IOException;
 }

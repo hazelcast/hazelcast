@@ -29,12 +29,15 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -137,12 +140,13 @@ public class PortableTest {
     }
 
     @Test
-    public void testMap() {
+    public void testIntegratedObject() {
         final SerializationService serializationService = createSerializationService(1, ByteOrder.nativeOrder(), false);
-        final SerializationService serializationService2 = createSerializationService(2, ByteOrder.nativeOrder(), false);
+        final SerializationService serializationService2 = createSerializationService(2, ByteOrder.nativeOrder(),
+            false);
         Data data;
 
-        HashMap<String,Object> map = new HashMap<String, Object>();
+        final HashMap<String, Object> map = new HashMap<String, Object>();
         map.put("one", "1");
         map.put("two", Integer.valueOf(2));
 
@@ -150,23 +154,83 @@ public class PortableTest {
         collection.add("First");
         collection.add("Second");
         collection.add("Third");
-        NamedPortable p1 = new NamedPortable("an-actual-portable", 111);
+        final NamedPortable p1 = new NamedPortable("an-actual-portable", 111);
 
         final String[] strArray = new String[2];
         strArray[0] = "First ArrayItem";
         strArray[1] = "Second ArrayItem";
-        NamedWithMapPortable[] nn = new NamedWithMapPortable[5];
-        for (int i = 0; i < nn.length; i++) {
 
-
-            nn[i] = new NamedWithMapPortable("named-portable-with-map" + i, i, map, collection, strArray, "Just a String", p1 );
-        }
-
-        NamedWithMapPortable np = nn[0];
+        final NamedWithMapPortable np = new NamedWithMapPortable("named-portable-with-map" + 1, 1, map, collection,
+            strArray, "Just a String", p1);
         data = serializationService.toData(np);
         assertEquals(np, serializationService.toObject(data));
         assertEquals(np, serializationService2.toObject(data));
     }
+
+    @Test
+    public void testCollection() {
+        final SerializationService serializationService = createSerializationService(1, ByteOrder.BIG_ENDIAN, false);
+        final SerializationService serializationService2 = createSerializationService(2, ByteOrder.LITTLE_ENDIAN, false);
+
+        final Collection<String> collection = new ArrayList<String>();
+        collection.add("First");
+        collection.add("Second");
+        collection.add("Third");
+
+
+        final CollectionPortable cp = new CollectionPortable(collection);
+
+        final CollectionPortable cpWithEmpty = new CollectionPortable(new ArrayList<String>());
+        assertEquals("Portable with collection member", cp, serializeDeserialize(serializationService, cp));
+        assertEquals("Portable with collection member", cp, serializeDeserialize(serializationService2, cp));
+        assertEquals("Portable with empty collection",cpWithEmpty, serializeDeserialize(serializationService, cpWithEmpty));
+    }
+
+    @Test
+    public void testMap2() {
+        final SerializationService serializationService = createSerializationService(1, ByteOrder.BIG_ENDIAN, false);
+        final SerializationService serializationService2 = createSerializationService(2, ByteOrder.LITTLE_ENDIAN, false);
+
+        final Map<String,Object> map = new HashMap<String, Object>();
+        map.put("First", "a String");
+        map.put("Second", new Integer(5));
+        map.put("Third", new ObjectPortable<String>("Test"));
+
+
+        final MapPortable mp = new MapPortable(map);
+
+        assertEquals("Portable with map", mp, serializeDeserialize(serializationService, mp));
+        assertEquals("Portable with map", mp, serializeDeserialize(serializationService2, mp));
+
+    }
+    @Test
+    public void testObject() {
+        final SerializationService serializationService = createSerializationService(1, ByteOrder.BIG_ENDIAN, false);
+
+
+        final ObjectPortable<String> stringObject = new ObjectPortable<String>("Testing");
+        assertEquals("Object with a String", stringObject, serializeDeserialize(serializationService, stringObject));
+
+        final ObjectPortable<Long> longObject = new ObjectPortable<Long>(Long.valueOf(5));
+        assertEquals("Object with a Long", longObject, serializeDeserialize(serializationService, longObject));
+
+        final ObjectPortable<Long> longNullObject = new ObjectPortable<Long>(null);
+        assertEquals("Object with a null Object field", longNullObject, serializeDeserialize(serializationService, longNullObject));
+
+        final ArrayList<String> list = new ArrayList<String>();
+        list.add("TEST");
+        final ObjectPortable<CollectionPortable> wrappedPortable = new ObjectPortable<CollectionPortable>(new CollectionPortable(list));
+        assertEquals("Object with a Portable field", wrappedPortable, serializeDeserialize(serializationService, wrappedPortable));
+
+    }
+
+    private <T> T serializeDeserialize(SerializationService serializationService, T object) {
+        final Data data = serializationService.toData(object);
+        final T deserializedObject = serializationService.toObject(data);
+        return deserializedObject;
+    }
+
+
 
     @Test
     public void testDifferentVersionsUsingDataWriteAndRead() throws IOException {
@@ -316,8 +380,10 @@ public class PortableTest {
         serializationConfig.addPortableFactory(FACTORY_ID, new TestPortableFactory());
         serializationConfig.setPortableVersion(1);
         serializationConfig.addClassDefinition(
-                new ClassDefinitionBuilder(FACTORY_ID, RawDataPortable.CLASS_ID)
-                        .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition()).build());
+            new ClassDefinitionBuilder(FACTORY_ID, RawDataPortable.CLASS_ID).addLongField("l").addCharArrayField("c")
+                                                                            .addPortableField("p",
+                                                                                createNamedPortableClassDefinition())
+                                                                            .build());
 
         try {
             new SerializationServiceBuilder().setConfig(serializationConfig).build();
@@ -486,6 +552,13 @@ public class PortableTest {
                     return new InvalidRawDataPortable2();
                 case NamedWithMapPortable.CLASS_ID:
                     return new NamedWithMapPortable();
+                case CollectionPortable.CLASS_ID:
+                    return new CollectionPortable();
+                case ObjectPortable.CLASS_ID:
+                    return new ObjectPortable();
+                case MapPortable.CLASS_ID:
+                    return new MapPortable();
+
 
             }
             return null;
@@ -929,6 +1002,7 @@ public class PortableTest {
             sds = input.readObject();
         }
     }
+
     public static class NamedWithMapPortable implements Portable {
         static final int CLASS_ID = 7;
 
@@ -1024,6 +1098,174 @@ public class PortableTest {
             return sb.toString();
         }
     }
+
+    public static class CollectionPortable implements Portable {
+        static final int CLASS_ID = 8;
+
+        private Collection<String> coll;
+
+
+        private CollectionPortable() {
+        }
+
+        private CollectionPortable(final Collection<String> collection) {
+            this.coll = collection;
+
+        }
+
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        public void writePortable(final PortableWriter writer) throws IOException {
+            writer.writeCollection("mycoll", coll);
+        }
+
+        public void readPortable(final PortableReader reader) throws IOException {
+            coll = new ArrayList<String>();
+            reader.readCollection("mycoll", coll);
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof CollectionPortable)) {
+                return false;
+            }
+
+            final CollectionPortable that = (CollectionPortable) o;
+
+            if (coll != null ? !coll.equals(that.coll) : that.coll != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return coll != null ? coll.hashCode() : 0;
+        }
+
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
+
+    }
+
+    public static class MapPortable implements Portable {
+        static final int CLASS_ID = 10;
+
+        private Map<String, Object> myMap;
+
+
+        private MapPortable() {
+        }
+
+        private MapPortable(final Map<String,Object> map) {
+            this.myMap = map;
+
+        }
+
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        public void writePortable(final PortableWriter writer) throws IOException {
+            writer.writeMap("myMap", myMap);
+        }
+
+        public void readPortable(final PortableReader reader) throws IOException {
+            myMap = new HashMap<String, Object>();
+            reader.readMap("myMap", myMap);
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof MapPortable)) {
+                return false;
+            }
+
+            final MapPortable that = (MapPortable) o;
+
+            if (myMap != null ? !myMap.equals(that.myMap) : that.myMap != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return myMap != null ? myMap.hashCode() : 0;
+        }
+
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
+
+    }
+
+    public static class ObjectPortable<T> implements Portable {
+
+        static final int CLASS_ID = 9;
+
+        private T anyObject;
+
+
+        private ObjectPortable() {
+        }
+
+        private ObjectPortable(final T anObject) {
+            this.anyObject = anObject;
+        }
+
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        public void writePortable(final PortableWriter writer) throws IOException {
+            writer.writeObject("anyObject", anyObject);
+        }
+
+        public void readPortable(final PortableReader reader) throws IOException {
+            anyObject = reader.readObject("anyObject");
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof ObjectPortable)) {
+                return false;
+            }
+
+            final ObjectPortable that = (ObjectPortable) o;
+
+            if (anyObject != null ? !anyObject.equals(that.anyObject) : that.anyObject != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return anyObject != null ? anyObject.hashCode() : 0;
+        }
+
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
+
+    }
+
     public static class SimpleDataSerializable implements DataSerializable {
         private byte[] data;
 
