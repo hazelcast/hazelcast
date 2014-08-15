@@ -52,7 +52,7 @@ Here is a sample configuration:
 </hazelcast>
 ```
 
-As you know, a configuration can be applied to more than one map using wildcards (Please see [Wildcard Configuration](#wildcard-configuration)), meaning the configuration is shared among the maps. But, `MapStore` does not know which entries to be stored when there is one configuration applied to multiple maps. To overcome this, Hazelcast provides `MapStoreFactory` interface.
+As you know, a configuration can be applied to more than one map using wildcards (Please see [Using Wildcard](#using-wildcard)), meaning the configuration is shared among the maps. But, `MapStore` does not know which entries to be stored when there is one configuration applied to multiple maps. To overcome this, Hazelcast provides `MapStoreFactory` interface.
 
 Using this factory, `MapStore`s for each map can be created, when a wildcard configuration is used. A sample code is given below.
 
