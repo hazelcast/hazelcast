@@ -160,14 +160,12 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public boolean containsEntry(K key, V value) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null!!!");
+        }
         Data keyData = toData(key);
         Data valueData = toData(value);
-        ClientRequest request;
-        if (keyData == null) {
-            request = new ContainsRequest(name, valueData);
-        } else {
-            request = new KeyBasedContainsRequest(name, keyData, valueData);
-        }
+        ClientRequest request = new KeyBasedContainsRequest(name, keyData, valueData);
         Boolean result = invoke(request, keyData);
         return result;
     }
