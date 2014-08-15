@@ -29,6 +29,8 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -46,6 +48,7 @@ public class ConnectionManager implements MembershipListener {
     private final HazelcastClient client;
     private volatile int lastDisconnectedConnectionId = -1;
     private ClientBinder binder;
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private volatile boolean lookingForLiveConnection = false;
     private volatile boolean running = true;
@@ -77,14 +80,14 @@ public class ConnectionManager implements MembershipListener {
                         logger.log(Level.FINEST,
                                 "Being idle for some time, Doing a getMembers() call to ping the server!");
                         final CountDownLatch latch = new CountDownLatch(1);
-                        new Thread(new Runnable() {
+                        executorService.execute(new Runnable() {
                             public void run() {
                                 Set<Member> members = client.getCluster().getMembers();
                                 if (members != null && members.size() >= 1) {
                                     latch.countDown();
                                 }
                             }
-                        }).start();
+                        });
                         if (!latch.await(10000, TimeUnit.MILLISECONDS)) {
                             logger.log(Level.WARNING, "Server didn't respond to client's ping call within 10 seconds!");
                         }
