@@ -16,6 +16,8 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
@@ -23,7 +25,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
+import static com.hazelcast.instance.GroupProperties.PROP_APPLICATION_VALIDATION_TOKEN;
+import static com.hazelcast.instance.GroupProperties.PROP_PARTITION_COUNT;
+
+/**
+ * Contains enough information about Hazelcast Config, to do a check when a cluster joins.
+ */
 public final class ConfigCheck implements IdentifiedDataSerializable {
 
     private String groupName;
@@ -36,56 +46,98 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
 
     private PartitionGroupConfig.MemberGroupType memberGroupType;
 
+    private Map<String, String> properties = new HashMap<String, String>();
+
     public ConfigCheck() {
     }
 
-    public boolean isCompatible(ConfigCheck other) {
-        if (!groupName.equals(other.groupName)) {
+    public ConfigCheck(Config config, String joinerType) {
+        this.joinerType = joinerType;
+
+        // Copying all properties relevant for checking.
+        this.properties.put(PROP_PARTITION_COUNT, config.getProperty(PROP_PARTITION_COUNT));
+        this.properties.put(PROP_APPLICATION_VALIDATION_TOKEN, config.getProperty(PROP_APPLICATION_VALIDATION_TOKEN));
+
+        // Copying group-config settings/
+        GroupConfig groupConfig = config.getGroupConfig();
+        if (groupConfig != null) {
+            this.groupName = groupConfig.getName();
+            this.groupPassword = config.getGroupConfig().getPassword();
+        }
+
+        // Partition-group settings
+        final PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
+        if (partitionGroupConfig != null) {
+            partitionGroupEnabled = partitionGroupConfig.isEnabled();
+            if (partitionGroupEnabled) {
+                memberGroupType = partitionGroupConfig.getGroupType();
+            } else {
+                memberGroupType = PartitionGroupConfig.MemberGroupType.PER_MEMBER;
+            }
+        }
+    }
+
+    public boolean isCompatible(ConfigCheck that) {
+        // check group-properties.
+        if (!equals(groupName, that.groupName)) {
             return false;
         }
-        if (!groupPassword.equals(other.groupPassword)) {
-            throw new HazelcastException("Incompatible group password!");
+        if (!equals(groupPassword, that.groupPassword)) {
+            throw new ConfigMismatchException("Incompatible group password!");
         }
-        if (!joinerType.equals(other.joinerType)) {
-            throw new HazelcastException("Incompatible joiners! " + joinerType + " -vs- " + other.joinerType);
+
+        verifyJoiner(that);
+        verifyPartitionGroup(that);
+        verifyPartitionCount(that);
+        verifyApplicationValidationToken(that);
+        return true;
+    }
+
+    private void verifyApplicationValidationToken(ConfigCheck other) {
+        String thisValidationToken = properties.get(PROP_APPLICATION_VALIDATION_TOKEN);
+        String thatValidationToken = other.properties.get(PROP_APPLICATION_VALIDATION_TOKEN);
+        if (!equals(thisValidationToken, thatValidationToken)) {
+            throw new ConfigMismatchException("Incompatible '" + PROP_APPLICATION_VALIDATION_TOKEN + "'! this: " +
+                    thisValidationToken + ", other: " + thatValidationToken);
         }
+    }
+
+    private void verifyPartitionCount(ConfigCheck other) {
+        String thisPartitionCount = properties.get(PROP_PARTITION_COUNT);
+        String thatPartitionCount = other.properties.get(PROP_PARTITION_COUNT);
+        if (!equals(thisPartitionCount, thatPartitionCount)) {
+            throw new ConfigMismatchException("Incompatible partition count! this: " + thisPartitionCount + ", other: "
+                    + thatPartitionCount);
+        }
+    }
+
+    private void verifyPartitionGroup(ConfigCheck other) {
         if (!partitionGroupEnabled && other.partitionGroupEnabled
                 || partitionGroupEnabled && !other.partitionGroupEnabled) {
-            throw new HazelcastException("Incompatible partition groups! "
+            throw new ConfigMismatchException("Incompatible partition groups! "
                     + "this: " + (partitionGroupEnabled ? "enabled" : "disabled") + " / " + memberGroupType
                     + ", other: " + (other.partitionGroupEnabled ? "enabled" : "disabled")
                     + " / " + other.memberGroupType);
         }
+
         if (partitionGroupEnabled && memberGroupType != other.memberGroupType) {
-            throw new HazelcastException("Incompatible partition groups! this: " + memberGroupType + ", other: "
+            throw new ConfigMismatchException("Incompatible partition groups! this: " + memberGroupType + ", other: "
                     + other.memberGroupType);
         }
-        return true;
     }
 
-    public ConfigCheck setGroupName(String groupName) {
-        this.groupName = groupName;
-        return this;
+    private void verifyJoiner(ConfigCheck other) {
+        if (!equals(joinerType, other.joinerType)) {
+            throw new ConfigMismatchException("Incompatible joiners! " + joinerType + " -vs- " + other.joinerType);
+        }
     }
 
-    public ConfigCheck setGroupPassword(String groupPassword) {
-        this.groupPassword = groupPassword;
-        return this;
-    }
+    private static boolean equals(String thisValue, String thatValue) {
+        if (thisValue == null) {
+            return thatValue == null;
+        }
 
-    public ConfigCheck setJoinerType(String joinerType) {
-        this.joinerType = joinerType;
-        return this;
-    }
-
-    public ConfigCheck setPartitionGroupEnabled(boolean partitionGroupEnabled) {
-        this.partitionGroupEnabled = partitionGroupEnabled;
-        return this;
-    }
-
-    public ConfigCheck setMemberGroupType(PartitionGroupConfig.MemberGroupType memberGroupType) {
-        this.memberGroupType = memberGroupType;
-        return this;
+        return thisValue.equals(thatValue);
     }
 
     @Override
@@ -107,6 +159,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         if (partitionGroupEnabled) {
             out.writeUTF(memberGroupType.toString());
         }
+        out.writeObject(properties);
     }
 
     @Override
@@ -122,5 +175,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             } catch (IllegalArgumentException ignored) {
             }
         }
+        properties = in.readObject();
     }
 }
