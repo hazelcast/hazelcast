@@ -32,6 +32,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -55,6 +56,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class EvictionTest extends HazelcastTestSupport {
     /**
      * Test for the issue 477.
@@ -171,35 +173,6 @@ public class EvictionTest extends HazelcastTestSupport {
         }
         assertEquals(evictCount.get(), 0);
         assertNotNull(map.get(key));
-    }
-
-    @Test
-    public void testMapWideEviction() throws InterruptedException {
-        final int size = 10000;
-        Config cfg = new Config();
-        final MapConfig mc = cfg.getMapConfig("testMapWideEviction");
-        mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
-        mc.setEvictionPercentage(25);
-        MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
-        msc.setSize(size);
-        mc.setMaxSizeConfig(msc);
-        final int n = 3;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
-        final HazelcastInstance[] instances = factory.newInstances(cfg);
-
-        final IMap map = instances[0].getMap("testMapWideEviction");
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
-        }
-        Thread.sleep(2000);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(map.size() <= (size * n * (100 - mc.getEvictionPercentage()) / 100));
-            }
-        });
-
     }
 
     // current eviction check period is 1 second.
