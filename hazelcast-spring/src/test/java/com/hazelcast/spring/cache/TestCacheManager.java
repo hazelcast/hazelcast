@@ -27,10 +27,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
@@ -46,6 +48,9 @@ public class TestCacheManager {
 
     @Autowired
     private IDummyBean bean;
+
+    @Autowired
+    private CacheManager cacheManager;
 
     @BeforeClass
     @AfterClass
@@ -80,6 +85,23 @@ public class TestCacheManager {
         final String nameFromCacheAfterTTL = bean.getNameWithTTL();
         assertNull(nameFromCacheAfterTTL);
 
+    }
+
+    @Test
+    public void testCacheNames() throws InterruptedException {
+
+        //Create a test instance, to reproduce the behaviour stated in the
+        //github issue: https://github.com/hazelcast/hazelcast/issues/492
+        String testMap = "test-map";
+        HazelcastInstance testInstance = Hazelcast.newHazelcastInstance();
+        testInstance.getMap(testMap);
+
+        //Be sure that test-map is distrubuted
+        Thread.sleep(3000);
+
+        Collection<String> test = cacheManager.getCacheNames();
+        Assert.assertTrue(test.contains(testMap));
+        testInstance.shutdown();
     }
 
 
