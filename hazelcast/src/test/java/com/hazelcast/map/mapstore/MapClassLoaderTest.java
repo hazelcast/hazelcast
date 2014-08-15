@@ -18,6 +18,7 @@ package com.hazelcast.map.mapstore;
 
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,6 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -39,25 +41,22 @@ import static org.junit.Assert.*;
 public class MapClassLoaderTest extends HazelcastTestSupport {
 
     private static final int WRITE_DELAY_SECONDS = 5;
-    private static final int MS_LOAD_DELAY = 5000;
-    private static final int MS_PER_LOAD = 50;
     private static final int PRE_LOAD_SIZE = 200;
     private static final String MAP_NAME = MapClassLoaderTest.class.getSimpleName();
 
     // https://github.com/hazelcast/hazelcast/issues/2721
     @Test
-    public void testIssue2721() throws InterruptedException {
-        final Config config = new Config();
+    public void test2721() throws InterruptedException {
+        Config config = new Config();
 
         // get map config
-        final MapConfig mapConfig = config.getMapConfig(MAP_NAME);
+        MapConfig mapConfig = config.getMapConfig(MAP_NAME);
 
         // create shared map store implementation
-        final InMemoryMapStore store = new InMemoryMapStore();
+        final InMemoryMapStore store = new InMemoryMapStore(50, false);
         store.preload(PRE_LOAD_SIZE);
 
-        // create map store config
-        final MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
         mapStoreConfig.setWriteDelaySeconds(WRITE_DELAY_SECONDS);
@@ -65,14 +64,16 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
         mapStoreConfig.setImplementation(store);
         mapConfig.setMapStoreConfig(mapStoreConfig);
 
-        final HazelcastInstance instance = createHazelcastInstance(config);
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 
-        // Get map so map store is triggered
         instance.getMap(MAP_NAME);
+
+        // print context class loaders
+        TreeMap<String, Boolean> contextClassLoaders = store.getContextClassLoaders();
 
         boolean anEmptyCtxClassLoaderExist = false;
         // test if all load threads had a context class loader set
-        for (boolean hasCtxClassLoader : store.getContextClassLoaders().values()) {
+        for (boolean hasCtxClassLoader : contextClassLoaders.values()) {
             if (!hasCtxClassLoader) {
                 anEmptyCtxClassLoaderExist = true;
                 break;
@@ -84,13 +85,19 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
 
     private class InMemoryMapStore implements MapStore<String, String> {
 
-        private final ConcurrentHashMap<String, String> store =
-                    new ConcurrentHashMap<String, String>();
-        private final ConcurrentHashMap<String, Boolean> contextClassLoaders =
-                    new ConcurrentHashMap<String, Boolean>();
+        private final int msPerLoad;
 
-        public TreeMap<String, Boolean> getContextClassLoaders() {
-            return new TreeMap<String, Boolean>(contextClassLoaders);
+        private final boolean sleepBeforeLoadAllKeys;
+
+        private final ConcurrentHashMap<String, String> store = new ConcurrentHashMap<String, String>();
+
+        private final AtomicInteger countLoadAllKeys = new AtomicInteger(0);
+
+        private final ConcurrentHashMap<String, Boolean> contextClassLoaders = new ConcurrentHashMap<String, Boolean>();
+
+        public InMemoryMapStore(int msPerLoad, boolean sleepBeforeLoadAllKeys) {
+            this.msPerLoad = msPerLoad;
+            this.sleepBeforeLoadAllKeys = sleepBeforeLoadAllKeys;
         }
 
         public void preload(int size) {
@@ -99,25 +106,52 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
             }
         }
 
-        private void saveInfoAboutCurrentLoaderThread() {
-            Thread thread = Thread.currentThread();
-            ClassLoader contextClassLoader = thread.getContextClassLoader();
-            contextClassLoaders.putIfAbsent(thread.getName(), contextClassLoader != null);
+        public TreeMap<String, Boolean> getContextClassLoaders() {
+            return new TreeMap<String, Boolean>(contextClassLoaders);
         }
 
         @Override
         public String load(String key) {
-            sleepMillis(MS_PER_LOAD);
-            saveInfoAboutCurrentLoaderThread();
+            // sleep
+            if (msPerLoad > 0) {
+                try {
+                    Thread.sleep(msPerLoad);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // remember if context class loader was present
+            Thread thread = Thread.currentThread();
+            ClassLoader contextClassLoader = thread.getContextClassLoader();
+            contextClassLoaders.putIfAbsent(thread.getName(), contextClassLoader != null);
+
             return store.get(key);
         }
 
         @Override
         public Map<String, String> loadAll(Collection<String> keys) {
-            saveInfoAboutCurrentLoaderThread();
+
+            // log
+            List<String> keysList = new ArrayList<String>(keys);
+            Collections.sort(keysList);
+
+            // remember if context class loader was present
+            Thread thread = Thread.currentThread();
+            ClassLoader contextClassLoader = thread.getContextClassLoader();
+            contextClassLoaders.putIfAbsent(thread.getName(), contextClassLoader != null);
+
             Map<String, String> result = new HashMap<String, String>();
             for (String key : keys) {
-                sleepMillis(MS_PER_LOAD);
+                // sleep
+                if (msPerLoad > 0) {
+                    try {
+                        Thread.sleep(msPerLoad);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
                 String value = store.get(key);
                 if (value != null) {
                     result.put(key, value);
@@ -128,9 +162,23 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
 
         @Override
         public Set<String> loadAllKeys() {
-            // sleep to highlight asynchronous behavior
-            sleepMillis(MS_LOAD_DELAY);
-            return store.keySet();
+
+            // sleep 5s to highlight asynchronous behavior
+            if (sleepBeforeLoadAllKeys) {
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            countLoadAllKeys.incrementAndGet();
+
+            Set<String> result = new HashSet<String>(store.keySet());
+            List<String> resultList = new ArrayList<String>(result);
+            Collections.sort(resultList);
+
+            return result;
         }
 
         @Override
@@ -150,6 +198,8 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
 
         @Override
         public void deleteAll(Collection<String> keys) {
+            List<String> keysList = new ArrayList<String>(keys);
+            Collections.sort(keysList);
             for (String key : keys) {
                 store.remove(key);
             }
