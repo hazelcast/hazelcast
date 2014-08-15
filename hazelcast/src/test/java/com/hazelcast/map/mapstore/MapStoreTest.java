@@ -562,7 +562,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
     }
 
-    private int writeBehindQueueSize(HazelcastInstance node, String mapName){
+    private int writeBehindQueueSize(HazelcastInstance node, String mapName) {
         int size = 0;
         final NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
@@ -570,12 +570,12 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             final RecordStore recordStore = mapServiceContext.getExistingRecordStore(i, mapName);
-            if(recordStore == null){
+            if (recordStore == null) {
                 continue;
             }
             final MapDataStore<Data, Object> mapDataStore
-                    =recordStore.getMapDataStore();
-             size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
+                    = recordStore.getMapDataStore();
+            size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
         }
         return size;
     }
@@ -1623,6 +1623,43 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         assertNull(putIfAbsent);
     }
+
+    @Test
+    public void testMapStoreAdapterStoreAll() {
+        String mapName = randomMapName();
+        Config cfg = new Config();
+        final TestMapStoreAdapter store = new TestMapStoreAdapter();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(3);
+        mapStoreConfig.setImplementation(store);
+        cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+        HazelcastInstance instance = createHazelcastInstance(cfg);
+        IMap<Integer, Integer> map = instance.getMap(mapName);
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+
+        assertOpenEventually(store.latchStoreAll);
+    }
+
+    public class TestMapStoreAdapter extends MapStoreAdapter<Integer, Integer> {
+
+        final CountDownLatch latchStoreAll;
+
+        TestMapStoreAdapter() {
+            latchStoreAll = new CountDownLatch(1);
+        }
+
+        @Override
+        public void storeAll(final Map<Integer, Integer> map) {
+            for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+                store(entry.getKey(), entry.getValue());
+            }
+            latchStoreAll.countDown();
+        }
+    }
+
 
     public static class RecordingMapStore implements MapStore<String, String> {
 
