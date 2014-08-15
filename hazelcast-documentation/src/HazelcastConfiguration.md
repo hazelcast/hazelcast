@@ -1,6 +1,6 @@
 
 
-## Hazelcast Configuration
+## Configuration
 
 Hazelcast can be configured declaratively (XML) or programmatically (API) or even by the mix of both.
 
@@ -205,7 +205,7 @@ It has below attributes.
 
 
 
-- `auto-increment`: According to the above example, Hazelcast will try to find free ports between 5781 and 5801. Normally, you will not need to change this value, but it will come very handy when needed. You may also want to choose to use only one port. In that case, you can disable the auto-increment feature of `port`, as shown below.
+- `auto-increment`: According to the above example, Hazelcast will try to find free ports between 5781 and 5801. Normally, you will not need to change this value, but it will come very handy when needed. You may also want to choose to use only one port. In that case, you can disable the auto-increment feature of `port` by setting its value as `false`.
 
 
 Naturally, the parameter `port-count` is ignored when the above configuration is made.
@@ -270,7 +270,9 @@ This configuration parameter is used to enable the Hazelcast instances to form a
                 </trusted-interfaces>   
             </multicast>
             <tcp-ip enabled="false">
-                <interface>127.0.0.1</interface>
+                <required-member>192.168.1.104</required-member>
+                <member>192.168.1.104</member>
+                <members>192.168.1.105,192.168.1.106</members>
             </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
@@ -299,7 +301,7 @@ join.getTcpIpConfig().addMember( "10.45.67.32" ).addMember( "10.45.67.100" )
 
 It has below elements and attributes.
 
-- `multicast` 
+- `multicast`: It includes parameters to fine tune the multicast join mechanism.
 	- `enabled`: Specifies whether the multicast discovery is enabled or not. Values can be `true` or `false`.
 	- `multicast-group`: The multicast group IP address. Specify it when you want to create clusters within the same network. Values can be between 224.0.0.0 and 239.255.255.255. Default value is 224.2.2.3
 	- `multicast-port`: The multicast socket port which Hazelcast member listens to and sends discovery messages through it. Default value is 54327.
@@ -307,9 +309,19 @@ It has below elements and attributes.
 	- `multicast-timeout-seconds`: Only when the nodes are starting up, this timeout (in seconds) specifies the period during which a node waits for a multicast response from another node. For example, if you set it as 60 seconds, each node will wait for 60 seconds until a leader node is selected. Its default value is 2 seconds. 
 	- `trusted-interfaces`: Includes IP addresses of trusted members. When a node wants to join to the cluster, its join request will be rejected if it is not a trusted member. You can give an IP addresses range using the wildcard (\*) on the last digit of IP address (e.g. 192.168.1.\* or 192.168.1.100-110).
 	
-- `tcp-ip`
-	- 	
+- `tcp-ip`: It includes parameters to fine tune the TCP/IP join mechanism.
+	- `enabled`: Specifies whether the TCP/IP discovery is enabled or not. Values can be `true` or `false`.
+	- `required-member`: IP address of the required member. Cluster will only formed if the member with this IP address is found.
+	- `member`: IP address(es) of one or more well known members. Once members are connected to these well known ones, all member addresses will be communicated with each other. You can also give comma separated IP addresses using the `members` tag.
 
+- `aws`: It includes parameteres to allow the nodes form a cluster on Amazon EC2 environment.
+	- `enabled`: Specifies whether the EC2 discovery is enabled or not. Values can be `true` or `false`.
+	- `access-key`, `secret-key`: Access and secret keys of your account on EC2.
+	- `region`: The region where your nodes are running. Default value is `us-east-1`. Needs to be specified if the region is other than the default one.
+	- `host-header`: 
+	- `security-group-name`:
+	- `tag-key`:
+	- `tag-value`: 
  
 
 
