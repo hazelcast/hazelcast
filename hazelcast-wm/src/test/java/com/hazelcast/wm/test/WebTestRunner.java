@@ -58,11 +58,9 @@ public class WebTestRunner extends Runner {
     @Override
     public void run(RunNotifier notifier) {
         System.clearProperty(TestWebFilter.USE_SPRING_AWARE_FILTER_PROPERTY);
-        System.out.println("Running round 1 by using WebFilter for " + getDescription() + " ...");
         delegatedRunner.run(notifier);
 
         System.setProperty(TestWebFilter.USE_SPRING_AWARE_FILTER_PROPERTY, "true");
-        System.out.println("Running round 2 by using SpringAwareWebFilter for " + getDescription() + " ...");
         delegatedRunner.run(notifier);
     }
 }
