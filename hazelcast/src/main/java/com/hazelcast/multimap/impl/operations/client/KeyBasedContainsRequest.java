@@ -54,4 +54,20 @@ public class KeyBasedContainsRequest extends MultiMapKeyBasedRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         value = IOUtil.readNullableData(in);
     }
+
+    @Override
+    public String getMethodName() {
+        if (value == null) {
+            return "containsKey";
+        }
+        return "containsEntry";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (value == null) {
+            return new Object[]{key};
+        }
+        return new Object[]{key, value};
+    }
 }
