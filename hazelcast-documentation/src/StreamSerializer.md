@@ -54,7 +54,7 @@ And now, as the last step, let's register the `EmployeeStreamSerializer` in the 
 ```xml
 <serialization>
   <serializers>
-    <serializer type-class="Employee">EmployeeStreamSerializer</serializer>
+    <serializer type-class="Employee" class-name="EmployeeStreamSerializer"></serializer>
   </serializers>
 </serialization>
 ```
@@ -130,7 +130,7 @@ config.getSerializationConfig().addSerializerConfig(sc);
 <hazelcast>
   <serialization>
     <serializers>
-      <serializer type-class="com.www.Foo">com.www.FooXmlSerializer</serializer>
+      <serializer type-class="com.www.Foo" class-name="com.www.FooXmlSerializer"></serializer>
     </serializers>
   </serialization>
 </hazelcast>
