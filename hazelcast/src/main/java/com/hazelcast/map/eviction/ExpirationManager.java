@@ -60,8 +60,8 @@ public class ExpirationManager {
         private final Comparator<PartitionContainer> partitionContainerComparator = new Comparator<PartitionContainer>() {
             @Override
             public int compare(PartitionContainer o1, PartitionContainer o2) {
-                final long s1 = o1.getLastCleanupTime();
-                final long s2 = o2.getLastCleanupTime();
+                final long s1 = o1.getLastCleanupTimeCopy();
+                final long s2 = o2.getLastCleanupTimeCopy();
                 return (s1 < s2) ? -1 : ((s1 == s2) ? 0 : 1);
             }
         };
@@ -100,8 +100,14 @@ public class ExpirationManager {
             if (partitionContainers.isEmpty()) {
                 return;
             }
-            Collections.sort(partitionContainers, partitionContainerComparator);
+
+            sortPartitionContainers(partitionContainers);
             sendCleanupOperations(partitionContainers);
+        }
+
+        private void sortPartitionContainers(List<PartitionContainer> partitionContainers) {
+            updateLastCleanupTimesBeforeSorting(partitionContainers);
+            Collections.sort(partitionContainers, partitionContainerComparator);
         }
 
 
@@ -180,6 +186,18 @@ public class ExpirationManager {
                 .setValidateTarget(false)
                 .setService(mapServiceContext.getService());
         return clearExpiredOperation;
+    }
+
+
+    /**
+     * Sets last clean-up time before sorting.
+     *
+     * @param partitionContainers partition containers.
+     */
+    private void updateLastCleanupTimesBeforeSorting(List<PartitionContainer> partitionContainers) {
+        for (PartitionContainer partitionContainer : partitionContainers) {
+            partitionContainer.setLastCleanupTimeCopy(partitionContainer.getLastCleanupTime());
+        }
     }
 
 

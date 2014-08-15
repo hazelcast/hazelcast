@@ -48,6 +48,15 @@ public class PartitionContainer {
 
     private volatile long lastCleanupTime;
 
+    /**
+     * Used when sorting partition containers in {@link com.hazelcast.map.eviction.ExpirationManager}
+     * A non-volatile copy of lastCleanupTime is used with two reasons.
+     * <p/>
+     * 1. We need an un-modified field during sorting.
+     * 2. Decrease number of volatile reads.
+     */
+    private long lastCleanupTimeCopy;
+
     public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
         this.partitionId = partitionId;
@@ -112,5 +121,13 @@ public class PartitionContainer {
 
     public void setLastCleanupTime(long lastCleanupTime) {
         this.lastCleanupTime = lastCleanupTime;
+    }
+
+    public long getLastCleanupTimeCopy() {
+        return lastCleanupTimeCopy;
+    }
+
+    public void setLastCleanupTimeCopy(long lastCleanupTimeCopy) {
+        this.lastCleanupTimeCopy = lastCleanupTimeCopy;
     }
 }
