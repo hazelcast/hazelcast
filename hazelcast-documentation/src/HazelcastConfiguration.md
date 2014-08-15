@@ -455,7 +455,7 @@ This configuration is for ???. It has below attributes.
 
 ### List Configuration
 
-This configuration is for ???. It has below attributes.
+It has below attributes.
 
 - backup-count:
 - async-backup-count:
