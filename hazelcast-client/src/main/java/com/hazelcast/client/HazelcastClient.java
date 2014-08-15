@@ -260,7 +260,7 @@ public final class HazelcastClient implements HazelcastInstance {
         partitionService.start();
     }
 
-    ClientConnectionManagerImpl createClientConnectionManager() {
+    ClientConnectionManager createClientConnectionManager() {
         final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
         AddressTranslator addressTranslator;
         if (awsConfig != null && awsConfig.isEnabled()) {

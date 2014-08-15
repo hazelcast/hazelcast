@@ -162,6 +162,24 @@ Here are the steps to setup Hazelcast Session Clustering:
 </listener>
 ```
 
+- If Spring based security is used for application, you should use `com.hazelcast.web.spring.SpringAwareWebFilter` instead of `com.hazelcast.web.WebFilter` in your filter definition.
+
+```xml
+...
+
+<filter>
+  <filter-name>hazelcast-filter</filter-name>
+  <filter-class>com.hazelcast.web.spring.SpringAwareWebFilter</filter-class>
+    ...
+</filter> 
+
+...
+```
+
+`SpringAwareWebFilter` makes Spring aware about Hazelcast based sessions by publishing events to Spring context and these events are used by `org.springframework.security.core.session.SessionRegistry` instance. 
+
+As like before, you must also define `com.hazelcast.web.SessionListener` in your `web.xml`. However, it is not needed to define `org.springframework.security.web.session.HttpSessionEventPublisher` in your `web.xml` as before, since `SpringAwareWebFilter` already informs Spring about session based events like create or destroy. 
+
 - Package and deploy your `war` file as you would normally do.
 
 It is that easy. All HTTP requests will go through Hazelcast `WebFilter` and it will put the session objects into Hazelcast distributed map if needed.

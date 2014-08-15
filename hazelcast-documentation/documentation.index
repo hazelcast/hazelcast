@@ -116,7 +116,6 @@ src/Config.md
 	src/ListenerConfig.md
 	src/Logging.md
 	src/ConfigurationProperties.md
-	src/ConfigWrapUp.md
 src/NetworkPartitioning.md
 
 src/FAQ.md

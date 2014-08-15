@@ -18,13 +18,16 @@ package com.hazelcast.client.impl.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.util.AbstractLoadBalancer;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipAdapter;
+import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.After;
@@ -34,27 +37,36 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
+import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientTxnTest {
+public class ClientTxnTest extends HazelcastTestSupport {
 
     static HazelcastInstance hz;
     static HazelcastInstance server;
     static HazelcastInstance second;
 
     @Before
-    public void init(){
+    public void init() {
         server = Hazelcast.newHazelcastInstance();
         final ClientConfig config = new ClientConfig();
         config.getNetworkConfig().setRedoOperation(true);
+        //always start the txn on first member
+        config.setLoadBalancer(new AbstractLoadBalancer() {
+            @Override
+            public Member next() {
+                Member[] members = getMembers();
+                if (members == null || members.length == 0) {
+                    return null;
+                }
+                return members[0];
+            }
+        });
         hz = HazelcastClient.newHazelcastClient(config);
         second = Hazelcast.newHazelcastInstance();
     }
@@ -67,25 +79,35 @@ public class ClientTxnTest {
 
     @Test
     public void testTxnRollback() throws Exception {
-        final String queueName = "testTxnRollback";
+        final String queueName = randomString();
         final TransactionContext context = hz.newTransactionContext();
-        CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch txnRollbackLatch = new CountDownLatch(1);
+        final CountDownLatch memberRemovedLatch = new CountDownLatch(1);
+
+        hz.getCluster().addMembershipListener(new MembershipAdapter() {
+            @Override
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                memberRemovedLatch.countDown();
+            }
+        });
+
         try {
             context.beginTransaction();
             assertNotNull(context.getTxnId());
             final TransactionalQueue queue = context.getQueue(queueName);
-            queue.offer("item");
+            queue.offer(randomString());
 
             server.shutdown();
 
             context.commitTransaction();
             fail("commit should throw exception!!!");
-        } catch (Exception e){
+        } catch (Exception e) {
             context.rollbackTransaction();
-            latch.countDown();
+            txnRollbackLatch.countDown();
         }
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(txnRollbackLatch);
+        assertOpenEventually(memberRemovedLatch);
 
         final IQueue<Object> q = hz.getQueue(queueName);
         assertNull(q.poll());
@@ -93,29 +115,35 @@ public class ClientTxnTest {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testTxnRollbackOnServerCrash() throws Exception {
-        final String queueName = "testTxnRollbackOnServerCrash";
+        final String queueName = randomString();
         final TransactionContext context = hz.newTransactionContext();
-        CountDownLatch latch = new CountDownLatch(1);
+        CountDownLatch txnRollbackLatch = new CountDownLatch(1);
+        final CountDownLatch memberRemovedLatch = new CountDownLatch(1);
 
         context.beginTransaction();
 
         final TransactionalQueue queue = context.getQueue(queueName);
 
-        String key = HazelcastTestSupport.generateKeyOwnedBy(server);
-        queue.offer(key);
+        queue.offer(randomString());
+        hz.getCluster().addMembershipListener(new MembershipAdapter() {
+            @Override
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                memberRemovedLatch.countDown();
+            }
+        });
         server.getLifecycleService().terminate();
 
-        try{
+        try {
             context.commitTransaction();
             fail("commit should throw exception !");
-        } catch (Exception e){
+        } catch (Exception e) {
             context.rollbackTransaction();
-            latch.countDown();
+            txnRollbackLatch.countDown();
         }
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(txnRollbackLatch);
+        assertOpenEventually(memberRemovedLatch);
 
         final IQueue<Object> q = hz.getQueue(queueName);
         assertNull(q.poll());
