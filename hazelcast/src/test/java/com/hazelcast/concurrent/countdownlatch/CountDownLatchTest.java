@@ -53,7 +53,6 @@ public class CountDownLatchTest extends HazelcastTestSupport {
         final HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch(randomString());
 
-        assertEquals(0, latch.getCount());
         assertTrue(latch.trySetCount(40));
         assertEquals(40, latch.getCount());
     }
@@ -65,6 +64,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
 
         latch.trySetCount(10);
         assertFalse(latch.trySetCount(20));
+        assertEquals(10,latch.getCount());
     }
 
     @Test
@@ -143,7 +143,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
     public void testAwait_withManyThreads() {
         final HazelcastInstance instance = createHazelcastInstance();
         final ICountDownLatch latch = instance.getCountDownLatch(randomString());
-        final CountDownLatch testLatch = new CountDownLatch(10);
+        final CountDownLatch completedLatch = new CountDownLatch(10);
 
         latch.trySetCount(1);
         for (int i = 0; i < 10; i++) {
@@ -154,12 +154,12 @@ public class CountDownLatchTest extends HazelcastTestSupport {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    testLatch.countDown();
+                    completedLatch.countDown();
                 }
             }.start();
         }
         latch.countDown();
-        assertOpenEventually(testLatch);
+        assertOpenEventually(completedLatch);
     }
 
     @Test(timeout = 15000)
