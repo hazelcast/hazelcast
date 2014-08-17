@@ -22,6 +22,7 @@ import com.hazelcast.nio.NIOThread;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
 import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
@@ -239,7 +240,7 @@ public final class BasicOperationScheduler {
         }
     }
 
-    public final class PartitionThread extends Thread {
+    public final class PartitionThread extends HazelcastManagedThread {
 
         final int threadId;
         private final BlockingQueue workQueue = new LinkedBlockingQueue();
