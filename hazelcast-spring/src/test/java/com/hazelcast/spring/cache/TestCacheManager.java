@@ -16,8 +16,7 @@
 
 package com.hazelcast.spring.cache;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.*;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -33,6 +32,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
 import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
@@ -92,12 +92,32 @@ public class TestCacheManager {
 
         //Create a test instance, to reproduce the behaviour stated in the
         //github issue: https://github.com/hazelcast/hazelcast/issues/492
-        String testMap = "test-map";
+        final String testMap = "test-map";
+
+        final CountDownLatch distributionSignal = new CountDownLatch(1);
+        instance.addDistributedObjectListener(new DistributedObjectListener() {
+
+            @Override
+            public void distributedObjectCreated(DistributedObjectEvent event) {
+                DistributedObject distributedObject = event.getDistributedObject();
+                if(distributedObject instanceof IMap) {
+                    IMap<?, ?> map = (IMap) distributedObject;
+                    if(testMap.equals(map.getName())) {
+                        distributionSignal.countDown();
+                    }
+                }
+            }
+
+            @Override
+            public void distributedObjectDestroyed(DistributedObjectEvent event) {
+
+            }
+        });
+
         HazelcastInstance testInstance = Hazelcast.newHazelcastInstance();
         testInstance.getMap(testMap);
-
         //Be sure that test-map is distrubuted
-        Thread.sleep(3000);
+        distributionSignal.await();
 
         Collection<String> test = cacheManager.getCacheNames();
         Assert.assertTrue(test.contains(testMap));
