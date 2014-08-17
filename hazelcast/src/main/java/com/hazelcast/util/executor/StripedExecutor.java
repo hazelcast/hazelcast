@@ -85,6 +85,7 @@ public final class StripedExecutor implements Executor {
 
         for (Worker worker : workers) {
             worker.workQueue.clear();
+            worker.interrupt();
         }
     }
 
