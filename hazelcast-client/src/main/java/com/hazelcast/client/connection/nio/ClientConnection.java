@@ -19,6 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.impl.client.RemoveAllListeners;
 import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
@@ -70,7 +71,7 @@ public class ClientConnection implements Connection, Closeable {
 
     private final ClientReadHandler readHandler;
 
-    private final ClientConnectionManagerImpl connectionManager;
+    private final ClientConnectionManager connectionManager;
 
     private final int connectionId;
 
@@ -90,7 +91,7 @@ public class ClientConnection implements Connection, Closeable {
     private final AtomicInteger packetCount = new AtomicInteger(0);
     private volatile int failedHeartBeat;
 
-    public ClientConnection(ClientConnectionManagerImpl connectionManager, IOSelector in, IOSelector out,
+    public ClientConnection(ClientConnectionManager connectionManager, IOSelector in, IOSelector out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper,
                             ClientExecutionService executionService,
                             ClientInvocationServiceImpl invocationService,
@@ -267,7 +268,7 @@ public class ClientConnection implements Connection, Closeable {
         return socketChannelWrapper;
     }
 
-    public ClientConnectionManagerImpl getConnectionManager() {
+    public ClientConnectionManager getConnectionManager() {
         return connectionManager;
     }
 
@@ -287,7 +288,7 @@ public class ClientConnection implements Connection, Closeable {
         return (InetSocketAddress) socketChannelWrapper.socket().getLocalSocketAddress();
     }
 
-    void innerClose() throws IOException {
+    private void innerClose() throws IOException {
         if (!live) {
             return;
         }
@@ -373,7 +374,7 @@ public class ClientConnection implements Connection, Closeable {
 
         logger.warning(message);
         if (!socketChannelWrapper.isBlocking()) {
-            connectionManager.destroyConnection(this);
+            connectionManager.onConnectionClose(this);
         }
     }
 
@@ -381,8 +382,8 @@ public class ClientConnection implements Connection, Closeable {
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     void heartBeatingFailed() {
         failedHeartBeat++;
-        if (failedHeartBeat == connectionManager.maxFailedHeartbeatCount) {
-            connectionManager.connectionMarkedAsNotResponsive(this);
+        if (failedHeartBeat == connectionManager.getMaxFailedHeartbeatCount()) {
+            connectionManager.onDetectingUnresponsiveConnection(this);
             final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
             final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
 
@@ -398,7 +399,7 @@ public class ClientConnection implements Connection, Closeable {
         final int lastFailedHeartBeat = failedHeartBeat;
         failedHeartBeat = 0;
         if (lastFailedHeartBeat != 0) {
-            if (lastFailedHeartBeat >= connectionManager.maxFailedHeartbeatCount) {
+            if (lastFailedHeartBeat >= connectionManager.getMaxFailedHeartbeatCount()) {
                 try {
                     final RemoveAllListeners request = new RemoveAllListeners();
                     final ICompletableFuture future = invocationService.send(request, ClientConnection.this);
@@ -411,7 +412,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public boolean isHeartBeating() {
-        return failedHeartBeat < connectionManager.maxFailedHeartbeatCount;
+        return failedHeartBeat < connectionManager.getMaxFailedHeartbeatCount();
     }
 
     @Override

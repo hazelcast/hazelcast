@@ -332,11 +332,8 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="serializer">
-        <xs:simpleContent>
-            <xs:extension base="xs:string">
-                <xs:attribute name="type-class" type="xs:string"/>
-            </xs:extension>
-        </xs:simpleContent>
+        <xs:attribute name="class-name" type="xs:string" use="required"/>
+        <xs:attribute name="type-class" type="xs:string" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="socket-interceptor">

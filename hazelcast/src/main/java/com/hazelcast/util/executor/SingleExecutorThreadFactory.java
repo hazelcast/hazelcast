@@ -16,8 +16,6 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-
 public final class SingleExecutorThreadFactory extends AbstractExecutorThreadFactory {
 
     private final String threadName;
@@ -32,19 +30,10 @@ public final class SingleExecutorThreadFactory extends AbstractExecutorThreadFac
         return new ManagedThread(r);
     }
 
-    private class ManagedThread extends Thread {
+    private class ManagedThread extends HazelcastManagedThread {
 
         public ManagedThread(Runnable target) {
             super(threadGroup, target, threadName);
-        }
-
-        @Override
-        public void run() {
-            try {
-                super.run();
-            } catch (OutOfMemoryError e) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-            }
         }
     }
 }

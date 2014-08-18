@@ -30,6 +30,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -68,7 +69,7 @@ public class ClientLockWithTerminationTest {
         client1.getLifecycleService().terminate();
 
         lock = client2.getLock(keyOwnedByNode2);
-        boolean lockObtained = lock.tryLock();
+        boolean lockObtained = lock.tryLock(120, TimeUnit.SECONDS);
 
         assertTrue("Lock was Not Obtained, lock should be released on client crash", lockObtained);
     }

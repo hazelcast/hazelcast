@@ -344,7 +344,8 @@ Socket interceptor has two steps. First, it will be initialized by the configure
 
 
 ```java
-SocketInterceptorConfig socketInterceptorConfig = clientConfig.getNetworkConfig().getSocketInterceptorConfig();
+SocketInterceptorConfig socketInterceptorConfig = clientConfig
+               .getNetworkConfig().getSocketInterceptorConfig();
 
 MyClientSocketInterceptor myClientSocketInterceptor = new MyClientSocketInterceptor();
 
@@ -355,7 +356,8 @@ socketInterceptorConfig.setImplementation(myClientSocketInterceptor);
 If you want to configure it with a class name instead of an instance;
 
 ```java
-SocketInterceptorConfig socketInterceptorConfig = clientConfig.getNetworkConfig().getSocketInterceptorConfig();
+SocketInterceptorConfig socketInterceptorConfig = clientConfig
+            .getNetworkConfig().getSocketInterceptorConfig();
 
 MyClientSocketInterceptor myClientSocketInterceptor = new MyClientSocketInterceptor();
 
@@ -473,7 +475,8 @@ Below is a generic template of a declarative configuration.
 
 ```xml
 
-<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.3.xsd"
+<hazelcast-client xsi:schemaLocation=
+    "http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.3.xsd"
                   xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 

@@ -23,9 +23,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.multimap.impl.operations.client.AddEntryListenerRequest;
 import com.hazelcast.multimap.impl.operations.client.ClearRequest;
-import com.hazelcast.multimap.impl.operations.client.ContainsEntryRequest;
+import com.hazelcast.multimap.impl.operations.client.ContainsRequest;
 import com.hazelcast.multimap.impl.operations.client.EntrySetRequest;
 import com.hazelcast.multimap.impl.operations.client.GetAllRequest;
+import com.hazelcast.multimap.impl.operations.client.KeyBasedContainsRequest;
 import com.hazelcast.multimap.impl.operations.client.KeySetRequest;
 import com.hazelcast.multimap.impl.operations.client.PortableEntrySetResponse;
 import com.hazelcast.multimap.impl.operations.client.PutRequest;
@@ -155,32 +156,32 @@ public class MultiMapClientRequestTest extends ClientTestSupport {
 
         //contains key value
         final SimpleClient client = getClient();
-        client.send(new ContainsEntryRequest(name, ss.toData("key1"), ss.toData("value1")));
+        client.send(new KeyBasedContainsRequest(name, ss.toData("key1"), ss.toData("value1")));
         boolean result = (Boolean) client.receive();
         assertTrue(result);
 
         //not contains key value
-        client.send(new ContainsEntryRequest(name, ss.toData("key1"), ss.toData("value2")));
+        client.send(new KeyBasedContainsRequest(name, ss.toData("key1"), ss.toData("value2")));
         result = (Boolean) client.receive();
         assertFalse(result);
 
         //contains key
-        client.send(new ContainsEntryRequest(name, ss.toData("key2"), null));
+        client.send(new KeyBasedContainsRequest(name, ss.toData("key2"), null));
         result = (Boolean) client.receive();
         assertTrue(result);
 
         //not contains key
-        client.send(new ContainsEntryRequest(name, ss.toData("key4"), null));
+        client.send(new KeyBasedContainsRequest(name, ss.toData("key4"), null));
         result = (Boolean) client.receive();
         assertFalse(result);
 
         //contains value
-        client.send(new ContainsEntryRequest(name, null, ss.toData("value3")));
+        client.send(new ContainsRequest(name, ss.toData("value3")));
         result = (Boolean) client.receive();
         assertTrue(result);
 
         //not contains value
-        client.send(new ContainsEntryRequest(name, null, ss.toData("value0")));
+        client.send(new ContainsRequest(name, ss.toData("value0")));
         result = (Boolean) client.receive();
         assertFalse(result);
     }

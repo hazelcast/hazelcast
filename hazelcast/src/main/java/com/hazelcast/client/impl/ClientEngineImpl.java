@@ -58,6 +58,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.InternalOperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.executor.ExecutorType;
@@ -89,9 +90,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
      */
     public static final String SERVICE_NAME = "hz:core:clientEngine";
     private static final int ENDPOINT_REMOVE_DELAY_MS = 10;
-    private static final int THREADS_PER_CORE = 10;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
-    private static final int HEART_BEAT_CHECK_INTERVAL_SECONDS = 10;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -106,22 +105,30 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
     public ClientEngineImpl(Node node) {
+        this.logger = node.getLogger(ClientEngine.class);
         this.node = node;
         this.serializationService = node.getSerializationService();
         this.nodeEngine = node.nodeEngine;
         this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
-        int coreSize = Runtime.getRuntime().availableProcessors();
-        this.executor = nodeEngine.getExecutionService().register(ExecutionService.CLIENT_EXECUTOR,
-                coreSize * THREADS_PER_CORE, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
-                ExecutorType.CONCRETE);
-        this.logger = node.getLogger(ClientEngine.class);
-        long heartbeatNoHeartBeatsSeconds = node.groupProperties.CLIENT_MAX_NO_HEARTBEAT_SECONDS.getInteger();
+        this.executor = newExecutor();
 
-        ClientHeartbeatMonitor heartBeatMonitor =
-                new ClientHeartbeatMonitor(heartbeatNoHeartBeatsSeconds, endpointManager, this);
+        ClientHeartbeatMonitor heartBeatMonitor = new ClientHeartbeatMonitor(
+                endpointManager, this, nodeEngine.getExecutionService(), node.groupProperties);
+        heartBeatMonitor.start();
+    }
+
+    private Executor newExecutor() {
         final ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.scheduleWithFixedDelay(heartBeatMonitor, HEART_BEAT_CHECK_INTERVAL_SECONDS,
-                HEART_BEAT_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        int coreSize = Runtime.getRuntime().availableProcessors();
+
+        int threadCount = node.getGroupProperties().CLIENT_ENGINE_THREAD_COUNT.getInteger();
+        if (threadCount <= 0) {
+            threadCount = coreSize * 2;
+        }
+
+        return executionService.register(ExecutionService.CLIENT_EXECUTOR,
+                threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
+                ExecutorType.CONCRETE);
     }
 
     //needed for testing purposes
@@ -135,7 +142,13 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     public void handlePacket(Packet packet) {
-        executor.execute(new ClientPacketProcessor(packet));
+        int partitionId = packet.getPartitionId();
+        if (partitionId < 0) {
+            executor.execute(new ClientPacketProcessor(packet));
+        } else {
+            InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+            operationService.execute(new ClientPacketProcessor(packet), packet.getPartitionId());
+        }
     }
 
     @Override

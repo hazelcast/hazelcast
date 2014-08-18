@@ -3,7 +3,7 @@
 
 # Serialization
 
-All your distributed objects such as your key and value objects, objects you offer into distributed queue and your distributed callable/runnable objects need be serialized.
+All your distributed objects such as your key and value objects, objects you offer into distributed queue and your distributed callable/runnable objects need to be serialized.
 
 Hazelcast serializes all your objects into an instance of `com.hazelcast.nio.serialization.Data`. `Data` is the binary representation of an object. 
 
@@ -17,7 +17,7 @@ When Hazelcast serializes an object into `Data`:
 
 **(4)** If above checks fail, Hazelcast will use Java serialization.
 
-If all of the above checks do not work, then serialization will fail. When a class implements multiple interface, above steps are important to determine the serialization mechanism that Hazelcast will use. And when a class definition is required for any of these serializations, all the classes needed by the application should be on the classpath, Hazelcast does not download them automatically.
+If all of the above checks do not work, then serialization will fail. When a class implements multiple interfaces, above steps are important to determine the serialization mechanism that Hazelcast will use. And when a class definition is required for any of these serializations, all the classes needed by the application should be on the classpath, Hazelcast does not download them automatically.
 
 Hazelcast optimizes the serialization for the below types, and the user cannot override this behavior:
 

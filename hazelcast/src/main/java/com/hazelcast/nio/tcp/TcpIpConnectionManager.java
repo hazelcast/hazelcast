@@ -294,15 +294,16 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return wrapper;
     }
 
-    TcpIpConnection assignSocketChannel(SocketChannelWrapper channel) {
+    TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
         final int index = nextSelectorIndex();
         final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
                 outSelectors[index], connectionIdGen.incrementAndGet(), channel);
+        connection.setEndPoint(endpoint);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
         connection.getReadHandler().register();
-        log(Level.INFO, channel.socket().getLocalPort() + " accepted socket connection from "
-                + channel.socket().getRemoteSocketAddress());
+        log(Level.INFO,  "Established socket connection between " + channel.socket().getLocalSocketAddress()
+                + " and " + channel.socket().getRemoteSocketAddress());
         return connection;
     }
 

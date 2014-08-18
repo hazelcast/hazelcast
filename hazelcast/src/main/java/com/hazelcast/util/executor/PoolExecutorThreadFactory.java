@@ -16,7 +16,6 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.Queue;
@@ -45,7 +44,7 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
         return new ManagedThread(r, name, id);
     }
 
-    private class ManagedThread extends Thread {
+    private class ManagedThread extends HazelcastManagedThread {
 
         protected final int id;
 
@@ -54,17 +53,12 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
             this.id = id;
         }
 
-        public void run() {
+        @Override
+        protected void afterRun() {
             try {
-                super.run();
-            } catch (OutOfMemoryError e) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-            } finally {
-                try {
-                    idQ.offer(id);
-                } catch (Throwable ignored) {
-                    EmptyStatement.ignore(ignored);
-                }
+                idQ.offer(id);
+            } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
     }
