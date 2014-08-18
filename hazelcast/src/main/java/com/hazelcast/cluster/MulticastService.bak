@@ -110,11 +110,11 @@ public class MulticastService implements Runnable {
         try {
             while (running) {
                 try {
-                    final Object message = receive();
-                    if (message != null) {
+                    final JoinMessage joinMessage = receive();
+                    if (joinMessage != null) {
                         for (MulticastListener multicastListener : listeners) {
                             try {
-                                multicastListener.onMessage(message);
+                                multicastListener.onMessage(joinMessage);
                             } catch (Exception e) {
                                 logger.warning(e);
                             }
@@ -131,7 +131,7 @@ public class MulticastService implements Runnable {
         }
     }
 
-    private Object receive() {
+    private JoinMessage receive() {
         try {
             try {
                 multicastSocket.receive(datagramPacketReceive);
@@ -146,7 +146,7 @@ public class MulticastService implements Runnable {
 
                 final byte packetVersion = input.readByte();
                 if (packetVersion != Packet.VERSION) {
-                    logger.warning("Received a multicast message with a different packet version! This -> "
+                    logger.warning("Received a JoinRequest with a different packet version! This -> "
                             + Packet.VERSION + ", Incoming -> " + packetVersion
                             + ", Sender -> " + datagramPacketReceive.getAddress());
                     return null;
@@ -170,7 +170,7 @@ public class MulticastService implements Runnable {
         return null;
     }
 
-    public void send(Object joinMessage) {
+    public void send(JoinMessage joinMessage) {
         if (!running) return;
         final BufferObjectDataOutput out = sendOutput;
         synchronized (sendLock) {

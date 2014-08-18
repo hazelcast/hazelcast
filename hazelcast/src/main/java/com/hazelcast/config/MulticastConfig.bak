@@ -38,10 +38,6 @@ public class MulticastConfig {
      */
     public static final boolean DEFAULT_ENABLED = true;
     /**
-     * Whether the multicast client discovery mechanism has been enabled
-     */
-    public static final boolean DEFAULT_CLIENT_DISCOVERY_ENABLED = false;
-    /**
      * Default group of multicast.
      */
     public static final String DEFAULT_MULTICAST_GROUP = "224.2.2.3";
@@ -62,8 +58,6 @@ public class MulticastConfig {
 
 
     private boolean enabled = DEFAULT_ENABLED;
-
-    private boolean clientDiscoveryEnabled = DEFAULT_CLIENT_DISCOVERY_ENABLED;
 
     private String multicastGroup = DEFAULT_MULTICAST_GROUP;
 
@@ -92,26 +86,6 @@ public class MulticastConfig {
      */
     public MulticastConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
-        return this;
-    }
-
-    /**
-     * Check if the multicast client discovery mechanism has been enabled.
-     *
-     * @return the enabled
-     */
-    public boolean isClientDiscoveryEnabled() {
-        return clientDiscoveryEnabled;
-    }
-
-    /**
-     * Enables or disables the multicast discovery mechanism
-     *
-     * @param enabled the enabled to set true when disabled, false when disabled.
-     * @return the updated MulticastConfig
-     */
-    public MulticastConfig setClientDiscoveryEnabled(boolean enabled) {
-        this.clientDiscoveryEnabled = enabled;
         return this;
     }
 

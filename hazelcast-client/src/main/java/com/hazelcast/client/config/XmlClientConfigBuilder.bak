@@ -212,41 +212,9 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 handleSSLConfig(child, clientNetworkConfig);
             } else if ("aws".equals(nodeName)) {
                 handleAWS(child, clientNetworkConfig);
-            } else if("discovery".equals(nodeName)) {
-                handleDiscovery(child, clientNetworkConfig);
             }
         }
         clientConfig.setNetworkConfig(clientNetworkConfig);
-    }
-
-    private void handleDiscovery(Node node, ClientNetworkConfig clientNetworkConfig) {
-        ClientDiscoveryConfig discoveryConfig = clientNetworkConfig.getDiscoveryConfig();
-        final NamedNodeMap atts = node.getAttributes();
-        for (int a = 0; a < atts.getLength(); a++) {
-            final org.w3c.dom.Node att = atts.item(a);
-            final String value = getTextContent(att).trim();
-            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
-                discoveryConfig.setEnabled(checkTrue(value));
-            }
-        }
-        for (Node n : new IterableNodeList(node.getChildNodes())) {
-            final String value = getTextContent(n).trim();
-            if ("multicast-group".equals(cleanNodeName(n.getNodeName()))) {
-                discoveryConfig.setMulticastGroup(value);
-            } else if ("multicast-port".equals(cleanNodeName(n.getNodeName()))) {
-                discoveryConfig.setMulticastPort(Integer.parseInt(value));
-            } else if ("multicast-timeout-seconds".equals(cleanNodeName(n.getNodeName()))) {
-                discoveryConfig.setMulticastTimeoutSeconds(Integer.parseInt(value));
-            } else if ("multicast-time-to-live".equals(cleanNodeName(n.getNodeName()))) {
-                discoveryConfig.setMulticastTimeToLive(Integer.parseInt(value));
-            } else if ("trusted-interfaces".equals(cleanNodeName(n.getNodeName()))) {
-                for (org.w3c.dom.Node child : new IterableNodeList(n.getChildNodes())) {
-                    if ("interface".equalsIgnoreCase(cleanNodeName(child.getNodeName()))) {
-                        discoveryConfig.addTrustedInterface(getTextContent(child).trim());
-                    }
-                }
-            }
-        }
     }
 
     private void handleAWS(Node node, ClientNetworkConfig clientNetworkConfig) {
