@@ -90,7 +90,7 @@ public class DiscoveryMulticastListener implements MulticastListener {
     }
 
     private boolean isDiscoveryResponse(DiscoveryMessage discoveryMessage) {
-        return discoveryMessage.getAddress() != null && discoveryMessage.getMemberCount() > 0;
+        return discoveryMessage.getMemberCount() > 0;
     }
 
     private boolean isMessageToSelf(DiscoveryMessage discoveryMessage) {
