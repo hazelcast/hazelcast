@@ -144,7 +144,6 @@ public class HazelcastXaTest {
     }
 
     @Test
-
     public void testRecovery() throws Exception {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();

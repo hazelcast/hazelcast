@@ -193,7 +193,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     /**
-     * Only difference between add or update is event type to be published.
+     * Only difference between add and update is event type to be published.
      */
     private boolean entryAddedOrUpdated(Map.Entry entry, long now) {
         final Object value = entry.getValue();
