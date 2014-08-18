@@ -19,7 +19,7 @@ public class FillMapMember {
     Map<String, String> capitalcities = hzInstance.getMap( "capitals" ); 
     capitalcities.put( "1", "Tokyo" );
     capitalcities.put( "2", "Paris” );
-    capitalcities.put( "3", "New York" );
+    capitalcities.put( "3", "Washington" );
     capitalcities.put( "4", "Ankara" );
     capitalcities.put( "5", "Brussels" );
     capitalcities.put( "6", "Amsterdam" );
