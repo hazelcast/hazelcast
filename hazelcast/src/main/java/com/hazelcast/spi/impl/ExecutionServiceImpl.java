@@ -259,7 +259,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
     @PrivateApi
     void shutdown() {
-        logger.finest( "Stopping executors...");
+        logger.finest("Stopping executors...");
         for (ExecutorService executorService : executors.values()) {
             executorService.shutdown();
         }
