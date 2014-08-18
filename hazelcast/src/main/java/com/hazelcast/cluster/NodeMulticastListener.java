@@ -61,12 +61,7 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private void handleActiveAndJoined(JoinMessage joinMessage) {
-        if (!isJoinRequest(joinMessage)) {
-            logDroppedMessage(joinMessage);
-            return;
-        }
-
-        if (node.isMaster()) {
+       if (node.isMaster()) {
             JoinRequest request = (JoinRequest) joinMessage;
             JoinMessage response = new JoinMessage(request.getPacketVersion(), request.getBuildNumber(),
                     node.getThisAddress(), request.getUuid(), request.getConfigCheck(),
@@ -130,11 +125,13 @@ public class NodeMulticastListener implements MulticastListener {
             return false;
         }
 
-        try {
-            return node.getClusterService().validateJoinMessage(joinMessage);
-        } catch (Exception e) {
-            return false;
-        }
+//        try {
+//            return node.getClusterService().validateJoinMessage(joinMessage);
+//        } catch (Exception e) {
+//            return false;
+//        }
+
+        return true;
     }
 
     private boolean isMessageToSelf(JoinMessage joinMessage) {

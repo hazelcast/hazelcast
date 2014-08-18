@@ -19,7 +19,6 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -77,58 +76,70 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         }
     }
 
-    public boolean isCompatible(ConfigCheck that) {
+    /**
+     * Checks if 2 Hazelcast configurations are compatible.
+     *
+     * @param found
+     * @return true if compatible. False if part of another group.
+     * @throws com.hazelcast.cluster.ConfigMismatchException if the configuration isn't compatible. An exception is thrown so
+     *                                                       we can pass a nice message.
+     */
+    public boolean isCompatible(ConfigCheck found) {
         // check group-properties.
-        if (!equals(groupName, that.groupName)) {
+        if (!equals(groupName, found.groupName)) {
             return false;
         }
-        if (!equals(groupPassword, that.groupPassword)) {
-            throw new ConfigMismatchException("Incompatible group password!");
-        }
 
-        verifyJoiner(that);
-        verifyPartitionGroup(that);
-        verifyPartitionCount(that);
-        verifyApplicationValidationToken(that);
+        verifyGroupPassword(found);
+        verifyJoiner(found);
+        verifyPartitionGroup(found);
+        verifyPartitionCount(found);
+        verifyApplicationValidationToken(found);
         return true;
     }
 
-    private void verifyApplicationValidationToken(ConfigCheck other) {
-        String thisValidationToken = properties.get(PROP_APPLICATION_VALIDATION_TOKEN);
-        String thatValidationToken = other.properties.get(PROP_APPLICATION_VALIDATION_TOKEN);
-        if (!equals(thisValidationToken, thatValidationToken)) {
-            throw new ConfigMismatchException("Incompatible '" + PROP_APPLICATION_VALIDATION_TOKEN + "'! this: " +
-                    thisValidationToken + ", other: " + thatValidationToken);
+    private void verifyGroupPassword(ConfigCheck found) {
+        if (!equals(groupPassword, found.groupPassword)) {
+            throw new ConfigMismatchException("Incompatible group password!");
         }
     }
 
-    private void verifyPartitionCount(ConfigCheck other) {
-        String thisPartitionCount = properties.get(PROP_PARTITION_COUNT);
-        String thatPartitionCount = other.properties.get(PROP_PARTITION_COUNT);
-        if (!equals(thisPartitionCount, thatPartitionCount)) {
-            throw new ConfigMismatchException("Incompatible partition count! this: " + thisPartitionCount + ", other: "
-                    + thatPartitionCount);
+    private void verifyApplicationValidationToken(ConfigCheck found) {
+        String expectedValidationToken = properties.get(PROP_APPLICATION_VALIDATION_TOKEN);
+        String foundValidationToken = found.properties.get(PROP_APPLICATION_VALIDATION_TOKEN);
+        if (!equals(expectedValidationToken, foundValidationToken)) {
+            throw new ConfigMismatchException("Incompatible '" + PROP_APPLICATION_VALIDATION_TOKEN + "'! expected: " +
+                    expectedValidationToken + ", found: " + foundValidationToken);
         }
     }
 
-    private void verifyPartitionGroup(ConfigCheck other) {
-        if (!partitionGroupEnabled && other.partitionGroupEnabled
-                || partitionGroupEnabled && !other.partitionGroupEnabled) {
+    private void verifyPartitionCount(ConfigCheck found) {
+        String expectedPartitionCount = properties.get(PROP_PARTITION_COUNT);
+        String foundPartitionCount = found.properties.get(PROP_PARTITION_COUNT);
+        if (!equals(expectedPartitionCount, foundPartitionCount)) {
+            throw new ConfigMismatchException("Incompatible partition count! expected: " + expectedPartitionCount + ", found: "
+                    + foundPartitionCount);
+        }
+    }
+
+    private void verifyPartitionGroup(ConfigCheck found) {
+        if (!partitionGroupEnabled && found.partitionGroupEnabled
+                || partitionGroupEnabled && !found.partitionGroupEnabled) {
             throw new ConfigMismatchException("Incompatible partition groups! "
-                    + "this: " + (partitionGroupEnabled ? "enabled" : "disabled") + " / " + memberGroupType
-                    + ", other: " + (other.partitionGroupEnabled ? "enabled" : "disabled")
-                    + " / " + other.memberGroupType);
+                    + "expected: " + (partitionGroupEnabled ? "enabled" : "disabled") + " / " + memberGroupType
+                    + ", found: " + (found.partitionGroupEnabled ? "enabled" : "disabled")
+                    + " / " + found.memberGroupType);
         }
 
-        if (partitionGroupEnabled && memberGroupType != other.memberGroupType) {
-            throw new ConfigMismatchException("Incompatible partition groups! this: " + memberGroupType + ", other: "
-                    + other.memberGroupType);
+        if (partitionGroupEnabled && memberGroupType != found.memberGroupType) {
+            throw new ConfigMismatchException("Incompatible partition groups! expected: " + memberGroupType + ", found: "
+                    + found.memberGroupType);
         }
     }
 
-    private void verifyJoiner(ConfigCheck other) {
-        if (!equals(joinerType, other.joinerType)) {
-            throw new ConfigMismatchException("Incompatible joiners! " + joinerType + " -vs- " + other.joinerType);
+    private void verifyJoiner(ConfigCheck found) {
+        if (!equals(joinerType, found.joinerType)) {
+            throw new ConfigMismatchException("Incompatible joiners! expected: " + joinerType + ", found" + found.joinerType);
         }
     }
 
