@@ -26,10 +26,13 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ProxyService;
 
+import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
@@ -59,6 +62,19 @@ public class HealthMonitor extends Thread {
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final double PERCENTAGE_MULTIPLIER = 100d;
     private static final double THRESHOLD = 70;
+    private static final Set<String> YOUNG_GC = new HashSet<String>(3);
+    private static final Set<String> OLD_GC = new HashSet<String>(3);
+
+    static {
+        YOUNG_GC.add("PS Scavenge");
+        YOUNG_GC.add("ParNew");
+        YOUNG_GC.add("G1 Young Generation");
+
+        OLD_GC.add("PS MarkSweep");
+        OLD_GC.add("ConcurrentMarkSweep");
+        OLD_GC.add("G1 Old Generation");
+    }
+
     private final ILogger logger;
     private final Node node;
     private final Runtime runtime;
@@ -126,7 +142,11 @@ public class HealthMonitor extends Thread {
     /**
      * Health metrics to be logged under load.
      */
-    public class HealthMetrics {
+    private class HealthMetrics {
+        private final long physicalMemoryTotal;
+        private final long physicalMemoryFree;
+        private final long swapSpaceTotal;
+        private final long swapSpaceFree;
         private final long memoryFree;
         private final long memoryTotal;
         private final long memoryUsed;
@@ -155,9 +175,14 @@ public class HealthMonitor extends Thread {
         private final int activeConnectionCount;
         private final int connectionCount;
         private final int ioExecutorQueueSize;
+        private final GcMetrics gcMetrics;
 
         //CHECKSTYLE:OFF
         public HealthMetrics() {
+            physicalMemoryTotal = get(osMxBean, "getTotalPhysicalMemorySize", -1L);
+            physicalMemoryFree = get(osMxBean, "getFreePhysicalMemorySize", -1L);
+            swapSpaceTotal = get(osMxBean, "getTotalSwapSpaceSize", -1L);
+            swapSpaceFree = get(osMxBean, "getFreeSwapSpaceSize", -1L);
             memoryFree = runtime.freeMemory();
             memoryTotal = runtime.totalMemory();
             memoryUsed = memoryTotal - memoryFree;
@@ -185,6 +210,7 @@ public class HealthMonitor extends Thread {
             clientEndpointCount = clientEngine.getClientEndpointCount();
             activeConnectionCount = connectionManager.getActiveConnectionCount();
             connectionCount = connectionManager.getConnectionCount();
+            gcMetrics = new GcMetrics();
         }
         //CHECKSTYLE:ON
 
@@ -206,12 +232,24 @@ public class HealthMonitor extends Thread {
 
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("memory.used=").append(numberToUnitRepresentation(memoryUsed)).append(", ");
-            sb.append("memory.free=").append(numberToUnitRepresentation(memoryFree)).append(", ");
-            sb.append("memory.total=").append(numberToUnitRepresentation(memoryTotal)).append(", ");
-            sb.append("memory.max=").append(numberToUnitRepresentation(memoryMax)).append(", ");
-            sb.append("memory.used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
-            sb.append("memory.used/max=").append(percentageString(memoryUsedOfMaxPercentage)).append((", "));
+            sb.append("physical.memory.total=").append(numberToUnitRepresentation(physicalMemoryTotal)).append(", ");
+            sb.append("physical.memory.free=").append(numberToUnitRepresentation(physicalMemoryFree)).append(", ");
+            sb.append("swap.space.total=").append(numberToUnitRepresentation(swapSpaceTotal)).append(", ");
+            sb.append("swap.space.free=").append(numberToUnitRepresentation(swapSpaceFree)).append(", ");
+            sb.append("heap.memory.used=").append(numberToUnitRepresentation(memoryUsed)).append(", ");
+            sb.append("heap.memory.free=").append(numberToUnitRepresentation(memoryFree)).append(", ");
+            sb.append("heap.memory.total=").append(numberToUnitRepresentation(memoryTotal)).append(", ");
+            sb.append("heap.memory.max=").append(numberToUnitRepresentation(memoryMax)).append(", ");
+            sb.append("heap.memory.used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
+            sb.append("heap.memory.used/max=").append(percentageString(memoryUsedOfMaxPercentage)).append((", "));
+            sb.append("minor.gc.count=").append(gcMetrics.minorCount).append(", ");
+            sb.append("minor.gc.time=").append(gcMetrics.minorTime).append("ms, ");
+            sb.append("major.gc.count=").append(gcMetrics.majorCount).append(", ");
+            sb.append("major.gc.time=").append(gcMetrics.majorTime).append("ms, ");
+            if (gcMetrics.unknownCount > 0) {
+                sb.append("unknown.gc.count=").append(gcMetrics.unknownCount).append(", ");
+                sb.append("unknown.gc.time=").append(gcMetrics.unknownTime).append("ms, ");
+            }
             sb.append("load.process=").append(format("%.2f", processCpuLoad)).append("%, ");
             sb.append("load.system=").append(format("%.2f", systemCpuLoad)).append("%, ");
             sb.append("load.systemAverage=").append(format("%.2f", systemLoadAverage)).append("%, ");
@@ -238,7 +276,50 @@ public class HealthMonitor extends Thread {
         }
     }
 
-    private static Long get(OperatingSystemMXBean mbean, String methodName, Long defaultValue) {
+    private final class GcMetrics {
+        final long minorCount;
+        final long minorTime;
+        final long majorCount;
+        final long majorTime;
+        final long unknownCount;
+        final long unknownTime;
+
+        //CHECKSTYLE:OFF
+        private GcMetrics() {
+            long minorCount = 0;
+            long minorTime = 0;
+            long majorCount = 0;
+            long majorTime = 0;
+            long unknownCount = 0;
+            long unknownTime = 0;
+
+            for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans()) {
+                long count = gc.getCollectionCount();
+                if (count >= 0) {
+                    if (YOUNG_GC.contains(gc.getName())) {
+                        minorCount += count;
+                        minorTime += gc.getCollectionTime();
+                    } else if (OLD_GC.contains(gc.getName())) {
+                        majorCount += count;
+                        majorTime += gc.getCollectionTime();
+                    } else {
+                        unknownCount += count;
+                        unknownTime += gc.getCollectionTime();
+                    }
+                }
+            }
+
+            this.minorCount = minorCount;
+            this.minorTime = minorTime;
+            this.majorCount = majorCount;
+            this.majorTime = majorTime;
+            this.unknownCount = unknownCount;
+            this.unknownTime = unknownTime;
+        }
+        //CHECKSTYLE:ON
+    }
+
+    private static long get(OperatingSystemMXBean mbean, String methodName, long defaultValue) {
         try {
             Method method = mbean.getClass().getMethod(methodName);
             method.setAccessible(true);
@@ -248,17 +329,25 @@ public class HealthMonitor extends Thread {
                 return defaultValue;
             }
 
+            if (value instanceof Long) {
+                return (Long) value;
+            }
+
             if (value instanceof Double) {
                 double v = (Double) value;
                 return Math.round(v * PERCENTAGE_MULTIPLIER);
             }
 
-            return defaultValue;
+            if (value instanceof Number) {
+                return ((Number) value).longValue();
+            }
+
         } catch (RuntimeException re) {
             throw re;
-        } catch (Exception e) {
-            return defaultValue;
+        } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
         }
+        return defaultValue;
     }
 
     public static String percentageString(double p) {
