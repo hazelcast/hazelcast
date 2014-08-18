@@ -18,6 +18,7 @@ package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.*;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -117,7 +118,7 @@ public class TestCacheManager {
         HazelcastInstance testInstance = Hazelcast.newHazelcastInstance();
         testInstance.getMap(testMap);
         //Be sure that test-map is distrubuted
-        distributionSignal.await();
+        HazelcastTestSupport.assertOpenEventually(distributionSignal);
 
         Collection<String> test = cacheManager.getCacheNames();
         Assert.assertTrue(test.contains(testMap));
