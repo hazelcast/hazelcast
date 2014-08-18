@@ -720,8 +720,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
 
+    /**
+     * https://github.com/hazelcast/hazelcast/issues/969 not valid any more
+     * since reads trigger event firing.
+     */
     @Test
-    public void testEmptyMapReadsFiresNoEvent() throws InterruptedException {
+    public void testMapReadFiresEvent() throws InterruptedException {
         final String mapName = randomMapName();
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -729,8 +733,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = node.getMap(mapName);
 
         final AtomicInteger addCount = new AtomicInteger(0);
-        final AtomicInteger updateCount = new AtomicInteger(0);
-        final AtomicInteger removeCount = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(1);
 
         map.addEntryListener(new EntryAdapter<Integer, Integer>() {
@@ -739,27 +741,13 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 addCount.incrementAndGet();
                 latch.countDown();
             }
-
-            @Override
-            public void entryRemoved(EntryEvent<Integer, Integer> event) {
-                removeCount.incrementAndGet();
-                latch.countDown();
-            }
-
-            @Override
-            public void entryUpdated(EntryEvent<Integer, Integer> event) {
-                updateCount.incrementAndGet();
-                latch.countDown();
-            }
-
         }, true);
 
+        map.put(1, 1);
         map.executeOnKey(1, new ValueReaderEntryProcessor());
 
-        latch.await(10, TimeUnit.SECONDS);
-        assertEquals(0, addCount.get());
-        assertEquals(0, updateCount.get());
-        assertEquals(0, removeCount.get());
+        assertOpenEventually(latch);
+        assertEquals(1, addCount.get());
     }
 
     private static class ValueReaderEntryProcessor extends AbstractEntryProcessor {
