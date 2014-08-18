@@ -227,15 +227,20 @@ public final class ExecutionServiceImpl implements ExecutionService {
     @PrivateApi
     void shutdown() {
         logger.finest( "Stopping executors...");
-        cachedExecutorService.shutdown();
+        for (ExecutorService executorService : executors.values()) {
+            executorService.shutdown();
+        }
         scheduledExecutorService.shutdownNow();
+        cachedExecutorService.shutdown();
+        try {
+            scheduledExecutorService.awaitTermination(1, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            logger.finest(e);
+        }
         try {
             cachedExecutorService.awaitTermination(3, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             logger.finest(e);
-        }
-        for (ExecutorService executorService : executors.values()) {
-            executorService.shutdown();
         }
         executors.clear();
     }
