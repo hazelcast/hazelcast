@@ -51,6 +51,7 @@ public class MockSimpleClient implements SimpleClient {
         //the ConnectionManager.
         clientEngine.getConnectionListener().connectionAdded(connection);
         AuthenticationRequest auth = new AuthenticationRequest(new UsernamePasswordCredentials("dev", "dev-pass"));
+        auth.setOwnerConnection(true);
         send(auth);
         receive();
     }
