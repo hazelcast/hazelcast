@@ -235,6 +235,10 @@ public class Node {
                 multicastSocket.setSoTimeout(1000);
                 mcService = new MulticastService(this, multicastSocket);
                 mcService.addMulticastListener(new NodeMulticastListener(this));
+                if(multicastConfig.isClientDiscoveryEnabled())
+                {
+                    mcService.addMulticastListener(new DiscoveryMulticastListener(this));
+                }
             }
         } catch (Exception e) {
             logger.severe(e);
@@ -550,6 +554,14 @@ public class Node {
                 .setJoinerType(joiner != null ? joiner.getType() : "")
                 .setPartitionGroupEnabled(partitionGroupEnabled)
                 .setMemberGroupType(memberGroupType);
+        return configCheck;
+    }
+
+    public ClientConfigCheck createClientConfigCheck() {
+        final ClientConfigCheck configCheck = new ClientConfigCheck();
+        final GroupConfig groupConfig = config.getGroupConfig();
+
+        configCheck.setGroupName(groupConfig.getName()).setGroupPassword(groupConfig.getPassword());
         return configCheck;
     }
 

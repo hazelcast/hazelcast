@@ -40,6 +40,7 @@ public class ClientNetworkConfig {
     private SocketOptions socketOptions = new SocketOptions();
     private SSLConfig sslConfig;
     private ClientAwsConfig clientAwsConfig;
+    private ClientDiscoveryConfig discoveryConfig = new ClientDiscoveryConfig();
 
 
     /**
@@ -262,5 +263,28 @@ public class ClientNetworkConfig {
      */
     public ClientAwsConfig getAwsConfig() {
         return clientAwsConfig;
+    }
+
+    /**
+     * Sets configuration to enable discovery of cluster using multicast.
+     * null value indicates that no multicast discovery should be used.
+     *
+     * @param discoveryConfig the DiscoveryConfig
+     * @see #getDiscoveryConfig()
+     */
+    public ClientNetworkConfig setDiscoveryConfig(ClientDiscoveryConfig discoveryConfig) {
+        this.discoveryConfig = discoveryConfig;
+        return this;
+    }
+
+    /**
+     * Returns the current {@link ClientDiscoveryConfig}. It is possible that null is returned if no discovery config
+     * has been set.
+     *
+     * @return DiscoveryConfig
+     * @see #setDiscoveryConfig(ClientDiscoveryConfig)
+     */
+    public ClientDiscoveryConfig getDiscoveryConfig() {
+        return discoveryConfig;
     }
 }
