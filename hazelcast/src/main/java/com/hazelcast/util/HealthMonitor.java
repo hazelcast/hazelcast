@@ -232,6 +232,7 @@ public class HealthMonitor extends Thread {
 
         public String toString() {
             StringBuilder sb = new StringBuilder();
+            sb.append("processors=").append(runtime.availableProcessors()).append(", ");
             sb.append("physical.memory.total=").append(numberToUnitRepresentation(physicalMemoryTotal)).append(", ");
             sb.append("physical.memory.free=").append(numberToUnitRepresentation(physicalMemoryFree)).append(", ");
             sb.append("swap.space.total=").append(numberToUnitRepresentation(swapSpaceTotal)).append(", ");
