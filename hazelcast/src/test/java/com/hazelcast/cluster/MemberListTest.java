@@ -71,8 +71,8 @@ public class MemberListTest {
     public void testOutOfSyncMemberList() throws Exception {
         List<HazelcastInstance> instanceList = buildInstances(3, 35701);
         final HazelcastInstance h1 = instanceList.get(0);
-        final HazelcastInstance h2 = instanceList.get(0);
-        final HazelcastInstance h3 = instanceList.get(0);
+        final HazelcastInstance h2 = instanceList.get(1);
+        final HazelcastInstance h3 = instanceList.get(2);
 
         // All three nodes join into one cluster
         assertEquals(3, h1.getCluster().getMembers().size());
@@ -148,8 +148,8 @@ public class MemberListTest {
     public void testOutOfSyncMemberListTwoMasters() throws Exception {
         List<HazelcastInstance> instanceList = buildInstances(3, 35701);
         final HazelcastInstance h1 = instanceList.get(0);
-        final HazelcastInstance h2 = instanceList.get(0);
-        final HazelcastInstance h3 = instanceList.get(0);
+        final HazelcastInstance h2 = instanceList.get(1);
+        final HazelcastInstance h3 = instanceList.get(2);
 
         final MemberImpl m1 = (MemberImpl) h1.getCluster().getLocalMember();
         final MemberImpl m2 = (MemberImpl) h2.getCluster().getLocalMember();
@@ -190,8 +190,8 @@ public class MemberListTest {
     public void testSameMasterDifferentMemberList() throws Exception {
         List<HazelcastInstance> instanceList = buildInstances(3, 45701);
         final HazelcastInstance h1 = instanceList.get(0);
-        final HazelcastInstance h2 = instanceList.get(0);
-        final HazelcastInstance h3 = instanceList.get(0);
+        final HazelcastInstance h2 = instanceList.get(1);
+        final HazelcastInstance h3 = instanceList.get(2);
 
         final MemberImpl m1 = (MemberImpl) h1.getCluster().getLocalMember();
         final MemberImpl m2 = (MemberImpl) h2.getCluster().getLocalMember();
