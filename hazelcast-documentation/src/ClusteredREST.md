@@ -224,7 +224,8 @@ This resource returns information related to provided member.
 + *Request:*
 
 	```plain
-	curl http://localhost:8083/mancenter/rest/clusters/dev/members/192.168.2.78:5701/managedExecutors/hz:system
+	curl http://localhost:8083/mancenter/rest/clusters/dev/members/192.168.2.78:5701
+	  /managedExecutors/hz:system
 	```
 + *Response:* `200` (application/json)
 + *Body:*
