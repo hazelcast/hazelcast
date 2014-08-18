@@ -18,7 +18,8 @@ public class DiscoveryMessage implements DataSerializable {
     public DiscoveryMessage() {
     }
 
-    public DiscoveryMessage(byte packetVersion, int buildNumber, Address address, ClientConfigCheck configCheck, int memberCount) {
+    public DiscoveryMessage(byte packetVersion, int buildNumber, Address address, ClientConfigCheck configCheck,
+                            int memberCount) {
         this.packetVersion = packetVersion;
         this.buildNumber = buildNumber;
         this.address = address;

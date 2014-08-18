@@ -25,7 +25,9 @@ public class DiscoveryMulticastListener implements MulticastListener {
     @Override
     public void onMessage(Object msg) {
         // Do not log the type check as the Multicast Service handles multiple message types.
-        if(!isDiscoveryMessage(msg)) return;
+        if (!isDiscoveryMessage(msg)) {
+            return;
+        }
 
         if (!isValidDiscoveryMessage(msg)) {
             logDroppedMessage(msg);
