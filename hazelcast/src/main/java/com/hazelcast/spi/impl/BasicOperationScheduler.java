@@ -25,6 +25,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.Queue;
 import java.util.Random;
@@ -389,7 +390,7 @@ public final class BasicOperationScheduler {
         }
     }
 
-    final class OperationThread extends Thread {
+    final class OperationThread extends HazelcastManagedThread {
 
         private final int threadId;
         private final boolean isPartitionSpecific;
