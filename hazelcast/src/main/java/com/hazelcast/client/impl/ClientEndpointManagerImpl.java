@@ -56,7 +56,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
             return null;
         }
 
-        ClientEndpointImpl endpoint = new ClientEndpointImpl(clientEngine, conn, null);
+        ClientEndpointImpl endpoint = new ClientEndpointImpl(clientEngine, conn);
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
             logger.severe("An endpoint already exists for connection:" + conn);
         }
