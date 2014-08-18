@@ -27,6 +27,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -40,8 +41,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
 
     private Credentials credentials;
     private ClientPrincipal principal;
-    private boolean reAuth;
-    private boolean firstConnection;
+    private boolean ownerConnection;
 
     public AuthenticationRequest() {
     }
@@ -125,23 +125,29 @@ public final class AuthenticationRequest extends CallableClientRequest {
     private Object handleAuthenticated() {
         ClientEngineImpl clientEngine = getService();
 
-        if (principal != null && reAuth) {
-            principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
+        if (ownerConnection) {
+            final String uuid = getUuid();
+            principal = new ClientPrincipal(uuid, clientEngine.getLocalMember().getUuid());
             reAuthLocal();
             Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
             for (MemberImpl member : members) {
                 if (!member.localMember()) {
-                    ClientReAuthOperation op = new ClientReAuthOperation(principal.getUuid(), firstConnection);
+                    ClientReAuthOperation op = new ClientReAuthOperation(uuid, ownerConnection);
                     clientEngine.sendOperation(op, member.getAddress());
                 }
             }
         }
-        if (principal == null) {
-            principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
-        }
-        endpoint.authenticated(principal, firstConnection);
+
+        endpoint.authenticated(principal, ownerConnection);
         clientEngine.bind(endpoint);
         return new SerializableCollection(clientEngine.toData(clientEngine.getThisAddress()), clientEngine.toData(principal));
+    }
+
+    private String getUuid() {
+        if (principal != null) {
+            return principal.getUuid();
+        }
+        return UuidUtil.createClientUuid(endpoint.getConnection().getEndPoint());
     }
 
     private void reAuthLocal() {
@@ -165,16 +171,12 @@ public final class AuthenticationRequest extends CallableClientRequest {
         return ClientPortableHook.AUTH;
     }
 
-    public void setReAuth(boolean reAuth) {
-        this.reAuth = reAuth;
+    public boolean isOwnerConnection() {
+        return ownerConnection;
     }
 
-    public boolean isFirstConnection() {
-        return firstConnection;
-    }
-
-    public void setFirstConnection(boolean firstConnection) {
-        this.firstConnection = firstConnection;
+    public void setOwnerConnection(boolean ownerConnection) {
+        this.ownerConnection = ownerConnection;
     }
 
     @Override
@@ -185,16 +187,16 @@ public final class AuthenticationRequest extends CallableClientRequest {
         } else {
             writer.writeNullPortable("principal", ClientPortableHook.ID, ClientPortableHook.PRINCIPAL);
         }
-        writer.writeBoolean("reAuth", reAuth);
-        writer.writeBoolean("firstConnection", firstConnection);
+        writer.writeBoolean("reAuth", true);//not used, leaved for compatibility
+        writer.writeBoolean("firstConnection", ownerConnection);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         credentials = (Credentials) reader.readPortable("credentials");
         principal = reader.readPortable("principal");
-        reAuth = reader.readBoolean("reAuth");
-        firstConnection = reader.readBoolean("firstConnection");
+        reader.readBoolean("reAuth");  //not used, leaved for compatibility
+        ownerConnection = reader.readBoolean("firstConnection");
     }
 
     @Override

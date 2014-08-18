@@ -52,13 +52,12 @@ public final class ClientEndpoint implements Client {
     private final List<Runnable> destroyActions = Collections.synchronizedList(new LinkedList<Runnable>());
     private final SocketAddress socketAddress;
 
-    private String uuid;
     private LoginContext loginContext;
     private ClientPrincipal principal;
     private boolean firstConnection;
     private volatile boolean authenticated;
 
-    ClientEndpoint(ClientEngineImpl clientEngine, Connection conn, String uuid) {
+    ClientEndpoint(ClientEngineImpl clientEngine, Connection conn) {
         this.clientEngine = clientEngine;
         this.conn = conn;
         if (conn instanceof TcpIpConnection) {
@@ -67,7 +66,6 @@ public final class ClientEndpoint implements Client {
         } else {
             socketAddress = null;
         }
-        this.uuid = uuid;
     }
 
     Connection getConnection() {
@@ -76,7 +74,7 @@ public final class ClientEndpoint implements Client {
 
     @Override
     public String getUuid() {
-        return uuid;
+        return principal != null ? principal.getUuid() : null;
     }
 
     public boolean live() {
@@ -97,14 +95,12 @@ public final class ClientEndpoint implements Client {
 
     void authenticated(ClientPrincipal principal, boolean firstConnection) {
         this.principal = principal;
-        this.uuid = principal.getUuid();
         this.firstConnection = firstConnection;
         this.authenticated = true;
     }
 
     void authenticated(ClientPrincipal principal) {
         this.principal = principal;
-        this.uuid = principal.getUuid();
         this.authenticated = true;
     }
 
@@ -143,7 +139,7 @@ public final class ClientEndpoint implements Client {
 
     public TransactionContext getTransactionContext(String txnId) {
         final TransactionContext transactionContext = transactionContextMap.get(txnId);
-        if(transactionContext == null){
+        if (transactionContext == null) {
             throw new TransactionException("No transaction context found for txnId:" + txnId);
         }
         return transactionContext;
@@ -237,7 +233,7 @@ public final class ClientEndpoint implements Client {
     public String toString() {
         StringBuilder sb = new StringBuilder("ClientEndpoint{");
         sb.append("conn=").append(conn);
-        sb.append(", uuid='").append(uuid).append('\'');
+        sb.append(", principal='").append(principal).append('\'');
         sb.append(", firstConnection=").append(firstConnection);
         sb.append(", authenticated=").append(authenticated);
         sb.append('}');
