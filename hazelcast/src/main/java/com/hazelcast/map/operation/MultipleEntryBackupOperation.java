@@ -1,58 +1,51 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.MapEntrySimple;
-import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.PartitionAwareOperation;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * date: 19/12/13
- * author: eminn
- */
-public class MultipleEntryBackupOperation extends AbstractMapOperation implements BackupOperation, PartitionAwareOperation {
+public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation implements BackupOperation {
+
     private Set<Data> keys;
-    private EntryBackupProcessor backupProcessor;
 
     public MultipleEntryBackupOperation() {
     }
 
     public MultipleEntryBackupOperation(String name, Set<Data> keys, EntryBackupProcessor backupProcessor) {
-        super(name);
-        this.backupProcessor = backupProcessor;
+        super(name, backupProcessor);
         this.keys = keys;
     }
 
     @Override
     public void run() throws Exception {
-        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
-        final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
-        MapEntrySimple entry;
+        final Set<Data> keys = this.keys;
 
-        for (Data key : keys) {
-            if (partitionService.getPartitionId(key) != getPartitionId()) {
+        for (Data dataKey : keys) {
+            if (keyNotOwnedByThisPartition(dataKey)) {
                 continue;
             }
-            Object objectKey = mapService.getMapServiceContext().toObject(key);
-            final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(key);
-            final Object valueBeforeProcess = mapService.getMapServiceContext().toObject(mapEntry.getValue());
-            entry = new MapEntrySimple(objectKey, valueBeforeProcess);
-            backupProcessor.processBackup(entry);
-            if (!entry.isModified()) {
-                continue;
+
+            final Object oldValue = getValueFor(dataKey);
+
+            final Object key = toObject(dataKey);
+            final Object value = toObject(oldValue);
+
+            final Map.Entry entry = createMapEntry(key, value);
+
+            processBackup(entry);
+
+            if (entryRemovedBackup(entry, dataKey)) {
+                return;
             }
-            if (entry.getValue() == null) {
-                recordStore.removeBackup(key);
-            } else {
-                recordStore.putBackup(key, entry.getValue());
+            if (entryAddedOrUpdatedBackup(entry, dataKey)) {
+                return;
             }
         }
     }
@@ -94,5 +87,4 @@ public class MultipleEntryBackupOperation extends AbstractMapOperation implement
     public String toString() {
         return "MultipleEntryBackupOperation{}";
     }
-
 }
