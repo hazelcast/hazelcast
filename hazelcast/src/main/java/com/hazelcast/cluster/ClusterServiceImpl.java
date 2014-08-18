@@ -598,7 +598,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
             logger.warning("Received an invalid join request from " + joinRequest.getAddress()
                     + ", cause: clusters part of different cluster-groups");
-            conn.close();
+
+            nodeEngine.getOperationService().send(new GroupMismatchOperation(),joinRequest.getAddress());
+            //conn.close();
         } catch (ConfigMismatchException e) {
             logger.warning("Received an invalid join request from " + joinRequest.getAddress() + ", cause:" + e.getMessage());
             sendConfigurationMismatchFailure(joinRequest.getAddress(), e.getMessage());

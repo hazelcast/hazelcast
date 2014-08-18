@@ -31,7 +31,8 @@ import static com.hazelcast.instance.GroupProperties.PROP_APPLICATION_VALIDATION
 import static com.hazelcast.instance.GroupProperties.PROP_PARTITION_COUNT;
 
 /**
- * Contains enough information about Hazelcast Config, to do a check when a cluster joins.
+ * Contains enough information about Hazelcast Config, to do a validation check so that clusters with different configurations
+ * don't join.
  */
 public final class ConfigCheck implements IdentifiedDataSerializable {
 
@@ -46,6 +47,12 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     private PartitionGroupConfig.MemberGroupType memberGroupType;
 
     private Map<String, String> properties = new HashMap<String, String>();
+
+    // TODO: The actual map/queue configuration needs to be added
+
+    private final Map<String, Object> maps = new HashMap<String, Object>();
+
+    private final Map<String, Object> queues = new HashMap<String, Object>();
 
     public ConfigCheck() {
     }
@@ -171,6 +178,18 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             out.writeUTF(memberGroupType.toString());
         }
         out.writeObject(properties);
+
+        out.writeInt(maps.size());
+        for (Map.Entry<String, Object> entry : maps.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
+
+        out.writeInt(queues.size());
+        for (Map.Entry<String, Object> entry : queues.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
     }
 
     @Override
@@ -187,5 +206,19 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             }
         }
         properties = in.readObject();
+
+        int mapSize = in.readInt();
+        for (int k = 0; k < mapSize; k++) {
+            String key = in.readUTF();
+            Object value = in.readObject();
+            maps.put(key, value);
+        }
+
+        int queueSize = in.readInt();
+        for (int k = 0; k < queueSize; k++) {
+            String key = in.readUTF();
+            Object value = in.readObject();
+            queues.put(key, value);
+        }
     }
 }

@@ -84,6 +84,12 @@ public class NodeMulticastListener implements MulticastListener {
                 logDroppedMessage(joinMessage);
             }
         } else {
+            Address address = joinMessage.address;
+            if(node.getJoiner().isBlacklisted(address)){
+                logDroppedMessage(joinMessage);
+                return;
+            }
+
             if (!node.joined() && node.getMasterAddress() == null) {
                 String masterHost = joinMessage.getAddress().getHost();
                 if (trustedInterfaces.isEmpty() || matchAnyInterface(masterHost, trustedInterfaces)) {

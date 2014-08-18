@@ -10,7 +10,7 @@ import java.io.IOException;
 
 /**
  * When a node wants to join the cluster, its sends its ConfigCheck to the cluster where it is validated.
- * If the ConfigCheck fails, this operation is send to that node trigger him to shutdown himself. This
+ * If the ConfigCheck fails, this operation is send to that node to trigger him to shutdown himself. This
  * way he will not join the cluster.
  *
  * @see com.hazelcast.cluster.AuthenticationFailureOperation
