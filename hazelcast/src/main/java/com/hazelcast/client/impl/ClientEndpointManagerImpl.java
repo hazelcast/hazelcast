@@ -3,7 +3,6 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.UuidUtil;
@@ -22,9 +21,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
-    private static final ILogger LOGGER = Logger.getLogger(ClientEndpointManager.class);
     private static final int DESTROY_ENDPOINT_DELAY_MS = 1111;
 
+    private final ILogger logger;
     private final ClientEngineImpl clientEngine;
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<Connection, ClientEndpointImpl> endpoints =
@@ -33,6 +32,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     public ClientEndpointManagerImpl(ClientEngineImpl clientEngine, NodeEngine nodeEngine) {
         this.clientEngine = clientEngine;
         this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(ClientEndpointManager.class);
     }
 
     @Override
@@ -53,14 +53,14 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     public ClientEndpointImpl createEndpoint(Connection conn) {
         if (!conn.live()) {
-            LOGGER.severe("Can't create and endpoint for a dead connection");
+            logger.severe("Can't create and endpoint for a dead connection");
             return null;
         }
 
         String clientUuid = UuidUtil.createClientUuid(conn.getEndPoint());
         ClientEndpointImpl endpoint = new ClientEndpointImpl(clientEngine, conn, clientUuid);
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
-            LOGGER.severe("An endpoint already exists for connection:" + conn);
+            logger.severe("An endpoint already exists for connection:" + conn);
         }
         return endpoint;
     }
@@ -74,11 +74,11 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         ClientEndpointImpl endpoint = (ClientEndpointImpl) ce;
 
         endpoints.remove(endpoint.getConnection());
-        LOGGER.info("Destroying " + endpoint);
+        logger.info("Destroying " + endpoint);
         try {
             endpoint.destroy();
         } catch (LoginException e) {
-            LOGGER.warning(e);
+            logger.warning(e);
         }
 
         final Connection connection = endpoint.getConnection();
@@ -86,7 +86,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
             try {
                 connection.close();
             } catch (Throwable e) {
-                LOGGER.warning("While closing client connection: " + connection, e);
+                logger.warning("While closing client connection: " + connection, e);
             }
         } else {
             nodeEngine.getExecutionService().schedule(new Runnable() {
@@ -95,7 +95,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
                         try {
                             connection.close();
                         } catch (Throwable e) {
-                            LOGGER.warning("While closing client connection: " + e.toString());
+                            logger.warning("While closing client connection: " + e.toString());
                         }
                     }
                 }

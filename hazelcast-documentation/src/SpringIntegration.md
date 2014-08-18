@@ -374,7 +374,7 @@ Annotation Based Configuration does not require any XML definition.
 
 - Implement a `CachingConfiguration` class with related Annotations.
 
-   ```java
+```java
 @Configuration
 @EnableCaching
 public class CachingConfiguration implements CachingConfigurer{
@@ -392,7 +392,7 @@ public class CachingConfiguration implements CachingConfigurer{
 
 - Launch Application Context and register `CachingConfiguration`.
 
-   ```java
+```java
 AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 context.register(CachingConfiguration.class);
 context.refresh();

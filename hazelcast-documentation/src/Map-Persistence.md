@@ -2,7 +2,9 @@
 
 ### Map Persistence
 
-Hazelcast allows you to load and store the distributed map entries from/to a persistent datastore such as relational database. If a loader implementation is provided, when `get(key)` is called, if the map entry does not exist in-memory, then Hazelcast will call your loader implementation to load the entry from a datastore. If a store implementation is provided, when `put(key,value)` is called, Hazelcast will call your store implementation to store the entry into a datastore. Hazelcast can call your implementation to store the entries synchronously (write-through) with no-delay or asynchronously (write-behind) with delay and it is defined by the `write-delay-seconds` value in the configuration.
+Hazelcast allows you to load and store the distributed map entries from/to a persistent data-store such as relational database. Note that this DataStore needs to be a centralized system that is
+accessible from all Hazelcast Nodes. Persisting to local file system is not supported.
+If a loader implementation is provided, when `get(key)` is called, if the map entry does not exist in-memory, then Hazelcast will call your loader implementation to load the entry from a datastore. If a store implementation is provided, when `put(key,value)` is called, Hazelcast will call your store implementation to store the entry into a datastore. Hazelcast can call your implementation to store the entries synchronously (write-through) with no-delay or asynchronously (write-behind) with delay and it is defined by the `write-delay-seconds` value in the configuration.
 
 If it is write-through, when the `map.put(key,value)` call returns, you can be sure that
 
@@ -52,7 +54,7 @@ Here is a sample configuration:
 </hazelcast>
 ```
 
-As you know, a configuration can be applied to more than one map using wildcards (Please see [Wildcard Configuration](#wildcard-configuration)), meaning the configuration is shared among the maps. But, `MapStore` does not know which entries to be stored when there is one configuration applied to multiple maps. To overcome this, Hazelcast provides `MapStoreFactory` interface.
+As you know, a configuration can be applied to more than one map using wildcards (Please see [Using Wildcard](#using-wildcard)), meaning the configuration is shared among the maps. But, `MapStore` does not know which entries to be stored when there is one configuration applied to multiple maps. To overcome this, Hazelcast provides `MapStoreFactory` interface.
 
 Using this factory, `MapStore`s for each map can be created, when a wildcard configuration is used. A sample code is given below.
 

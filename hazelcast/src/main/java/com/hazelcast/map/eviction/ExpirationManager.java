@@ -86,7 +86,7 @@ public class ExpirationManager {
                     }
                     if (currentlyRunningCleanupOperationsCount > getMaxCleanupOperationCountInOneRound()
                             || notInProcessableTimeWindow(partitionContainer, now)
-                            || notAnyExpirableRecord(partitionContainer)) {
+                            || notHaveAnyExpirableRecord(partitionContainer)) {
                         continue;
                     }
 
@@ -164,7 +164,7 @@ public class ExpirationManager {
          * @param partitionContainer corresponding partition container.
          * @return <code>true</code> if no expirable record in that partition <code>false</code> otherwise.
          */
-        private boolean notAnyExpirableRecord(PartitionContainer partitionContainer) {
+        private boolean notHaveAnyExpirableRecord(PartitionContainer partitionContainer) {
             boolean notExist = true;
             final ConcurrentMap<String, RecordStore> maps = partitionContainer.getMaps();
             for (RecordStore store : maps.values()) {
