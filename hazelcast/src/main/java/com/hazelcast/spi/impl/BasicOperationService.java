@@ -748,7 +748,11 @@ final class BasicOperationService implements InternalOperationService {
         responseExecutor.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
         for (RemoteCall call : remoteCalls.values()) {
-            call.offerResponse(response);
+            try {
+                call.offerResponse(response);
+            } catch (Throwable e) {
+                logger.warning(call + " could not be notified with shutdown message -> " + e.getMessage());
+            }
         }
         remoteCalls.clear();
         backupCalls.clear();
@@ -811,9 +815,11 @@ final class BasicOperationService implements InternalOperationService {
         private void notifyRemoteCall(NormalResponse response) {
             RemoteCall call = deregisterRemoteCall(response.getCallId());
             if (call == null) {
-                throw new HazelcastException("No call for response:" + response);
+                if (nodeEngine.isActive()) {
+                    throw new HazelcastException("No call for response:" + response);
+                }
+                return;
             }
-
             call.offerResponse(response);
         }
 
