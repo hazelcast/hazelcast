@@ -85,7 +85,7 @@ public class NodeMulticastListener implements MulticastListener {
             }
         } else {
             Address address = joinMessage.address;
-            if(node.getJoiner().isBlacklisted(address)){
+            if (node.getJoiner().isBlacklisted(address)) {
                 logDroppedMessage(joinMessage);
                 return;
             }
