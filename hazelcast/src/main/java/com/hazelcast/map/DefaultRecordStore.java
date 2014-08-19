@@ -521,16 +521,15 @@ public class DefaultRecordStore implements RecordStore {
     public boolean delete(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        Object oldValue = null;
         if (record == null) {
             if(mapContainer.getStore() != null) {
                 removeIndex(dataKey);
                 mapStoreDelete(null, dataKey);
             }
         } else {
-            removeRecord(dataKey, record);
+            return removeRecord(dataKey, record) != null;
         }
-        return oldValue != null;
+        return false;
     }
 
     private void resetAccessSequenceNumber() {
