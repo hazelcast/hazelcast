@@ -22,36 +22,28 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CacheKeyIteratorResult implements IdentifiedDataSerializable {
 
-    private int segmentIndex;
     private int tableIndex;
-
-    private Set<Data> keySet;
-
+    private List<Data> keys;
 
     public CacheKeyIteratorResult() {
     }
 
-    public CacheKeyIteratorResult(Set<Data> keySet, int segmentIndex, int tableIndex) {
-        this.keySet = keySet;
-        this.segmentIndex = segmentIndex;
+    public CacheKeyIteratorResult(List<Data> keys, int tableIndex) {
+        this.keys = keys;
         this.tableIndex = tableIndex;
-    }
-
-    public int getSegmentIndex() {
-        return segmentIndex;
     }
 
     public int getTableIndex() {
         return tableIndex;
     }
 
-    public Set<Data> getKeySet() {
-        return keySet;
+    public List<Data> getKeys() {
+        return keys;
     }
 
     @Override
@@ -66,11 +58,10 @@ public class CacheKeyIteratorResult implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(segmentIndex);
         out.writeInt(tableIndex);
-        int size = keySet.size();
+        int size = keys.size();
         out.writeInt(size);
-        for (Data o : keySet) {
+        for (Data o : keys) {
             o.writeData(out);
         }
 
@@ -78,23 +69,29 @@ public class CacheKeyIteratorResult implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        segmentIndex = in.readInt();
         tableIndex = in.readInt();
         int size = in.readInt();
-        keySet = new HashSet<Data>(size);
+        keys = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
             Data data = new Data();
             data.readData(in);
-            keySet.add(data);
+            keys.add(data);
         }
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("CacheKeyIteratorResult{");
-        sb.append(", segmentIndex=").append(segmentIndex);
         sb.append(", tableIndex=").append(tableIndex);
         sb.append('}');
         return sb.toString();
+    }
+
+    public int getCount() {
+        return keys != null ? keys.size() : 0;
+    }
+
+    public Data getKey(int index) {
+        return keys != null ? keys.get(index) : null;
     }
 }

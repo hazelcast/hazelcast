@@ -18,44 +18,56 @@ package com.hazelcast.cache.operation;
 
 import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheService;
-import com.hazelcast.cache.ICacheRecordStore;
-import com.hazelcast.cache.record.CacheRecord;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.Member;
+import com.hazelcast.executor.DistributedExecutorService;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
+import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * @author mdogan 05/02/14
  */
-abstract class AbstractCacheOperation extends AbstractNamedOperation
-        implements PartitionAwareOperation, IdentifiedDataSerializable {
+public class CacheCreateConfigOperation extends AbstractNamedOperation implements IdentifiedDataSerializable {
 
-    Data key;
-    Object response;
+    private CacheConfig config;
+    private boolean create;
 
-    transient ICacheRecordStore cache;
+    private transient Object response;
 
-    transient CacheRecord backupRecord;
-
-    protected AbstractCacheOperation() {
+    public CacheCreateConfigOperation() {
     }
 
-    protected AbstractCacheOperation(String name, Data key) {
+    public CacheCreateConfigOperation(String name, CacheConfig config, boolean create) {
         super(name);
-        this.key = key;
+        this.config = config;
+        this.create = create;
     }
+
 
     @Override
-    public final void beforeRun() throws Exception {
-        CacheService service = getService();
-        cache = service.getOrCreateCache(name, getPartitionId());
+    public void run() throws Exception {
+        final CacheService service = getService();
+        if(create){
+            response = service.createCacheConfigIfAbsent(config);
+        } else {
+            response = service.updateCacheConfig(config);
+        }
     }
 
     @Override
@@ -64,22 +76,27 @@ abstract class AbstractCacheOperation extends AbstractNamedOperation
     }
 
     @Override
-    public final Object getResponse() {
+    public Object getResponse() {
         return response;
     }
-
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        key.writeData(out);
+        out.writeObject(config);
+        out.writeBoolean(create);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        key = new Data();
-        key.readData(in);
+        config = in.readObject();
+        create = in.readBoolean();
+    }
+
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.CREATE_CONFIG;
     }
 
     @Override
@@ -87,12 +104,5 @@ abstract class AbstractCacheOperation extends AbstractNamedOperation
         return CacheDataSerializerHook.F_ID;
     }
 
-    //region BackupawareOperation will use these
-    public final int getSyncBackupCount() {
-        return cache != null ? cache.getConfig().getBackupCount() : 0;
-    }
 
-    public final int getAsyncBackupCount() {
-        return cache != null ? cache.getConfig().getAsyncBackupCount() : 0;
-    }
 }

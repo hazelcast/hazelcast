@@ -16,24 +16,25 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @author mdogan 05/02/14
+ * Cache Partition Segment
  */
 public final class CachePartitionSegment {
 
     private final NodeEngine nodeEngine;
     private final CacheService cacheService;
     private final int partitionId;
-    private final ConcurrentMap<String, ICacheRecordStore> caches
-            = new ConcurrentHashMap<String, ICacheRecordStore>();
+    private final ConcurrentMap<String, ICacheRecordStore> caches = new ConcurrentHashMap<String, ICacheRecordStore>();
     private final Object mutex = new Object();
 
     private final ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction =
@@ -49,6 +50,14 @@ public final class CachePartitionSegment {
         this.partitionId = partitionId;
     }
 
+    public Iterator<ICacheRecordStore> cacheIterator() {
+        return caches.values().iterator();
+    }
+
+    public Collection<CacheConfig> getCacheConfigs() {
+        return cacheService.getCacheConfigs();
+    }
+
     int getPartitionId() {
         return partitionId;
     }
@@ -61,21 +70,19 @@ public final class CachePartitionSegment {
         return caches.get(name);
     }
 
-    public Iterator<ICacheRecordStore> cacheIterator() {
-        return caches.values().iterator();
-    }
-
     void deleteCache(String name) {
-        ICacheRecordStore cache = caches.remove(name);
-        if (cache != null) {
-            cache.destroy();
+        synchronized (mutex) {
+            ICacheRecordStore cache = caches.remove(name);
+            if (cache != null) {
+                cache.destroy();
+            }
         }
     }
 
     void clear() {
         synchronized (mutex) {
-            for (ICacheRecordStore cache : caches.values()) {
-                cache.destroy();
+            for (String name : caches.keySet()) {
+                deleteCache(name);
             }
         }
         caches.clear();

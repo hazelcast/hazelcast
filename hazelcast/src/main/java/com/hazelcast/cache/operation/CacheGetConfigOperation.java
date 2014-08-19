@@ -17,51 +17,44 @@
 package com.hazelcast.cache.operation;
 
 import com.hazelcast.cache.CacheDataSerializerHook;
-import com.hazelcast.cache.CacheKeyIteratorResult;
+import com.hazelcast.cache.CacheService;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class CacheKeyIteratorOperation extends AbstractCacheOperation implements ReadonlyOperation {
+/**
+ */
+public class CacheGetConfigOperation extends PartitionWideCacheOperation implements ReadonlyOperation /*implements BackupAwareOperation*/ {
 
-    private int tableIndex;
-    private int size;
-
-    public CacheKeyIteratorOperation() {
+    public CacheGetConfigOperation() {
     }
 
-    public CacheKeyIteratorOperation(String name, int tableIndex, int size) {
-        super(name, new Data());
-        this.tableIndex = tableIndex;
-        this.size = size;
-    }
-
-    @Override
-    public int getId() {
-        return CacheDataSerializerHook.KEY_ITERATOR;
+    public CacheGetConfigOperation(String name) {
+        super(name);
     }
 
     @Override
     public void run() throws Exception {
-        final CacheKeyIteratorResult iterator = this.cache.iterator(tableIndex, size);
-        response = cache != null ? iterator : null;
+        final CacheService service = getService();
+        final CacheConfig cacheConfig = service.getCacheConfig(name);
+        response = cacheConfig;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(tableIndex);
-        out.writeInt(size);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        tableIndex = in.readInt();
-        size = in.readInt();
     }
 
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.GET_CONFIG;
+    }
 }

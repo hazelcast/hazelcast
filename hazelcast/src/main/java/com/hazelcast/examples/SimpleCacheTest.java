@@ -19,6 +19,7 @@ package com.hazelcast.examples;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.ICache;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
@@ -29,8 +30,10 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.logging.ILogger;
 
+import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
+import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 import java.util.LinkedList;
 import java.util.List;
@@ -71,7 +74,7 @@ public final class SimpleCacheTest {
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty("hazelcast.jmx", "true");
+//        System.setProperty("hazelcast.jmx", "true");
 
         // randomize multicast group...
         Random rand = new Random();
@@ -105,7 +108,7 @@ public final class SimpleCacheTest {
      * @throws InterruptedException
      */
     public static void main(String[] input) throws InterruptedException {
-        int threadCount = 400;
+        int threadCount = 40;
         int entryCount = 10 * 1000;
         int valueSize = 1000;
         int getPercentage = 40;
@@ -148,11 +151,19 @@ public final class SimpleCacheTest {
     }
 
     private void run(ExecutorService es) {
-        HazelcastCachingProvider hcp = new HazelcastCachingProvider();
+//        HazelcastCachingProvider hcp = new HazelcastCachingProvider();
+//
+//        HazelcastCacheManager cacheManager = new HazelcastCacheManager(hcp,instance,hcp.getDefaultURI(),hcp.getDefaultClassLoader(),null);
 
-        HazelcastCacheManager cacheManager = new HazelcastCacheManager(hcp,instance,hcp.getDefaultURI(),hcp.getDefaultClassLoader(),null);
+        final CachingProvider cachingProvider = Caching.getCachingProvider();
 
-        final ICache<String, Object> cache = cacheManager.getCache(NAMESPACE);
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
+
+
+        CacheConfig<String, Object> config = new CacheConfig<String, Object>();
+
+        final Cache<String, Object> cache = cacheManager.createCache(NAMESPACE, config);
+
 //        final IMap<String, Object> map = instance.getMap(NAMESPACE);
         for (int i = 0; i < threadCount; i++) {
             es.execute(new Runnable() {

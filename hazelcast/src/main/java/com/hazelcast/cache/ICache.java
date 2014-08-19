@@ -89,6 +89,8 @@ public interface ICache<K, V> extends DistributedObject, javax.cache.Cache<K, V>
 
     void setStatisticsEnabled(boolean enabled);
 
+    void enableManagement(boolean enabled);
+
 //    CacheStats getStats();
 
 

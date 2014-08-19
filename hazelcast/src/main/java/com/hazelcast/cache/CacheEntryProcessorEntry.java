@@ -19,6 +19,7 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.nio.serialization.Data;
 
+import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
@@ -47,8 +48,9 @@ public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
         this.cacheRecordStore = cacheRecordStore;
         this.now = now;
         this.start = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? System.nanoTime() : 0;
-        ;
-        this.expiryPolicy = cacheRecordStore.cacheConfig.getExpiryPolicyFactory().create();
+
+        final Factory<ExpiryPolicy> expiryPolicyFactory = cacheRecordStore.cacheConfig.getExpiryPolicyFactory();
+        this.expiryPolicy = expiryPolicyFactory.create();
 
     }
 

@@ -20,12 +20,13 @@ import com.hazelcast.cache.operation.CacheClearBackupOperation;
 import com.hazelcast.cache.operation.CacheClearOperation;
 import com.hazelcast.cache.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.operation.CacheContainsKeyOperation;
+import com.hazelcast.cache.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.operation.CacheGetAllOperation;
 import com.hazelcast.cache.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.operation.CacheGetAndRemoveOperation;
 import com.hazelcast.cache.operation.CacheGetAndReplaceOperation;
-import com.hazelcast.cache.operation.CacheGetOperation;
+import com.hazelcast.cache.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.operation.CacheKeyIteratorOperation;
 import com.hazelcast.cache.operation.CacheLoadAllOperation;
 import com.hazelcast.cache.operation.CacheLoadAllOperationFactory;
@@ -38,32 +39,34 @@ import com.hazelcast.cache.operation.CacheRemoveOperation;
 import com.hazelcast.cache.operation.CacheReplaceOperation;
 import com.hazelcast.cache.operation.CacheSizeOperation;
 import com.hazelcast.cache.operation.CacheSizeOperationFactory;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.ConstructorFunction;
 
 public final class CacheDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_DS_FACTORY, -25);
     private static short i = 0;
     public static final short GET = i++;
-
     public static final short CONTAINS_KEY = i++;
 
     public static final short PUT = i++;
+
     public static final short PUT_IF_ABSENT = i++;
     public static final short REMOVE = i++;
     public static final short GET_AND_REMOVE = i++;
     public static final short REPLACE = i++;
     public static final short GET_AND_REPLACE = i++;
-
     public static final short PUT_BACKUP = i++;
+
     public static final short PUT_ALL_BACKUP = i++;
     public static final short REMOVE_BACKUP = i++;
     public static final short CLEAR_BACKUP = i++;
-
     public static final short SIZE = i++;
+
     public static final short SIZE_FACTORY = i++;
     public static final short CLEAR = i++;
     public static final short CLEAR_FACTORY = i++;
@@ -73,79 +76,165 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
     public static final short GET_ALL_FACTORY = i++;
     public static final short LOAD_ALL = i++;
     public static final short LOAD_ALL_FACTORY = i++;
-
     public static final short EXPIRY_POLICY = i++;
+
     public static final short EVENT = i++;
     public static final short KEY_ITERATOR = i++;
     public static final short KEY_ITERATION_RESULT = i++;
     public static final short ENTRY_PROCESSOR = i++;
     public static final short CLEAR_RESPONSE = i++;
+    public static final short CREATE_CONFIG = i++;
+    public static final short GET_CONFIG = i++;
 
+    private static final int LEN = i++;
 
     public int getFactoryId() {
         return F_ID;
     }
 
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            public IdentifiedDataSerializable create(int typeId) {
-                if (typeId == GET) {
-                    return new CacheGetOperation();
-                } else if (typeId == CONTAINS_KEY) {
-                    return new CacheContainsKeyOperation();
-                } else if (typeId == PUT) {
-                    return new CachePutOperation();
-                } else if (typeId == PUT_IF_ABSENT) {
-                    return new CachePutIfAbsentOperation();
-                } else if (typeId == REMOVE) {
-                    return new CacheRemoveOperation();
-                } else if (typeId == GET_AND_REMOVE) {
-                    return new CacheGetAndRemoveOperation();
-                } else if (typeId == REPLACE) {
-                    return new CacheReplaceOperation();
-                } else if (typeId == GET_AND_REPLACE) {
-                    return new CacheGetAndReplaceOperation();
-                } else if (typeId == PUT_BACKUP) {
-                    return new CachePutBackupOperation();
-                } else if (typeId == PUT_ALL_BACKUP) {
-                    return new CachePutAllBackupOperation();
-                } else if (typeId == REMOVE_BACKUP) {
-                    return new CacheRemoveBackupOperation();
-                } else if (typeId == CLEAR_BACKUP) {
-                    return new CacheClearBackupOperation();
-                } else if (typeId == SIZE) {
-                    return new CacheSizeOperation();
-                } else if (typeId == SIZE_FACTORY) {
-                    return new CacheSizeOperationFactory();
-                } else if (typeId == CLEAR) {
-                    return new CacheClearOperation();
-                } else if (typeId == CLEAR_FACTORY) {
-                    return new CacheClearOperationFactory();
-                } else if (typeId == GET_STATS) {
-//                        return new CacheXXXXXOperation();
-                } else if (typeId == GET_STATS_FACTORY) {
-//                        return new CacheXXXXXOperation();
-                } else if (typeId == GET_ALL) {
-                    return new CacheGetAllOperation();
-                } else if (typeId == GET_ALL_FACTORY) {
-                    return new CacheGetAllOperationFactory();
-                } else if (typeId == LOAD_ALL) {
-                    return new CacheLoadAllOperation();
-                } else if (typeId == LOAD_ALL_FACTORY) {
-                    return new CacheLoadAllOperationFactory();
-                } else if (typeId == EVENT) {
-//                        return new CacheEntryEventImpl<>();
-                } else if (typeId == KEY_ITERATOR) {
-                    return new CacheKeyIteratorOperation();
-                } else if (typeId == KEY_ITERATION_RESULT) {
-                    return new CacheKeyIteratorResult();
-                } else if (typeId == ENTRY_PROCESSOR) {
-                    return new CacheEntryProcessorOperation();
-                } else if (typeId == CLEAR_RESPONSE) {
-                    return new CacheClearResponse();
-                }
-                throw new IllegalArgumentException("Unknown type-id: " + typeId);
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        constructors[CONTAINS_KEY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheContainsKeyOperation();
             }
         };
+        constructors[PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CachePutOperation();
+            }
+        };
+        constructors[PUT_IF_ABSENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CachePutIfAbsentOperation();
+            }
+        };
+        constructors[REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheRemoveOperation();
+            }
+        };
+        constructors[GET_AND_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheGetAndRemoveOperation();
+            }
+        };
+        constructors[REPLACE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheReplaceOperation();
+            }
+        };
+        constructors[GET_AND_REPLACE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheGetAndReplaceOperation();
+            }
+        };
+        constructors[PUT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CachePutBackupOperation();
+            }
+        };
+        constructors[PUT_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CachePutAllBackupOperation();
+            }
+        };
+        constructors[REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheRemoveBackupOperation();
+            }
+        };
+        constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheClearBackupOperation();
+            }
+        };
+        constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheSizeOperation();
+            }
+        };
+        constructors[SIZE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheSizeOperationFactory();
+            }
+        };
+        constructors[CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheClearOperation();
+            }
+        };
+        constructors[CLEAR_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheClearOperationFactory();
+            }
+        };
+//        constructors[GET_STATS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+////                        return new CacheXXXXXOperation();
+//            }
+//        };
+//        constructors[GET_STATS_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+////                        return new CacheXXXXXOperation();
+//            }
+//        };
+        constructors[GET_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheGetAllOperation();
+            }
+        };
+        constructors[GET_ALL_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheGetAllOperationFactory();
+            }
+        };
+        constructors[LOAD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheLoadAllOperation();
+            }
+        };
+        constructors[LOAD_ALL_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheLoadAllOperationFactory();
+            }
+        };
+//        constructors[EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+////                        return new CacheEntryEventImpl<>();
+//            }
+//        };
+        constructors[KEY_ITERATOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheKeyIteratorOperation();
+            }
+        };
+        constructors[KEY_ITERATION_RESULT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheKeyIteratorResult();
+            }
+        };
+        constructors[ENTRY_PROCESSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheEntryProcessorOperation();
+            }
+        };
+        constructors[CLEAR_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheClearResponse();
+            }
+        };
+        constructors[CREATE_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheCreateConfigOperation();
+            }
+        };
+        constructors[GET_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheGetConfigOperation();
+            }
+
+        };
+        return new ArrayDataSerializableFactory(constructors);
     }
 }

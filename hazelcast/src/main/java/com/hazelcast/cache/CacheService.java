@@ -18,6 +18,7 @@ package com.hazelcast.cache;
 
 
 import com.hazelcast.cache.operation.CacheReplicationOperation;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
@@ -45,7 +46,7 @@ import java.util.concurrent.ConcurrentMap;
 
 
 /**
- * @author mdogan 05/02/14
+ * Cache Service
  */
 public class CacheService implements ManagedService, RemoteService, MigrationAwareService
         , EventPublishingService<CacheEventData, CacheEventListenerAdaptor> {
@@ -55,6 +56,8 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     private NodeEngine nodeEngine;
     private CachePartitionSegment[] segments;
     private ConcurrentMap<CacheEntryListenerConfiguration, EventRegistration> eventRegistrationMap;
+
+    private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
 
     //region ManagedService
     @Override
@@ -97,6 +100,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     //region RemoteService
     @Override
     public DistributedObject createDistributedObject(String objectName) {
+//        return null;
         return new CacheProxy(objectName, nodeEngine, this);
     }
 
@@ -105,6 +109,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         for (CachePartitionSegment segment : segments) {
             segment.deleteCache(objectName);
         }
+        deleteCacheConfig(objectName);
     }
     //endregion
 
@@ -143,9 +148,6 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
 
 
     //region CacheService Impls
-    public CachePartitionSegment getSegment(int partitionId) {
-        return segments[partitionId];
-    }
 
     public ICacheRecordStore getOrCreateCache(String name, int partitionId) {
         return segments[partitionId].getOrCreateCache(name);
@@ -153,6 +155,32 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
 
     public ICacheRecordStore getCache(String name, int partitionId) {
         return segments[partitionId].getCache(name);
+    }
+
+    public boolean createCacheConfigIfAbsent(CacheConfig config){
+        final CacheConfig _config = configs.putIfAbsent(config.getName(), config);
+        return _config == null;
+    }
+
+    public boolean updateCacheConfig(CacheConfig config){
+        final CacheConfig oldConfig = configs.put(config.getName(), config);
+        return oldConfig != null;
+    }
+
+    public void deleteCacheConfig(String name){
+        configs.remove(name);
+    }
+
+    public CacheConfig getCacheConfig(String name) {
+        return configs.get(name);
+    }
+
+    public Iterable<String> getCacheNames(){
+        return configs.keySet();
+    }
+
+    public Collection<CacheConfig> getCacheConfigs(){
+        return configs.values();
     }
 
     public Object toObject(Object data) {
@@ -182,14 +210,10 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         if (candidates.isEmpty()) {
             return;
         }
-
         Set<EventRegistration> registrationsWithOldValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutOldValue = new HashSet<EventRegistration>();
-
         Object objectValue = toObject(value);
         Object objectOldValue = toObject(oldValue);
-
-
         for (EventRegistration candidate : candidates) {
             EventFilter filter = candidate.getFilter();
 
@@ -208,14 +232,11 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         if (registrationsWithOldValue.isEmpty() && registrationsWithoutOldValue.isEmpty()) {
             return;
         }
-
         Data dataValue = toData(value);
         Data dataOldValue = toData(oldValue);
-        ;
         if (eventType == EventType.REMOVED || eventType == EventType.EXPIRED) {
             dataValue = dataValue != null ? dataValue : dataOldValue;
         }
-
 //        final Address caller=null;
         int orderKey = dataKey.hashCode();
         CacheEventData eventWithOldValue = new CacheEventData(cacheName, dataKey, dataValue, dataOldValue, eventType);
@@ -232,7 +253,6 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     @Override
     public void dispatchEvent(CacheEventData eventData, CacheEventListenerAdaptor listener) {
         //Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
-
         final EventType eventType = eventData.getEventType();
         final Object key = toObject(eventData.getDataKey());
         final Object newValue = toObject(eventData.getDataNewValue());
@@ -243,10 +263,8 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     public <K, V> void registerCacheEntryListener(CacheProxy<K, V> cacheProxy, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         final CacheEventFilterAdaptor<K, V> eventFilter = new CacheEventFilterAdaptor<K, V>(cacheProxy, cacheEntryListenerConfiguration);
         final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(cacheProxy, cacheEntryListenerConfiguration);
-
         final EventService eventService = getNodeEngine().getEventService();
         final EventRegistration registration = eventService.registerListener(CacheService.SERVICE_NAME, cacheProxy.getName(), eventFilter, entryListener);
-
         eventRegistrationMap.put(cacheEntryListenerConfiguration, registration);
     }
 
@@ -257,7 +275,6 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
             eventService.deregisterListener(SERVICE_NAME, cacheProxy.getName(), eventRegistration.getId());
         }
     }
-
     //endregion
 
 

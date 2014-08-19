@@ -16,10 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
+
 /**
  * Contains configuration for an NearCache.
  */
-public class NearCacheConfig {
+public class NearCacheConfig implements DataSerializable{
     /**
      * Default value of time to live in seconds.
      */
@@ -180,5 +186,27 @@ public class NearCacheConfig {
         sb.append(", cacheLocalEntries=").append(cacheLocalEntries);
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(evictionPolicy);
+        out.writeInt(timeToLiveSeconds);
+        out.writeInt(maxSize);
+        out.writeBoolean(invalidateOnChange);
+        out.writeInt(inMemoryFormat.ordinal());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name= in.readUTF();
+        evictionPolicy= in.readUTF();
+        timeToLiveSeconds = in.readInt();
+        maxSize = in.readInt();
+        maxSize= in.readInt();
+        invalidateOnChange= in.readBoolean();
+        final int inMemoryFormatInt = in.readInt();
+        inMemoryFormat = InMemoryFormat.values()[inMemoryFormatInt];
     }
 }

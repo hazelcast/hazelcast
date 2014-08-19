@@ -29,8 +29,10 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,6 +41,8 @@ import java.util.Map;
 public final class CacheReplicationOperation extends AbstractOperation {
 
     Map<String, Map<Data, CacheRecord>> data;
+
+    List<CacheConfig> configs;
 
     public CacheReplicationOperation() {
         data = new HashMap<String, Map<Data, CacheRecord>>();
@@ -55,11 +59,20 @@ public final class CacheReplicationOperation extends AbstractOperation {
                 data.put(next.getName(), next.getReadOnlyRecords());
             }
         }
+
+        configs= new ArrayList<CacheConfig>();
+        for(CacheConfig conf:segment.getCacheConfigs()){
+            configs.add(conf);
+        }
     }
 
     @Override
     public final void beforeRun() throws Exception {
-
+        //migrate CacheConfigs first
+        CacheService service = getService();
+        for(CacheConfig config:configs){
+            service.createCacheConfigIfAbsent(config);
+        }
     }
 
     @Override
@@ -89,6 +102,13 @@ public final class CacheReplicationOperation extends AbstractOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        int confSize= configs.size();
+        out.writeInt(confSize);
+        if (confSize > 0) {
+            for(CacheConfig config:configs){
+                out.writeObject(config);
+            }
+        }
         int count = data.size();
         out.writeInt(count);
         if (count > 0) {
@@ -118,6 +138,14 @@ public final class CacheReplicationOperation extends AbstractOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        int confSize = in.readInt();
+        if (confSize > 0) {
+            configs= new ArrayList<CacheConfig>();
+            for (int i = 0; i < confSize; i++) {
+                final CacheConfig config = in.readObject();
+                configs.add(config);
+            }
+        }
         int count = in.readInt();
         if (count > 0) {
             for (int i = 0; i < count; i++) {

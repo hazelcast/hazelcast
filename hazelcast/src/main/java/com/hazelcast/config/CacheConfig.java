@@ -17,12 +17,24 @@
 package com.hazelcast.config;
 
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
+import javax.cache.configuration.Factory;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheWriter;
+
+import java.io.IOException;
+import java.util.HashSet;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-public class CacheConfig<K,V> extends MutableConfiguration<K,V> {
+public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataSerializable{
 
     public final static int MIN_BACKUP_COUNT = 0;
     public final static int DEFAULT_BACKUP_COUNT = 1;
@@ -190,8 +202,73 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> {
         this.inMemoryFormat = isNotNull(inMemoryFormat,"inMemoryFormat");
         return this;
     }
-//    @Override
-//    public Factory<ExpiryPolicy> getExpiryPolicyFactory() {
-//        return super.getExpiryPolicyFactory();
-//    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeInt(backupCount);
+        out.writeInt(asyncBackupCount);
+
+        out.writeInt(inMemoryFormat.ordinal());
+        out.writeInt(evictionPolicy.ordinal());
+
+        //SUPER
+        out.writeObject(keyType);
+        out.writeObject(valueType);
+        out.writeObject(cacheLoaderFactory);
+        out.writeObject(cacheWriterFactory);
+        out.writeObject(expiryPolicyFactory);
+
+        out.writeBoolean(isReadThrough);
+        out.writeBoolean(isWriteThrough);
+        out.writeBoolean(isStoreByValue);
+        out.writeBoolean(isManagementEnabled);
+
+        final boolean listNotEmpty = listenerConfigurations != null && !listenerConfigurations.isEmpty();
+        out.writeBoolean(listNotEmpty);
+        if(listNotEmpty){
+            out.writeInt(listenerConfigurations.size());
+            for(CacheEntryListenerConfiguration<K,V> cc:listenerConfigurations){
+                out.writeObject(cc);
+            }
+        }
+
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        backupCount= in.readInt();
+        asyncBackupCount= in.readInt();
+
+        final int _inMemoryFormat = in.readInt();
+        inMemoryFormat = InMemoryFormat.values()[_inMemoryFormat];
+
+        final int _evictionPolicy = in.readInt();
+        evictionPolicy = EvictionPolicy.values()[_evictionPolicy];
+
+        //SUPER
+        keyType = in.readObject();
+        valueType = in.readObject();
+        cacheLoaderFactory = in.readObject();
+        cacheWriterFactory = in.readObject();
+        expiryPolicyFactory = in.readObject();
+
+        isReadThrough = in.readBoolean();
+        isWriteThrough = in.readBoolean();
+        isStoreByValue = in.readBoolean();
+        isManagementEnabled = in.readBoolean();
+
+        final boolean listNotEmpty = in.readBoolean();
+        if(listNotEmpty){
+            final int size = in.readInt();
+            listenerConfigurations = new HashSet<CacheEntryListenerConfiguration<K, V>>(size);
+            for(int i=0; i<size ; i++){
+                listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
+            }
+        }
+
+    }
+
+
 }

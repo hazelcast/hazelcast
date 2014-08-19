@@ -27,133 +27,99 @@ import com.hazelcast.spi.Operation;
 import javax.cache.Cache;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.Set;
 
 public class ClusterWideIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
 
-    private int partitionIndex;
-    private int segmentIndex = Integer.MAX_VALUE;
-    private int tableIndex = -1;
+    private final int partitionCount;
+    private int partitionIndex=-1;
+    private int lastTableIndex;
 
-    private int fetchSize;
+    final private int fetchSize;
 
     private CacheProxy<K, V> cacheProxy;
 
-    private Set<Data> keys = null;
+    private int index;
+    private int currentIndex = -1;
 
-    private Iterator<Data> keysIterator = null;
-    private Data nextKey;
+    CacheKeyIteratorResult result;
 
-    private Data lastKey;
-
-    private boolean hasNextKey = false;
     final SerializationService serializationService;
 
     public ClusterWideIterator(CacheProxy<K, V> cacheProxy) {
         this.cacheProxy = cacheProxy;
-
         final NodeEngine engine = cacheProxy.getNodeEngine();
-        serializationService = engine.getSerializationService();
-
-        this.partitionIndex = engine.getPartitionService().getPartitionCount() - 1;
+        this.serializationService = engine.getSerializationService();
+        this.partitionCount = engine.getPartitionService().getPartitionCount();
 
         //TODO can be made configurable
         this.fetchSize = 100;
+        advance();
     }
 
     @Override
     public boolean hasNext() {
         cacheProxy.ensureOpen();
-        if (nextKey == null) {
-            advance();
+        if (result != null && index < result.getCount()) {
+            return true;
         }
-        return nextKey != null;
+        return advance();
     }
 
     @Override
     public Cache.Entry<K, V> next() {
-        if (hasNext()) {
-            try {
-                final V value = cacheProxy.get(nextKey);
-                final K key = serializationService.toObject(nextKey);
-                return new CacheEntry<K, V>(key, value);
-            } finally {
-                advance();
-            }
+        if (!hasNext()) {
+            throw new NoSuchElementException();
         }
-        throw new NoSuchElementException("Iteration ended. Has no more element");
+        currentIndex = index;
+        index++;
+        final Data keyData = result.getKey(currentIndex);
+        final K key = serializationService.toObject(keyData);
+        final V value = cacheProxy.get(key);
+        return new CacheEntry<K, V>(key, value);
     }
 
     @Override
     public void remove() {
         cacheProxy.ensureOpen();
-        if (lastKey == null) {
-            throw new IllegalStateException("Must progress to the next entry to remove");
+        if (result == null || currentIndex < 0) {
+            throw new IllegalStateException("Iterator.next() must be called before remove()!");
         }
-        if (cacheProxy.remove(lastKey)) {
-            lastKey = null;
-        }
+        Data keyData = result.getKey(currentIndex);
+        final K key = serializationService.toObject(keyData);
+        cacheProxy.remove(key);
+        currentIndex = -1;
     }
 
-    private void advance() {
-        if (nextKey != null && keysIterator.hasNext()) {
-            lastKey = nextKey;
-            nextKey = keysIterator.next();
-            return;
-        }
-
-        while ((partitionIndex >= 0) && (tableIndex >= 0 || segmentIndex >= 0)) {
-            fetch();
-            if (nextKey != null) {
-                return;
-            }
-        }
-
-        //partition content done, proceed to next one
-        if (partitionIndex <= 0) {
-            lastKey = nextKey;
-            nextKey = null;
-        } else {
-            while (partitionIndex > 0) {
-                if (segmentIndex < 0) {
-                    segmentIndex = Integer.MAX_VALUE;
-                }
-                tableIndex = -1;
-//            segmentIndex=Integer.MAX_VALUE;
-                partitionIndex--;
-                fetch();
-                if (nextKey != null) {
-                    return;
+    private boolean advance() {
+        while (partitionIndex < getPartitionCount()) {
+            if (result == null || result.getCount() < fetchSize || lastTableIndex < 0) {
+                partitionIndex++;
+                lastTableIndex = Integer.MAX_VALUE;
+                result = null;
+                if (partitionIndex == getPartitionCount()) {
+                    return false;
                 }
             }
+            result = fetch();
+            if (result != null && result.getCount() > 0) {
+                index = 0;
+                lastTableIndex = result.getTableIndex();
+                return true;
+            }
         }
+        return false;
     }
 
-    private void fetch() {
+
+    protected int getPartitionCount(){
+        return partitionCount;
+    }
+
+    protected CacheKeyIteratorResult fetch() {
         final NodeEngine nodeEngine = cacheProxy.getNodeEngine();
-        final Operation op = new CacheKeyIteratorOperation(cacheProxy.getName(), segmentIndex, tableIndex, fetchSize);
-        final InternalCompletableFuture<Object> f = nodeEngine.getOperationService()
+        final Operation op = new CacheKeyIteratorOperation(cacheProxy.nameWithPrefix, lastTableIndex, fetchSize);
+        final InternalCompletableFuture<CacheKeyIteratorResult> f = nodeEngine.getOperationService()
                 .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionIndex);
-
-        final CacheKeyIteratorResult iteratorResult = (CacheKeyIteratorResult) f.getSafely();
-        if (iteratorResult != null) {
-            segmentIndex = iteratorResult.getSegmentIndex();
-            tableIndex = iteratorResult.getTableIndex();
-            keys = iteratorResult.getKeySet();
-            keysIterator = keys.iterator();
-            if (keysIterator.hasNext()) {
-                if (nextKey != null) {
-                    lastKey = nextKey;
-                }
-                nextKey = this.keysIterator.next();
-                return;
-            }
-        }
-        segmentIndex = -1;
-        tableIndex = -1;
-        if (nextKey != null) {
-            lastKey = nextKey;
-        }
-        nextKey = null;
+        return f.getSafely();
     }
 }

@@ -74,7 +74,7 @@ public interface ICacheRecordStore {
 
     CacheRecord removeRecord(Data key);
 
-    CacheKeyIteratorResult iterator(int segmentIndex, int tableIndex, int size);
+    CacheKeyIteratorResult iterator(int tableIndex, int size);
 
     Object invoke(Data key, EntryProcessor entryProcessor, Object[] arguments);
 

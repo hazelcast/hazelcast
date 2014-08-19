@@ -3,6 +3,7 @@ package com.hazelcast.cache;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 
 import javax.cache.Cache;
 import javax.cache.CacheException;
@@ -14,35 +15,34 @@ import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Properties;
 
-public class HazelcastCacheManager implements CacheManager {
+public abstract class HazelcastCacheManager implements CacheManager {
 
-    protected final HazelcastInstance hazelcastInstance;
-    protected final HazelcastCachingProvider cachingProvider;
+    protected HazelcastInstance hazelcastInstance;
+    protected CachingProvider cachingProvider;
 
-    private final URI uri;
-    private final WeakReference<ClassLoader> classLoaderReference;
-    private final Properties properties;
+    protected final HashMap<String, ICache<?, ?>> caches = new HashMap<String, ICache<?, ?>>();
 
-    private final boolean isDefaultURI;
-    private final boolean isDefaultClassLoader;
+    protected final URI uri;
+    protected final WeakReference<ClassLoader> classLoaderReference;
+    protected final Properties properties;
 
-    private volatile boolean closeTriggered=false;
+    protected final boolean isDefaultURI;
+    protected final boolean isDefaultClassLoader;
 
-    public HazelcastCacheManager(HazelcastCachingProvider cachingProvider, HazelcastInstance hazelcastInstance, URI uri, ClassLoader classLoader, Properties properties) {
+    protected volatile boolean closeTriggered=false;
+    protected final String cacheNamePrefix;
+
+    public HazelcastCacheManager(CachingProvider cachingProvider,URI uri, ClassLoader classLoader, Properties properties) {
         if (cachingProvider == null) {
             throw new NullPointerException("CachingProvider missing");
         }
         this.cachingProvider = cachingProvider;
-
-        if (hazelcastInstance == null) {
-            throw new NullPointerException("hazelcastInstance missing");
-        }
-        this.hazelcastInstance = hazelcastInstance;
 
         isDefaultURI = uri == null;
         this.uri = isDefaultURI ? cachingProvider.getDefaultURI(): uri;
@@ -52,6 +52,8 @@ public class HazelcastCacheManager implements CacheManager {
         this.classLoaderReference = new WeakReference<ClassLoader>(_classLoader);
 
         this.properties = properties == null ? new Properties() : new Properties(properties);
+
+        this.cacheNamePrefix = cacheNamePrefix();
     }
 
     @Override
@@ -75,151 +77,63 @@ public class HazelcastCacheManager implements CacheManager {
     }
 
     @Override
-    public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration) throws IllegalArgumentException {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-
-        if (cacheName == null) {
-            throw new NullPointerException("cacheName must not be null");
-        }
-
-        if (configuration == null) {
-            throw new NullPointerException("configuration must not be null");
-        }
-        //FIXME this check has race condition, can not detect proxies created but not emitted to other nodes yet.
-        for (String name : getCacheNames()) {
-            if (cacheName.equals(name)) {
-                throw new CacheException("A cache named " + cacheName + " already exists.");
-            }
-        }
-
-        final CacheConfig<K, V> cacheConfig;
-        if (configuration instanceof CompleteConfiguration) {
-            cacheConfig = new CacheConfig<K, V>((CompleteConfiguration) configuration);
-        } else {
-            cacheConfig = new CacheConfig<K, V>();
-            cacheConfig.setStoreByValue(configuration.isStoreByValue());
-            cacheConfig.setTypes(configuration.getKeyType(), configuration.getValueType());
-        }
-        cacheConfig.setName(cacheName);
-        hazelcastInstance.getConfig().addCacheConfig(cacheConfig);
-        return getCacheObject(cacheName);
-    }
-
-    @Override
-    public <K, V> ICache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (keyType == null) {
-            throw new NullPointerException("keyType can not be null");
-        }
-        if (valueType == null) {
-            throw new NullPointerException("valueType can not be null");
-        }
-        final CacheConfig<?, ?> configuration = hazelcastInstance.getConfig().getCacheConfig(cacheName);
-        if (configuration.getKeyType() != null && configuration.getKeyType().equals(keyType)) {
-            if (configuration.getValueType() != null && configuration.getValueType().equals(valueType)) {
-                return getCacheObject(cacheName);
-            } else {
-                throw new ClassCastException("Incompatible cache value types specified, expected " +
-                        configuration.getValueType() + " but " + valueType + " was specified");
-            }
-        } else {
-            throw new ClassCastException("Incompatible cache key types specified, expected " +
-                    configuration.getKeyType() + " but " + keyType + " was specified");
-        }
-    }
-
-    @Override
     public <K, V> ICache<K, V> getCache(String cacheName) {
         if (isClosed()) {
             throw new IllegalStateException();
         }
-        final CacheConfig<?, ?> configuration = hazelcastInstance.getConfig().getCacheConfig(cacheName);
+        synchronized (caches) {
+            final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
+            ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
 
-        if (Object.class.equals(configuration.getKeyType()) && Object.class.equals(configuration.getValueType())){
-            return getCacheObject(cacheName);
-        } else {
-            throw new IllegalArgumentException("Cache " + cacheName + " was " +
-                    "defined with specific types Cache<" +
-                    configuration.getKeyType() + ", " + configuration.getValueType() + "> " +
-                    "in which case CacheManager.getCache(String, Class, Class) must be used");
-        }
-    }
+            if(cache != null) {
+                Configuration<?, ?> configuration = cache.getConfiguration(CacheConfig.class);
 
-    private <K, V> ICache<K, V> getCacheObject(String cacheName){
-        ICache<K, V> cache = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, cacheName);
-        if (cache != null && cache instanceof CacheProxy) {
-            ((CacheProxy<K, V>) cache).initCacheManager(this);
-        }
-        return cache;
-    }
-
-    @Override
-    public Iterable<String> getCacheNames() {
-        final Collection<String> names;
-        if (isClosed()) {
-            names = Collections.emptySet();
-        } else {
-            names = new LinkedHashSet<String>();
-            final HazelcastInstance hz = hazelcastInstance;
-            Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
-            for (DistributedObject distributedObject : distributedObjects) {
-                if (distributedObject instanceof ICache && distributedObject.getName().startsWith(managerPrefix())) {
-                    names.add(distributedObject.getName());
+                if (Object.class.equals(configuration.getKeyType()) && Object.class.equals(configuration.getValueType())){
+                    return (ICache<K, V>) cache;
+                } else {
+                    throw new IllegalArgumentException("Cache " + cacheName + " was " +
+                            "defined with specific types Cache<" +
+                            configuration.getKeyType() + ", " + configuration.getValueType() + "> " +
+                            "in which case CacheManager.getCache(String, Class, Class) must be used");
                 }
             }
         }
-        return Collections.unmodifiableCollection(names);
+        return null;
     }
 
-    @Override
-    public void destroyCache(String cacheName) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        HazelcastInstance hz = hazelcastInstance;
-        hazelcastInstance.getConfig().removeCacheConfig(cacheName);
-        DistributedObject cache = hz.getDistributedObject(CacheService.SERVICE_NAME, cacheName);
-        cache.destroy();
-    }
+//    @Override
+//    public void enableManagement(String cacheName, boolean enabled) {
+//        if (isClosed()) {
+//            throw new IllegalStateException();
+//        }
+//        if (cacheName == null) {
+//            throw new NullPointerException();
+//        }
+//        synchronized (caches) {
+//            final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
+//            ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
+//            cache.enableManagement(enabled);
+//        }
+//    }
+//
+//    @Override
+//    public void enableStatistics(String cacheName, boolean enabled) {
+//        if (isClosed()) {
+//            throw new IllegalStateException();
+//        }
+//        if (cacheName == null) {
+//            throw new NullPointerException();
+//        }
+//        synchronized (caches) {
+//            final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
+//            ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
+//            cache.setStatisticsEnabled(enabled);
+//        }
+//
+////        final CacheConfig configuration = cache.getConfiguration(CacheConfig.class);
+////        configuration.setStatisticsEnabled(true);
+//    }
 
-    @Override
-    public void enableManagement(String cacheName, boolean enabled) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void enableStatistics(String cacheName, boolean enabled) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException();
-        }
-        final ICache<Object, Object> cache = getCacheObject(cacheName);
-        cache.setStatisticsEnabled(enabled);
-        final CacheConfig configuration = cache.getConfiguration(CacheConfig.class);
-        configuration.setStatisticsEnabled(true);
-    }
-
-    @Override
-    public void close() {
-        if(!closeTriggered){
-            HazelcastInstance hz = hazelcastInstance;
-            Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
-            for (DistributedObject distributedObject : distributedObjects) {
-                if (distributedObject instanceof ICache) {
-                    distributedObject.destroy();
-                }
-            }
-//            hz.shutdown();
-            cachingProvider.releaseCacheManager(uri,classLoaderReference.get());
-        }
-        closeTriggered=true;
-    }
 
     @Override
     public boolean isClosed() {
@@ -243,14 +157,19 @@ public class HazelcastCacheManager implements CacheManager {
         return sb.toString();
     }
 
-    private String managerPrefix(){
-        final StringBuilder sb = new StringBuilder("/hazelcast");
+    protected String cacheNamePrefix(){
+        final StringBuilder sb = new StringBuilder("/hz");
         if(!isDefaultClassLoader){
             sb.append("/").append(classLoaderReference.get().toString() );
         }
         if(!isDefaultURI){
             sb.append("/").append(uri.toASCIIString() );
         }
+        sb.append("/");
         return sb.toString();
+    }
+
+    protected String getCacheNameWithPrefix(String name){
+        return cacheNamePrefix + name;
     }
 }
