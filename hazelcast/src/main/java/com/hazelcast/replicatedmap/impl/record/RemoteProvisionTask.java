@@ -82,9 +82,9 @@ final class RemoteProvisionTask<K, V>
         Object value = replicatedRecordStore.unmarshallValue(replicatedRecord.getValue());
         VectorClockTimestamp vectorClockTimestamp = replicatedRecord.getVectorClockTimestamp();
         long originalTtlMillis = replicatedRecord.getTtlMillis();
-        long actualTtlMillis = getActualTtl(replicatedRecord);
-        if (originalTtlMillis == 0 || actualTtlMillis > 0) {
-            recordCache[recordCachePos++] = new ReplicatedRecord(key, value, vectorClockTimestamp, hash, actualTtlMillis);
+        long remainingTtlMillis = getRemainingTtl(replicatedRecord);
+        if (originalTtlMillis == 0 || remainingTtlMillis > 0) {
+            recordCache[recordCachePos++] = new ReplicatedRecord(key, value, vectorClockTimestamp, hash, remainingTtlMillis);
         }
 
         if (finalRecord) {
@@ -92,7 +92,7 @@ final class RemoteProvisionTask<K, V>
         }
     }
 
-    private long getActualTtl(ReplicatedRecord<K, V> replicatedRecord) {
+    private long getRemainingTtl(ReplicatedRecord<K, V> replicatedRecord) {
         long ttl = replicatedRecord.getTtlMillis();
         if (ttl != 0) {
             long updateTime = replicatedRecord.getUpdateTime();
