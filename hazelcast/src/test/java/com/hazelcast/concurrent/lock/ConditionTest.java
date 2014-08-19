@@ -63,11 +63,12 @@ public class ConditionTest extends HazelcastTestSupport {
         final ICondition condition1 = lock.newCondition(randomString());
 
         final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch syncLatch = new CountDownLatch(2);
 
-        createThreadWaitsForCondition(latch, lock, condition0).start();
-        createThreadWaitsForCondition(latch, lock, condition1).start();
+        createThreadWaitsForCondition(latch, lock, condition0, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition1, syncLatch).start();
 
-        sleepSeconds(1);
+        syncLatch.await();
 
         lock.lock();
         condition0.signal();
@@ -88,11 +89,13 @@ public class ConditionTest extends HazelcastTestSupport {
         final ICondition condition = lock.newCondition(randomString());
 
         final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch syncLatch = new CountDownLatch(2);
 
-        createThreadWaitsForCondition(latch, lock, condition).start();
-        createThreadWaitsForCondition(latch, lock, condition).start();
+        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
 
-        sleepSeconds(1);
+        syncLatch.await();
+
         lock.lock();
         condition.signalAll();
         lock.unlock();
@@ -109,11 +112,13 @@ public class ConditionTest extends HazelcastTestSupport {
         final ICondition condition1 = lock.newCondition(randomString());
 
         final CountDownLatch latch = new CountDownLatch(10);
+        final CountDownLatch syncLatch = new CountDownLatch(2);
 
-        createThreadWaitsForCondition(latch, lock, condition0).start();
-        createThreadWaitsForCondition(latch, lock, condition1).start();
+        createThreadWaitsForCondition(latch, lock, condition0, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition1, syncLatch).start();
 
-        sleepSeconds(1);
+        syncLatch.await();
+
         lock.lock();
         condition0.signalAll();
         lock.unlock();
@@ -136,18 +141,15 @@ public class ConditionTest extends HazelcastTestSupport {
         final ICondition condition1 = lock.newCondition(name);
 
         final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch syncLatch = new CountDownLatch(2);
 
-        createThreadWaitsForCondition(latch, lock, condition0).start();
-        createThreadWaitsForCondition(latch, lock, condition1).start();
+        createThreadWaitsForCondition(latch, lock, condition0, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition1, syncLatch).start();
 
-        sleepSeconds(1);
-
-        lock.lock();
-        condition0.signal();
-        lock.unlock();
+        syncLatch.await();
 
         lock.lock();
-        condition1.signal();
+        condition0.signalAll();
         lock.unlock();
 
         assertOpenEventually(latch);
@@ -164,12 +166,13 @@ public class ConditionTest extends HazelcastTestSupport {
         final ICondition condition1 = lock1.newCondition(name);
 
         final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch syncLatch = new CountDownLatch(2);
 
-        createThreadWaitsForCondition(latch, lock0, condition0).start();
+        createThreadWaitsForCondition(latch, lock0, condition0, syncLatch).start();
 
-        createThreadWaitsForCondition(latch, lock1, condition1).start();
+        createThreadWaitsForCondition(latch, lock1, condition1, syncLatch).start();
 
-        sleepSeconds(1);
+        syncLatch.await();
 
         lock0.lock();
         condition0.signalAll();
@@ -343,7 +346,7 @@ public class ConditionTest extends HazelcastTestSupport {
                 try {
                     lock.lock();
                     condition0.await();
-                } catch (Throwable e) {
+                } catch (InterruptedException e) {
                     latch.countDown();
                 }
             }
@@ -358,19 +361,20 @@ public class ConditionTest extends HazelcastTestSupport {
 
     //if there are multiple waiters, then only 1 waiter should be notified.
     @Test(timeout = 60000)
-    public void testSignalWithMultipleWaiters() {
+    public void testSignalWithMultipleWaiters() throws InterruptedException {
         HazelcastInstance instance = createHazelcastInstance();
 
         ILock lock = instance.getLock(randomString());
         final ICondition condition = lock.newCondition(randomString());
 
         final CountDownLatch latch = new CountDownLatch(10);
+        final CountDownLatch syncLatch = new CountDownLatch(3);
 
-        createThreadWaitsForCondition(latch, lock, condition).start();
-        createThreadWaitsForCondition(latch, lock, condition).start();
-        createThreadWaitsForCondition(latch, lock, condition).start();
+        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
 
-        sleepSeconds(1);
+        syncLatch.await();
 
         lock.lock();
         condition.signal();
@@ -401,7 +405,7 @@ public class ConditionTest extends HazelcastTestSupport {
         condition.signal();
         lock.unlock();
 
-        createThreadWaitsForCondition(latch, lock, condition).start();
+        createThreadWaitsForCondition(latch, lock, condition, null).start();
         // if the thread is still waiting, then the signal is not stored.
         assertFalse(latch.await(3000, TimeUnit.MILLISECONDS));
     }
@@ -550,6 +554,7 @@ public class ConditionTest extends HazelcastTestSupport {
         lock.unlock();
     }
 
+    // See #3262
     @Test(timeout = 60000)
     @Ignore
     public void testAwait_whenNegativeTimeout() throws InterruptedException {
@@ -714,12 +719,12 @@ public class ConditionTest extends HazelcastTestSupport {
         assertEquals(size, count.get());
     }
 
-    private Thread createThreadWaitsForCondition(final CountDownLatch latch, final ILock lock, final ICondition condition) {
+    private Thread createThreadWaitsForCondition(final CountDownLatch latch, final ILock lock, final ICondition condition, final CountDownLatch syncLatch) {
         Thread t = new Thread(new Runnable() {
             public void run() {
                 try {
                     lock.lock();
-
+                    syncLatch.countDown();
                     condition.await();
                     latch.countDown();
                 } catch (InterruptedException e) {
