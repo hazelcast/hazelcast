@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.MultiTargetClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.MultiTargetClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPortableHook;

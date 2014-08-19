@@ -17,7 +17,7 @@
 package com.hazelcast.mapreduce.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.InvocationClientRequest;
+import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.mapreduce.impl.MapReducePortableHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;

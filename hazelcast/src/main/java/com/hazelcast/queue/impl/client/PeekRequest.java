@@ -16,7 +16,7 @@
 
 package com.hazelcast.queue.impl.client;
 
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.queue.impl.PeekOperation;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.spi.Operation;

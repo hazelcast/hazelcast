@@ -16,8 +16,8 @@
 
 package com.hazelcast.executor.impl.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorPortableHook;
 import com.hazelcast.nio.serialization.PortableReader;

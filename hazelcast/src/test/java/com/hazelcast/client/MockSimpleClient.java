@@ -16,6 +16,9 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.client.AuthenticationRequest;
+import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -57,6 +60,7 @@ public class MockSimpleClient implements SimpleClient {
         //the ConnectionManager.
         clientEngine.getConnectionListener().connectionAdded(connection);
         AuthenticationRequest auth = new AuthenticationRequest(new UsernamePasswordCredentials("dev", "dev-pass"));
+        auth.setOwnerConnection(true);
         send(auth);
         receive();
     }

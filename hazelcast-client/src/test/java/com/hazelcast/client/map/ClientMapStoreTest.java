@@ -1,15 +1,18 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.map.mapstore.writebehind.ReachedMaxSizeException;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -20,6 +23,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -326,5 +331,66 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
     private int getMaxCapacity(HazelcastInstance node) {
         return getNode(node).getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
+    }
+
+
+
+    @Test
+    public void testIssue3023_testWithSubStringMapNames() throws Exception {
+        String mapNameWithStore = "MapStore*";
+        String mapNameWithStoreAndSize = "MapStoreMaxSize*";
+
+        String xml ="<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n" +
+                       "                             http://www.hazelcast.com/schema/config/hazelcast-config-3.2.xsd\"\n" +
+                       "                             xmlns=\"http://www.hazelcast.com/schema/config\"\n" +
+                       "                             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                       "\n" +
+                       "    <map name=\""+mapNameWithStore+"\">\n" +
+                       "        <map-store enabled=\"true\">\n" +
+                       "            <class-name>com.will.cause.problem.if.used</class-name>\n" +
+                       "            <write-delay-seconds>5</write-delay-seconds>\n" +
+                       "        </map-store>\n" +
+                       "    </map>\n" +
+                       "\n" +
+                       "    <map name=\""+mapNameWithStoreAndSize+"\">\n" +
+                       "        <in-memory-format>BINARY</in-memory-format>\n" +
+                       "        <backup-count>1</backup-count>\n" +
+                       "        <async-backup-count>0</async-backup-count>\n" +
+                       "        <max-idle-seconds>0</max-idle-seconds>\n" +
+                       "        <eviction-policy>LRU</eviction-policy>\n" +
+                       "        <max-size policy=\"PER_NODE\">10</max-size>\n" +
+                       "        <eviction-percentage>50</eviction-percentage>\n" +
+                       "\n" +
+                       "        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n" +
+                       "\n" +
+                       "        <map-store enabled=\"true\">\n" +
+                       "            <class-name>com.hazelcast.client.map.helpers.AMapStore</class-name>\n" +
+                       "            <write-delay-seconds>5</write-delay-seconds>\n" +
+                       "        </map-store>\n" +
+                       "    </map>\n" +
+                       "\n" +
+                       "</hazelcast>";
+
+        Config config = buildConfig(xml);
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        IMap map = client.getMap(mapNameWithStoreAndSize+"1");
+        map.put(1,1);
+
+        final AMapStore store = (AMapStore) (hz.getConfig().getMapConfig(mapNameWithStoreAndSize+"1").getMapStoreConfig().getImplementation());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals( 1,  store.store.get(1));
+            }
+        });
+    }
+
+    private Config buildConfig(String xml) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        return configBuilder.build();
     }
 }

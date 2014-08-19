@@ -49,6 +49,8 @@ public class MultiMapOperationFactory implements OperationFactory {
     }
 
     public Operation createOperation() {
+        //TODO: Don't use a if/else, but use a switch case.
+
         if (operationFactoryType == OperationFactoryType.KEY_SET) {
             return new KeySetOperation(name);
         } else if (operationFactoryType == OperationFactoryType.VALUES) {

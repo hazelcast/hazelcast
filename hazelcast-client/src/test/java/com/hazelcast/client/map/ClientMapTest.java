@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.AuthenticationRequest;
+import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
@@ -118,7 +118,7 @@ public class ClientMapTest {
             public void entryEvicted(EntryEvent event) {
                 final Object value = event.getValue();
                 final Object oldValue = event.getOldValue();
-                if (value != null) {
+                if (value == null) {
                     nullLatch.countDown();
                 }
                 if (oldValue != null) {

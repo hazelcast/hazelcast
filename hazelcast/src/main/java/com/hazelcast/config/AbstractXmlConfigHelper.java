@@ -65,10 +65,8 @@ public abstract class AbstractXmlConfigHelper {
 
         public Iterator<Node> iterator() {
             return new Iterator<Node>() {
-
                 private int index;
                 private Node next;
-
                 private boolean findNext() {
                     next = null;
                     for (; index < maximum; index++) {
@@ -80,6 +78,7 @@ public abstract class AbstractXmlConfigHelper {
                     }
                     return false;
                 }
+
                 public boolean hasNext() {
                     return findNext();
                 }
@@ -190,6 +189,17 @@ public abstract class AbstractXmlConfigHelper {
         } catch (final Exception e) {
             LOGGER.info(parameterName + " parameter value, [" + value
                     + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
+            LOGGER.warning(e);
+            return defaultValue;
+        }
+    }
+
+    protected long getLongValue(final String parameterName, final String value, final long defaultValue) {
+        try {
+            return Long.parseLong(value);
+        } catch (final Exception e) {
+            LOGGER.info(parameterName + " parameter value, [" + value
+                    + "], is not a proper long. Default value, [" + defaultValue + "], will be used!");
             LOGGER.warning(e);
             return defaultValue;
         }
@@ -317,9 +327,10 @@ public abstract class AbstractXmlConfigHelper {
             final String value = getTextContent(child);
             if ("serializer".equals(name)) {
                 SerializerConfig serializerConfig = new SerializerConfig();
-                serializerConfig.setClassName(value);
                 final String typeClassName = getAttribute(child, "type-class");
+                final String className = getAttribute(child, "class-name");
                 serializerConfig.setTypeClassName(typeClassName);
+                serializerConfig.setClassName(className);
                 serializationConfig.addSerializerConfig(serializerConfig);
             } else if ("global-serializer".equals(name)) {
                 GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();

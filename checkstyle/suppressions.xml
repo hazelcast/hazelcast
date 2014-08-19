@@ -124,19 +124,21 @@
 
 
     <!-- client -->
-    <suppress checks="" files="com.hazelcast.client.ClientPortableHook"/>
-    <suppress checks="" files="com.hazelcast.client.txn.ClientTxnPortableHook"/>
+    <!-- TODO: We need to get these wildcard suppressions fixed -->
     <suppress checks="" files="com.hazelcast.client.proxy.ClientQueueProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMultiMapProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMapProxy"/>
     <suppress checks="" files="com.hazelcast.client.HazelcastClient"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.proxy.ClientExecutorServiceProxy"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.HazelcastClientProxy"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.ClientPortableFactory"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.impl.client.ClientPortableFactory"/>
+    <!-- TODO: We need to get this wildcard suppressions fixed -->
+    <suppress checks="" files="com.hazelcast.client.impl.client.ClientPortableHook"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.config.ClientConfig"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.connection.nio.ClientConnection"/>
-    <suppress checks="MethodCount" files="com.hazelcast.client.ClientEngineImpl"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.ClientEngineImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.impl.ClientEngineImpl"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.impl.ClientEngineImpl"/>
+    <!-- TODO: We need to get this wildcard suppressions fixed -->
     <suppress checks="" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
 
     <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
@@ -227,6 +229,7 @@
          god-object -->
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.BasicOperationService"/>
+    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.EventServiceImpl"/>
     <!-- the invocation just has many parameters because there are a lot of things to tune.-->
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicInvocation"/>
@@ -244,6 +247,7 @@
     <suppress checks="JavadocType" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.transaction[\\/]"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.transaction.client.ClientTxnPortableHook"/>
 
     <!-- Security -->
     <suppress checks="JavadocMethod" files="com.hazelcast.security[\\/]"/>
