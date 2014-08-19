@@ -240,7 +240,9 @@ public class MultiMapService implements ManagedService, RemoteService,
     }
 
     public void rollbackMigration(PartitionMigrationEvent event) {
-        clearMigrationData(event.getPartitionId());
+        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
+            clearMigrationData(event.getPartitionId());
+        }
     }
 
     public void clearPartitionReplica(int partitionId) {
