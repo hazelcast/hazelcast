@@ -64,7 +64,12 @@ public class PessimisticUpdateMember {
 }
 ```
 
+The IMap lock will automatically be collected by the garbage collector when the map entry is removed.
+
+The IMap lock is reentrant, but it doesn't support fairness.
+
 Another way can be acquiring a predictable `Lock` object from Hazelcast. By this way, every value in the map can be given a lock or you can create a stripe of locks.
+
 
 #### Optimistic Locking
 
