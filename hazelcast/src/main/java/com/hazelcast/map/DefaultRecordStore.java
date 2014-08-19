@@ -577,15 +577,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         final long now = getNow();
 
         Record record = records.get(key);
-        Object oldValue = null;
         if (record == null) {
             removeIndex(key);
             mapDataStore.remove(key, now);
             onStore(record);
         } else {
-            removeRecord(key, record, now);
+            return removeRecord(key, record, now) != null;
         }
-        return oldValue != null;
+        return false;
     }
 
     @Override
