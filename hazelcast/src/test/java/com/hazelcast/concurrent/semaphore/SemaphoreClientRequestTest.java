@@ -64,12 +64,12 @@ public class SemaphoreClientRequestTest extends ClientTestSupport {
         ISemaphore s = getInstance().getSemaphore(name);
         assertTrue(s.init(10));
 
-        getClient().send(new AcquireRequest(name, 3, 0));
+        getClient().send(new AcquireRequest(name, 3, 0,"acquire"));
         boolean result = (Boolean) getClient().receive();
         assertTrue(result);
         assertEquals(7, s.availablePermits());
 
-        getClient().send(new AcquireRequest(name, 8, 6 * 1000));
+        getClient().send(new AcquireRequest(name, 8, 6 * 1000,"acquire"));
         assertEquals(7, s.availablePermits());
 
         Thread.sleep(2 * 1000);
@@ -80,7 +80,7 @@ public class SemaphoreClientRequestTest extends ClientTestSupport {
         assertTrue(result);
         assertEquals(0, s.availablePermits());
 
-        getClient().send(new AcquireRequest(name, 4, 2 * 1000));
+        getClient().send(new AcquireRequest(name, 4, 2 * 1000,"acquire"));
         result = (Boolean) getClient().receive();
         assertFalse(result);
 

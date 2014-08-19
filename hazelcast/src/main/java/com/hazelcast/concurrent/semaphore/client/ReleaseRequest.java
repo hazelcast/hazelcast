@@ -54,7 +54,7 @@ public class ReleaseRequest extends SemaphoreRequest {
 
     @Override
     public Object[] getParameters() {
-        if (permitCount == 1) {
+        if (permitCount == -1 ) {
             return null;
         }
         return super.getParameters();

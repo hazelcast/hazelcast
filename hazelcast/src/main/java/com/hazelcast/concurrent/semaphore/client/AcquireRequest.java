@@ -30,13 +30,15 @@ import java.util.concurrent.TimeUnit;
 public class AcquireRequest extends SemaphoreRequest {
 
     private long timeout = -1;
+    private String methodName;
 
     public AcquireRequest() {
     }
 
-    public AcquireRequest(String name, int permitCount, long timeout) {
+    public AcquireRequest(String name, int permitCount, long timeout,String methodName) {
         super(name, permitCount);
         this.timeout = timeout;
+        this.methodName = methodName;
     }
 
     @Override
@@ -53,12 +55,14 @@ public class AcquireRequest extends SemaphoreRequest {
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeLong("t", timeout);
+        writer.writeUTF("m",methodName);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         timeout = reader.readLong("t");
+        methodName = reader.readUTF("m");
     }
 
     @Override
@@ -68,15 +72,12 @@ public class AcquireRequest extends SemaphoreRequest {
 
     @Override
     public String getMethodName() {
-        if (timeout != -1) {
-            return "tryAcquire";
-        }
-        return "acquire";
+        return methodName;
     }
 
     @Override
     public Object[] getParameters() {
-        if (permitCount == 1) {
+        if (permitCount == -1) {
             if (timeout > 0) {
                 // tryAcquire(timeout, TimeUnit)
                 return new Object[]{timeout, TimeUnit.MILLISECONDS};
