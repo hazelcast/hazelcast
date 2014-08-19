@@ -31,8 +31,8 @@ import java.util.concurrent.TimeUnit;
 
 public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
 
-    protected static String TRY_ACQUIRE = "tryAcquire";
-    protected static String ACQUIRE = "acquire";
+    protected static final String TRY_ACQUIRE = "tryAcquire";
+    protected static final String ACQUIRE = "acquire";
 
     private final String name;
     private volatile Data key;
@@ -50,13 +50,13 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     public void acquire() throws InterruptedException {
-        AcquireRequest request = new AcquireRequest(name, -1, -1,ACQUIRE);
+        AcquireRequest request = new AcquireRequest(name, -1, -1, ACQUIRE);
         invoke(request);
     }
 
     public void acquire(int permits) throws InterruptedException {
         checkNegative(permits);
-        AcquireRequest request = new AcquireRequest(name, permits, -1,ACQUIRE);
+        AcquireRequest request = new AcquireRequest(name, permits, -1, ACQUIRE);
         invoke(request);
     }
 
@@ -90,7 +90,7 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     public boolean tryAcquire() {
-        AcquireRequest request = new AcquireRequest(name, -1, -1,TRY_ACQUIRE);
+        AcquireRequest request = new AcquireRequest(name, -1, -1, TRY_ACQUIRE);
         Boolean result = invoke(request);
         return result;
     }
@@ -108,14 +108,14 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
         if (timeout == 0) {
             return tryAcquire();
         }
-        AcquireRequest request = new AcquireRequest(name, -1, unit.toMillis(timeout),TRY_ACQUIRE);
+        AcquireRequest request = new AcquireRequest(name, -1, unit.toMillis(timeout), TRY_ACQUIRE);
         Boolean result = invoke(request);
         return result;
     }
 
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
         checkNegative(permits);
-        AcquireRequest request = new AcquireRequest(name, permits, unit.toMillis(timeout),TRY_ACQUIRE);
+        AcquireRequest request = new AcquireRequest(name, permits, unit.toMillis(timeout), TRY_ACQUIRE);
         Boolean result = invoke(request);
         return result;
     }

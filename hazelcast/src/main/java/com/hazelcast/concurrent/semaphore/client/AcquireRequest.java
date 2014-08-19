@@ -35,7 +35,7 @@ public class AcquireRequest extends SemaphoreRequest {
     public AcquireRequest() {
     }
 
-    public AcquireRequest(String name, int permitCount, long timeout,String methodName) {
+    public AcquireRequest(String name, int permitCount, long timeout, String methodName) {
         super(name, permitCount);
         this.timeout = timeout;
         this.methodName = methodName;
@@ -55,7 +55,7 @@ public class AcquireRequest extends SemaphoreRequest {
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeLong("t", timeout);
-        writer.writeUTF("m",methodName);
+        writer.writeUTF("m", methodName);
     }
 
     @Override
