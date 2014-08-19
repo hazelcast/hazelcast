@@ -168,6 +168,28 @@ public class SortLimitTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPagingWithFilteringAndComparatorAndIndex() {
+        final IMap<Integer, Integer> map = initMap();
+
+        map.addIndex("this", true);
+        final Predicate lessEqual = Predicates.between("this", 12, 20);
+        final PagingPredicate predicate = new PagingPredicate(lessEqual, new TestComparator(false, IterationType.VALUE), pageSize);
+
+        Collection<Integer> values = map.values(predicate);
+        assertIterableEquals(values, 20, 19, 18, 17, 16);
+
+        predicate.nextPage();
+        assertEquals(16, predicate.getAnchor().getValue());
+        values = map.values(predicate);
+        assertIterableEquals(values, 15, 14, 13, 12);
+
+        predicate.nextPage();
+        assertEquals(12, predicate.getAnchor().getValue());
+        values = map.values(predicate);
+        assertEquals(0, values.size());
+    }
+
+    @Test
     public void testKeyPaging() {
         final IMap<Integer, Integer> map = initMap();
         map.clear();

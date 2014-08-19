@@ -101,12 +101,14 @@ import java.util.logging.Level;
  */
 public class WebFilter implements Filter {
 
+    public static final String WEB_FILTER_ATTRIBUTE_KEY = WebFilter.class.getName();
+
     protected static final String HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR = "::hz::";
 
-    private static final ILogger LOGGER = Logger.getLogger(WebFilter.class);
-    private static final LocalCacheEntry NULL_ENTRY = new LocalCacheEntry();
-    private static final String HAZELCAST_REQUEST = "*hazelcast-request";
-    private static final String HAZELCAST_SESSION_COOKIE_NAME = "hazelcast.sessionId";
+    protected static final ILogger LOGGER = Logger.getLogger(WebFilter.class);
+    protected static final LocalCacheEntry NULL_ENTRY = new LocalCacheEntry();
+    protected static final String HAZELCAST_REQUEST = "*hazelcast-request";
+    protected static final String HAZELCAST_SESSION_COOKIE_NAME = "hazelcast.sessionId";
 
     protected ServletContext servletContext;
     protected FilterConfig filterConfig;
@@ -166,7 +168,7 @@ public class WebFilter implements Filter {
         // Register the WebFilter with the ServletContext so SessionListener can look it up. The name
         // here is WebFilter.class instead of getClass() because WebFilter can have subclasses
         servletContext = config.getServletContext();
-        servletContext.setAttribute(WebFilter.class.getName(), this);
+        servletContext.setAttribute(WEB_FILTER_ATTRIBUTE_KEY, this);
 
         initInstance();
         initCookieParams();
@@ -296,7 +298,7 @@ public class WebFilter implements Filter {
         return key.substring(key.indexOf(HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR) + HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR.length());
     }
 
-    private HazelcastHttpSession createNewSession(RequestWrapper requestWrapper, String existingSessionId) {
+    protected HazelcastHttpSession createNewSession(RequestWrapper requestWrapper, String existingSessionId) {
         String id = existingSessionId == null ? generateSessionId() : existingSessionId;
         if (requestWrapper.getOriginalSession(false) != null) {
             LOGGER.finest("Original session exists!!!");
@@ -345,7 +347,7 @@ public class WebFilter implements Filter {
      *                   in the cluster; otherwise, {@code false} to only remove the session globally if this
      *                   node was the final node referencing it
      */
-    private void destroySession(HazelcastHttpSession session, boolean invalidate) {
+    protected void destroySession(HazelcastHttpSession session, boolean invalidate) {
         if (LOGGER.isFinestEnabled()) {
             LOGGER.finest("Destroying local session: " + session.getId());
         }
@@ -483,21 +485,21 @@ public class WebFilter implements Filter {
         }
     }
 
-    private static class ResponseWrapper extends HttpServletResponseWrapper {
+    protected static class ResponseWrapper extends HttpServletResponseWrapper {
 
         public ResponseWrapper(final HttpServletResponse original) {
             super(original);
         }
     }
 
-    private static class LocalCacheEntry {
+    protected static class LocalCacheEntry {
         volatile boolean dirty;
         volatile boolean reload;
         boolean removed;
         private Object value;
     }
 
-    private class RequestWrapper extends HttpServletRequestWrapper {
+    protected class RequestWrapper extends HttpServletRequestWrapper {
         final ResponseWrapper res;
         HazelcastHttpSession hazelcastSession;
         String requestedSessionId;
@@ -594,7 +596,7 @@ public class WebFilter implements Filter {
         }
     } // END of RequestWrapper
 
-    private class HazelcastHttpSession implements HttpSession {
+    protected class HazelcastHttpSession implements HttpSession {
 
         volatile boolean valid = true;
         final String id;
@@ -610,6 +612,14 @@ public class WebFilter implements Filter {
             this.originalSession = originalSession;
             this.deferredWrite = deferredWrite;
             this.localCache = deferredWrite ? buildLocalCache() : null;
+        }
+
+        public HttpSession getOriginalSession() {
+            return originalSession;
+        }
+
+        public String getOriginalSessionId() {
+            return originalSession != null ? originalSession.getId() : null;
         }
 
         public Object getAttribute(final String name) {

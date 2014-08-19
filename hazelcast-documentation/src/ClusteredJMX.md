@@ -7,7 +7,7 @@
 Clustered JMX via Management Center will allow you to monitor clustered statistics of distributed objects from a JMX interface.
 
 
-### Configuration
+### Clustered JMX Configuration
 
 In order to configure Clustered JMX, you should use two command line parameters for your Management Center deployment.
 

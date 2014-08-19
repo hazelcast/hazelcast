@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.EventHandler;

@@ -17,14 +17,13 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.ClientImpl;
-import com.hazelcast.client.ClientPrincipal;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LifecycleServiceImpl;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.AddressProvider;
+import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
@@ -68,14 +67,14 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     private static final ILogger LOGGER = Logger.getLogger(ClientClusterService.class);
 
     private final HazelcastClient client;
-    private final ClientConnectionManagerImpl connectionManager;
+    private final ClientConnectionManager connectionManager;
     private final ClusterListenerThread clusterThread;
     private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
 
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
-        this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
+        this.connectionManager = client.getConnectionManager();
         this.clusterThread = createListenerThread();
         final ClientConfig clientConfig = getClientConfig();
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
@@ -148,9 +147,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public Client getLocalClient() {
-        ClientPrincipal cp = connectionManager.getPrincipal();
+        final String uuid = connectionManager.getUuid();
         ClientConnection conn = clusterThread.getConnection();
-        return new ClientImpl(cp != null ? cp.getUuid() : null, conn != null ? conn.getLocalSocketAddress() : null);
+        return new ClientImpl(uuid, conn != null ? conn.getLocalSocketAddress() : null);
     }
 
     SerializationService getSerializationService() {

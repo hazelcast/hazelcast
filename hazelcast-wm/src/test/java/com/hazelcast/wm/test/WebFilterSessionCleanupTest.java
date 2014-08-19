@@ -38,7 +38,8 @@ import static org.junit.Assert.assertTrue;
  *
  * @since 3.3
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(WebTestRunner.class)
+@DelegatedRunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class WebFilterSessionCleanupTest extends AbstractWebFilterTest {
 

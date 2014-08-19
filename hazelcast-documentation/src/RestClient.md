@@ -49,12 +49,14 @@ Content-Length: 0
 
 **Creating/Updating Entries in a Map**
 
-You can put a new `key1/value1` entry into a map by using POST call to `http://10.20.17.1:5701/hazelcast/rest/maps/mapName/key1` URL. This call's content body should contain the value of the key. Also, if the call contains the MIME type, Hazelcast stores this information, too. 
+You can put a new `key1/value1` entry into a map by using POST call to 
+`http://10.20.17.1:5701/hazelcast/rest/maps/mapName/key1` URL. This call's content body should contain the value of the key. Also, if the call contains the MIME type, Hazelcast stores this information, too. 
 
 A sample POST call is shown below.
 
 ```plain
-$ curl -v -X POST -H "Content-Type: text/plain" -d "bar" http://10.20.17.1:5701/hazelcast/rest/maps/mapName/foo
+$ curl -v -X POST -H "Content-Type: text/plain" -d "bar" 
+    http://10.20.17.1:5701/hazelcast/rest/maps/mapName/foo
 ```
 
 It will return the following if successful:
@@ -67,7 +69,8 @@ It will return the following if successful:
 
 **Retrieving Entries from a Map**
 
-If you want to retrieve an entry, you can use GET call to `http://10.20.17.1:5701/hazelcast/rest/maps/mapName/key1`. You can also retrieve this entry from another member of your cluster such as `http://10.20.17.3:5701/hazelcast/rest/maps/mapName/key1`.
+If you want to retrieve an entry, you can use GET call to `http://10.20.17.1:5701/hazelcast/rest/maps/mapName/key1`. You can also retrieve this entry from another member of your cluster such as 
+`http://10.20.17.3:5701/hazelcast/rest/maps/mapName/key1`.
 
 A sample GET call is shown below.
 
@@ -123,7 +126,8 @@ $ curl -v -X DELETE http://10.20.17.1:5701/hazelcast/rest/maps/mapName
 You can use POST call to create an item on the queue. A sample is shown below.
 
 ```plain
-$ curl -v -X POST -H "Content-Type: text/plain" -d "foo" http://10.20.17.1:5701/hazelcast/rest/queues/myEvents
+$ curl -v -X POST -H "Content-Type: text/plain" -d "foo" 
+    http://10.20.17.1:5701/hazelcast/rest/queues/myEvents
 ```
 
 Above call is equivalent to `HazelcastInstance#getQueue("myEvents").offer("foo");`.

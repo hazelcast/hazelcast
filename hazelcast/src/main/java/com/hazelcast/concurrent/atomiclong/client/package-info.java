@@ -16,7 +16,7 @@
 
 /**
  * <p>This package contains client requests for the IAtomicLong.<br/>
- * This package contains all the client requests object to operate on the
+ * This package contains all the client request object to operate on the
  * IAtomicLong that are send by the client. This is done to reduce tight
  * coupling between client and server.
  *

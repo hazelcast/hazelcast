@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.EntryEvent;
@@ -40,10 +41,11 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.multimap.impl.operations.client.AddEntryListenerRequest;
 import com.hazelcast.multimap.impl.operations.client.ClearRequest;
-import com.hazelcast.multimap.impl.operations.client.ContainsEntryRequest;
+import com.hazelcast.multimap.impl.operations.client.ContainsRequest;
 import com.hazelcast.multimap.impl.operations.client.CountRequest;
 import com.hazelcast.multimap.impl.operations.client.EntrySetRequest;
 import com.hazelcast.multimap.impl.operations.client.GetAllRequest;
+import com.hazelcast.multimap.impl.operations.client.KeyBasedContainsRequest;
 import com.hazelcast.multimap.impl.operations.client.KeySetRequest;
 import com.hazelcast.multimap.impl.operations.client.MultiMapIsLockedRequest;
 import com.hazelcast.multimap.impl.operations.client.MultiMapLockRequest;
@@ -160,7 +162,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        ContainsEntryRequest request = new ContainsEntryRequest(name, keyData, null);
+        ClientRequest request = new KeyBasedContainsRequest(name, keyData, null);
         Boolean result = invoke(request, keyData);
         return result;
     }
@@ -169,7 +171,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ValidationUtil.checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        ContainsEntryRequest request = new ContainsEntryRequest(name, null, valueData);
+        ClientRequest request = new ContainsRequest(name, valueData);
         Boolean result = invoke(request);
         return result;
     }
@@ -180,7 +182,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         Data keyData = toData(key);
         Data valueData = toData(value);
-        ContainsEntryRequest request = new ContainsEntryRequest(name, keyData, valueData);
+        ClientRequest request = new KeyBasedContainsRequest(name, keyData, valueData);
         Boolean result = invoke(request, keyData);
         return result;
     }

@@ -30,13 +30,33 @@ import com.hazelcast.spi.OperationService;
  */
 public interface InternalOperationService extends OperationService {
 
-    void receive(Packet packet);
-
     void onMemberLeft(MemberImpl member);
 
     boolean isCallTimedOut(Operation op);
 
     void notifyBackupCall(long callId);
+
+    /**
+     * Executes a Runnable on a thread that is responsible for a given partition.
+     *
+     * This method is typically used by the {@link com.hazelcast.client.ClientEngine} when it has received a Packet containing
+     * a request that needs to be processed. The advantage of this method is that the request can immediately be handed over to
+     * a thread that can take care of it; either execute it directly or send it to the remote machine.
+     *
+     * @param task the task to execute
+     * @param partitionId the partition id. A partition of smaller than 0, means that the task is going to be executed in
+     *                    the generic operation-threads and not on a partition specific operation-thread.
+     */
+    void execute(Runnable task, int partitionId);
+
+    /**
+     * Executes an operation.
+     *
+     * This method is typically called by the IO system when an operation-packet is received.
+     *
+     * @param packet the packet containing the serialized operation.
+     */
+    void executeOperation(Packet packet);
 
     /**
      * Shuts down this InternalOperationService.

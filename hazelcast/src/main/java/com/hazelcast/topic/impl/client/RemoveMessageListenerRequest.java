@@ -16,7 +16,7 @@
 
 package com.hazelcast.topic.impl.client;
 
-import com.hazelcast.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.topic.impl.TopicPortableHook;

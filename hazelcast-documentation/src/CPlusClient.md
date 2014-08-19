@@ -57,7 +57,9 @@ For Linux, there are two distributions; 32 bit and 64 bit.
 
 Sample script to build with static library:
 
-`g++ main.cpp -pthread -I./external/include -I./hazelcast/include ./hazelcast/lib/libHazelcastClientStatic_64.a ./external/lib/libz.a`
+`g++ main.cpp -pthread -I./external/include -I./hazelcast/include 
+     ./hazelcast/lib/libHazelcastClientStatic_64.a 
+     ./external/lib/libz.a`
 
 Sample script to build with shared library:
 

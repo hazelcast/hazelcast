@@ -189,6 +189,11 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
+    public void execute(Runnable task, int partitionId) {
+        scheduler.execute(task, partitionId);
+    }
+
+    @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         if (partitionId < 0) {
             throw new IllegalArgumentException("Partition id cannot be negative!");
@@ -206,7 +211,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @PrivateApi
     @Override
-    public void receive(final Packet packet) {
+    public void executeOperation(final Packet packet) {
         scheduler.execute(packet);
     }
 
@@ -407,7 +412,11 @@ final class BasicOperationService implements InternalOperationService {
         logger.finest("Stopping operation threads...");
         final Object response = new HazelcastInstanceNotActiveException();
         for (BasicInvocation invocation : invocations.values()) {
-            invocation.notify(response);
+            try {
+                invocation.notify(response);
+            } catch (Throwable e) {
+                logger.warning(invocation + " could not be notified with shutdown message -> " + e.getMessage());
+            }
         }
         invocations.clear();
         scheduler.shutdown();
@@ -564,7 +573,10 @@ final class BasicOperationService implements InternalOperationService {
         private void notifyRemoteCall(NormalResponse response) {
             BasicInvocation invocation = invocations.get(response.getCallId());
             if (invocation == null) {
-                throw new HazelcastException("No invocation for response:" + response);
+                if (nodeEngine.isActive()) {
+                    throw new HazelcastException("No invocation for response: " + response);
+                }
+                return;
             }
 
             invocation.notify(response);

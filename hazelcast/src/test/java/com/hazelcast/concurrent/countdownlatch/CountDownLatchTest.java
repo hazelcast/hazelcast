@@ -25,16 +25,13 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.concurrent.TimeUnit;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 /**
  * @author mdogan 1/16/13
@@ -42,6 +39,13 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class CountDownLatchTest extends HazelcastTestSupport {
+
+    @Test (expected = IllegalArgumentException.class)
+    public void testTrySetCount_whenArgumentNegative() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch("latch");
+        latch.trySetCount(-20);
+    }
 
     @Test
     @ClientCompatibleTest

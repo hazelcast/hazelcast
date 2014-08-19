@@ -119,7 +119,8 @@ IHazelcastInstance defaultClient = HazelcastClient.NewHazelcastClient();
 
 ...
 
-IHazelcastInstance xmlConfClient = Hazelcast.NewHazelcastClient(@"..\Hazelcast.Net\Resources\hazelcast-client.xml");
+IHazelcastInstance xmlConfClient = Hazelcast
+    .NewHazelcastClient(@"..\Hazelcast.Net\Resources\hazelcast-client.xml");
 ```
 
 IHazelcastInstance interface is the starting point where all distributed objects can be obtained using it.

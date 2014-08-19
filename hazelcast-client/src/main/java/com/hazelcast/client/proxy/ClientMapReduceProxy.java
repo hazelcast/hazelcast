@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.InvocationClientRequest;
+import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientProxy;

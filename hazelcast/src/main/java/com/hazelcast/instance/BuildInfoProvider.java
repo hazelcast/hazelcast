@@ -16,7 +16,10 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.util.HazelcastUtil;
+import com.hazelcast.util.EmptyStatement;
+
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * Provides information about current Hazelcast build.
@@ -27,18 +30,32 @@ public final class BuildInfoProvider {
     }
 
     public static BuildInfo getBuildInfo() {
-        return BuildInfoHolder.INFO;
-    }
+        final InputStream inRuntimeProperties =
+                BuildInfoProvider.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
+        Properties runtimeProperties = new Properties();
+        try {
+            if (inRuntimeProperties != null) {
+                runtimeProperties.load(inRuntimeProperties);
+                inRuntimeProperties.close();
+            }
+        } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
+        }
 
-    private static final class BuildInfoHolder {
-        static final BuildInfo INFO = createNew();
-    }
+        String version = runtimeProperties.getProperty("hazelcast.version");
+        String distribution = runtimeProperties.getProperty("hazelcast.distribution");
+        boolean enterprise = !"Hazelcast".equals(distribution);
 
-    private static BuildInfo createNew() {
-        final String version = HazelcastUtil.getVersion();
-        final String build = HazelcastUtil.getBuild();
-        final int buildNumber = HazelcastUtil.getBuildNumber();
-        final boolean enterprise = HazelcastUtil.isEnterprise();
+        // override BUILD_NUMBER with a system property
+        String build;
+        Integer hazelcastBuild = Integer.getInteger("hazelcast.build", -1);
+        if (hazelcastBuild == -1) {
+            build = runtimeProperties.getProperty("hazelcast.build");
+        } else {
+            build = String.valueOf(hazelcastBuild);
+        }
+        int buildNumber = Integer.valueOf(build);
+
         return new BuildInfo(version, build, buildNumber, enterprise);
     }
 

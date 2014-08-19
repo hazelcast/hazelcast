@@ -53,6 +53,7 @@ public class UpdateMapConfigOperation extends Operation {
         newConfig.setMaxIdleSeconds(mapConfig.getMaxIdleSeconds());
         newConfig.setEvictionPolicy(mapConfig.getEvictionPolicy());
         newConfig.setEvictionPercentage(mapConfig.getEvictionPercentage());
+        newConfig.setMinEvictionCheckMillis(mapConfig.getMinEvictionCheckMillis());
         newConfig.setReadBackupData(mapConfig.isReadBackupData());
         newConfig.setBackupCount(mapConfig.getBackupCount());
         newConfig.setAsyncBackupCount(mapConfig.getAsyncBackupCount());

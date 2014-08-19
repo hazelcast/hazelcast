@@ -29,10 +29,7 @@ public class TestServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-
-		if (req.getRequestURI().endsWith("redirect"))
-		{
+		if (req.getRequestURI().endsWith("redirect")) {
 			//Don't touch session before redirect
 			resp.sendRedirect("/");
 			return;

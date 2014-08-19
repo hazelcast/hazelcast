@@ -132,6 +132,16 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
+            <xs:element name="min-eviction-check-millis" type="xs:unsignedLong" minOccurs="0" maxOccurs="1"
+                        default="100">
+                <xs:annotation>
+                    <xs:documentation>
+                        Minimum time in milliseconds which should pass before checking
+                        if a partition of this map is evictable or not.
+                        Default value is 100 millis.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="merge-policy" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
@@ -174,7 +184,7 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -366,7 +376,8 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="topology-changed-strategy" type="topology-changed-strategy" minOccurs="0" maxOccurs="1" default="CANCEL_RUNNING_OPERATION">
+            <xs:element name="topology-changed-strategy" type="topology-changed-strategy" minOccurs="0" maxOccurs="1"
+                        default="CANCEL_RUNNING_OPERATION">
                 <xs:annotation>
                     <xs:documentation>
                         The topology-changed-strategy defines how the map reduce framework will react on topology
@@ -487,7 +498,7 @@
     </xs:complexType>
     <xs:complexType name="interfaces">
         <xs:sequence>
-            <xs:element name="interface" type="xs:string" default="127.0.0.1"  minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="interface" type="xs:string" default="127.0.0.1" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
     </xs:complexType>
@@ -643,8 +654,8 @@
             <xs:extension base="xs:string">
                 <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
                 <xs:attribute name="update-interval" type="xs:integer" default="3" use="optional"/>
-                <xs:attribute name="cluster-id" type="xs:string"  use="optional"/>
-                <xs:attribute name="security-token" type="xs:string"  use="optional"/>
+                <xs:attribute name="cluster-id" type="xs:string" use="optional"/>
+                <xs:attribute name="security-token" type="xs:string" use="optional"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -913,11 +924,8 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="serializer">
-        <xs:simpleContent>
-            <xs:extension base="xs:string">
-                <xs:attribute name="type-class" type="xs:string"/>
-            </xs:extension>
-        </xs:simpleContent>
+        <xs:attribute name="class-name" type="xs:string" use="required"/>
+        <xs:attribute name="type-class" type="xs:string" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="socket-interceptor">
@@ -941,14 +949,14 @@
         </xs:sequence>
     </xs:complexType>
 
-	<xs:element name="member-attributes">
-    	<xs:complexType >
-        	<xs:sequence>
-            	<xs:element name="attribute" type="attribute" maxOccurs="unbounded"/>
-        	</xs:sequence>
-    	</xs:complexType>
+    <xs:element name="member-attributes">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="attribute" type="attribute" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
         <xs:unique name="uniqueAttributeConstraint">
-        	<xs:selector xpath="./*"/>
+            <xs:selector xpath="./*"/>
             <xs:field xpath="@name"/>
         </xs:unique>
     </xs:element>
@@ -970,9 +978,9 @@
     <xs:complexType name="attribute">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-        		<xs:attribute name="name" use="required" type="attributeName"/>
-        		<!--xs:attribute name="name" use="required" type="xs:ID"/-->
-        		<xs:attribute name="type" use="optional" default="string" type="attributeTypeEnum"/>
+                <xs:attribute name="name" use="required" type="attributeName"/>
+                <!--xs:attribute name="name" use="required" type="xs:ID"/-->
+                <xs:attribute name="type" use="optional" default="string" type="attributeTypeEnum"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -984,7 +992,7 @@
 
     <xs:simpleType name="topology-changed-strategy">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="CANCEL_RUNNING_OPERATION" />
+            <xs:enumeration value="CANCEL_RUNNING_OPERATION"/>
             <xs:enumeration value="DISCARD_AND_RESTART"/>
         </xs:restriction>
     </xs:simpleType>
