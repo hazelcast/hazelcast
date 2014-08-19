@@ -73,6 +73,12 @@ locks can be available for live members immediately.
 two nodes from different clusters can acquire the same lock.
 For more information on places where split brain can be handled, please see [Split Brain](#how-is-split-brain-syndrome-handled).
 
+- Locks are not automatically removed. If a lock isn't used anymore, Hazelcast will not automatically garbage collect the lock and
+this can lead to an OutOfMemoryError. So if you create locks on the fly, make sure they are destroyed.
+
+- The IMap also providing locking support on the entry level using the IMap.lock(key) method. Although the same infrastructure 
+is being used, the IMap.lock(key) is not an ILock and it isn't possible to expose it directly.
+
 ### ICondition
 
 ICondition is the distributed implementation of `notify`, `notifyAll` and `wait` operations on Java object . It can be used to synchronize
