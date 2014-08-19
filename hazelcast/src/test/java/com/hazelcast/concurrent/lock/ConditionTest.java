@@ -554,6 +554,7 @@ public class ConditionTest extends HazelcastTestSupport {
         lock.unlock();
     }
 
+    // See #3262
     @Test(timeout = 60000)
     @Ignore
     public void testAwait_whenNegativeTimeout() throws InterruptedException {
