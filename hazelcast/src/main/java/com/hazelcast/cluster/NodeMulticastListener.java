@@ -61,6 +61,11 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private void handleActiveAndJoined(JoinMessage joinMessage) {
+       if(!(joinMessage instanceof JoinRequest)){
+           logDroppedMessage(joinMessage);
+           return;
+       }
+
        if (node.isMaster()) {
             JoinRequest request = (JoinRequest) joinMessage;
             JoinMessage response = new JoinMessage(request.getPacketVersion(), request.getBuildNumber(),
