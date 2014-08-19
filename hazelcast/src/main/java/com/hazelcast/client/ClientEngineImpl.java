@@ -54,7 +54,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionManagerService;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
@@ -241,8 +240,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
             return null;
         }
 
-        String clientUuid = UuidUtil.createClientUuid(conn.getEndPoint());
-        ClientEndpoint endpoint = new ClientEndpoint(ClientEngineImpl.this, conn, clientUuid);
+        ClientEndpoint endpoint = new ClientEndpoint(ClientEngineImpl.this, conn);
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
             logger.severe("An endpoint already exists for connection:" + conn);
         }

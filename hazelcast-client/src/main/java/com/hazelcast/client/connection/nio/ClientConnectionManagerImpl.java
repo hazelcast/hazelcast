@@ -444,7 +444,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         @Override
         public void auth(ClientConnection connection) throws AuthenticationException, IOException {
-            final Object response = authenticate(connection, credentials, principal, true, true);
+            final Object response = authenticate(connection, credentials, principal, true);
             principal = (ClientPrincipal) response;
         }
     }
@@ -452,17 +452,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private class ClusterAuthenticator implements Authenticator {
         @Override
         public void auth(ClientConnection connection) throws AuthenticationException, IOException {
-            authenticate(connection, credentials, principal, false, false);
+            authenticate(connection, credentials, principal, false);
         }
     }
 
     private Object authenticate(ClientConnection connection, Credentials credentials, ClientPrincipal principal,
-                                boolean reAuth, boolean firstConnection) throws IOException {
+                                boolean firstConnection) throws IOException {
         final SerializationService ss = getSerializationService();
         AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
         connection.init();
-        auth.setReAuth(reAuth);
-        auth.setFirstConnection(firstConnection);
+        auth.setOwnerConnection(firstConnection);
         SerializableCollection collectionWrapper; //contains remoteAddress and principal
         try {
             collectionWrapper = (SerializableCollection) sendAndReceive(auth, connection);
