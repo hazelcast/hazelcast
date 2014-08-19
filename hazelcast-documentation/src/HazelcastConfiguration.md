@@ -453,6 +453,44 @@ This configuration is for ???. It has below attributes.
 - message-listeners:
 
 
+### Set Configuration
+
+**Declarative:**
+
+```xml
+<set name="default">
+   <backup-count>1</backup-count>
+   <async-backup-count>0</async-backup-count>
+   <max-size>10</max-size>
+   <statistics-enabled>true</statistics-enabled>
+   <item-listeners>
+      <item-listener>???<item-listener>
+   </item-listeners>
+</set>
+```
+
+**Programmatic:**
+
+```java
+Config config = new Config();
+config.getGroupConfig().setName( "MyGroup" ).setPassword( "5551234" );
+```
+   
+
+It has below parameters.
+
+
+
+
+
+- backup-count:
+- async-backup-count:
+- statistics-enabled:
+- max-size:
+- item-listeners:
+
+
+
 ### List Configuration
 
 It has below attributes.
@@ -462,18 +500,8 @@ It has below attributes.
 - statistics-enabled:
 - max-size:
 - item-listeners:
-- statistics-enabled:
 
-### Set Configuration
 
-This configuration is for ???. It has below attributes.
-
-- backup-count:
-- async-backup-count:
-- statistics-enabled:
-- max-size:
-- item-listeners:
-- statistics-enabled:
 
 ### Semaphore Configuration
 
