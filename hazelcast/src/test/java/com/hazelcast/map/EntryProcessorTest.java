@@ -66,6 +66,7 @@ import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -273,13 +274,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = instance2.getMap("map");
         map.put(key, simpleValue);
         map.executeOnKey(key, new EntryInc());
-
-        SimpleValue expected = new SimpleValue(2);
-        assertTrue(expected.equals(map.get(key)));
+        assertTrue(simpleValue.equals(map.get(key)));
 
         instance1.shutdown();
 
-        assertTrue(expected.equals(map.get(key)));
+        assertTrue(simpleValue.equals(map.get(key)));
 
     }
 
@@ -305,16 +304,14 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         map.executeOnKeys(keys, new EntryInc());
 
-        SimpleValue expectedValue = new SimpleValue(2);
-
         for (Object key : keys) {
-            assertEquals(expectedValue, map.get(key));
+            assertEquals(simpleValue, map.get(key));
         }
 
         instance1.shutdown();
 
         for (Object key : keys) {
-            assertEquals(expectedValue, map.get(key));
+            assertEquals(simpleValue, map.get(key));
         }
 
     }
@@ -644,7 +641,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final AtomicInteger updateKey1Sum = new AtomicInteger(0);
         final AtomicInteger removeKey1Sum = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(6);
-        map.addEntryListener(new EntryListener<Integer, Integer>() {
+        map.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
                 addCount.incrementAndGet();
@@ -670,20 +667,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                     updateKey1Sum.addAndGet(event.getValue());
                 }
                 latch.countDown();
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
-            }
-
-            @Override
-            public void mapEvicted(MapEvent event) {
-
-            }
-
-            @Override
-            public void mapCleared(MapEvent event) {
-
             }
         }, true);
 
@@ -719,35 +702,72 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-
-    /**
-     * https://github.com/hazelcast/hazelcast/issues/969 not valid any more
-     * since reads trigger event firing.
-     */
     @Test
-    public void testMapReadFiresEvent() throws InterruptedException {
-        final String mapName = randomMapName();
-
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance node = nodeFactory.newHazelcastInstance();
-        IMap<Integer, Integer> map = node.getMap(mapName);
-
+    public void testIssue969() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessorEntryListeners");
         final AtomicInteger addCount = new AtomicInteger(0);
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        map.addEntryListener(new EntryAdapter<Integer, Integer>() {
+        final AtomicInteger updateCount = new AtomicInteger(0);
+        final AtomicInteger removeCount = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(3);
+        map.addEntryListener(new EntryListener<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
                 addCount.incrementAndGet();
                 latch.countDown();
             }
+
+            @Override
+            public void entryRemoved(EntryEvent<Integer, Integer> event) {
+                removeCount.incrementAndGet();
+                latch.countDown();
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent<Integer, Integer> event) {
+                updateCount.incrementAndGet();
+                latch.countDown();
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent<Integer, Integer> event) {
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
+            }
         }, true);
 
-        map.put(1, 1);
+        map.executeOnKey(1, new ValueReaderEntryProcessor());
+        assertNull(map.get(1));
         map.executeOnKey(1, new ValueReaderEntryProcessor());
 
-        assertOpenEventually(latch);
-        assertEquals(1, addCount.get());
+        map.put(1, 3);
+        assertNotNull(map.get(1));
+        map.executeOnKey(1, new ValueReaderEntryProcessor());
+
+        map.put(2, 2);
+        ValueReaderEntryProcessor valueReaderEntryProcessor = new ValueReaderEntryProcessor();
+        map.executeOnKey(2, valueReaderEntryProcessor);
+        assertEquals(2, valueReaderEntryProcessor.getValue().intValue());
+
+        map.put(2, 5);
+        map.executeOnKey(2, valueReaderEntryProcessor);
+        assertEquals(5, valueReaderEntryProcessor.getValue().intValue());
+
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
+        assertEquals(2, addCount.get());
+        assertEquals(0, removeCount.get());
+        assertEquals(1, updateCount.get());
     }
 
     private static class ValueReaderEntryProcessor extends AbstractEntryProcessor {
@@ -992,13 +1012,14 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     /**
-     * Expected serialization count is 1 in Object format
-     * since event publishing needs a Data type.
+     * Expected serialization count is 0 in Object format
+     * when there is no registered event listener.
+     * If there is an event listener serialization count should be 1.
      */
     @Test
     public void testEntryProcessorSerializationCountWithObjectFormat() {
         final String mapName = randomMapName();
-        final int expectedSerializationCount = 1;
+        final int expectedSerializationCount = 0;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         Config cfg = new Config();
         cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);

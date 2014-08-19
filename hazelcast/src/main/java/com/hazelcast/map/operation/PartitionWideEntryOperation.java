@@ -69,24 +69,19 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
             }
 
             final long now = getNow();
-
             final Map.Entry entry = createMapEntry(key, value);
 
             final Data response = process(entry);
 
             addToResponses(dataKey, response);
-
+            // first call noOp, other if checks below depends on it.
             if (noOp(entry, oldValue)) {
                 continue;
             }
-
             if (entryRemoved(entry, dataKey, oldValue, now)) {
                 continue;
             }
-
-            if (entryAddedOrUpdated(entry, dataKey, oldValue, now)) {
-                continue;
-            }
+            entryAddedOrUpdated(entry, dataKey, oldValue, now);
         }
     }
 

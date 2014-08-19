@@ -43,10 +43,8 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
             if (keyNotOwnedByThisPartition(dataKey)) {
                 continue;
             }
-
             final long now = getNow();
-
-             final Object oldValue = getValueFor(dataKey);
+            final Object oldValue = getValueFor(dataKey);
 
             final Object key = toObject(dataKey);
             final Object value = toObject(oldValue);
@@ -56,15 +54,13 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
             final Data response = process(entry);
 
             addToResponses(dataKey, response);
-
+            // first call noOp, other if checks below depends on it.
             if (noOp(entry, oldValue)) {
                 continue;
             }
-
             if (entryRemoved(entry, dataKey, oldValue, now)) {
                 continue;
             }
-
             if (entryAddedOrUpdated(entry, dataKey, oldValue, now)) {
                 continue;
             }

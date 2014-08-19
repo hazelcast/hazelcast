@@ -106,37 +106,35 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
         return mapServiceContext.getMapEventPublisher();
     }
 
-    protected void publishEntryEvent(Data key, Object value, Object oldValue, EntryEventType eventType) {
-        if (hasRegisteredListenerForThisMap()) {
-            oldValue = nullifyOldValueIfNecessary(oldValue, eventType);
-            final MapEventPublisher mapEventPublisher = getMapEventPublisher();
-            mapEventPublisher.
-                    publishEvent(getCallerAddress(), name, eventType, key, toData(oldValue), toData(value));
-        }
-    }
-
     protected LocalMapStatsImpl getLocalMapStats() {
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
         return localMapStatsProvider.getLocalMapStatsImpl(name);
     }
 
-    protected EntryEventType pickEvent(Object value, Object oldValue) {
-        if (oldValue == null && value != null) {
-            return EntryEventType.ADDED;
-        } else if (oldValue != null && value != null) {
-            return EntryEventType.UPDATED;
-        } else if (value == null) {
+    private EntryEventType pickEventTypeOrNull(Map.Entry entry, Object oldValue) {
+        final Object value = entry.getValue();
+        if (value == null) {
             return EntryEventType.REMOVED;
+        } else {
+            if (oldValue == null) {
+                return EntryEventType.ADDED;
+            }
+            final MapEntrySimple mapEntrySimple = (MapEntrySimple) entry;
+            if (mapEntrySimple.isModified()) {
+                return EntryEventType.UPDATED;
+            }
         }
-        throw new RuntimeException("Unexpected event type. This should not be happen.");
+        // return null for read only operations.
+        return null;
     }
 
     /**
      * Entry has not exist and no add operation has been done.
      */
     protected boolean noOp(Map.Entry entry, Object oldValue) {
-        return oldValue == null && entry.getValue() == null;
+        final MapEntrySimple mapEntrySimple = (MapEntrySimple) entry;
+        return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
     }
 
     protected boolean entryRemoved(Map.Entry entry, Data key, Object oldValue, long now) {
@@ -162,11 +160,15 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
     }
 
     protected void doPostOps(Data key, Object oldValue, Map.Entry entry) {
-        final Object newValue = entry.getValue();
-        final EntryEventType eventType = pickEvent(newValue, oldValue);
+        final EntryEventType eventType = pickEventTypeOrNull(entry, oldValue);
+        if (eventType == null) {
+            return;
+        }
 
+        Object newValue = entry.getValue();
         invalidateNearCaches(key);
-        publishEntryEvent(key, newValue, oldValue, eventType);
+        // assign it again since we don't want to serialize newValue every time.
+        newValue = publishEntryEvent(key, newValue, oldValue, eventType);
         publishWanReplicationEvent(key, newValue, eventType);
     }
 
@@ -216,6 +218,17 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
         }
     }
 
+    protected Object publishEntryEvent(Data key, Object value, Object oldValue, EntryEventType eventType) {
+        if (hasRegisteredListenerForThisMap()) {
+            oldValue = nullifyOldValueIfNecessary(oldValue, eventType);
+            final MapEventPublisher mapEventPublisher = getMapEventPublisher();
+            value = toData(value);
+            mapEventPublisher.
+                    publishEvent(getCallerAddress(), name, eventType, key, toData(oldValue), (Data) value);
+        }
+        return value;
+    }
+
     protected void publishWanReplicationEvent(Data key, Object value, EntryEventType eventType) {
         final MapContainer mapContainer = this.mapContainer;
         if (mapContainer.getWanReplicationPublisher() == null
@@ -247,12 +260,13 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
     }
 
     protected void addToResponses(Data key, Data response) {
+        if (response == null) {
+            return;
+        }
         if (responses == null) {
             responses = new MapEntrySet();
         }
-        if (response != null) {
-            responses.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, response));
-        }
+        responses.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, response));
     }
 
     protected Data process(Map.Entry entry) {

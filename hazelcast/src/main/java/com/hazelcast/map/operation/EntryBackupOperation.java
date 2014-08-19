@@ -30,6 +30,7 @@ import java.util.Map;
 
 public class EntryBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
+    protected transient Object oldValue;
     private EntryBackupProcessor entryProcessor;
 
     public EntryBackupOperation() {
@@ -49,22 +50,24 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public void run() {
-        Map.Entry<Data, Object> entry = getEntry(dataKey);
+        oldValue = getValueFor(dataKey);
 
-        final Object key = toObject(entry.getKey());
-        final Object value = toObject(entry.getValue());
+        final Object key = toObject(dataKey);
+        final Object value = toObject(oldValue);
 
-        entry = createMapEntry(key, value);
+        final Map.Entry entry = createMapEntry(key, value);
 
-        process(entry);
+        processBackup(entry);
 
-        if (entryRemoved(entry)) {
+        if (noOpBackup(entry)) {
             return;
         }
 
-        if (entryAddedOrUpdated(entry)) {
+        if (entryRemovedBackup(entry)) {
             return;
         }
+
+        entryAddedOrUpdatedBackup(entry);
     }
 
 
@@ -90,11 +93,11 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         return "EntryBackupOperation{}";
     }
 
-    private void process(Map.Entry entry) {
+    private void processBackup(Map.Entry entry) {
         entryProcessor.processBackup(entry);
     }
 
-    private boolean entryRemoved(Map.Entry entry) {
+    private boolean entryRemovedBackup(Map.Entry entry) {
         final Object value = entry.getValue();
         if (value == null) {
             recordStore.removeBackup(dataKey);
@@ -103,7 +106,7 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         return false;
     }
 
-    private boolean entryAddedOrUpdated(Map.Entry entry) {
+    private boolean entryAddedOrUpdatedBackup(Map.Entry entry) {
         final Object value = entry.getValue();
         if (value != null) {
             recordStore.putBackup(dataKey, value);
@@ -112,13 +115,23 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         return false;
     }
 
+    /**
+     * noOpBackup in two cases:
+     * - setValue not called on entry
+     * - or entry does not exist and no add operation is done.
+     */
+    private boolean noOpBackup(Map.Entry entry) {
+        final MapEntrySimple mapEntrySimple = (MapEntrySimple) entry;
+        return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
+    }
+
 
     private Map.Entry createMapEntry(Object key, Object value) {
         return new MapEntrySimple(key, value);
     }
 
-    private Map.Entry<Data, Object> getEntry(Data key) {
-        return recordStore.getMapEntryForBackup(key);
+    private Object getValueFor(Data dataKey) {
+        return recordStore.getMapEntry(dataKey).getValue();
     }
 
     private Object toObject(Object data) {

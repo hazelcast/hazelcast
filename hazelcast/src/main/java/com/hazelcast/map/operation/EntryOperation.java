@@ -54,7 +54,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private EntryProcessor entryProcessor;
     private EntryEventType eventType;
     private Object response;
-
+    private transient Object dataValue;
 
     public EntryOperation() {
     }
@@ -74,7 +74,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     @Override
     public void run() {
         final long now = getNow();
-
         oldValue = getValueFor(dataKey);
 
         final Object key = toObject(dataKey);
@@ -82,19 +81,17 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
         final Map.Entry entry = createMapEntry(key, value);
 
-        response = process(entry);
+        //dataValue = entry.getValue();
 
+        response = process(entry);
+        // first call noOp, other if checks below depends on it.
         if (noOp(entry)) {
             return;
         }
-
         if (entryRemoved(entry, now)) {
             return;
         }
-
-        if (entryAddedOrUpdated(entry, now)) {
-            return;
-        }
+        entryAddedOrUpdated(entry, now);
     }
 
     @Override
@@ -175,10 +172,13 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     /**
-     * Entry does not exist and no add operation is done.
+     * noOp in two cases:
+     * - setValue not called on entry
+     * - or entry does not exist and no add operation is done.
      */
     private boolean noOp(Map.Entry entry) {
-        return oldValue == null && entry.getValue() == null;
+        final MapEntrySimple mapEntrySimple = (MapEntrySimple) entry;
+        return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
     }
 
     private boolean entryRemoved(Map.Entry entry, long now) {
@@ -186,7 +186,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (value == null) {
             recordStore.remove(dataKey);
             getLocalMapStats().incrementRemoves(getLatencyFrom(now));
-            eventType = pickEvent(value);
+            eventType = pickEventTypeOrNull(entry);
             return true;
         }
         return false;
@@ -200,22 +200,28 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (value != null) {
             put(value);
             getLocalMapStats().incrementPuts(getLatencyFrom(now));
-            dataValue = toData(value);
-            eventType = pickEvent(value);
+            eventType = pickEventTypeOrNull(entry);
             return true;
         }
         return false;
     }
 
-    private EntryEventType pickEvent(Object value) {
-        if (oldValue == null && value != null) {
-            return EntryEventType.ADDED;
-        } else if (oldValue != null && value != null) {
-            return EntryEventType.UPDATED;
-        } else if (value == null) {
+    private EntryEventType pickEventTypeOrNull(Map.Entry entry) {
+        final Object value = entry.getValue();
+        if (value == null) {
             return EntryEventType.REMOVED;
+        } else {
+            dataValue = value;
+            if (oldValue == null) {
+                return EntryEventType.ADDED;
+            }
+            final MapEntrySimple mapEntrySimple = (MapEntrySimple) entry;
+            if (mapEntrySimple.isModified()) {
+                return EntryEventType.UPDATED;
+            }
         }
-        throw new RuntimeException("Unexpected event type. This should not be happen.");
+        // return null for read only operations.
+        return null;
     }
 
     private void put(Object value) {
@@ -265,8 +271,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (hasRegisteredListenerForThisMap()) {
             nullifyOldValueIfNecessary();
             final MapEventPublisher mapEventPublisher = getMapEventPublisher();
+            dataValue = toData(dataValue);
             mapEventPublisher.
-                    publishEvent(getCallerAddress(), name, eventType, dataKey, toData(oldValue), dataValue);
+                    publishEvent(getCallerAddress(), name, eventType, dataKey, toData(oldValue), (Data) dataValue);
         }
     }
 
@@ -284,8 +291,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         } else {
             final Record record = recordStore.getRecord(key);
             if (record != null) {
-                final Data dataValueAsData = toData(dataValue);
-                final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
+                dataValue = toData(dataValue);
+                final EntryView entryView = createSimpleEntryView(key, dataValue, record);
                 mapEventPublisher.publishWanReplicationUpdate(name, entryView);
             }
         }

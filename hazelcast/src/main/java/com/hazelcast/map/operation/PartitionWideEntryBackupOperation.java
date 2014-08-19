@@ -53,7 +53,6 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
             if (!applyPredicate(dataKey, key, value)) {
                 continue;
             }
-
             final Map.Entry entry = createMapEntry(key, value);
 
             processBackup(entry);
@@ -64,9 +63,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
             if (entryRemovedBackup(entry, dataKey)) {
                 continue;
             }
-            if (entryAddedOrUpdatedBackup(entry, dataKey)) {
-                continue;
-            }
+            entryAddedOrUpdatedBackup(entry, dataKey);
         }
     }
 
