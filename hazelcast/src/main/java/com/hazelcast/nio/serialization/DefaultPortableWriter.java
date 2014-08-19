@@ -112,12 +112,12 @@ public class DefaultPortableWriter implements PortableWriter {
 
     private void checkPortableAttributes(FieldDefinition fd, Portable portable) {
         if (fd.getFactoryId() != portable.getFactoryId()) {
-            throw new HazelcastSerializationException("Wrong Portable type! Generic portable types are not supported!" +
-                    " Expected factory-id: " + fd.getFactoryId() + ", Actual factory-id: " + portable.getFactoryId());
+            throw new HazelcastSerializationException("Wrong Portable type! Generic portable types are not supported! "
+                    + " Expected factory-id: " + fd.getFactoryId() + ", Actual factory-id: " + portable.getFactoryId());
         }
         if (fd.getClassId() != portable.getClassId()) {
-            throw new HazelcastSerializationException("Wrong Portable type! Generic portable types are not supported!" +
-                    " Expected class-id: " + fd.getClassId() + ", Actual class-id: " + portable.getClassId());
+            throw new HazelcastSerializationException("Wrong Portable type! Generic portable types are not supported! "
+                    + "Expected class-id: " + fd.getClassId() + ", Actual class-id: " + portable.getClassId());
         }
     }
 
