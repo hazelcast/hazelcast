@@ -27,7 +27,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.replicatedmap.impl.CleanerRegistrator;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.EventRegistration;
@@ -45,7 +44,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
 
 /**
  * Internal base class to encapsulate the internals from the interface methods of ReplicatedRecordStore
@@ -67,13 +65,12 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
     protected final Member localMember;
 
     private final EntryTaskScheduler ttlEvictionScheduler;
-    private final ScheduledFuture<?> cleanerFuture;
     private final EventService eventService;
 
     private final Object[] mutexes;
     private final String name;
 
-    protected AbstractBaseReplicatedRecordStore(String name, NodeEngine nodeEngine, CleanerRegistrator cleanerRegistrator,
+    protected AbstractBaseReplicatedRecordStore(String name, NodeEngine nodeEngine,
                                                 ReplicatedMapService replicatedMapService) {
         this.name = name;
 
@@ -94,8 +91,6 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
         for (int i = 0; i < mutexes.length; i++) {
             mutexes[i] = new Object();
         }
-
-        this.cleanerFuture = cleanerRegistrator.registerCleaner(this);
     }
 
     @Override
@@ -118,11 +113,6 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
 
     @Override
     public void destroy() {
-        if (cleanerFuture.isCancelled()) {
-            return;
-        }
-        cleanerFuture.cancel(true);
-
         replicationPublisher.destroy();
         storage.clear();
         replicatedMapService.destroyDistributedObject(getName());

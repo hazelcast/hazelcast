@@ -22,6 +22,7 @@ import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapInitChunkOperatio
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,12 +81,25 @@ final class RemoteProvisionTask<K, V>
         Object key = replicatedRecordStore.unmarshallKey(replicatedRecord.getKey());
         Object value = replicatedRecordStore.unmarshallValue(replicatedRecord.getValue());
         VectorClockTimestamp vectorClockTimestamp = replicatedRecord.getVectorClockTimestamp();
-        long ttlMillis = replicatedRecord.getTtlMillis();
-        recordCache[recordCachePos++] = new ReplicatedRecord(key, value, vectorClockTimestamp, hash, ttlMillis);
+        long originalTtlMillis = replicatedRecord.getTtlMillis();
+        long actualTtlMillis = getActualTtl(replicatedRecord);
+        if (originalTtlMillis == 0 || actualTtlMillis > 0) {
+            recordCache[recordCachePos++] = new ReplicatedRecord(key, value, vectorClockTimestamp, hash, actualTtlMillis);
+        }
 
         if (finalRecord) {
             sendChunk(finalRecord);
         }
+    }
+
+    private long getActualTtl(ReplicatedRecord<K, V> replicatedRecord) {
+        long ttl = replicatedRecord.getTtlMillis();
+        if (ttl != 0) {
+            long updateTime = replicatedRecord.getUpdateTime();
+            long currentTime = Clock.currentTimeMillis();
+            ttl = ttl - (currentTime - updateTime);
+        }
+        return ttl;
     }
 
     private void sendChunk(boolean finalChunk) {
