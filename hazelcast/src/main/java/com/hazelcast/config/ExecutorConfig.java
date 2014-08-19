@@ -24,7 +24,7 @@ public class ExecutorConfig {
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
      */
-    public static final int DEFAULT_POOL_SIZE = 8;
+    public static final int DEFAULT_POOL_SIZE = 16;
 
     /**
      * Capacity of Queue
