@@ -87,6 +87,8 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private void postJoin() {
+        blacklistedAddressed.clear();
+
         systemLogService.logJoin("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
         if (!node.isActive()) {
             return;
