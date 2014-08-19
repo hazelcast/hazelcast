@@ -277,7 +277,7 @@ public class HealthMonitor extends Thread {
         }
     }
 
-    private final class GcMetrics {
+    private static final class GcMetrics {
         final long minorCount;
         final long minorTime;
         final long majorCount;
