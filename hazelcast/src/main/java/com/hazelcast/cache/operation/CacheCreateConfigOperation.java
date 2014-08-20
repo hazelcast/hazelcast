@@ -19,26 +19,12 @@ package com.hazelcast.cache.operation;
 import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.Member;
-import com.hazelcast.executor.DistributedExecutorService;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
-import java.util.Collection;
 
 /**
  * @author mdogan 05/02/14

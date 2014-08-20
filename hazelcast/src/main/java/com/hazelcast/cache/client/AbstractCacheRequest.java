@@ -18,10 +18,9 @@ package com.hazelcast.cache.client;
 
 import com.hazelcast.cache.CachePortableHook;
 import com.hazelcast.cache.CacheService;
-import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.impl.client.KeyBasedClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 
-import javax.cache.expiry.ExpiryPolicy;
 import java.security.Permission;
 
 abstract class AbstractCacheRequest extends KeyBasedClientRequest implements RetryableRequest {

@@ -18,7 +18,7 @@ package com.hazelcast.cache.client;
 
 import com.hazelcast.cache.CachePortableHook;
 import com.hazelcast.cache.CacheService;
-import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.instance.Node;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.monitor.TimedClientState;
