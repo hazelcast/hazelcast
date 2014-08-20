@@ -492,7 +492,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         final SerializationService ss = getSerializationService();
         AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
         connection.init();
-        auth.setFirstConnection(firstConnection);
+        auth.setOwnerConnection(firstConnection);
         //contains remoteAddress and principal
         SerializableCollection collectionWrapper;
         try {

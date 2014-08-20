@@ -5,7 +5,6 @@ import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
@@ -36,10 +35,10 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     }
 
     @Override
-    public Set<ClientEndpoint> getEndpoints(String uuid) {
+    public Set<ClientEndpoint> getEndpoints(String clientUuid) {
         Set<ClientEndpoint> endpointSet = new HashSet<ClientEndpoint>();
         for (ClientEndpointImpl endpoint : endpoints.values()) {
-            if (uuid.equals(endpoint.getUuid())) {
+            if (clientUuid.equals(endpoint.getUuid())) {
                 endpointSet.add(endpoint);
             }
         }
@@ -57,8 +56,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
             return null;
         }
 
-        String clientUuid = UuidUtil.createClientUuid(conn.getEndPoint());
-        ClientEndpointImpl endpoint = new ClientEndpointImpl(clientEngine, conn, clientUuid);
+        ClientEndpointImpl endpoint = new ClientEndpointImpl(clientEngine, conn);
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
             logger.severe("An endpoint already exists for connection:" + conn);
         }

@@ -1,10 +1,13 @@
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -15,6 +18,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -50,21 +55,134 @@ public class ConditionTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    @Ignore
-    public void testMultipleConditionsForSameLock() {
+    public void testMultipleConditionsForSameLock() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
 
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition0 = lock.newCondition(randomString());
+        final ICondition condition1 = lock.newCondition(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch syncLatch = new CountDownLatch(2);
+
+        createThreadWaitsForCondition(latch, lock, condition0, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition1, syncLatch).start();
+
+        syncLatch.await();
+
+        lock.lock();
+        condition0.signal();
+        lock.unlock();
+
+        lock.lock();
+        condition1.signal();
+        lock.unlock();
+
+        assertOpenEventually(latch);
     }
 
     @Test(timeout = 60000)
-    @Ignore
-    public void testSameConditionRetrievedMultipleTimesForSameLock() {
+    public void testSignalAll() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
 
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition = lock.newCondition(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch syncLatch = new CountDownLatch(2);
+
+        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
+
+        syncLatch.await();
+
+        lock.lock();
+        condition.signalAll();
+        lock.unlock();
+
+        assertOpenEventually(latch);
     }
 
     @Test(timeout = 60000)
-    @Ignore
-    public void testConditionsWithSameNameButDifferentLocksAreIndependent() {
+    public void testSignalAll_whenMultipleConditions() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
 
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition0 = lock.newCondition(randomString());
+        final ICondition condition1 = lock.newCondition(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(10);
+        final CountDownLatch syncLatch = new CountDownLatch(2);
+
+        createThreadWaitsForCondition(latch, lock, condition0, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition1, syncLatch).start();
+
+        syncLatch.await();
+
+        lock.lock();
+        condition0.signalAll();
+        lock.unlock();
+
+        assertTrueDelayed5sec(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(latch.getCount(), 9);
+            }
+        });
+    }
+
+    @Test(timeout = 60000)
+    public void testSameConditionRetrievedMultipleTimesForSameLock() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+
+        final ILock lock = instance.getLock(randomString());
+        String name = randomString();
+        final ICondition condition0 = lock.newCondition(name);
+        final ICondition condition1 = lock.newCondition(name);
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch syncLatch = new CountDownLatch(2);
+
+        createThreadWaitsForCondition(latch, lock, condition0, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition1, syncLatch).start();
+
+        syncLatch.await();
+
+        lock.lock();
+        condition0.signalAll();
+        lock.unlock();
+
+        assertOpenEventually(latch);
+    }
+
+    @Test(timeout = 60000)
+    public void testConditionsWithSameNameButDifferentLocksAreIndependent() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+
+        String name = randomString();
+        ILock lock0 = instance.getLock(randomString());
+        final ICondition condition0 = lock0.newCondition(name);
+        ILock lock1 = instance.getLock(randomString());
+        final ICondition condition1 = lock1.newCondition(name);
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch syncLatch = new CountDownLatch(2);
+
+        createThreadWaitsForCondition(latch, lock0, condition0, syncLatch).start();
+
+        createThreadWaitsForCondition(latch, lock1, condition1, syncLatch).start();
+
+        syncLatch.await();
+
+        lock0.lock();
+        condition0.signalAll();
+        lock0.unlock();
+
+        lock1.lock();
+        condition1.signalAll();
+        lock1.unlock();
+
+        assertOpenEventually(latch);
     }
 
     @Test(timeout = 60000)
@@ -210,23 +328,86 @@ public class ConditionTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    @Ignore
-    public void testInterruptionDuringWaiting() {
+    public void testInterruptionDuringWaiting() throws InterruptedException {
+        Config config = new Config();
+        // the system should wait at most 5000 ms in order to determine the operation status
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
 
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition0 = lock.newCondition(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    lock.lock();
+                    condition0.await();
+                } catch (InterruptedException e) {
+                    latch.countDown();
+                }
+            }
+        });
+        thread.start();
+
+        sleepSeconds(2);
+        thread.interrupt();
+
+        assertOpenEventually(latch);
     }
 
     //if there are multiple waiters, then only 1 waiter should be notified.
     @Test(timeout = 60000)
-    @Ignore
-    public void testSignalWithMultipleWaiters() {
+    public void testSignalWithMultipleWaiters() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+
+        ILock lock = instance.getLock(randomString());
+        final ICondition condition = lock.newCondition(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(10);
+        final CountDownLatch syncLatch = new CountDownLatch(3);
+
+        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
+        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
+
+        syncLatch.await();
+
+        lock.lock();
+        condition.signal();
+        lock.unlock();
+
+        assertTrueDelayed5sec(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(9, latch.getCount());
+            }
+        });
+
+        assertEquals(false, lock.isLocked());
     }
 
     //a signal is send to wake up threads, but it isn't a flag set on the condition so that future waiters will
     //receive this signal
     @Test(timeout = 60000)
-    @Ignore
-    public void testSignalIsNotStored() {
+    public void testSignalIsNotStored() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
 
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition = lock.newCondition(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        lock.lock();
+        condition.signal();
+        lock.unlock();
+
+        createThreadWaitsForCondition(latch, lock, condition, null).start();
+        // if the thread is still waiting, then the signal is not stored.
+        assertFalse(latch.await(3000, TimeUnit.MILLISECONDS));
     }
 
     @Test(timeout = 60000, expected = IllegalMonitorStateException.class)
@@ -245,34 +426,146 @@ public class ConditionTest extends HazelcastTestSupport {
         condition.signal();
     }
 
-    @Test(timeout = 60000)
-    @Ignore
-    public void testAwaitOnConditionOwnedByOtherThread() {
+    @Test(timeout = 60000, expected = IllegalMonitorStateException.class)
+    public void testAwait_whenOwnedByOtherThread() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
 
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition = lock.newCondition(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock();
+                latch.countDown();
+            }
+        }).start();
+
+        latch.await();
+
+        condition.await();
+    }
+
+    @Test(timeout = 60000, expected = IllegalMonitorStateException.class)
+    public void testSignal_whenOwnedByOtherThread() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition = lock.newCondition(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock();
+                latch.countDown();
+            }
+        }).start();
+
+        latch.await();
+
+        condition.signal();
     }
 
     @Test(timeout = 60000)
-    @Ignore
-    public void testSignalOnConditionOwnedByOtherThread() {
+    public void testAwaitTimeout_whenFail() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
 
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition = lock.newCondition(randomString());
+
+        lock.lock();
+
+        assertFalse(condition.await(1, TimeUnit.MILLISECONDS));
     }
 
     @Test(timeout = 60000)
-    @Ignore
-    public void testAwait_whenTimeout() {
+    public void testAwaitTimeout_whenSuccess() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
 
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition = lock.newCondition(randomString());
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock();
+                try {
+                    if (condition.await(10, TimeUnit.SECONDS)) {
+                        latch.countDown();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+        sleepSeconds(1);
+        lock.lock();
+        condition.signal();
+        lock.unlock();
     }
 
     @Test(timeout = 60000)
-    @Ignore
-    public void testAwait_whenNegativeTimeout() {
+    public void testAwaitUntil_whenFail() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
 
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition = lock.newCondition(randomString());
+
+        lock.lock();
+
+        Date date = new Date();
+        date.setTime(System.currentTimeMillis()+1000);
+        assertFalse(condition.awaitUntil(date));
     }
 
     @Test(timeout = 60000)
-    @Ignore
-    public void testAwait_nullTimeout() {
+    public void testAwaitUntil_whenSuccess() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
 
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition = lock.newCondition(randomString());
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock();
+                try {
+                    Date date = new Date();
+                    date.setTime(System.currentTimeMillis()+10000);
+                    if (condition.awaitUntil(date)) {
+                        latch.countDown();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+        sleepSeconds(1);
+        lock.lock();
+        condition.signal();
+        lock.unlock();
+    }
+
+    // See #3262
+    @Test(timeout = 60000)
+    @Ignore
+    public void testAwait_whenNegativeTimeout() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition = lock.newCondition(randomString());
+
+        lock.lock();
+
+        assertFalse(condition.await(-1, TimeUnit.MILLISECONDS));
     }
 
     // ====================== tests to make sure the condition can deal with cluster member failure ====================
@@ -319,7 +612,7 @@ public class ConditionTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000, expected = DistributedObjectDestroyedException.class)
-    public void testDestroyLockWhenOtherWaitingOnConditionAwait() throws InterruptedException {
+    public void testDestroyLock_whenOtherWaitingOnConditionAwait() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         final ILock lock = instance.getLock(randomString());
@@ -345,7 +638,7 @@ public class ConditionTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000, expected = HazelcastInstanceNotActiveException.class)
-    public void testShutDownNodeWhenOtherWaitingOnConditionAwait() throws InterruptedException {
+    public void testShutDownNode_whenOtherWaitingOnConditionAwait() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         nodeFactory.newHazelcastInstance();
@@ -424,5 +717,23 @@ public class ConditionTest extends HazelcastTestSupport {
 
         finalLatch.await(2, TimeUnit.MINUTES);
         assertEquals(size, count.get());
+    }
+
+    private Thread createThreadWaitsForCondition(final CountDownLatch latch, final ILock lock, final ICondition condition, final CountDownLatch syncLatch) {
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    lock.lock();
+                    syncLatch.countDown();
+                    condition.await();
+                    latch.countDown();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    lock.unlock();
+                }
+            }
+        });
+        return t;
     }
 }

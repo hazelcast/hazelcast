@@ -32,7 +32,7 @@ If you want to specify your own configuration file to create `Config`, Hazelcast
 
 **2- Programmatic Configuration**
 
-To configure Hazelcast programmatically, just instantiate a `Config` object and set/change its properties/attributes due to your needs.
+To configure Hazelcast programmatically, just instantiate a `Config` object and set/change its properties/attributes due to your needs. Just to give an idea, below is a sample code in which some network, map, map store and near cache attributes are configured for a Hazelcast instance.
 
 ```java
 Config config = new Config();
@@ -71,7 +71,7 @@ After creating `Config` object, you can use it to create a new Hazelcast instanc
 <a name="named-hazelcastinstance"></a>
 -   To create a named `HazelcastInstance` you should set `instanceName` of `Config` object. 
 
-    ```java
+```java
     Config config = new Config();
     config.setInstanceName( "my-instance" );
     Hazelcast.newHazelcastInstance( config );
@@ -434,15 +434,50 @@ This configuration is for ???. It has below attributes.
 
 ### Queue Configuration
 
-This configuration is for ???. It has below attributes.
+**Declarative:**
 
-- max-size: Value of maximum size of Queue.
-- backup-count: Value of synchronous backup count.
-- async-backup-count: Value of asynchronous backup count.
-- empty-queue-ttl: Value of time to live to empty the Queue
-- item-listeners:
-- queue-store:
-- statistics-enabled:
+```xml
+<queue name="default">
+    <max-size>0</max-size>
+    <backup-count>1</backup-count>
+    <async-backup-count>0</async-backup-count>
+    <empty-queue-ttl>-1</empty-queue-ttl>
+    <item-listeners>
+       <item-listener>???</item-listener>
+    <item-listeners>
+</queue>
+<queue-store>
+    <class-name>com.hazelcast.QueueStoreImpl</class-name>
+    <properties>
+       <property name="binary">false</property>
+       <property name="memory-limit">10000</property>
+       <property name="bulk-load">500</property>
+    </properties>
+</queue-store>   
+```
+
+**Programmatic:**
+
+```java
+Config config = new Config();
+QueueConfig queueConfig = config.getQueueConfig();
+queueConfig.setName( "MyQueue" ).setBackupCount( "1" )
+        .setMaxSize( "0" ).setStatisticsEnabled( "true" );
+queueConfig.getQueueStoreConfig()
+        .setEnabled ( "true" )
+        .setClassName( "com.hazelcast.QueueStoreImpl" )
+        .setProperty( "binary", "false" );
+```
+
+It has below attributes and parameters.
+
+- `max-size`: Value of maximum size of items in the Queue.
+- `backup-count`: Count of synchronous backups. Remember that, Queue is a non-partitioned data structure, i.e. all entries of a Set resides in one partition. When this parameter is '1', it means there will be a backup of that Set in another node in the cluster. When it is '2', 2 nodes will have the backup.
+- `async-backup-count`: Count of asynchronous backups.
+- `empty-queue-ttl`: Value of time to live to empty the Queue.
+- `item-listeners`: ???
+- `queue-store`: Includes the queue store factory class name and the properties  *binary*, *memory limit* and *bulk load*. Please refer to [Queue Persistence](#queue-persistence).
+- `statistics-enabled: If set as `true`, you can retrieve statistics for this Queue using the method `getLocalQueueStats()`.
 
 ### Topic Configuration
 
@@ -453,27 +488,80 @@ This configuration is for ???. It has below attributes.
 - message-listeners:
 
 
-### List Configuration
-
-It has below attributes.
-
-- backup-count:
-- async-backup-count:
-- statistics-enabled:
-- max-size:
-- item-listeners:
-- statistics-enabled:
-
 ### Set Configuration
 
-This configuration is for ???. It has below attributes.
+**Declarative:**
 
-- backup-count:
-- async-backup-count:
-- statistics-enabled:
-- max-size:
-- item-listeners:
-- statistics-enabled:
+```xml
+<set name="default">
+   <backup-count>1</backup-count>
+   <async-backup-count>0</async-backup-count>
+   <max-size>10</max-size>
+   <statistics-enabled>true</statistics-enabled>
+   <item-listeners>
+      <item-listener>???<item-listener>
+   </item-listeners>
+</set>
+```
+
+**Programmatic:**
+
+```java
+Config config = new Config();
+CollectionConfig collectionSet = config.getCollectionConfig();
+collectionSet.setName( "MySet" ).setBackupCount( "1" )
+        .setMaxSize( "10" ).setStatisticsEnabled( "true" );
+```
+   
+
+It has below parameters.
+
+
+- `backup-count`: Count of synchronous backups. Remember that, Set is a non-partitioned data structure, i.e. all entries of a Set resides in one partition. When this parameter is '1', it means there will be a backup of that Set in another node in the cluster. When it is '2', 2 nodes will have the backup.
+- `async-backup-count`: Count of asynchronous backups.
+- `statistics-enabled`: If set as `true`, you can retrieve statistics for this Set.
+- `max-size`: It is the maximum entry size for this Set.
+- `item-listeners`: ???
+
+
+
+### List Configuration
+
+**Declarative:**
+
+```xml
+<list name="default">
+   <backup-count>1</backup-count>
+   <async-backup-count>0</async-backup-count>
+   <max-size>10</max-size>
+   <statistics-enabled>true</statistics-enabled>
+   <item-listeners>
+      <item-listener>???<item-listener>
+   </item-listeners>
+</list>
+```
+
+**Programmatic:**
+
+```java
+Config config = new Config();
+CollectionConfig collectionList = config.getCollectionConfig();
+collectionList.setName( "MyList" ).setBackupCount( "1" )
+        .setMaxSize( "10" ).setStatisticsEnabled( "true" );
+```
+   
+
+It has below parameters.
+
+
+- `backup-count`: Count of synchronous backups. Remember that, List is a non-partitioned data structure, i.e. all entries of a List resides in one partition. When this parameter is '1', it means there will be a backup of that List in another node in the cluster. When it is '2', 2 nodes will have the backup.
+- `async-backup-count`: Count of asynchronous backups.
+- `statistics-enabled`: If set as `true`, you can retrieve statistics for this List.
+- `max-size`: It is the maximum entry size for this List.
+- `item-listeners`: ???
+
+
+
 
 ### Semaphore Configuration
 
