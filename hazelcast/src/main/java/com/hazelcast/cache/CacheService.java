@@ -37,6 +37,7 @@ import com.hazelcast.spi.RemoteService;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.event.EventType;
+import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Properties;
@@ -58,6 +59,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     private ConcurrentMap<CacheEntryListenerConfiguration, EventRegistration> eventRegistrationMap;
 
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
+    private final ConcurrentMap<String, CacheStatistics> statistics = new ConcurrentHashMap<String, CacheStatistics>();
 
     //region ManagedService
     @Override
@@ -171,6 +173,46 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         configs.remove(name);
     }
 
+    public CacheStatistics createCacheStatIfAbsent(String name){
+        if(!statistics.containsKey(name)){
+            statistics.putIfAbsent(name, new CacheStatistics());
+        }
+        return statistics.get(name);
+    }
+
+    public void deleteCacheStat(String name){
+        statistics.remove(name);
+    }
+
+    public void enableStatistics(String cacheNameWithPrefix, URI uri, String name, boolean enabled) {
+        final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
+        if( cacheConfig != null){
+            cacheConfig.setStatisticsEnabled(enabled);
+        }
+        if (enabled) {
+            final CacheStatistics cacheStatistics = createCacheStatIfAbsent(cacheNameWithPrefix);
+            final CacheStatisticsMXBeanImpl mxBean = new CacheStatisticsMXBeanImpl(cacheStatistics);
+
+            MXBeanUtil.registerCacheObject(mxBean, uri, name, true);
+        } else {
+            MXBeanUtil.unregisterCacheObject(uri, name, true);
+            deleteCacheStat(cacheNameWithPrefix);
+        }
+    }
+
+    public void enableManagement(String cacheNameWithPrefix, boolean enabled) {
+        final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
+        if( cacheConfig != null){
+            cacheConfig.setManagementEnabled(enabled);
+        }
+
+//        if (enabled) {
+//            MXBeanUtil.registerCacheObject(this, false);
+//        } else {
+//            MXBeanUtil.unregisterCacheObject(this, false);
+//        }
+    }
+
     public CacheConfig getCacheConfig(String name) {
         return configs.get(name);
     }
@@ -275,6 +317,9 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
             eventService.deregisterListener(SERVICE_NAME, cacheProxy.getName(), eventRegistration.getId());
         }
     }
+
+
+
     //endregion
 
 

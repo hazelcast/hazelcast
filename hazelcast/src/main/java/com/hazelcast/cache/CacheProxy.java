@@ -437,16 +437,16 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         }
     }
 
-    @Override
-    public CacheMXBean getCacheMXBean() {
-        return null;
-    }
+//    @Override
+//    public CacheMXBean getCacheMXBean() {
+//        return null;
+//    }
 
-    @Override
-    public CacheStatisticsMXBean getCacheStatisticsMXBean() {
-        ensureOpen();
-        return new CacheStatisticsMXBeanImpl(this);
-    }
+//    @Override
+//    public CacheStatisticsMXBean getCacheStatisticsMXBean() {
+//        ensureOpen();
+//        return new CacheStatisticsMXBeanImpl(this);
+//    }
 
     public CacheStatistics getCacheStatistics() {
         final NodeEngine nodeEngine = getNodeEngine();
@@ -462,14 +462,14 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         return statistics;
     }
 
-    @Override
-    public void setStatisticsEnabled(boolean enabled) {
-        if (enabled) {
-            MXBeanUtil.registerCacheObject(this, true);
-        } else {
-            MXBeanUtil.unregisterCacheObject(this, true);
-        }
-    }
+//    @Override
+//    public void setStatisticsEnabled(boolean enabled) {
+//        if (enabled) {
+//            MXBeanUtil.registerCacheObject(this, true);
+//        } else {
+//            MXBeanUtil.unregisterCacheObject(this, true);
+//        }
+//    }
 
     public V get(Data key) {
         ensureOpen();
@@ -489,13 +489,13 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         return (V) result;
     }
 
-    public void enableManagement(boolean enabled) {
-       if (enabled) {
-            MXBeanUtil.registerCacheObject(this, false);
-        } else {
-            MXBeanUtil.unregisterCacheObject(this, false);
-        }
-    }
+//    public void enableManagement(boolean enabled) {
+//       if (enabled) {
+//            MXBeanUtil.registerCacheObject(this, false);
+//        } else {
+//            MXBeanUtil.unregisterCacheObject(this, false);
+//        }
+//    }
 
 //    void initCacheManager(HazelcastCacheManager cacheManager) {
 //        if (this.cacheManager == null) {

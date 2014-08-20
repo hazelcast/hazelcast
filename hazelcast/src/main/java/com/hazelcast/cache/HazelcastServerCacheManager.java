@@ -18,6 +18,7 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.operation.CacheGetConfigOperation;
+import com.hazelcast.cache.operation.CacheManagementConfigOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
@@ -30,6 +31,7 @@ import javax.cache.Cache;
 import javax.cache.CacheException;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
+import javax.management.ObjectName;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
@@ -195,22 +197,10 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
         if (cacheName == null) {
             throw new NullPointerException();
         }
-        synchronized (caches) {
-            final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-            ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
-            cache.enableManagement(enabled);
-        }
-
-        //FIXME ENABLE OTHER NODES
-//        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-//
-//        for(MemberImpl member:members){
-//            if(!member.localMember()){
-//                final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheNameWithPrefix, cacheConfig,true);
-//                final InternalCompletableFuture<Object> f2 = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
-//                f2.getSafely();//make sure all configs are created
-//            }
-//        }
+        final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
+        cacheService.enableManagement(cacheNameWithPrefix, enabled);
+        //ENABLE OTHER NODES
+        enableStatisticManagementOnOtherNodes(uri, cacheName, false, enabled);
     }
 
     @Override
@@ -221,14 +211,21 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
         if (cacheName == null) {
             throw new NullPointerException();
         }
-        synchronized (caches) {
-            final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-            ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
-            cache.setStatisticsEnabled(enabled);
-        }
+        final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
+        cacheService.enableStatistics(cacheNameWithPrefix, uri, cacheName, enabled);
+        //ENABLE OTHER NODES
+        enableStatisticManagementOnOtherNodes(uri, cacheName, true, enabled);
+    }
 
-//        final CacheConfig configuration = cache.getConfiguration(CacheConfig.class);
-//        configuration.setStatisticsEnabled(true);
+    private void enableStatisticManagementOnOtherNodes(URI uri, String cacheName, boolean statOrMan, boolean enabled){
+        final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
+        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for(MemberImpl member:members){
+            if(!member.localMember()){
+                final CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, uri, cacheName,statOrMan, enabled);
+                nodeEngine.getOperationService().invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+            }
+        }
     }
 
     @Override

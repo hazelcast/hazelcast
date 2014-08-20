@@ -23,20 +23,20 @@ public class CacheStatisticsMXBeanImpl implements CacheStatisticsMXBean, Seriali
 
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
 
-    private CacheProxy proxy;
+    private CacheStatistics statistics;
 
-    public CacheStatisticsMXBeanImpl(CacheProxy proxy) {
-        this.proxy = proxy;
+    public CacheStatisticsMXBeanImpl(CacheStatistics statistics) {
+        this.statistics = statistics;
     }
 
     @Override
     public void clear() {
-        proxy.getCacheStatistics().clear();
+        statistics.clear();
     }
 
     @Override
     public long getCacheHits() {
-        return proxy.getCacheStatistics().getHits();
+        return statistics.getHits();
     }
 
     @Override
@@ -50,7 +50,7 @@ public class CacheStatisticsMXBeanImpl implements CacheStatisticsMXBean, Seriali
 
     @Override
     public long getCacheMisses() {
-        return proxy.getCacheStatistics().getMisses();
+        return statistics.getMisses();
     }
 
     @Override
@@ -64,45 +64,45 @@ public class CacheStatisticsMXBeanImpl implements CacheStatisticsMXBean, Seriali
 
     @Override
     public long getCacheGets() {
-        return proxy.getCacheStatistics().getHits() + proxy.getCacheStatistics().getMisses();
+        return statistics.getHits() + statistics.getMisses();
     }
 
     @Override
     public long getCachePuts() {
-        return proxy.getCacheStatistics().getPuts();
+        return statistics.getPuts();
     }
 
     @Override
     public long getCacheRemovals() {
-        return proxy.getCacheStatistics().getRemovals();
+        return statistics.getRemovals();
     }
 
     @Override
     public long getCacheEvictions() {
-        return proxy.getCacheStatistics().getEvictions();
+        return statistics.getEvictions();
     }
 
     @Override
     public float getAverageGetTime() {
-        if (proxy.getCacheStatistics().getGetTimeTakenNanos() == 0 || getCacheGets() == 0) {
+        if (statistics.getGetTimeTakenNanos() == 0 || getCacheGets() == 0) {
             return 0;
         }
-        return (proxy.getCacheStatistics().getGetTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        return (statistics.getGetTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
     @Override
     public float getAveragePutTime() {
-        if (proxy.getCacheStatistics().getPutTimeTakenNanos() == 0 || getCacheGets() == 0) {
+        if (statistics.getPutTimeTakenNanos() == 0 || getCacheGets() == 0) {
             return 0;
         }
-        return (proxy.getCacheStatistics().getPutTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        return (statistics.getPutTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
     @Override
     public float getAverageRemoveTime() {
-        if (proxy.getCacheStatistics().getRemoveTimeTakenNanos() == 0 || getCacheGets() == 0) {
+        if (statistics.getRemoveTimeTakenNanos() == 0 || getCacheGets() == 0) {
             return 0;
         }
-        return (proxy.getCacheStatistics().getRemoveTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        return (statistics.getRemoveTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
     }
 }

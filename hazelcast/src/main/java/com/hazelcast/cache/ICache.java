@@ -83,13 +83,13 @@ public interface ICache<K, V> extends DistributedObject, javax.cache.Cache<K, V>
 
     int size();
 
-    CacheMXBean getCacheMXBean();
+//    CacheMXBean getCacheMXBean();
+//
+//    CacheStatisticsMXBean getCacheStatisticsMXBean();
 
-    CacheStatisticsMXBean getCacheStatisticsMXBean();
-
-    void setStatisticsEnabled(boolean enabled);
-
-    void enableManagement(boolean enabled);
+//    void setStatisticsEnabled(boolean enabled);
+//
+//    void enableManagement(boolean enabled);
 
 //    CacheStats getStats();
 

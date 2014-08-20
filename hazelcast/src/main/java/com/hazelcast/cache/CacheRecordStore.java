@@ -50,10 +50,10 @@ public class CacheRecordStore implements ICacheRecordStore {
     final int partitionId;
     final NodeEngine nodeEngine;
     final CacheService cacheService;
-    final CacheStatistics statistics;
     final CacheConfig cacheConfig;
-
     final CacheConcurrentHashMap<Data, CacheRecord> records = new CacheConcurrentHashMap<Data, CacheRecord>(1000);
+
+    CacheStatistics statistics;
 
     final CacheRecordFactory cacheRecordFactory;
     final ScheduledFuture<?> evictionTaskFuture;
@@ -82,7 +82,8 @@ public class CacheRecordStore implements ICacheRecordStore {
         }
         evictionTaskFuture = nodeEngine.getExecutionService()
                 .scheduleWithFixedDelay("hz:cache", new EvictionTask(), 5, 5, TimeUnit.SECONDS);
-        this.statistics = new CacheStatistics();
+
+
         this.cacheRecordFactory = new CacheRecordFactory(cacheConfig.getInMemoryFormat(), nodeEngine.getSerializationService());
         final Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
         defaultExpiryPolicy = expiryPolicyFactory.create();
@@ -520,7 +521,7 @@ public class CacheRecordStore implements ICacheRecordStore {
 
     @Override
     public CacheKeyIteratorResult iterator(int tableIndex, int size) {
-        return records.fetchNext( tableIndex, size);
+        return records.fetchNext(tableIndex, size);
     }
 
     @Override
@@ -534,8 +535,8 @@ public class CacheRecordStore implements ICacheRecordStore {
             processExpiredEntry(key, record);
             record = null;
         }
-        if (record == null || isExpired) {
-            if (isStatisticsEnabled()) {
+        if (isStatisticsEnabled()) {
+            if (record == null || isExpired) {
                 statistics.increaseCacheMisses(1);
             } else {
                 statistics.increaseCacheHits(1);
@@ -902,11 +903,18 @@ public class CacheRecordStore implements ICacheRecordStore {
         return cacheConfig.isWriteThrough();
     }
 
-    public boolean isEventsEnabled() {
-        return isEventsEnabled;
-    }
+//    public boolean isEventsEnabled() {
+//        return isEventsEnabled;
+//    }
 
     public boolean isStatisticsEnabled() {
-        return cacheConfig.isStatisticsEnabled();
+        if(!cacheConfig.isStatisticsEnabled()){
+            return false;
+        }
+        if(statistics == null){
+            this.statistics =  cacheService.createCacheStatIfAbsent(name) ;
+        }
+        return true;
     }
+
 }
