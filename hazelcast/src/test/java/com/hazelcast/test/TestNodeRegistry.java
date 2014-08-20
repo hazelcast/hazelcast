@@ -323,6 +323,15 @@ final class TestNodeRegistry {
             public String toString() {
                 return "MockJoiner";
             }
+
+            @Override
+            public void blacklist(Address callerAddress) {
+            }
+
+            @Override
+            public boolean isBlacklisted(Address address) {
+                return false;
+            }
         }
     }
 }
