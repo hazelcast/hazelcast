@@ -16,14 +16,15 @@
 
 package com.hazelcast.map;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.config.Config;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class PartitionContainer {
     private final MapService mapService;
@@ -55,13 +56,24 @@ public class PartitionContainer {
     }
 
     public RecordStore getRecordStore(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(maps, name, this,recordStoreConstructor);
+    	RecordStore result = getExistingRecordStore(name);
+    	
+    	return result != null ? result : ConcurrencyUtil.getOrPutSynchronized(maps, name, this,recordStoreConstructor);
     }
 
     public RecordStore getExistingRecordStore(String mapName) {
+    	//check for wildcards to make sure we get the correct record store:
+    	if (mapName.contains("*")){
+    		for (String name: maps.keySet()) {
+    			if (Config.nameMatches(name, mapName)) {
+    				return maps.get(name);
+    			}
+    		}
+    	}
+    	
         return maps.get(mapName);
     }
-
+    
     void destroyMap(String name) {
         RecordStore recordStore = maps.remove(name);
         if (recordStore != null) {

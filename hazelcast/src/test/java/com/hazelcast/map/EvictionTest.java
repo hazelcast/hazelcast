@@ -16,11 +16,34 @@
 
 package com.hazelcast.map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapConfig.EvictionPolicy;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -33,21 +56,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -863,4 +871,85 @@ public class EvictionTest extends HazelcastTestSupport {
             }
         }, 30);
     }
+    
+    private Config createLRUConfig(String mapName, int size, int evictionPercentage) {
+        Config cfg = new XmlConfigBuilder().build();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(0);
+        mapStoreConfig.setClassName("com.hazelcast.examples.DummyStore");
+
+        MapConfig mcfg = cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+        mcfg.setEvictionPolicy(EvictionPolicy.LRU);
+        mcfg.setEvictionPercentage(evictionPercentage);
+        MaxSizeConfig msc = new MaxSizeConfig();
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
+        msc.setSize(size);
+        mcfg.setMaxSizeConfig(msc);
+        
+        cfg.getMapConfig("default").setMapStoreConfig(null);
+        assertNotNull(cfg.getMapConfig(mapName).getMapStoreConfig());
+        
+        return cfg;
+    }
+
+    /**
+     * Test eviction for LRU using configuration and getting the Map using the same
+     * name as the configuration.
+     */
+    @Test
+    public void testEvictionLRUWithExactName() {
+        final int size = 2000;
+        final int evictionPercentage = 25;
+        final String mapName = "test.eviction.LRU";
+        
+        Config cfg = createLRUConfig("test.eviction.LRU", size, evictionPercentage);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance instance = factory.newHazelcastInstance(cfg);
+        final IMap<Object, Object> map = instance.getMap(mapName);        
+        
+        //Overfill map
+        for (int i = 0; i < size * 2; i++) {
+            map.put(i, i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+            	assertTrue(map.size() < size * (1-evictionPercentage/100));
+            }
+        });        
+    }
+
+    /**
+     * Test eviction for LRU using configuration and getting the Map using a wildcard as the 
+     * map name in the configuration.
+     */
+    @Test
+    public void testEvictionLRUWithWildcardName() throws InterruptedException {
+        final int size = 2000;
+        final int evictionPercentage = 25;
+        
+        final String mapName = "test.eviction.LRU";
+        
+        Config cfg = createLRUConfig("test.eviction.*", size, evictionPercentage);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance instance = factory.newHazelcastInstance(cfg);
+        final IMap<Object, Object> map = instance.getMap(mapName);        
+       
+        //Overfill map
+        for (int i = 0; i < size * 2; i++) {
+            map.put(i, i);
+        }
+        
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+            	assertTrue(map.size() < size * (1-evictionPercentage/100));
+            }
+        });     
+    }    
+    
 }
