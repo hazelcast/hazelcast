@@ -16,6 +16,26 @@
 
 package com.hazelcast.map;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
@@ -36,22 +56,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -903,17 +907,19 @@ public class EvictionTest extends HazelcastTestSupport {
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(cfg);
-        IMap<Object, Object> map = instance.getMap(mapName);        
-        sleepSeconds(1);
+        final IMap<Object, Object> map = instance.getMap(mapName);        
         
         //Overfill map
         for (int i = 0; i < size * 2; i++) {
             map.put(i, i);
         }
-        //Wait for eviction to happen 
-        sleepSeconds(2);
-        
-        assertTrue(map.size() < size * (1-evictionPercentage/100));
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+            	assertTrue(map.size() < size * (1-evictionPercentage/100));
+            }
+        });        
     }
 
     /**
@@ -921,7 +927,7 @@ public class EvictionTest extends HazelcastTestSupport {
      * map name in the configuration.
      */
     @Test
-    public void testEvictionLRUWithWildcardName() {
+    public void testEvictionLRUWithWildcardName() throws InterruptedException {
         final int size = 2000;
         final int evictionPercentage = 25;
         
@@ -931,17 +937,19 @@ public class EvictionTest extends HazelcastTestSupport {
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(cfg);
-        IMap<Object, Object> map = instance.getMap(mapName);        
-        sleepSeconds(1);
-        
+        final IMap<Object, Object> map = instance.getMap(mapName);        
+       
         //Overfill map
         for (int i = 0; i < size * 2; i++) {
             map.put(i, i);
         }
-        //Wait for eviction to happen
-        sleepSeconds(2);
         
-        assertTrue(map.size() < size * (1-evictionPercentage/100));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+            	assertTrue(map.size() < size * (1-evictionPercentage/100));
+            }
+        });     
     }    
     
 }
