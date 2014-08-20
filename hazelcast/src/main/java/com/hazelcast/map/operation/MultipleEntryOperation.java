@@ -54,6 +54,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
             final Data response = process(entry);
 
             addToResponses(dataKey, response);
+
             // first call noOp, other if checks below depends on it.
             if (noOp(entry, oldValue)) {
                 continue;

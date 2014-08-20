@@ -81,9 +81,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
         final Map.Entry entry = createMapEntry(key, value);
 
-        //dataValue = entry.getValue();
-
         response = process(entry);
+
         // first call noOp, other if checks below depends on it.
         if (noOp(entry)) {
             return;
