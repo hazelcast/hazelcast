@@ -90,7 +90,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testQueueEviction() throws Exception {
-         final Config config = new Config();
+        final Config config = new Config();
         config.getQueueConfig("q").setEmptyQueueTtl(2);
         final HazelcastInstance hz = createHazelcastInstance(config);
         final IQueue<Object> q = hz.getQueue("q");
@@ -100,7 +100,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
             assertEquals("item", q.poll());
             q.take();
             fail();
-        } catch (Exception e){
+        } catch (Exception e) {
             assertTrue(e instanceof DistributedObjectDestroyedException);
         }
         q.size();
@@ -135,7 +135,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
     @Test
     public void testQueueStats() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-       final String name = "t_queue";
+        final String name = "t_queue";
 
         HazelcastInstance ins1 = factory.newHazelcastInstance();
         final int items = 20;
@@ -336,6 +336,24 @@ public class BasicQueueTest extends HazelcastTestSupport {
         assertEquals(list.size(), 6);
         assertEquals(list.remove(0), "item4");
 
+    }
+
+    @Test
+    public void testAddAll_whenCollectionContainsNull() {
+        HazelcastInstance instance = createHazelcastInstance();
+        IQueue<String> queue = instance.getQueue(randomString());
+        for (int i = 0; i < 10; i++) {
+            queue.offer("item" + i);
+        }
+        List<String> list = new ArrayList<String>();
+        list.add("item10");
+        list.add(null);
+
+        try {
+            queue.addAll(list);
+            fail();
+        } catch (NullPointerException e) {
+        }
     }
 
     @Test

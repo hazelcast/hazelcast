@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ValidationUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -202,7 +203,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
 
     @Override
     public boolean addAll(Collection<? extends E> es) {
-        return addAllInternal(getDataList(es));
+        return addAllInternal(getDataListAddAll(es));
     }
 
     @Override
@@ -219,6 +220,16 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         final NodeEngine nodeEngine = getNodeEngine();
         List<Data> dataList = new ArrayList<Data>(objects.size());
         for (Object o : objects) {
+            dataList.add(nodeEngine.toData(o));
+        }
+        return dataList;
+    }
+
+    private List<Data> getDataListAddAll(Collection<?> objects) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        List<Data> dataList = new ArrayList<Data>(objects.size());
+        for (Object o : objects) {
+            throwExceptionIfNull(o);
             dataList.add(nodeEngine.toData(o));
         }
         return dataList;
