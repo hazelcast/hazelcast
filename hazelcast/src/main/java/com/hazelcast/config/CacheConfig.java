@@ -49,6 +49,8 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
     public final static InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
     private String name = null;
+    private String managerPrefix = null;
+    private String uriString = null;
 
     private int backupCount = DEFAULT_BACKUP_COUNT;
 
@@ -103,6 +105,34 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
     public CacheConfig<K,V> setName(String name) {
         this.name = name;
         return this;
+    }
+
+    /**
+     * @return the managerPrefix
+     */
+    public String getManagerPrefix() {
+        return managerPrefix;
+    }
+
+    public CacheConfig<K,V> setManagerPrefix(String managerPrefix) {
+        this.managerPrefix = managerPrefix;
+        return this;
+    }
+
+    public String getUriString() {
+        return uriString;
+    }
+
+    public CacheConfig<K,V> setUriString(String uriString) {
+        this.uriString = uriString;
+        return this;
+    }
+
+    /**
+     * @return the name with manager scope prefix
+     */
+    public String getNameWithPrefix() {
+        return managerPrefix+name;
     }
 
     /**
@@ -206,6 +236,8 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeUTF(managerPrefix);
+        out.writeUTF(uriString);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
 
@@ -238,6 +270,8 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        managerPrefix = in.readUTF();
+        uriString = in.readUTF();
         backupCount= in.readInt();
         asyncBackupCount= in.readInt();
 

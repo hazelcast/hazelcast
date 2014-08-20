@@ -50,6 +50,7 @@ import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
+import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
@@ -97,8 +98,14 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         super(nodeEngine, service);
         this.name = name;
         this.cacheManager = cacheManager;
-        this.nameWithPrefix = cacheConfig.getName();
+        this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
+
+        if (cacheConfig.getCacheLoaderFactory() != null) {
+            final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
+            cacheLoader = cacheLoaderFactory.create();
+        }
+
     }
 
     //region DISTRIBUTED OBJECT

@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 
 import com.hazelcast.cache.CacheKeyIteratorResult;
+import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.logging.SystemLog;
 import com.hazelcast.nio.serialization.Data;
 
@@ -63,6 +64,7 @@ public class CacheConcurrentHashMap<K, V> extends ConcurrentReferenceHashMap<K, 
     }
 
     int fetch(int tableIndex, int size, List<Data> keys) {
+        final long now = Clock.currentTimeMillis();
 //        List<K> keys = new ArrayList<K>();
         int nextTableIndex;
         final Segment<K, V> segment = segments[0];
@@ -78,17 +80,17 @@ public class CacheConcurrentHashMap<K, V> extends ConcurrentReferenceHashMap<K, 
             HashEntry<K, V> nextEntry = currentTable[nextTableIndex--];
             while (nextEntry != null) {
                 if (nextEntry.key() != null) {
-                    keys.add((Data) nextEntry.key());
-                    counter++;
+                    CacheRecord record = (CacheRecord) nextEntry.value();
+                    boolean isExpired = record != null && record.isExpiredAt(now);
+                    if(!isExpired){
+                        keys.add((Data) nextEntry.key());
+                        counter++;
+                    }
                 }
                 nextEntry = nextEntry.next;
             }
         }
-
         return nextTableIndex;
-
-
-
     }
 
 

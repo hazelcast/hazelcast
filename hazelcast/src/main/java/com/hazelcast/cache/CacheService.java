@@ -111,7 +111,11 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         for (CachePartitionSegment segment : segments) {
             segment.deleteCache(objectName);
         }
+        enableStatistics(objectName,false);
+        enableManagement(objectName,false);
+
         deleteCacheConfig(objectName);
+        deleteCacheStat(objectName);
     }
     //endregion
 
@@ -160,12 +164,12 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     }
 
     public boolean createCacheConfigIfAbsent(CacheConfig config){
-        final CacheConfig _config = configs.putIfAbsent(config.getName(), config);
+        final CacheConfig _config = configs.putIfAbsent(config.getNameWithPrefix(), config);
         return _config == null;
     }
 
     public boolean updateCacheConfig(CacheConfig config){
-        final CacheConfig oldConfig = configs.put(config.getName(), config);
+        final CacheConfig oldConfig = configs.put(config.getNameWithPrefix(), config);
         return oldConfig != null;
     }
 
@@ -184,19 +188,19 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         statistics.remove(name);
     }
 
-    public void enableStatistics(String cacheNameWithPrefix, URI uri, String name, boolean enabled) {
+    public void enableStatistics(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
         if( cacheConfig != null){
             cacheConfig.setStatisticsEnabled(enabled);
-        }
-        if (enabled) {
-            final CacheStatistics cacheStatistics = createCacheStatIfAbsent(cacheNameWithPrefix);
-            final CacheStatisticsMXBeanImpl mxBean = new CacheStatisticsMXBeanImpl(cacheStatistics);
+            if (enabled) {
+                final CacheStatistics cacheStatistics = createCacheStatIfAbsent(cacheNameWithPrefix);
+                final CacheStatisticsMXBeanImpl mxBean = new CacheStatisticsMXBeanImpl(cacheStatistics);
 
-            MXBeanUtil.registerCacheObject(mxBean, uri, name, true);
-        } else {
-            MXBeanUtil.unregisterCacheObject(uri, name, true);
-            deleteCacheStat(cacheNameWithPrefix);
+                MXBeanUtil.registerCacheObject(mxBean, cacheConfig.getUriString(), cacheConfig.getName(), true);
+            } else {
+                MXBeanUtil.unregisterCacheObject(cacheConfig.getUriString(), cacheConfig.getName(), true);
+                deleteCacheStat(cacheNameWithPrefix);
+            }
         }
     }
 
@@ -204,13 +208,14 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
         if( cacheConfig != null){
             cacheConfig.setManagementEnabled(enabled);
+            if (enabled) {
+                final CacheMXBeanImpl mxBean = new CacheMXBeanImpl(cacheConfig);
+                MXBeanUtil.registerCacheObject(mxBean, cacheConfig.getUriString(), cacheConfig.getName(), false);
+            } else {
+                MXBeanUtil.unregisterCacheObject(cacheConfig.getUriString(), cacheConfig.getName(), false);
+                deleteCacheStat(cacheNameWithPrefix);
+            }
         }
-
-//        if (enabled) {
-//            MXBeanUtil.registerCacheObject(this, false);
-//        } else {
-//            MXBeanUtil.unregisterCacheObject(this, false);
-//        }
     }
 
     public CacheConfig getCacheConfig(String name) {

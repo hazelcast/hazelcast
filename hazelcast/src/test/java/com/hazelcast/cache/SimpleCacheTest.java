@@ -14,31 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.examples;
+package com.hazelcast.cache;
 
-import com.hazelcast.cache.HazelcastCacheManager;
-import com.hazelcast.cache.HazelcastCachingProvider;
-import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Partition;
 import com.hazelcast.logging.ILogger;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
-import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;

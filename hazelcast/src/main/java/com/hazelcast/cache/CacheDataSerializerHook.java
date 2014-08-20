@@ -27,6 +27,7 @@ import com.hazelcast.cache.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.operation.CacheGetAndRemoveOperation;
 import com.hazelcast.cache.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.operation.CacheGetConfigOperation;
+import com.hazelcast.cache.operation.CacheGetOperation;
 import com.hazelcast.cache.operation.CacheKeyIteratorOperation;
 import com.hazelcast.cache.operation.CacheLoadAllOperation;
 import com.hazelcast.cache.operation.CacheLoadAllOperationFactory;
@@ -76,7 +77,7 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
     public static final short LOAD_ALL = i++;
     public static final short LOAD_ALL_FACTORY = i++;
     public static final short EXPIRY_POLICY = i++;
-    public static final short EVENT = i++;
+//    public static final short EVENT = i++;
 
     public static final short KEY_ITERATOR = i++;
     public static final short KEY_ITERATION_RESULT = i++;
@@ -94,6 +95,11 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
+        constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheGetOperation();
+            }
+        };
         constructors[CONTAINS_KEY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheContainsKeyOperation();

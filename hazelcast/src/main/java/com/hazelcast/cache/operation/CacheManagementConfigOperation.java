@@ -31,18 +31,14 @@ import java.net.URI;
  */
 public class CacheManagementConfigOperation extends AbstractNamedOperation implements IdentifiedDataSerializable {
 
-    private String cacheNameWithPrefix;
-    private URI uri;
     private boolean isStat;
     private boolean enabled;
 
     public CacheManagementConfigOperation() {
     }
 
-    public CacheManagementConfigOperation(String cacheNameWithPrefix, URI uri, String name, boolean isStat, boolean enabled) {
-        super(name);
-        this.cacheNameWithPrefix = cacheNameWithPrefix;
-        this.uri = uri;
+    public CacheManagementConfigOperation(String cacheNameWithPrefix, boolean isStat, boolean enabled) {
+        super(cacheNameWithPrefix);
         this.isStat = isStat;
         this.enabled = enabled;
     }
@@ -52,7 +48,7 @@ public class CacheManagementConfigOperation extends AbstractNamedOperation imple
     public void run() throws Exception {
         final CacheService service = getService();
         if(isStat) {
-            service.enableStatistics(cacheNameWithPrefix, uri, name, enabled);
+            service.enableStatistics(name, enabled);
         } else {
             service.enableManagement(name, enabled);
         }
@@ -71,8 +67,6 @@ public class CacheManagementConfigOperation extends AbstractNamedOperation imple
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(cacheNameWithPrefix);
-        out.writeObject(uri);
         out.writeBoolean(isStat);
         out.writeBoolean(enabled);
     }
@@ -80,8 +74,6 @@ public class CacheManagementConfigOperation extends AbstractNamedOperation imple
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        cacheNameWithPrefix = in.readUTF();
-        uri = in.readObject();
         isStat = in.readBoolean();
         enabled = in.readBoolean();
     }

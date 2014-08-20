@@ -15,8 +15,6 @@
  */
 package com.hazelcast.cache;
 
-import com.sun.jmx.mbeanserver.JmxMBeanServer;
-
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanServer;
@@ -36,11 +34,8 @@ public class TCKMBeanServerBuilder extends MBeanServerBuilder {
     }
 
     @Override
-    public MBeanServer newMBeanServer(String defaultDomain, MBeanServer outer,
-                                      MBeanServerDelegate delegate) {
-        MBeanServerDelegate decoratingDelegate = new RIMBeanServerDelegate(delegate);
-        return JmxMBeanServer.newMBeanServer(defaultDomain, outer,
-                decoratingDelegate, false);
+    public MBeanServer newMBeanServer(String defaultDomain, MBeanServer outer, MBeanServerDelegate delegate) {
+        return super.newMBeanServer(defaultDomain, outer, new RIMBeanServerDelegate(delegate));
     }
 
     public class RIMBeanServerDelegate extends MBeanServerDelegate {
@@ -87,26 +82,19 @@ public class TCKMBeanServerBuilder extends MBeanServerBuilder {
         }
 
         @Override
-        public synchronized void addNotificationListener(NotificationListener listener,
-                                                         NotificationFilter filter,
-                                                         Object handback) throws
-                IllegalArgumentException {
+        public synchronized void addNotificationListener(NotificationListener listener, NotificationFilter filter,
+                                                         Object handback) throws IllegalArgumentException {
             delegate.addNotificationListener(listener, filter, handback);
         }
 
         @Override
-        public synchronized void removeNotificationListener(NotificationListener
-                                                                    listener,
-                                                            NotificationFilter
-                                                                    filter,
-                                                            Object handback) throws
-                ListenerNotFoundException {
+        public synchronized void removeNotificationListener(NotificationListener listener, NotificationFilter filter,
+                                                            Object handback) throws ListenerNotFoundException {
             delegate.removeNotificationListener(listener, filter, handback);
         }
 
         @Override
-        public synchronized void removeNotificationListener(NotificationListener
-                                                                    listener) throws
+        public synchronized void removeNotificationListener(NotificationListener listener) throws
                 ListenerNotFoundException {
             delegate.removeNotificationListener(listener);
         }

@@ -84,7 +84,9 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
                     cacheConfig.setStoreByValue(configuration.isStoreByValue());
                     cacheConfig.setTypes(configuration.getKeyType(), configuration.getValueType());
                 }
-                cacheConfig.setName(cacheNameWithPrefix);
+                cacheConfig.setName(cacheName);
+                cacheConfig.setManagerPrefix(this.cacheNamePrefix);
+                cacheConfig.setUriString(getURI().toString());
 
                 final CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheNameWithPrefix, cacheConfig,true);
                 final OperationService operationService = nodeEngine.getOperationService();
@@ -110,6 +112,12 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
                 caches.put(cacheNameWithPrefix,cacheProxy);
 
                 if (created) {
+                    if(cacheConfig.isStatisticsEnabled()){
+                        enableStatistics(cacheName,true);
+                    }
+                    if(cacheConfig.isManagementEnabled()){
+                        enableManagement(cacheName,true);
+                    }
                     return cacheProxy;
                 }
             }
@@ -212,7 +220,7 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
             throw new NullPointerException();
         }
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        cacheService.enableStatistics(cacheNameWithPrefix, uri, cacheName, enabled);
+        cacheService.enableStatistics(cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
         enableStatisticManagementOnOtherNodes(uri, cacheName, true, enabled);
     }
@@ -222,7 +230,7 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for(MemberImpl member:members){
             if(!member.localMember()){
-                final CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, uri, cacheName,statOrMan, enabled);
+                final CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan, enabled);
                 nodeEngine.getOperationService().invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
             }
         }

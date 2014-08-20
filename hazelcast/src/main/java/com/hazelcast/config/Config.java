@@ -268,7 +268,7 @@ public class Config {
     }
 
     public Config addCacheConfig(CacheConfig cacheConfig) {
-        cacheConfigs.put(cacheConfig.getName(), cacheConfig);
+        cacheConfigs.put(cacheConfig.getNameWithPrefix(), cacheConfig);
         return this;
     }
 

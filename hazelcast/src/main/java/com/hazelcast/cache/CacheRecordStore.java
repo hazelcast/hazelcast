@@ -37,6 +37,7 @@ import javax.cache.processor.EntryProcessor;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
@@ -110,7 +111,7 @@ public class CacheRecordStore implements ICacheRecordStore {
             if (value == null) {
                 return null;
             }
-            createRecordWithExpiry(key, value, record, _expiryPolicy, now, false);
+            createRecordWithExpiry(key, value, record, _expiryPolicy, now, true);
 
             return value;
         } else {
@@ -466,18 +467,27 @@ public class CacheRecordStore implements ICacheRecordStore {
     @Override
     public void clear(Set<Data> keys, boolean isRemoveAll) {
         if (isRemoveAll) {
+            final long now = Clock.currentTimeMillis();
             final Set<Data> _keys = new HashSet<Data>(keys.isEmpty() ? records.keySet() : keys );
             try {
-                final int initialCount = _keys.size();
                 deleteAllCacheEntry(_keys);
-                if (isStatisticsEnabled()) {
-                    statistics.increaseCacheRemovals(initialCount - _keys.size());
-                }
+//                if (isStatisticsEnabled()) {
+//                    statistics.increaseCacheRemovals(_keys.size());
+//                }
             } finally {
                 final Set<Data> _keysToClean = new HashSet<Data>(keys.isEmpty() ? records.keySet() : keys );
                 for (Data key : _keysToClean) {
-                    if (_keys.contains(key) && records.containsKey(key) ){
-                        deleteRecord(key);
+                    final CacheRecord record = records.get(key);
+                    if (_keys.contains(key) && record != null ){
+                        boolean isExpired =  record.isExpiredAt(now);
+                        if (isExpired) {
+                            processExpiredEntry(key, record);
+                        } else {
+                            deleteRecord(key);
+                            if (isStatisticsEnabled()) {
+                                statistics.increaseCacheRemovals(1);
+                            }
+                        }
                     } else {
                         keys.remove(key);
                     }
@@ -561,7 +571,7 @@ public class CacheRecordStore implements ICacheRecordStore {
                     final Data key = entry.getKey();
                     final Object value = entry.getValue();
                     if(value != null){
-                        getAndPut(key, value, null, null, false,false);
+                        getAndPut(key, value, null, null, false,true);
 //                        this.disableWriteThrough = false;
 //                        put(key, value, null, null);
 //                        this.disableWriteThrough = true;//cacheConfig.isWriteThrough();
@@ -574,7 +584,7 @@ public class CacheRecordStore implements ICacheRecordStore {
                     final Object value = entry.getValue();
                     if(value != null){
 //                        this.disableWriteThrough = false;
-                        final boolean hasPut = putIfAbsent(key, value, null, null,false);
+                        final boolean hasPut = putIfAbsent(key, value, null, null,true);
 //                        this.disableWriteThrough = true;//cacheConfig.isWriteThrough();
                         if(hasPut){
                             keysLoadad.add(key);

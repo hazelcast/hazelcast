@@ -34,7 +34,7 @@ public class MXBeanUtil {
 
 //    private static MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
-    public static void registerCacheObject(Object mxbean, URI uri, String name, boolean stats) {
+    public static void registerCacheObject(Object mxbean, String uri, String name, boolean stats) {
         //these can change during runtime, so always look it up
         ObjectName registeredObjectName = calculateObjectName(uri, name, stats);
         try {
@@ -48,7 +48,7 @@ public class MXBeanUtil {
     }
 
 
-    static boolean isRegistered(URI uri, String name, boolean stats) {
+    static boolean isRegistered(String uri, String name, boolean stats) {
         Set<ObjectName> registeredObjectNames = null;
 
         ObjectName objectName = calculateObjectName(uri, name, stats);
@@ -58,7 +58,7 @@ public class MXBeanUtil {
     }
 
 
-    public static void unregisterCacheObject(URI uri, String name, boolean stats) {
+    public static void unregisterCacheObject(String uri, String name, boolean stats) {
         Set<ObjectName> registeredObjectNames = null;
 
         ObjectName objectName = calculateObjectName(uri, name, stats);
@@ -79,8 +79,8 @@ public class MXBeanUtil {
      * Creates an object name using the scheme
      * "javax.cache:type=Cache&lt;Statistics|Configuration&gt;,name=&lt;cacheName&gt;"
      */
-    public static ObjectName calculateObjectName(URI uri, String name, boolean stats) {
-        String cacheManagerName = mbeanSafe(uri.toString());
+    public static ObjectName calculateObjectName(String uri, String name, boolean stats) {
+        String cacheManagerName = mbeanSafe(uri);
         String cacheName = mbeanSafe(name);
 
         try {

@@ -44,10 +44,10 @@ public abstract class HazelcastCacheManager implements CacheManager {
         }
         this.cachingProvider = cachingProvider;
 
-        isDefaultURI = uri == null;
+        isDefaultURI = uri == null || cachingProvider.getDefaultURI().equals(uri);
         this.uri = isDefaultURI ? cachingProvider.getDefaultURI(): uri;
 
-        isDefaultClassLoader = classLoader == null;
+        isDefaultClassLoader = classLoader == null || cachingProvider.getDefaultClassLoader().equals(classLoader);
         final ClassLoader _classLoader = isDefaultClassLoader ? cachingProvider.getDefaultClassLoader() : classLoader;
         this.classLoaderReference = new WeakReference<ClassLoader>(_classLoader);
 
