@@ -45,6 +45,7 @@ import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
@@ -227,7 +228,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         boolean valid = Packet.VERSION == joinMessage.getPacketVersion();
         if (valid) {
             try {
-                valid = node.createConfigCheck().isCompatible(joinMessage.getConfigCheck());
+                ConfigCheck newMemberConfigCheck = joinMessage.getConfigCheck();
+                ConfigCheck clusterConfigCheck = node.createConfigCheck();
+                valid = clusterConfigCheck.isCompatible(newMemberConfigCheck);
             } catch (Exception e) {
                 final String message = "Invalid join request from: " + joinMessage.getAddress() + ", reason:" + e.getMessage();
                 logger.warning(message);
@@ -242,6 +245,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         boolean validJoinRequest;
         try {
             validJoinRequest = validateJoinMessage(joinRequest);
+        } catch (ConfigMismatchException e) {
+            throw e;
         } catch (Exception e) {
             validJoinRequest = false;
         }
@@ -306,7 +311,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (lastConfirmation == null ||
                 (now - lastConfirmation > maxNoMasterConfirmationMillis)) {
             logger.warning("Removing " + member + " because it has not sent any master confirmation " +
-                            " for " + maxNoMasterConfirmationMillis + " ms.");
+                    " for " + maxNoMasterConfirmationMillis + " ms.");
             removeAddress(member.getAddress());
             return true;
         }
@@ -337,7 +342,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    private boolean isMaster(MemberImpl member) {return member.getAddress().equals(getMasterAddress());}
+    private boolean isMaster(MemberImpl member) {
+        return member.getAddress().equals(getMasterAddress());
+    }
 
     private void sendHearBeatIfRequired(long now, MemberImpl member) {
         if ((now - member.getLastWrite()) > HEARTBEAT_INTERVAL) {
@@ -525,9 +532,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
 
         Connection conn = op.getConnection();
-        if (!isValidJoinRequest(joinRequest)) {
-            logger.info("Received an invalid join request from " + joinRequest.getAddress());
-            conn.close();
+
+        if (!ensureValidConfiguration(joinRequest, conn)) {
             return;
         }
 
@@ -584,8 +590,31 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
+    private boolean ensureValidConfiguration(JoinRequest joinRequest, Connection conn) {
+        try {
+            if (isValidJoinRequest(joinRequest)) {
+                return true;
+            }
+
+            logger.warning("Received an invalid join request from " + joinRequest.getAddress()
+                    + ", cause: clusters part of different cluster-groups");
+
+            nodeEngine.getOperationService().send(new GroupMismatchOperation(),joinRequest.getAddress());
+            //conn.close();
+        } catch (ConfigMismatchException e) {
+            logger.warning("Received an invalid join request from " + joinRequest.getAddress() + ", cause:" + e.getMessage());
+            sendConfigurationMismatchFailure(joinRequest.getAddress(), e.getMessage());
+        }
+        return false;
+    }
+
     private void sendAuthenticationFailure(Address target) {
         nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), target);
+    }
+
+    private void sendConfigurationMismatchFailure(Address target, String msg) {
+        OperationService operationService = nodeEngine.getOperationService();
+        operationService.send(new ConfigMismatchOperation(msg), target);
     }
 
     private void checkSecureLogin(JoinRequest joinRequest, MemberInfo newMemberInfo) {
@@ -594,15 +623,15 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             if (cr == null) {
                 throw new SecurityException("Expecting security credentials " +
                         "but credentials could not be found in JoinRequest!");
-            } else {
-                try {
-                    LoginContext lc = node.securityContext.createMemberLoginContext(cr);
-                    lc.login();
-                } catch (LoginException e) {
-                    throw new SecurityException(
-                            "Authentication has failed for " + cr.getPrincipal() + '@' + cr.getEndpoint()
-                                    + " => (" + e.getMessage() + ")");
-                }
+            }
+
+            try {
+                LoginContext lc = node.securityContext.createMemberLoginContext(cr);
+                lc.login();
+            } catch (LoginException e) {
+                throw new SecurityException(
+                        "Authentication has failed for " + cr.getPrincipal() + '@' + cr.getEndpoint()
+                                + " => (" + e.getMessage() + ")");
             }
         }
     }

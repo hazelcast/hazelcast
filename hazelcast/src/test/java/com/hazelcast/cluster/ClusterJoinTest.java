@@ -40,6 +40,7 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -271,30 +272,6 @@ public class ClusterJoinTest {
     }
 
     @Test
-    public void testMulticast_With_IncompatiblePasswords() throws Exception {
-        Config config1 = new Config();
-        config1.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        config1.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "3");
-        config1.getGroupConfig().setPassword("pass1");
-        config1.getNetworkConfig().getJoin().getMulticastConfig()
-                .setEnabled(true).setMulticastTimeoutSeconds(3);
-        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
-
-        Config config2 = new Config();
-        config2.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        config2.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "3");
-        config2.getGroupConfig().setPassword("pass2");
-        config2.getNetworkConfig().getJoin().getMulticastConfig()
-                .setEnabled(true).setMulticastTimeoutSeconds(3);
-        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
-
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
-    }
-
-    @Test
     public void testTcpIp_With_IncompatiblePasswords() throws Exception {
         Config config1 = new Config();
         config1.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
@@ -303,7 +280,6 @@ public class ClusterJoinTest {
         config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config1.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
 
         Config config2 = new Config();
         config2.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
@@ -312,10 +288,8 @@ public class ClusterJoinTest {
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
 
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
+        assertIncompatible(config1, config2);
     }
 
     @Test
@@ -325,7 +299,6 @@ public class ClusterJoinTest {
         config1.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "3");
         config1.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(3);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
 
         Config config2 = new Config();
         config2.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
@@ -333,10 +306,8 @@ public class ClusterJoinTest {
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setConnectionTimeoutSeconds(3)
                 .setEnabled(true).addMember("127.0.0.1");
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
 
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
+        assertIncompatible(config1, config2);
     }
 
     @Test
@@ -349,7 +320,7 @@ public class ClusterJoinTest {
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
         config1.getPartitionGroupConfig().setEnabled(true)
                 .setGroupType(PartitionGroupConfig.MemberGroupType.HOST_AWARE);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+
 
         Config config2 = new Config();
         config2.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
@@ -358,10 +329,8 @@ public class ClusterJoinTest {
         config2.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(3);
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
         config2.getPartitionGroupConfig().setEnabled(false);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
 
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
+        assertIncompatible(config1, config2);
     }
 
     @Test
@@ -374,7 +343,6 @@ public class ClusterJoinTest {
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
         config1.getPartitionGroupConfig().setEnabled(true)
                 .setGroupType(PartitionGroupConfig.MemberGroupType.CUSTOM);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
 
         Config config2 = new Config();
         config2.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
@@ -384,10 +352,7 @@ public class ClusterJoinTest {
                 .setEnabled(true).setConnectionTimeoutSeconds(3).addMember("127.0.0.1");
         config2.getPartitionGroupConfig().setEnabled(true)
                 .setGroupType(PartitionGroupConfig.MemberGroupType.HOST_AWARE);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
-
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
+        assertIncompatible(config1, config2);
     }
 
     /**
@@ -459,5 +424,19 @@ public class ClusterJoinTest {
         assertEquals(2, h3.getCluster().getMembers().size());
         assertEquals(2, numNodesWithTwoMembers);
         assertEquals(2, numNodesThatKnowAboutH3);
+    }
+
+    private void assertIncompatible(Config config1, Config config2) {
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config1);
+
+        try {
+            Hazelcast.newHazelcastInstance(config2);
+            fail();
+        } catch (IllegalStateException e) {
+
+        }
+
+        assertTrue(hz1.getLifecycleService().isRunning());
+        assertEquals(1, hz1.getCluster().getMembers().size());
     }
 }

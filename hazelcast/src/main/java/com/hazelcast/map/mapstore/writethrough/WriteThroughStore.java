@@ -84,7 +84,7 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public Object flush(Data key, Object value, long now) {
+    public Object flush(Data key, Object value, long now, boolean backup) {
         return value;
     }
 

@@ -39,7 +39,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void run() {
-        dataValue = mapService.getMapServiceContext().toData(recordStore.evict(dataKey));
+        dataValue = mapService.getMapServiceContext().toData(recordStore.evict(dataKey, false));
         evicted = dataValue != null;
     }
 

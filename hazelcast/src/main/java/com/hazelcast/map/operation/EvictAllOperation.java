@@ -34,7 +34,7 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
         if (recordStore == null) {
             return;
         }
-        numberOfEvictedEntries = recordStore.evictAll();
+        numberOfEvictedEntries = recordStore.evictAll(false);
         shouldRunOnBackup = true;
     }
 

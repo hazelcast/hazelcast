@@ -47,12 +47,13 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     public void acquire() throws InterruptedException {
-        acquire(1);
+        AcquireRequest request = new AcquireRequest(name);
+        invoke(request);
     }
 
     public void acquire(int permits) throws InterruptedException {
         checkNegative(permits);
-        AcquireRequest request = new AcquireRequest(name, permits, -1);
+        AcquireRequest request = new AcquireRequest(name, permits);
         invoke(request);
     }
 
@@ -75,7 +76,8 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     public void release() {
-        release(1);
+        ReleaseRequest request = new ReleaseRequest(name, 1);
+        invoke(request);
     }
 
     public void release(int permits) {
@@ -85,7 +87,9 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     public boolean tryAcquire() {
-        return tryAcquire(1);
+        AcquireRequest request = new AcquireRequest(name, 1, 0);
+        Boolean result = invoke(request);
+        return result;
     }
 
     public boolean tryAcquire(int permits) {
@@ -98,7 +102,12 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     public boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException {
-        return tryAcquire(1, timeout, unit);
+        if (timeout == 0) {
+            return tryAcquire();
+        }
+        AcquireRequest request = new AcquireRequest(name, 1, unit.toMillis(timeout));
+        Boolean result = invoke(request);
+        return result;
     }
 
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {

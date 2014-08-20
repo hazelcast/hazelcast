@@ -30,6 +30,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Arrays;
@@ -71,7 +72,7 @@ public final class EvictionHelper {
     }
 
     public static void removeEvictableRecords(final RecordStore recordStore, int evictableSize, final MapConfig mapConfig,
-                                              final MapServiceContext mapServiceContext) {
+                                              final MapServiceContext mapServiceContext, boolean backup) {
         final MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
         // criteria is a long value, like last access times or hits,
         // used for calculating LFU or LRU.
@@ -91,11 +92,13 @@ public final class EvictionHelper {
             if (value <= criteriaValue) {
                 final Data tmpKey = record.getKey();
                 final Object tmpValue = record.getValue();
-                if (evictIfNotLocked(tmpKey, recordStore)) {
+                if (evictIfNotLocked(tmpKey, recordStore, backup)) {
                     evictedRecordCounter++;
                     final String mapName = mapConfig.getName();
-                    interceptAndInvalidate(mapServiceContext, value, tmpKey, mapName);
-                    fireEvent(tmpKey, tmpValue, mapName, mapServiceContext);
+                    if (!backup) {
+                        interceptAndInvalidate(mapServiceContext, value, tmpKey, mapName);
+                        fireEvent(tmpKey, tmpValue, mapName, mapServiceContext);
+                    }
                 }
             }
             if (evictedRecordCounter >= evictableSize) {
@@ -152,6 +155,9 @@ public final class EvictionHelper {
     }
 
     public static void fireEvent(Data key, Object value, String mapName, MapServiceContext mapServiceContext) {
+        if (!hasListener(mapName, mapServiceContext)) {
+            return;
+        }
         final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final Address thisAddress = nodeEngine.getThisAddress();
@@ -160,11 +166,17 @@ public final class EvictionHelper {
                 key, dataValue, null);
     }
 
-    public static boolean evictIfNotLocked(Data key, RecordStore recordStore) {
+    private static boolean hasListener(String mapName, MapServiceContext mapServiceContext) {
+        final String serviceName = mapServiceContext.serviceName();
+        final EventService eventService = mapServiceContext.getNodeEngine().getEventService();
+        return eventService.hasEventRegistration(serviceName, mapName);
+    }
+
+    public static boolean evictIfNotLocked(Data key, RecordStore recordStore, boolean backup) {
         if (recordStore.isLocked(key)) {
             return false;
         }
-        recordStore.evict(key);
+        recordStore.evict(key, backup);
         return true;
     }
 
