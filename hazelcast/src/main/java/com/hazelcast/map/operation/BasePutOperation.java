@@ -23,11 +23,12 @@ import com.hazelcast.map.MapEventPublisher;
 import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
-import com.hazelcast.map.record.Records;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
+
+import static com.hazelcast.map.record.Records.buildRecordInfo;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
@@ -71,15 +72,16 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     public boolean shouldBackup() {
+        Record record = recordStore.getRecord(dataKey);
+        if (record == null) {
+            return false;
+        }
         return true;
     }
 
     public Operation getBackupOperation() {
-        RecordInfo replicationInfo = null;
-        Record record = recordStore.getRecord(dataKey);
-        if (record != null) {
-            replicationInfo = Records.buildRecordInfo(record);
-        }
+        final Record record = recordStore.getRecord(dataKey);
+        final RecordInfo replicationInfo = buildRecordInfo(record);
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
     }
 

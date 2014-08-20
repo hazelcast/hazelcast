@@ -94,10 +94,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     public Operation getBackupOperation() {
         final Record record = recordStore.getRecord(dataKey);
-        RecordInfo replicationInfo = null;
-        if (record != null) {
-            replicationInfo = Records.buildRecordInfo(record);
-        }
+        final RecordInfo replicationInfo = Records.buildRecordInfo(record);
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, true);
     }
 
@@ -108,7 +105,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     @Override
     public boolean shouldBackup() {
-        return shouldBackup;
+        return shouldBackup && recordStore.getRecord(dataKey) != null;
     }
 
     public WaitNotifyKey getNotifiedKey() {

@@ -198,13 +198,12 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      * key, order of operations may be reflected differently to map store.
      */
     @Override
-    public Object flush(Data key, Object value, long now) {
+    public Object flush(Data key, Object value, long now, boolean backup) {
         if (writeCoalescing) {
-            return defaultFlush(key);
+            return defaultFlush(key, backup);
         } else {
             return flushWhenNotWriteCoalescing(key, value, now);
         }
-
     }
 
     @Override
@@ -334,13 +333,15 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return toObject(entry.getValue());
     }
 
-    private Object defaultFlush(Data key) {
+    private Object defaultFlush(Data key, boolean backup) {
         DelayedEntry entry = DelayedEntry.createWithNullValue(key, -1, -1);
         entry = writeBehindQueue.get(entry);
         if (entry == null) {
             return null;
         }
-        writeBehindProcessor.flush(entry);
+        if (!backup) {
+            writeBehindProcessor.flush(entry);
+        }
         final List<DelayedEntry> entries = Collections.singletonList(entry);
         writeBehindQueue.removeAll(entries);
         return entry.getValue();
