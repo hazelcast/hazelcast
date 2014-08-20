@@ -26,6 +26,12 @@ public final class ValidationUtil {
     private ValidationUtil() {
     }
 
+    public static void checkNotNull(Object argument, String message) {
+        if (argument == null) {
+            throw new NullPointerException(message);
+        }
+    }
+
     public static String hasText(String argument, String argName) {
         isNotNull(argument, argName);
 

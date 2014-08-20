@@ -17,25 +17,26 @@
 package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.internal.matchers.Null;
 
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+import java.util.TreeSet;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -64,18 +65,18 @@ public class ClientMultiMapTest {
         assertTrue(mm.put(key, 1));
     }
 
-    @Test(expected = HazelcastSerializationException.class)
+    @Test(expected = NullPointerException.class)
     public void testPut_withNullValue() {
         Object key ="key";
         final MultiMap mm = client.getMultiMap(randomString());
-        assertFalse(mm.put(key, null));
+        mm.put(key, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testPut_withNullKey() {
         Object value ="value";
         final MultiMap mm = client.getMultiMap(randomString());
-        assertFalse(mm.put(null, value));
+        mm.put(null, value);
     }
 
     @Test
@@ -277,7 +278,7 @@ public class ClientMultiMapTest {
     }
 
     @Test
-    public void testEnterySet() {
+    public void testEntrySet() {
         final int maxKeys = 14;
         final int maxValues = 3;
         final MultiMap mm = client.getMultiMap(randomString());
@@ -310,7 +311,7 @@ public class ClientMultiMapTest {
     public void testContainsKey_whenKeyNull() {
         final MultiMap mm = client.getMultiMap(randomString());
 
-        assertFalse(mm.containsKey(null));
+        mm.containsKey(null);
     }
 
     @Test
@@ -328,10 +329,10 @@ public class ClientMultiMapTest {
         assertFalse(mm.containsValue("NOT_THERE"));
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testContainsValue_whenSearchValueNull() {
         final MultiMap mm = client.getMultiMap(randomString());
-        assertFalse(mm.containsValue(null));
+        mm.containsValue(null);
     }
 
     @Test
