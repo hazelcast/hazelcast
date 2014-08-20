@@ -154,7 +154,7 @@ public interface RecordStore {
 
     boolean containsValue(Object testValue);
 
-    Object evict(Data key);
+    Object evict(Data key, boolean backup);
 
     /**
      * Evicts all keys except locked ones.
@@ -202,9 +202,9 @@ public interface RecordStore {
      * Do expiration operations.
      *
      * @param percentage of max expirables according to the record store size.
-     * @param owner      <code>true</code> if an owner partition, otherwise <code>false</code>.
+     * @param backup     <code>true</code> if a backup partition, otherwise <code>false</code>.
      */
-    void evictExpiredEntries(int percentage, boolean owner);
+    void evictExpiredEntries(int percentage, boolean backup);
 
     /**
      * @return <code>true</code> if record store has at least one candidate entry

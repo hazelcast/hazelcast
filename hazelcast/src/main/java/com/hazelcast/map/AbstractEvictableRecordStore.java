@@ -71,7 +71,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public void evictExpiredEntries(int percentage, boolean ownerPartition) {
+    public void evictExpiredEntries(int percentage, boolean backup) {
         final long now = getNow();
         final int size = size();
         final int maxIterationCount = getMaxIterationCount(size, percentage);
@@ -79,7 +79,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         int loop = 0;
         int evictedEntryCount = 0;
         while (true) {
-            evictedEntryCount += evictExpiredEntriesInternal(maxIterationCount, now, ownerPartition);
+            evictedEntryCount += evictExpiredEntriesInternal(maxIterationCount, now, backup);
             if (evictedEntryCount >= maxIterationCount) {
                 break;
             }
@@ -112,7 +112,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return Math.round(maxIterationCount);
     }
 
-    private int evictExpiredEntriesInternal(int maxIterationCount, long now, boolean ownerPartition) {
+    private int evictExpiredEntriesInternal(int maxIterationCount, long now, boolean backup) {
         int evictedCount = 0;
         int checkedEntryCount = 0;
         initExpirationIterator();
@@ -131,16 +131,11 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             }
             //!!! get entry value here because evictInternal(key) nulls the record value.
             final Object value = record.getValue();
-            evictInternal(key);
+            evictInternal(key, backup);
             evictedCount++;
-            initExpirationIterator();
-
             // do post eviction operations if this partition is an owner partition.
-            if (ownerPartition) {
-                doPostEvictionOperations(key, value);
-            }
-            if (!expirationIterator.hasNext()) {
-                break;
+            if (!backup) {
+                doPostEvictionOperations(key, value, backup);
             }
         }
         return evictedCount;
@@ -164,9 +159,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      *
      * @param now now in time.
      */
-    protected void evictEntries(long now) {
+    protected void evictEntries(long now, boolean backup) {
         if (evictionEnabled) {
-            cleanUp(now);
+            cleanUp(now, backup);
         }
     }
 
@@ -176,34 +171,34 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      *
      * @param now now.
      */
-    protected void postReadCleanUp(long now) {
+    protected void postReadCleanUp(long now, boolean backup) {
         if (evictionEnabled) {
             readCountBeforeCleanUp++;
             if ((readCountBeforeCleanUp & POST_READ_CHECK_POINT) == 0) {
-                cleanUp(now);
+                cleanUp(now, backup);
             }
         }
 
     }
 
-    private void cleanUp(long now) {
+    private void cleanUp(long now, boolean backup) {
         if (size() == 0) {
             return;
         }
         if (inEvictableTimeWindow(now) && isEvictable()) {
-            removeEvictables();
+            removeEvictables(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
         }
     }
 
-    private void removeEvictables() {
+    private void removeEvictables(boolean backup) {
         final int evictableSize = getEvictableSize();
         if (evictableSize < 1) {
             return;
         }
         final MapConfig mapConfig = mapContainer.getMapConfig();
-        removeEvictableRecords(this, evictableSize, mapConfig, mapServiceContext);
+        removeEvictableRecords(this, evictableSize, mapConfig, mapServiceContext, backup);
     }
 
     private int getEvictableSize() {
@@ -235,8 +230,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return EvictionHelper.checkEvictable(mapContainer);
     }
 
-    protected Record nullIfExpired(Record record) {
-        return evictIfNotReachable(record);
+    protected Record nullIfExpired(Record record, boolean backup) {
+        return evictIfNotReachable(record, backup);
     }
 
     protected void markRecordStoreExpirable(long ttl) {
@@ -245,7 +240,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
     }
 
-    abstract Object evictInternal(Data key);
+    abstract Object evictInternal(Data key, boolean backup);
 
 
     /**
@@ -255,7 +250,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * @param record {@link com.hazelcast.map.record.Record}
      * @return null if evictable.
      */
-    private Record evictIfNotReachable(Record record) {
+    private Record evictIfNotReachable(Record record, boolean backup) {
         if (record == null) {
             return null;
         }
@@ -267,8 +262,10 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return record;
         }
         final Object value = record.getValue();
-        evict(key);
-        doPostEvictionOperations(key, value);
+        evict(key, backup);
+        if (!backup) {
+            doPostEvictionOperations(key, value, backup);
+        }
         return null;
     }
 
@@ -339,10 +336,14 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * - Sends eviction event.
      * - Invalidates near cache.
      *
-     * @param key   the key to be processed.
-     * @param value the value to be processed.
+     * @param key    the key to be processed.
+     * @param value  the value to be processed.
+     * @param backup <code>true</code> if running on a backup partition, otherwise <code>false</code>
      */
-    private void doPostEvictionOperations(Data key, Object value) {
+    private void doPostEvictionOperations(Data key, Object value, boolean backup) {
+        if (backup) {
+            return;
+        }
         final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         if (nearCacheProvider.isNearCacheAndInvalidationEnabled(name)) {
             nearCacheProvider.invalidateAllNearCaches(name, key);
