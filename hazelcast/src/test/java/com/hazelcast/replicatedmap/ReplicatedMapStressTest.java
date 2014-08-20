@@ -1,7 +1,7 @@
 package com.hazelcast.replicatedmap;
 
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 
 
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class ReplicatedMapStressTest extends HazelcastTestSupport {
     @Test
     public void stressTestRemove() throws Exception {
