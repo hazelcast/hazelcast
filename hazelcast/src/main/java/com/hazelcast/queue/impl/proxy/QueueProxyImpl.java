@@ -22,8 +22,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ValidationUtil;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
