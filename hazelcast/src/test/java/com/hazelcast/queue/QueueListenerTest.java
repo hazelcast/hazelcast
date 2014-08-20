@@ -78,7 +78,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testListeners() throws InterruptedException {
-        final String name = "testListeners";
+        final String name = randomString();
         HazelcastInstance instance = createHazelcastInstance();
         final CountDownLatch latch = new CountDownLatch(20);
         final AtomicBoolean notCalled = new AtomicBoolean(true);
