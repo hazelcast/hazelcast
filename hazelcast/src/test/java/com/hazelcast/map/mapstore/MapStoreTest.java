@@ -42,6 +42,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapStoreWrapper;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.map.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.monitor.LocalMapStats;
@@ -1415,6 +1416,33 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertTrue(expectedStoreCount <= mapStore.count.intValue());
     }
 
+
+    @Test
+    public void testMapDelete_whenLoadFails() throws Exception {
+        final FailingLoadMapStore mapStore = new FailingLoadMapStore();
+        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeCount(1)
+                .build();
+
+        try {
+            map.delete(1);
+        } catch (IllegalStateException e) {
+            fail();
+        }
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testMapRemove_whenMapStoreLoadFails() throws Exception {
+        final FailingLoadMapStore mapStore = new FailingLoadMapStore();
+        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeCount(1)
+                .build();
+
+        map.remove(1);
+    }
+
     @Test
     @Category(NightlyTest.class)
     public void testIssue1085WriteBehindBackupTransactional() throws InterruptedException {
@@ -2374,5 +2402,11 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
     }
 
+    class FailingLoadMapStore extends MapStoreAdapter {
+        @Override
+        public Object load(Object key) {
+            throw new IllegalStateException();
+        }
+    }
 
 }

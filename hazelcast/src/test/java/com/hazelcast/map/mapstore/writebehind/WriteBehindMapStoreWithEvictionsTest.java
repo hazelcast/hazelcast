@@ -152,7 +152,6 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         assertEquals(100, map.get(1));
     }
 
-
     private void assertFinalValueEquals(final int expected, final int actual) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -186,6 +185,5 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
             assertFinalValueEquals(i, (Integer) map.get(i));
         }
     }
-
 
 }

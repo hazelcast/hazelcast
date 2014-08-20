@@ -507,6 +507,41 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
+    public Object remove(Data key) {
+        checkIfLoaded();
+        final long now = getNow();
+        evictEntries(now);
+
+        Record record = records.get(key);
+        Object oldValue;
+        if (record == null) {
+            oldValue = mapDataStore.load(key);
+
+            if (oldValue != null) {
+                removeIndex(key);
+                mapDataStore.remove(key, now);
+            }
+        } else {
+            oldValue = removeRecord(key, record, now);
+        }
+        return oldValue;
+    }
+
+    public Object removeRecord(Data key, Record record, long now) {
+        Object oldValue = record.getValue();
+        oldValue = mapServiceContext.interceptRemove(name, oldValue);
+        if (oldValue != null) {
+            removeIndex(key);
+            mapDataStore.remove(key, now);
+            onStore(record);
+        }
+        // reduce size
+        updateSizeEstimator(-calculateRecordHeapCost(record));
+        deleteRecord(key);
+        return oldValue;
+    }
+
+    @Override
     public boolean remove(Data key, Object testValue) {
         checkIfLoaded();
         final long now = getNow();
@@ -537,32 +572,19 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public Object remove(Data key) {
+    public boolean delete(Data key) {
         checkIfLoaded();
         final long now = getNow();
 
         Record record = records.get(key);
-        Object oldValue;
         if (record == null) {
-            oldValue = mapDataStore.load(key);
-            if (oldValue != null) {
-                removeIndex(key);
-                mapDataStore.remove(key, now);
-            }
+            removeIndex(key);
+            mapDataStore.remove(key, now);
+            onStore(record);
         } else {
-            oldValue = record.getValue();
-            oldValue = mapServiceContext.interceptRemove(name, oldValue);
-            if (oldValue != null) {
-                removeIndex(key);
-                mapDataStore.remove(key, now);
-                onStore(record);
-            }
-            // reduce size
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            deleteRecord(key);
+            return removeRecord(key, record, now) != null;
         }
-        evictEntries(now);
-        return oldValue;
+        return false;
     }
 
     @Override
