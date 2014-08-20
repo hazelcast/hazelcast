@@ -122,6 +122,78 @@ public class MultiMapTest extends HazelcastTestSupport {
 
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testGet_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.get(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPut_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.put(null, "someVal");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPut_whenNullValue() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.put("someVal", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testLock_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.lock(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testUnlock_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.unlock(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsKey_whenNullKey() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsKey(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsValue_whenNullKey() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsValue(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsEntry_whenNullKey() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsEntry(null, "someVal");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsEntry_whenNullValue() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsEntry("someVal", null);
+    }
+
     @Test
     public void testPutGetRemoveWhileCollectionTypeList() throws InterruptedException {
         Config config = new Config();
