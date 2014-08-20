@@ -410,25 +410,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public int evictAll() {
+    public int evictAll(boolean backup) {
         checkIfLoaded();
         final int size = size();
-        final Set<Data> keysToPreserve = evictAllInternal();
+        final Set<Data> keysToPreserve = evictAllInternal(backup);
         removeIndexByPreservingKeys(keysToPreserve);
         return size - keysToPreserve.size();
     }
 
-    @Override
-    public void evictAllBackup() {
-        evictAllInternal();
-    }
-
     /**
-     * Internal evict all provides common functionality to all {@link #evictAll()}
+     * Internal evict all provides common functionality to all {@link #evictAll(boolean)} ()}
      *
      * @return preserved keys.
      */
-    private Set<Data> evictAllInternal() {
+    private Set<Data> evictAllInternal(boolean backup) {
         resetSizeEstimator();
         resetAccessSequenceNumber();
 
@@ -438,7 +433,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             keysToPreserve = recordsToPreserve.keySet();
             updateSizeEstimator(calculateRecordHeapCost(recordsToPreserve.values()));
         }
-        flush(recordsToPreserve);
+        flush(recordsToPreserve, backup);
         clearRecordsMap(recordsToPreserve);
         return keysToPreserve;
     }
@@ -447,15 +442,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
      * Flushes evicted records to map store.
      *
      * @param excludeRecords Records which should not be flushed.
+     * @param backup         <code>true</code> if backup, false otherwise.
      */
-    private void flush(Map<Data, Record> excludeRecords) {
+    private void flush(Map<Data, Record> excludeRecords, boolean backup) {
         Iterator<Record> iterator = records.values().iterator();
         while (iterator.hasNext()) {
             Record record = iterator.next();
             if (excludeRecords == null || !excludeRecords.containsKey(record.getKey())) {
                 final Data key = record.getKey();
                 final long lastUpdateTime = record.getLastUpdateTime();
-                mapDataStore.flush(key, record.getValue(), lastUpdateTime, false);
+                mapDataStore.flush(key, record.getValue(), lastUpdateTime, backup);
             }
         }
     }

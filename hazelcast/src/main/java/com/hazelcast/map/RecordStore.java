@@ -159,14 +159,10 @@ public interface RecordStore {
     /**
      * Evicts all keys except locked ones.
      *
+     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return number of evicted entries.
      */
-    int evictAll();
-
-    /**
-     * Evicts all keys except locked ones on backup.
-     */
-    void evictAllBackup();
+    int evictAll(boolean backup);
 
     Collection<Data> valuesData();
 
