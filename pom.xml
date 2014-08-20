@@ -75,7 +75,6 @@
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.language>java</sonar.language>
-        <sonar.verbose>true</sonar.verbose>
         <animal.sniffer.plugin.version>1.11</animal.sniffer.plugin.version>
     </properties>
     <licenses>
@@ -143,7 +142,7 @@
         </resources>
 
         <plugins>
-              <plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${maven.assembly.plugin.version}</version>
@@ -277,6 +276,17 @@
 
 
         <profile>
+            <properties>
+                <argLine>
+                    -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                    -Dhazelcast.version.check.enabled=false
+                    -Dhazelcast.mancenter.enabled=false
+                    -Dhazelcast.logging.type=none
+                    -Dhazelcast.test.use.network=false
+                </argLine>
+                <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+                <sonar.language>java</sonar.language>
+            </properties>
             <id>test-coverage</id>
             <build>
                 <plugins>
@@ -287,15 +297,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <testFailureIgnore>true</testFailureIgnore>
-                            <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                -Dhazelcast.version.check.enabled=false
-                                -Dhazelcast.mancenter.enabled=false
-                                -Dhazelcast.logging.type=none
-                                -Dhazelcast.test.use.network=false
-                            </argLine>
-
-                               <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
+                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
                             <excludedGroups>com.hazelcast.test.annotation.NightlyTest,com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
                         </configuration>
                     </plugin>
@@ -305,7 +307,7 @@
         </profile>
 
         <profile>
-             <id>test-coverage-nightly</id>
+            <id>test-coverage-nightly</id>
             <properties>
                 <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
                 <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco.exec</sonar.jacoco.reportPath>
@@ -319,7 +321,7 @@
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${jacoco.version}</version>
                         <configuration>
-                             <append>true</append>
+                            <append>true</append>
                         </configuration>
                         <executions>
                             <execution>
