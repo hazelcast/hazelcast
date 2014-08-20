@@ -24,11 +24,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,8 +42,8 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.assertTrue;
 
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(NightlyTest.class)
 public class EntryProcessorStressTest extends HazelcastTestSupport {
 
     @Test
@@ -84,7 +84,8 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
                     List<Integer> actualOrder = processorMap.get(key);
                     //using >= for the test, as it can be the case that an entry processor could be executed more the once
                     //when the owning node is terminated after running the entry processor (and the backup) but before the response is sent
-                    assertTrue("failed to execute all entry processor tasks at iteration", actualOrder.size() >= maxTasks);
+                    assertTrue("failed to execute all entry processor tasks at iteration",
+                            actualOrder.size() >= maxTasks);
                 }
             });
         }
@@ -108,7 +109,7 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
             if(backup){
                 System.out.print("Backup ");
             }
-            System.out.println("EntryProcessor => "+l +" size="+l.size()+" last val="+id);
+            System.out.println("EntryProcessor => " + l + " size=" + l.size() + " last val=" + id);
             return id;
         }
 
