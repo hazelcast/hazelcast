@@ -52,7 +52,7 @@ public class ReplicatedRecord<K, V>
     private volatile VectorClockTimestamp vectorClockTimestamp;
     private int latestUpdateHash;
     private long ttlMillis;
-    private volatile long updateTime = System.currentTimeMillis();
+    private volatile long updateTime = Clock.currentTimeMillis();
 
     public ReplicatedRecord() {
     }
@@ -149,7 +149,7 @@ public class ReplicatedRecord<K, V>
 
     public void access() {
         HITS_UPDATER.incrementAndGet(this);
-        LAST_ACCESS_TIME_UPDATER.set(this, System.currentTimeMillis());
+        LAST_ACCESS_TIME_UPDATER.set(this, Clock.currentTimeMillis());
     }
 
     @Override

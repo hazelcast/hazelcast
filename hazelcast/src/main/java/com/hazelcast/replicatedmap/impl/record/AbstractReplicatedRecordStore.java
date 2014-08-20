@@ -106,19 +106,19 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     @Override
     public Object get(Object key) {
         ValidationUtil.isNotNull(key, "key");
-        long time = System.currentTimeMillis();
+        long time = Clock.currentTimeMillis();
         storage.checkState();
         ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
 
         // Force return null on ttl expiration (but before cleanup thread run)
         long ttlMillis = replicatedRecord == null ? 0 : replicatedRecord.getTtlMillis();
-        if (ttlMillis > 0 && System.currentTimeMillis() - replicatedRecord.getUpdateTime() >= ttlMillis) {
+        if (ttlMillis > 0 && Clock.currentTimeMillis() - replicatedRecord.getUpdateTime() >= ttlMillis) {
             replicatedRecord = null;
         }
 
         Object value = replicatedRecord == null ? null : unmarshallValue(replicatedRecord.getValue());
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            mapStats.incrementGets(System.currentTimeMillis() - time);
+            mapStats.incrementGets(Clock.currentTimeMillis() - time);
         }
         return value;
     }
@@ -139,7 +139,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         if (ttl < 0) {
             throw new IllegalArgumentException("ttl must be a positive integer");
         }
-        long time = System.currentTimeMillis();
+        long time = Clock.currentTimeMillis();
         storage.checkState();
         V oldValue = null;
         K marshalledKey = (K) marshallKey(key);
@@ -168,7 +168,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         Object unmarshalledOldValue = unmarshallValue(oldValue);
         fireEntryListenerEvent(key, unmarshalledOldValue, value);
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            mapStats.incrementPuts(System.currentTimeMillis() - time);
+            mapStats.incrementPuts(Clock.currentTimeMillis() - time);
         }
         return unmarshalledOldValue;
     }
