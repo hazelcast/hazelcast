@@ -101,9 +101,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public void putRecord(Data key, Record record) {
+        final long now = getNow();
         final Record existingRecord = records.put(key, record);
         updateSizeEstimator(-calculateRecordHeapCost(existingRecord));
         updateSizeEstimator(calculateRecordHeapCost(record));
+        evictEntries(now);
     }
 
     @Override
@@ -510,13 +512,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     public Object remove(Data key) {
         checkIfLoaded();
         final long now = getNow();
-        evictEntries(now);
 
         Record record = records.get(key);
         Object oldValue;
         if (record == null) {
             oldValue = mapDataStore.load(key);
-
             if (oldValue != null) {
                 removeIndex(key);
                 mapDataStore.remove(key, now);
@@ -524,20 +524,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         } else {
             oldValue = removeRecord(key, record, now);
         }
-        return oldValue;
-    }
-
-    public Object removeRecord(Data key, Record record, long now) {
-        Object oldValue = record.getValue();
-        oldValue = mapServiceContext.interceptRemove(name, oldValue);
-        if (oldValue != null) {
-            removeIndex(key);
-            mapDataStore.remove(key, now);
-            onStore(record);
-        }
-        // reduce size
-        updateSizeEstimator(-calculateRecordHeapCost(record));
-        deleteRecord(key);
+        evictEntries(now);
         return oldValue;
     }
 
@@ -584,6 +571,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         } else {
             return removeRecord(key, record, now) != null;
         }
+        evictEntries(now);
         return false;
     }
 
@@ -591,12 +579,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     public Object get(Data key) {
         checkIfLoaded();
         long now = getNow();
-        final Object value = get0(key, now);
+        final Object value = getInternal(key, now);
         postReadCleanUp(now);
         return value;
     }
 
-    private Object get0(Data key, long now) {
+    private Object getInternal(Data key, long now) {
         Record record = records.get(key);
         record = nullIfExpired(record);
         Object value;
@@ -998,6 +986,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public MapDataStore<Data, Object> getMapDataStore() {
         return mapDataStore;
+    }
+
+    private Object removeRecord(Data key, Record record, long now) {
+        Object oldValue = record.getValue();
+        oldValue = mapServiceContext.interceptRemove(name, oldValue);
+        if (oldValue != null) {
+            removeIndex(key);
+            mapDataStore.remove(key, now);
+            onStore(record);
+        }
+        // reduce size
+        updateSizeEstimator(-calculateRecordHeapCost(record));
+        deleteRecord(key);
+        return oldValue;
     }
 
 }
