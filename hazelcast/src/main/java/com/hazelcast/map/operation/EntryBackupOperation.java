@@ -19,6 +19,7 @@ package com.hazelcast.map.operation;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.MapEntrySimple;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,37 +30,44 @@ import java.util.Map;
 
 public class EntryBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
+    protected transient Object oldValue;
     private EntryBackupProcessor entryProcessor;
+
+    public EntryBackupOperation() {
+    }
 
     public EntryBackupOperation(String name, Data dataKey, EntryBackupProcessor entryProcessor) {
         super(name, dataKey);
         this.entryProcessor = entryProcessor;
     }
 
-    public EntryBackupOperation() {
-    }
-
+    @Override
     public void innerBeforeRun() {
         if (entryProcessor instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) entryProcessor).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
         }
     }
 
+    @Override
     public void run() {
-        Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryForBackup(dataKey);
-        Object objectKey = mapService.getMapServiceContext().toObject(dataKey);
-        final Object valueBeforeProcess = mapService.getMapServiceContext().toObject(mapEntry.getValue());
-        MapEntrySimple<Object, Object> entry = new MapEntrySimple<Object, Object>(objectKey, valueBeforeProcess);
-        entryProcessor.processBackup(entry);
-        if (!entry.isModified()) {
+        oldValue = getValueFor(dataKey);
+
+        final Object key = toObject(dataKey);
+        final Object value = toObject(oldValue);
+
+        final Map.Entry entry = createMapEntry(key, value);
+
+        processBackup(entry);
+
+        if (noOpBackup(entry)) {
             return;
         }
-        if (entry.getValue() == null) {
-            recordStore.removeBackup(dataKey);
-        } else {
-            recordStore.putBackup(dataKey, entry.getValue());
+
+        if (entryRemovedBackup(entry)) {
+            return;
         }
 
+        entryAddedOrUpdatedBackup(entry);
     }
 
 
@@ -83,6 +91,52 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
     @Override
     public String toString() {
         return "EntryBackupOperation{}";
+    }
+
+    private void processBackup(Map.Entry entry) {
+        entryProcessor.processBackup(entry);
+    }
+
+    private boolean entryRemovedBackup(Map.Entry entry) {
+        final Object value = entry.getValue();
+        if (value == null) {
+            recordStore.removeBackup(dataKey);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean entryAddedOrUpdatedBackup(Map.Entry entry) {
+        final Object value = entry.getValue();
+        if (value != null) {
+            recordStore.putBackup(dataKey, value);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * noOpBackup in two cases:
+     * - setValue not called on entry
+     * - or entry does not exist and no add operation is done.
+     */
+    private boolean noOpBackup(Map.Entry entry) {
+        final MapEntrySimple mapEntrySimple = (MapEntrySimple) entry;
+        return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
+    }
+
+
+    private Map.Entry createMapEntry(Object key, Object value) {
+        return new MapEntrySimple(key, value);
+    }
+
+    private Object getValueFor(Data dataKey) {
+        return recordStore.getMapEntry(dataKey).getValue();
+    }
+
+    private Object toObject(Object data) {
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.toObject(data);
     }
 
 }
