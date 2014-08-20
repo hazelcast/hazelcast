@@ -38,11 +38,15 @@ public final class SortingUtil {
                 comparable2 = entry2;
                 break;
         }
-        int result;
+        int result = 0;
         if (comparable1 instanceof Comparable && comparable2 instanceof Comparable) {
             result = ((Comparable) comparable1).compareTo(comparable2);
         } else {
-            result = comparable1.hashCode() - comparable2.hashCode();
+            // Use hash-code only for key based comparisons
+            // since generally hash-codes are not meaningful for values
+            if (iterationType == IterationType.KEY) {
+                result = comparable1.hashCode() - comparable2.hashCode();
+            }
         }
 
         if (result != 0) {
