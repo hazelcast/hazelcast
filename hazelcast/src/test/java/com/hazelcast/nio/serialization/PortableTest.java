@@ -488,5 +488,132 @@ public class PortableTest {
         }
     }
 
+    @Test(expected = HazelcastSerializationException.class)
+    public void testGenericPortable_whenMultipleTypesAreUsed() {
+        SerializationService ss = new SerializationServiceBuilder()
+                .addPortableFactory(1, new PortableFactory() {
+                    @Override
+                    public Portable create(int classId) {
+                        switch (classId) {
+                            case ParentGenericPortable.CLASS_ID:
+                                return new ParentGenericPortable();
+                            case ChildGenericPortable1.CLASS_ID:
+                                return new ChildGenericPortable1();
+                            case ChildGenericPortable2.CLASS_ID:
+                                return new ChildGenericPortable2();
+                        }
+                        throw new IllegalArgumentException();
+                    }
+                }).build();
+
+
+        ss.toData(new ParentGenericPortable<ChildGenericPortable1>(new ChildGenericPortable1("aaa", "bbb")));
+
+        Data data = ss.toData(new ParentGenericPortable<ChildGenericPortable2>(new ChildGenericPortable2("ccc")));
+        ss.toObject(data);
+    }
+
+    private static class ParentGenericPortable<T extends Portable> implements Portable {
+        static final int CLASS_ID = 1;
+
+        T child;
+
+        ParentGenericPortable() {
+        }
+
+        ParentGenericPortable(T child) {
+            this.child = child;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writePortable("c", child);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            child = reader.readPortable("c");
+        }
+    }
+
+    private static class ChildGenericPortable1 implements Portable {
+        static final int CLASS_ID = 2;
+
+        String s1;
+        String s2;
+
+        ChildGenericPortable1() {
+        }
+
+        ChildGenericPortable1(String s1, String s2) {
+            this.s1 = s1;
+            this.s2 = s2;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeUTF("s1", s1);
+            writer.writeUTF("s2", s2);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            s1 = reader.readUTF("s1");
+            s2 = reader.readUTF("s2");
+        }
+    }
+
+    private static class ChildGenericPortable2 implements Portable {
+        static final int CLASS_ID = 3;
+
+        String s;
+
+        ChildGenericPortable2() {
+        }
+
+        ChildGenericPortable2(String s1) {
+            this.s = s1;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 1;
+        }
+
+        @Override
+        public int getClassId() {
+            return CLASS_ID;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeUTF("s", s);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            s = reader.readUTF("s");
+        }
+    }
 
 }
