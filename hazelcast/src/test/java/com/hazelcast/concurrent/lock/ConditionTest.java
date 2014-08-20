@@ -1,5 +1,6 @@
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICondition;
@@ -53,6 +54,30 @@ public class ConditionTest extends HazelcastTestSupport {
     @Ignore
     public void testSameConditionRetrievedMultipleTimesForSameLock() {
 
+    }
+
+    @Test
+    public void testAwaitTime_whenNotSignalled() throws InterruptedException {
+        Config config = new Config();
+        int callTimeoutMillis = 3000;
+        config.setProperty("hazelcast.operation.call.timeout.millis", String.valueOf(callTimeoutMillis));
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        final ILock lock = instance.getLock(randomString());
+        String name = randomString();
+        final ICondition condition0 = lock.newCondition(name);
+
+        final int awaitMillis = callTimeoutMillis * 3;
+
+        lock.lock();
+        try {
+            final long begin = System.currentTimeMillis();
+            condition0.await(awaitMillis, TimeUnit.MILLISECONDS);
+            final long end = System.currentTimeMillis();
+            assertEquals(awaitMillis, end - begin, 1000);
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Test(timeout = 60000)

@@ -33,7 +33,6 @@ public class AwaitOperation extends BaseLockOperation
         implements WaitSupport, BackupAwareOperation {
 
     private String conditionId;
-    private boolean firstRun;
     private boolean expired;
 
     public AwaitOperation() {
@@ -46,8 +45,10 @@ public class AwaitOperation extends BaseLockOperation
 
     @Override
     public void beforeRun() throws Exception {
-        LockStoreImpl lockStore = getLockStore();
-        firstRun = lockStore.startAwaiting(key, conditionId, getCallerUuid(), threadId);
+        if (!expired) {
+            LockStoreImpl lockStore = getLockStore();
+            lockStore.startAwaiting(key, conditionId, getCallerUuid(), threadId);
+        }
     }
 
     @Override
@@ -75,16 +76,19 @@ public class AwaitOperation extends BaseLockOperation
     @Override
     public boolean shouldWait() {
         LockStoreImpl lockStore = getLockStore();
-        boolean canAcquireLock = lockStore.canAcquireLock(key, getCallerUuid(), threadId);
 
         ConditionKey signalKey = lockStore.getSignalKey(key);
-        if (signalKey != null && conditionId.equals(signalKey.getConditionId()) && canAcquireLock) {
-            return false;
+        if (signalKey == null) {
+            return true;
         }
 
-        boolean shouldWait = firstRun || !canAcquireLock;
-        firstRun = false;
-        return shouldWait;
+        boolean canAcquireLock = lockStore.canAcquireLock(key, getCallerUuid(), threadId);
+
+        if (!canAcquireLock) {
+            return true;
+        }
+
+        return !conditionId.equals(signalKey.getConditionId());
     }
 
     @Override
