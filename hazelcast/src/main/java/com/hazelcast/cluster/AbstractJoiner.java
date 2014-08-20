@@ -52,7 +52,7 @@ public abstract class AbstractJoiner implements Joiner {
 
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
     private final AtomicInteger tryCount = new AtomicInteger(0);
-    private final Set<Address> blacklistedAddressed = Collections.synchronizedSet(new HashSet<Address>());
+    private final Set<Address> blacklistedAddresses = Collections.synchronizedSet(new HashSet<Address>());
     protected final Config config;
     protected final Node node;
     protected final ILogger logger;
@@ -69,25 +69,26 @@ public abstract class AbstractJoiner implements Joiner {
 
     @Override
     public void blacklist(Address callerAddress) {
-        logger.info("Address "+callerAddress+" is added to the blacklist.");
-        blacklistedAddressed.add(callerAddress);
+        logger.info(callerAddress + " is added to the blacklist.");
+        blacklistedAddresses.add(callerAddress);
     }
 
     @Override
     public boolean isBlacklisted(Address address) {
-        return blacklistedAddressed.contains(address);
+        return blacklistedAddresses.contains(address);
     }
 
     public abstract void doJoin();
 
     @Override
     public void join() {
+        blacklistedAddresses.clear();
         doJoin();
         postJoin();
     }
 
     private void postJoin() {
-        blacklistedAddressed.clear();
+        blacklistedAddresses.clear();
 
         systemLogService.logJoin("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
         if (!node.isActive()) {
