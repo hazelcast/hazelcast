@@ -28,7 +28,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ProblematicTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,13 +41,11 @@ import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertTrue;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class EntryProcessorStressTest extends HazelcastTestSupport {
 
     @Test
-    @Category(ProblematicTest.class)
     public void dropedEntryProcessorTest_withKeyOwningNodeTermination() throws ExecutionException, InterruptedException {
         String mapName = randomString();
         Config cfg = new Config();
@@ -72,7 +69,7 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
                 processorMap.submitToKey(key, new SimpleEntryProcessor(i));
 
                 if (i == maxTasks / 2) {
-                    instance2.getLifecycleService().terminate();
+                    instance2.getLifecycleService().shutdown();
                 }
             }
 
