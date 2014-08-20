@@ -476,7 +476,7 @@ It has below attributes and parameters.
 - `async-backup-count`: Count of asynchronous backups.
 - `empty-queue-ttl`: Value of time to live to empty the Queue.
 - `item-listeners`: ???
-- `queue-store`: Includes the queue store factory class name and the properties  *binary*, *memory limit* and *bulk load*. 
+- `queue-store`: Includes the queue store factory class name and the properties  *binary*, *memory limit* and *bulk load*. Please refer to [Queue Persistence](#queue-persistence).
 - `statistics-enabled: If set as `true`, you can retrieve statistics for this Queue using the method `getLocalQueueStats()`.
 
 ### Topic Configuration
