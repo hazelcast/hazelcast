@@ -25,6 +25,24 @@ import com.hazelcast.util.HealthMonitorLevel;
  */
 public class GroupProperties {
 
+    /**
+     * This property can be used to verify that Hazelcast nodes only join when their 'application' level configuration is the
+     * same.
+     *
+     * So imagine that you have multiple machines, but you want to make sure that each machine that is going to join the cluster
+     * has exactly the same 'application level' settings, so settings that are not part of the Hazelcast configuration, but
+     * maybe some filepath. To prevent these machines, with potential different application level configuration, to form
+     * a cluster, this property can be set.
+     *
+     * You could use actual values, e.g. string paths, but you can also use e.g. an md5 hash. We'll give the give the guarantee
+     * that only nodes are going to form a cluster where the token is an exact match. If this token is different, the member
+     * can't be started and therefor you will get the guarantee that all members in the cluster, will have exactly the same
+     * application validation token.
+     *
+     * This validation-token will be checked before member join the cluster.
+     */
+    public static final String PROP_APPLICATION_VALIDATION_TOKEN = "hazelcast.application.validation.token";
+
     public static final String PROP_HEALTH_MONITORING_LEVEL = "hazelcast.health.monitoring.level";
     public static final String PROP_HEALTH_MONITORING_DELAY_SECONDS = "hazelcast.health.monitoring.delay.seconds";
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
