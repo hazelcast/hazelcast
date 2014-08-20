@@ -28,7 +28,6 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -39,6 +38,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -153,6 +153,39 @@ public class DefaultRecordStore implements RecordStore {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public Object remove(Data dataKey) {
+        checkIfLoaded();
+        Record record = records.get(dataKey);
+        Object oldValue = null;
+        if (record == null) {
+            MapStoreWrapper store = mapContainer.getStore();
+            if (store != null) {
+                oldValue = store.load(mapService.toObject(dataKey));
+                if (oldValue != null) {
+                    removeIndex(dataKey);
+                    mapStoreDelete(null, dataKey);
+                }
+            }
+        } else {
+            oldValue = removeRecord(dataKey, record);
+        }
+        return oldValue;
+    }
+
+    private Object removeRecord(Data dataKey, Record record) {
+        Object oldValue = record.getValue();
+        oldValue = mapService.interceptRemove(name, oldValue);
+        if (oldValue != null) {
+            removeIndex(dataKey);
+            mapStoreDelete(record, dataKey);
+        }
+        updateSizeEstimator(-calculateRecordSize(record));
+        deleteRecord(dataKey);
+        cancelAssociatedSchedulers(dataKey);
+        return oldValue;
     }
 
     public void flush() {
@@ -484,35 +517,23 @@ public class DefaultRecordStore implements RecordStore {
         resetAccessSequenceNumber();
     }
 
-    private void resetAccessSequenceNumber() {
-        lruAccessSequenceNumber = 0L;
-    }
-
-    public Object remove(Data dataKey) {
+    @Override
+    public boolean delete(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        Object oldValue = null;
         if (record == null) {
-            if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
-                if (oldValue != null) {
-                    removeIndex(dataKey);
-                    mapStoreDelete(null, dataKey);
-                }
+            if(mapContainer.getStore() != null) {
+                removeIndex(dataKey);
+                mapStoreDelete(null, dataKey);
             }
         } else {
-            oldValue = record.getValue();
-            oldValue = mapService.interceptRemove(name, oldValue);
-            if (oldValue != null) {
-                removeIndex(dataKey);
-                mapStoreDelete(record, dataKey);
-            }
-            // reduce size
-            updateSizeEstimator(-calculateRecordSize(record));
-            deleteRecord(dataKey);
-            cancelAssociatedSchedulers(dataKey);
+            return removeRecord(dataKey, record) != null;
         }
-        return oldValue;
+        return false;
+    }
+
+    private void resetAccessSequenceNumber() {
+        lruAccessSequenceNumber = 0L;
     }
 
     private void removeIndex(Data key) {

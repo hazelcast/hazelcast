@@ -1362,6 +1362,48 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDelete_whenLoadFails() throws Exception {
+        final FailingLoadMapStore mapStore = new FailingLoadMapStore();
+
+        final MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(1);
+
+        final Config config = new Config();
+        config.getMapConfig("testMapStoreLoad_whenCalledDelete").setBackupCount(0);
+
+        final TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(1);
+
+        final IMap<Object, Object> map = instanceFactory.newInstances(config)[0]
+                .getMap("testMapStoreLoad_whenCalledDelete");
+
+        try {
+            map.delete(1);
+        } catch (IllegalStateException e) {
+            fail();
+        }
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testRemove_whenLoadFails() throws Exception {
+        final FailingLoadMapStore mapStore = new FailingLoadMapStore();
+
+        final MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(1);
+
+        final Config config = new Config();
+        config.getMapConfig("testRemove_whenMapStoreFails")
+                .setBackupCount(0)
+                .setMapStoreConfig(mapStoreConfig);
+
+        final TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(1);
+
+        final IMap<Object, Object> map = instanceFactory.newInstances(config)[0]
+                .getMap("testRemove_whenMapStoreFails");
+
+        map.remove(1);
+    }
+
+    @Test
     public void testWriteBehindSameSecondSameKey() throws Exception {
         TestMapStore testMapStore = new TestMapStore(100, 0, 0); // In some cases 2 store operation may happened
         testMapStore.setLoadAllKeys(false);
@@ -2207,6 +2249,15 @@ public class MapStoreTest extends HazelcastTestSupport {
         public void storeAll(final Map<K, V> kvMap) {
             store.putAll(kvMap);
         }
+    }
+
+    class FailingLoadMapStore extends MapStoreAdapter {
+
+        @Override
+        public Object load(Object key) {
+            throw new IllegalStateException();
+        }
+
     }
 
 

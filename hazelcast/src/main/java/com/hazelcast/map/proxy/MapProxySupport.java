@@ -321,7 +321,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected void deleteInternal(Data key) {
-        RemoveOperation operation = new RemoveOperation(name, key);
+        DeleteOperation operation = new DeleteOperation(name, key);
         invokeOperation(key, operation);
         invalidateNearCache(key);
     }

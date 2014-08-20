@@ -103,6 +103,8 @@ public interface RecordStore {
 
     boolean containsValue(Object testValue);
 
+    boolean delete(Data dataKey);
+
     Object evict(Data key);
 
     Collection<Object> valuesObject();
