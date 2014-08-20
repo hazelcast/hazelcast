@@ -285,8 +285,6 @@
                     -Dhazelcast.logging.type=none
                     -Dhazelcast.test.use.network=false
                 </argLine>
-                <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-                <sonar.language>java</sonar.language>
             </properties>
             <id>test-coverage</id>
             <build>
