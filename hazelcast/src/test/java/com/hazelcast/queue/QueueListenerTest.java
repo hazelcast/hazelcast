@@ -19,6 +19,8 @@ package com.hazelcast.queue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.DistributedObjectEvent;
+import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
@@ -31,6 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,9 +53,66 @@ public class QueueListenerTest extends HazelcastTestSupport {
     private ItemListenerConfig itemListenerConfig = new ItemListenerConfig();
     private QueueConfig qConfig = new QueueConfig();
 
+    //TODO: Don't add a number to a test to test a diferent case. I guess it was already in the system.
+    @Test
+    public void testQueueEviction2() throws Exception {
+        final Config config = new Config();
+        config.getQueueConfig("q2").setEmptyQueueTtl(0);
+        final HazelcastInstance hz = createHazelcastInstance(config);
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        hz.addDistributedObjectListener(new DistributedObjectListener() {
+            @Override
+            public void distributedObjectCreated(DistributedObjectEvent event) {
+                latch.countDown();
+            }
+
+            @Override
+            public void distributedObjectDestroyed(DistributedObjectEvent event) {
+                latch.countDown();
+            }
+        });
+
+        final IQueue<Object> q = hz.getQueue("q2");
+        q.offer("item");
+        q.poll();
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testConfigListenerRegistration() throws InterruptedException {
+        Config config = new Config();
+        final String name = "queue";
+        final QueueConfig queueConfig = config.getQueueConfig(name);
+        final DummyListener dummyListener = new DummyListener();
+        final ItemListenerConfig itemListenerConfig = new ItemListenerConfig(dummyListener, true);
+        queueConfig.addItemListenerConfig(itemListenerConfig);
+        final HazelcastInstance instance = createHazelcastInstance(config);
+        final IQueue queue = instance.getQueue(name);
+        queue.offer("item");
+        queue.poll();
+        assertTrue(dummyListener.latch.await(10, TimeUnit.SECONDS));
+    }
+
+    private static class DummyListener implements ItemListener, Serializable {
+
+        public final CountDownLatch latch = new CountDownLatch(2);
+
+        public DummyListener() {
+        }
+
+        public void itemAdded(ItemEvent item) {
+            latch.countDown();
+        }
+
+        public void itemRemoved(ItemEvent item) {
+            latch.countDown();
+        }
+    }
+
     @Test
     public void testItemListener_addedToQueueConfig_Issue366() throws InterruptedException {
-
         itemListenerConfig.setImplementation(simpleItemListener);
         itemListenerConfig.setIncludeValue(true);
 
@@ -106,11 +166,13 @@ public class QueueListenerTest extends HazelcastTestSupport {
         CountDownLatch latch;
         AtomicBoolean notCalled;
 
+        //TODO: Why do you pass an argument if it isn't used??
         TestItemListener(CountDownLatch latch, AtomicBoolean notCalled) {
             this.latch = latch;
             this.notCalled = new AtomicBoolean(true);
         }
 
+        @Override
         public void itemAdded(ItemEvent item) {
             if (item.getItem().equals("item" + offer++)) {
                 latch.countDown();
@@ -119,6 +181,7 @@ public class QueueListenerTest extends HazelcastTestSupport {
             }
         }
 
+        @Override
         public void itemRemoved(ItemEvent item) {
             if (item.getItem().equals("item" + poll++)) {
                 latch.countDown();
@@ -135,10 +198,12 @@ public class QueueListenerTest extends HazelcastTestSupport {
             added = new CountDownLatch(CountDown);
         }
 
+        @Override
         public void itemAdded(ItemEvent itemEvent) {
             added.countDown();
         }
 
+        @Override
         public void itemRemoved(ItemEvent itemEvent) {
         }
     }

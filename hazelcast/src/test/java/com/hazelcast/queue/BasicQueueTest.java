@@ -17,29 +17,17 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.DistributedObjectEvent;
-import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -50,119 +38,15 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class BasicQueueTest extends HazelcastTestSupport {
+public class BasicQueueTest extends AbstractQueueTest {
 
-    @Test
-    public void testConfigListenerRegistration() throws InterruptedException {
-        Config config = new Config();
-        final String name = "queue";
-        final QueueConfig queueConfig = config.getQueueConfig(name);
-        final DummyListener dummyListener = new DummyListener();
-        final ItemListenerConfig itemListenerConfig = new ItemListenerConfig(dummyListener, true);
-        queueConfig.addItemListenerConfig(itemListenerConfig);
-        final HazelcastInstance instance = createHazelcastInstance(config);
-        final IQueue queue = instance.getQueue(name);
-        queue.offer("item");
-        queue.poll();
-        assertTrue(dummyListener.latch.await(10, TimeUnit.SECONDS));
-    }
 
-    private static class DummyListener implements ItemListener, Serializable {
-
-        public final CountDownLatch latch = new CountDownLatch(2);
-
-        public DummyListener() {
-        }
-
-        public void itemAdded(ItemEvent item) {
-            latch.countDown();
-        }
-
-        public void itemRemoved(ItemEvent item) {
-            latch.countDown();
-        }
-    }
-
-    @Test
-    public void testQueueEviction() throws Exception {
-        final Config config = new Config();
-        config.getQueueConfig("q").setEmptyQueueTtl(2);
-        final HazelcastInstance hz = createHazelcastInstance(config);
-        final IQueue<Object> q = hz.getQueue("q");
-
-        try {
-            assertTrue(q.offer("item"));
-            assertEquals("item", q.poll());
-            q.take();
-            fail();
-        } catch (Exception e) {
-            assertTrue(e instanceof DistributedObjectDestroyedException);
-        }
-        q.size();
-
-    }
-
-    @Test
-    public void testQueueEviction2() throws Exception {
-        final Config config = new Config();
-        config.getQueueConfig("q2").setEmptyQueueTtl(0);
-        final HazelcastInstance hz = createHazelcastInstance(config);
-
-        final CountDownLatch latch = new CountDownLatch(2);
-        hz.addDistributedObjectListener(new DistributedObjectListener() {
-            public void distributedObjectCreated(DistributedObjectEvent event) {
-                latch.countDown();
-            }
-
-            public void distributedObjectDestroyed(DistributedObjectEvent event) {
-                latch.countDown();
-            }
-        });
-
-        final IQueue<Object> q = hz.getQueue("q2");
-        q.offer("item");
-        q.poll();
-
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-    }
-
-    @Test
-    public void testQueueStats() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final String name = randomString();
-
-        HazelcastInstance ins1 = factory.newHazelcastInstance();
-        final int items = 20;
-        IQueue q1 = ins1.getQueue(name);
-        for (int i = 0; i < items / 2; i++) {
-            q1.offer("item" + i);
-        }
-
-        HazelcastInstance ins2 = factory.newHazelcastInstance();
-        IQueue q2 = ins2.getQueue(name);
-        for (int i = 0; i < items / 2; i++) {
-            q2.offer("item" + i);
-        }
-
-        LocalQueueStats stats1 = ins1.getQueue(name).getLocalQueueStats();
-        LocalQueueStats stats2 = ins2.getQueue(name).getLocalQueueStats();
-
-        assertTrue(stats1.getOwnedItemCount() == items || stats2.getOwnedItemCount() == items);
-        assertFalse(stats1.getOwnedItemCount() == items && stats2.getOwnedItemCount() == items);
-
-        if (stats1.getOwnedItemCount() == items) {
-            assertEquals(items, stats2.getBackupItemCount());
-            assertEquals(0, stats1.getBackupItemCount());
-        } else {
-            assertEquals(items, stats1.getBackupItemCount());
-            assertEquals(0, stats2.getBackupItemCount());
-        }
-    }
+    // ================ offer ==============================
 
     @Test
     public void testOffer() throws Exception {
         int count = 100;
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < count; i++) {
             queue.offer("item" + i);
         }
@@ -183,18 +67,21 @@ public class BasicQueueTest extends HazelcastTestSupport {
             queue.offer("item" + i);
         }
 
-        assertEquals(100, queue.size());
-        assertFalse(queue.offer("rejected"));
+        boolean accepted = queue.offer("rejected");
+        assertFalse(accepted);
+        assertEquals(count, queue.size());
     }
 
     @Test
     public void testOffer_whenNullArgument() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         try {
             queue.offer(null);
             fail();
-        } catch (NullPointerException e) {
+        } catch (NullPointerException expected) {
         }
+
+        assertTrue(queue.isEmpty());
     }
 
     @Test
@@ -210,7 +97,6 @@ public class BasicQueueTest extends HazelcastTestSupport {
             queue.offer("item" + i);
         }
 
-        assertEquals(100, queue.size());
         assertFalse(queue.offer("rejected"));
         offerThread.start();
         queue.poll();
@@ -218,15 +104,16 @@ public class BasicQueueTest extends HazelcastTestSupport {
         assertTrue(queue.contains("waiting"));
     }
 
+    // ================ poll ==============================
+
     @Test
     public void testPoll() {
         int count = 100;
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < count; i++) {
             queue.offer("item" + i);
         }
 
-        assertEquals(100, queue.size());
         queue.poll();
         queue.poll();
         queue.poll();
@@ -235,27 +122,30 @@ public class BasicQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPollWithTimeout() throws Exception {
-        final IQueue<String> queue = getQueue();
-        PollThread pollThread = new PollThread(queue);
-
-        assertSizeEventually(0, queue);
-        pollThread.start();
-        assertTrue(queue.offer("offer"));
-        assertSizeEventually(0, queue);
-    }
-
-    @Test
     public void testPoll_whenQueueEmpty() {
-        IQueue<String> queue = getQueue();
-
-        assertEquals(0, queue.size());
+        IQueue<String> queue = newQueue();
         assertNull(queue.poll());
     }
 
+    // ================ poll with timeout ==============================
+
+
+    @Test
+    public void testPollWithTimeout() throws Exception {
+        final IQueue<String> queue = newQueue();
+        PollThread pollThread = new PollThread(queue);
+
+        pollThread.start();
+        assertTrue(queue.offer("offer"));
+        assertSizeEventually(0, queue);
+        //todo: you need to check which item you got.
+    }
+
+    // ================ remove ==============================
+
     @Test
     public void testRemove() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -266,7 +156,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testRemove_whenElementNotExists() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -277,24 +167,29 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testRemove_whenQueueEmpty() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         assertFalse(queue.remove("not in Queue"));
     }
 
     @Test
     public void testRemove_whenArgNull() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
+        queue.add("foo");
 
         try {
             queue.remove(null);
             fail();
-        } catch (NullPointerException e) {
+        } catch (NullPointerException expected) {
         }
+
+        assertEquals(1, queue.size());
     }
+
+    // ================ drainTo ==============================
 
     @Test
     public void testDrainTo() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -309,33 +204,30 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testDrainTo_whenQueueEmpty() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         List list = new ArrayList();
 
-        assertEquals(0, queue.size());
         assertEquals(0, queue.drainTo(list));
     }
 
     @Test
     public void testDrainTo_whenCollectionNull() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
-        List list = null;
 
         try {
-            assertEquals(0, queue.drainTo(list));
+            queue.drainTo(null);
             fail();
-        } catch (NullPointerException e) {
+        } catch (NullPointerException expected) {
         }
         assertEquals(0, queue.size());
     }
 
-
     @Test
     public void testDrainToWithMaxElement() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -347,38 +239,41 @@ public class BasicQueueTest extends HazelcastTestSupport {
         assertEquals(6, queue.size());
     }
 
-
+    // TODO: There is a bug here because the items are now lost if the collection is null.
+    // We should immediately check the collection when you call 'drainTo'.
     @Test
     public void testDrainToWithMaxElement_whenCollectionNull() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
-        List list = null;
 
         try {
-            assertEquals(4, queue.drainTo(list, 4));
+            queue.drainTo(null, 4);
             fail();
-        } catch (NullPointerException e) {
+        } catch (NullPointerException expected) {
         }
+
         assertEquals(6, queue.size());
     }
 
     @Test
     public void testDrainToWithMaxElement_whenMaxArgNegative() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
-        List list = new ArrayList(10);
+        List list = new ArrayList();
 
         assertEquals(10, queue.drainTo(list, -4));
         assertEquals(0, queue.size());
     }
 
+    // ================ contains ==============================
+
     @Test
     public void testContains_whenExists() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -389,7 +284,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testContains_whenNotExists() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -397,6 +292,8 @@ public class BasicQueueTest extends HazelcastTestSupport {
         assertFalse(queue.contains("item10"));
         assertFalse(queue.contains("item19"));
     }
+
+    // ================ containsAll ==============================
 
     @Test
     public void testAddAll_whenCollectionContainsNull() {
@@ -417,7 +314,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
     }
 
     public void testContainsAll_whenExists() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -430,8 +327,8 @@ public class BasicQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testContainsAll_whenAllNotExists() {
-        IQueue<String> queue = getQueue();
+    public void testContainsAll_whenNoneExists() {
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -445,7 +342,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsAll_whenSomeExists() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -460,17 +357,18 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testContainsAll_whenNull() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
-        List list = null;
-        assertFalse(queue.containsAll(list));
+        queue.containsAll(null);
     }
+
+    // ================ addAll ==============================
 
     @Test
     public void testAddAll() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         List<String> list = new ArrayList<String>();
         for (int i = 0; i < 10; i++) {
             list.add("item" + i);
@@ -482,19 +380,20 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testAddAll_whenNullCollection() {
-        IQueue<String> queue = getQueue();
-        List<String> list = null;
+        IQueue<String> queue = newQueue();
 
         try {
-            assertFalse(queue.addAll(list));
+            queue.addAll(null);
             fail();
-        } catch (NullPointerException e) {
+        } catch (NullPointerException expected) {
         }
+
+        assertEquals(0, queue.size());
     }
 
     @Test
     public void testAddAll_whenEmptyCollection() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -505,10 +404,9 @@ public class BasicQueueTest extends HazelcastTestSupport {
         assertEquals(10, queue.size());
     }
 
-
     @Test
     public void testAddAll_whenDuplicateItems() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -520,9 +418,11 @@ public class BasicQueueTest extends HazelcastTestSupport {
         assertEquals(11, queue.size());
     }
 
+    // ================ retainAll ==============================
+
     @Test
     public void testRetainAll() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
@@ -537,14 +437,13 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testRetainAll_whenCollectionNull() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
-        List list = null;
 
         try {
-            assertFalse(queue.retainAll(list));
+            queue.retainAll(null);
             fail();
         } catch (NullPointerException e) {
         }
@@ -553,7 +452,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testRetainAll_whenCollectionEmpty() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
@@ -565,7 +464,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testRetainAll_whenCollectionContainsNull() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
@@ -576,9 +475,11 @@ public class BasicQueueTest extends HazelcastTestSupport {
         assertEquals(0, queue.size());
     }
 
+    // ================ removeAll ==============================
+
     @Test
     public void testRemoveAll() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
@@ -593,16 +494,15 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAll_whenCollectionNull() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
-        List<String> list = null;
 
         try {
-            assertTrue(queue.removeAll(list));
+            queue.removeAll(null);
             fail();
-        } catch (NullPointerException e) {
+        } catch (NullPointerException expected) {
         }
 
         assertEquals(3, queue.size());
@@ -610,7 +510,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAll_whenCollectionEmpty() {
-        IQueue<String> queue = getQueue();
+        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
@@ -620,52 +520,7 @@ public class BasicQueueTest extends HazelcastTestSupport {
         assertEquals(3, queue.size());
     }
 
-    @Test
-    public void testIterator() {
-        IQueue<String> queue = getQueue();
-        for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
-        }
-        Iterator<String> iterator = queue.iterator();
-        int i = 0;
-        while (iterator.hasNext()) {
-            Object o = iterator.next();
-            assertEquals(o, "item" + i++);
-        }
-    }
-
-    @Test
-    public void testIterator_whenQueueEmpty() {
-        IQueue<String> queue = getQueue();
-        Iterator<String> iterator = queue.iterator();
-
-        assertFalse(iterator.hasNext());
-        try {
-            assertNull(iterator.next());
-            fail();
-        } catch (NoSuchElementException e) {
-        }
-    }
-
-    @Test
-    public void testIteratorRemove() {
-        IQueue<String> queue = getQueue();
-        for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
-        }
-
-        Iterator<String> iterator = queue.iterator();
-        while (iterator.hasNext()) {
-            iterator.next();
-            try {
-                iterator.remove();
-                fail();
-            } catch (UnsupportedOperationException e) {
-            }
-        }
-
-        assertEquals(10, queue.size());
-    }
+    // ================ toArray ==============================
 
     @Test
     public void testToArray() {
@@ -699,12 +554,6 @@ public class BasicQueueTest extends HazelcastTestSupport {
         iterator.next();
         iterator.remove();
     }
-
-    private IQueue getQueue() {
-        HazelcastInstance instance = createHazelcastInstance();
-        return instance.getQueue(randomString());
-    }
-
 
     private class OfferThread extends Thread {
         IQueue queue;

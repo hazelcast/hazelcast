@@ -71,6 +71,22 @@ public class XMLConfigBuilderTest {
         new XmlConfigBuilder();
     }
 
+    @Test(expected = HazelcastException.class)
+    public void testJoinValidation(){
+        String xml = "<hazelcast>\n" +
+                "    <network>\n" +
+                "        <join>\n" +
+                "            <multicast enabled=\"true\"/>\n" +
+                "            <tcp-ip enabled=\"true\"/>\n" +
+                "        </join>\n" +
+                "    </network>\n" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+
     @Test
     public void testSecurityInterceptorConfig() {
         String xml =

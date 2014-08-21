@@ -135,7 +135,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         try {
             parse(config);
         } catch (Exception e) {
-            throw new HazelcastException(e);
+            throw new HazelcastException(e.getMessage(), e);
         }
         return config;
     }
@@ -521,6 +521,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleAWS(child);
             }
         }
+
+        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+        joinConfig.verify();
     }
 
     private void handleAWS(Node node) {
