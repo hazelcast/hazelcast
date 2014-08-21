@@ -102,8 +102,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     //region RemoteService
     @Override
     public DistributedObject createDistributedObject(String objectName) {
-//        return null;
-        return new CacheProxy(objectName, nodeEngine, this);
+        return new CacheDistributedObject(objectName, nodeEngine, this);
     }
 
     @Override

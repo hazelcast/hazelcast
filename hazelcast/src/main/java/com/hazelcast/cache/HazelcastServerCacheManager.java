@@ -53,9 +53,9 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
         }
         this.hazelcastInstance = hazelcastInstance;
         //just to get a reference to nodeEngine and cacheService
-        final CacheProxy setupRef = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
+        final CacheDistributedObject setupRef = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         nodeEngine = setupRef.getNodeEngine();
-        cacheService = (CacheService) setupRef.getService();
+        cacheService = setupRef.getService();
 //        setupRef.destroy();
     }
 
@@ -64,11 +64,9 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
         if (isClosed()) {
             throw new IllegalStateException();
         }
-
         if (cacheName == null) {
             throw new NullPointerException("cacheName must not be null");
         }
-
         if (configuration == null) {
             throw new NullPointerException("configuration must not be null");
         }
@@ -97,7 +95,6 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
 
                 //CREATE ON OTHERS TOO
                 final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-
                 for(MemberImpl member:members){
                     if(!member.localMember()){
                         final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheNameWithPrefix, cacheConfig,true);
@@ -108,9 +105,9 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
                 //UPDATE LOCAL MEMBER
                 cacheService.createCacheConfigIfAbsent(cacheConfig);
 
-                final CacheProxy<K, V> cacheProxy = new CacheProxy<K, V>(cacheName, cacheConfig, nodeEngine, cacheService, this);
+                final CacheDistributedObject cacheDistributedObject = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, cacheNameWithPrefix);
+                final CacheProxy<K, V> cacheProxy = new CacheProxy<K, V>(cacheName, cacheConfig, cacheDistributedObject, this);
                 caches.put(cacheNameWithPrefix,cacheProxy);
-
                 if (created) {
                     if(cacheConfig.isStatisticsEnabled()){
                         enableStatistics(cacheName,true);
@@ -175,11 +172,21 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
         if (isClosed()) {
             throw new IllegalStateException();
         }
-        HazelcastInstance hz = hazelcastInstance;
+        if (cacheName == null) {
+            throw new NullPointerException();
+        }
+
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
+        synchronized (caches) {
+            final ICache<?, ?> destroy = caches.remove(cacheNameWithPrefix);
+            if(destroy != null){
+                destroy.close();
+            }
+        }
+
+        HazelcastInstance hz = hazelcastInstance;
         DistributedObject cache = hz.getDistributedObject(CacheService.SERVICE_NAME, cacheNameWithPrefix);
         cache.destroy();
-        caches.remove(cacheNameWithPrefix);
     }
 
     @Override
@@ -242,10 +249,14 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
             HazelcastInstance hz = hazelcastInstance;
             Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
             for (DistributedObject distributedObject : distributedObjects) {
-                if (distributedObject instanceof ICache) {
+                if (distributedObject instanceof CacheDistributedObject) {
                     distributedObject.destroy();
                 }
             }
+            for(ICache cache:caches.values()){
+                cache.close();
+            }
+            caches.clear();
             getCachingProvider().releaseCacheManager(uri, classLoaderReference.get());
         }
         closeTriggered=true;

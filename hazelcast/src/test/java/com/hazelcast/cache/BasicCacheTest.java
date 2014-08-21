@@ -40,6 +40,7 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.spi.CachingProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,7 +67,7 @@ public class BasicCacheTest extends HazelcastTestSupport {
 
 //        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         Config config = new Config();
-        hz=Hazelcast.newHazelcastInstance(config);
+//        hz=Hazelcast.newHazelcastInstance(config);
         hz2=Hazelcast.newHazelcastInstance(config);
 //        Hazelcast.newHazelcastInstance(config);
 //        hz= factory.newHazelcastInstance(config);
@@ -234,25 +235,40 @@ public class BasicCacheTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void testCacheMigration(){
-        HazelcastServerCachingProvider hcp = new HazelcastServerCachingProvider();
+        final CachingProvider cachingProvider = Caching.getCachingProvider();
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
 
-        HazelcastServerCacheManager cacheManager = new HazelcastServerCacheManager(hcp,hz,hcp.getDefaultURI(),hcp.getDefaultClassLoader(),null);
 
         CacheConfig<Integer,String> config =  new CacheConfig<Integer, String>();
         config.setName("SimpleCache");
         config.setInMemoryFormat(InMemoryFormat.OBJECT);
 
-        Cache<Integer, String> simpleCache = cacheManager.createCache("simpleCache", config);
+        Cache<Integer, String> cache = cacheManager.createCache("simpleCache", config);
 
-        Cache<Integer, String> cache = cacheManager.getCache("simpleCache");
 
         for(int i=0;i<100;i++){
             cache.put(i,"value"+i);
         }
 
-        hz2.shutdown();
+//        hz2.shutdown();
+//
+//        for(int i=0;i<100;i++){
+//            String val = cache.get(i);
+//            assertEquals(val,"value" + i);
+//        }
+//
+
+        cachingProvider.close();
+
+        final CachingProvider cachingProvider2 = Caching.getCachingProvider();
+        final CacheManager cacheManager2 = cachingProvider2.getCacheManager();
+
+
+        Cache<Integer, String> cache2 = cacheManager2.getCache("simpleCache");
+
+        assertNotNull(cache2);
 
         for(int i=0;i<100;i++){
             String val = cache.get(i);

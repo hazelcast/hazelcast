@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 @Beta
-public interface ICache<K, V> extends DistributedObject, javax.cache.Cache<K, V> {
+public interface ICache<K, V> extends /*DistributedObject,*/ javax.cache.Cache<K, V> {
 
     //region async extentions
     Future<V> getAsync(K key);

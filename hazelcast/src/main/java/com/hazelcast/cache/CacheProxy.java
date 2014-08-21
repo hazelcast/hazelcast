@@ -70,53 +70,56 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-
 /**
- * @author mdogan 05/02/14
+ * CacheProxy implementing ICache
+ *
+ * @param <K> key
+ * @param <V> value
  */
-final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> implements ICache<K, V> {
-
+public class CacheProxy<K, V> implements ICache<K, V> {
+//WARNING:: this proxy do not extend AbstractDistributedObject as Cache and AbstractDistributedObject
+// has getName method which have different values a distributedObject delegate used to over come this
     private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     private final CacheConfig<K, V> cacheConfig;
 
+    //this will represent the name from the user perspective
     private String name;
+    //this is the prefixed distributed obj name
     String nameWithPrefix;
+
     private boolean isClosed = false;
 
+    private CacheDistributedObject delegate;
     private HazelcastCacheManager cacheManager;
     private CacheLoader<K, V> cacheLoader;
-    private CacheStatistics statistics = new CacheStatistics();
+//    private CacheStatistics statistics = new CacheStatistics();
 
-    protected CacheProxy(String name, NodeEngine nodeEngine, CacheService service) {
-        super(nodeEngine, service);
+    protected CacheProxy(String name, CacheConfig cacheConfig, CacheDistributedObject delegate, HazelcastServerCacheManager cacheManager) {
+//        super(nodeEngine, service);
         this.name = name;
-        cacheConfig = null;
-    }
-
-    protected CacheProxy(String name, CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService service, HazelcastServerCacheManager cacheManager) {
-        super(nodeEngine, service);
-        this.name = name;
-        this.cacheManager = cacheManager;
-        this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
+        this.delegate = delegate;
+        this.cacheManager = cacheManager;
+        this.nameWithPrefix = delegate.getName();//cacheConfig.getNameWithPrefix();
 
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
         }
-
     }
 
     //region DISTRIBUTED OBJECT
-    @Override
-    public String getName() {
-        return name;
+    protected String getServiceName() {
+        return delegate.getServiceName();
     }
 
-    @Override
-    public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+    protected CacheService getService() {
+        return delegate.getService();
+    }
+
+    protected NodeEngine getNodeEngine(){
+        return delegate.getNodeEngine();
     }
     //endregion
 
@@ -444,39 +447,20 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         }
     }
 
-//    @Override
-//    public CacheMXBean getCacheMXBean() {
-//        return null;
-//    }
-
-//    @Override
-//    public CacheStatisticsMXBean getCacheStatisticsMXBean() {
-//        ensureOpen();
-//        return new CacheStatisticsMXBeanImpl(this);
-//    }
-
-    public CacheStatistics getCacheStatistics() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        final List<Integer> memberPartitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-        statistics.clear();
-        for (Integer partition : memberPartitions) {
-            ICacheRecordStore cache = getService().getCache(nameWithPrefix, partition);
-            if (cache != null) {
-                statistics.acumulate(cache.getCacheStats());
-            }
-        }
-        return statistics;
-    }
-
-//    @Override
-//    public void setStatisticsEnabled(boolean enabled) {
-//        if (enabled) {
-//            MXBeanUtil.registerCacheObject(this, true);
-//        } else {
-//            MXBeanUtil.unregisterCacheObject(this, true);
+//    public CacheStatistics getCacheStatistics() {
+//        final NodeEngine nodeEngine = getNodeEngine();
+//        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+//        final List<Integer> memberPartitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+//        statistics.clear();
+//        for (Integer partition : memberPartitions) {
+//            ICacheRecordStore cache = getService().getCache(nameWithPrefix, partition);
+//            if (cache != null) {
+//                statistics.acumulate(cache.getCacheStats());
+//            }
 //        }
+//        return statistics;
 //    }
+
 
     public V get(Data key) {
         ensureOpen();
@@ -495,28 +479,6 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         }
         return (V) result;
     }
-
-//    public void enableManagement(boolean enabled) {
-//       if (enabled) {
-//            MXBeanUtil.registerCacheObject(this, false);
-//        } else {
-//            MXBeanUtil.unregisterCacheObject(this, false);
-//        }
-//    }
-
-//    void initCacheManager(HazelcastCacheManager cacheManager) {
-//        if (this.cacheManager == null) {
-//            this.cacheManager = cacheManager;
-//        }
-//    }
-
-    protected void postDestroy() {
-        //FIXME unregister MXBEANS
-//        setStatisticsEnabled(false);
-//        enableManagement(false);
-        this.isClosed = true;
-    }
-
 
     private <T> InternalCompletableFuture<T> putAsyncInternal(K key, V value,
                                                               ExpiryPolicy expiryPolicy, boolean getValue) {
@@ -567,6 +529,11 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
     //endregion
 
     //region javax.cache.Cache<K, V> IMPL
+
+    @Override
+    public String getName() {
+        return name;
+    }
 
     @Override
     public V get(K key) {
@@ -791,34 +758,9 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
                 }
             }
         } catch (Throwable t) {
-            throw rethrow(t, CacheException.class);
-        }
-
-    }
-
-    //TODO MOVE THIS INTO ExceptionUtil
-    private static <T extends Throwable> RuntimeException rethrow(final Throwable t, Class<T> allowedType) throws T {
-        if (t instanceof Error) {
-            if (t instanceof OutOfMemoryError) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
-            }
-            throw (Error) t;
-        } else if (allowedType.isAssignableFrom(t.getClass())) {
-            throw (T) t;
-        } else if (t instanceof RuntimeException) {
-            throw (RuntimeException) t;
-        } else if (t instanceof ExecutionException) {
-            final Throwable cause = t.getCause();
-            if (cause != null) {
-                throw rethrow(cause, allowedType);
-            } else {
-                throw new HazelcastException(t);
-            }
-        } else {
-            throw new HazelcastException(t);
+            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
-
 
     @Override
     public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
@@ -868,11 +810,13 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
             CacheEntryProcessorResult<T> ceResult;
             try {
                 final T result = this.invoke(key, entryProcessor, arguments);
-                ceResult = new CacheEntryProcessorResult<T>(result);
+                ceResult = result != null ?new CacheEntryProcessorResult<T>(result) : null;
             } catch (Exception e) {
                 ceResult = new CacheEntryProcessorResult<T>(e);
             }
-            allResult.put(key, ceResult);
+            if(ceResult != null){
+                allResult.put(key, ceResult);
+            }
         }
         return allResult;
     }
@@ -891,8 +835,8 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
                 CacheWriter, registered CacheEntryListeners and ExpiryPolicy instances that
         implement the java.io.Closeable interface,
 */
-
-        destroy();
+        isClosed = true;
+        delegate.destroy();
     }
 
     @Override
@@ -925,8 +869,6 @@ final class CacheProxy<K, V> extends AbstractDistributedObject<CacheService> imp
         ensureOpen();
         return new ClusterWideIterator<K, V>(this);
     }
-
     //endregion
-
 
 }
