@@ -1016,6 +1016,26 @@ public class ReplicatedMapTest
         map1.removeEntryListener(null);
     }
 
+    @Test
+    public void testPutAll()
+            throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+
+        final ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default1");
+        final ReplicatedMap<Object, Object> map2 = instance1.getReplicatedMap("default2");
+
+        map1.put("istanbul","turkey");
+        map1.put("tokyo","japan");
+        map2.put("paris","france");
+        map2.put("istanbul","city");
+        map1.putAll(map2);
+
+        assertEquals(3,map1.size());
+        assertEquals("city",map1.get("istanbul"));
+        assertEquals("france",map1.get("paris"));
+    }
+
     private Config buildConfig(InMemoryFormat inMemoryFormat, long replicationDelay) {
         Config config = new Config();
         ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("default");
