@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.map.eviction.EvictionHelper.checkEvictable;
 import static com.hazelcast.map.eviction.EvictionHelper.fireEvent;
 import static com.hazelcast.map.eviction.EvictionHelper.removeEvictableRecords;
 
@@ -185,7 +186,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size() == 0) {
             return;
         }
-        if (inEvictableTimeWindow(now) && isEvictable()) {
+        if (inEvictableTimeWindow(now) && isEvictable(backup)) {
             removeEvictables(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
@@ -226,8 +227,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                 || (now - lastEvictionTime) > minEvictionCheckMillis;
     }
 
-    private boolean isEvictable() {
-        return EvictionHelper.checkEvictable(mapContainer);
+    private boolean isEvictable(boolean backup) {
+        return checkEvictable(mapContainer, partitionId, backup);
     }
 
     protected Record nullIfExpired(Record record, boolean backup) {
