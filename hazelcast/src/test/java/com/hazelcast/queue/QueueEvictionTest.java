@@ -24,7 +24,7 @@ import static org.junit.Assert.fail;
 public class QueueEvictionTest extends AbstractQueueTest{
 
 
-    //what are you testing? The itent is not clear
+    //what are you testing? The intent is not clear
     @Test
     public void testQueueEviction() throws Exception {
         final Config config = new Config();
