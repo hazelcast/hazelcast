@@ -48,9 +48,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-/**
- * @author ali 6/3/13
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class QueueTestsFrom2X extends HazelcastTestSupport {
