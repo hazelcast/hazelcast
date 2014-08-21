@@ -591,6 +591,8 @@ public class Node {
 
     Joiner createJoiner() {
         JoinConfig join = config.getNetworkConfig().getJoin();
+       join.verify();
+
         if (join.getMulticastConfig().isEnabled() && multicastService != null) {
             logger.info("Creating MulticastJoiner");
             systemLogService.logJoin("Creating MulticastJoiner");
@@ -613,6 +615,7 @@ public class Node {
         }
         return null;
     }
+
 
     public void setAsMaster() {
         logger.finest("This node is being set as the master");
