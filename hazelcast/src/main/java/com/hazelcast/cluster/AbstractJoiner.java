@@ -32,6 +32,8 @@ import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +52,7 @@ public abstract class AbstractJoiner implements Joiner {
 
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
     private final AtomicInteger tryCount = new AtomicInteger(0);
+    private final Set<Address> blacklistedAddresses = Collections.synchronizedSet(new HashSet<Address>());
     protected final Config config;
     protected final Node node;
     protected final ILogger logger;
@@ -64,15 +67,29 @@ public abstract class AbstractJoiner implements Joiner {
         this.config = node.config;
     }
 
+    @Override
+    public void blacklist(Address callerAddress) {
+        logger.info(callerAddress + " is added to the blacklist.");
+        blacklistedAddresses.add(callerAddress);
+    }
+
+    @Override
+    public boolean isBlacklisted(Address address) {
+        return blacklistedAddresses.contains(address);
+    }
+
     public abstract void doJoin();
 
     @Override
     public void join() {
+        blacklistedAddresses.clear();
         doJoin();
         postJoin();
     }
 
     private void postJoin() {
+        blacklistedAddresses.clear();
+
         systemLogService.logJoin("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
         if (!node.isActive()) {
             return;

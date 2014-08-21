@@ -23,7 +23,7 @@ public class EvictAllBackupOperation extends AbstractMapOperation implements Bac
         if (recordStore == null) {
             return;
         }
-        recordStore.evictAllBackup();
+        recordStore.evictAll(true);
     }
 
     @Override

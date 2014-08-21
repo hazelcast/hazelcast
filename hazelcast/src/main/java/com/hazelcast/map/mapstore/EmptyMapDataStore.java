@@ -65,7 +65,7 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public Object flush(Object key, Object value, long now) {
+    public Object flush(Object key, Object value, long now, boolean backup) {
         return value;
     }
 

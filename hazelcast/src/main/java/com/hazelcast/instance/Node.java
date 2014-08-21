@@ -544,19 +544,8 @@ public class Node {
     }
 
     public ConfigCheck createConfigCheck() {
-        final ConfigCheck configCheck = new ConfigCheck();
-        final GroupConfig groupConfig = config.getGroupConfig();
-        final PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
-        final boolean partitionGroupEnabled = partitionGroupConfig != null && partitionGroupConfig.isEnabled();
-
-        PartitionGroupConfig.MemberGroupType memberGroupType = partitionGroupEnabled
-                ? partitionGroupConfig.getGroupType()
-                : PartitionGroupConfig.MemberGroupType.PER_MEMBER;
-        configCheck.setGroupName(groupConfig.getName()).setGroupPassword(groupConfig.getPassword())
-                .setJoinerType(joiner != null ? joiner.getType() : "")
-                .setPartitionGroupEnabled(partitionGroupEnabled)
-                .setMemberGroupType(memberGroupType);
-        return configCheck;
+        String joinerType = joiner == null ? "" : joiner.getType();
+        return new ConfigCheck(config, joinerType);
     }
 
     public ClientConfigCheck createClientConfigCheck() {
@@ -616,6 +605,8 @@ public class Node {
 
     Joiner createJoiner() {
         JoinConfig join = config.getNetworkConfig().getJoin();
+       join.verify();
+
         if (join.getMulticastConfig().isEnabled() && multicastService != null) {
             logger.info("Creating MulticastJoiner");
             systemLogService.logJoin("Creating MulticastJoiner");
@@ -638,6 +629,7 @@ public class Node {
         }
         return null;
     }
+
 
     public void setAsMaster() {
         logger.finest("This node is being set as the master");

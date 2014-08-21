@@ -34,6 +34,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -86,13 +87,16 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
                 mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
                 keysToInvalidate.add(dataKey);
+
+                // check in case of an expiration.
+                final Record record = recordStore.getRecord(dataKey);
+                if (record == null) {
+                    continue;
+                }
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
-                    Record record = recordStore.getRecord(dataKey);
-                    if (record != null) {
-                        final Data dataValueAsData = mapServiceContext.toData(dataValue);
-                        final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
-                        mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-                    }
+                    final Data dataValueAsData = mapServiceContext.toData(dataValue);
+                    final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
+                    mapEventPublisher.publishWanReplicationUpdate(name, entryView);
                 }
                 backupEntrySet.add(entry);
                 RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));

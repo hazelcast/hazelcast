@@ -46,4 +46,14 @@ public class BuildInfo {
         return enterprise;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("BuildInfo{");
+        sb.append("version='").append(version).append('\'');
+        sb.append(", build='").append(build).append('\'');
+        sb.append(", buildNumber=").append(buildNumber);
+        sb.append(", enterprise=").append(enterprise);
+        sb.append('}');
+        return sb.toString();
+    }
 }

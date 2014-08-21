@@ -17,56 +17,53 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class PartitionWideEntryBackupOperation extends AbstractMapOperation implements BackupOperation, PartitionAwareOperation {
-
-    EntryBackupProcessor entryProcessor;
-
-    public PartitionWideEntryBackupOperation(String name, EntryBackupProcessor entryProcessor) {
-        super(name);
-        this.entryProcessor = entryProcessor;
-    }
+public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOperation implements BackupOperation {
 
     public PartitionWideEntryBackupOperation() {
     }
 
+    public PartitionWideEntryBackupOperation(String name, EntryBackupProcessor backupProcessor) {
+        super(name, backupProcessor);
+    }
+
+    @Override
     public void run() {
-        Map.Entry entry;
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
         final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
-            Data dataKey = record.getKey();
-            Object objectKey = mapService.getMapServiceContext().toObject(record.getKey());
-            Object valueBeforeProcess = mapService.getMapServiceContext().toObject(record.getValue());
-            if (getPredicate() != null) {
-                QueryEntry queryEntry
-                        = new QueryEntry(getNodeEngine().getSerializationService(), dataKey, objectKey, valueBeforeProcess);
-                if (!getPredicate().apply(queryEntry)) {
-                    continue;
-                }
+            final Data dataKey = record.getKey();
+            final Object oldValue = record.getValue();
+
+            final Object key = toObject(dataKey);
+            final Object value = toObject(oldValue);
+
+            if (!applyPredicate(dataKey, key, value)) {
+                continue;
             }
-            entry = new AbstractMap.SimpleEntry(objectKey, valueBeforeProcess);
-            entryProcessor.processBackup(entry);
-            if (entry.getValue() == null) {
-                recordStore.removeBackup(dataKey);
-            } else {
-                recordStore.putBackup(dataKey, entry.getValue());
+            final Map.Entry entry = createMapEntry(key, value);
+
+            processBackup(entry);
+
+            if (noOp(entry, oldValue)) {
+                continue;
             }
+            if (entryRemovedBackup(entry, dataKey)) {
+                continue;
+            }
+            entryAddedOrUpdatedBackup(entry, dataKey);
         }
     }
 
@@ -82,13 +79,13 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        entryProcessor = in.readObject();
+        backupProcessor = in.readObject();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(entryProcessor);
+        out.writeObject(backupProcessor);
     }
 
     @Override
@@ -99,5 +96,14 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
     @Override
     public String toString() {
         return "PartitionWideEntryBackupOperation{}";
+    }
+
+    private boolean applyPredicate(Data dataKey, Object key, Object value) {
+        if (getPredicate() == null) {
+            return true;
+        }
+        final SerializationService ss = getNodeEngine().getSerializationService();
+        QueryEntry queryEntry = new QueryEntry(ss, dataKey, key, value);
+        return getPredicate().apply(queryEntry);
     }
 }

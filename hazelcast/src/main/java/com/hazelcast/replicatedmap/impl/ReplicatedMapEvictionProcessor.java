@@ -46,7 +46,11 @@ public class ReplicatedMapEvictionProcessor
         if (replicatedRecordStore != null) {
             for (ScheduledEntry<Object, Object> entry : entries) {
                 Object key = entry.getKey();
-                replicatedRecordStore.remove(key);
+                if (entry.getValue() == null) {
+                    replicatedRecordStore.removeTombstone(key);
+                } else {
+                    replicatedRecordStore.remove(key);
+                }
             }
         }
     }

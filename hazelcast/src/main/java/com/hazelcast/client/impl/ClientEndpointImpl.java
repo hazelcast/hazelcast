@@ -57,14 +57,13 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     private final List<Runnable> removeListenerActions = Collections.synchronizedList(new LinkedList<Runnable>());
     private final SocketAddress socketAddress;
 
-    private String uuid;
     private LoginContext loginContext;
     private ClientPrincipal principal;
     private boolean firstConnection;
     private Credentials credentials;
     private volatile boolean authenticated;
 
-    ClientEndpointImpl(ClientEngineImpl clientEngine, Connection conn, String uuid) {
+    ClientEndpointImpl(ClientEngineImpl clientEngine, Connection conn) {
         this.clientEngine = clientEngine;
         this.conn = conn;
         if (conn instanceof TcpIpConnection) {
@@ -73,7 +72,6 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         } else {
             socketAddress = null;
         }
-        this.uuid = uuid;
     }
 
     public Connection getConnection() {
@@ -82,7 +80,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
 
     @Override
     public String getUuid() {
-        return uuid;
+        return principal != null ? principal.getUuid() : null;
     }
 
     public boolean live() {
@@ -104,7 +102,6 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     @Override
     public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection) {
         this.principal = principal;
-        this.uuid = principal.getUuid();
         this.firstConnection = firstConnection;
         this.credentials = credentials;
         this.authenticated = true;
@@ -113,9 +110,8 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     @Override
     public void authenticated(ClientPrincipal principal) {
         this.principal = principal;
-        this.uuid = principal.getUuid();
         this.authenticated = true;
-        clientEngine.addOwnershipMapping(uuid, principal.getOwnerUuid());
+        clientEngine.addOwnershipMapping(principal.getUuid(), principal.getOwnerUuid());
     }
 
     public boolean isAuthenticated() {
@@ -273,7 +269,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     public String toString() {
         StringBuilder sb = new StringBuilder("ClientEndpoint{");
         sb.append("conn=").append(conn);
-        sb.append(", uuid='").append(uuid).append('\'');
+        sb.append(", principal='").append(principal).append('\'');
         sb.append(", firstConnection=").append(firstConnection);
         sb.append(", authenticated=").append(authenticated);
         sb.append('}');

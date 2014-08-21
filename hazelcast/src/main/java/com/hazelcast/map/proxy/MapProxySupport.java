@@ -51,6 +51,7 @@ import com.hazelcast.map.operation.BaseRemoveOperation;
 import com.hazelcast.map.operation.ClearOperation;
 import com.hazelcast.map.operation.ContainsKeyOperation;
 import com.hazelcast.map.operation.ContainsValueOperationFactory;
+import com.hazelcast.map.operation.DeleteOperation;
 import com.hazelcast.map.operation.EntryOperation;
 import com.hazelcast.map.operation.EvictAllOperation;
 import com.hazelcast.map.operation.EvictOperation;
@@ -515,7 +516,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected void deleteInternal(Data key) {
-        RemoveOperation operation = new RemoveOperation(name, key);
+        DeleteOperation operation = new DeleteOperation(name, key);
         invokeOperation(key, operation);
         invalidateNearCache(key);
     }
