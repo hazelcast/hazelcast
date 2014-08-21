@@ -6,6 +6,7 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -22,6 +23,7 @@ public class QueueStatisticsTest extends AbstractQueueTest{
     // and there is a lot more statistics to be tested.
 
     @Test
+    @Ignore
     public void testQueueStats() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final String name = randomString();
