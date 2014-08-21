@@ -22,7 +22,6 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.messages.MultiReplicationMessage;
@@ -30,14 +29,12 @@ import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.DataReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ObjectReplicatedRecordStorage;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ReplicationPublisher;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
@@ -45,11 +42,8 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.EventListener;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * This is the main service implementation to handle replication and manages the backing
@@ -68,34 +62,19 @@ public class ReplicatedMapService
      */
     public static final String EVENT_TOPIC_NAME = SERVICE_NAME + ".replication";
 
-    private static final int INITIAL_DELAY = 5;
-    private static final int PERIOD = 5;
-
     private final ConcurrentHashMap<String, ReplicatedRecordStore> replicatedStorages = initReplicatedRecordStoreMapping();
-
-    private final CleanerRegistrator cleanerRegistrator = new CleanerRegistrator() {
-        @Override
-        public <V> ScheduledFuture<V> registerCleaner(ReplicatedRecordStore replicatedRecordStorage) {
-            return (ScheduledFuture) ReplicatedMapService.this.registerCleaner(replicatedRecordStorage);
-        }
-    };
 
     private final ConstructorFunction<String, ReplicatedRecordStore> constructor = buildConstructorFunction();
 
-    private final ILogger logger;
     private final Config config;
     private final NodeEngine nodeEngine;
     private final EventService eventService;
-    private final ExecutionService executionService;
-
     private final EventRegistration eventRegistration;
 
     public ReplicatedMapService(NodeEngine nodeEngine) {
-        this.logger = nodeEngine.getLogger(ReplicatedMapService.class.getName());
         this.nodeEngine = nodeEngine;
         this.config = nodeEngine.getConfig();
         this.eventService = nodeEngine.getEventService();
-        this.executionService = nodeEngine.getExecutionService();
         this.eventRegistration = eventService.registerListener(SERVICE_NAME, EVENT_TOPIC_NAME, new ReplicationListener());
     }
 
@@ -188,15 +167,6 @@ public class ReplicatedMapService
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
-    ScheduledFuture<?> registerCleaner(ReplicatedRecordStore replicatedRecordStorage) {
-        if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
-            AbstractReplicatedRecordStore recordStore = (AbstractReplicatedRecordStore) replicatedRecordStorage;
-            return executionService.scheduleWithFixedDelay(new Cleaner(recordStore), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
-        }
-        String className = replicatedRecordStorage.getClass().getName();
-        throw new IllegalArgumentException("Unknown ReplicatedRecordStore implementation: " + className);
-    }
-
     private ConcurrentHashMap<String, ReplicatedRecordStore> initReplicatedRecordStoreMapping() {
         return new ConcurrentHashMap<String, ReplicatedRecordStore>();
     }
@@ -211,11 +181,11 @@ public class ReplicatedMapService
                 AbstractReplicatedRecordStore replicatedRecordStorage = null;
                 switch (inMemoryFormat) {
                     case OBJECT:
-                        replicatedRecordStorage = new ObjectReplicatedRecordStorage(name, nodeEngine, cleanerRegistrator,
+                        replicatedRecordStorage = new ObjectReplicatedRecordStorage(name, nodeEngine,
                                 ReplicatedMapService.this);
                         break;
                     case BINARY:
-                        replicatedRecordStorage = new DataReplicatedRecordStore(name, nodeEngine, cleanerRegistrator,
+                        replicatedRecordStorage = new DataReplicatedRecordStore(name, nodeEngine,
                                 ReplicatedMapService.this);
                         break;
                     case OFFHEAP:
@@ -252,31 +222,4 @@ public class ReplicatedMapService
             }
         }
     }
-
-    /**
-     * The Cleaner is used to removed expired entries from the registered
-     * {@link com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore}
-     */
-    private static final class Cleaner
-            implements Runnable {
-
-        private final long ttl = TimeUnit.SECONDS.toMillis(10);
-        private final AbstractReplicatedRecordStore replicatedRecordStorage;
-
-        private Cleaner(AbstractReplicatedRecordStore replicatedRecordStorage) {
-            this.replicatedRecordStorage = replicatedRecordStorage;
-        }
-
-        public void run() {
-            final Iterator<ReplicatedRecord> iterator = replicatedRecordStorage.getRecords().iterator();
-            final long now = System.currentTimeMillis();
-            while (iterator.hasNext()) {
-                final ReplicatedRecord v = iterator.next();
-                if (v.getValue() == null && (v.getUpdateTime() + ttl) < now) {
-                    iterator.remove();
-                }
-            }
-        }
-    }
-
 }

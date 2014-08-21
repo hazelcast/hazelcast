@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.replicatedmap.impl.CleanerRegistrator;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.NodeEngine;
 
@@ -30,9 +29,9 @@ public class DataReplicatedRecordStore
 
     private final NodeEngine nodeEngine;
 
-    public DataReplicatedRecordStore(String name, NodeEngine nodeEngine, CleanerRegistrator cleanerRegistrator,
+    public DataReplicatedRecordStore(String name, NodeEngine nodeEngine,
                                      ReplicatedMapService replicatedMapService) {
-        super(name, nodeEngine, cleanerRegistrator, replicatedMapService);
+        super(name, nodeEngine, replicatedMapService);
         this.nodeEngine = nodeEngine;
     }
 
