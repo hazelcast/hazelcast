@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 public class QueueStatisticsTest extends AbstractQueueTest {
 
     @Test
-    public void testQueueStats_ItemCount() {
+    public void testItemCount() {
         IQueue queue = newQueue();
         int items = 20;
         for (int i = 0; i < items; i++) {
@@ -32,7 +32,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
     }
 
     @Test
-    public void testQueueStats_OfferOperationCount() throws InterruptedException {
+    public void testOfferOperationCount() throws InterruptedException {
         IQueue queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
@@ -49,7 +49,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
     }
 
     @Test
-    public void testQueueStats_RejectedOfferOperationCount() {
+    public void testRejectedOfferOperationCount() {
         IQueue queue = newQueue_WithMaxSizeConfig(30);
         for (int i = 0; i < 30; i++) {
             queue.offer("item" + i);
@@ -64,7 +64,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
     }
 
     @Test
-    public void testQueueStats_PollOperationCount() throws InterruptedException {
+    public void testPollOperationCount() throws InterruptedException {
         IQueue queue = newQueue();
         for (int i = 0; i < 30; i++) {
             queue.offer("item" + i);
@@ -85,7 +85,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
     }
 
     @Test
-    public void testQueueStats_EmptyPollOperationCount() {
+    public void testEmptyPollOperationCount() {
         IQueue queue = newQueue();
 
         for (int i = 0; i < 10; i++) {
@@ -97,7 +97,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
     }
 
     @Test
-    public void testQueueStats_OtherOperationCount() {
+    public void testOtherOperationCount() {
         IQueue queue = newQueue();
         for (int i = 0; i < 30; i++) {
             queue.offer("item" + i);
@@ -112,7 +112,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
     }
 
     @Test
-    public void testQueueStats_Age() {
+    public void testAge() {
         IQueue queue = newQueue();
         queue.offer("maxAgeItem");
         queue.offer("minAgeItem");
@@ -126,7 +126,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
     }
 
     @Test
-    public void testQueueStats_EventOperationCount() {
+    public void testEventOperationCount() {
         IQueue queue = newQueue();
         TestListener listener = new TestListener(30);
         queue.addItemListener(listener, true);
