@@ -77,6 +77,25 @@ public class JoinConfig {
         return this;
     }
 
+    /**
+     * Verifies this JoinConfig is valid. So at most a single joiner should be active.
+     *
+     * @throws IllegalStateException when the join config is not valid.
+     */
+    public void verify() {
+        if (getTcpIpConfig().isEnabled() && getMulticastConfig().isEnabled()) {
+            throw new IllegalStateException("TCP/IP and Multicast join be enabled at the same time");
+        }
+
+        if (getTcpIpConfig().isEnabled() && getAwsConfig().isEnabled()) {
+            throw new IllegalStateException("TCP/IP and AWS join can't be enabled at the same time");
+        }
+
+        if (getMulticastConfig().isEnabled() && getAwsConfig().isEnabled()) {
+            throw new IllegalStateException("Multicast and AWS join can't be enabled at the same time");
+        }
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("JoinConfig{");
