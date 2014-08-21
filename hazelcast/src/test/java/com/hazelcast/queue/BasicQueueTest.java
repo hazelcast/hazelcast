@@ -134,11 +134,12 @@ public class BasicQueueTest extends AbstractQueueTest {
     public void testPollWithTimeout() throws Exception {
         final IQueue<String> queue = newQueue();
         PollThread pollThread = new PollThread(queue);
-
         pollThread.start();
-        assertTrue(queue.offer("offer"));
-        assertSizeEventually(0, queue);
-        //todo: you need to check which item you got.
+        queue.offer("offer");
+        queue.offer("remain");
+
+        assertSizeEventually(1, queue);
+        assertTrue(queue.contains("remain"));
     }
 
     // ================ remove ==============================
@@ -222,7 +223,7 @@ public class BasicQueueTest extends AbstractQueueTest {
             fail();
         } catch (NullPointerException expected) {
         }
-        assertEquals(0, queue.size());
+        assertEquals(10, queue.size());
     }
 
     @Test
@@ -239,8 +240,6 @@ public class BasicQueueTest extends AbstractQueueTest {
         assertEquals(6, queue.size());
     }
 
-    // TODO: There is a bug here because the items are now lost if the collection is null.
-    // We should immediately check the collection when you call 'drainTo'.
     @Test
     public void testDrainToWithMaxElement_whenCollectionNull() {
         IQueue<String> queue = newQueue();
@@ -254,7 +253,7 @@ public class BasicQueueTest extends AbstractQueueTest {
         } catch (NullPointerException expected) {
         }
 
-        assertEquals(6, queue.size());
+        assertEquals(10, queue.size());
     }
 
     @Test
@@ -583,6 +582,7 @@ public class BasicQueueTest extends AbstractQueueTest {
         public void run() {
             try {
                 queue.poll(2, TimeUnit.SECONDS);
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

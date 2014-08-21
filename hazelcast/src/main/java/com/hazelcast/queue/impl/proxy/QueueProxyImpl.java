@@ -115,6 +115,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
     @Override
     public int drainTo(Collection<? super E> objects, int i) {
         final NodeEngine nodeEngine = getNodeEngine();
+        throwExceptionIfNull(objects, "Collection is null");
         if (this.equals(objects)) {
             throw new IllegalArgumentException("Can not drain to same Queue");
         }

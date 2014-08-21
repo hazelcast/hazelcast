@@ -166,6 +166,12 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         }
     }
 
+    protected void throwExceptionIfNull(Object o, String message) {
+        if (o == null) {
+            throw new NullPointerException(message);
+        }
+    }
+
     private <T> T invokeAndGet(QueueOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
