@@ -61,6 +61,16 @@ public class CountDownLatchTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testTrySetCount_whenCountIsNotZero() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+        latch.trySetCount(10);
+        assertFalse(latch.trySetCount(20));
+        assertFalse(latch.trySetCount(0));
+        assertEquals(10, latch.getCount());
+    }
+
+    @Test
     public void testTrySetCount_whenPositive() {
         final HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch(randomString());
