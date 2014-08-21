@@ -218,7 +218,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         }
     }
 
-    private class UpdateThread extends TestThread {
+    private class UpdateThread extends RepartitioningStressTest.TestThread {
         private final int itemCount;
         private final ConcurrentMap<Integer, Integer> map;
         private final int[] values;
