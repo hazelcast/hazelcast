@@ -22,6 +22,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ValidationUtil;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -114,10 +117,11 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
 
     @Override
     public int drainTo(Collection<? super E> objects, int i) {
-        final NodeEngine nodeEngine = getNodeEngine();
+        ValidationUtil.checkNotNull(objects, "Collection is null");
         if (this.equals(objects)) {
             throw new IllegalArgumentException("Can not drain to same Queue");
         }
+        final NodeEngine nodeEngine = getNodeEngine();
         Collection<Data> dataList = drainInternal(i);
         for (Data data : dataList) {
             E e = nodeEngine.toObject(data);
@@ -227,7 +231,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         final NodeEngine nodeEngine = getNodeEngine();
         List<Data> dataList = new ArrayList<Data>(objects.size());
         for (Object o : objects) {
-            throwExceptionIfNull(o);
+            ValidationUtil.checkNotNull(o, "Object is null");
             dataList.add(nodeEngine.toData(o));
         }
         return dataList;
