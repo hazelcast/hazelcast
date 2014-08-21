@@ -20,11 +20,14 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
+import static java.lang.String.format;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -40,11 +43,147 @@ import org.junit.runner.RunWith;
 @Category(QuickTest.class)
 public class CountDownLatchTest extends HazelcastTestSupport {
 
-    @Test (expected = IllegalArgumentException.class)
+    private static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+
+    static {
+        ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.parseInt(System.getProperty("hazelcast.assertTrueEventually.timeout", "120"));
+        System.out.println("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
     public void testTrySetCount_whenArgumentNegative() {
         final HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch("latch");
         latch.trySetCount(-20);
+    }
+
+    @Test
+    public void testTrySetCount_whenCountIsZero() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+
+        assertTrue(latch.trySetCount(40));
+        assertEquals(40, latch.getCount());
+    }
+
+    @Test
+    public void testTrySetCount_whenCountIsNotZero() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+
+        latch.trySetCount(10);
+        assertFalse(latch.trySetCount(20));
+        assertEquals(10, latch.getCount());
+    }
+
+    @Test
+    public void testCountDown() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+
+        latch.trySetCount(20);
+        for (int i = 19; i >= 0; i--) {
+            latch.countDown();
+            assertEquals(i, latch.getCount());
+        }
+    }
+
+    @Test
+    public void testCountDown_isRemovedWhenReachZero() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+        CountDownLatchService service = getNode(instance).getNodeEngine().getService(CountDownLatchService.SERVICE_NAME);
+
+        latch.trySetCount(1);
+        assertTrue(service.containsLatch(latch.getName()));
+        latch.countDown();
+        assertFalse(service.containsLatch(latch.getName()));
+    }
+
+    @Test
+    public void testGetCount() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+
+        latch.trySetCount(20);
+        assertEquals(20, latch.getCount());
+    }
+
+    @Test
+    public void testDestroy() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+        NodeEngineImpl nodeEngine = getNode(instance).getNodeEngine();
+        CountDownLatchService service = nodeEngine.getService(CountDownLatchService.SERVICE_NAME);
+
+        latch.destroy();
+        assertFalse(service.containsLatch(latch.getName()));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAwait_whenInstanceShutdown() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance instance = factory.newHazelcastInstance(new Config());
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+        latch.trySetCount(10);
+        Thread thread = (new Thread() {
+            public void run() {
+                instance.shutdown();
+            }
+        });
+        thread.start();
+        assertOpenEventually(latch);
+    }
+
+    @Test(timeout = 15000)
+    public void testAwait() throws InterruptedException {
+        final HazelcastInstance instance = createHazelcastInstance();
+        final ICountDownLatch latch = instance.getCountDownLatch(randomString());
+        latch.trySetCount(1);
+        Thread thread = (new Thread() {
+            public void run() {
+                latch.countDown();
+            }
+        });
+        thread.start();
+        assertOpenEventually(latch);
+    }
+
+    @Test(timeout = 15000)
+    public void testAwait_withManyThreads() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        final ICountDownLatch latch = instance.getCountDownLatch(randomString());
+        final CountDownLatch completedLatch = new CountDownLatch(10);
+
+        latch.trySetCount(1);
+        for (int i = 0; i < 10; i++) {
+            new Thread() {
+                public void run() {
+                    try {
+                        if (latch.await(1, TimeUnit.MINUTES)) {
+                            completedLatch.countDown();
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }.start();
+        }
+        latch.countDown();
+        assertOpenEventually(completedLatch);
+    }
+
+    @Test(timeout = 15000)
+    public void testAwait_TimeOut() throws InterruptedException {
+        final HazelcastInstance instance = createHazelcastInstance();
+        final ICountDownLatch latch = instance.getCountDownLatch(randomString());
+
+        latch.trySetCount(1);
+        long time = System.currentTimeMillis();
+        assertFalse(latch.await(100, TimeUnit.MILLISECONDS));
+        long elapsed = System.currentTimeMillis() - time;
+        assertTrue(elapsed >= 100);
+        assertEquals(1,latch.getCount());
     }
 
     @Test
@@ -160,5 +299,16 @@ public class CountDownLatchTest extends HazelcastTestSupport {
         latch5.countDown();
         assertEquals(5, latch4.getCount());
         assertEquals(5, latch5.getCount());
+    }
+
+    public static void assertOpenEventually(ICountDownLatch latch) {
+        try {
+            boolean completed = latch.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+            assertTrue(format("CountDownLatch failed to complete within %d seconds , count left: %d", ASSERT_TRUE_EVENTUALLY_TIMEOUT,
+                    latch.getCount()), completed);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }
