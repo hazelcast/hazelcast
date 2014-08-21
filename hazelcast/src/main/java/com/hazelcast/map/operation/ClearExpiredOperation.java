@@ -50,10 +50,10 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
         final MapService mapService = getService();
         final PartitionContainer partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
         final ConcurrentMap<String, RecordStore> recordStores = partitionContainer.getMaps();
-        final boolean isOwnerPartition = isOwner();
+        final boolean backup = !isOwner();
         for (final RecordStore recordStore : recordStores.values()) {
             if (recordStore.size() > 0 && recordStore.isExpirable()) {
-                recordStore.evictExpiredEntries(expirationPercentage, isOwnerPartition);
+                recordStore.evictExpiredEntries(expirationPercentage, backup);
             }
             cleanupEvictionStagingArea(recordStore, now);
         }

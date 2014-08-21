@@ -24,12 +24,17 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.RandomPicker;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MulticastJoiner extends AbstractJoiner {
+
+    private static final int PUBLISH_INTERVAL = 100;
 
     private final AtomicInteger currentTryCount = new AtomicInteger(0);
     private final AtomicInteger maxTryCount;
@@ -84,7 +89,7 @@ public class MulticastJoiner extends AbstractJoiner {
 
     private void doTCP() {
         node.setMasterAddress(null);
-        logger.finest("Multicast couldn't find cluster. Trying TCP/IP");
+        logger.warning("Multicast couldn't find cluster. Defaulting to TCP/IP");
         new TcpIpJoiner(node).join();
     }
 
@@ -153,9 +158,7 @@ public class MulticastJoiner extends AbstractJoiner {
         }
     }
 
-    private static final int publishInterval = 100;
-
-    private Address findMasterWithMulticast() {
+     private Address findMasterWithMulticast() {
         try {
             JoinRequest joinRequest = node.createJoinRequest();
             while (node.isActive() && currentTryCount.incrementAndGet() <= maxTryCount.get()) {
@@ -163,7 +166,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 node.multicastService.send(joinRequest);
                 if (node.getMasterAddress() == null) {
                     //noinspection BusyWait
-                    Thread.sleep(publishInterval);
+                    Thread.sleep(PUBLISH_INTERVAL);
                 } else {
                     return node.getMasterAddress();
                 }
@@ -181,7 +184,7 @@ public class MulticastJoiner extends AbstractJoiner {
     private int calculateTryCount() {
         final NetworkConfig networkConfig = config.getNetworkConfig();
         int timeoutSeconds = networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds();
-        int tryCountCoefficient = 1000 / publishInterval;
+        int tryCountCoefficient = 1000 / PUBLISH_INTERVAL;
         int tryCount = timeoutSeconds * tryCountCoefficient;
         String host = node.getThisAddress().getHost();
         int lastDigits;

@@ -155,6 +155,30 @@ public class ConditionTest extends HazelcastTestSupport {
         assertOpenEventually(latch);
     }
 
+    @Test
+    public void testAwaitTime_whenNotSignalled() throws InterruptedException {
+        Config config = new Config();
+        int callTimeoutMillis = 3000;
+        config.setProperty("hazelcast.operation.call.timeout.millis", String.valueOf(callTimeoutMillis));
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        final ILock lock = instance.getLock(randomString());
+        String name = randomString();
+        final ICondition condition0 = lock.newCondition(name);
+
+        final int awaitMillis = callTimeoutMillis * 3;
+
+        lock.lock();
+        try {
+            final long begin = System.currentTimeMillis();
+            condition0.await(awaitMillis, TimeUnit.MILLISECONDS);
+            final long end = System.currentTimeMillis();
+            assertEquals(awaitMillis, end - begin, 1000);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     @Test(timeout = 60000)
     public void testConditionsWithSameNameButDifferentLocksAreIndependent() throws InterruptedException {
         HazelcastInstance instance = createHazelcastInstance();
@@ -520,7 +544,7 @@ public class ConditionTest extends HazelcastTestSupport {
         lock.lock();
 
         Date date = new Date();
-        date.setTime(System.currentTimeMillis()+1000);
+        date.setTime(System.currentTimeMillis() + 1000);
         assertFalse(condition.awaitUntil(date));
     }
 
@@ -538,7 +562,7 @@ public class ConditionTest extends HazelcastTestSupport {
                 lock.lock();
                 try {
                     Date date = new Date();
-                    date.setTime(System.currentTimeMillis()+10000);
+                    date.setTime(System.currentTimeMillis() + 10000);
                     if (condition.awaitUntil(date)) {
                         latch.countDown();
                     }

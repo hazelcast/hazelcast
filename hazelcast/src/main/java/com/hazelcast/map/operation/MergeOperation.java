@@ -60,7 +60,8 @@ public class MergeOperation extends BasePutOperation {
 
 
     public boolean shouldBackup() {
-        return merged;
+        final Record record = recordStore.getRecord(dataKey);
+        return merged && record != null;
     }
 
     public void afterRun() {
@@ -73,11 +74,8 @@ public class MergeOperation extends BasePutOperation {
         if (dataValue == null) {
             return new RemoveBackupOperation(name, dataKey);
         } else {
-            RecordInfo replicationInfo = null;
             final Record record = recordStore.getRecord(dataKey);
-            if (record != null) {
-                replicationInfo = Records.buildRecordInfo(record);
-            }
+            final RecordInfo replicationInfo = Records.buildRecordInfo(record);
             return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
         }
     }

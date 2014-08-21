@@ -34,6 +34,23 @@ import java.util.Map;
  * <p/>
  * An EntryProcessor may not be re-entrant i.e. it may not access the same {@link Map}. Limitation: you can only access
  * data on the same partition.
+ * <p/>
+ * Note that to modify an entry by using EntryProcessors you should explicitly call
+ * {@link java.util.Map.Entry#setValue} method of {@link java.util.Map.Entry} such as:
+ * <p/>
+ * <pre>
+ * <code>
+ * {@literal@}Override
+ *     public Object process(Map.Entry entry) {
+ *        Value value = entry.getValue();
+ *        // process and modify value
+ *        // ...
+ *        entry.setValue(value);
+ *        return result;
+ *    }
+ * </code>
+ * </pre>
+ * otherwise EntryProcessor does not guarantee to modify the entry.
  *
  * @param <K>
  * @param <V>
@@ -43,6 +60,22 @@ public interface EntryProcessor<K, V> extends Serializable {
     /**
      * Process the entry without worrying about concurrency.
      * <p/>
+     * Note that to modify an entry by using EntryProcessor you should explicitly call
+     * {@link java.util.Map.Entry#setValue} method of {@link java.util.Map.Entry} such as:
+     * <p/>
+     * <pre>
+     * <code>
+     * {@literal@}Override
+     *        public Object process(Map.Entry entry) {
+     *          Value value = entry.getValue();
+     *          // process and modify value
+     *          // ...
+     *          entry.setValue(value);
+     *          return result;
+     *        }
+     * </code>
+     * </pre>
+     * otherwise EntryProcessor does not guarantee to modify the entry.
      *
      * @param entry entry to be processed
      * @return result of the process

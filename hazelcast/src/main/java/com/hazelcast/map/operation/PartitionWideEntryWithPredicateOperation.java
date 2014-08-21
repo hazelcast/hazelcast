@@ -22,14 +22,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
-/**
- * date: 9/16/13
- * author: eminn
- */
 public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntryOperation {
-    Predicate predicate;
+
+    private Predicate predicate;
 
     public PartitionWideEntryWithPredicateOperation() {
     }
