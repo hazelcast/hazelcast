@@ -70,6 +70,8 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.HealthMonitor;
 import com.hazelcast.util.HealthMonitorLevel;
 
@@ -116,22 +118,35 @@ public final class HazelcastInstanceImpl
         //in one HazelcastInstance will not reflect on other the user-context of other HazelcastInstances.
         userContext.putAll(config.getUserContext());
         node = new Node(this, config, nodeContext);
-        logger = node.getLogger(getClass().getName());
-        lifecycleService.fireLifecycleEvent(STARTING);
-        node.start();
-        if (!node.isActive()) {
-            node.connectionManager.shutdown();
-            throw new IllegalStateException("Node failed to start!");
-        }
-        managementService = new ManagementService(this);
 
+        try {
+            logger = node.getLogger(getClass().getName());
+            lifecycleService.fireLifecycleEvent(STARTING);
+
+            node.start();
+            if (!node.isActive()) {
+                throw new IllegalStateException("Node failed to start!");
+            }
+
+            managementService = new ManagementService(this);
+            initManagedContext(configuredManagedContext);
+            initHealthMonitor();
+        } catch (Throwable e) {
+            try {
+                node.connectionManager.shutdown();
+            } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
+            }
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    private void initManagedContext(ManagedContext configuredManagedContext) {
         if (configuredManagedContext != null) {
             if (configuredManagedContext instanceof HazelcastInstanceAware) {
                 ((HazelcastInstanceAware) configuredManagedContext).setHazelcastInstance(this);
             }
         }
-
-        initHealthMonitor();
     }
 
     private void initHealthMonitor() {
