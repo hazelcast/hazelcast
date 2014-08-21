@@ -28,7 +28,6 @@ import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.Queue;
-import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
