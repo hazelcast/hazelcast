@@ -31,6 +31,7 @@ import java.util.concurrent.locks.LockSupport;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
@@ -160,12 +161,13 @@ public class ConditionTest extends HazelcastTestSupport {
        HazelcastInstance instance = createHazelcastInstance();
 
         final ILock lock = instance.getLock(randomString());
-        String name = randomString();
-        final ICondition condition0 = lock.newCondition(name);
-
+        final ICondition condition = lock.newCondition(randomString());
         lock.lock();
-        boolean success = condition0.await(1, TimeUnit.MILLISECONDS);
+
+        boolean success = condition.await(1, TimeUnit.MILLISECONDS);
+
         assertFalse(success);
+        assertTrue(lock.isLockedByCurrentThread());
     }
 
     @Test(timeout = 60000)
