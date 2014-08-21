@@ -903,7 +903,6 @@ public class EvictionTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 final int currentMapSize = map.size();
                 final int expectedSize = maxSize * (100 - evictionPercentage) / 100;
-                System.out.println("expectedSize = " + expectedSize);
                 assertTrue(currentMapSize < expectedSize);
             }
         });
