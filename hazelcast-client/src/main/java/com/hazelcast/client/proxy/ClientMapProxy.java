@@ -112,8 +112,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     private volatile ClientNearCache<Data> nearCache;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
-    public ClientMapProxy(String instanceName, String serviceName, String name) {
-        super(instanceName, serviceName, name);
+    public ClientMapProxy(String serviceName, String name) {
+        super(serviceName, name);
         this.name = name;
     }
 

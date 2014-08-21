@@ -25,8 +25,8 @@ public class ClientConditionProxy extends ClientProxy implements ICondition {
     private volatile Data key;
     private final InternalLockNamespace namespace;
 
-    public ClientConditionProxy(String instanceName, ClientLockProxy clientLockProxy, String name, ClientContext ctx) {
-        super(instanceName, LockService.SERVICE_NAME, clientLockProxy.getName());
+    public ClientConditionProxy(ClientLockProxy clientLockProxy, String name, ClientContext ctx) {
+        super(LockService.SERVICE_NAME, clientLockProxy.getName());
         this.setContext(ctx);
         this.lockProxy = clientLockProxy;
         this.namespace = new InternalLockNamespace(lockProxy.getName());
