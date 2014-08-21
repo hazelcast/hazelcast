@@ -190,7 +190,20 @@ Hazelcast Session Replication works as P2P by default. You need to set `use-clie
 
 #### Caching Locally with `deferred-write`
 
-If the value for `deferred-write` is set as **true**, Hazelcast will cache the session locally and will update the local session on set or deletion of an attribute. Only at the end of request, it will update the distributed map with all the updates. So, it will not be updating the distributed map on each attribute update. It will only call it once at the end of request. It will be also caching it, i.e. whenever there is a read for the attribute, it will read it from the cache. If `deferred-write` is **false**, you will not have the attributes cached on any server.
+If the value for `deferred-write` is set as **true**, Hazelcast will cache the session locally and will update the local session on set or deletion of an attribute. Only at the end of request, it will update the distributed map with all the updates. So, it will not be updating the distributed map on each attribute update. It will only call it once at the end of request. It will be also caching it, i.e. whenever there is a read for the attribute, it will read it from the cache. 
+
+**Important note about `deferred-write=false` setting**
+
+If `deferred-write` is **false**, you will not have local attribute cache as mentioned above. In this case, any update(i.e. setAttribute) on the session will directly be available in the cluster. One exception to this behaivour is the changes to the session attribute objects. To update attribute clusterwide, setAttribute has to be called after making changes to the attribute object.
+
+Following example explains how to update attribute in case of `deferred-write=false` setting : 
+
+```
+session.setAttribute("myKey", new ArrayList());
+List list1 = session.getAttribute("myKey");
+list1.add("myValue"); 
+session.setAttribute("myKey", list1); // changes updated in the cluster
+```
 
 #### SessionId Generation
 
