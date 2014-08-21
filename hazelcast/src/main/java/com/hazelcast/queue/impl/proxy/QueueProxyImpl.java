@@ -23,7 +23,6 @@ import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ValidationUtil;
-import edu.umd.cs.findbugs.annotations.CheckForNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
