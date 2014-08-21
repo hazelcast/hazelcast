@@ -47,7 +47,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -426,7 +430,7 @@ public class EvictionTest extends HazelcastTestSupport {
         sleepSeconds(3);
 
         int recentlyUsedEvicted = 0;
-        for (int i = 0; i < size/2; i++) {
+        for (int i = 0; i < size / 2; i++) {
             if (map.get(i) == null) {
                 recentlyUsedEvicted++;
             }
@@ -435,7 +439,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEvictionLFU_statisticsDisabled(){
+    public void testEvictionLFU_statisticsDisabled() {
         final String mapName = randomMapName("_testEvictionLFU_statisticsDisabled_");
         final int instanceCount = 1;
         final int size = 10000;
@@ -478,8 +482,6 @@ public class EvictionTest extends HazelcastTestSupport {
             assertNotNull(map.get(i));
         }
     }
-
-
 
 
     @Test
@@ -862,5 +864,61 @@ public class EvictionTest extends HazelcastTestSupport {
                 assertNull(map.get("foo"));
             }
         }, 30);
+    }
+
+
+    @Test
+    public void testGotCorrectMapConfigInEviction_withFullMapName() {
+        final int maxSize = 1000;
+        final int evictionPercentage = 25;
+        final String mapName = randomMapName("test.map.");
+        final Config config = createDefaultMapConfig(mapName, maxSize, evictionPercentage);
+
+        testGotCorrectMapConfigInEviction(mapName, maxSize, config);
+    }
+
+    @Test
+    public void testGotCorrectMapConfigInEviction_withWildcardMapName() {
+        final int maxSize = 1000;
+        final int evictionPercentage = 25;
+        final String mapNamePrefix = "test.map.";
+        final String mapName = randomMapName(mapNamePrefix);
+        final Config config = createDefaultMapConfig(mapNamePrefix + '*', maxSize, evictionPercentage);
+
+        testGotCorrectMapConfigInEviction(mapName, maxSize, config);
+    }
+
+    private void testGotCorrectMapConfigInEviction(String mapName, final int maxSize, Config config) {
+        final int evictionPercentage = 25;
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        final IMap<Object, Object> map = instance.getMap(mapName);
+        //Put (2 * maxSize) items
+        for (int i = 0; i < 2 * maxSize; i++) {
+            map.put(i, i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final int currentMapSize = map.size();
+                final int expectedSize = maxSize * (100 - evictionPercentage) / 100;
+                System.out.println("expectedSize = " + expectedSize);
+                assertTrue(currentMapSize < expectedSize);
+            }
+        });
+    }
+
+
+    private static Config createDefaultMapConfig(String mapName, int maxSize, int evictionPercentage) {
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
+        mapConfig.setEvictionPercentage(evictionPercentage);
+        MaxSizeConfig msc = new MaxSizeConfig();
+        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
+        msc.setSize(maxSize);
+        mapConfig.setMaxSizeConfig(msc);
+        return config;
     }
 }
