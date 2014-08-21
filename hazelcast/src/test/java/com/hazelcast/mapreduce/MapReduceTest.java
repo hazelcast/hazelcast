@@ -30,6 +30,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,6 +52,7 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 @SuppressWarnings("unused")
+@Repeat(100)
 public class MapReduceTest
         extends HazelcastTestSupport {
 
@@ -735,7 +737,7 @@ public class MapReduceTest
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMap(m1));
-        JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(1).mapper(new GroupingTestMapper())
+        JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(10).mapper(new GroupingTestMapper())
                                                                   .combiner(new ObjectCombinerFactory())
                                                                   .reducer(new ObjectReducerFactory()).submit();
 
