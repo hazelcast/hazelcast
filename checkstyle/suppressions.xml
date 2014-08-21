@@ -73,7 +73,7 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.XmlConfigBuilder"/>
-
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.config.XmlClientConfigBuilder"/>
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>

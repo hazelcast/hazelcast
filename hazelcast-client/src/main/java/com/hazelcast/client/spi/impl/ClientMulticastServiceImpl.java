@@ -24,9 +24,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class ClientMulticastServiceImpl implements ClientMulticastService, Runnable {
+    private static final int THREAD_CLOSE_TIMEOUT = 5;
+    private static final int DATA_OUTPUT_BUFFER_SIZE = 1024;
     private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
 
-    private static final ILogger logger = Logger.getLogger(ClientMulticastService.class);
+    private final ILogger logger = Logger.getLogger(ClientMulticastService.class);
     private final MulticastSocket multicastSocket;
     private final DatagramPacket datagramPacketSend;
     private final DatagramPacket datagramPacketReceive;
@@ -44,7 +46,7 @@ public class ClientMulticastServiceImpl implements ClientMulticastService, Runna
         ClientConfig config = client.getClientConfig();
         this.multicastSocket = multicastSocket;
 
-        sendOutput = client.getSerializationService().createObjectDataOutput(1024);
+        sendOutput = client.getSerializationService().createObjectDataOutput(DATA_OUTPUT_BUFFER_SIZE);
         datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
         final MulticastConfig multicastConfig = config.getNetworkConfig().getDiscoveryConfig();
         datagramPacketSend = new DatagramPacket(new byte[0], 0, InetAddress
@@ -60,10 +62,10 @@ public class ClientMulticastServiceImpl implements ClientMulticastService, Runna
         listeners.remove(multicastListener);
     }
 
-    public void start()
-    {
+    public void start() {
         if (client.getClientConfig().getNetworkConfig().getDiscoveryConfig().isEnabled()) {
-            final Thread multicastServiceThread = new Thread(client.getThreadGroup(), this, client.getName() + ".multicast-discovery");
+            final Thread multicastServiceThread = new Thread(client.getThreadGroup(), this,
+                    client.getName() + ".multicast-discovery");
             multicastServiceThread.start();
         }
     }
@@ -76,9 +78,10 @@ public class ClientMulticastServiceImpl implements ClientMulticastService, Runna
             try {
                 multicastSocket.close();
             } catch (Throwable ignored) {
+                logger.finest("exception while closing multicast socket");
             }
             running = false;
-            if (!stopLatch.await(5, TimeUnit.SECONDS)) {
+            if (!stopLatch.await(THREAD_CLOSE_TIMEOUT, TimeUnit.SECONDS)) {
                 logger.warning("Failed to shutdown MulticastService in 5 seconds!");
             }
         } catch (Throwable e) {
@@ -93,6 +96,7 @@ public class ClientMulticastServiceImpl implements ClientMulticastService, Runna
             datagramPacketReceive.setData(new byte[0]);
             datagramPacketSend.setData(new byte[0]);
         } catch (Throwable ignored) {
+            logger.finest("exception while closing client multicast service");
         }
         stopLatch.countDown();
     }
@@ -151,8 +155,8 @@ public class ClientMulticastServiceImpl implements ClientMulticastService, Runna
                 }
             } catch (Exception e) {
                 if (e instanceof EOFException || e instanceof HazelcastSerializationException) {
-                    logger.warning("Received data format is invalid." +
-                            " (An old version of Hazelcast may be running here.)", e);
+                    logger.warning("Received data format is invalid."
+                            + " (An old version of Hazelcast may be running here.)", e);
                 } else {
                     throw e;
                 }
@@ -164,7 +168,9 @@ public class ClientMulticastServiceImpl implements ClientMulticastService, Runna
     }
 
     public void send(Object message) {
-        if (!running) return;
+        if (!running) {
+            return;
+        }
         final BufferObjectDataOutput out = sendOutput;
         synchronized (sendLock) {
             try {

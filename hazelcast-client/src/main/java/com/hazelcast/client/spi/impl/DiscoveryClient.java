@@ -40,7 +40,7 @@ public class DiscoveryClient {
                 LOGGER.finest("MulticastListener onMessage " + msg);
                 if (msg != null && msg instanceof DiscoveryMessage) {
                     DiscoveryMessage discoveryMessage = (DiscoveryMessage) msg;
-                    if(isValidDiscoveryMessage(discoveryMessage)) {
+                    if (isValidDiscoveryMessage(discoveryMessage)) {
                         q.add(discoveryMessage);
                     }
                 }
@@ -50,7 +50,7 @@ public class DiscoveryClient {
         int pollTimeout = config.getNetworkConfig().getDiscoveryConfig().getMulticastTimeoutSeconds();
         Set<InetSocketAddress> addresses = new HashSet<InetSocketAddress>();
         ClientMulticastService multicastService = client.getClientMulticastService();
-        if(multicastService != null) {
+        if (multicastService != null) {
             multicastService.addMulticastListener(listener);
             multicastService.send(createDiscoveryRequest());
             LOGGER.finest("Sent multicast join request");
@@ -60,6 +60,7 @@ public class DiscoveryClient {
                     addresses.add(discoveryInfo.getAddress().getInetSocketAddress());
                 }
             } catch (InterruptedException ignored) {
+                LOGGER.finest("getAddress interrupted");
             } catch (Exception e) {
                 LOGGER.warning(e);
             } finally {
@@ -70,11 +71,11 @@ public class DiscoveryClient {
     }
 
     private boolean isValidDiscoveryMessage(DiscoveryMessage discoveryMessage) {
-        if(discoveryMessage.getMemberCount() <= 0) {
+        if (discoveryMessage.getMemberCount() <= 0) {
             return false;
         }
 
-        if(!createClientConfigCheck().isCompatible(discoveryMessage.getConfigCheck())) {
+        if (!createClientConfigCheck().isCompatible(discoveryMessage.getConfigCheck())) {
             return false;
         }
 

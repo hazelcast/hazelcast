@@ -212,7 +212,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 handleSSLConfig(child, clientNetworkConfig);
             } else if ("aws".equals(nodeName)) {
                 handleAWS(child, clientNetworkConfig);
-            } else if("discovery".equals(nodeName)) {
+            } else if ("discovery".equals(nodeName)) {
                 handleDiscovery(child, clientNetworkConfig);
             }
         }
