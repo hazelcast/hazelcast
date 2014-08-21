@@ -7,6 +7,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -24,8 +25,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
             queue.offer("item" + i);
         }
         LocalQueueStats stats = queue.getLocalQueueStats();
-        assertEquals(20,stats.getOwnedItemCount());
-        assertEquals(0,stats.getBackupItemCount());
+        assertEquals(20, stats.getOwnedItemCount());
+        assertEquals(0, stats.getBackupItemCount());
     }
-
 }
