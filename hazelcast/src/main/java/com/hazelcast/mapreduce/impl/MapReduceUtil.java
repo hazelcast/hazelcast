@@ -32,6 +32,8 @@ import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.mapreduce.impl.task.MemberAssigningJobProcessInformationImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -324,6 +326,19 @@ public final class MapReduceUtil {
         for (Object otherInjectee : injectees) {
             if (otherInjectee != null) {
                 managedContext.initialize(otherInjectee);
+            }
+        }
+    }
+
+    public static void enforcePartitionTableWarmup(MapReduceService mapReduceService) {
+        InternalPartitionService partitionService = mapReduceService.getNodeEngine().getPartitionService();
+        InternalPartition[] partitions = partitionService.getPartitions();
+        for (InternalPartition partition : partitions) {
+            while (partition.getOwnerOrNull() == null) {
+                try {
+                    Thread.sleep(100);
+                } catch (Exception ignore) {
+                }
             }
         }
     }

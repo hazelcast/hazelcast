@@ -20,6 +20,7 @@ import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.KeyValueSourceMappingPhase;
 import com.hazelcast.mapreduce.impl.task.MappingPhase;
@@ -86,6 +87,10 @@ public class StartProcessingJobOperation<K>
             return;
         }
 
+        // Force warmup of partition table!
+        MapReduceUtil.enforcePartitionTableWarmup(mapReduceService);
+
+        // Create actual mapping operation
         MappingPhase mappingPhase = new KeyValueSourceMappingPhase(keys, predicate);
         supervisor.startTasks(mappingPhase);
     }
