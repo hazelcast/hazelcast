@@ -44,7 +44,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -161,7 +160,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         return partitionId;
     }
 
-    private void throwExceptionIfNull(Object o) {
+    protected void throwExceptionIfNull(Object o) {
         if (o == null) {
             throw new NullPointerException("Object is null");
         }

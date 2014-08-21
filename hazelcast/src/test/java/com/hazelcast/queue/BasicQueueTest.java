@@ -25,12 +25,10 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -298,6 +296,23 @@ public class BasicQueueTest extends AbstractQueueTest {
     // ================ containsAll ==============================
 
     @Test
+    public void testAddAll_whenCollectionContainsNull() {
+        HazelcastInstance instance = createHazelcastInstance();
+        IQueue<String> queue = instance.getQueue(randomString());
+        for (int i = 0; i < 10; i++) {
+            queue.offer("item" + i);
+        }
+        List<String> list = new ArrayList<String>();
+        list.add("item10");
+        list.add(null);
+
+        try {
+            queue.addAll(list);
+            fail();
+        } catch (NullPointerException e) {
+        }
+    }
+
     public void testContainsAll_whenExists() {
         IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
