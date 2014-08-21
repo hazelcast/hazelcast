@@ -868,27 +868,27 @@ public class EvictionTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testGotCorrectMapConfigInEviction_withFullMapName() {
+    public void testEviction_withFullMapName() {
         final int maxSize = 1000;
         final int evictionPercentage = 25;
         final String mapName = randomMapName("test.map.");
         final Config config = createDefaultMapConfig(mapName, maxSize, evictionPercentage);
 
-        testGotCorrectMapConfigInEviction(mapName, maxSize, config);
+        testGotCorrectMapNameDuringEviction(mapName, maxSize, config);
     }
 
     @Test
-    public void testGotCorrectMapConfigInEviction_withWildcardMapName() {
+    public void testEviction_withWildcardMapName() {
         final int maxSize = 1000;
         final int evictionPercentage = 25;
         final String mapNamePrefix = "test.map.";
         final String mapName = randomMapName(mapNamePrefix);
         final Config config = createDefaultMapConfig(mapNamePrefix + '*', maxSize, evictionPercentage);
 
-        testGotCorrectMapConfigInEviction(mapName, maxSize, config);
+        testGotCorrectMapNameDuringEviction(mapName, maxSize, config);
     }
 
-    private void testGotCorrectMapConfigInEviction(String mapName, final int maxSize, Config config) {
+    private void testGotCorrectMapNameDuringEviction(String mapName, final int maxSize, Config config) {
         final int evictionPercentage = 25;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(config);
