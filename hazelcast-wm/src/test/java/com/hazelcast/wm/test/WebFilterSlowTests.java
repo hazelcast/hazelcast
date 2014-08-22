@@ -117,7 +117,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         CookieStore cookieStore = new BasicCookieStore();
 
         assertEquals("true", executeRequest("write", serverPort1, cookieStore));
-        //       assertEquals(2, map.size());
+        assertEquals(2, map.size());
 
         assertEquals("value", executeRequest("read", serverPort2, cookieStore));
         assertEquals("true", executeRequest("update", serverPort2, cookieStore));
