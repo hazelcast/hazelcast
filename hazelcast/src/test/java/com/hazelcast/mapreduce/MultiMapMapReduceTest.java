@@ -133,7 +133,7 @@ public class MultiMapMapReduceTest
     public static class MultiMapReducer
             extends Reducer<Integer, Integer> {
 
-        private int value;
+        private volatile int value;
 
         @Override
         public void reduce(Integer value) {

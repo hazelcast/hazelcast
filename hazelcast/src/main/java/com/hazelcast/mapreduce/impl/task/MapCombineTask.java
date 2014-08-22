@@ -21,6 +21,7 @@ import com.hazelcast.mapreduce.LifecycleMapper;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
 import com.hazelcast.mapreduce.impl.notification.LastChunkNotification;
 import com.hazelcast.mapreduce.impl.operation.PostPonePartitionProcessing;
@@ -38,6 +39,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
@@ -223,8 +225,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 .processRequest(supervisor.getJobOwner(), new PostPonePartitionProcessing(name, jobId, partitionId), name);
 
         if (result.getResultState() != SUCCESSFUL) {
-            throw new RuntimeException("Could not postpone processing for partitionId " + partitionId + " -> "
-                    + result.getResultState());
+            throw new RuntimeException(
+                    "Could not postpone processing for partitionId " + partitionId + " -> " + result.getResultState());
         }
     }
 
@@ -232,6 +234,20 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         notifyRemoteException(supervisor, t);
         if (t instanceof Error) {
             ExceptionUtil.sneakyThrow(t);
+        }
+    }
+
+    private void processPartitionMapping(KeyValueSource<KeyIn, ValueIn> delegate, int partitionId)
+            throws Exception {
+        delegate.reset();
+        if (delegate.open(nodeEngine)) {
+            DefaultContext<KeyOut, ValueOut> context = supervisor.getOrCreateContext(this);
+            processMapping(partitionId, context, delegate);
+            delegate.close();
+            finalizeMapping(partitionId, context);
+        } else {
+            // Partition assignment might not be ready yet, postpone the processing and retry later
+            postponePartitionProcessing(partitionId);
         }
     }
 
@@ -248,6 +264,17 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 delegate = new KeyValueSourceFacade<KeyIn, ValueIn>(keyValueSource, supervisor);
             }
 
+            try {
+                // Force warmup of partition table!
+                MapReduceUtil.enforcePartitionTableWarmup(mapReduceService);
+            } catch (TimeoutException e) {
+                handleProcessorThrowable(e);
+            }
+
+            processPartitions(delegate);
+        }
+
+        private void processPartitions(KeyValueSource<KeyIn, ValueIn> delegate) {
             while (true) {
                 if (cancelled.get()) {
                     return;
@@ -267,16 +294,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 try {
                     // This call cannot be delegated
                     ((PartitionIdAware) keyValueSource).setPartitionId(partitionId);
-                    delegate.reset();
-                    if (delegate.open(nodeEngine)) {
-                        DefaultContext<KeyOut, ValueOut> context = supervisor.getOrCreateContext(MapCombineTask.this);
-                        processMapping(partitionId, context, delegate);
-                        delegate.close();
-                        finalizeMapping(partitionId, context);
-                    } else {
-                        // Partition assignment might not be ready yet, postpone the processing and retry later
-                        postponePartitionProcessing(partitionId);
-                    }
+                    processPartitionMapping(delegate, partitionId);
                 } catch (Throwable t) {
                     handleProcessorThrowable(t);
                 }
@@ -314,6 +332,9 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         @Override
         public void run() {
             try {
+                // Force warmup of partition table!
+                MapReduceUtil.enforcePartitionTableWarmup(mapReduceService);
+
                 RequestPartitionResult result = mapReduceService
                         .processRequest(supervisor.getJobOwner(), new RequestMemberIdAssignment(name, jobId), name);
 
@@ -331,16 +352,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     delegate = new KeyValueSourceFacade<KeyIn, ValueIn>(keyValueSource, supervisor);
                 }
 
-                delegate.reset();
-                if (delegate.open(nodeEngine)) {
-                    DefaultContext<KeyOut, ValueOut> context = supervisor.getOrCreateContext(MapCombineTask.this);
-                    processMapping(partitionId, context, delegate);
-                    delegate.close();
-                    finalizeMapping(partitionId, context);
-                } else {
-                    // Partition assignment might not be ready yet, postpone the processing and retry later
-                    postponePartitionProcessing(partitionId);
-                }
+                processPartitionMapping(delegate, partitionId);
             } catch (Throwable t) {
                 handleProcessorThrowable(t);
             }
