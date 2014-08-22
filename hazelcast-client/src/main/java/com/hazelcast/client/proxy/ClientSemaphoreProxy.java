@@ -34,8 +34,8 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     private final String name;
     private volatile Data key;
 
-    public ClientSemaphoreProxy(String instanceName, String serviceName, String objectId) {
-        super(instanceName, serviceName, objectId);
+    public ClientSemaphoreProxy(String serviceName, String objectId) {
+        super(serviceName, objectId);
         this.name = objectId;
     }
 

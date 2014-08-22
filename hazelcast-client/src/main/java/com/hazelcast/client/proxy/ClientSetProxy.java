@@ -23,8 +23,8 @@ import com.hazelcast.core.ISet;
 */
 public class ClientSetProxy<E> extends AbstractClientCollectionProxy<E> implements ISet<E> {
 
-    public ClientSetProxy(String instanceName, String serviceName, String name) {
-        super(instanceName, serviceName, name);
+    public ClientSetProxy(String serviceName, String name) {
+        super(serviceName, name);
     }
 
     @Override

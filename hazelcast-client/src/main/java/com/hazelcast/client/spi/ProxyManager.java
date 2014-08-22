@@ -16,12 +16,12 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.impl.client.ClientCreateRequest;
-import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.impl.client.ClientCreateRequest;
+import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
+import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
@@ -53,8 +53,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -80,8 +78,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public final class ProxyManager {
 
-    private static final ILogger LOGGER = Logger.getLogger(ProxyManager.class);
-    private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class, String.class};
+    private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
 
     private final HazelcastClient client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
@@ -119,20 +116,22 @@ public final class ProxyManager {
 
         register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                String instanceName = client.getName();
                 IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + id);
-                return new ClientIdGeneratorProxy(instanceName, IdGeneratorService.SERVICE_NAME, id, atomicLong);
+                return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, id, atomicLong);
             }
         });
 
         for (ProxyFactoryConfig proxyFactoryConfig : config.getProxyFactoryConfigs()) {
             try {
                 ClassLoader classLoader = config.getClassLoader();
-                String className = proxyFactoryConfig.getClassName();
-                ClientProxyFactory clientProxyFactory = ClassLoaderUtil.newInstance(classLoader, className);
+                ClientProxyFactory clientProxyFactory = proxyFactoryConfig.getFactoryImpl();
+                if (clientProxyFactory == null) {
+                    String className = proxyFactoryConfig.getClassName();
+                    clientProxyFactory = ClassLoaderUtil.newInstance(classLoader, className);
+                }
                 register(proxyFactoryConfig.getService(), clientProxyFactory);
             } catch (Exception e) {
-                LOGGER.severe(e);
+                throw ExceptionUtil.rethrow(e);
             }
         }
     }
@@ -153,7 +152,7 @@ public final class ProxyManager {
                 @Override
                 public ClientProxy create(String id) {
                     String instanceName = client.getName();
-                    return instantiateClientProxy(proxyType, instanceName, serviceName, id);
+                    return instantiateClientProxy(proxyType, serviceName, id);
                 }
             });
 
@@ -285,10 +284,10 @@ public final class ProxyManager {
 
     }
 
-    private <T> T instantiateClientProxy(Class<T> proxyType, String instanceName, String serviceName, String id) {
+    private <T> T instantiateClientProxy(Class<T> proxyType, String serviceName, String id) {
         try {
             final Constructor<T> constructor = proxyType.getConstructor(CONSTRUCTOR_ARGUMENT_TYPES);
-            return constructor.newInstance(instanceName, serviceName, id);
+            return constructor.newInstance(serviceName, id);
 
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

@@ -40,8 +40,8 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
     private final String name;
     private volatile Data key;
 
-    public ClientAtomicReferenceProxy(String instanceName, String serviceName, String objectId) {
-        super(instanceName, serviceName, objectId);
+    public ClientAtomicReferenceProxy(String serviceName, String objectId) {
+        super(serviceName, objectId);
         this.name = objectId;
     }
 

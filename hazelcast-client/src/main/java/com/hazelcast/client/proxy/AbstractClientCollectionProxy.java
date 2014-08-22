@@ -54,8 +54,8 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
 
     protected final String partitionKey;
 
-    public AbstractClientCollectionProxy(String instanceName, String serviceName, String name) {
-        super(instanceName, serviceName, name);
+    public AbstractClientCollectionProxy(String serviceName, String name) {
+        super(serviceName, name);
         partitionKey = getPartitionKey();
     }
 
