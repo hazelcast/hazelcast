@@ -49,10 +49,9 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.executor.DistributedExecutorService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.MultiMapService;
@@ -64,7 +63,6 @@ import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -75,8 +73,6 @@ import java.util.concurrent.ConcurrentMap;
  * @author mdogan 5/16/13
  */
 public final class ProxyManager {
-
-    private final static ILogger logger = Logger.getLogger(ProxyManager.class);
 
     private final HazelcastClient client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
@@ -95,90 +91,98 @@ public final class ProxyManager {
     }
 
     public void init(ClientConfig config) {
-        final String instanceName = client.getName();
         // register defaults
         register(MapService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientMapProxy(instanceName, MapService.SERVICE_NAME, String.valueOf(id));
+                return new ClientMapProxy(MapService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(QueueService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientQueueProxy(instanceName, QueueService.SERVICE_NAME, String.valueOf(id));
+                return new ClientQueueProxy(QueueService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(MultiMapService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientMultiMapProxy(instanceName, MultiMapService.SERVICE_NAME, String.valueOf(id));
+                return new ClientMultiMapProxy(MultiMapService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(ListService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientListProxy(instanceName, ListService.SERVICE_NAME, String.valueOf(id));
+                return new ClientListProxy(ListService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(SetService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientSetProxy(instanceName, SetService.SERVICE_NAME, String.valueOf(id));
+                return new ClientSetProxy(SetService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(SemaphoreService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientSemaphoreProxy(instanceName, SemaphoreService.SERVICE_NAME, String.valueOf(id));
+                return new ClientSemaphoreProxy(SemaphoreService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(TopicService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientTopicProxy(instanceName, TopicService.SERVICE_NAME, String.valueOf(id));
+                return new ClientTopicProxy(TopicService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(AtomicLongService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientAtomicLongProxy(instanceName, AtomicLongService.SERVICE_NAME, String.valueOf(id));
+                return new ClientAtomicLongProxy(AtomicLongService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(AtomicReferenceService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientAtomicReferenceProxy(instanceName, AtomicReferenceService.SERVICE_NAME, String.valueOf(id));
+                return new ClientAtomicReferenceProxy(AtomicReferenceService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(DistributedExecutorService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientExecutorServiceProxy(instanceName, DistributedExecutorService.SERVICE_NAME, String.valueOf(id));
+                return new ClientExecutorServiceProxy(DistributedExecutorService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(LockServiceImpl.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientLockProxy(instanceName, LockServiceImpl.SERVICE_NAME, id);
+                return new ClientLockProxy(LockServiceImpl.SERVICE_NAME, id);
             }
         });
         register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
                 String name = String.valueOf(id);
                 IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + name);
-                return new ClientIdGeneratorProxy(instanceName, IdGeneratorService.SERVICE_NAME, name, atomicLong);
+                return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, name, atomicLong);
             }
         });
         register(CountDownLatchService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
-                return new ClientCountDownLatchProxy(instanceName, CountDownLatchService.SERVICE_NAME, String.valueOf(id));
+                return new ClientCountDownLatchProxy(CountDownLatchService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(MapReduceService.SERVICE_NAME, new ClientProxyFactory() {
             @Override
             public ClientProxy create(String id) {
-                return new ClientMapReduceProxy(instanceName, MapReduceService.SERVICE_NAME, id);
+                return new ClientMapReduceProxy(MapReduceService.SERVICE_NAME, id);
             }
         });
 
         for (ProxyFactoryConfig proxyFactoryConfig:config.getProxyFactoryConfigs()){
             try {
-                ClientProxyFactory clientProxyFactory = ClassLoaderUtil.newInstance(config.getClassLoader(), proxyFactoryConfig.getClassName());
-                register(proxyFactoryConfig.getService(),clientProxyFactory);
+                ClassLoader classLoader = config.getClassLoader();
+                ClientProxyFactory clientProxyFactory = proxyFactoryConfig.getFactoryImpl();
+                if (clientProxyFactory == null) {
+                    String className = proxyFactoryConfig.getClassName();
+                    clientProxyFactory = ClassLoaderUtil.newInstance(classLoader, className);
+                }
+                register(proxyFactoryConfig.getService(), clientProxyFactory);
             } catch (Exception e) {
-                logger.severe(e);
+                throw ExceptionUtil.rethrow(e);
             }
         }
+    }
+
+    public HazelcastInstance getHazelcastInstance() {
+        return client;
     }
 
     public void register(String serviceName, ClientProxyFactory factory) {

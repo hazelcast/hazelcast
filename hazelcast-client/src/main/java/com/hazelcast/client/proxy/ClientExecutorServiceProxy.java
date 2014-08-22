@@ -66,8 +66,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private final AtomicInteger consecutiveSubmits = new AtomicInteger();
     private volatile long lastSubmitTime = 0L;
 
-    public ClientExecutorServiceProxy(String instanceName, String serviceName, String objectId) {
-        super(instanceName, serviceName, objectId);
+    public ClientExecutorServiceProxy(String serviceName, String objectId) {
+        super(serviceName, objectId);
         name = objectId;
     }
 

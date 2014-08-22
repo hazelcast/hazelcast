@@ -38,8 +38,8 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     private final String name;
     private volatile Data key;
 
-    public ClientTopicProxy(String instanceName, String serviceName, String objectId) {
-        super(instanceName, serviceName, objectId);
+    public ClientTopicProxy(String serviceName, String objectId) {
+        super(serviceName, objectId);
         this.name = objectId;
     }
 

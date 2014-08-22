@@ -56,8 +56,8 @@ public class ClientMapReduceProxy
 
     private final ConcurrentMap<String, ClientTrackableJob> trackableJobs = new ConcurrentHashMap<String, ClientTrackableJob>();
 
-    public ClientMapReduceProxy(String instanceName, String serviceName, String objectName) {
-        super(instanceName, serviceName, objectName);
+    public ClientMapReduceProxy(String serviceName, String objectName) {
+        super(serviceName, objectName);
     }
 
     @Override
