@@ -27,6 +27,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,6 +43,7 @@ import static org.junit.Assert.*;
 public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
     @After
+    @Before
     public void cleanup() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
