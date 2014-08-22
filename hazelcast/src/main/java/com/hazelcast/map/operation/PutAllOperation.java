@@ -94,11 +94,9 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                     continue;
                 }
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
-                    if (record != null) {
-                        final Data dataValueAsData = mapServiceContext.toData(dataValue);
-                        final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
-                        mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-                    }
+                    final Data dataValueAsData = mapServiceContext.toData(dataValue);
+                    final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
+                    mapEventPublisher.publishWanReplicationUpdate(name, entryView);
                 }
                 backupEntrySet.add(entry);
                 RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));

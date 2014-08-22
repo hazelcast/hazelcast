@@ -84,8 +84,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
-    public ClientMultiMapProxy(String instanceName, String serviceName, String name) {
-        super(instanceName, serviceName, name);
+    public ClientMultiMapProxy(String serviceName, String name) {
+        super(serviceName, name);
         this.name = name;
     }
 

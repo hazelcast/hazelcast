@@ -566,7 +566,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (record == null) {
             removeIndex(key);
             mapDataStore.remove(key, now);
-            onStore(record);
         } else {
             return removeRecord(key, record, now) != null;
         }

@@ -477,15 +477,65 @@ It has below attributes and parameters.
 - `empty-queue-ttl`: Value of time to live to empty the Queue.
 - `item-listeners`: ???
 - `queue-store`: Includes the queue store factory class name and the properties  *binary*, *memory limit* and *bulk load*. Please refer to [Queue Persistence](#queue-persistence).
-- `statistics-enabled: If set as `true`, you can retrieve statistics for this Queue using the method `getLocalQueueStats()`.
+- `statistics-enabled`: If set as `true`, you can retrieve statistics for this Queue using the method `getLocalQueueStats()`.
 
 ### Topic Configuration
 
-This configuration is for ???. It has below attributes.
+**Declarative Configuration:**
 
-- statistics-enabled:
-- global-ordering-enabled:
-- message-listeners:
+```xml
+<hazelcast>
+  ...
+  <topic name="yourTopicName">
+    <global-ordering-enabled>true</global-ordering-enabled>
+    <statistics-enabled>true</statistics-enabled>
+    <message-listeners>
+      <message-listener>MessageListenerImpl</message-listener>
+    </message-listeners>
+  </topic>
+  ...
+</hazelcast>
+```
+
+**Programmatic Configuration:**
+
+```java
+TopicConfig topicConfig = new TopicConfig();
+topicConfig.setGlobalOrderingEnabled( true );
+topicConfig.setStatisticsEnabled( true );
+topicConfig.setName( "yourTopicName" );
+MessageListener<String> implementation = new MessageListener<String>() {
+  @Override
+  public void onMessage( Message<String> message ) {
+    // process the message
+  }
+};
+topicConfig.addMessageListenerConfig( new ListenerConfig( implementation ) );
+HazelcastInstance instance = Hazelcast.newHazelcastInstance()
+```
+
+
+It has below attributes.
+
+- statistics-enabled: By default, it is **true**, meaning statistics are calculated.
+- global-ordering-enabled: By default, it is **false**, meaning there is no global order guarantee by default.???
+- message-listeners: ???
+
+
+
+Topic related but not topic specific configuration parameters
+
+   - `hazelcast.event.queue.capacity`: default value is 1,000,000.
+   - `hazelcast.event.queue.timeout.millis`: default value is 250.
+   - `hazelcast.event.thread.count`: default value is 5.
+   
+<br></br>
+***RELATED INFORMATION*** 
+
+*For description of these parameters, please see [Global Event Configuration](#global-event-configuration)*
+
+
+
 
 
 ### Set Configuration
@@ -565,11 +615,30 @@ It has below parameters.
 
 ### Semaphore Configuration
 
-This configuration is for ???. It has below attributes.
+**Declarative:**
 
-- initial-permits:
-- backup-count:
-- async-backup-count:
+```xml
+<semaphore name="semaphore">
+   <backup-count>1</backup-count>
+   <async-backup-count>0</async-backup-count>
+   <initial-permits>3</initial-permits>
+</semaphore>
+```
+
+**Programmatic:**
+
+```java
+Config config = new Config();
+SemaphoreConfig semaphoreConfig = config.getSemaphoreConfig();
+semaphoreConfig.setName( "semaphore" ).setBackupCount( "1" )
+        .setInitialPermits( "3" );
+```
+
+It has below attributes.
+
+- initial-permits: It is the thread count which the concurrent access is limited to. For example, if it is set as "3", concurrent access to the object is limited to 3 thread.
+- backup-count: Count of synchronous backups. ???
+- async-backup-count: Count of asynchronous backups. ???
 
 ### Executor Service Configuration
 

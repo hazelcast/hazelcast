@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -51,7 +52,7 @@ public class ReplicatedRecord<K, V>
     private volatile VectorClockTimestamp vectorClockTimestamp;
     private int latestUpdateHash;
     private long ttlMillis;
-    private volatile long updateTime = System.currentTimeMillis();
+    private volatile long updateTime = Clock.currentTimeMillis();
 
     public ReplicatedRecord() {
     }
@@ -72,6 +73,10 @@ public class ReplicatedRecord<K, V>
     public V getValue() {
         access();
         return value;
+    }
+
+    public boolean isTombstone() {
+        return value == null;
     }
 
     public VectorClockTimestamp getVectorClockTimestamp() {
@@ -121,7 +126,7 @@ public class ReplicatedRecord<K, V>
         V oldValue = this.value;
         this.value = value;
         this.latestUpdateHash = hash;
-        this.updateTime = System.currentTimeMillis();
+        this.updateTime = Clock.currentTimeMillis();
         this.ttlMillis = ttlMillis;
         return oldValue;
     }
@@ -144,7 +149,7 @@ public class ReplicatedRecord<K, V>
 
     public void access() {
         HITS_UPDATER.incrementAndGet(this);
-        LAST_ACCESS_TIME_UPDATER.set(this, System.currentTimeMillis());
+        LAST_ACCESS_TIME_UPDATER.set(this, Clock.currentTimeMillis());
     }
 
     @Override

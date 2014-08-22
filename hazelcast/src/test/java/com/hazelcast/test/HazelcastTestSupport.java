@@ -41,7 +41,7 @@ import static org.junit.Assert.fail;
 
 public abstract class HazelcastTestSupport {
 
-    private static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+    public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     static {
         System.setProperty("hazelcast.repmap.hooks.allowed", "true");

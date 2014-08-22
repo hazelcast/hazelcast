@@ -1785,7 +1785,8 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     public static Config newConfig(String mapName, Object storeImpl, int writeDelaySeconds) {
-        Config config = new XmlConfigBuilder().build();
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder();
+        Config config = configBuilder.build();
         MapConfig mapConfig = config.getMapConfig(mapName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setImplementation(storeImpl);
