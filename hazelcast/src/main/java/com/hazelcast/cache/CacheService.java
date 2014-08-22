@@ -34,12 +34,18 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.EventServiceImpl;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.event.EventType;
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,7 +62,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     private ILogger logger;
     private NodeEngine nodeEngine;
     private CachePartitionSegment[] segments;
-    private ConcurrentMap<CacheEntryListenerConfiguration, EventRegistration> eventRegistrationMap;
+    private ConcurrentMap<String, Map<CacheEntryListenerConfiguration, EventRegistration>> eventRegistrationMap;
 
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     private final ConcurrentMap<String, CacheStatistics> statistics = new ConcurrentHashMap<String, CacheStatistics>();
@@ -71,7 +77,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         for (int i = 0; i < partitionCount; i++) {
             segments[i] = new CachePartitionSegment(nodeEngine, this, i);
         }
-        eventRegistrationMap = new ConcurrentHashMap<CacheEntryListenerConfiguration, EventRegistration>();
+        eventRegistrationMap = new ConcurrentHashMap<String, Map<CacheEntryListenerConfiguration, EventRegistration>>();
     }
 
     @Override
@@ -135,7 +141,6 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             clearPartitionReplica(event.getPartitionId());
         }
-
     }
 
     @Override
@@ -256,6 +261,8 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         if (candidates.isEmpty()) {
             return;
         }
+        ArrayList<CacheEventListenerAdaptor> syncListWithOldValue= new ArrayList<CacheEventListenerAdaptor>();
+        ArrayList<CacheEventListenerAdaptor> syncListWithoutOldValue= new ArrayList<CacheEventListenerAdaptor>();
         Set<EventRegistration> registrationsWithOldValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutOldValue = new HashSet<EventRegistration>();
         Object objectValue = toObject(value);
@@ -267,15 +274,25 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
             if (filter instanceof CacheEventFilterAdaptor) {
                 final CacheEventFilterAdaptor<Object, Object> ceFilter = (CacheEventFilterAdaptor<Object, Object>) filter;
                 if (ceFilter.filterEventData(eventType, key, objectValue, objectOldValue)) {
-                    if (ceFilter.isOldValueRequired()) {
-                        registrationsWithOldValue.add(candidate);
+                    if(ceFilter.isSynchronous()){
+                        final Object listener = ((EventServiceImpl.Registration) candidate).getListener();
+                        if (ceFilter.isOldValueRequired()) {
+                            syncListWithOldValue.add((CacheEventListenerAdaptor) listener);
+                        } else {
+                            syncListWithoutOldValue.add((CacheEventListenerAdaptor) listener);
+                        }
                     } else {
-                        registrationsWithoutOldValue.add(candidate);
+                        if (ceFilter.isOldValueRequired()) {
+                            registrationsWithOldValue.add(candidate);
+                        } else {
+                            registrationsWithoutOldValue.add(candidate);
+                        }
                     }
                 }
             }
         }
-        if (registrationsWithOldValue.isEmpty() && registrationsWithoutOldValue.isEmpty()) {
+        if (registrationsWithOldValue.isEmpty() && registrationsWithoutOldValue.isEmpty()
+                && syncListWithOldValue.isEmpty()&& syncListWithoutOldValue.isEmpty()) {
             return;
         }
         Data dataValue = toData(value);
@@ -290,6 +307,14 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
 
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithOldValue, eventWithOldValue, orderKey);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutOldValue, eventWithOutOldValue, orderKey);
+
+        //EXECUTE SYNC LISTENERs
+        for(CacheEventListenerAdaptor listener:syncListWithOldValue){
+            dispatchEvent(eventWithOldValue,listener);
+        }
+        for(CacheEventListenerAdaptor listener:syncListWithoutOldValue){
+            dispatchEvent(eventWithOutOldValue,listener);
+        }
     }
 
     public NodeEngine getNodeEngine() {
@@ -310,15 +335,42 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         final CacheEventFilterAdaptor<K, V> eventFilter = new CacheEventFilterAdaptor<K, V>(cacheProxy, cacheEntryListenerConfiguration);
         final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(cacheProxy, cacheEntryListenerConfiguration);
         final EventService eventService = getNodeEngine().getEventService();
-        final EventRegistration registration = eventService.registerListener(CacheService.SERVICE_NAME, cacheProxy.getName(), eventFilter, entryListener);
-        eventRegistrationMap.put(cacheEntryListenerConfiguration, registration);
+        final EventRegistration registration = eventService.registerListener(CacheService.SERVICE_NAME, cacheProxy.getDistributedObjectName(), eventFilter, entryListener);
+        Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.get(cacheProxy.getDistributedObjectName());
+        if(map == null){
+            map = new HashMap<CacheEntryListenerConfiguration, EventRegistration>();
+            eventRegistrationMap.put(cacheProxy.getDistributedObjectName(), map);
+        }
+        map.put(cacheEntryListenerConfiguration, registration);
     }
 
-    public <K, V> void deregisterCacheEntryListener(CacheProxy<K, V> cacheProxy, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        final EventRegistration eventRegistration = eventRegistrationMap.remove(cacheEntryListenerConfiguration);
-        if (eventRegistration != null) {
+    public <K, V> void unregisterCacheEntryListener(String name, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.get(name);
+        if(map != null){
+            final EventRegistration eventRegistration = map.remove(cacheEntryListenerConfiguration);
+            if (eventRegistration != null) {
+                final EventService eventService = getNodeEngine().getEventService();
+                eventService.deregisterListener(SERVICE_NAME, name, eventRegistration.getId());
+            }
+        }
+    }
+
+    public void unregisterCacheEntryListener(String name) {
+        Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.get(name);
+        if(map != null){
             final EventService eventService = getNodeEngine().getEventService();
-            eventService.deregisterListener(SERVICE_NAME, cacheProxy.getName(), eventRegistration.getId());
+            for(EventRegistration eventRegistration:map.values()){
+                eventService.deregisterListener(SERVICE_NAME, name, eventRegistration.getId());
+
+                //try to close the listener
+                if (((EventServiceImpl.Registration)eventRegistration).getListener() instanceof Closeable) {
+                    try {
+                        ((Closeable) eventRegistration).close();
+                    } catch (IOException e) {
+                        //log
+                    }
+                }
+            }
         }
     }
 

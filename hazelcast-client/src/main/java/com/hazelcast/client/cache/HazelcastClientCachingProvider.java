@@ -14,37 +14,42 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache;
+package com.hazelcast.client.cache;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.cache.HazelcastAbstractCachingProvider;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 
 import javax.cache.CacheManager;
 import java.net.URI;
 import java.util.Properties;
 
-public final class HazelcastServerCachingProvider extends HazelcastAbstractCachingProvider {
+public final class HazelcastClientCachingProvider extends HazelcastAbstractCachingProvider {
 
-    public HazelcastServerCachingProvider() {
+
+    public HazelcastClientCachingProvider() {
         super();
     }
 
     @Override
     protected HazelcastInstance initHazelcast() {
-        Config config = new XmlConfigBuilder().build();
-        return Hazelcast.newHazelcastInstance(config);
+        ClientConfig config = new XmlClientConfigBuilder().build();
+        return  HazelcastClient.newHazelcastClient(config);
     }
 
     @Override
     protected CacheManager getHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
-        return new HazelcastServerCacheManager(this, getHazelcastInstance(), uri, classLoader, managerProperties);
+        return null;
+//       return new HazelcastClientCacheManager(this, getHazelcastInstance(), uri, classLoader, managerProperties);
     }
+
+
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("HazelcastServerCachingProvider{");
+        final StringBuilder sb = new StringBuilder("HazelcastClientCachingProvider{");
         sb.append("hazelcastInstance=").append(hazelcastInstance);
         sb.append('}');
         return sb.toString();

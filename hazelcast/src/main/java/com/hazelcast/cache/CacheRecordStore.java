@@ -21,7 +21,10 @@ import com.hazelcast.cache.record.CacheRecordFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.util.CacheConcurrentHashMap;
 import com.hazelcast.util.Clock;
 
@@ -34,6 +37,9 @@ import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.processor.EntryProcessor;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +48,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.hazelcast.cache.record.CacheRecordFactory.isExpiredAt;
 
@@ -111,7 +119,7 @@ public class CacheRecordStore implements ICacheRecordStore {
             if (value == null) {
                 return null;
             }
-            createRecordWithExpiry(key, value, record, _expiryPolicy, now, true);
+            createRecordWithExpiry(key, value, _expiryPolicy, now, true);
 
             return value;
         } else {
@@ -146,7 +154,8 @@ public class CacheRecordStore implements ICacheRecordStore {
         getAndPut(key, value, expiryPolicy, caller, false,false);
     }
 
-    protected Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, boolean getValue, boolean disableWriteThrough) {
+    protected Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, boolean getValue,
+                               boolean disableWriteThrough) {
         final ExpiryPolicy _expiryPolicy = expiryPolicy != null ? expiryPolicy : defaultExpiryPolicy;
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
@@ -164,8 +173,7 @@ public class CacheRecordStore implements ICacheRecordStore {
         // not be added to the cache or listeners called or writers called.
 
         if (record == null || isExpired) {
-            isPutSucceed = createRecordWithExpiry(key, value, record, _expiryPolicy, now, disableWriteThrough);
-
+            isPutSucceed = createRecordWithExpiry(key, value, _expiryPolicy, now, disableWriteThrough);
         } else {
             oldValue = record.getValue();
             isPutSucceed = updateRecordWithExpiry(key, value, record, _expiryPolicy, now, disableWriteThrough);
@@ -218,8 +226,7 @@ public class CacheRecordStore implements ICacheRecordStore {
             processExpiredEntry(key, record);
         }
         if (record == null || isExpired) {
-            result = createRecordWithExpiry(key, value, record, _expiryPolicy, now, disableWriteThrough);
-
+            result = createRecordWithExpiry(key, value, _expiryPolicy, now, disableWriteThrough);
         } else {
             result = false;
         }
@@ -502,6 +509,49 @@ public class CacheRecordStore implements ICacheRecordStore {
     public void destroy() {
         clear(null, false);
         onDestroy();
+
+        //close the configured CacheWriter
+        if (cacheWriter instanceof Closeable) {
+            try {
+                ((Closeable) cacheWriter).close();
+            } catch (IOException e) {
+                //log
+            }
+        }
+
+        //close the configured CacheLoader
+        if (cacheLoader instanceof Closeable) {
+            try {
+                ((Closeable) cacheLoader).close();
+            } catch (IOException e) {
+                //log
+            }
+        }
+
+        //close the configured defaultExpiryPolicy
+        if (defaultExpiryPolicy instanceof Closeable) {
+            try {
+                ((Closeable) defaultExpiryPolicy).close();
+            } catch (IOException e) {
+               //log
+            }
+        }
+
+        //close the configured CacheEntryListeners
+        EventService eventService = cacheService.getNodeEngine().getEventService();
+        Collection<EventRegistration> candidates = eventService.getRegistrations(CacheService.SERVICE_NAME, name);
+
+        for (EventRegistration registration : candidates) {
+            if (((EventServiceImpl.Registration)registration).getListener() instanceof Closeable) {
+                try {
+                    ((Closeable) registration).close();
+                } catch (IOException e) {
+                    //log
+                }
+            }
+        }
+        cacheService.unregisterCacheEntryListener(name);
+
     }
 
     public void onDestroy() {
@@ -628,7 +678,7 @@ public class CacheRecordStore implements ICacheRecordStore {
 
     }
 
-    boolean createRecordWithExpiry(Data key, Object value, CacheRecord record, ExpiryPolicy _expiryPolicy, long now,
+    boolean createRecordWithExpiry(Data key, Object value, ExpiryPolicy _expiryPolicy, long now,
                                    boolean disableWriteThrough) {
         Duration expiryDuration;
         try {
@@ -641,11 +691,9 @@ public class CacheRecordStore implements ICacheRecordStore {
         if(!disableWriteThrough){
             writeThroughCache(key, value);
         }
-        record = createRecord(key, value, et);
 
-        if (isExpiredAt(et, now)) {
-            processExpiredEntry(key, record);
-        } else {
+        if (!isExpiredAt(et, now)) {
+            CacheRecord record = createRecord(key, value, et);
             records.put(key, record);
             return true;
         }
@@ -654,10 +702,8 @@ public class CacheRecordStore implements ICacheRecordStore {
 
     private CacheRecord createRecord(Data keyData, Object value, long expirationTime) {
         final CacheRecord record = cacheRecordFactory.newRecordWithExpiry(keyData, value, expirationTime);
-
         if (isEventsEnabled) {
             final Object recordValue = record.getValue();
-
             Data dataValue;
             if (!(recordValue instanceof Data)) {
                 dataValue = cacheService.toData(recordValue);
@@ -762,6 +808,7 @@ public class CacheRecordStore implements ICacheRecordStore {
         if (isExpiredAt(et, now)) {
             return null;
         }
+        //TODO below create may fire create event, is it OK?
         final CacheRecord record = createRecord(key, value, et);
         return record;
     }

@@ -151,10 +151,10 @@ public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
                     statistics.increaseCachePuts(1);
                     statistics.addGetTimeNano(System.nanoTime() - start);
                 }
-                cacheRecordStore.createRecordWithExpiry(keyData, value, record, expiryPolicy, now, false);
+                cacheRecordStore.createRecordWithExpiry(keyData, value,  expiryPolicy, now, false);
                 break;
             case LOAD:
-                cacheRecordStore.createRecordWithExpiry(keyData, value, record, expiryPolicy, now, true);
+                cacheRecordStore.createRecordWithExpiry(keyData, value,  expiryPolicy, now, true);
                 break;
             case NONE:
                 //NOOP

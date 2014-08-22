@@ -29,6 +29,7 @@ import com.hazelcast.cache.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.operation.CacheGetOperation;
 import com.hazelcast.cache.operation.CacheKeyIteratorOperation;
+import com.hazelcast.cache.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.cache.operation.CacheLoadAllOperation;
 import com.hazelcast.cache.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.cache.operation.CacheManagementConfigOperation;
@@ -55,37 +56,38 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
     public static final short GET = i++;
     public static final short CONTAINS_KEY = i++;
     public static final short PUT = i++;
-
     public static final short PUT_IF_ABSENT = i++;
 
     public static final short REMOVE = i++;
+
     public static final short GET_AND_REMOVE = i++;
     public static final short REPLACE = i++;
     public static final short GET_AND_REPLACE = i++;
     public static final short PUT_BACKUP = i++;
     public static final short PUT_ALL_BACKUP = i++;
-
     public static final short REMOVE_BACKUP = i++;
+
     public static final short CLEAR_BACKUP = i++;
     public static final short SIZE = i++;
     public static final short SIZE_FACTORY = i++;
-
     public static final short CLEAR = i++;
+
     public static final short CLEAR_FACTORY = i++;
     public static final short GET_ALL = i++;
     public static final short GET_ALL_FACTORY = i++;
     public static final short LOAD_ALL = i++;
     public static final short LOAD_ALL_FACTORY = i++;
     public static final short EXPIRY_POLICY = i++;
-//    public static final short EVENT = i++;
-
     public static final short KEY_ITERATOR = i++;
+
     public static final short KEY_ITERATION_RESULT = i++;
     public static final short ENTRY_PROCESSOR = i++;
     public static final short CLEAR_RESPONSE = i++;
     public static final short CREATE_CONFIG = i++;
     public static final short GET_CONFIG = i++;
     public static final short MANAGEMENT_CONFIG = i++;
+    //    public static final short EVENT = i++;
+    public static final short LISTENER_REGISTRATION = i++;
 
     private static final int LEN = i++;
 
@@ -234,6 +236,11 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
         constructors[MANAGEMENT_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheManagementConfigOperation();
+            }
+        };
+        constructors[LISTENER_REGISTRATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheListenerRegistrationOperation();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

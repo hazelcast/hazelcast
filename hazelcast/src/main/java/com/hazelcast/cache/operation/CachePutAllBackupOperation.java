@@ -69,7 +69,7 @@ public class CachePutAllBackupOperation extends AbstractNamedOperation implement
         super.writeInternal(out);
         out.writeBoolean(cacheRecords != null);
         if (cacheRecords != null) {
-            out.write(cacheRecords.size());
+            out.writeInt(cacheRecords.size());
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
                 final Data key = entry.getKey();
                 final CacheRecord record = entry.getValue();

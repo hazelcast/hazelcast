@@ -68,7 +68,7 @@ public class BasicCacheTest extends HazelcastTestSupport {
 //        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         Config config = new Config();
 //        hz=Hazelcast.newHazelcastInstance(config);
-        hz2=Hazelcast.newHazelcastInstance(config);
+//        hz2=Hazelcast.newHazelcastInstance(config);
 //        Hazelcast.newHazelcastInstance(config);
 //        hz= factory.newHazelcastInstance(config);
 //        hz2= factory.newHazelcastInstance(config);
@@ -252,6 +252,7 @@ public class BasicCacheTest extends HazelcastTestSupport {
             cache.put(i,"value"+i);
         }
 
+        hz=Hazelcast.newHazelcastInstance();
 //        hz2.shutdown();
 //
 //        for(int i=0;i<100;i++){
@@ -260,13 +261,13 @@ public class BasicCacheTest extends HazelcastTestSupport {
 //        }
 //
 
-        cachingProvider.close();
+//        cachingProvider.close();
 
-        final CachingProvider cachingProvider2 = Caching.getCachingProvider();
-        final CacheManager cacheManager2 = cachingProvider2.getCacheManager();
+//        final CachingProvider cachingProvider2 = Caching.getCachingProvider();
+//        final CacheManager cacheManager2 = cachingProvider2.getCacheManager();
+//
 
-
-        Cache<Integer, String> cache2 = cacheManager2.getCache("simpleCache");
+        Cache<Integer, String> cache2 = cacheManager.getCache("simpleCache");
 
         assertNotNull(cache2);
 

@@ -77,7 +77,7 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
         super.writeInternal(out);
         out.writeBoolean(keys != null);
         if (keys != null) {
-            out.write(keys.size());
+            out.writeInt(keys.size());
             for (Data key : keys) {
                 key.writeData(out);
             }

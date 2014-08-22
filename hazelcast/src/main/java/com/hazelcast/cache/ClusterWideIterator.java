@@ -117,7 +117,7 @@ public class ClusterWideIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
 
     protected CacheKeyIteratorResult fetch() {
         final NodeEngine nodeEngine = cacheProxy.getNodeEngine();
-        final Operation op = new CacheKeyIteratorOperation(cacheProxy.nameWithPrefix, lastTableIndex, fetchSize);
+        final Operation op = new CacheKeyIteratorOperation(cacheProxy.getDistributedObjectName(), lastTableIndex, fetchSize);
         final InternalCompletableFuture<CacheKeyIteratorResult> f = nodeEngine.getOperationService()
                 .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionIndex);
         return f.getSafely();

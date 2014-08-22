@@ -29,12 +29,14 @@ import com.hazelcast.spi.OperationService;
 
 import javax.cache.Cache;
 import javax.cache.CacheException;
+import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
 import javax.management.ObjectName;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -74,7 +76,7 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
             final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
             final CacheConfig _cacheConfig = cacheService.getCacheConfig(cacheNameWithPrefix);
             if(_cacheConfig == null){
-                final CacheConfig cacheConfig;
+                final CacheConfig<K,V> cacheConfig;
                 if (configuration instanceof CompleteConfiguration) {
                     cacheConfig = new CacheConfig<K, V>((CompleteConfiguration) configuration);
                 } else {
@@ -114,6 +116,12 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
                     }
                     if(cacheConfig.isManagementEnabled()){
                         enableManagement(cacheName,true);
+                    }
+                    //REGISTER LISTENERS
+                    final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations().iterator();
+                    while (iterator.hasNext()){
+                        final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
+                        cacheService.registerCacheEntryListener(cacheProxy,listenerConfig);
                     }
                     return cacheProxy;
                 }
@@ -246,6 +254,8 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
     @Override
     public void close() {
         if(!closeTriggered){
+            releaseCacheManager(uri, classLoaderReference.get());
+
             HazelcastInstance hz = hazelcastInstance;
             Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
             for (DistributedObject distributedObject : distributedObjects) {
@@ -257,9 +267,12 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
                 cache.close();
             }
             caches.clear();
-            getCachingProvider().releaseCacheManager(uri, classLoaderReference.get());
         }
         closeTriggered=true;
+    }
+
+    protected void  releaseCacheManager(URI uri, ClassLoader classLoader){
+        ((HazelcastAbstractCachingProvider)cachingProvider).releaseCacheManager(uri,classLoader);
     }
 
     public HazelcastServerCachingProvider getCachingProvider(){

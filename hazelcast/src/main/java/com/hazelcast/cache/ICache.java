@@ -17,18 +17,15 @@
 package com.hazelcast.cache;
 
 
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.cache.expiry.ExpiryPolicy;
-import javax.cache.management.CacheMXBean;
-import javax.cache.management.CacheStatisticsMXBean;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
 @Beta
-public interface ICache<K, V> extends /*DistributedObject,*/ javax.cache.Cache<K, V> {
+public interface ICache<K, V> extends javax.cache.Cache<K, V> {
 
     //region async extentions
     Future<V> getAsync(K key);
@@ -82,14 +79,6 @@ public interface ICache<K, V> extends /*DistributedObject,*/ javax.cache.Cache<K
     //endregion
 
     int size();
-
-//    CacheMXBean getCacheMXBean();
-//
-//    CacheStatisticsMXBean getCacheStatisticsMXBean();
-
-//    void setStatisticsEnabled(boolean enabled);
-//
-//    void enableManagement(boolean enabled);
 
 //    CacheStats getStats();
 

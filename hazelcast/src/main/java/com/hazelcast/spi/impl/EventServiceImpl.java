@@ -713,6 +713,10 @@ public class EventServiceImpl implements EventService {
             return localOnly;
         }
 
+        public Object getListener(){
+            return listener;
+        }
+
         //CHECKSTYLE:OFF
         @Override
         public boolean equals(Object o) {

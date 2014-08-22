@@ -18,11 +18,13 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.operation.CacheContainsKeyOperation;
+import com.hazelcast.cache.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.operation.CacheGetAndRemoveOperation;
 import com.hazelcast.cache.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.operation.CacheGetOperation;
+import com.hazelcast.cache.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.cache.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.cache.operation.CachePutIfAbsentOperation;
 import com.hazelcast.cache.operation.CachePutOperation;
@@ -30,14 +32,12 @@ import com.hazelcast.cache.operation.CacheRemoveOperation;
 import com.hazelcast.cache.operation.CacheReplaceOperation;
 import com.hazelcast.cache.operation.CacheSizeOperationFactory;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -54,20 +54,18 @@ import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
-import javax.cache.management.CacheMXBean;
-import javax.cache.management.CacheStatisticsMXBean;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
@@ -85,8 +83,6 @@ public class CacheProxy<K, V> implements ICache<K, V> {
 
     //this will represent the name from the user perspective
     private String name;
-    //this is the prefixed distributed obj name
-    String nameWithPrefix;
 
     private boolean isClosed = false;
 
@@ -96,17 +92,18 @@ public class CacheProxy<K, V> implements ICache<K, V> {
 //    private CacheStatistics statistics = new CacheStatistics();
 
     protected CacheProxy(String name, CacheConfig cacheConfig, CacheDistributedObject delegate, HazelcastServerCacheManager cacheManager) {
-//        super(nodeEngine, service);
         this.name = name;
         this.cacheConfig = cacheConfig;
         this.delegate = delegate;
         this.cacheManager = cacheManager;
-        this.nameWithPrefix = delegate.getName();//cacheConfig.getNameWithPrefix();
-
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
         }
+    }
+
+    public String getDistributedObjectName(){
+        return delegate.getName();
     }
 
     //region DISTRIBUTED OBJECT
@@ -134,7 +131,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         final SerializationService serializationService = engine.getSerializationService();
 
         final Data k = serializationService.toData(key);
-        final Operation op = new CacheGetOperation(nameWithPrefix, k, expiryPolicy);
+        final Operation op = new CacheGetOperation(getDistributedObjectName(), k, expiryPolicy);
         final InternalCompletableFuture<Object> f = engine.getOperationService()
                 .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
         return new DelegatingFuture<V>(f, serializationService);
@@ -182,7 +179,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         final Data k = serializationService.toData(key);
         final Data v = serializationService.toData(value);
 
-        final Operation op = new CachePutIfAbsentOperation(nameWithPrefix, k, v, expiryPolicy);
+        final Operation op = new CachePutIfAbsentOperation(getDistributedObjectName(), k, v, expiryPolicy);
         return engine.getOperationService().invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
     }
 
@@ -197,7 +194,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         try {
             return f.get();
         } catch (Throwable e) {
-            return ExceptionUtil.sneakyThrow(e);
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -233,7 +230,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         final SerializationService serializationService = engine.getSerializationService();
         final Data keyData = serializationService.toData(key);
         final Data valueData = oldValue != null ? serializationService.toData(oldValue) : null;
-        final Operation op = new CacheRemoveOperation(nameWithPrefix, keyData, valueData);
+        final Operation op = new CacheRemoveOperation(getDistributedObjectName(), keyData, valueData);
         final int partitionId = getPartitionId(engine, keyData);
         return engine.getOperationService().invokeOnPartition(getServiceName(), op, partitionId);
     }
@@ -247,7 +244,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         }
         final SerializationService serializationService = engine.getSerializationService();
         final Data k = serializationService.toData(key);
-        final Operation op = new CacheGetAndRemoveOperation(nameWithPrefix, k);
+        final Operation op = new CacheGetAndRemoveOperation(getDistributedObjectName(), k);
         final InternalCompletableFuture<Object> f =
                 engine.getOperationService().invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
         return new DelegatingFuture<V>(f, serializationService);
@@ -279,7 +276,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         final Data k = serializationService.toData(key);
         final Data v = serializationService.toData(value);
 
-        final Operation op = new CacheGetAndReplaceOperation(nameWithPrefix, k, v, expiryPolicy);
+        final Operation op = new CacheGetAndReplaceOperation(getDistributedObjectName(), k, v, expiryPolicy);
         final InternalCompletableFuture<Object> f = engine.getOperationService().invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
         return new DelegatingFuture<V>(f, serializationService);
     }
@@ -313,7 +310,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         final Data o = serializationService.toData(oldValue);
         final Data n = serializationService.toData(newValue);
 
-        final Operation op = new CacheReplaceOperation(nameWithPrefix, k, o, n, expiryPolicy);
+        final Operation op = new CacheReplaceOperation(getDistributedObjectName(), k, o, n, expiryPolicy);
         return engine.getOperationService().invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
     }
 
@@ -323,7 +320,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         try {
             return f.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -349,7 +346,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
 
         final Collection<Integer> partitions = getPartitionsForKeys(ks);
         try {
-            final CacheGetAllOperationFactory factory = new CacheGetAllOperationFactory(nameWithPrefix, ks, expiryPolicy);
+            final CacheGetAllOperationFactory factory = new CacheGetAllOperationFactory(getDistributedObjectName(), ks, expiryPolicy);
             final Map<Integer, Object> responses = engine.getOperationService()
                     .invokeOnPartitions(getServiceName(), factory, partitions);
             for (Object response : responses.values()) {
@@ -363,13 +360,13 @@ public class CacheProxy<K, V> implements ICache<K, V> {
 //                        int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
 //                        if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
 //                                .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
-//                            mapService.putNearCache(nameWithPrefix, entry.getKey(), entry.getValue());
+//                            mapService.putNearCache(getDistributedObjectName(), entry.getKey(), entry.getValue());
 //                        }
 //                    }
                 }
             }
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+        } catch (Throwable e) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
         return result;
     }
@@ -418,7 +415,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         try {
             return f.get();
         } catch (Throwable e) {
-            return ExceptionUtil.sneakyThrow(e);
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -428,7 +425,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             final SerializationService serializationService = nodeEngine.getSerializationService();
-            final CacheSizeOperationFactory operationFactory = new CacheSizeOperationFactory(nameWithPrefix);
+            final CacheSizeOperationFactory operationFactory = new CacheSizeOperationFactory(getDistributedObjectName());
             final Map<Integer, Object> results =
                     nodeEngine.getOperationService().invokeOnAllPartitions(getServiceName(), operationFactory);
             int total = 0;
@@ -443,7 +440,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
             }
             return total;
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
 
@@ -453,7 +450,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
 //        final List<Integer> memberPartitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
 //        statistics.clear();
 //        for (Integer partition : memberPartitions) {
-//            ICacheRecordStore cache = getService().getCache(nameWithPrefix, partition);
+//            ICacheRecordStore cache = getService().getCache(getDistributedObjectName(), partition);
 //            if (cache != null) {
 //                statistics.acumulate(cache.getCacheStats());
 //            }
@@ -470,7 +467,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         }
         final SerializationService serializationService = engine.getSerializationService();
 
-        final Operation op = new CacheGetOperation(nameWithPrefix, key, null);
+        final Operation op = new CacheGetOperation(getDistributedObjectName(), key, null);
         final InternalCompletableFuture<Object> f = engine.getOperationService()
                 .invokeOnPartition(getServiceName(), op, getPartitionId(engine, key));
         Object result = f.getSafely();
@@ -497,7 +494,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         final Data keyData = serializationService.toData(key);
         final Data valueData = serializationService.toData(value);
 
-        final Operation op = new CachePutOperation(nameWithPrefix, keyData, valueData, expiryPolicy, getValue);
+        final Operation op = new CachePutOperation(getDistributedObjectName(), keyData, valueData, expiryPolicy, getValue);
         final int partitionId = getPartitionId(engine, keyData);
         return engine.getOperationService().invokeOnPartition(getServiceName(), op, partitionId);
     }
@@ -541,7 +538,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         try {
             return f.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -551,7 +548,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        final Operation op = new CacheRemoveOperation(nameWithPrefix, key, null);
+        final Operation op = new CacheRemoveOperation(getDistributedObjectName(), key, null);
         final int partitionId = getPartitionId(engine, key);
         final InternalCompletableFuture<Boolean> f = engine.getOperationService()
                 .invokeOnPartition(getServiceName(), op, partitionId);
@@ -588,7 +585,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         final SerializationService serializationService = engine.getSerializationService();
 
         final Data k = serializationService.toData(key);
-        final Operation op = new CacheContainsKeyOperation(nameWithPrefix, k);
+        final Operation op = new CacheContainsKeyOperation(getDistributedObjectName(), k);
         final InternalCompletableFuture<Boolean> f = engine.getOperationService()
                 .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
 
@@ -624,7 +621,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
             keysData.add(ss.toData(key));
         }
 
-        OperationFactory operationFactory = new CacheLoadAllOperationFactory(nameWithPrefix, keysData, replaceExistingValues);
+        OperationFactory operationFactory = new CacheLoadAllOperationFactory(getDistributedObjectName(), keysData, replaceExistingValues);
         try {
             final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
 
@@ -691,7 +688,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         try {
             return f.get();
         } catch (Throwable e) {
-            return ExceptionUtil.sneakyThrow(e);
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -712,8 +709,8 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         final Future<V> f = getAndReplaceAsync(key, value, null);
         try {
             return f.get();
-        } catch (Throwable e) {
-            return ExceptionUtil.sneakyThrow(e);
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
 
@@ -746,7 +743,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
 
     private void removeAllInternal(Set<Data> keysData, boolean isRemoveAll) {
         final OperationService operationService = getNodeEngine().getOperationService();
-        final CacheClearOperationFactory operationFactory = new CacheClearOperationFactory(nameWithPrefix, keysData, isRemoveAll);
+        final CacheClearOperationFactory operationFactory = new CacheClearOperationFactory(getDistributedObjectName(), keysData, isRemoveAll);
         try {
             final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
             for (Object result : results.values()) {
@@ -783,7 +780,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         }
         final SerializationService serializationService = engine.getSerializationService();
         final Data k = serializationService.toData(key);
-        final Operation op = new CacheEntryProcessorOperation(nameWithPrefix, k, entryProcessor, arguments);
+        final Operation op = new CacheEntryProcessorOperation(getDistributedObjectName(), k, entryProcessor, arguments);
         try {
             final InternalCompletableFuture<T> f = engine.getOperationService()
                     .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
@@ -837,6 +834,17 @@ public class CacheProxy<K, V> implements ICache<K, V> {
 */
         isClosed = true;
         delegate.destroy();
+
+        //close the configured CacheLoader
+        if (cacheLoader instanceof Closeable) {
+            try {
+                ((Closeable) cacheLoader).close();
+            } catch (IOException e) {
+                //log
+            }
+        }
+
+
     }
 
     @Override
@@ -854,14 +862,41 @@ public class CacheProxy<K, V> implements ICache<K, V> {
 
     @Override
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+//        ensureOpen();
         final CacheService service = getService();
         service.registerCacheEntryListener(this, cacheEntryListenerConfiguration);
+        cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+
+        //CREATE ON OTHERS TOO
+        final NodeEngine nodeEngine = getNodeEngine();
+        final OperationService operationService = nodeEngine.getOperationService();
+        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for(MemberImpl member:members){
+            if(!member.localMember()){
+                final Operation op = new CacheListenerRegistrationOperation(getDistributedObjectName(), cacheEntryListenerConfiguration, true);
+                final InternalCompletableFuture<Object> f2 = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                f2.getSafely();//make sure all configs are created
+            }
+        }
     }
 
     @Override
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         final CacheService service = getService();
-        service.deregisterCacheEntryListener(this, cacheEntryListenerConfiguration);
+        service.unregisterCacheEntryListener(getDistributedObjectName(), cacheEntryListenerConfiguration);
+        cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+
+        //CREATE ON OTHERS TOO
+        final NodeEngine nodeEngine = getNodeEngine();
+        final OperationService operationService = nodeEngine.getOperationService();
+        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for(MemberImpl member:members){
+            if(!member.localMember()){
+                final Operation op = new CacheListenerRegistrationOperation(getDistributedObjectName(), cacheEntryListenerConfiguration, false);
+                final InternalCompletableFuture<Object> f2 = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                f2.getSafely();//make sure all configs are created
+            }
+        }
     }
 
     @Override

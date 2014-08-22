@@ -101,7 +101,8 @@ public final class ProxyManager {
     public void init(ClientConfig config) {
         // register defaults
         register(MapService.SERVICE_NAME, ClientMapProxy.class);
-        register(CacheService.SERVICE_NAME, ClientCacheProxy.class);
+        //TODO review if ClientProxy is OK here ?
+        register(CacheService.SERVICE_NAME, ClientProxy.class);
         register(QueueService.SERVICE_NAME, ClientQueueProxy.class);
         register(MultiMapService.SERVICE_NAME, ClientMultiMapProxy.class);
         register(ListService.SERVICE_NAME, ClientListProxy.class);

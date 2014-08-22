@@ -65,7 +65,7 @@ public class CacheLoadAllOperationFactory implements OperationFactory, Identifie
         out.writeBoolean(replaceExistingValues);
         out.writeBoolean(keys != null);
         if (keys != null) {
-            out.write(keys.size());
+            out.writeInt(keys.size());
             for (Data key : keys) {
                 key.writeData(out);
             }

@@ -31,7 +31,7 @@ public class CacheEventFilterAdaptor<K, V> implements EventFilter, DataSerializa
     private transient ICache<K, V> source;
 
     private boolean oldValueRequired;
-//    private final boolean isSynchronous;
+    private boolean isSynchronous;
 
     private CacheEntryEventFilter<? super K, ? super V> cacheEntryEventFilter;
 
@@ -47,7 +47,7 @@ public class CacheEventFilterAdaptor<K, V> implements EventFilter, DataSerializa
                 ? null
                 : cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory().create();
         this.oldValueRequired = cacheEntryListenerConfiguration.isOldValueRequired();
-//        this.isSynchronous = cacheEntryListenerConfiguration.isSynchronous();
+        this.isSynchronous = cacheEntryListenerConfiguration.isSynchronous();
     }
 
     @Override
@@ -57,11 +57,15 @@ public class CacheEventFilterAdaptor<K, V> implements EventFilter, DataSerializa
 
     public boolean filterEventData(EventType eventType, K key, V newValue, V oldValue) {
         final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
-        return /*(this.isSynchronous==isSynchronous) && */(cacheEntryEventFilter == null || cacheEntryEventFilter.evaluate(event));
+        return (cacheEntryEventFilter == null || cacheEntryEventFilter.evaluate(event));
     }
 
     public boolean isOldValueRequired() {
         return oldValueRequired;
+    }
+
+    public boolean isSynchronous(){
+        return isSynchronous;
     }
 
     @Override

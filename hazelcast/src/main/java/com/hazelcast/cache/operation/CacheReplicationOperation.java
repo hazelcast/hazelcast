@@ -46,6 +46,7 @@ public final class CacheReplicationOperation extends AbstractOperation {
 
     public CacheReplicationOperation() {
         data = new HashMap<String, Map<Data, CacheRecord>>();
+        configs= new ArrayList<CacheConfig>();
     }
 
     public CacheReplicationOperation(CachePartitionSegment segment, int replicaIndex) {
@@ -61,14 +62,14 @@ public final class CacheReplicationOperation extends AbstractOperation {
         }
 
         configs= new ArrayList<CacheConfig>();
-        for(CacheConfig conf:segment.getCacheConfigs()){
-            configs.add(conf);
+        for(CacheConfig cacheConfig:segment.getCacheConfigs()){
+            configs.add(cacheConfig);
         }
     }
 
     @Override
     public final void beforeRun() throws Exception {
-        //migrate CacheConfigs first
+//        //migrate CacheConfigs first
         CacheService service = getService();
         for(CacheConfig config:configs){
             service.createCacheConfigIfAbsent(config);
@@ -170,7 +171,7 @@ public final class CacheReplicationOperation extends AbstractOperation {
     }
 
     public boolean isEmpty() {
-        return data == null || data.isEmpty();
+        return (configs == null || configs.isEmpty()) && (data == null || data.isEmpty());
     }
 
 }
