@@ -113,9 +113,9 @@ public class MapEvictionManager {
                 if (nodeEngine.getThisAddress().equals(owner)) {
                     final PartitionContainer container = mapService.getPartitionContainer(i);
                     if (container == null) {
-                        return false;
+                        continue;
                     }
-                    nodeTotalSize += container.getRecordStore(mapName).size();
+                    nodeTotalSize += getRecordStoreSize(mapName, container);
                     if (nodeTotalSize >= maxSize) {
                         return true;
                     }
@@ -145,9 +145,9 @@ public class MapEvictionManager {
                 if (nodeEngine.getThisAddress().equals(owner)) {
                     final PartitionContainer container = mapService.getPartitionContainer(i);
                     if (container == null) {
-                        return false;
+                        continue;
                     }
-                    final int size = container.getRecordStore(mapName).size();
+                    final int size = getRecordStoreSize(mapName, container);
                     if (size >= maxSize) {
                         return true;
                     }
@@ -155,6 +155,15 @@ public class MapEvictionManager {
             }
             return false;
         }
+
+        private int getRecordStoreSize(String mapName, PartitionContainer partitionContainer) {
+            final RecordStore existingRecordStore = partitionContainer.getExistingRecordStore(mapName);
+            if (existingRecordStore == null) {
+                return 0;
+            }
+            return existingRecordStore.size();
+        }
+
 
         private boolean isEvictableHeapSize(final MapContainer mapContainer) {
             final long usedHeapSize = getUsedHeapSize(mapContainer);
@@ -190,12 +199,22 @@ public class MapEvictionManager {
                     if (container == null) {
                         return -1;
                     }
-                    heapCost += container.getRecordStore(mapName).getHeapCost();
+                    heapCost += getRecordStoreHeapCost(mapName, container);
                 }
             }
             heapCost += mapContainer.getNearCacheSizeEstimator().getSize();
             return heapCost;
         }
+
+
+        private long getRecordStoreHeapCost(String mapName, PartitionContainer partitionContainer) {
+            final RecordStore existingRecordStore = partitionContainer.getExistingRecordStore(mapName);
+            if (existingRecordStore == null) {
+                return 0L;
+            }
+            return existingRecordStore.getHeapCost();
+        }
+
     }
 
 
@@ -356,7 +375,7 @@ public class MapEvictionManager {
                 break;
             case USED_HEAP_PERCENTAGE:
             case USED_HEAP_SIZE:
-                evictableSize = currentPartitionSize * evictionPercentage / 100;
+                evictableSize = Math.max(currentPartitionSize * evictionPercentage / 100, 1);
                 break;
             default:
                 throw new IllegalArgumentException("Max size policy is not defined [" + maxSizePolicy + "]");

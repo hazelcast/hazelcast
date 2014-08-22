@@ -71,8 +71,8 @@ public class DefaultRecordStore implements RecordStore {
     private final LockStore lockStore;
     private final RecordFactory recordFactory;
     private final ILogger logger;
-    private final SizeEstimator sizeEstimator;
     private final AtomicBoolean loaded = new AtomicBoolean(false);
+    private SizeEstimator sizeEstimator;
     /**
      * used for lru eviction.
      */
@@ -1083,5 +1083,9 @@ public class DefaultRecordStore implements RecordStore {
                 logger.warning("Exception while load all task:" + e.toString());
             }
         }
+    }
+
+    public void setSizeEstimator(SizeEstimator sizeEstimator) {
+        this.sizeEstimator = sizeEstimator;
     }
 }
