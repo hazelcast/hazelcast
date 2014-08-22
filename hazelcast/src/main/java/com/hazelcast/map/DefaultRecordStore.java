@@ -617,6 +617,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             record = nullIfExpired(record, false);
             if (record != null) {
                 addMapEntrySet(record.getKey(), record.getValue(), mapEntrySet);
+		accessRecord(record, now);
                 iterator.remove();
             }
         }
