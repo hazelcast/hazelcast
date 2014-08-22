@@ -1543,7 +1543,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         partitionService.clearPartitionReplica(partitionId, replicaIndex);
                     }
                 } else if (thisAddress.equals(newAddress)) {
-                    partitionService.clearPartitionReplica(partitionId, replicaIndex);
                     partitionService.forcePartitionReplicaSync(partitionId, replicaIndex);
                 }
             }
