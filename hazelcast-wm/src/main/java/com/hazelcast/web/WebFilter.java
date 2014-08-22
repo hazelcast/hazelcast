@@ -549,7 +549,8 @@ public class WebFilter implements Filter {
                 if (hazelcastSession == null) {
                     final Boolean existing = (Boolean) getClusterMap()
                             .executeOnKey(requestedSessionId, new ReferenceSessionEntryProcessor());
-                    boolean canOrMustCreate = create || !RequestWrapper.this.res.isCommitted() || getOriginalSession(false) != null;
+                    boolean canOrMustCreate = create || !RequestWrapper.this.res.isCommitted()
+                            || getOriginalSession(false) != null;
                     if (existing != null && existing && canOrMustCreate) {
                         // we already have the session in the cluster, so "copy" it to this node
                         hazelcastSession = createNewSession(RequestWrapper.this, requestedSessionId);
