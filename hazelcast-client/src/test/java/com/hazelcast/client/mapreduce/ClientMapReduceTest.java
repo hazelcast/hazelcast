@@ -31,7 +31,6 @@ import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
@@ -130,9 +129,8 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 60000)
-    public void testMapper()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testMapper() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -163,9 +161,8 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 60000)
-    public void testMapperReducer()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testMapperReducer() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -203,9 +200,8 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 60000)
-    public void testMapperCollator()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testMapperCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -237,9 +233,8 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 60000)
-    public void testKeyedMapperCollator()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testKeyedMapperCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -268,9 +263,8 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         assertEquals(50, result);
     }
 
-    @Test(timeout = 60000)
-    public void testKeyPredicateMapperCollator()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testKeyPredicateMapperCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -299,9 +293,8 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         assertEquals(50, result);
     }
 
-    @Test(timeout = 60000)
-    public void testMapperReducerCollator()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testMapperReducerCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -338,9 +331,8 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 60000)
-    public void testAsyncMapper()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testAsyncMapper() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -387,9 +379,8 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 60000)
-    public void testKeyedAsyncMapper()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testKeyedAsyncMapper() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -438,9 +429,8 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 60000)
-    public void testAsyncMapperReducer()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testAsyncMapperReducer() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -495,9 +485,8 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 60000)
-    public void testAsyncMapperCollator()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testAsyncMapperCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -550,9 +539,8 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
         }
     }
 
-    @Test(timeout = 60000)
-    public void testAsyncMapperReducerCollator()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testAsyncMapperReducerCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -657,7 +645,7 @@ public class ClientMapReduceTest extends AbstractClientMapReduceJobTest {
     public static class TestReducer
             extends Reducer<String, Integer, Integer> {
 
-        private transient int sum = 0;
+        private volatile int sum = 0;
 
         @Override
         public void reduce(Integer value) {

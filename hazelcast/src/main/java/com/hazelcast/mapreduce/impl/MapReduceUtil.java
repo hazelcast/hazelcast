@@ -39,6 +39,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.MAPPING;
 import static com.hazelcast.mapreduce.JobPartitionState.State.PROCESSED;
@@ -62,6 +65,8 @@ public final class MapReduceUtil {
     private static final String EXECUTOR_NAME_PREFIX = "mapreduce::hz::";
     private static final String SERVICE_NAME = MapReduceService.SERVICE_NAME;
     private static final float DEFAULT_MAP_GROWTH_FACTOR = 0.75f;
+    private static final int RETRY_PARTITION_TABLE_MILLIS = 100;
+    private static final long PARTITION_READY_TIMEOUT = 10000;
 
     private MapReduceUtil() {
     }
@@ -330,14 +335,21 @@ public final class MapReduceUtil {
         }
     }
 
-    public static void enforcePartitionTableWarmup(MapReduceService mapReduceService) {
+    public static void enforcePartitionTableWarmup(MapReduceService mapReduceService) throws TimeoutException {
         InternalPartitionService partitionService = mapReduceService.getNodeEngine().getPartitionService();
         InternalPartition[] partitions = partitionService.getPartitions();
+
+        long startTime = Clock.currentTimeMillis();
         for (InternalPartition partition : partitions) {
-            while (partition.getOwnerOrNull() == null) {
+            while (partitionService.getPartition(partition.getPartitionId(), true).getOwnerOrNull() == null) {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(RETRY_PARTITION_TABLE_MILLIS);
                 } catch (Exception ignore) {
+                    EmptyStatement.ignore(ignore);
+                }
+
+                if (Clock.currentTimeMillis() - startTime > PARTITION_READY_TIMEOUT) {
+                    throw new TimeoutException("Partition get ready timeout reached!");
                 }
             }
         }
