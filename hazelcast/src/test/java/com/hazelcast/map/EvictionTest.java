@@ -788,6 +788,55 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
 
+    @Test
+    public void testEvictionPerNode_sweepsBackupPartitions() {
+        final int maxSize = 1000;
+        // node count should be at least 2 since we are testing a scenario on backups.
+        final int nodeCount = 2;
+        final String mapName = randomMapName();
+
+        final Config config = newConfig(mapName, maxSize, MaxSizeConfig.MaxSizePolicy.PER_NODE);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+
+        IMap<Integer, Integer> map = instances[0].getMap(mapName);
+        // fill map with (2 * maxSize) items.
+        for (int i = 0; i < 2 * maxSize; i++) {
+            map.put(i, i);
+        }
+
+        assertBackupsSweepedOnAllNodes(mapName, maxSize, instances);
+    }
+
+    private void assertBackupsSweepedOnAllNodes(String mapName, int maxSize, HazelcastInstance[] instances) {
+
+        for (HazelcastInstance instance : instances) {
+            final IMap<Integer, Integer> map = instance.getMap(mapName);
+
+            final long backupEntryCount = map.getLocalMapStats().getBackupEntryCount();
+            final long ownedEntryCount = map.getLocalMapStats().getOwnedEntryCount();
+
+            // entry count = (owned + backup).
+            // On one node, entry count should be smaller than (2 * maxSize).
+            assertTrue(2 * maxSize > ownedEntryCount + backupEntryCount);
+        }
+
+    }
+
+    private static Config newConfig(String mapName, int maxSize, MaxSizeConfig.MaxSizePolicy maxSizePolicy) {
+        final Config config = new Config();
+        final MapConfig mapConfig = new MapConfig(mapName + "*");
+        final MaxSizeConfig maxSizeConfig = new MaxSizeConfig(maxSize, maxSizePolicy);
+        mapConfig.setMaxSizeConfig(maxSizeConfig);
+        mapConfig.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
+        mapConfig.setMinEvictionCheckMillis(0);
+        config.addMapConfig(mapConfig);
+
+        return config;
+    }
+
+
     /**
      * Test for the issue 2659.
      * Eviction event is fired for an object already removed
@@ -863,4 +912,6 @@ public class EvictionTest extends HazelcastTestSupport {
         sleepSeconds(1);
         return map;
     }
+
+
 }
