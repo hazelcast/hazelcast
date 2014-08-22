@@ -24,11 +24,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,44 +37,39 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertTrue;
 
-
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(NightlyTest.class)
 public class EntryProcessorStressTest extends HazelcastTestSupport {
 
     @Test
-    @Category(ProblematicTest.class)
     public void dropedEntryProcessorTest_withKeyOwningNodeTermination() throws ExecutionException, InterruptedException {
         String mapName = randomString();
         Config cfg = new Config();
         cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
 
-
-        final int maxIterations=50;
+        final int maxIterations = 50;
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(maxIterations+1);
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
 
-        for(int iteration=0; iteration<maxIterations; iteration++){
-
-            System.out.println("======================"+iteration+"==============================");
-
+        for (int iteration = 0; iteration < maxIterations; iteration++) {
             HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
 
             final int maxTasks = 20;
-            final Object key  =  generateKeyOwnedBy(instance2);
+            final Object key = generateKeyOwnedBy(instance2);
 
             final IMap<Object, List<Integer>> processorMap = instance1.getMap(mapName);
             processorMap.put(key, new ArrayList<Integer>());
 
-            for (int i = 0 ; i < maxTasks ; i++) {
+            for (int i = 0; i < maxTasks; i++) {
                 processorMap.submitToKey(key, new SimpleEntryProcessor(i));
 
-                if(i==maxTasks/2){
-                    instance2.getLifecycleService().terminate();
+                if (i == maxTasks / 2) {
+                    instance2.getLifecycleService().shutdown();
                 }
             }
 
@@ -84,15 +78,17 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
                     List<Integer> actualOrder = processorMap.get(key);
                     //using >= for the test, as it can be the case that an entry processor could be executed more the once
                     //when the owning node is terminated after running the entry processor (and the backup) but before the response is sent
-                    assertTrue("failed to execute all entry processor tasks at iteration", actualOrder.size() >= maxTasks);
+                    assertTrue("failed to execute all entry processor tasks at iteration",
+                            actualOrder.size() >= maxTasks);
                 }
-            });
+            }, 30);
         }
     }
 
-    private static class SimpleEntryProcessor implements DataSerializable, EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
-        private Integer id;
-        private boolean backup=false;
+    private static class SimpleEntryProcessor implements DataSerializable, EntryProcessor<Object, List<Integer>>,
+            EntryBackupProcessor<Object, List<Integer>> {
+
+        private int id;
 
         public SimpleEntryProcessor() {}
 
@@ -102,30 +98,27 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
 
         @Override
         public Object process(Map.Entry<Object, List<Integer>> entry) {
-            List l = entry.getValue();
-            l.add(id);
-
-            if(backup){
-                System.out.print("Backup ");
-            }
-            System.out.println("EntryProcessor => "+l +" size="+l.size()+" last val="+id);
+            List<Integer> list = entry.getValue();
+            list.add(id);
+            // add a random artificial latency
+            LockSupport.parkNanos((long) (Math.random() * 10000));
+            entry.setValue(list);
             return id;
         }
 
         @Override
-        public void processBackup(Map.Entry entry) {
-            backup=true;
+        public void processBackup(Map.Entry<Object, List<Integer>> entry) {
             process(entry);
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(id);
+            out.writeInt(id);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            id = in.readObject();
+            id = in.readInt();
         }
 
         @Override

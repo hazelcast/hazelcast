@@ -28,15 +28,17 @@ public class ClientSecurityConfig {
         return credentials;
     }
 
-    public void setCredentials(Credentials credentials) {
+    public ClientSecurityConfig setCredentials(Credentials credentials) {
         this.credentials = credentials;
+        return this;
     }
 
     public String getCredentialsClassname() {
         return credentialsClassname;
     }
 
-    public void setCredentialsClassname(String credentialsClassname) {
+    public ClientSecurityConfig setCredentialsClassname(String credentialsClassname) {
         this.credentialsClassname = credentialsClassname;
+        return this;
     }
 }
