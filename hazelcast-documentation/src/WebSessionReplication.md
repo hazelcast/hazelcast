@@ -194,9 +194,9 @@ If the value for `deferred-write` is set as **true**, Hazelcast will cache the s
 
 **Important note about `deferred-write=false` setting**
 
-If `deferred-write` is **false**, you will not have local attribute cache as mentioned above. In this case, any update(i.e. setAttribute) on the session will directly be available in the cluster. One exception to this behaivour is the changes to the session attribute objects. To update attribute clusterwide, setAttribute has to be called after making changes to the attribute object.
+If `deferred-write` is **false**, you will not have local attribute cache as mentioned above. In this case, any update (i.e. `setAttribute`) on the session will directly be available in the cluster. One exception to this behavior is the changes to the session attribute objects. To update an attribute clusterwide, `setAttribute` has to be called after making changes to the attribute object.
 
-Following example explains how to update attribute in case of `deferred-write=false` setting : 
+Following example explains how to update an attribute in the case of `deferred-write=false` setting: 
 
 ```
 session.setAttribute("myKey", new ArrayList());
