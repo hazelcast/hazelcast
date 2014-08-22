@@ -28,12 +28,10 @@ import com.hazelcast.cluster.MulticastService;
 import com.hazelcast.cluster.NodeMulticastListener;
 import com.hazelcast.cluster.TcpIpJoiner;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -146,6 +144,53 @@ public class Node {
         this.config = config;
         configClassLoader = config.getClassLoader();
         this.groupProperties = new GroupProperties(config);
+        buildInfo = BuildInfoProvider.getBuildInfo();
+        serializationService = (SerializationServiceImpl) createSerializationService(hazelcastInstance, config);
+        systemLogService = new SystemLogService(groupProperties.SYSTEM_LOG_ENABLED.getBoolean());
+
+        String loggingType = groupProperties.LOGGING_TYPE.getString();
+        loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(),
+                loggingType, buildInfo);
+        final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
+        try {
+            addressPicker.pickAddress();
+        } catch (Throwable e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+
+        final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
+        try {
+            address = addressPicker.getPublicAddress();
+            final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
+            localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
+            loggingService.setThisMember(localMember);
+            logger = loggingService.getLogger(Node.class.getName());
+            initializer = NodeInitializerFactory.create(configClassLoader);
+            initializer.beforeInitialize(this);
+
+            securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
+            nodeEngine = new NodeEngineImpl(this);
+            clientEngine = new ClientEngineImpl(this);
+            connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
+            partitionService = new InternalPartitionServiceImpl(this);
+            clusterService = new ClusterServiceImpl(this);
+            textCommandService = new TextCommandServiceImpl(this);
+            initializer.printNodeInfo(this);
+            versionCheck.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
+            this.multicastService = createMulticastService(addressPicker);
+            initializeListeners(config);
+            joiner = nodeContext.createJoiner(this);
+
+        } catch (Throwable e) {
+            try {
+                serverSocketChannel.close();
+            } catch (Throwable ignored) {
+            }
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    private SerializationService createSerializationService(HazelcastInstanceImpl hazelcastInstance, Config config) {
         SerializationService ss;
         try {
             String partitioningStrategyClassName = groupProperties.PARTITIONING_STRATEGY_CLASS.getString();
@@ -165,47 +210,13 @@ public class Node {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        buildInfo = BuildInfoProvider.getBuildInfo();
-        serializationService = (SerializationServiceImpl) ss;
-        systemLogService = new SystemLogService(groupProperties.SYSTEM_LOG_ENABLED.getBoolean());
+        return ss;
+    }
 
-        String loggingType = groupProperties.LOGGING_TYPE.getString();
-        loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(),
-                loggingType, buildInfo);
-        final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
-        try {
-            addressPicker.pickAddress();
-        } catch (Throwable e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-        final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
-        address = addressPicker.getPublicAddress();
-        final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-        localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
-        loggingService.setThisMember(localMember);
-        logger = loggingService.getLogger(Node.class.getName());
-        initializer = NodeInitializerFactory.create(configClassLoader);
-        try {
-            initializer.beforeInitialize(this);
-        } catch (Throwable e) {
-            try {
-                serverSocketChannel.close();
-            } catch (Throwable ignored) {
-            }
-            throw ExceptionUtil.rethrow(e);
-        }
-        securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
-        nodeEngine = new NodeEngineImpl(this);
-        clientEngine = new ClientEngineImpl(this);
-        connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
-        partitionService = new InternalPartitionServiceImpl(this);
-        clusterService = new ClusterServiceImpl(this);
-        textCommandService = new TextCommandServiceImpl(this);
-        initializer.printNodeInfo(this);
-        versionCheck.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
-        JoinConfig join = config.getNetworkConfig().getJoin();
+    private MulticastService createMulticastService(AddressPicker addressPicker) {
         MulticastService mcService = null;
         try {
+            JoinConfig join = config.getNetworkConfig().getJoin();
             if (join.getMulticastConfig().isEnabled()) {
                 MulticastConfig multicastConfig = join.getMulticastConfig();
                 MulticastSocket multicastSocket = new MulticastSocket(null);
@@ -239,9 +250,7 @@ public class Node {
         } catch (Exception e) {
             logger.severe(e);
         }
-        this.multicastService = mcService;
-        initializeListeners(config);
-        joiner = nodeContext.createJoiner(this);
+        return mcService;
     }
 
     private void initializeListeners(Config config) {
@@ -591,7 +600,7 @@ public class Node {
 
     Joiner createJoiner() {
         JoinConfig join = config.getNetworkConfig().getJoin();
-       join.verify();
+        join.verify();
 
         if (join.getMulticastConfig().isEnabled() && multicastService != null) {
             logger.info("Creating MulticastJoiner");
