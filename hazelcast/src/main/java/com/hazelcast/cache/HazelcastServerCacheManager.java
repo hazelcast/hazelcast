@@ -192,9 +192,9 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
             }
         }
 
-        HazelcastInstance hz = hazelcastInstance;
-        DistributedObject cache = hz.getDistributedObject(CacheService.SERVICE_NAME, cacheNameWithPrefix);
-        cache.destroy();
+//        HazelcastInstance hz = hazelcastInstance;
+//        DistributedObject cache = hz.getDistributedObject(CacheService.SERVICE_NAME, cacheNameWithPrefix);
+//        cache.destroy();
     }
 
     @Override

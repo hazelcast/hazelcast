@@ -862,7 +862,12 @@ public class CacheProxy<K, V> implements ICache<K, V> {
 
     @Override
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-//        ensureOpen();
+        ensureOpen();
+        if (cacheEntryListenerConfiguration == null) {
+            throw new NullPointerException("CacheEntryListenerConfiguration can't be " +
+                    "null");
+        }
+
         final CacheService service = getService();
         service.registerCacheEntryListener(this, cacheEntryListenerConfiguration);
         cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -882,6 +887,11 @@ public class CacheProxy<K, V> implements ICache<K, V> {
 
     @Override
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        if (cacheEntryListenerConfiguration == null) {
+            throw new NullPointerException("CacheEntryListenerConfiguration can't be " +
+                    "null");
+        }
+
         final CacheService service = getService();
         service.unregisterCacheEntryListener(getDistributedObjectName(), cacheEntryListenerConfiguration);
         cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);

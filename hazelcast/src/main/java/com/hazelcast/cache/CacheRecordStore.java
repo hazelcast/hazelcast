@@ -550,7 +550,7 @@ public class CacheRecordStore implements ICacheRecordStore {
                 }
             }
         }
-        cacheService.unregisterCacheEntryListener(name);
+
 
     }
 
@@ -675,7 +675,7 @@ public class CacheRecordStore implements ICacheRecordStore {
     }
 
     public void evictExpiredRecords() {
-
+        //TODO EVICT EXPIRED RECORDS
     }
 
     boolean createRecordWithExpiry(Data key, Object value, ExpiryPolicy _expiryPolicy, long now,

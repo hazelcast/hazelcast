@@ -40,7 +40,6 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.event.EventType;
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -116,6 +115,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         for (CachePartitionSegment segment : segments) {
             segment.deleteCache(objectName);
         }
+        unregisterAllCacheEntryListener(objectName);
         enableStatistics(objectName,false);
         enableManagement(objectName,false);
 
@@ -355,8 +355,8 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         }
     }
 
-    public void unregisterCacheEntryListener(String name) {
-        Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.get(name);
+    public void unregisterAllCacheEntryListener(String name) {
+        Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.remove(name);
         if(map != null){
             final EventService eventService = getNodeEngine().getEventService();
             for(EventRegistration eventRegistration:map.values()){
