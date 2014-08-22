@@ -806,10 +806,10 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        assertBackupsSweepedOnAllNodes(mapName, maxSize, instances);
+        assertBackupsSweptOnAllNodes(mapName, maxSize, instances);
     }
 
-    private void assertBackupsSweepedOnAllNodes(String mapName, int maxSize, HazelcastInstance[] instances) {
+    private void assertBackupsSweptOnAllNodes(String mapName, int maxSize, HazelcastInstance[] instances) {
 
         for (HazelcastInstance instance : instances) {
             final IMap<Integer, Integer> map = instance.getMap(mapName);
