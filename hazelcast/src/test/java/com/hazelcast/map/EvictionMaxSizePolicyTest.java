@@ -104,7 +104,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
     private void setTestSizeEstimator(IMap map, final long oneEntryHeapCostInMegaBytes) {
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
-        final MapService mapService = mapProxy.getService();
+        final MapService mapService = (MapService) mapProxy.getService();
         final NodeEngine nodeEngine = mapService.getNodeEngine();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int i = 0; i < partitionService.getPartitionCount(); i++) {
