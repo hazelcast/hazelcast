@@ -727,7 +727,7 @@ public class WebFilter implements Filter {
                 entry.value = value;
                 entry.dirty = true;
             } else {
-                getClusterMap().put(buildAttributeName(name), value);
+                getClusterMap().set(buildAttributeName(name), value);
             }
         }
 
@@ -813,7 +813,7 @@ public class WebFilter implements Filter {
                             clusterMap.delete(buildAttributeName(entry.getKey()));
                             iterator.remove();
                         } else {
-                            clusterMap.put(buildAttributeName(entry.getKey()), cacheEntry.value);
+                            clusterMap.set(buildAttributeName(entry.getKey()), cacheEntry.value);
                             cacheEntry.dirty = false;
                         }
                     }
