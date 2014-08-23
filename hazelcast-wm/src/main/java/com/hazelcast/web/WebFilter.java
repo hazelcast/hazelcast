@@ -305,7 +305,7 @@ public class WebFilter implements Filter {
         }
 
         HttpSession originalSession = requestWrapper.getOriginalSession(true);
-        HazelcastHttpSession hazelcastSession = new HazelcastHttpSession(id, originalSession, deferredWrite);
+        HazelcastHttpSession hazelcastSession = createHazelcastHttpSession(id, originalSession, deferredWrite);
         if (existingSessionId == null) {
             hazelcastSession.setClusterWideNew(true);
             // If the session is being created for the first time, add its initial reference in the cluster-wide map.
@@ -316,6 +316,19 @@ public class WebFilter implements Filter {
         addSessionCookie(requestWrapper, id);
 
         return hazelcastSession;
+    }
+
+    /**
+     * {@code HazelcastHttpSession instance} creation is split off to a separate method to allow subclasses to return a
+     * customized / extended version of {@code HazelcastHttpSession}.
+     *
+     * @param id the session id
+     * @param originalSession the original session
+     * @param deferredWrite whether writes are deferred
+     * @return a new HazelcastHttpSession instance
+     */
+    protected HazelcastHttpSession createHazelcastHttpSession(String id, HttpSession originalSession, boolean deferredWrite) {
+        return new HazelcastHttpSession(id, originalSession, deferredWrite);
     }
 
     private void prepareReloadingSession(HazelcastHttpSession hazelcastSession) {
