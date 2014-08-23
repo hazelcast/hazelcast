@@ -73,6 +73,7 @@ public final class SortingUtil {
      * @return +1 if i1 > i2, -1 if i2 > i1, 0 if i1 and i2 are equals
      */
     private static int compareIntegers(int i1, int i2) {
+        // i1 - i2 is not good way for comparison
         if (i1 > i2) {
             return +1;
         } else if (i2 > i1) {
