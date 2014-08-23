@@ -1,9 +1,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceImpl;
 
 import javax.cache.Cache;
 import javax.cache.CacheException;
@@ -13,13 +11,11 @@ import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 import java.lang.ref.WeakReference;
 import java.net.URI;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.Properties;
+import java.util.Set;
 
 public abstract class HazelcastCacheManager implements CacheManager {
 
@@ -35,17 +31,17 @@ public abstract class HazelcastCacheManager implements CacheManager {
     protected final boolean isDefaultURI;
     protected final boolean isDefaultClassLoader;
 
-    protected volatile boolean closeTriggered=false;
+    protected volatile boolean closeTriggered = false;
     protected final String cacheNamePrefix;
 
-    public HazelcastCacheManager(CachingProvider cachingProvider,URI uri, ClassLoader classLoader, Properties properties) {
+    public HazelcastCacheManager(CachingProvider cachingProvider, URI uri, ClassLoader classLoader, Properties properties) {
         if (cachingProvider == null) {
             throw new NullPointerException("CachingProvider missing");
         }
         this.cachingProvider = cachingProvider;
 
         isDefaultURI = uri == null || cachingProvider.getDefaultURI().equals(uri);
-        this.uri = isDefaultURI ? cachingProvider.getDefaultURI(): uri;
+        this.uri = isDefaultURI ? cachingProvider.getDefaultURI() : uri;
 
         isDefaultClassLoader = classLoader == null || cachingProvider.getDefaultClassLoader().equals(classLoader);
         final ClassLoader _classLoader = isDefaultClassLoader ? cachingProvider.getDefaultClassLoader() : classLoader;
@@ -54,6 +50,54 @@ public abstract class HazelcastCacheManager implements CacheManager {
         this.properties = properties == null ? new Properties() : new Properties(properties);
 
         this.cacheNamePrefix = cacheNamePrefix();
+    }
+
+    @Override
+    public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration) throws IllegalArgumentException {
+        if (isClosed()) {
+            throw new IllegalStateException();
+        }
+        if (cacheName == null) {
+            throw new NullPointerException("cacheName must not be null");
+        }
+        if (configuration == null) {
+            throw new NullPointerException("configuration must not be null");
+        }
+        synchronized (caches) {
+            final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
+            final CacheConfig cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
+            if (cacheConfig == null) {
+                final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
+                //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
+                final boolean created = createConfigOnPartition(newCacheConfig);
+                if (created) {
+                    //CREATE ON OTHERS TOO
+                    createConfigOnAllMembers(newCacheConfig);
+                    //UPDATE LOCAL MEMBER
+                    addCacheConfigIfAbsentToLocal(newCacheConfig);
+                    //create proxy object
+                    final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
+                    caches.put(cacheNameWithPrefix, cacheProxy);
+                    if (newCacheConfig.isStatisticsEnabled()) {
+                        enableStatistics(cacheName, true);
+                    }
+                    if (newCacheConfig.isManagementEnabled()) {
+                        enableManagement(cacheName, true);
+                    }
+                    //REGISTER LISTENERS
+                    registerListeners(newCacheConfig, cacheProxy);
+                    return cacheProxy;
+                } else {
+                    //this node don't have the config, so grep it and spread that one to cluster
+                    final CacheConfig<K, V> cacheConfigFromPartition = getCacheConfigFromPartition(cacheNameWithPrefix);
+                    //ADD CONFIG ON EACH NODE
+                    createConfigOnAllMembers(cacheConfigFromPartition);
+                    //UPDATE LOCAL MEMBER
+                    addCacheConfigIfAbsentToLocal(cacheConfigFromPartition);
+                }
+            }
+            throw new CacheException("A cache named " + cacheName + " already exists.");
+        }
     }
 
     @Override
@@ -77,18 +121,47 @@ public abstract class HazelcastCacheManager implements CacheManager {
     }
 
     @Override
+    public <K, V> ICache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType) {
+        if (isClosed()) {
+            throw new IllegalStateException();
+        }
+        if (keyType == null) {
+            throw new NullPointerException("keyType can not be null");
+        }
+        if (valueType == null) {
+            throw new NullPointerException("valueType can not be null");
+        }
+        synchronized (caches) {
+            final ICache<?, ?> cache = getCacheUnchecked(cacheName);
+            if (cache != null) {
+                Configuration<?, ?> configuration = cache.getConfiguration(CacheConfig.class);
+                if (configuration.getKeyType() != null && configuration.getKeyType().equals(keyType)) {
+                    if (configuration.getValueType() != null && configuration.getValueType().equals(valueType)) {
+                        return (ICache<K, V>) cache;
+                    } else {
+                        throw new ClassCastException("Incompatible cache value types specified, expected " +
+                                configuration.getValueType() + " but " + valueType + " was specified");
+                    }
+                } else {
+                    throw new ClassCastException("Incompatible cache key types specified, expected " +
+                            configuration.getKeyType() + " but " + keyType + " was specified");
+                }
+            }
+        }
+        return null;
+    }
+
     public <K, V> ICache<K, V> getCache(String cacheName) {
         if (isClosed()) {
             throw new IllegalStateException();
         }
         synchronized (caches) {
-            final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-            ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
-
-            if(cache != null) {
+            final ICache<?, ?> cache = getCacheUnchecked(cacheName);
+            if (cache != null) {
                 Configuration<?, ?> configuration = cache.getConfiguration(CacheConfig.class);
 
-                if (Object.class.equals(configuration.getKeyType()) && Object.class.equals(configuration.getValueType())){
+                if (Object.class.equals(configuration.getKeyType()) &&
+                        Object.class.equals(configuration.getValueType())) {
                     return (ICache<K, V>) cache;
                 } else {
                     throw new IllegalArgumentException("Cache " + cacheName + " was " +
@@ -101,39 +174,92 @@ public abstract class HazelcastCacheManager implements CacheManager {
         return null;
     }
 
-//    @Override
-//    public void enableManagement(String cacheName, boolean enabled) {
-//        if (isClosed()) {
-//            throw new IllegalStateException();
-//        }
-//        if (cacheName == null) {
-//            throw new NullPointerException();
-//        }
-//        synchronized (caches) {
-//            final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-//            ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
-//            cache.enableManagement(enabled);
-//        }
-//    }
-//
-//    @Override
-//    public void enableStatistics(String cacheName, boolean enabled) {
-//        if (isClosed()) {
-//            throw new IllegalStateException();
-//        }
-//        if (cacheName == null) {
-//            throw new NullPointerException();
-//        }
-//        synchronized (caches) {
-//            final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-//            ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
-//            cache.setStatisticsEnabled(enabled);
-//        }
-//
-////        final CacheConfig configuration = cache.getConfiguration(CacheConfig.class);
-////        configuration.setStatisticsEnabled(true);
-//    }
+    protected <K, V> ICache<?, ?> getCacheUnchecked(String cacheName) {
+        final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
+        ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
+        if (cache == null) {
+            //remote check
+            final CacheConfig<K, V> cacheConfig = getCacheConfigFromPartition(cacheNameWithPrefix);
+            if (cacheConfig == null) {
+                //no cache found
+                return null;
+            }
+            //create the cache proxy which already exists in the cluster
+            final ICache<K, V> cacheProxy = createCacheProxy(cacheConfig);
+            caches.put(cacheNameWithPrefix, cacheProxy);
+            cache = cacheProxy;
+        }
+        return cache;
+    }
 
+    @Override
+    public Iterable<String> getCacheNames() {
+        //TODO should this return all cluster names, or just the managed ones
+/* OPTION 1: */
+        Set<String> names;
+        if (isClosed()) {
+            names = Collections.emptySet();
+        } else {
+            names = new LinkedHashSet<String>();
+            for (String nameWithPrefix : caches.keySet()) {
+                final String name = nameWithPrefix.substring(nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length());
+                names.add(name);
+            }
+        }
+        return Collections.unmodifiableCollection(names);
+//        return Collections.unmodifiableCollection(caches.keySet());
+/* OPTION 2:*/
+//        Set<String> names;
+//        if (isClosed()) {
+//            names = Collections.emptySet();
+//        } else {
+//            names = new LinkedHashSet<String>();
+//            for(String nameWithPrefix:cacheService.getCacheNames()){
+//                final String name = nameWithPrefix.substring(nameWithPrefix.indexOf(cacheNamePrefix)+cacheNamePrefix.length());
+//                names.add(name);
+//            }
+//        }
+//        return Collections.unmodifiableCollection(names);
+    }
+
+
+    @Override
+    public void destroyCache(String cacheName) {
+        if (isClosed()) {
+            throw new IllegalStateException();
+        }
+        if (cacheName == null) {
+            throw new NullPointerException();
+        }
+
+        final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
+        synchronized (caches) {
+            final ICache<?, ?> destroy = caches.remove(cacheNameWithPrefix);
+            if (destroy != null) {
+                destroy.close();
+            }
+        }
+    }
+
+    @Override
+    public void close() {
+        if (!closeTriggered) {
+            releaseCacheManager(uri, classLoaderReference.get());
+
+//            HazelcastInstance hz = hazelcastInstance;
+//            Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
+//            for (DistributedObject distributedObject : distributedObjects) {
+//                if (distributedObject instanceof CacheDistributedObject) {
+//                    distributedObject.destroy();
+//                }
+//            }
+            for (ICache cache : caches.values()) {
+                cache.close();
+            }
+            caches.clear();
+        }
+        closeTriggered = true;
+    }
 
     @Override
     public boolean isClosed() {
@@ -157,19 +283,53 @@ public abstract class HazelcastCacheManager implements CacheManager {
         return sb.toString();
     }
 
-    protected String cacheNamePrefix(){
+    protected void releaseCacheManager(URI uri, ClassLoader classLoader) {
+        ((HazelcastAbstractCachingProvider) cachingProvider).releaseCacheManager(uri, classLoader);
+    }
+
+    protected String cacheNamePrefix() {
         final StringBuilder sb = new StringBuilder("/hz");
-        if(!isDefaultClassLoader){
-            sb.append("/").append(classLoaderReference.get().toString() );
+        if (!isDefaultClassLoader) {
+            sb.append("/").append(classLoaderReference.get().toString());
         }
-        if(!isDefaultURI){
-            sb.append("/").append(uri.toASCIIString() );
+        if (!isDefaultURI) {
+            sb.append("/").append(uri.toASCIIString());
         }
         sb.append("/");
         return sb.toString();
     }
 
-    protected String getCacheNameWithPrefix(String name){
+    protected String getCacheNameWithPrefix(String name) {
         return cacheNamePrefix + name;
     }
+
+    protected <K, V, C extends Configuration<K, V>> CacheConfig<K,V> createCacheConfig(String cacheName, C configuration){
+        final CacheConfig<K,V> cacheConfig;
+        if (configuration instanceof CompleteConfiguration) {
+            cacheConfig = new CacheConfig<K, V>((CompleteConfiguration) configuration);
+        } else {
+            cacheConfig = new CacheConfig<K, V>();
+            cacheConfig.setStoreByValue(configuration.isStoreByValue());
+            cacheConfig.setTypes(configuration.getKeyType(), configuration.getValueType());
+        }
+        cacheConfig.setName(cacheName);
+        cacheConfig.setManagerPrefix(this.cacheNamePrefix);
+        cacheConfig.setUriString(getURI().toString());
+        return cacheConfig;
+    }
+
+    protected abstract <K, V> CacheConfig<K, V> getCacheConfigLocal(String cacheName);
+
+    protected abstract <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig);
+
+    protected abstract <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig);
+
+    protected abstract <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig);
+
+    protected abstract <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig);
+
+    protected abstract <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName);
+
+    protected abstract <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source);
+
 }

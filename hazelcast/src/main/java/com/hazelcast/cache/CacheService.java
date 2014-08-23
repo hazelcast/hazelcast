@@ -255,6 +255,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     }
 
     public void publishEvent(String cacheName, EventType eventType, Data dataKey, Object oldValue, Object value) {
+        //TODO clean up this event publish thing
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> candidates = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
 
@@ -331,15 +332,15 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         listener.handleEvent(nodeEngine, eventData.getName(), eventType, key, newValue, oldValue);
     }
 
-    public <K, V> void registerCacheEntryListener(CacheProxy<K, V> cacheProxy, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        final CacheEventFilterAdaptor<K, V> eventFilter = new CacheEventFilterAdaptor<K, V>(cacheProxy, cacheEntryListenerConfiguration);
-        final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(cacheProxy, cacheEntryListenerConfiguration);
+    public <K, V> void registerCacheEntryListener(String name, ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        final CacheEventFilterAdaptor<K, V> eventFilter = new CacheEventFilterAdaptor<K, V>(source, cacheEntryListenerConfiguration);
+        final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(source, cacheEntryListenerConfiguration);
         final EventService eventService = getNodeEngine().getEventService();
-        final EventRegistration registration = eventService.registerListener(CacheService.SERVICE_NAME, cacheProxy.getDistributedObjectName(), eventFilter, entryListener);
-        Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.get(cacheProxy.getDistributedObjectName());
+        final EventRegistration registration = eventService.registerListener(CacheService.SERVICE_NAME, name, eventFilter, entryListener);
+        Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.get(name);
         if(map == null){
             map = new HashMap<CacheEntryListenerConfiguration, EventRegistration>();
-            eventRegistrationMap.put(cacheProxy.getDistributedObjectName(), map);
+            eventRegistrationMap.put(name, map);
         }
         map.put(cacheEntryListenerConfiguration, registration);
     }

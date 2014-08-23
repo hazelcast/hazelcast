@@ -62,157 +62,6 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
     }
 
     @Override
-    public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration) throws IllegalArgumentException {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException("cacheName must not be null");
-        }
-        if (configuration == null) {
-            throw new NullPointerException("configuration must not be null");
-        }
-        synchronized (caches) {
-            final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-            final CacheConfig _cacheConfig = cacheService.getCacheConfig(cacheNameWithPrefix);
-            if(_cacheConfig == null){
-                final CacheConfig<K,V> cacheConfig;
-                if (configuration instanceof CompleteConfiguration) {
-                    cacheConfig = new CacheConfig<K, V>((CompleteConfiguration) configuration);
-                } else {
-                    cacheConfig = new CacheConfig<K, V>();
-                    cacheConfig.setStoreByValue(configuration.isStoreByValue());
-                    cacheConfig.setTypes(configuration.getKeyType(), configuration.getValueType());
-                }
-                cacheConfig.setName(cacheName);
-                cacheConfig.setManagerPrefix(this.cacheNamePrefix);
-                cacheConfig.setUriString(getURI().toString());
-
-                final CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheNameWithPrefix, cacheConfig,true);
-                final OperationService operationService = nodeEngine.getOperationService();
-
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
-                final InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, cacheCreateConfigOperation, partitionId);
-                boolean created = f.getSafely();
-
-                //CREATE ON OTHERS TOO
-                final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-                for(MemberImpl member:members){
-                    if(!member.localMember()){
-                        final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheNameWithPrefix, cacheConfig,true);
-                        final InternalCompletableFuture<Object> f2 = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
-                        f2.getSafely();//make sure all configs are created
-                    }
-                }
-                //UPDATE LOCAL MEMBER
-                cacheService.createCacheConfigIfAbsent(cacheConfig);
-
-                final CacheDistributedObject cacheDistributedObject = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, cacheNameWithPrefix);
-                final CacheProxy<K, V> cacheProxy = new CacheProxy<K, V>(cacheName, cacheConfig, cacheDistributedObject, this);
-                caches.put(cacheNameWithPrefix,cacheProxy);
-                if (created) {
-                    if(cacheConfig.isStatisticsEnabled()){
-                        enableStatistics(cacheName,true);
-                    }
-                    if(cacheConfig.isManagementEnabled()){
-                        enableManagement(cacheName,true);
-                    }
-                    //REGISTER LISTENERS
-                    final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations().iterator();
-                    while (iterator.hasNext()){
-                        final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
-                        cacheService.registerCacheEntryListener(cacheProxy,listenerConfig);
-                    }
-                    return cacheProxy;
-                }
-            }
-            throw new CacheException("A cache named " + cacheName + " already exists.");
-        }
-    }
-
-    @Override
-    public <K, V> ICache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (keyType == null) {
-            throw new NullPointerException("keyType can not be null");
-        }
-        if (valueType == null) {
-            throw new NullPointerException("valueType can not be null");
-        }
-        synchronized (caches) {
-            final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-            ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
-
-            Configuration<?, ?> configuration = null;
-            if(cache != null) {
-                //local check
-                configuration = cache.getConfiguration(CacheConfig.class);
-            } else {
-                //remote check
-                final CacheGetConfigOperation cacheCreateConfigOperation = new CacheGetConfigOperation(cacheNameWithPrefix);
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
-                final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
-                        .invokeOnPartition(CacheService.SERVICE_NAME, cacheCreateConfigOperation, partitionId);
-                configuration = f.getSafely();
-            }
-            if (configuration == null){
-                //no cache found
-                return null;
-            }
-            if (configuration.getKeyType() != null && configuration.getKeyType().equals(keyType)) {
-                if (configuration.getValueType() != null && configuration.getValueType().equals(valueType)) {
-                    return (ICache<K, V>) cache;
-                } else {
-                    throw new ClassCastException("Incompatible cache value types specified, expected " +
-                            configuration.getValueType() + " but " + valueType + " was specified");
-                }
-            } else {
-                throw new ClassCastException("Incompatible cache key types specified, expected " +
-                        configuration.getKeyType() + " but " + keyType + " was specified");
-            }
-        }
-    }
-
-    @Override
-    public void destroyCache(String cacheName) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException();
-        }
-
-        final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        synchronized (caches) {
-            final ICache<?, ?> destroy = caches.remove(cacheNameWithPrefix);
-            if(destroy != null){
-                destroy.close();
-            }
-        }
-
-//        HazelcastInstance hz = hazelcastInstance;
-//        DistributedObject cache = hz.getDistributedObject(CacheService.SERVICE_NAME, cacheNameWithPrefix);
-//        cache.destroy();
-    }
-
-    @Override
-    public Iterable<String> getCacheNames() {
-        Set<String> names;
-        if (isClosed()) {
-            names = Collections.emptySet();
-        } else {
-            names = new LinkedHashSet<String>();
-            for(String nameWithPrefix:cacheService.getCacheNames()){
-                final String name = nameWithPrefix.substring(nameWithPrefix.indexOf(cacheNamePrefix)+cacheNamePrefix.length());
-                names.add(name);
-            }
-        }
-        return Collections.unmodifiableCollection(names);
-    }
-
-    @Override
     public void enableManagement(String cacheName, boolean enabled) {
         if (isClosed()) {
             throw new IllegalStateException();
@@ -223,7 +72,7 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         cacheService.enableManagement(cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
-        enableStatisticManagementOnOtherNodes(uri, cacheName, false, enabled);
+        enableStatisticManagementOnOtherNodes(cacheName, false, enabled);
     }
 
     @Override
@@ -237,10 +86,10 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         cacheService.enableStatistics(cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
-        enableStatisticManagementOnOtherNodes(uri, cacheName, true, enabled);
+        enableStatisticManagementOnOtherNodes(cacheName, true, enabled);
     }
 
-    private void enableStatisticManagementOnOtherNodes(URI uri, String cacheName, boolean statOrMan, boolean enabled){
+    private void enableStatisticManagementOnOtherNodes(String cacheName, boolean statOrMan, boolean enabled){
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for(MemberImpl member:members){
@@ -252,32 +101,64 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
     }
 
     @Override
-    public void close() {
-        if(!closeTriggered){
-            releaseCacheManager(uri, classLoaderReference.get());
+    protected <K, V> CacheConfig<K, V> getCacheConfigLocal(String cacheName) {
+        return cacheService.getCacheConfig(cacheName);
+    }
 
-            HazelcastInstance hz = hazelcastInstance;
-            Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
-            for (DistributedObject distributedObject : distributedObjects) {
-                if (distributedObject instanceof CacheDistributedObject) {
-                    distributedObject.destroy();
-                }
+    @Override
+    protected <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
+        //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
+        final CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheConfig,true);
+        final OperationService operationService = nodeEngine.getOperationService();
+
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
+        final InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, cacheCreateConfigOperation, partitionId);
+        return f.getSafely();
+    }
+
+    @Override
+    protected  <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
+        cacheService.createCacheConfigIfAbsent(cacheConfig);
+    }
+
+    @Override
+    protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
+        final OperationService operationService = nodeEngine.getOperationService();
+        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for(MemberImpl member:members){
+            if(!member.localMember()){
+                final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig,true);
+                final InternalCompletableFuture<Object> f2 = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                f2.getSafely();//make sure all configs are created
             }
-            for(ICache cache:caches.values()){
-                cache.close();
-            }
-            caches.clear();
         }
-        closeTriggered=true;
     }
 
-    protected void  releaseCacheManager(URI uri, ClassLoader classLoader){
-        ((HazelcastAbstractCachingProvider)cachingProvider).releaseCacheManager(uri,classLoader);
+    @Override
+    protected <K, V> ICache<K,V> createCacheProxy(CacheConfig<K, V> cacheConfig){
+        final CacheDistributedObject cacheDistributedObject = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, cacheConfig.getNameWithPrefix());
+        final CacheProxy<K, V> cacheProxy = new CacheProxy<K, V>(cacheConfig, cacheDistributedObject, this);
+        return cacheProxy;
     }
 
-    public HazelcastServerCachingProvider getCachingProvider(){
-        return (HazelcastServerCachingProvider) cachingProvider;
+    @Override
+    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix){
+        //remote check
+        final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
+        final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
+                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+        return f.getSafely();
     }
 
+    @Override
+    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K,V> source){
+        //REGISTER LISTENERS
+        final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations().iterator();
+        while (iterator.hasNext()){
+            final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
+            cacheService.registerCacheEntryListener(cacheConfig.getNameWithPrefix(), source,listenerConfig);
+        }
+    }
 
 }

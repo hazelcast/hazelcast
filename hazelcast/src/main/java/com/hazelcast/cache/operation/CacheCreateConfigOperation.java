@@ -39,8 +39,8 @@ public class CacheCreateConfigOperation extends AbstractNamedOperation implement
     public CacheCreateConfigOperation() {
     }
 
-    public CacheCreateConfigOperation(String name, CacheConfig config, boolean create) {
-        super(name);
+    public CacheCreateConfigOperation(CacheConfig config, boolean create) {
+        super(config.getNameWithPrefix());
         this.config = config;
         this.create = create;
     }

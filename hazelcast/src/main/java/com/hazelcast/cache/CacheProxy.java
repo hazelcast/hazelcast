@@ -79,10 +79,10 @@ public class CacheProxy<K, V> implements ICache<K, V> {
 // has getName method which have different values a distributedObject delegate used to over come this
     private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
-    private final CacheConfig<K, V> cacheConfig;
 
+    private final CacheConfig<K, V> cacheConfig;
     //this will represent the name from the user perspective
-    private String name;
+    private final String name;
 
     private boolean isClosed = false;
 
@@ -91,8 +91,8 @@ public class CacheProxy<K, V> implements ICache<K, V> {
     private CacheLoader<K, V> cacheLoader;
 //    private CacheStatistics statistics = new CacheStatistics();
 
-    protected CacheProxy(String name, CacheConfig cacheConfig, CacheDistributedObject delegate, HazelcastServerCacheManager cacheManager) {
-        this.name = name;
+    protected CacheProxy(CacheConfig cacheConfig, CacheDistributedObject delegate, HazelcastServerCacheManager cacheManager) {
+        this.name = cacheConfig.getName();
         this.cacheConfig = cacheConfig;
         this.delegate = delegate;
         this.cacheManager = cacheManager;
@@ -869,7 +869,7 @@ public class CacheProxy<K, V> implements ICache<K, V> {
         }
 
         final CacheService service = getService();
-        service.registerCacheEntryListener(this, cacheEntryListenerConfiguration);
+        service.registerCacheEntryListener(getDistributedObjectName(), this, cacheEntryListenerConfiguration);
         cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
 
         //CREATE ON OTHERS TOO
