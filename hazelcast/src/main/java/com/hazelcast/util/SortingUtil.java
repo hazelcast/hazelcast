@@ -19,7 +19,7 @@ public final class SortingUtil {
             if (result != 0) {
                 return result;
             }
-            return compareIntegers(entry1.getKey().hashCode(), entry2.getKey().hashCode());
+            return entry1.getKey().hashCode() - entry2.getKey().hashCode();
         }
 
         Object comparable1;
@@ -38,49 +38,21 @@ public final class SortingUtil {
                 comparable2 = entry2;
                 break;
         }
-
-        int result;
+        int result = 0;
         if (comparable1 instanceof Comparable && comparable2 instanceof Comparable) {
             result = ((Comparable) comparable1).compareTo(comparable2);
         } else {
-            result = compareIntegers(comparable1.hashCode(), comparable2.hashCode());
+            // Use hash-code only for key based comparisons
+            // since generally hash-codes are not meaningful for values
+            if (iterationType == IterationType.KEY) {
+                result = comparable1.hashCode() - comparable2.hashCode();
+            }
         }
 
         if (result != 0) {
             return result;
         }
-        return compareIntegers(entry1.getKey().hashCode(), entry2.getKey().hashCode());
-    }
-
-    /**
-     * Compares two integers by considering their signs.
-     *
-     * Suppose that
-     *      i1 = -500.000.000
-     *      i2 = 2.000.000.000
-     *
-     * Normally "i1 < i2", but if we use "i1 - i2" for comparison
-     * i1 - i2 = -500.000.000 - 2.000.000.000 and we may accept result as "-2.500.000.000".
-     * But the actual result is "1.794.967.296" because of overflow between
-     * positive and negative integer bounds.
-     *
-     * So, if we use "i1 - i2" for comparison, since result is greater than 0,
-     * "i1" is accepted as bigger that "i2". But in fact "i1" is smaller than "i2".
-     * Therefore, "i1 - i2" is not good way for comparison way between signed integers.
-     *
-     * @param i1 First number to compare with second one
-     * @param i2 Second number to compare with first one
-     * @return +1 if i1 > i2, -1 if i2 > i1, 0 if i1 and i2 are equals
-     */
-    private static int compareIntegers(int i1, int i2) {
-        // i1 - i2 is not good way for comparison
-        if (i1 > i2) {
-            return +1;
-        } else if (i2 > i1) {
-            return -1;
-        } else {
-            return 0;
-        }
+        return entry1.getKey().hashCode() - entry2.getKey().hashCode();
     }
 
     public static Comparator<Map.Entry> newComparator(final Comparator<Map.Entry> comparator, final IterationType iterationType){
