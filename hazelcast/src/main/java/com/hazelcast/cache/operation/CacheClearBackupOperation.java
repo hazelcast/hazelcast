@@ -19,7 +19,6 @@ package com.hazelcast.cache.operation;
 import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
-import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -28,12 +27,12 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
-public class CacheClearBackupOperation extends AbstractNamedOperation implements BackupOperation, IdentifiedDataSerializable {
+public class CacheClearBackupOperation
+        extends AbstractNamedOperation
+        implements BackupOperation, IdentifiedDataSerializable {
 
     private Set<Data> keys;
 
@@ -58,13 +57,15 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
     }
 
     @Override
-    public void beforeRun() throws Exception {
+    public void beforeRun()
+            throws Exception {
         CacheService service = getService();
         cache = service.getOrCreateCache(name, getPartitionId());
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         if (keys != null) {
             for (Data key : keys) {
                 cache.removeRecord(key);
@@ -73,7 +74,8 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeBoolean(keys != null);
         if (keys != null) {
@@ -85,7 +87,8 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         boolean isKeysNotNull = in.readBoolean();
         if (isKeysNotNull) {
@@ -98,6 +101,5 @@ public class CacheClearBackupOperation extends AbstractNamedOperation implements
             }
         }
     }
-
 
 }

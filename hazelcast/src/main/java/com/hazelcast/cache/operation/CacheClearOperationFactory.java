@@ -31,7 +31,8 @@ import java.util.Set;
 /**
  * @author mdogan 06/02/14
  */
-public class CacheClearOperationFactory implements OperationFactory, IdentifiedDataSerializable {
+public class CacheClearOperationFactory
+        implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;
     private Set<Data> keys = null;
@@ -62,7 +63,8 @@ public class CacheClearOperationFactory implements OperationFactory, IdentifiedD
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(name);
         out.writeBoolean(isRemoveAll);
         out.writeBoolean(keys != null);
@@ -75,7 +77,8 @@ public class CacheClearOperationFactory implements OperationFactory, IdentifiedD
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         name = in.readUTF();
         isRemoveAll = in.readBoolean();
         boolean isKeysNotNull = in.readBoolean();

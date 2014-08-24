@@ -19,7 +19,8 @@ package com.hazelcast.cache.record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 
-public interface CacheRecord<V> extends DataSerializable {
+public interface CacheRecord<V>
+        extends DataSerializable {
 
     Data getKey();
 

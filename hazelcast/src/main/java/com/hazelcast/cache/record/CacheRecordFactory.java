@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 
 public class CacheRecordFactory {
 
-
     private InMemoryFormat inMemoryFormat;
     private SerializationService serializationService;
 
@@ -43,7 +42,7 @@ public class CacheRecordFactory {
                 record = new CacheDataRecord(key, dataValue, expiryTime);
                 break;
             case OBJECT:
-                Object objectValue= serializationService.toObject(value);
+                Object objectValue = serializationService.toObject(value);
                 record = new CacheObjectRecord(key, objectValue, expiryTime);
                 break;
             default:

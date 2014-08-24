@@ -25,7 +25,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CacheKeyIteratorResult implements IdentifiedDataSerializable {
+public class CacheKeyIteratorResult
+        implements IdentifiedDataSerializable {
 
     private int tableIndex;
     private List<Data> keys;
@@ -57,7 +58,8 @@ public class CacheKeyIteratorResult implements IdentifiedDataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeInt(tableIndex);
         int size = keys.size();
         out.writeInt(size);
@@ -68,7 +70,8 @@ public class CacheKeyIteratorResult implements IdentifiedDataSerializable {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         tableIndex = in.readInt();
         int size = in.readInt();
         keys = new ArrayList<Data>(size);

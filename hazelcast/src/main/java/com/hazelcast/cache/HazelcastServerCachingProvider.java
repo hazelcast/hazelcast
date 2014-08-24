@@ -25,7 +25,8 @@ import javax.cache.CacheManager;
 import java.net.URI;
 import java.util.Properties;
 
-public final class HazelcastServerCachingProvider extends HazelcastAbstractCachingProvider {
+public final class HazelcastServerCachingProvider
+        extends HazelcastAbstractCachingProvider {
 
     public HazelcastServerCachingProvider() {
         super();

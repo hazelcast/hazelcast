@@ -20,12 +20,10 @@ import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
 import com.hazelcast.cache.record.CacheRecord;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
@@ -34,7 +32,8 @@ import java.io.IOException;
 /**
  * @author mdogan 05/02/14
  */
-abstract class AbstractCacheOperation extends AbstractNamedOperation
+abstract class AbstractCacheOperation
+        extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     Data key;
@@ -53,7 +52,8 @@ abstract class AbstractCacheOperation extends AbstractNamedOperation
     }
 
     @Override
-    public final void beforeRun() throws Exception {
+    public final void beforeRun()
+            throws Exception {
         CacheService service = getService();
         cache = service.getOrCreateCache(name, getPartitionId());
     }
@@ -68,15 +68,16 @@ abstract class AbstractCacheOperation extends AbstractNamedOperation
         return response;
     }
 
-
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         key.writeData(out);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         key = new Data();
         key.readData(in);

@@ -29,7 +29,9 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.Map;
 
-public class CacheSizeRequest extends AllPartitionsClientRequest implements RetryableRequest {
+public class CacheSizeRequest
+        extends AllPartitionsClientRequest
+        implements RetryableRequest {
 
     private String name;
 
@@ -53,11 +55,13 @@ public class CacheSizeRequest extends AllPartitionsClientRequest implements Retr
         return CachePortableHook.SIZE;
     }
 
-    public void write(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer)
+            throws IOException {
         writer.writeUTF("n", name);
     }
 
-    public void read(PortableReader reader) throws IOException {
+    public void read(PortableReader reader)
+            throws IOException {
         name = reader.readUTF("n");
     }
 

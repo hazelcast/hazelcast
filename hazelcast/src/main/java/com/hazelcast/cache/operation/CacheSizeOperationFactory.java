@@ -28,7 +28,8 @@ import java.io.IOException;
 /**
  * @author mdogan 06/02/14
  */
-public class CacheSizeOperationFactory implements OperationFactory, IdentifiedDataSerializable {
+public class CacheSizeOperationFactory
+        implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;
 
@@ -55,12 +56,14 @@ public class CacheSizeOperationFactory implements OperationFactory, IdentifiedDa
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(name);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         name = in.readUTF();
     }
 }

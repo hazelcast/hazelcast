@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache;
 
-
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -25,7 +24,8 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 @Beta
-public interface ICache<K, V> extends javax.cache.Cache<K, V> {
+public interface ICache<K, V>
+        extends javax.cache.Cache<K, V> {
 
     //region async extentions
     Future<V> getAsync(K key);
@@ -57,7 +57,6 @@ public interface ICache<K, V> extends javax.cache.Cache<K, V> {
     Future<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy);
     //endregion
 
-
     //region method with expirypolicy
     V get(K key, ExpiryPolicy expiryPolicy);
 
@@ -80,7 +79,6 @@ public interface ICache<K, V> extends javax.cache.Cache<K, V> {
 
     int size();
 
-//    CacheStats getStats();
-
+    //    CacheStats getStats();
 
 }

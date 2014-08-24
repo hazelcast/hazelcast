@@ -23,7 +23,9 @@ import com.hazelcast.spi.ReadonlyOperation;
 /**
  * @author mdogan 05/02/14
  */
-public class CacheContainsKeyOperation extends AbstractCacheOperation implements ReadonlyOperation {
+public class CacheContainsKeyOperation
+        extends AbstractCacheOperation
+        implements ReadonlyOperation {
 
     public CacheContainsKeyOperation() {
     }
@@ -33,7 +35,8 @@ public class CacheContainsKeyOperation extends AbstractCacheOperation implements
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         response = cache != null && cache.contains(key);
     }
 

@@ -29,7 +29,9 @@ import java.io.IOException;
 /**
  * @author mdogan 05/02/14
  */
-public class CachePutOperation extends AbstractCacheOperation implements BackupAwareOperation {
+public class CachePutOperation
+        extends AbstractCacheOperation
+        implements BackupAwareOperation {
 
     private Data value;
     private boolean get; // getAndPut
@@ -53,7 +55,8 @@ public class CachePutOperation extends AbstractCacheOperation implements BackupA
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         if (get) {
             response = cache.getAndPut(key, value, expiryPolicy, getCallerUuid());
         } else {
@@ -74,7 +77,8 @@ public class CachePutOperation extends AbstractCacheOperation implements BackupA
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeBoolean(get);
         out.writeObject(expiryPolicy);
@@ -82,7 +86,8 @@ public class CachePutOperation extends AbstractCacheOperation implements BackupA
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         get = in.readBoolean();
         expiryPolicy = in.readObject();

@@ -30,7 +30,9 @@ import java.io.IOException;
 /**
  * @author mdogan 05/02/14
  */
-public class CachePutBackupOperation extends AbstractCacheOperation implements BackupOperation {
+public class CachePutBackupOperation
+        extends AbstractCacheOperation
+        implements BackupOperation {
 
     private CacheRecord cacheRecord;
 
@@ -43,7 +45,8 @@ public class CachePutBackupOperation extends AbstractCacheOperation implements B
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         CacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
         cache.setRecord(key, cacheRecord);
@@ -51,13 +54,15 @@ public class CachePutBackupOperation extends AbstractCacheOperation implements B
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeObject(cacheRecord);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         cacheRecord = in.readObject();
     }

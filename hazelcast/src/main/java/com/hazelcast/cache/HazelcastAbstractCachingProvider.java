@@ -16,9 +16,6 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -33,7 +30,8 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.WeakHashMap;
 
-public abstract class HazelcastAbstractCachingProvider implements CachingProvider {
+public abstract class HazelcastAbstractCachingProvider
+        implements CachingProvider {
 
     protected final static ILogger logger = Logger.getLogger(HazelcastCachingProvider.class);
     protected static HazelcastInstance hazelcastInstance;
@@ -69,8 +67,8 @@ public abstract class HazelcastAbstractCachingProvider implements CachingProvide
         return cacheManager;
     }
 
-    protected  HazelcastInstance getHazelcastInstance(){
-        if(hazelcastInstance == null){
+    protected HazelcastInstance getHazelcastInstance() {
+        if (hazelcastInstance == null) {
             hazelcastInstance = initHazelcast();
         }
         return hazelcastInstance;
@@ -168,7 +166,7 @@ public abstract class HazelcastAbstractCachingProvider implements CachingProvide
         }
     }
 
-    protected abstract HazelcastInstance initHazelcast() ;
+    protected abstract HazelcastInstance initHazelcast();
 
-    protected abstract CacheManager getHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) ;
+    protected abstract CacheManager getHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties);
 }

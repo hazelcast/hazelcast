@@ -18,7 +18,8 @@ package com.hazelcast.cache.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-public class CacheObjectRecord extends AbstractCacheRecord<Object> {
+public class CacheObjectRecord
+        extends AbstractCacheRecord<Object> {
 
     CacheObjectRecord(Data key, Object value, long expiryTime) {
         super(key, value, expiryTime);

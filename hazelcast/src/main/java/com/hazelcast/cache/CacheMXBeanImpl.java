@@ -20,7 +20,8 @@ import com.hazelcast.config.CacheConfig;
 
 import javax.cache.management.CacheMXBean;
 
-public class CacheMXBeanImpl implements CacheMXBean{
+public class CacheMXBeanImpl
+        implements CacheMXBean {
 
     private CacheConfig cacheConfig;
 

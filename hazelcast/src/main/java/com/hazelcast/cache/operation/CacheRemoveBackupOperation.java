@@ -23,7 +23,9 @@ import com.hazelcast.spi.BackupOperation;
 /**
  * @author mdogan 05/02/14
  */
-public class CacheRemoveBackupOperation extends AbstractCacheOperation implements BackupOperation {
+public class CacheRemoveBackupOperation
+        extends AbstractCacheOperation
+        implements BackupOperation {
 
     public CacheRemoveBackupOperation() {
     }
@@ -33,7 +35,8 @@ public class CacheRemoveBackupOperation extends AbstractCacheOperation implement
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         if (cache != null) {
             response = cache.remove(key, null);
         } else {

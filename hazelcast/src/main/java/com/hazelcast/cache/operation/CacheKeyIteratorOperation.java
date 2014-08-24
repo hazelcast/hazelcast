@@ -25,7 +25,9 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class CacheKeyIteratorOperation extends AbstractCacheOperation implements ReadonlyOperation {
+public class CacheKeyIteratorOperation
+        extends AbstractCacheOperation
+        implements ReadonlyOperation {
 
     private int tableIndex;
     private int size;
@@ -45,20 +47,23 @@ public class CacheKeyIteratorOperation extends AbstractCacheOperation implements
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         final CacheKeyIteratorResult iterator = this.cache.iterator(tableIndex, size);
         response = cache != null ? iterator : null;
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeInt(tableIndex);
         out.writeInt(size);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         tableIndex = in.readInt();
         size = in.readInt();

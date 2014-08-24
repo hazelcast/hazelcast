@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache;
 
-
 import com.hazelcast.cache.operation.CacheKeyIteratorOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -28,10 +27,11 @@ import javax.cache.Cache;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class ClusterWideIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
+public class ClusterWideIterator<K, V>
+        implements Iterator<Cache.Entry<K, V>> {
 
     private final int partitionCount;
-    private int partitionIndex=-1;
+    private int partitionIndex = -1;
     private int lastTableIndex;
 
     final private int fetchSize;
@@ -110,8 +110,7 @@ public class ClusterWideIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
         return false;
     }
 
-
-    protected int getPartitionCount(){
+    protected int getPartitionCount() {
         return partitionCount;
     }
 
@@ -119,7 +118,8 @@ public class ClusterWideIterator<K, V> implements Iterator<Cache.Entry<K, V>> {
         final NodeEngine nodeEngine = cacheProxy.getNodeEngine();
         final Operation op = new CacheKeyIteratorOperation(cacheProxy.getDistributedObjectName(), lastTableIndex, fetchSize);
         final InternalCompletableFuture<CacheKeyIteratorResult> f = nodeEngine.getOperationService()
-                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionIndex);
+                                                                              .invokeOnPartition(CacheService.SERVICE_NAME, op,
+                                                                                      partitionIndex);
         return f.getSafely();
     }
 }

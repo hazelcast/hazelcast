@@ -28,7 +28,8 @@ import com.hazelcast.spi.Operation;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
-public class CachePutIfAbsentRequest extends AbstractCacheRequest {
+public class CachePutIfAbsentRequest
+        extends AbstractCacheRequest {
 
     protected Data key;
     protected Data value;
@@ -54,10 +55,11 @@ public class CachePutIfAbsentRequest extends AbstractCacheRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new CachePutIfAbsentOperation(name, key, value,expiryPolicy);
+        return new CachePutIfAbsentOperation(name, key, value, expiryPolicy);
     }
 
-    public void write(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer)
+            throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
@@ -65,7 +67,8 @@ public class CachePutIfAbsentRequest extends AbstractCacheRequest {
         out.writeObject(expiryPolicy);
     }
 
-    public void read(PortableReader reader) throws IOException {
+    public void read(PortableReader reader)
+            throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();

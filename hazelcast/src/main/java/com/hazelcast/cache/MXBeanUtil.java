@@ -16,14 +16,11 @@
 
 package com.hazelcast.cache;
 
-import javax.cache.Cache;
 import javax.cache.CacheException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-import java.net.URI;
 import java.util.Set;
 
 //FIXME Move this into ManagementService
@@ -32,7 +29,7 @@ public class MXBeanUtil {
     //ensure everything gets put in one MBeanServer
     private static MBeanServer mBeanServer = MBeanServerFactory.createMBeanServer();
 
-//    private static MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+    //    private static MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
     public static void registerCacheObject(Object mxbean, String uri, String name, boolean stats) {
         //these can change during runtime, so always look it up
@@ -42,11 +39,11 @@ public class MXBeanUtil {
                 mBeanServer.registerMBean(mxbean, registeredObjectName);
             }
         } catch (Exception e) {
-            throw new CacheException("Error registering cache MXBeans for CacheManager "
-                    + registeredObjectName + " . Error was " + e.getMessage(), e);
+            throw new CacheException(
+                    "Error registering cache MXBeans for CacheManager " + registeredObjectName + " . Error was " + e.getMessage(),
+                    e);
         }
     }
-
 
     static boolean isRegistered(String uri, String name, boolean stats) {
         Set<ObjectName> registeredObjectNames = null;
@@ -56,7 +53,6 @@ public class MXBeanUtil {
 
         return !registeredObjectNames.isEmpty();
     }
-
 
     public static void unregisterCacheObject(String uri, String name, boolean stats) {
         Set<ObjectName> registeredObjectNames = null;
@@ -69,8 +65,8 @@ public class MXBeanUtil {
             try {
                 mBeanServer.unregisterMBean(registeredObjectName);
             } catch (Exception e) {
-                throw new CacheException("Error unregistering object instance "
-                        + registeredObjectName + " . Error was " + e.getMessage(), e);
+                throw new CacheException(
+                        "Error unregistering object instance " + registeredObjectName + " . Error was " + e.getMessage(), e);
             }
         }
     }
@@ -84,9 +80,9 @@ public class MXBeanUtil {
         String cacheName = mbeanSafe(name);
 
         try {
-            String objectNameType = stats?"Statistics":"Configuration";
-            return new ObjectName("javax.cache:type=Cache" + objectNameType + ",CacheManager="
-                    + cacheManagerName + ",Cache=" + cacheName);
+            String objectNameType = stats ? "Statistics" : "Configuration";
+            return new ObjectName(
+                    "javax.cache:type=Cache" + objectNameType + ",CacheManager=" + cacheManagerName + ",Cache=" + cacheName);
         } catch (MalformedObjectNameException e) {
             throw new CacheException("Illegal ObjectName for Management Bean. " +
                     "CacheManager=[" + cacheManagerName + "], Cache=[" + cacheName + "]", e);

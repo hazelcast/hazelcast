@@ -28,11 +28,11 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class CacheRemoveRequest extends AbstractCacheRequest {
+public class CacheRemoveRequest
+        extends AbstractCacheRequest {
 
     protected Data key;
     protected Data currentValue = null;
-
 
     public CacheRemoveRequest() {
     }
@@ -61,14 +61,16 @@ public class CacheRemoveRequest extends AbstractCacheRequest {
         return new CacheRemoveOperation(name, key, currentValue);
     }
 
-    public void write(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer)
+            throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         IOUtil.writeNullableData(out, currentValue);
     }
 
-    public void read(PortableReader reader) throws IOException {
+    public void read(PortableReader reader)
+            throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();

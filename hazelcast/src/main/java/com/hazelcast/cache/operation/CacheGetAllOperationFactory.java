@@ -29,12 +29,12 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CacheGetAllOperationFactory implements OperationFactory, IdentifiedDataSerializable {
+public class CacheGetAllOperationFactory
+        implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;
     private Set<Data> keys = new HashSet<Data>();
     private ExpiryPolicy expiryPolicy;
-
 
     public CacheGetAllOperationFactory() {
     }
@@ -61,7 +61,8 @@ public class CacheGetAllOperationFactory implements OperationFactory, Identified
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(name);
         out.writeObject(expiryPolicy);
         out.writeInt(keys.size());
@@ -71,7 +72,8 @@ public class CacheGetAllOperationFactory implements OperationFactory, Identified
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         name = in.readUTF();
         expiryPolicy = in.readObject();
         int size = in.readInt();

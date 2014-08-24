@@ -30,7 +30,9 @@ import java.io.IOException;
 /**
  * @author mdogan 05/02/14
  */
-public class CacheReplaceOperation extends AbstractCacheOperation implements BackupAwareOperation {
+public class CacheReplaceOperation
+        extends AbstractCacheOperation
+        implements BackupAwareOperation {
 
     private Data value;
     private Data currentValue; // replace if same
@@ -47,7 +49,8 @@ public class CacheReplaceOperation extends AbstractCacheOperation implements Bac
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         if (cache != null) {
             if (currentValue == null) {
                 response = cache.replace(key, value, expiryPolicy, getCallerUuid());
@@ -72,9 +75,9 @@ public class CacheReplaceOperation extends AbstractCacheOperation implements Bac
         return new CachePutBackupOperation(name, key, backupRecord);
     }
 
-
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         value.writeData(out);
         IOUtil.writeNullableData(out, currentValue);
@@ -82,7 +85,8 @@ public class CacheReplaceOperation extends AbstractCacheOperation implements Bac
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         value = new Data();
         value.readData(in);

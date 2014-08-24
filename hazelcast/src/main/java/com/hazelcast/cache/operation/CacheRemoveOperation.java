@@ -29,7 +29,9 @@ import java.io.IOException;
 /**
  * @author mdogan 05/02/14
  */
-public class CacheRemoveOperation extends AbstractCacheOperation implements BackupAwareOperation {
+public class CacheRemoveOperation
+        extends AbstractCacheOperation
+        implements BackupAwareOperation {
 
     private Data currentValue; // if same
 
@@ -46,7 +48,8 @@ public class CacheRemoveOperation extends AbstractCacheOperation implements Back
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         if (cache != null) {
             if (currentValue == null) {
                 response = cache.remove(key, getCallerUuid());
@@ -68,20 +71,21 @@ public class CacheRemoveOperation extends AbstractCacheOperation implements Back
         return new CacheRemoveBackupOperation(name, key);
     }
 
-
     @Override
     public int getId() {
         return CacheDataSerializerHook.REMOVE;
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         IOUtil.writeNullableData(out, currentValue);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         currentValue = IOUtil.readNullableData(in);
     }

@@ -49,7 +49,8 @@ import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 
-public final class CacheDataSerializerHook implements DataSerializerHook {
+public final class CacheDataSerializerHook
+        implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_DS_FACTORY, -25);
     private static short i = 0;
@@ -197,11 +198,11 @@ public final class CacheDataSerializerHook implements DataSerializerHook {
                 return new CacheLoadAllOperationFactory();
             }
         };
-//        constructors[EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-////                        return new CacheEntryEventImpl<>();
-//            }
-//        };
+        //        constructors[EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        //            public IdentifiedDataSerializable createNew(Integer arg) {
+        ////                        return new CacheEntryEventImpl<>();
+        //            }
+        //        };
         constructors[KEY_ITERATOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheKeyIteratorOperation();

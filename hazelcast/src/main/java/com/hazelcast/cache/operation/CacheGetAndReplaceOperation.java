@@ -31,7 +31,9 @@ import java.io.IOException;
 /**
  * @author mdogan 05/02/14
  */
-public class CacheGetAndReplaceOperation extends AbstractCacheOperation implements BackupAwareOperation {
+public class CacheGetAndReplaceOperation
+        extends AbstractCacheOperation
+        implements BackupAwareOperation {
 
     private Data value;
     private ExpiryPolicy expiryPolicy;
@@ -46,7 +48,8 @@ public class CacheGetAndReplaceOperation extends AbstractCacheOperation implemen
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         CacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
         response = cache.getAndReplace(key, value, expiryPolicy, getCallerUuid());
@@ -63,16 +66,17 @@ public class CacheGetAndReplaceOperation extends AbstractCacheOperation implemen
         return new CachePutBackupOperation(name, key, backupRecord);
     }
 
-
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         value.writeData(out);
         out.writeObject(expiryPolicy);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         value = new Data();
         value.readData(in);

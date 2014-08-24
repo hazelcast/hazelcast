@@ -28,7 +28,8 @@ import java.util.Collection;
 /**
  * @author enesakar 2/11/14
  */
-public class CachePortableHook implements PortableHook {
+public class CachePortableHook
+        implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_PORTABLE_FACTORY, -24);
     public static final int GET = 1;
@@ -55,76 +56,76 @@ public class CachePortableHook implements PortableHook {
             final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[16];
 
             {
-//                constructors[GET] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CacheGetRequest();
-//                    }
-//                };
-//                constructors[PUT] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CachePutRequest();
-//                    }
-//                };
-//                constructors[PUT_IF_ABSENT] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CachePutIfAbsentRequest();
-//                    }
-//                };
-//                constructors[CONTAINS_KEY] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CacheContainsKeyRequest();
-//                    }
-//                };
-//                constructors[REPLACE] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CacheReplaceRequest();
-//                    }
-//                };
-//                constructors[GET_AND_REPLACE] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CacheGetAndReplaceRequest();
-//                    }
-//                };
-//                constructors[REMOVE] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CacheRemoveRequest();
-//                    }
-//                };
-//                constructors[GET_AND_REMOVE] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CacheGetAndRemoveRequest();
-//                    }
-//                };
-//                constructors[SIZE] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CacheSizeRequest();
-//                    }
-//                };
-//                constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CacheClearRequest();
-//                    }
-//                };
-//                constructors[ADD_INVALIDATION_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CacheAddInvalidationListenerRequest();
-//                    }
-//                };
-//                constructors[INVALIDATION_MESSAGE] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CacheInvalidationMessage();
-//                    }
-//                };
-//                constructors[REMOVE_INVALIDATION_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CacheRemoveInvalidationListenerRequest();
-//                    }
-//                };
-//                constructors[SEND_STATS] = new ConstructorFunction<Integer, Portable>() {
-//                    public Portable createNew(Integer arg) {
-//                        return new CachePushStatsRequest();
-//                    }
-//                };
+                //                constructors[GET] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CacheGetRequest();
+                //                    }
+                //                };
+                //                constructors[PUT] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CachePutRequest();
+                //                    }
+                //                };
+                //                constructors[PUT_IF_ABSENT] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CachePutIfAbsentRequest();
+                //                    }
+                //                };
+                //                constructors[CONTAINS_KEY] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CacheContainsKeyRequest();
+                //                    }
+                //                };
+                //                constructors[REPLACE] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CacheReplaceRequest();
+                //                    }
+                //                };
+                //                constructors[GET_AND_REPLACE] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CacheGetAndReplaceRequest();
+                //                    }
+                //                };
+                //                constructors[REMOVE] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CacheRemoveRequest();
+                //                    }
+                //                };
+                //                constructors[GET_AND_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CacheGetAndRemoveRequest();
+                //                    }
+                //                };
+                //                constructors[SIZE] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CacheSizeRequest();
+                //                    }
+                //                };
+                //                constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CacheClearRequest();
+                //                    }
+                //                };
+                //                constructors[ADD_INVALIDATION_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CacheAddInvalidationListenerRequest();
+                //                    }
+                //                };
+                //                constructors[INVALIDATION_MESSAGE] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CacheInvalidationMessage();
+                //                    }
+                //                };
+                //                constructors[REMOVE_INVALIDATION_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CacheRemoveInvalidationListenerRequest();
+                //                    }
+                //                };
+                //                constructors[SEND_STATS] = new ConstructorFunction<Integer, Portable>() {
+                //                    public Portable createNew(Integer arg) {
+                //                        return new CachePushStatsRequest();
+                //                    }
+                //                };
             }
 
             public Portable create(int classId) {

@@ -29,13 +29,13 @@ import com.hazelcast.spi.Operation;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
-public class CacheReplaceRequest extends AbstractCacheRequest {
+public class CacheReplaceRequest
+        extends AbstractCacheRequest {
 
     protected Data key;
     protected Data value;
     protected Data currentValue = null;
     protected ExpiryPolicy expiryPolicy;
-
 
     public CacheReplaceRequest() {
     }
@@ -68,7 +68,8 @@ public class CacheReplaceRequest extends AbstractCacheRequest {
         return new CacheReplaceOperation(name, key, currentValue, value, expiryPolicy);
     }
 
-    public void write(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer)
+            throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
@@ -77,7 +78,8 @@ public class CacheReplaceRequest extends AbstractCacheRequest {
         out.writeObject(expiryPolicy);
     }
 
-    public void read(PortableReader reader) throws IOException {
+    public void read(PortableReader reader)
+            throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();

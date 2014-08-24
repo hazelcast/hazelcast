@@ -29,7 +29,9 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CacheGetAllOperation extends PartitionWideCacheOperation implements ReadonlyOperation {
+public class CacheGetAllOperation
+        extends PartitionWideCacheOperation
+        implements ReadonlyOperation {
 
     private Set<Data> keys = new HashSet<Data>();
     private ExpiryPolicy expiryPolicy;
@@ -71,7 +73,8 @@ public class CacheGetAllOperation extends PartitionWideCacheOperation implements
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeObject(expiryPolicy);
         if (keys == null) {
@@ -85,7 +88,8 @@ public class CacheGetAllOperation extends PartitionWideCacheOperation implements
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         expiryPolicy = in.readObject();
         int size = in.readInt();

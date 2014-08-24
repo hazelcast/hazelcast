@@ -21,12 +21,12 @@ import com.hazelcast.spi.NodeEngine;
 
 /**
  * distributed object for cache, it will be used as a delegate in CacheProxy
- *
  */
-class CacheDistributedObject extends AbstractDistributedObject<CacheService> {
+class CacheDistributedObject
+        extends AbstractDistributedObject<CacheService> {
 
     private String name;
-    private boolean isDestroy=false;
+    private boolean isDestroy = false;
 
     protected CacheDistributedObject(String name, NodeEngine nodeEngine, CacheService service) {
         super(nodeEngine, service);
@@ -48,7 +48,7 @@ class CacheDistributedObject extends AbstractDistributedObject<CacheService> {
         isDestroy = true;
     }
 
-    public boolean isDestroy(){
+    public boolean isDestroy() {
         return isDestroy;
     }
 }

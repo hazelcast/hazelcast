@@ -16,9 +16,9 @@
 
 package com.hazelcast.cache.client;
 
-import com.hazelcast.cache.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.CachePortableHook;
 import com.hazelcast.cache.CacheService;
+import com.hazelcast.cache.operation.CacheClearOperationFactory;
 import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.nio.ObjectDataInput;
@@ -34,11 +34,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class CacheClearRequest extends AllPartitionsClientRequest implements RetryableRequest {
+public class CacheClearRequest
+        extends AllPartitionsClientRequest
+        implements RetryableRequest {
 
     private String name;
-    private Set<Data> keys= null ;
-    private  boolean isRemoveAll=false;
+    private Set<Data> keys = null;
+    private boolean isRemoveAll = false;
 
     public CacheClearRequest() {
     }
@@ -62,29 +64,31 @@ public class CacheClearRequest extends AllPartitionsClientRequest implements Ret
         return CachePortableHook.CLEAR;
     }
 
-    public void write(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer)
+            throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeBoolean(isRemoveAll);
         out.writeBoolean(keys != null);
-        if(keys != null){
+        if (keys != null) {
             out.write(keys.size());
-            for(Data key:keys){
+            for (Data key : keys) {
                 key.writeData(out);
             }
         }
 
     }
 
-    public void read(PortableReader reader) throws IOException {
+    public void read(PortableReader reader)
+            throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
         isRemoveAll = in.readBoolean();
         boolean isKeysNotNull = in.readBoolean();
-        if(isKeysNotNull){
+        if (isKeysNotNull) {
             int size = in.readInt();
-            keys= new HashSet<Data>(size);
-            for(int i=0; i< size; i++){
+            keys = new HashSet<Data>(size);
+            for (int i = 0; i < size; i++) {
                 Data key = new Data();
                 key.readData(in);
                 keys.add(key);
@@ -94,7 +98,7 @@ public class CacheClearRequest extends AllPartitionsClientRequest implements Ret
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new CacheClearOperationFactory(name,keys, isRemoveAll);
+        return new CacheClearOperationFactory(name, keys, isRemoveAll);
     }
 
     @Override

@@ -28,19 +28,22 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by asim on 28.04.2014.
  */
-public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable {
+public class HazelcastExpiryPolicy
+        implements ExpiryPolicy, IdentifiedDataSerializable {
 
     private Duration create;
     private Duration access;
     private Duration update;
 
     public HazelcastExpiryPolicy(long createMillis, long accessMillis, long updateMillis) {
-        this(new Duration(TimeUnit.MILLISECONDS, createMillis), new Duration(TimeUnit.MILLISECONDS, accessMillis), new Duration(TimeUnit.MILLISECONDS, updateMillis));
+        this(new Duration(TimeUnit.MILLISECONDS, createMillis), new Duration(TimeUnit.MILLISECONDS, accessMillis),
+                new Duration(TimeUnit.MILLISECONDS, updateMillis));
     }
 
-
-    public HazelcastExpiryPolicy(long createDurationAmount, long accessDurationAmount, long updateDurationAmount, TimeUnit timeUnit) {
-        this(new Duration(timeUnit, createDurationAmount), new Duration(timeUnit, accessDurationAmount), new Duration(timeUnit, updateDurationAmount));
+    public HazelcastExpiryPolicy(long createDurationAmount, long accessDurationAmount, long updateDurationAmount,
+                                 TimeUnit timeUnit) {
+        this(new Duration(timeUnit, createDurationAmount), new Duration(timeUnit, accessDurationAmount),
+                new Duration(timeUnit, updateDurationAmount));
     }
 
     public HazelcastExpiryPolicy(ExpiryPolicy expiryPolicy) {
@@ -72,7 +75,6 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
         return update;
     }
 
-
     @Override
     public int getFactoryId() {
         return CacheDataSerializerHook.F_ID;
@@ -84,27 +86,31 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         writeDuration(out, create);
         writeDuration(out, access);
         writeDuration(out, update);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         create = readDuration(in);
         access = readDuration(in);
         update = readDuration(in);
     }
 
-    public static void writeDuration(ObjectDataOutput out, Duration duration) throws IOException {
+    public static void writeDuration(ObjectDataOutput out, Duration duration)
+            throws IOException {
         if (duration != null) {
             out.writeLong(duration.getDurationAmount());
             out.writeInt(duration.getTimeUnit().ordinal());
         }
     }
 
-    public static Duration readDuration(ObjectDataInput in) throws IOException {
+    public static Duration readDuration(ObjectDataInput in)
+            throws IOException {
         long da = in.readLong();
         if (da > -1) {
             TimeUnit tu = TimeUnit.values()[in.readInt()];

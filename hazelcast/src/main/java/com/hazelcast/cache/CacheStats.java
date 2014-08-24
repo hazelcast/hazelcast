@@ -1,6 +1,5 @@
 package com.hazelcast.cache;
 
-
 import com.hazelcast.monitor.NearCacheStats;
 
 public interface CacheStats {

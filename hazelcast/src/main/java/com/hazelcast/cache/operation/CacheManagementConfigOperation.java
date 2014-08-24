@@ -24,12 +24,13 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
-import java.net.URI;
 
 /**
  * @author mdogan 05/02/14
  */
-public class CacheManagementConfigOperation extends AbstractNamedOperation implements IdentifiedDataSerializable {
+public class CacheManagementConfigOperation
+        extends AbstractNamedOperation
+        implements IdentifiedDataSerializable {
 
     private boolean isStat;
     private boolean enabled;
@@ -43,11 +44,11 @@ public class CacheManagementConfigOperation extends AbstractNamedOperation imple
         this.enabled = enabled;
     }
 
-
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         final CacheService service = getService();
-        if(isStat) {
+        if (isStat) {
             service.enableStatistics(name, enabled);
         } else {
             service.enableManagement(name, enabled);
@@ -65,14 +66,16 @@ public class CacheManagementConfigOperation extends AbstractNamedOperation imple
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeBoolean(isStat);
         out.writeBoolean(enabled);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         isStat = in.readBoolean();
         enabled = in.readBoolean();
@@ -87,6 +90,5 @@ public class CacheManagementConfigOperation extends AbstractNamedOperation imple
     public int getFactoryId() {
         return CacheDataSerializerHook.F_ID;
     }
-
 
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache;
 
-
 import com.hazelcast.cache.operation.CacheReplicationOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.DistributedObject;
@@ -50,12 +49,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-
 /**
  * Cache Service
  */
-public class CacheService implements ManagedService, RemoteService, MigrationAwareService
-        , EventPublishingService<CacheEventData, CacheEventListenerAdaptor> {
+public class CacheService
+        implements ManagedService, RemoteService, MigrationAwareService,
+                   EventPublishingService<CacheEventData, CacheEventListenerAdaptor> {
 
     public final static String SERVICE_NAME = "hz:impl:cacheService";
     private ILogger logger;
@@ -87,9 +86,9 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
                 partitionSegment.clear();
             }
         }
-//        for (NearCache nearCache : nearCacheMap.values()) {
-//            nearCache.clear();
-//        }
+        //        for (NearCache nearCache : nearCacheMap.values()) {
+        //            nearCache.clear();
+        //        }
 
     }
 
@@ -103,7 +102,6 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     }
     //endregion
 
-
     //region RemoteService
     @Override
     public DistributedObject createDistributedObject(String objectName) {
@@ -116,14 +114,13 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
             segment.deleteCache(objectName);
         }
         unregisterAllCacheEntryListener(objectName);
-        enableStatistics(objectName,false);
-        enableManagement(objectName,false);
+        enableStatistics(objectName, false);
+        enableManagement(objectName, false);
 
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
     }
     //endregion
-
 
     //region MigrationAwareService
     @Override
@@ -156,7 +153,6 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     }
     //endregion
 
-
     //region CacheService Impls
 
     public ICacheRecordStore getOrCreateCache(String name, int partitionId) {
@@ -167,34 +163,34 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         return segments[partitionId].getCache(name);
     }
 
-    public boolean createCacheConfigIfAbsent(CacheConfig config){
+    public boolean createCacheConfigIfAbsent(CacheConfig config) {
         final CacheConfig _config = configs.putIfAbsent(config.getNameWithPrefix(), config);
         return _config == null;
     }
 
-    public boolean updateCacheConfig(CacheConfig config){
+    public boolean updateCacheConfig(CacheConfig config) {
         final CacheConfig oldConfig = configs.put(config.getNameWithPrefix(), config);
         return oldConfig != null;
     }
 
-    public void deleteCacheConfig(String name){
+    public void deleteCacheConfig(String name) {
         configs.remove(name);
     }
 
-    public CacheStatistics createCacheStatIfAbsent(String name){
-        if(!statistics.containsKey(name)){
+    public CacheStatistics createCacheStatIfAbsent(String name) {
+        if (!statistics.containsKey(name)) {
             statistics.putIfAbsent(name, new CacheStatistics());
         }
         return statistics.get(name);
     }
 
-    public void deleteCacheStat(String name){
+    public void deleteCacheStat(String name) {
         statistics.remove(name);
     }
 
     public void enableStatistics(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
-        if( cacheConfig != null){
+        if (cacheConfig != null) {
             cacheConfig.setStatisticsEnabled(enabled);
             if (enabled) {
                 final CacheStatistics cacheStatistics = createCacheStatIfAbsent(cacheNameWithPrefix);
@@ -210,7 +206,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
 
     public void enableManagement(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
-        if( cacheConfig != null){
+        if (cacheConfig != null) {
             cacheConfig.setManagementEnabled(enabled);
             if (enabled) {
                 final CacheMXBeanImpl mxBean = new CacheMXBeanImpl(cacheConfig);
@@ -226,17 +222,18 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         return configs.get(name);
     }
 
-    public Iterable<String> getCacheNames(){
+    public Iterable<String> getCacheNames() {
         return configs.keySet();
     }
 
-    public Collection<CacheConfig> getCacheConfigs(){
+    public Collection<CacheConfig> getCacheConfigs() {
         return configs.values();
     }
 
     public Object toObject(Object data) {
-        if (data == null)
+        if (data == null) {
             return null;
+        }
         if (data instanceof Data) {
             return nodeEngine.toObject(data);
         } else {
@@ -245,8 +242,9 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
     }
 
     public Data toData(Object object) {
-        if (object == null)
+        if (object == null) {
             return null;
+        }
         if (object instanceof Data) {
             return (Data) object;
         } else {
@@ -262,8 +260,8 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         if (candidates.isEmpty()) {
             return;
         }
-        ArrayList<CacheEventListenerAdaptor> syncListWithOldValue= new ArrayList<CacheEventListenerAdaptor>();
-        ArrayList<CacheEventListenerAdaptor> syncListWithoutOldValue= new ArrayList<CacheEventListenerAdaptor>();
+        ArrayList<CacheEventListenerAdaptor> syncListWithOldValue = new ArrayList<CacheEventListenerAdaptor>();
+        ArrayList<CacheEventListenerAdaptor> syncListWithoutOldValue = new ArrayList<CacheEventListenerAdaptor>();
         Set<EventRegistration> registrationsWithOldValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutOldValue = new HashSet<EventRegistration>();
         Object objectValue = toObject(value);
@@ -275,7 +273,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
             if (filter instanceof CacheEventFilterAdaptor) {
                 final CacheEventFilterAdaptor<Object, Object> ceFilter = (CacheEventFilterAdaptor<Object, Object>) filter;
                 if (ceFilter.filterEventData(eventType, key, objectValue, objectOldValue)) {
-                    if(ceFilter.isSynchronous()){
+                    if (ceFilter.isSynchronous()) {
                         final Object listener = ((EventServiceImpl.Registration) candidate).getListener();
                         if (ceFilter.isOldValueRequired()) {
                             syncListWithOldValue.add((CacheEventListenerAdaptor) listener);
@@ -292,8 +290,8 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
                 }
             }
         }
-        if (registrationsWithOldValue.isEmpty() && registrationsWithoutOldValue.isEmpty()
-                && syncListWithOldValue.isEmpty()&& syncListWithoutOldValue.isEmpty()) {
+        if (registrationsWithOldValue.isEmpty() && registrationsWithoutOldValue.isEmpty() && syncListWithOldValue.isEmpty()
+                && syncListWithoutOldValue.isEmpty()) {
             return;
         }
         Data dataValue = toData(value);
@@ -301,7 +299,7 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         if (eventType == EventType.REMOVED || eventType == EventType.EXPIRED) {
             dataValue = dataValue != null ? dataValue : dataOldValue;
         }
-//        final Address caller=null;
+        //        final Address caller=null;
         int orderKey = dataKey.hashCode();
         CacheEventData eventWithOldValue = new CacheEventData(cacheName, dataKey, dataValue, dataOldValue, eventType);
         CacheEventData eventWithOutOldValue = new CacheEventData(cacheName, dataKey, dataValue, null, eventType);
@@ -310,11 +308,11 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutOldValue, eventWithOutOldValue, orderKey);
 
         //EXECUTE SYNC LISTENERs
-        for(CacheEventListenerAdaptor listener:syncListWithOldValue){
-            dispatchEvent(eventWithOldValue,listener);
+        for (CacheEventListenerAdaptor listener : syncListWithOldValue) {
+            dispatchEvent(eventWithOldValue, listener);
         }
-        for(CacheEventListenerAdaptor listener:syncListWithoutOldValue){
-            dispatchEvent(eventWithOutOldValue,listener);
+        for (CacheEventListenerAdaptor listener : syncListWithoutOldValue) {
+            dispatchEvent(eventWithOutOldValue, listener);
         }
     }
 
@@ -332,22 +330,27 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         listener.handleEvent(nodeEngine, eventData.getName(), eventType, key, newValue, oldValue);
     }
 
-    public <K, V> void registerCacheEntryListener(String name, ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        final CacheEventFilterAdaptor<K, V> eventFilter = new CacheEventFilterAdaptor<K, V>(source, cacheEntryListenerConfiguration);
-        final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(source, cacheEntryListenerConfiguration);
+    public <K, V> void registerCacheEntryListener(String name, ICache<K, V> source,
+                                                  CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        final CacheEventFilterAdaptor<K, V> eventFilter = new CacheEventFilterAdaptor<K, V>(source,
+                cacheEntryListenerConfiguration);
+        final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(source,
+                cacheEntryListenerConfiguration);
         final EventService eventService = getNodeEngine().getEventService();
-        final EventRegistration registration = eventService.registerListener(CacheService.SERVICE_NAME, name, eventFilter, entryListener);
+        final EventRegistration registration = eventService
+                .registerListener(CacheService.SERVICE_NAME, name, eventFilter, entryListener);
         Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.get(name);
-        if(map == null){
+        if (map == null) {
             map = new HashMap<CacheEntryListenerConfiguration, EventRegistration>();
             eventRegistrationMap.put(name, map);
         }
         map.put(cacheEntryListenerConfiguration, registration);
     }
 
-    public <K, V> void unregisterCacheEntryListener(String name, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    public <K, V> void unregisterCacheEntryListener(String name,
+                                                    CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.get(name);
-        if(map != null){
+        if (map != null) {
             final EventRegistration eventRegistration = map.remove(cacheEntryListenerConfiguration);
             if (eventRegistration != null) {
                 final EventService eventService = getNodeEngine().getEventService();
@@ -358,13 +361,13 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
 
     public void unregisterAllCacheEntryListener(String name) {
         Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.remove(name);
-        if(map != null){
+        if (map != null) {
             final EventService eventService = getNodeEngine().getEventService();
-            for(EventRegistration eventRegistration:map.values()){
+            for (EventRegistration eventRegistration : map.values()) {
                 eventService.deregisterListener(SERVICE_NAME, name, eventRegistration.getId());
 
                 //try to close the listener
-                if (((EventServiceImpl.Registration)eventRegistration).getListener() instanceof Closeable) {
+                if (((EventServiceImpl.Registration) eventRegistration).getListener() instanceof Closeable) {
                     try {
                         ((Closeable) eventRegistration).close();
                     } catch (IOException e) {
@@ -375,9 +378,6 @@ public class CacheService implements ManagedService, RemoteService, MigrationAwa
         }
     }
 
-
-
     //endregion
-
 
 }

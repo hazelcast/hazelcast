@@ -20,22 +20,21 @@ import com.hazelcast.cache.CacheClearResponse;
 import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
-import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.CacheException;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * @author mdogan 06/02/14
  */
-public class CacheClearOperation extends PartitionWideCacheOperation implements BackupAwareOperation {
+public class CacheClearOperation
+        extends PartitionWideCacheOperation
+        implements BackupAwareOperation {
 
     private boolean isRemoveAll;
     private Set<Data> keys;
@@ -71,7 +70,7 @@ public class CacheClearOperation extends PartitionWideCacheOperation implements 
                 }
             }
             try {
-                if (keys == null || !filteredKeys.isEmpty()){
+                if (keys == null || !filteredKeys.isEmpty()) {
                     cache.clear(filteredKeys, isRemoveAll);
                 }
             } catch (CacheException e) {

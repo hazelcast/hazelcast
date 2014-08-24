@@ -17,7 +17,8 @@ import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
 
-public abstract class HazelcastCacheManager implements CacheManager {
+public abstract class HazelcastCacheManager
+        implements CacheManager {
 
     protected HazelcastInstance hazelcastInstance;
     protected CachingProvider cachingProvider;
@@ -53,7 +54,8 @@ public abstract class HazelcastCacheManager implements CacheManager {
     }
 
     @Override
-    public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration) throws IllegalArgumentException {
+    public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration)
+            throws IllegalArgumentException {
         if (isClosed()) {
             throw new IllegalStateException();
         }
@@ -160,8 +162,7 @@ public abstract class HazelcastCacheManager implements CacheManager {
             if (cache != null) {
                 Configuration<?, ?> configuration = cache.getConfiguration(CacheConfig.class);
 
-                if (Object.class.equals(configuration.getKeyType()) &&
-                        Object.class.equals(configuration.getValueType())) {
+                if (Object.class.equals(configuration.getKeyType()) && Object.class.equals(configuration.getValueType())) {
                     return (ICache<K, V>) cache;
                 } else {
                     throw new IllegalArgumentException("Cache " + cacheName + " was " +
@@ -207,21 +208,20 @@ public abstract class HazelcastCacheManager implements CacheManager {
             }
         }
         return Collections.unmodifiableCollection(names);
-//        return Collections.unmodifiableCollection(caches.keySet());
+        //        return Collections.unmodifiableCollection(caches.keySet());
 /* OPTION 2:*/
-//        Set<String> names;
-//        if (isClosed()) {
-//            names = Collections.emptySet();
-//        } else {
-//            names = new LinkedHashSet<String>();
-//            for(String nameWithPrefix:cacheService.getCacheNames()){
-//                final String name = nameWithPrefix.substring(nameWithPrefix.indexOf(cacheNamePrefix)+cacheNamePrefix.length());
-//                names.add(name);
-//            }
-//        }
-//        return Collections.unmodifiableCollection(names);
+        //        Set<String> names;
+        //        if (isClosed()) {
+        //            names = Collections.emptySet();
+        //        } else {
+        //            names = new LinkedHashSet<String>();
+        //            for(String nameWithPrefix:cacheService.getCacheNames()){
+        //                final String name = nameWithPrefix.substring(nameWithPrefix.indexOf(cacheNamePrefix)+cacheNamePrefix.length());
+        //                names.add(name);
+        //            }
+        //        }
+        //        return Collections.unmodifiableCollection(names);
     }
-
 
     @Override
     public void destroyCache(String cacheName) {
@@ -246,13 +246,13 @@ public abstract class HazelcastCacheManager implements CacheManager {
         if (!closeTriggered) {
             releaseCacheManager(uri, classLoaderReference.get());
 
-//            HazelcastInstance hz = hazelcastInstance;
-//            Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
-//            for (DistributedObject distributedObject : distributedObjects) {
-//                if (distributedObject instanceof CacheDistributedObject) {
-//                    distributedObject.destroy();
-//                }
-//            }
+            //            HazelcastInstance hz = hazelcastInstance;
+            //            Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
+            //            for (DistributedObject distributedObject : distributedObjects) {
+            //                if (distributedObject instanceof CacheDistributedObject) {
+            //                    distributedObject.destroy();
+            //                }
+            //            }
             for (ICache cache : caches.values()) {
                 cache.close();
             }
@@ -303,8 +303,8 @@ public abstract class HazelcastCacheManager implements CacheManager {
         return cacheNamePrefix + name;
     }
 
-    protected <K, V, C extends Configuration<K, V>> CacheConfig<K,V> createCacheConfig(String cacheName, C configuration){
-        final CacheConfig<K,V> cacheConfig;
+    protected <K, V, C extends Configuration<K, V>> CacheConfig<K, V> createCacheConfig(String cacheName, C configuration) {
+        final CacheConfig<K, V> cacheConfig;
         if (configuration instanceof CompleteConfiguration) {
             cacheConfig = new CacheConfig<K, V>((CompleteConfiguration) configuration);
         } else {

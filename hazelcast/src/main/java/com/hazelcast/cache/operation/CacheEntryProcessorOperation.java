@@ -27,8 +27,9 @@ import com.hazelcast.spi.Operation;
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
 
-public class CacheEntryProcessorOperation extends AbstractCacheOperation implements BackupAwareOperation {
-
+public class CacheEntryProcessorOperation
+        extends AbstractCacheOperation
+        implements BackupAwareOperation {
 
     private EntryProcessor entryProcessor;
     private Object[] arguments;
@@ -38,7 +39,8 @@ public class CacheEntryProcessorOperation extends AbstractCacheOperation impleme
     public CacheEntryProcessorOperation() {
     }
 
-    public CacheEntryProcessorOperation(String name, Data key, javax.cache.processor.EntryProcessor entryProcessor, Object... arguments) {
+    public CacheEntryProcessorOperation(String name, Data key, javax.cache.processor.EntryProcessor entryProcessor,
+                                        Object... arguments) {
         super(name, key);
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;
@@ -60,14 +62,16 @@ public class CacheEntryProcessorOperation extends AbstractCacheOperation impleme
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         response = cache.invoke(key, entryProcessor, arguments);
 
         backupRecord = cache.getRecord(key);
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeObject(entryProcessor);
         out.writeBoolean(arguments != null);
@@ -80,7 +84,8 @@ public class CacheEntryProcessorOperation extends AbstractCacheOperation impleme
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         entryProcessor = in.readObject();
 

@@ -37,10 +37,10 @@ public class CacheEventListenerAdaptor<K, V> {
 
     private transient ICache<K, V> source;
 
-
     public CacheEventListenerAdaptor(ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         this.source = source;
-        final CacheEntryListener<? super K, ? super V> cacheEntryListener = cacheEntryListenerConfiguration.getCacheEntryListenerFactory().create();
+        final CacheEntryListener<? super K, ? super V> cacheEntryListener = cacheEntryListenerConfiguration
+                .getCacheEntryListenerFactory().create();
         if (cacheEntryListener instanceof CacheEntryCreatedListener) {
             this.cacheEntryCreatedListener = (CacheEntryCreatedListener) cacheEntryListener;
         } else {
@@ -63,10 +63,9 @@ public class CacheEventListenerAdaptor<K, V> {
         }
     }
 
-
     public void handleEvent(NodeEngine nodeEngine, String cacheName, EventType eventType, K key, V newValue, V oldValue) {
         if (source == null) {
-//            this.source = nodeEngine.getHazelcastInstance().getDistributedObject(CacheService.SERVICE_NAME, cacheName);
+            //            this.source = nodeEngine.getHazelcastInstance().getDistributedObject(CacheService.SERVICE_NAME, cacheName);
         }
         final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
         switch (eventType) {

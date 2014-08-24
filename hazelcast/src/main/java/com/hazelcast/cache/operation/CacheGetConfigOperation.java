@@ -27,7 +27,9 @@ import java.io.IOException;
 
 /**
  */
-public class CacheGetConfigOperation extends PartitionWideCacheOperation implements ReadonlyOperation /*implements BackupAwareOperation*/ {
+public class CacheGetConfigOperation
+        extends PartitionWideCacheOperation
+        implements ReadonlyOperation /*implements BackupAwareOperation*/ {
 
     public CacheGetConfigOperation() {
     }
@@ -37,19 +39,22 @@ public class CacheGetConfigOperation extends PartitionWideCacheOperation impleme
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         final CacheService service = getService();
         final CacheConfig cacheConfig = service.getCacheConfig(name);
         response = cacheConfig;
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
     }
 

@@ -31,7 +31,9 @@ import java.io.IOException;
 /**
  * @author mdogan 05/02/14
  */
-public class CachePutIfAbsentOperation extends AbstractCacheOperation implements BackupAwareOperation {
+public class CachePutIfAbsentOperation
+        extends AbstractCacheOperation
+        implements BackupAwareOperation {
 
     private Data value;
     private ExpiryPolicy expiryPolicy;
@@ -46,7 +48,8 @@ public class CachePutIfAbsentOperation extends AbstractCacheOperation implements
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         CacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
         response = cache.putIfAbsent(key, value, expiryPolicy, getCallerUuid());
@@ -65,22 +68,22 @@ public class CachePutIfAbsentOperation extends AbstractCacheOperation implements
         return new CachePutBackupOperation(name, key, backupRecord);
     }
 
-
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeObject(expiryPolicy);
         value.writeData(out);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         expiryPolicy = in.readObject();
         value = new Data();
         value.readData(in);
     }
-
 
     @Override
     public int getId() {

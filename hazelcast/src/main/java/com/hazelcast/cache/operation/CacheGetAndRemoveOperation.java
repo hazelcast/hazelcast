@@ -24,7 +24,9 @@ import com.hazelcast.spi.Operation;
 /**
  * @author mdogan 05/02/14
  */
-public class CacheGetAndRemoveOperation extends AbstractCacheOperation implements BackupAwareOperation {
+public class CacheGetAndRemoveOperation
+        extends AbstractCacheOperation
+        implements BackupAwareOperation {
 
     public CacheGetAndRemoveOperation() {
     }
@@ -34,7 +36,8 @@ public class CacheGetAndRemoveOperation extends AbstractCacheOperation implement
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         response = cache != null ? cache.getAndRemove(key, getCallerUuid()) : null;
     }
 

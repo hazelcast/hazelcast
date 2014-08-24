@@ -37,12 +37,11 @@ public final class CachePartitionSegment {
     private final ConcurrentMap<String, ICacheRecordStore> caches = new ConcurrentHashMap<String, ICacheRecordStore>();
     private final Object mutex = new Object();
 
-    private final ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction =
-            new ConstructorFunction<String, ICacheRecordStore>() {
-                public ICacheRecordStore createNew(String name) {
-                    return new CacheRecordStore(name, partitionId, nodeEngine, cacheService);
-                }
-            };
+    private final ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction = new ConstructorFunction<String, ICacheRecordStore>() {
+        public ICacheRecordStore createNew(String name) {
+            return new CacheRecordStore(name, partitionId, nodeEngine, cacheService);
+        }
+    };
 
     CachePartitionSegment(NodeEngine nodeEngine, CacheService cacheService, int partitionId) {
         this.nodeEngine = nodeEngine;

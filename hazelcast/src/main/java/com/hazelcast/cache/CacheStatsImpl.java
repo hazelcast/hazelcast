@@ -11,7 +11,8 @@ import java.io.IOException;
 /**
  * @author enesakar 2/19/14
  */
-public class CacheStatsImpl implements DataSerializable, CacheStats {
+public class CacheStatsImpl
+        implements DataSerializable, CacheStats {
 
     private final Counter hits = new Counter();
     private final Counter misses = new Counter();
@@ -161,7 +162,8 @@ public class CacheStatsImpl implements DataSerializable, CacheStats {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeLong(misses.get());
         out.writeLong(hits.get());
         out.writeLong(puts.get());
@@ -177,7 +179,8 @@ public class CacheStatsImpl implements DataSerializable, CacheStats {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         misses.set(in.readLong());
         hits.set(in.readLong());
         puts.set(in.readLong());

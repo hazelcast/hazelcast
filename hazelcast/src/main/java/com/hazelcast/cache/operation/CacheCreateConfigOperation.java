@@ -29,7 +29,9 @@ import java.io.IOException;
 /**
  * @author mdogan 05/02/14
  */
-public class CacheCreateConfigOperation extends AbstractNamedOperation implements IdentifiedDataSerializable {
+public class CacheCreateConfigOperation
+        extends AbstractNamedOperation
+        implements IdentifiedDataSerializable {
 
     private CacheConfig config;
     private boolean create;
@@ -45,11 +47,11 @@ public class CacheCreateConfigOperation extends AbstractNamedOperation implement
         this.create = create;
     }
 
-
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         final CacheService service = getService();
-        if(create){
+        if (create) {
             response = service.createCacheConfigIfAbsent(config);
         } else {
             response = service.updateCacheConfig(config);
@@ -67,14 +69,16 @@ public class CacheCreateConfigOperation extends AbstractNamedOperation implement
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeObject(config);
         out.writeBoolean(create);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         config = in.readObject();
         create = in.readBoolean();
@@ -89,6 +93,5 @@ public class CacheCreateConfigOperation extends AbstractNamedOperation implement
     public int getFactoryId() {
         return CacheDataSerializerHook.F_ID;
     }
-
 
 }

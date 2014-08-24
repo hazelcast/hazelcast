@@ -19,7 +19,8 @@ package com.hazelcast.cache;
 import javax.cache.management.CacheStatisticsMXBean;
 import java.io.Serializable;
 
-public class CacheStatisticsMXBeanImpl implements CacheStatisticsMXBean, Serializable {
+public class CacheStatisticsMXBeanImpl
+        implements CacheStatisticsMXBean, Serializable {
 
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
 

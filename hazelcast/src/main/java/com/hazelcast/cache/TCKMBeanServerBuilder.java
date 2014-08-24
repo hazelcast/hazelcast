@@ -27,7 +27,8 @@ import javax.management.NotificationListener;
 /**
  * An MBeanServer builder for TCK tests.
  */
-public class TCKMBeanServerBuilder extends MBeanServerBuilder {
+public class TCKMBeanServerBuilder
+        extends MBeanServerBuilder {
 
     public TCKMBeanServerBuilder() {
         super();
@@ -38,7 +39,8 @@ public class TCKMBeanServerBuilder extends MBeanServerBuilder {
         return super.newMBeanServer(defaultDomain, outer, new RIMBeanServerDelegate(delegate));
     }
 
-    public class RIMBeanServerDelegate extends MBeanServerDelegate {
+    public class RIMBeanServerDelegate
+            extends MBeanServerDelegate {
 
         private MBeanServerDelegate delegate;
 
@@ -83,19 +85,21 @@ public class TCKMBeanServerBuilder extends MBeanServerBuilder {
 
         @Override
         public synchronized void addNotificationListener(NotificationListener listener, NotificationFilter filter,
-                                                         Object handback) throws IllegalArgumentException {
+                                                         Object handback)
+                throws IllegalArgumentException {
             delegate.addNotificationListener(listener, filter, handback);
         }
 
         @Override
         public synchronized void removeNotificationListener(NotificationListener listener, NotificationFilter filter,
-                                                            Object handback) throws ListenerNotFoundException {
+                                                            Object handback)
+                throws ListenerNotFoundException {
             delegate.removeNotificationListener(listener, filter, handback);
         }
 
         @Override
-        public synchronized void removeNotificationListener(NotificationListener listener) throws
-                ListenerNotFoundException {
+        public synchronized void removeNotificationListener(NotificationListener listener)
+                throws ListenerNotFoundException {
             delegate.removeNotificationListener(listener);
         }
 
@@ -109,6 +113,5 @@ public class TCKMBeanServerBuilder extends MBeanServerBuilder {
             return System.getProperty("org.jsr107.tck.management.agentId");
         }
     }
-
 
 }

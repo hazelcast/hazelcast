@@ -18,9 +18,10 @@ package com.hazelcast.cache.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-class CacheDataRecord extends AbstractCacheRecord<Data> {
+class CacheDataRecord
+        extends AbstractCacheRecord<Data> {
 
-    CacheDataRecord(){
+    CacheDataRecord() {
         super();
     }
 

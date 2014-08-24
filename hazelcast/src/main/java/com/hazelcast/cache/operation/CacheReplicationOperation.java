@@ -21,7 +21,6 @@ import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
 import com.hazelcast.cache.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -38,7 +37,8 @@ import java.util.Map;
 /**
  * @author mdogan 05/02/14
  */
-public final class CacheReplicationOperation extends AbstractOperation {
+public final class CacheReplicationOperation
+        extends AbstractOperation {
 
     Map<String, Map<Data, CacheRecord>> data;
 
@@ -46,7 +46,7 @@ public final class CacheReplicationOperation extends AbstractOperation {
 
     public CacheReplicationOperation() {
         data = new HashMap<String, Map<Data, CacheRecord>>();
-        configs= new ArrayList<CacheConfig>();
+        configs = new ArrayList<CacheConfig>();
     }
 
     public CacheReplicationOperation(CachePartitionSegment segment, int replicaIndex) {
@@ -61,23 +61,25 @@ public final class CacheReplicationOperation extends AbstractOperation {
             }
         }
 
-        configs= new ArrayList<CacheConfig>();
-        for(CacheConfig cacheConfig:segment.getCacheConfigs()){
+        configs = new ArrayList<CacheConfig>();
+        for (CacheConfig cacheConfig : segment.getCacheConfigs()) {
             configs.add(cacheConfig);
         }
     }
 
     @Override
-    public final void beforeRun() throws Exception {
-//        //migrate CacheConfigs first
+    public final void beforeRun()
+            throws Exception {
+        //        //migrate CacheConfigs first
         CacheService service = getService();
-        for(CacheConfig config:configs){
+        for (CacheConfig config : configs) {
             service.createCacheConfigIfAbsent(config);
         }
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         CacheService service = getService();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
             ICacheRecordStore cache = service.getOrCreateCache(entry.getKey(), getPartitionId());
@@ -101,12 +103,13 @@ public final class CacheReplicationOperation extends AbstractOperation {
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
-        int confSize= configs.size();
+        int confSize = configs.size();
         out.writeInt(confSize);
         if (confSize > 0) {
-            for(CacheConfig config:configs){
+            for (CacheConfig config : configs) {
                 out.writeObject(config);
             }
         }
@@ -137,11 +140,12 @@ public final class CacheReplicationOperation extends AbstractOperation {
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         int confSize = in.readInt();
         if (confSize > 0) {
-            configs= new ArrayList<CacheConfig>();
+            configs = new ArrayList<CacheConfig>();
             for (int i = 0; i < confSize; i++) {
                 final CacheConfig config = in.readObject();
                 configs.add(config);
@@ -158,7 +162,7 @@ public final class CacheReplicationOperation extends AbstractOperation {
                     for (int j = 0; j < subCount; j++) {
                         final Data key = new Data();
                         key.readData(in);
-                        if(key.bufferSize() == 0){
+                        if (key.bufferSize() == 0) {
                             //empty data received so reading done here
                             break;
                         }

@@ -36,7 +36,8 @@ import java.security.Permission;
  * date: 13/03/14
  * author: eminn
  */
-public class CachePushStatsRequest extends CallableClientRequest {
+public class CachePushStatsRequest
+        extends CallableClientRequest {
 
     private TimedClientState clientState;
 
@@ -58,30 +59,32 @@ public class CachePushStatsRequest extends CallableClientRequest {
     }
 
     @Override
-    public Object call() throws Exception {
+    public Object call()
+            throws Exception {
         final CacheService service = getService();
         final NodeEngine nodeEngine = service.getNodeEngine();
         final Node node = ((NodeEngineImpl) nodeEngine).getNode();
         final ManagementCenterService managementCenterService = node.getManagementCenterService();
         if (managementCenterService != null) {
-//            managementCenterService.addClientState(clientState);
+            //            managementCenterService.addClientState(clientState);
         }
         return null;
     }
 
     @Override
-    public void write(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer)
+            throws IOException {
         final ObjectDataOutput out = writer.getRawDataOutput();
         clientState.writeData(out);
     }
 
     @Override
-    public void read(PortableReader reader) throws IOException {
+    public void read(PortableReader reader)
+            throws IOException {
         final ObjectDataInput in = reader.getRawDataInput();
         clientState = new TimedClientState();
         clientState.readData(in);
     }
-
 
     @Override
     public String getServiceName() {

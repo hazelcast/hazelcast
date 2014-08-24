@@ -28,7 +28,9 @@ import java.io.IOException;
 /**
  * @author mdogan 05/02/14
  */
-public class CacheGetOperation extends AbstractCacheOperation implements ReadonlyOperation {
+public class CacheGetOperation
+        extends AbstractCacheOperation
+        implements ReadonlyOperation {
 
     private ExpiryPolicy expiryPolicy;
 
@@ -41,19 +43,21 @@ public class CacheGetOperation extends AbstractCacheOperation implements Readonl
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         response = cache != null ? cache.get(key, expiryPolicy) : null;
     }
 
-
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeObject(expiryPolicy);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         expiryPolicy = in.readObject();
     }

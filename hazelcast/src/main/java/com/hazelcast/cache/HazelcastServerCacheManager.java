@@ -20,35 +20,28 @@ import com.hazelcast.cache.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.operation.CacheManagementConfigOperation;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 
-import javax.cache.Cache;
-import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
-import javax.cache.configuration.CompleteConfiguration;
-import javax.cache.configuration.Configuration;
-import javax.management.ObjectName;
 import java.net.URI;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.Properties;
-import java.util.Set;
 
-public class HazelcastServerCacheManager extends HazelcastCacheManager {
+public class HazelcastServerCacheManager
+        extends HazelcastCacheManager {
 
-//    protected HazelcastInstanceImpl hazelcastInstance;
-//    private HazelcastServerCachingProvider cachingProvider;
+    //    protected HazelcastInstanceImpl hazelcastInstance;
+    //    private HazelcastServerCachingProvider cachingProvider;
     private NodeEngine nodeEngine;
     private CacheService cacheService;
 
-    public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance, URI uri, ClassLoader classLoader, Properties properties) {
+    public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
+                                       URI uri, ClassLoader classLoader, Properties properties) {
         super(cachingProvider, uri, classLoader, properties);
         if (hazelcastInstance == null) {
             throw new NullPointerException("hazelcastInstance missing");
@@ -58,7 +51,7 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
         final CacheDistributedObject setupRef = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         nodeEngine = setupRef.getNodeEngine();
         cacheService = setupRef.getService();
-//        setupRef.destroy();
+        //        setupRef.destroy();
     }
 
     @Override
@@ -89,12 +82,13 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
         enableStatisticManagementOnOtherNodes(cacheName, true, enabled);
     }
 
-    private void enableStatisticManagementOnOtherNodes(String cacheName, boolean statOrMan, boolean enabled){
+    private void enableStatisticManagementOnOtherNodes(String cacheName, boolean statOrMan, boolean enabled) {
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        for(MemberImpl member:members){
-            if(!member.localMember()){
-                final CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan, enabled);
+        for (MemberImpl member : members) {
+            if (!member.localMember()) {
+                final CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan,
+                        enabled);
                 nodeEngine.getOperationService().invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
             }
         }
@@ -108,16 +102,17 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
     @Override
     protected <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
         //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
-        final CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheConfig,true);
+        final CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheConfig, true);
         final OperationService operationService = nodeEngine.getOperationService();
 
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
-        final InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, cacheCreateConfigOperation, partitionId);
+        final InternalCompletableFuture<Boolean> f = operationService
+                .invokeOnPartition(CacheService.SERVICE_NAME, cacheCreateConfigOperation, partitionId);
         return f.getSafely();
     }
 
     @Override
-    protected  <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
+    protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
         cacheService.createCacheConfigIfAbsent(cacheConfig);
     }
 
@@ -125,39 +120,42 @@ public class HazelcastServerCacheManager extends HazelcastCacheManager {
     protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
         final OperationService operationService = nodeEngine.getOperationService();
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        for(MemberImpl member:members){
-            if(!member.localMember()){
-                final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig,true);
-                final InternalCompletableFuture<Object> f2 = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+        for (MemberImpl member : members) {
+            if (!member.localMember()) {
+                final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true);
+                final InternalCompletableFuture<Object> f2 = operationService
+                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
                 f2.getSafely();//make sure all configs are created
             }
         }
     }
 
     @Override
-    protected <K, V> ICache<K,V> createCacheProxy(CacheConfig<K, V> cacheConfig){
-        final CacheDistributedObject cacheDistributedObject = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, cacheConfig.getNameWithPrefix());
+    protected <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
+        final CacheDistributedObject cacheDistributedObject = hazelcastInstance
+                .getDistributedObject(CacheService.SERVICE_NAME, cacheConfig.getNameWithPrefix());
         final CacheProxy<K, V> cacheProxy = new CacheProxy<K, V>(cacheConfig, cacheDistributedObject, this);
         return cacheProxy;
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix){
+    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix) {
         //remote check
         final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
-                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+                                                                   .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.getSafely();
     }
 
     @Override
-    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K,V> source){
+    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
         //REGISTER LISTENERS
-        final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations().iterator();
-        while (iterator.hasNext()){
+        final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations()
+                                                                                    .iterator();
+        while (iterator.hasNext()) {
             final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
-            cacheService.registerCacheEntryListener(cacheConfig.getNameWithPrefix(), source,listenerConfig);
+            cacheService.registerCacheEntryListener(cacheConfig.getNameWithPrefix(), source, listenerConfig);
         }
     }
 

@@ -21,7 +21,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public abstract class PartitionWideCacheOperation extends AbstractNamedOperation
+public abstract class PartitionWideCacheOperation
+        extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     transient Object response;

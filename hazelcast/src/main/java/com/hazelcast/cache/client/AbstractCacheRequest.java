@@ -23,10 +23,11 @@ import com.hazelcast.client.impl.client.RetryableRequest;
 
 import java.security.Permission;
 
-abstract class AbstractCacheRequest extends KeyBasedClientRequest implements RetryableRequest {
+abstract class AbstractCacheRequest
+        extends KeyBasedClientRequest
+        implements RetryableRequest {
 
     protected String name;
-
 
     public AbstractCacheRequest() {
     }

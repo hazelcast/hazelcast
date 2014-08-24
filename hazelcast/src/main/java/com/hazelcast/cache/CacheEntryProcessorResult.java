@@ -19,8 +19,8 @@ package com.hazelcast.cache;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 
-public class CacheEntryProcessorResult<T> implements EntryProcessorResult<T> {
-
+public class CacheEntryProcessorResult<T>
+        implements EntryProcessorResult<T> {
 
     private T result;
     private Throwable exception;
@@ -34,12 +34,12 @@ public class CacheEntryProcessorResult<T> implements EntryProcessorResult<T> {
     }
 
     @Override
-    public T get() throws EntryProcessorException {
+    public T get()
+            throws EntryProcessorException {
         if (result != null) {
             return result;
         }
         throw new EntryProcessorException(exception);
     }
-
 
 }

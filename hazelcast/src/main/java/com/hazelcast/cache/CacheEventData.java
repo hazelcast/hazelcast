@@ -25,7 +25,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import javax.cache.event.EventType;
 import java.io.IOException;
 
-class CacheEventData implements DataSerializable {
+class CacheEventData
+        implements DataSerializable {
 
     private String name;
     private EventType eventType;
@@ -42,7 +43,8 @@ class CacheEventData implements DataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(name);
         out.writeInt(eventType.ordinal());
         dataKey.writeData(out);
@@ -51,7 +53,8 @@ class CacheEventData implements DataSerializable {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         name = in.readUTF();
         eventType = EventType.values()[in.readInt()];
         dataKey = IOUtil.readData(in);

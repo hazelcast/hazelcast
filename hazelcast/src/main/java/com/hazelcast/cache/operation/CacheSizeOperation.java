@@ -21,8 +21,9 @@ import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
 import com.hazelcast.spi.ReadonlyOperation;
 
-public class CacheSizeOperation extends PartitionWideCacheOperation implements ReadonlyOperation {
-
+public class CacheSizeOperation
+        extends PartitionWideCacheOperation
+        implements ReadonlyOperation {
 
     public CacheSizeOperation() {
     }
@@ -32,7 +33,8 @@ public class CacheSizeOperation extends PartitionWideCacheOperation implements R
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         CacheService service = getService();
         ICacheRecordStore cache = service.getCache(name, getPartitionId());
         response = cache != null ? cache.size() : 0;

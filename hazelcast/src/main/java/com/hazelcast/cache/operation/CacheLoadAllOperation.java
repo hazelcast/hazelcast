@@ -35,9 +35,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class CacheLoadAllOperation extends AbstractNamedOperation
+public class CacheLoadAllOperation
+        extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable, BackupAwareOperation {
-
 
     private Set<Data> keys;
     private boolean replaceExistingValues;
@@ -59,7 +59,8 @@ public class CacheLoadAllOperation extends AbstractNamedOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         CacheService service = getService();
         final int partitionId = getPartitionId();
         cache = service.getOrCreateCache(name, partitionId);

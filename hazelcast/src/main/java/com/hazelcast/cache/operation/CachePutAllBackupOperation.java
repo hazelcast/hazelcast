@@ -34,8 +34,9 @@ import java.util.Map;
 /**
  * @author mdogan 05/02/14
  */
-public class CachePutAllBackupOperation extends AbstractNamedOperation implements BackupOperation, IdentifiedDataSerializable {
-
+public class CachePutAllBackupOperation
+        extends AbstractNamedOperation
+        implements BackupOperation, IdentifiedDataSerializable {
 
     private Map<Data, CacheRecord> cacheRecords;
     private transient ICacheRecordStore cache;
@@ -49,14 +50,15 @@ public class CachePutAllBackupOperation extends AbstractNamedOperation implement
     }
 
     @Override
-    public void beforeRun() throws Exception {
+    public void beforeRun()
+            throws Exception {
         CacheService service = getService();
         cache = service.getOrCreateCache(name, getPartitionId());
     }
 
-
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         if (cacheRecords != null) {
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
                 cache.setRecord(entry.getKey(), entry.getValue());
@@ -65,7 +67,8 @@ public class CachePutAllBackupOperation extends AbstractNamedOperation implement
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         super.writeInternal(out);
         out.writeBoolean(cacheRecords != null);
         if (cacheRecords != null) {
@@ -80,7 +83,8 @@ public class CachePutAllBackupOperation extends AbstractNamedOperation implement
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         super.readInternal(in);
         final boolean recordNotNull = in.readBoolean();
         if (recordNotNull) {

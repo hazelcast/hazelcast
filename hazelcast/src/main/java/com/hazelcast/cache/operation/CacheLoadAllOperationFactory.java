@@ -28,12 +28,12 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CacheLoadAllOperationFactory implements OperationFactory, IdentifiedDataSerializable {
+public class CacheLoadAllOperationFactory
+        implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;
     private Set<Data> keys;
     private boolean replaceExistingValues;
-
 
     public CacheLoadAllOperationFactory(String name, Set<Data> keys, boolean replaceExistingValues) {
         this.name = name;
@@ -41,8 +41,8 @@ public class CacheLoadAllOperationFactory implements OperationFactory, Identifie
         this.replaceExistingValues = replaceExistingValues;
     }
 
-    public CacheLoadAllOperationFactory() { }
-
+    public CacheLoadAllOperationFactory() {
+    }
 
     @Override
     public int getFactoryId() {
@@ -56,11 +56,12 @@ public class CacheLoadAllOperationFactory implements OperationFactory, Identifie
 
     @Override
     public Operation createOperation() {
-        return new CacheLoadAllOperation(name,keys,replaceExistingValues);
+        return new CacheLoadAllOperation(name, keys, replaceExistingValues);
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(name);
         out.writeBoolean(replaceExistingValues);
         out.writeBoolean(keys != null);
@@ -73,7 +74,8 @@ public class CacheLoadAllOperationFactory implements OperationFactory, Identifie
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         name = in.readUTF();
         replaceExistingValues = in.readBoolean();
         boolean isKeysNotNull = in.readBoolean();

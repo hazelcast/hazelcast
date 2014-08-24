@@ -20,15 +20,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
-import javax.cache.management.CacheStatisticsMXBean;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-
-public class CacheStatistics implements DataSerializable {
+public class CacheStatistics
+        implements DataSerializable {
 
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
-
 
     private final AtomicLong removals = new AtomicLong();
     private final AtomicLong expiries = new AtomicLong();
@@ -160,7 +158,6 @@ public class CacheStatistics implements DataSerializable {
         }
     }
 
-
     /**
      * Increments the put time accumulator
      *
@@ -191,7 +188,7 @@ public class CacheStatistics implements DataSerializable {
         }
     }
 
-    public CacheStatistics acumulate(CacheStatistics other){
+    public CacheStatistics acumulate(CacheStatistics other) {
         puts.addAndGet(other.getPuts());
         removals.addAndGet(other.getRemovals());
         expiries.addAndGet(other.getExpiries());
@@ -205,7 +202,8 @@ public class CacheStatistics implements DataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeLong(puts.get());
         out.writeLong(removals.get());
         out.writeLong(expiries.get());
@@ -220,7 +218,8 @@ public class CacheStatistics implements DataSerializable {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         puts.set(in.readLong());
         removals.set(in.readLong());
         expiries.set(in.readLong());

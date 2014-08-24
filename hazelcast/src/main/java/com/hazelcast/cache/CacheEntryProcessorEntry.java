@@ -23,9 +23,8 @@ import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
-
-public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
-
+public class CacheEntryProcessorEntry<K, V>
+        implements MutableEntry<K, V> {
 
     private K key;
     private V value;
@@ -40,7 +39,6 @@ public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
     private final long now;
     private final long start;
     private final ExpiryPolicy expiryPolicy;
-
 
     public CacheEntryProcessorEntry(Data keyData, CacheRecord record, CacheRecordStore cacheRecordStore, long now) {
         this.keyData = keyData;
@@ -141,20 +139,20 @@ public class CacheEntryProcessorEntry<K, V> implements MutableEntry<K, V> {
                 break;
             case REMOVE:
                 cacheRecordStore.remove(keyData, null);
-//                if (isStatisticsEnabled) {
-//                    statistics.increaseCacheRemovals(1);
-//                    statistics.addGetTimeNano(System.nanoTime() - start);
-//                }
+                //                if (isStatisticsEnabled) {
+                //                    statistics.increaseCacheRemovals(1);
+                //                    statistics.addGetTimeNano(System.nanoTime() - start);
+                //                }
                 break;
             case CREATE:
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
                     statistics.addGetTimeNano(System.nanoTime() - start);
                 }
-                cacheRecordStore.createRecordWithExpiry(keyData, value,  expiryPolicy, now, false);
+                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, false);
                 break;
             case LOAD:
-                cacheRecordStore.createRecordWithExpiry(keyData, value,  expiryPolicy, now, true);
+                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, true);
                 break;
             case NONE:
                 //NOOP

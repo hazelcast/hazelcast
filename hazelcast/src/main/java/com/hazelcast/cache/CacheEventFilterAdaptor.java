@@ -26,7 +26,8 @@ import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.EventType;
 import java.io.IOException;
 
-public class CacheEventFilterAdaptor<K, V> implements EventFilter, DataSerializable {
+public class CacheEventFilterAdaptor<K, V>
+        implements EventFilter, DataSerializable {
 
     private transient ICache<K, V> source;
 
@@ -43,9 +44,9 @@ public class CacheEventFilterAdaptor<K, V> implements EventFilter, DataSerializa
     public CacheEventFilterAdaptor(ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
 
         this.source = source;
-        this.cacheEntryEventFilter = cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory() == null
-                ? null
-                : cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory().create();
+        this.cacheEntryEventFilter =
+                cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory() == null ? null : cacheEntryListenerConfiguration
+                        .getCacheEntryEventFilterFactory().create();
         this.oldValueRequired = cacheEntryListenerConfiguration.isOldValueRequired();
         this.isSynchronous = cacheEntryListenerConfiguration.isSynchronous();
     }
@@ -64,19 +65,21 @@ public class CacheEventFilterAdaptor<K, V> implements EventFilter, DataSerializa
         return oldValueRequired;
     }
 
-    public boolean isSynchronous(){
+    public boolean isSynchronous() {
         return isSynchronous;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeBoolean(oldValueRequired);
         out.writeObject(cacheEntryEventFilter);
         out.writeUTF(source.getName());
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         this.oldValueRequired = in.readBoolean();
         this.cacheEntryEventFilter = in.readObject();
         this.cacheName = in.readUTF();

@@ -22,8 +22,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class CacheClearResponse implements IdentifiedDataSerializable {
-
+public class CacheClearResponse
+        implements IdentifiedDataSerializable {
 
     private Object response;
 
@@ -49,12 +49,14 @@ public class CacheClearResponse implements IdentifiedDataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeObject(response);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         response = in.readObject();
     }
 

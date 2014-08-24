@@ -58,9 +58,9 @@ public interface ICacheRecordStore {
 
     void destroy();
 
-//    boolean hasExpiringEntry();
-//
-//    Callback<Data> createEvictionCallback();
+    //    boolean hasExpiringEntry();
+    //
+    //    Callback<Data> createEvictionCallback();
 
     CacheConfig getConfig();
 
@@ -80,7 +80,7 @@ public interface ICacheRecordStore {
 
     Set<Data> loadAll(Set<Data> keys, boolean replaceExistingValues);
 
-//    void setRecordStoreMode(boolean storeOrBackup);
+    //    void setRecordStoreMode(boolean storeOrBackup);
 
     CacheStatistics getCacheStats();
 
