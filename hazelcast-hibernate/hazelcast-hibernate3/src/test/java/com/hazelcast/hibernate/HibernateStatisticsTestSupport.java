@@ -149,7 +149,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testQuery() {
         final int entityCount = 10;
         final int queryCount = 3;
