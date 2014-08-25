@@ -782,14 +782,13 @@ This configuration is used for SPI.
 <services>
    <service enabled="true">
       <name>MyService</name>
-      
-   <max-thread-size>0</max-thread-size>
-   <queue-size>0</queue-size>
-   <retry-count>0</retry-count>
-   <chunk-size>1000</chunk-size>
-   <communicate-stats>true</communicate-stats>
-   <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
-</job-tracker>
+      <class-name>MyServiceClass</class-name>
+      <properties>
+         <custom-property-1 enabled="true">100</custom-property-1>
+         <custom-property-2>true</custom-property-2>
+      </properties>
+   </service>
+</services>
 ```
 
 **Programmatic:**
