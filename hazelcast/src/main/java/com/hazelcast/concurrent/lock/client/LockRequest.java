@@ -60,7 +60,7 @@ public final class LockRequest extends AbstractLockRequest {
         if (timeout == -1 && ttl != Long.MAX_VALUE) {
             // lock (lease, TimeUnit)
             return new Object[]{ttl, TimeUnit.MILLISECONDS};
-        } else if (timeout > 0) {
+        } else if (timeout >= 0) {
             // tryLock(timeout, TimeUnit)
             return new Object[]{timeout, TimeUnit.MILLISECONDS};
         }
