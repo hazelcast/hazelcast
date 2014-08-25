@@ -17,66 +17,44 @@
 package com.hazelcast.cache.client;
 
 import com.hazelcast.cache.CachePortableHook;
-import com.hazelcast.cache.operation.CacheGetOperation;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.cache.operation.CacheGetConfigOperation;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
 
-import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
-public class CacheGetRequest
+public class CacheGetConfigRequest
         extends AbstractCacheRequest {
 
-    protected Data key;
-    protected ExpiryPolicy expiryPolicy = null;
-
-    public CacheGetRequest() {
+    public CacheGetConfigRequest() {
     }
 
-    public CacheGetRequest(String name, Data key) {
-        super(name);
-        this.key = key;
+    public CacheGetConfigRequest(String cacheName) {
+        super(cacheName);
     }
 
-    protected CacheGetRequest(String name, Data key, ExpiryPolicy expiryPolicy) {
-        super(name);
-        this.key = key;
-        this.expiryPolicy = expiryPolicy;
-    }
-
-    public int getClassId() {
-        return CachePortableHook.GET;
-    }
-
+    @Override
     protected Object getKey() {
-        return key;
+        return name;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheGetOperation(name, key, expiryPolicy);
+        return new CacheGetConfigOperation(name);
+    }
+
+    public int getClassId() {
+        return CachePortableHook.GET_CONFIG;
     }
 
     public void write(PortableWriter writer)
             throws IOException {
         writer.writeUTF("n", name);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
-//        out.writeObject(expiryPolicy);
-
     }
 
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
-        final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
-//        this.expiryPolicy = in.readObject();
     }
-
 }

@@ -14,22 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.cache;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import org.junit.Ignore;
 
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+import javax.cache.spi.CachingProvider;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Ignore("not a JUnit test")
-public class SimpleMapTestFromClient {
+public class SimpleCacheTestFromClient {
 
     static {
         System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
@@ -56,7 +62,7 @@ public class SimpleMapTestFromClient {
         final ClientConfig clientConfig = new ClientConfig();
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+//        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final Stats stats = new Stats();
         if (args != null && args.length > 0) {
             for (String arg : args) {
@@ -85,22 +91,30 @@ public class SimpleMapTestFromClient {
         System.out.println("    Get Percentage: " + GET_PERCENTAGE);
         System.out.println("    Put Percentage: " + PUT_PERCENTAGE);
         System.out.println(" Remove Percentage: " + (100 - (PUT_PERCENTAGE + GET_PERCENTAGE)));
+
+        final CacheConfig<String, Object> config = new CacheConfig<String, Object>();
+        config.setTypes(String.class, Object.class);
+
+        final CachingProvider cachingProvider = Caching.getCachingProvider();
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
+        final Cache<String, Object> cache = cacheManager.createCache("default", config);
+
         ExecutorService es = Executors.newFixedThreadPool(THREAD_COUNT);
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.submit(new Runnable() {
                 public void run() {
-                    IMap<String, Object> map = client.getMap("default");
+                    final Cache<String, Object> cache = cacheManager.getCache("default",String.class, Object.class);
                     while (true) {
                         int key = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 100));
                         if (operation < GET_PERCENTAGE) {
-                            map.get(String.valueOf(key));
+                            cache.get(String.valueOf(key));
                             stats.gets.incrementAndGet();
                         } else if (operation < GET_PERCENTAGE + PUT_PERCENTAGE) {
-                            map.put(String.valueOf(key), new byte[VALUE_SIZE]);
+                            cache.put(String.valueOf(key), new byte[VALUE_SIZE]);
                             stats.puts.incrementAndGet();
                         } else {
-                            map.remove(String.valueOf(key));
+                            cache.remove(String.valueOf(key));
                             stats.removes.incrementAndGet();
                         }
                     }
@@ -112,8 +126,7 @@ public class SimpleMapTestFromClient {
                 while (true) {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
-                        System.out.println("cluster size:"
-                                + client.getCluster().getMembers().size());
+//                        System.out.println("cluster size:"  + client.getCluster().getMembers().size());
                         Stats currentStats = stats.getAndReset();
                         System.out.println(currentStats);
                         System.out.println("Operations per Second : " + currentStats.total()

@@ -151,8 +151,9 @@ public final class SimpleCacheTest {
 
 
         CacheConfig<String, Object> config = new CacheConfig<String, Object>();
+        config.setTypes(String.class, Object.class);
 
-        final Cache<String, Object> cache = cacheManager.createCache(NAMESPACE, config);
+        cacheManager.createCache(NAMESPACE, config);
 
 //        final IMap<String, Object> map = instance.getMap(NAMESPACE);
         for (int i = 0; i < threadCount; i++) {
@@ -160,6 +161,7 @@ public final class SimpleCacheTest {
                 public void run() {
                     try {
                         while (true) {
+                            final Cache<String, Object> cache = cacheManager.getCache(NAMESPACE,String.class, Object.class);
                             int key = (int) (random.nextFloat() * entryCount);
                             int operation = ((int) (random.nextFloat() * 100));
                             if (operation < getPercentage) {

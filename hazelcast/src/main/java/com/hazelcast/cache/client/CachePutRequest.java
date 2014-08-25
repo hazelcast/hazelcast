@@ -34,14 +34,20 @@ public class CachePutRequest
     protected Data key;
     protected Data value;
     protected boolean get = false; // getAndPut
-    protected ExpiryPolicy expiryPolicy;
+    protected ExpiryPolicy expiryPolicy=null;
 
     public CachePutRequest() {
     }
 
+    public CachePutRequest(String name, Data key, Data value) {
+        super(name);
+        this.key = key;
+        this.value = value;
+        this.expiryPolicy = null;
+    }
+
     public CachePutRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
         super(name);
-        this.name = name;
         this.key = key;
         this.value = value;
         this.expiryPolicy = expiryPolicy;

@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
+import com.hazelcast.client.proxy.ClientCacheDistributedObject;
 import com.hazelcast.client.proxy.ClientCacheProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
 import com.hazelcast.client.proxy.ClientExecutorServiceProxy;
@@ -101,8 +102,7 @@ public final class ProxyManager {
     public void init(ClientConfig config) {
         // register defaults
         register(MapService.SERVICE_NAME, ClientMapProxy.class);
-        //TODO review if ClientProxy is OK here ?
-        register(CacheService.SERVICE_NAME, ClientProxy.class);
+        register(CacheService.SERVICE_NAME, ClientCacheDistributedObject.class);
         register(QueueService.SERVICE_NAME, ClientQueueProxy.class);
         register(MultiMapService.SERVICE_NAME, ClientMultiMapProxy.class);
         register(ListService.SERVICE_NAME, ClientListProxy.class);

@@ -16,67 +16,59 @@
 
 package com.hazelcast.config;
 
-
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
-import javax.cache.configuration.Factory;
 import javax.cache.configuration.MutableConfiguration;
-import javax.cache.expiry.ExpiryPolicy;
-import javax.cache.integration.CacheLoader;
-import javax.cache.integration.CacheWriter;
-
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashSet;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataSerializable{
+public class CacheConfig<K, V>
+        extends MutableConfiguration<K, V>
+        implements DataSerializable {
 
     public final static int MIN_BACKUP_COUNT = 0;
+    private int asyncBackupCount = MIN_BACKUP_COUNT;
     public final static int DEFAULT_BACKUP_COUNT = 1;
+    private int backupCount = DEFAULT_BACKUP_COUNT;
     public final static int MAX_BACKUP_COUNT = 6;
-//    public final static int MIN_EVICTION_PERCENTAGE = 0;
-//    public final static int DEFAULT_EVICTION_PERCENTAGE = 20;
-//    public final static int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = 95;
-//    public final static int MAX_EVICTION_PERCENTAGE = 100;
-//    public final static int DEFAULT_TTL_SECONDS = 0;
+    //    public final static int MIN_EVICTION_PERCENTAGE = 0;
+    //    public final static int DEFAULT_EVICTION_PERCENTAGE = 20;
+    //    public final static int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = 95;
+    //    public final static int MAX_EVICTION_PERCENTAGE = 100;
+    //    public final static int DEFAULT_TTL_SECONDS = 0;
     public final static EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
-
+    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
     public final static InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
-
+    private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private String name = null;
     private String managerPrefix = null;
     private String uriString = null;
-
-    private int backupCount = DEFAULT_BACKUP_COUNT;
-
-    private int asyncBackupCount = MIN_BACKUP_COUNT;
-
-    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-
-    private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
-
     private NearCacheConfig nearCacheConfig;
 
-    private CacheConfigReadOnly<K,V> readOnly;
+    private CacheConfigReadOnly<K, V> readOnly;
 
     public CacheConfig() {
+        super();
     }
 
-    public CacheConfig(CompleteConfiguration<K,V> completeConfiguration) {
+    public CacheConfig(CompleteConfiguration<K, V> completeConfiguration) {
         super(completeConfiguration);
-        if(completeConfiguration instanceof CacheConfig){
-            final CacheConfig config = (CacheConfig)completeConfiguration;
-//        this.name = config.name;
+        if (completeConfiguration instanceof CacheConfig) {
+            final CacheConfig config = (CacheConfig) completeConfiguration;
+            //        this.name = config.name;
             this.backupCount = config.backupCount;
             this.asyncBackupCount = config.asyncBackupCount;
-//        this.evictionPercentage = config.evictionPercentage;
-//        this.evictionThresholdPercentage = config.evictionThresholdPercentage;
-//        this.timeToLiveSeconds = config.timeToLiveSeconds;
+            //        this.evictionPercentage = config.evictionPercentage;
+            //        this.evictionThresholdPercentage = config.evictionThresholdPercentage;
+            //        this.timeToLiveSeconds = config.timeToLiveSeconds;
             this.evictionPolicy = config.evictionPolicy;
             this.isStatisticsEnabled = config.isStatisticsEnabled;
             if (config.nearCacheConfig != null) {
@@ -85,9 +77,9 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
         }
     }
 
-    public CacheConfigReadOnly<K,V> getAsReadOnly(){
-        if (readOnly == null){
-            readOnly = new CacheConfigReadOnly<K,V>(this);
+    public CacheConfigReadOnly<K, V> getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new CacheConfigReadOnly<K, V>(this);
         }
         return readOnly;
     }
@@ -102,7 +94,7 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
     /**
      * @param name the name to set
      */
-    public CacheConfig<K,V> setName(String name) {
+    public CacheConfig<K, V> setName(String name) {
         this.name = name;
         return this;
     }
@@ -114,7 +106,7 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
         return managerPrefix;
     }
 
-    public CacheConfig<K,V> setManagerPrefix(String managerPrefix) {
+    public CacheConfig<K, V> setManagerPrefix(String managerPrefix) {
         this.managerPrefix = managerPrefix;
         return this;
     }
@@ -123,7 +115,7 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
         return uriString;
     }
 
-    public CacheConfig<K,V> setUriString(String uriString) {
+    public CacheConfig<K, V> setUriString(String uriString) {
         this.uriString = uriString;
         return this;
     }
@@ -132,7 +124,7 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
      * @return the name with manager scope prefix
      */
     public String getNameWithPrefix() {
-        return managerPrefix+name;
+        return managerPrefix + name;
     }
 
     /**
@@ -151,14 +143,12 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
      * @param backupCount the backupCount to set
      * @see #setAsyncBackupCount(int)
      */
-    public CacheConfig<K,V> setBackupCount(final int backupCount) {
+    public CacheConfig<K, V> setBackupCount(final int backupCount) {
         if (backupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map backup count must be equal to or bigger than "
-                    + MIN_BACKUP_COUNT);
+            throw new IllegalArgumentException("map backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
         }
         if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                    + MAX_BACKUP_COUNT);
+            throw new IllegalArgumentException("total (sync + async) map backup count must be less than " + MAX_BACKUP_COUNT);
         }
         this.backupCount = backupCount;
         return this;
@@ -179,14 +169,12 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
      * @param asyncBackupCount the asyncBackupCount to set
      * @see #setBackupCount(int)
      */
-    public CacheConfig<K,V> setAsyncBackupCount(final int asyncBackupCount) {
+    public CacheConfig<K, V> setAsyncBackupCount(final int asyncBackupCount) {
         if (asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map async backup count must be equal to or bigger than "
-                    + MIN_BACKUP_COUNT);
+            throw new IllegalArgumentException("map async backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
         }
         if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                    + MAX_BACKUP_COUNT);
+            throw new IllegalArgumentException("total (sync + async) map backup count must be less than " + MAX_BACKUP_COUNT);
         }
         this.asyncBackupCount = asyncBackupCount;
         return this;
@@ -206,11 +194,10 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
     /**
      * @param evictionPolicy the evictionPolicy to set
      */
-    public CacheConfig<K,V> setEvictionPolicy(EvictionPolicy evictionPolicy) {
+    public CacheConfig<K, V> setEvictionPolicy(EvictionPolicy evictionPolicy) {
         this.evictionPolicy = evictionPolicy;
         return this;
     }
-
 
     /**
      * @return data type that will be used for storing records.
@@ -228,13 +215,14 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
      * @param inMemoryFormat the record type to set
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
-    public CacheConfig<K,V> setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat,"inMemoryFormat");
+    public CacheConfig<K, V> setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
         return this;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(name);
         out.writeUTF(managerPrefix);
         out.writeUTF(uriString);
@@ -258,9 +246,9 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
 
         final boolean listNotEmpty = listenerConfigurations != null && !listenerConfigurations.isEmpty();
         out.writeBoolean(listNotEmpty);
-        if(listNotEmpty){
+        if (listNotEmpty) {
             out.writeInt(listenerConfigurations.size());
-            for(CacheEntryListenerConfiguration<K,V> cc:listenerConfigurations){
+            for (CacheEntryListenerConfiguration<K, V> cc : listenerConfigurations) {
                 out.writeObject(cc);
             }
         }
@@ -268,12 +256,13 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         name = in.readUTF();
         managerPrefix = in.readUTF();
         uriString = in.readUTF();
-        backupCount= in.readInt();
-        asyncBackupCount= in.readInt();
+        backupCount = in.readInt();
+        asyncBackupCount = in.readInt();
 
         final int _inMemoryFormat = in.readInt();
         inMemoryFormat = InMemoryFormat.values()[_inMemoryFormat];
@@ -294,15 +283,14 @@ public class CacheConfig<K,V> extends MutableConfiguration<K,V> implements DataS
         isManagementEnabled = in.readBoolean();
 
         final boolean listNotEmpty = in.readBoolean();
-        if(listNotEmpty){
+        if (listNotEmpty) {
             final int size = in.readInt();
             listenerConfigurations = new HashSet<CacheEntryListenerConfiguration<K, V>>(size);
-            for(int i=0; i<size ; i++){
+            for (int i = 0; i < size; i++) {
                 listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
             }
         }
 
     }
-
 
 }

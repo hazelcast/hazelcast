@@ -18,6 +18,8 @@ package com.hazelcast.cache;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.OptionalFeature;
@@ -39,33 +41,16 @@ public final class HazelcastCachingProvider
 
     public HazelcastCachingProvider() {
         CachingProvider cp = null;
-        //        try {
-        //            cp = ClassLoaderUtil.newInstance(getClass().getClassLoader(), CLIENT_CACHING_PROVIDER_CLASS);
-        //        } catch (Exception e) {
-        //            logger.warning("Could not load client CachingProvider! Fallback to server one... " + e.toString());
-        //        }
+        try {
+            cp = ClassLoaderUtil.newInstance(getClass().getClassLoader(), CLIENT_CACHING_PROVIDER_CLASS);
+        } catch (Exception e) {
+            logger.warning("Could not load client CachingProvider! Fallback to server one... " + e.toString());
+        }
         if (cp == null) {
             cp = new HazelcastServerCachingProvider();
         }
         delegate = cp;
     }
-
-    //    public HazelcastCachingProvider(HazelcastInstance instance) {
-    //        CachingProvider cp = null;
-    //        if (instance instanceof HazelcastInstanceProxy || instance instanceof HazelcastInstanceImpl) {
-    //            cp = new HazelcastServerCachingProvider(instance);
-    //        } else {
-    //            try {
-    //                Class<?> clazz = ClassLoaderUtil.loadClass(getClass().getClassLoader(), CLIENT_CACHING_PROVIDER_CLASS);
-    //                Constructor<?> constructor = clazz
-    //                        .getDeclaredConstructor(new Class[] {HazelcastInstance.class});
-    //                cp = (CachingProvider) constructor.newInstance(instance);
-    //            } catch (Exception e) {
-    //                ExceptionUtil.sneakyThrow(e);
-    //            }
-    //        }
-    //        delegate = cp;
-    //    }
 
     @Override
     public CacheManager getCacheManager(URI uri, ClassLoader classLoader, Properties properties) {

@@ -41,8 +41,7 @@ public final class HazelcastClientCachingProvider extends HazelcastAbstractCachi
 
     @Override
     protected CacheManager getHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
-        return null;
-//       return new HazelcastClientCacheManager(this, getHazelcastInstance(), uri, classLoader, managerProperties);
+       return new HazelcastClientCacheManager(this, getHazelcastInstance(), uri, classLoader, managerProperties);
     }
 
 

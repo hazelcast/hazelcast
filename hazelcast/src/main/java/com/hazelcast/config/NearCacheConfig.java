@@ -65,6 +65,12 @@ public class NearCacheConfig implements DataSerializable{
 
     private boolean cacheLocalEntries;
 
+    private LocalUpdatePolicy localUpdatePolicy = LocalUpdatePolicy.INVALIDATE;
+
+    public enum LocalUpdatePolicy {
+        INVALIDATE, CACHE
+    }
+
     public NearCacheConfig() {
     }
 
@@ -87,6 +93,7 @@ public class NearCacheConfig implements DataSerializable{
         maxSize = config.getMaxSize();
         timeToLiveSeconds = config.getTimeToLiveSeconds();
         cacheLocalEntries = config.isCacheLocalEntries();
+        localUpdatePolicy = config.localUpdatePolicy;
     }
 
     public NearCacheConfigReadOnly getAsReadOnly() {
@@ -168,6 +175,15 @@ public class NearCacheConfig implements DataSerializable{
         return this;
     }
 
+    public LocalUpdatePolicy getLocalUpdatePolicy() {
+        return localUpdatePolicy;
+    }
+
+    public NearCacheConfig setLocalUpdatePolicy(LocalUpdatePolicy localUpdatePolicy) {
+        this.localUpdatePolicy = localUpdatePolicy;
+        return this;
+    }
+
     // this setter is for reflection based configuration building
     public NearCacheConfig setInMemoryFormat(String inMemoryFormat) {
         this.inMemoryFormat = InMemoryFormat.valueOf(inMemoryFormat);
@@ -184,6 +200,7 @@ public class NearCacheConfig implements DataSerializable{
         sb.append(", invalidateOnChange=").append(invalidateOnChange);
         sb.append(", inMemoryFormat=").append(inMemoryFormat);
         sb.append(", cacheLocalEntries=").append(cacheLocalEntries);
+        sb.append(", localUpdatePolicy=").append(localUpdatePolicy);
         sb.append('}');
         return sb.toString();
     }
@@ -195,7 +212,9 @@ public class NearCacheConfig implements DataSerializable{
         out.writeInt(timeToLiveSeconds);
         out.writeInt(maxSize);
         out.writeBoolean(invalidateOnChange);
+        out.writeBoolean(cacheLocalEntries);
         out.writeInt(inMemoryFormat.ordinal());
+        out.writeInt(localUpdatePolicy.ordinal());
     }
 
     @Override
@@ -206,7 +225,10 @@ public class NearCacheConfig implements DataSerializable{
         maxSize = in.readInt();
         maxSize= in.readInt();
         invalidateOnChange= in.readBoolean();
+        cacheLocalEntries= in.readBoolean();
         final int inMemoryFormatInt = in.readInt();
         inMemoryFormat = InMemoryFormat.values()[inMemoryFormatInt];
+        final int localUpdatePolicyInt = in.readInt();
+        localUpdatePolicy = LocalUpdatePolicy.values()[localUpdatePolicyInt];
     }
 }

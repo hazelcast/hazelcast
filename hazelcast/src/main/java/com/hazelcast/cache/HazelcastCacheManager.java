@@ -67,7 +67,7 @@ public abstract class HazelcastCacheManager
         }
         synchronized (caches) {
             final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-            final CacheConfig cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
+            final CacheConfig<K,V> cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
             if (cacheConfig == null) {
                 final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
                 //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
@@ -310,7 +310,9 @@ public abstract class HazelcastCacheManager
         } else {
             cacheConfig = new CacheConfig<K, V>();
             cacheConfig.setStoreByValue(configuration.isStoreByValue());
-            cacheConfig.setTypes(configuration.getKeyType(), configuration.getValueType());
+            final Class<K> keyType = configuration.getKeyType();
+            final Class<V> valueType = configuration.getValueType();
+            cacheConfig.setTypes(keyType, valueType);
         }
         cacheConfig.setName(cacheName);
         cacheConfig.setManagerPrefix(this.cacheNamePrefix);
