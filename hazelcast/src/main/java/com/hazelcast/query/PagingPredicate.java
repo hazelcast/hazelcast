@@ -253,6 +253,12 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         return comparator;
     }
 
+    /**
+     * Retrieve the anchor object which is the last value object on the previous page.
+     *
+     * Note: This method will return `null` on the first page of the query result.
+     * @return Map.Entry
+     */
     public Map.Entry getAnchor() {
         return anchorMap.get(page);
     }
