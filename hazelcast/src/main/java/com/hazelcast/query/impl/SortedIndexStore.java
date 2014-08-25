@@ -124,6 +124,21 @@ public class SortedIndexStore implements IndexStore {
     }
 
     @Override
+    public Set<QueryableEntry> getRecords() {
+        // todo: too expensive?
+        MultiResultSet queryableEntries = new MultiResultSet();
+        for (ConcurrentMap<Data, QueryableEntry> dataQueryableEntryConcurrentMap : mapRecords.values()) {
+            queryableEntries.addResultSet(dataQueryableEntryConcurrentMap);
+        }
+        return queryableEntries;
+    }
+
+    @Override
+    public long getRecordCount() {
+        return mapRecords.size();
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         return new SingleResultSet(mapRecords.get(value));
     }

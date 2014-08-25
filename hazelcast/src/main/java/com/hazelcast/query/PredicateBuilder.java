@@ -49,6 +49,16 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
         return lsPredicates.get(0).apply(mapEntry);
     }
 
+    @Override
+    public boolean in(Predicate predicate) {
+        for (Predicate lsPredicate : lsPredicates) {
+            if(!lsPredicate.in(predicate)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public EntryObject getEntryObject() {
         return new EntryObject(this);
     }

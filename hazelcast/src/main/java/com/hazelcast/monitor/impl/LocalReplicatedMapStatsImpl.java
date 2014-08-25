@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.monitor.IndexStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,6 +25,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
 import com.hazelcast.util.Clock;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -87,6 +91,8 @@ public class LocalReplicatedMapStatsImpl
 
     private long ownedEntryCount;
     private long creationTime;
+
+    private IndexStats[] indexStats;
 
     public LocalReplicatedMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -376,6 +382,15 @@ public class LocalReplicatedMapStatsImpl
     @Override
     public long getHeapCost() {
         return 0;
+    }
+
+    @Override
+    public List<IndexStats> getIndexStats() {
+        return Collections.unmodifiableList(Arrays.asList(indexStats));
+    }
+
+    public void setIndexStats(IndexStats[] indexStats) {
+        this.indexStats = indexStats;
     }
 
     @Override

@@ -20,6 +20,7 @@ import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -243,7 +244,7 @@ public class XMLConfigBuilderTest {
 
     @Test
     public void networkReuseAddress() {
-       Config config = buildConfig("<hazelcast>\n" +
+        Config config = buildConfig("<hazelcast>\n" +
                 "    <network>\n" +
                 "        <reuse-address>true</reuse-address>\n" +
                 "    </network>\n" +
@@ -389,6 +390,7 @@ public class XMLConfigBuilderTest {
         assertEquals("http://localhost:8080/mancenter", manCenterCfg.getUrl());
     }
 
+
     @Test
     public void testMapStoreInitialModeLazy() {
         String xml =
@@ -402,6 +404,25 @@ public class XMLConfigBuilderTest {
         final MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
         assertTrue(mapStoreConfig.isEnabled());
         assertEquals(MapStoreConfig.InitialLoadMode.LAZY, mapStoreConfig.getInitialLoadMode());
+    }
+
+    @Test
+    public void testMapIndex() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<map name=\"mymap\">" +
+                        "<indexes>" +
+                            "<index ordered=\"true\" predicate=\"a = 4\">test</index>" +
+                        "</indexes>" +
+                        "</map>" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final List<MapIndexConfig> mapIndexConfig = config.getMapConfig("mymap").getMapIndexConfigs();
+        assertFalse(mapIndexConfig.isEmpty());
+        MapIndexConfig mapIndexConfig1 = mapIndexConfig.get(0);
+        assertEquals("test", mapIndexConfig1.getAttribute());
+        assertEquals(true, mapIndexConfig1.isOrdered());
+        assertEquals(true, mapIndexConfig1.getPredicate() instanceof SqlPredicate);
     }
 
     @Test

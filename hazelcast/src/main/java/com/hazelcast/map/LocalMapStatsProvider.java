@@ -62,6 +62,8 @@ public class LocalMapStatsProvider {
 
         localMapStats.init();
         localMapStats.setBackupCount(backupCount);
+        localMapStats.setIndexStats(mapContainer.getIndexService().createStatistics());
+
         addNearCacheStats(localMapStats, mapContainer);
 
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {

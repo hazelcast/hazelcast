@@ -359,7 +359,8 @@ public class ConfigXmlGenerator {
         if (!m.getMapIndexConfigs().isEmpty()) {
             xml.append("<indexes>");
             for (MapIndexConfig indexCfg : m.getMapIndexConfigs()) {
-                xml.append("<index ordered=\"").append(indexCfg.isOrdered()).append("\">");
+                xml.append("<index ordered=\"").append(indexCfg.isOrdered()).append("\"")
+                        .append(" predicate=\"").append(indexCfg.getPredicate().toString()).append("\">");
                 xml.append(indexCfg.getAttribute());
                 xml.append("</index>");
             }

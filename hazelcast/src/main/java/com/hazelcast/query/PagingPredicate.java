@@ -189,6 +189,12 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         return true;
     }
 
+    @Override
+    public boolean in(Predicate predicate) {
+        // todo fix bug?
+        return false;
+    }
+
     /**
      * After each query, an anchor entry is set for that page
      * anchor entry is the last entry of the query

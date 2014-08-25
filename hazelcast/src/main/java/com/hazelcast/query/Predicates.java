@@ -28,8 +28,10 @@ import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.OrResultSet;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.util.ValidationUtil;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -142,6 +144,15 @@ public final class Predicates {
         }
 
         @Override
+        public boolean equals(Object predicate) {
+            if (super.equals(predicate) && predicate instanceof BetweenPredicate) {
+                BetweenPredicate p = (BetweenPredicate) predicate;
+                return ValidationUtil.equalOrNull(p.to, to) && ValidationUtil.equalOrNull(p.from, from);
+            }
+            return false;
+        }
+
+        @Override
         public boolean apply(Map.Entry entry) {
             Comparable entryValue = readAttribute(entry);
             if (entryValue == null) {
@@ -153,6 +164,18 @@ public final class Predicates {
                 return false;
             }
             return entryValue.compareTo(fromConvertedValue) >= 0 && entryValue.compareTo(toConvertedValue) <= 0;
+        }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            if (super.equals(predicate) && predicate instanceof BetweenPredicate) {
+                BetweenPredicate p = (BetweenPredicate) predicate;
+                if(to==null || p.to ==null || from ==null || p.from == null) {
+                    return false;
+                }
+                return to.compareTo(p.to)<=0 && from.compareTo(p.from)>=0;
+            }
+            return false;
         }
 
         @Override
@@ -195,8 +218,18 @@ public final class Predicates {
         }
 
         @Override
+        public boolean equals(Object predicate) {
+            return predicate.equals(this);
+        }
+
+        @Override
         public boolean apply(Map.Entry mapEntry) {
             return !predicate.apply(mapEntry);
+        }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            return this.predicate.in(predicate);
         }
 
         @Override
@@ -235,6 +268,40 @@ public final class Predicates {
         }
 
         @Override
+        public boolean in(Predicate predicate) {
+            boolean found;
+            if(predicate instanceof InPredicate) {
+                Comparable[] pValues = ((InPredicate) predicate).getValues();
+                for (Comparable value : values) {
+                    found = false;
+                    for (Comparable pValue : pValues) {
+                        if(value.compareTo(pValue)==0) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if(!found) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean equals(Object predicate) {
+            if (super.equals(predicate) && predicate instanceof InPredicate) {
+                InPredicate p = (InPredicate) predicate;
+                if(p.values == null || values == null) {
+                    return values == p.values;
+                }
+                return Arrays.equals(p.values, values) && p.convertedInValues.equals(convertedInValues);
+            }
+            return false;
+        }
+
+        @Override
         public boolean apply(Map.Entry entry) {
             Comparable entryValue = readAttribute(entry);
             if (entryValue == null) {
@@ -249,6 +316,10 @@ public final class Predicates {
                 convertedInValues = set;
             }
             return set.contains(entryValue);
+        }
+
+        public Comparable[] getValues() {
+            return values;
         }
 
         @Override
@@ -299,7 +370,7 @@ public final class Predicates {
     /**
      * Regex Predicate
      */
-    public static class RegexPredicate implements Predicate, DataSerializable {
+    public static class RegexPredicate implements AttributePredicate, DataSerializable {
         private String attribute;
         private String regex;
         private volatile Pattern pattern;
@@ -330,6 +401,26 @@ public final class Predicates {
         }
 
         @Override
+        public String getAttribute() {
+            return attribute;
+        }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            // TODO:a sophisticated comparison algorithm for regex queries
+            return equals(predicate);
+        }
+
+        @Override
+        public boolean equals(Object predicate) {
+            if (predicate instanceof RegexPredicate) {
+                RegexPredicate p = (RegexPredicate) predicate;
+                return ValidationUtil.equalOrNull(p.attribute, attribute) && ValidationUtil.equalOrNull(p.regex, regex);
+            }
+            return false;
+        }
+
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(attribute);
             out.writeUTF(regex);
@@ -350,7 +441,7 @@ public final class Predicates {
     /**
      * Like Predicate
      */
-    public static class LikePredicate implements Predicate, DataSerializable {
+    public static class LikePredicate implements AttributePredicate, DataSerializable {
         protected String attribute;
         protected String second;
         private volatile Pattern pattern;
@@ -391,6 +482,26 @@ public final class Predicates {
                 Matcher m = pattern.matcher(firstVal);
                 return m.matches();
             }
+        }
+
+        @Override
+        public String getAttribute() {
+            return attribute;
+        }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            // TODO: a sophisticated comparison algorithm for like queries
+            return equals(predicate);
+        }
+
+        @Override
+        public boolean equals(Object predicate) {
+            if (predicate instanceof LikePredicate) {
+                LikePredicate p = (LikePredicate) predicate;
+                return ValidationUtil.equalOrNull(p.attribute, attribute) && ValidationUtil.equalOrNull(p.second, second);
+            }
+            return false;
         }
 
         @Override
@@ -447,12 +558,25 @@ public final class Predicates {
         protected int getFlags() {
             return Pattern.CASE_INSENSITIVE;
         }
+
+        @Override
+        public boolean equals(Object predicate) {
+            if (predicate instanceof LikePredicate) {
+                LikePredicate p = (LikePredicate) predicate;
+                if(p.attribute == null || attribute == null) {
+                    return p.attribute == attribute;
+                }
+
+                return p.attribute.toLowerCase().equals(attribute.toLowerCase()) && p.second.equals(second);
+            }
+            return false;
+        }
     }
 
     /**
      * And Predicate
      */
-    public static class AndPredicate implements IndexAwarePredicate, DataSerializable {
+    public static class AndPredicate implements IndexAwarePredicate, DataSerializable, ConnectorPredicate {
 
         protected Predicate[] predicates;
 
@@ -463,35 +587,34 @@ public final class Predicates {
             this.predicates = predicates;
         }
 
+
         @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Set<QueryableEntry> smallestIndexedResult = null;
             List<Set<QueryableEntry>> otherIndexedResults = new LinkedList<Set<QueryableEntry>>();
-            List<Predicate> lsNoIndexPredicates = null;
-            for (Predicate predicate : predicates) {
-                boolean indexed = false;
-                if (predicate instanceof IndexAwarePredicate) {
-                    IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                    if (iap.isIndexed(queryContext)) {
-                        indexed = true;
-                        Set<QueryableEntry> s = iap.filter(queryContext);
-                        if (smallestIndexedResult == null) {
-                            smallestIndexedResult = s;
-                        } else if (s.size() < smallestIndexedResult.size()) {
-                            otherIndexedResults.add(smallestIndexedResult);
-                            smallestIndexedResult = s;
-                        } else {
-                            otherIndexedResults.add(s);
-                        }
-                    }
+            List<Predicate> lsNoIndexPredicates;
+
+            for (Map.Entry<IndexAwarePredicate, Index> entry : queryContext.getQueryPlan()) {
+                IndexAwarePredicate key = entry.getKey();
+                Set<QueryableEntry> s;
+                if(key!=null) {
+                    s = key.filter(queryContext);
+                }else{
+                    s = entry.getValue().getRecords();
                 }
-                if (!indexed) {
-                    if (lsNoIndexPredicates == null) {
-                        lsNoIndexPredicates = new LinkedList<Predicate>();
-                    }
-                    lsNoIndexPredicates.add(predicate);
+                if (smallestIndexedResult == null) {
+                    smallestIndexedResult = s;
+                } else if (s.size() < smallestIndexedResult.size()) {
+                    otherIndexedResults.add(smallestIndexedResult);
+                    smallestIndexedResult = s;
+                } else {
+                    otherIndexedResults.add(s);
                 }
+
             }
+
+            lsNoIndexPredicates = Arrays.asList(queryContext.getNotIndexedPredicates());
+
             if (smallestIndexedResult == null) {
                 return null;
             }
@@ -500,13 +623,26 @@ public final class Predicates {
 
         @Override
         public boolean isIndexed(QueryContext queryContext) {
-            for (Predicate predicate : predicates) {
-                if (predicate instanceof IndexAwarePredicate) {
-                    IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                    if (iap.isIndexed(queryContext)) {
-                        return true;
-                    }
+            return queryContext.getQueryPlan().size() > 0;
+        }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            for (Predicate p : predicates) {
+                if(p.in(predicate)) {
+                    return true;
                 }
+            }
+            return false;
+        }
+
+        public boolean equals(Object predicate) {
+            if(predicates.length==0) {
+                return predicates[0].equals(predicate);
+            }
+            if(predicate instanceof ConnectorPredicate) {
+                ConnectorPredicate p = (ConnectorPredicate) predicate;
+                return this.isSubset(p) && p.isSubset(this);
             }
             return false;
         }
@@ -552,17 +688,88 @@ public final class Predicates {
                 predicates[i] = in.readObject();
             }
         }
+
+        @Override
+        public AndPredicate subtract(Predicate predicate) {
+            if(!isSubset(predicate)) {
+                return null;
+            }
+
+            List<Predicate> listPredicate = new LinkedList(Arrays.asList(predicates));
+            if (predicate instanceof ConnectorPredicate) {
+                for (Predicate p : ((ConnectorPredicate) predicate).getPredicates()) {
+                    listPredicate.remove(p);
+                }
+            } else {
+                listPredicate.remove(predicate);
+            }
+            return new AndPredicate(listPredicate.toArray(new Predicate[listPredicate.size()]));
+        }
+
+        @Override
+        public ConnectorPredicate copy() {
+            return new AndPredicate(predicates);
+        }
+
+        @Override
+        public void removeChild(int index) {
+            Predicate[] newPredicates = new Predicate[predicates.length-1];
+            for (int i = 0; i < predicates.length; i++) {
+                if(i<index) {
+                    newPredicates[i] = predicates[i];
+                }else
+                if(i > index) {
+                    newPredicates[i-1] = predicates[i];
+                }
+            }
+            predicates = newPredicates;
+        }
+
+        @Override
+        public int getPredicateCount() {
+            return predicates.length;
+        }
+
+        @Override
+        public Predicate[] getPredicates() {
+            return predicates;
+        }
+
+        @Override
+        public boolean isSubset(Predicate predicate) {
+            if(predicate instanceof ConnectorPredicate) {
+                for (Predicate pInline : ((ConnectorPredicate) predicate).getPredicates()) {
+                    if(!this.isSubset(pInline)) {
+                        return false;
+                    }
+                }
+                return true;
+            }else {
+                for (Predicate p : predicates) {
+                    if (p instanceof ConnectorPredicate) {
+                        if (((ConnectorPredicate) p).isSubset(predicate)) {
+                            return true;
+                        }
+                    } else if (predicate.equals(p)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
     }
 
     /**
      * Or Predicate
      */
-    public static class OrPredicate implements IndexAwarePredicate, DataSerializable {
+    public static class OrPredicate implements IndexAwarePredicate, DataSerializable, ConnectorPredicate {
 
         private Predicate[] predicates;
 
         public OrPredicate() {
         }
+
 
         public OrPredicate(Predicate... predicates) {
             this.predicates = predicates;
@@ -571,41 +778,49 @@ public final class Predicates {
         @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             List<Set<QueryableEntry>> indexedResults = new LinkedList<Set<QueryableEntry>>();
-            for (Predicate predicate : predicates) {
-                if (predicate instanceof IndexAwarePredicate) {
-                    IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                    if (iap.isIndexed(queryContext)) {
-                        Set<QueryableEntry> s = iap.filter(queryContext);
-                        if (s != null) {
-                            indexedResults.add(s);
-                        }
-                    } else {
-                        return null;
-                    }
+
+            for (Map.Entry<IndexAwarePredicate, Index> entry : queryContext.getQueryPlan()) {
+                IndexAwarePredicate key = entry.getKey();
+                if(key!=null) {
+                    indexedResults.add(key.filter(queryContext));
+                }else{
+                    indexedResults.add(entry.getValue().getRecords());
                 }
             }
+
             return indexedResults.isEmpty() ? null : new OrResultSet(indexedResults);
         }
 
         @Override
         public boolean isIndexed(QueryContext queryContext) {
-            for (Predicate predicate : predicates) {
-                if (predicate instanceof IndexAwarePredicate) {
-                    IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-                    if (!iap.isIndexed(queryContext)) {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
+            return queryContext.getNotIndexedPredicates().length == 0;
+        }
+
+        public boolean equals(Object predicate) {
+            if(predicates.length==0) {
+                return predicates[0].equals(predicate);
             }
-            return true;
+            if(predicate instanceof ConnectorPredicate) {
+                ConnectorPredicate p = (ConnectorPredicate) predicate;
+                return this.isSubset(p) && p.isSubset(this);
+            }
+            return false;
         }
 
         @Override
         public boolean apply(Map.Entry mapEntry) {
             for (Predicate predicate : predicates) {
                 if (predicate.apply(mapEntry)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            for (Predicate p : predicates) {
+                if(p.in(predicate)) {
                     return true;
                 }
             }
@@ -644,6 +859,78 @@ public final class Predicates {
             sb.append(")");
             return sb.toString();
         }
+
+        @Override
+        public OrPredicate subtract(Predicate predicate) {
+            if(!isSubset(predicate)) {
+                return null;
+            }
+
+            List<Predicate> listPredicate = new LinkedList(Arrays.asList(predicates));
+
+            if (predicate instanceof ConnectorPredicate) {
+                for (Predicate p : ((ConnectorPredicate) predicate).getPredicates()) {
+                    listPredicate.remove(p);
+                }
+            } else {
+                listPredicate.remove(predicate);
+            }
+            return new OrPredicate(listPredicate.toArray(new Predicate[listPredicate.size()]));
+        }
+
+        @Override
+        public ConnectorPredicate copy() {
+            return new OrPredicate(predicates);
+        }
+
+        @Override
+        public void removeChild(int index) {
+            Predicate[] newPredicates = new Predicate[predicates.length-1];
+            for (int i = 0; i < predicates.length; i++) {
+                if(i<index) {
+                    newPredicates[i] = predicates[i];
+                }else
+                if(i > index) {
+                    newPredicates[i-1] = predicates[i];
+                }
+            }
+            predicates = newPredicates;
+        }
+
+        @Override
+        public int getPredicateCount() {
+            return predicates.length;
+        }
+
+
+        @Override
+        public Predicate[] getPredicates() {
+            return predicates;
+        }
+
+        @Override
+        public boolean isSubset(Predicate predicate) {
+            if(predicate instanceof ConnectorPredicate) {
+                for (Predicate pInline : ((ConnectorPredicate) predicate).getPredicates()) {
+                    if(!this.isSubset(pInline)) {
+                        return false;
+                    }
+                }
+                return true;
+            }else {
+                for (Predicate p : predicates) {
+                    if (p instanceof ConnectorPredicate) {
+                        if (((ConnectorPredicate) p).isSubset(predicate)) {
+                            return true;
+                        }
+                    } else if (predicate.equals(p)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
     }
 
     /**
@@ -654,6 +941,15 @@ public final class Predicates {
         boolean less;
 
         public GreaterLessPredicate() {
+        }
+
+        @Override
+        public boolean equals(Object predicate) {
+            if (super.equals(predicate) && predicate instanceof GreaterLessPredicate) {
+                GreaterLessPredicate p = (GreaterLessPredicate) predicate;
+                return ValidationUtil.equalOrNull(p.equal, equal) && ValidationUtil.equalOrNull(p.less, less);
+            }
+            return false;
         }
 
         public GreaterLessPredicate(String attribute, Comparable value, boolean equal, boolean less) {
@@ -677,6 +973,11 @@ public final class Predicates {
             final Comparable attributeValue = convert(mapEntry, entryValue, value);
             final int result = entryValue.compareTo(attributeValue);
             return equal && result == 0 || (less ? (result < 0) : (result > 0));
+        }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            return false;
         }
 
         @Override
@@ -735,6 +1036,15 @@ public final class Predicates {
         }
 
         @Override
+        public boolean equals(Object predicate) {
+            if (predicate instanceof NotEqualPredicate) {
+                NotEqualPredicate p = (NotEqualPredicate) predicate;
+                return ValidationUtil.equalOrNull(p.attribute, attribute) && ValidationUtil.equalOrNull(p.value, value);
+            }
+            return false;
+        }
+
+        @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Index index = getIndex(queryContext);
             if (index != null) {
@@ -769,6 +1079,15 @@ public final class Predicates {
         }
 
         @Override
+        public boolean equals(Object predicate) {
+            if (super.equals(predicate) && predicate instanceof EqualPredicate) {
+                EqualPredicate p = (EqualPredicate) predicate;
+                return ValidationUtil.equalOrNull(p.value, value);
+            }
+            return false;
+        }
+
+        @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Index index = getIndex(queryContext);
             return index.getRecords(value);
@@ -782,6 +1101,11 @@ public final class Predicates {
             }
             value = convert(mapEntry, entryValue, value);
             return entryValue.equals(value);
+        }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            return equals(predicate);
         }
 
         @Override
@@ -806,7 +1130,7 @@ public final class Predicates {
      * Provides some functionality for some predicates
      * such as Between, In.
      */
-    public abstract static class AbstractPredicate implements IndexAwarePredicate, DataSerializable {
+    public abstract static class AbstractPredicate implements IndexAwarePredicate, DataSerializable, AttributePredicate {
 
         protected String attribute;
         private transient volatile AttributeType attributeType;
@@ -816,6 +1140,10 @@ public final class Predicates {
 
         protected AbstractPredicate(String attribute) {
             this.attribute = attribute;
+        }
+
+        public String getAttribute() {
+            return attribute;
         }
 
         protected Comparable convert(Map.Entry mapEntry, Comparable entryValue, Comparable attributeValue) {
@@ -848,7 +1176,16 @@ public final class Predicates {
 
         @Override
         public boolean isIndexed(QueryContext queryContext) {
-            return getIndex(queryContext) != null;
+            return queryContext.getIndex(this)!=null;
+        }
+
+        @Override
+        public boolean equals(Object predicate) {
+            if (predicate instanceof AbstractPredicate) {
+                AbstractPredicate p = (AbstractPredicate) predicate;
+                return ValidationUtil.equalOrNull(p.attribute, attribute);
+            }
+            return false;
         }
 
         protected Index getIndex(QueryContext queryContext) {
@@ -883,12 +1220,26 @@ public final class Predicates {
         }
 
         @Override
+        public boolean equals(Object predicate) {
+            if (predicate instanceof InstanceOfPredicate) {
+                InstanceOfPredicate p = (InstanceOfPredicate) predicate;
+                return ValidationUtil.equalOrNull(p.klass, klass);
+            }
+            return false;
+        }
+
+        @Override
         public boolean apply(Map.Entry mapEntry) {
             Object value = mapEntry.getValue();
             if (value == null) {
                 return false;
             }
             return klass.isAssignableFrom(value.getClass());
+        }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            return equals(predicate);
         }
 
         @Override

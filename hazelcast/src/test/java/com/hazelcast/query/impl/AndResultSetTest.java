@@ -41,6 +41,11 @@ public class AndResultSetTest extends HazelcastTestSupport {
         public boolean apply(Map.Entry mapEntry) {
             return false;
         }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            return false;
+        }
     }
 
     private Set<QueryableEntry> generateEntries(int count) {

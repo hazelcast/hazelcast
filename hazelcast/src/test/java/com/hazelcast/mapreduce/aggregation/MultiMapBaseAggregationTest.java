@@ -226,6 +226,11 @@ public class MultiMapBaseAggregationTest
             Integer key = mapEntry.getKey();
             return key != null && key < maxKey;
         }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            return false;
+        }
     }
 
     public static class Extractor implements PropertyExtractor<Integer, Object> {

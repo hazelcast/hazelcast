@@ -31,15 +31,16 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -485,6 +486,11 @@ public class ListenerTest extends HazelcastTestSupport {
             public boolean apply(Map.Entry<String, String> mapEntry) {
                 return true;
             }
+
+            @Override
+            public boolean in(Predicate predicate) {
+                return false;
+            }
         };
     }
 
@@ -492,6 +498,11 @@ public class ListenerTest extends HazelcastTestSupport {
         return new Predicate<String, String>() {
             @Override
             public boolean apply(Map.Entry<String, String> mapEntry) {
+                return false;
+            }
+
+            @Override
+            public boolean in(Predicate predicate) {
                 return false;
             }
         };

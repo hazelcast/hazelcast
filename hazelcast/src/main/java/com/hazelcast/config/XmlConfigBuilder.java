@@ -25,6 +25,8 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
@@ -889,8 +891,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             if ("index".equals(cleanNodeName(indexNode))) {
                 final NamedNodeMap attrs = indexNode.getAttributes();
                 boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
+                Predicate predicate = new SqlPredicate(getTextContent(attrs.getNamedItem("predicate")));
                 String attribute = getTextContent(indexNode);
-                mapConfig.addMapIndexConfig(new MapIndexConfig(attribute, ordered));
+                mapConfig.addMapIndexConfig(new MapIndexConfig(attribute, ordered, predicate));
             }
         }
     }

@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.query.IndexAwarePredicate;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -36,6 +37,11 @@ public class TestPredicate implements IndexAwarePredicate {
         didApply = true;
         TempData data = (TempData) mapEntry.getValue();
         return data.getAttr1().equals(value);
+    }
+
+    @Override
+    public boolean in(Predicate predicate) {
+        return false;
     }
 
     public Set<QueryableEntry> filter(QueryContext queryContext) {

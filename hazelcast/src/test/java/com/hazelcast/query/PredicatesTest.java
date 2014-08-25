@@ -44,7 +44,6 @@ import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.greaterEqual;
 import static com.hazelcast.query.Predicates.greaterThan;
 import static com.hazelcast.query.Predicates.ilike;
-import static com.hazelcast.query.Predicates.in;
 import static com.hazelcast.query.Predicates.instanceOf;
 import static com.hazelcast.query.Predicates.lessEqual;
 import static com.hazelcast.query.Predicates.lessThan;
@@ -78,7 +77,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         map.values(andPredicate);
     }
 
-    static class ShouldExecuteOncePredicate implements IndexAwarePredicate {
+        static class ShouldExecuteOncePredicate implements IndexAwarePredicate {
 
         boolean executed = false;
 
@@ -92,14 +91,20 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
 
         @Override
+        public boolean in(Predicate predicate) {
+            return false;
+        }
+
+        @Override
         public Set<QueryableEntry> filter(final QueryContext queryContext) {
             return null;
         }
 
         @Override
-        public boolean isIndexed(final QueryContext queryContext) {
+        public boolean isIndexed(QueryContext queryContext) {
             return false;
         }
+
     }
 
     @Test
@@ -137,6 +142,30 @@ public class PredicatesTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIsSubset_whenComplexPredicate() {
+        ConnectorPredicate and = (ConnectorPredicate) and(equal(null, 3),
+                and(equal(null, 10), or(notEqual(null, 15)), equal(null, 4), equal(null, 5)),
+                equal(null, 99));
+
+        assertTrue(and.isSubset(or(notEqual(null, 15))));
+        assertFalse(and.isSubset(and(notEqual(null, 15))));
+        assertTrue(and.isSubset(notEqual(null, 15)));
+        assertTrue(and.isSubset(equal(null, 99)));
+    }
+
+    @Test
+    public void tesConnectorPredicateEqual_whenMixedOrder() {
+        Predicate and0 = and(equal(null, 3),
+                and(equal(null, 10), or(notEqual(null, 15)), equal(null, 4), equal(null, 5)),
+                equal(null, 99));
+        Predicate and1 = and(equal(null, 99),
+                and(equal(null, 10), or(notEqual(null, 15)), equal(null, 4), equal(null, 5)),
+                equal(null, 3));
+
+        assertTrue(and0.equals(and1));
+    }
+
+    @Test
     public void testGreaterEqual() {
         assertPredicateTrue(greaterEqual(null, 5), 5);
     }
@@ -169,7 +198,7 @@ public class PredicatesTest extends HazelcastTestSupport {
     public void testPredicatesAgainstANullField() {
         assertFalse_withNullEntry(lessEqual("nullField", 1));
 
-        assertFalse_withNullEntry(in("nullField", 1));
+        assertFalse_withNullEntry(Predicates.in("nullField", 1));
         assertFalse_withNullEntry(lessThan("nullField", 1));
         assertFalse_withNullEntry(greaterEqual("nullField", 1));
         assertFalse_withNullEntry(greaterThan("nullField", 1));
@@ -192,10 +221,10 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testIn() {
-        assertPredicateTrue(in(null, 4, 7, 8, 5), 5);
-        assertPredicateTrue(in(null, 5, 7, 8), 5);
-        assertPredicateFalse(in(null, 6, 7, 8), 5);
-        assertPredicateFalse(in(null, 6, 7, 8), 9);
+        assertPredicateTrue(Predicates.in(null, 4, 7, 8, 5), 5);
+        assertPredicateTrue(Predicates.in(null, 5, 7, 8), 5);
+        assertPredicateFalse(Predicates.in(null, 6, 7, 8), 5);
+        assertPredicateFalse(Predicates.in(null, 6, 7, 8), 9);
     }
 
     @Test

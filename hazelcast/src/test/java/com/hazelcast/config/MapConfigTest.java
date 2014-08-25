@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -64,6 +65,23 @@ public class MapConfigTest {
         assertEquals(1, new MapConfig().setBackupCount(1).getBackupCount());
         assertEquals(2, new MapConfig().setBackupCount(2).getBackupCount());
         assertEquals(3, new MapConfig().setBackupCount(3).getBackupCount());
+    }
+
+    /**
+     * Test method for {@link com.hazelcast.config.MapConfig#setMapIndexConfigs(java.util.List)}
+     */
+    @Test
+    public void testIndex() {
+        MapIndexConfig mapIndexConfig = new MapIndexConfig();
+        mapIndexConfig
+                .setAttribute("test")
+                .setOrdered(true)
+                .setPredicate(Predicates.equal("test", 10));
+
+        MapIndexConfig actual = new MapConfig().addMapIndexConfig(mapIndexConfig).getMapIndexConfigs().get(0);
+        assertEquals("test", actual.getAttribute());
+        assertTrue(actual.isOrdered());
+        assertEquals(Predicates.equal("test", 10), actual.getPredicate());
     }
 
     /**

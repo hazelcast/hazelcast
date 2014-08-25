@@ -92,6 +92,20 @@ public class UnsortedIndexStore implements IndexStore {
     }
 
     @Override
+    public Set<QueryableEntry> getRecords() {
+        MultiResultSet queryableEntries = new MultiResultSet();
+        for (ConcurrentMap<Data, QueryableEntry> dataQueryableEntryConcurrentMap : mapRecords.values()) {
+            queryableEntries.addResultSet(dataQueryableEntryConcurrentMap);
+        }
+        return queryableEntries;
+    }
+
+    @Override
+    public long getRecordCount() {
+        return mapRecords.size();
+    }
+
+    @Override
     public void newIndex(Comparable newValue, QueryableEntry record) {
         Data indexKey = record.getIndexKey();
         ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);

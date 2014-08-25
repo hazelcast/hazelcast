@@ -22,9 +22,11 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.AbstractOperation;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.HashMap;
@@ -47,7 +49,7 @@ public class PostJoinMapOperation extends AbstractOperation {
         if (indexService.hasIndex()) {
             MapIndexInfo mapIndexInfo = new MapIndexInfo(mapContainer.getName());
             for (Index index : indexService.getIndexes()) {
-                mapIndexInfo.addIndexInfo(index.getAttributeName(), index.isOrdered());
+                mapIndexInfo.addIndexInfo(index.getAttributeName(), index.isOrdered(), index.getPredicate());
             }
             indexInfoList.add(mapIndexInfo);
         }
@@ -117,30 +119,34 @@ public class PostJoinMapOperation extends AbstractOperation {
         }
 
         static class IndexInfo implements DataSerializable {
+            Predicate predicate;
             String attributeName;
             boolean ordered;
 
             IndexInfo() {
             }
 
-            IndexInfo(String attributeName, boolean ordered) {
+            IndexInfo(String attributeName, boolean ordered, Predicate predicate) {
                 this.attributeName = attributeName;
                 this.ordered = ordered;
+                this.predicate = predicate;
             }
 
             public void writeData(ObjectDataOutput out) throws IOException {
                 out.writeUTF(attributeName);
                 out.writeBoolean(ordered);
+                out.writeObject(ordered);
             }
 
             public void readData(ObjectDataInput in) throws IOException {
                 attributeName = in.readUTF();
                 ordered = in.readBoolean();
+                predicate = in.readObject();
             }
         }
 
-        public void addIndexInfo(String attributeName, boolean ordered) {
-            lsIndexes.add(new MapIndexInfo.IndexInfo(attributeName, ordered));
+        public void addIndexInfo(String attributeName, boolean ordered, Predicate predicate) {
+            lsIndexes.add(new MapIndexInfo.IndexInfo(attributeName, ordered, predicate));
         }
 
         public void writeData(ObjectDataOutput out) throws IOException {
@@ -169,7 +175,7 @@ public class PostJoinMapOperation extends AbstractOperation {
             final MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapIndex.mapName);
             final IndexService indexService = mapContainer.getIndexService();
             for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
-                indexService.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
+                indexService.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered, indexInfo.predicate);
             }
         }
         for (InterceptorInfo interceptorInfo : interceptorInfoList) {

@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.query.Predicate;
+
 import static com.hazelcast.util.ValidationUtil.hasText;
 
 /**
@@ -27,6 +29,7 @@ public class MapIndexConfig {
 
     private String attribute;
     private boolean ordered;
+    private Predicate predicate;
     private MapIndexConfigReadOnly readOnly;
 
     /**
@@ -46,6 +49,23 @@ public class MapIndexConfig {
     public MapIndexConfig(String attribute, boolean ordered) {
         setAttribute(attribute);
         setOrdered(ordered);
+        setPredicate(null);
+    }
+
+    /**
+     * Creates a MapIndexConfig with the given attribute and ordered setting.
+     *
+     * @param attribute the attribute that is going to be indexed.
+     * @param ordered   if the index is ordered.
+     * @param predicate   condition for the index.
+     * @see #setOrdered(boolean)
+     * @see #setAttribute(String)
+     * @see #setPredicate(Predicate)
+     */
+    public MapIndexConfig(String attribute, boolean ordered, Predicate predicate) {
+        setAttribute(attribute);
+        setOrdered(ordered);
+        setPredicate(predicate);
     }
 
     public MapIndexConfig(MapIndexConfig config) {
@@ -68,6 +88,16 @@ public class MapIndexConfig {
      */
     public String getAttribute() {
         return attribute;
+    }
+
+    /**
+     * Gets the predicate that is condition for the index. If no predicate is set, null is returned.
+     *
+     * @return the predicate for the index.
+     * @see #setPredicate(Predicate)
+     */
+    public Predicate getPredicate() {
+        return predicate;
     }
 
     /**
@@ -102,6 +132,18 @@ public class MapIndexConfig {
      */
     public MapIndexConfig setOrdered(boolean ordered) {
         this.ordered = ordered;
+        return this;
+    }
+
+    /**
+     * Configures the index to be conditional or not. If predicate parameter is provided the index will contain
+     * only the entries filtered by this predicate.
+     *
+     * @param predicate condition for the index.
+     * @return the updated MapIndexConfig.
+     */
+    public MapIndexConfig setPredicate(Predicate predicate) {
+        this.predicate = predicate;
         return this;
     }
 

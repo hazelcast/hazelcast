@@ -16,12 +16,14 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.monitor.impl.MapIndexStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 
 import java.util.Set;
 /**
- * This interface contains the methods related to index of Query.
+ * This interface in the methods related to index of Query.
  */
 public interface Index {
 
@@ -31,9 +33,15 @@ public interface Index {
 
     void removeEntryIndex(Data indexKey);
 
+    Predicate getPredicate();
+
     Set<QueryableEntry> getRecords(Comparable[] values);
 
     Set<QueryableEntry> getRecords(Comparable value);
+
+    Set<QueryableEntry> getRecords();
+
+    long getRecordCount();
 
     Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to);
 
@@ -42,4 +50,6 @@ public interface Index {
     String getAttributeName();
 
     boolean isOrdered();
+
+    void setStatistics(MapIndexStats localMapIndexStats, int index);
 }

@@ -19,6 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.map.MapDataSerializerHook;
+import com.hazelcast.monitor.IndexStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,6 +27,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getInt;
@@ -97,6 +101,7 @@ public class LocalMapStatsImpl
     private int backupCount;
 
     private NearCacheStatsImpl nearCacheStats;
+    private IndexStats[] indexStats;
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -154,6 +159,14 @@ public class LocalMapStatsImpl
         if (hasNearCache) {
             nearCacheStats.writeData(out);
         }
+        boolean hasIndex = indexStats != null;
+        out.writeBoolean(hasIndex);
+        if (hasIndex) {
+            out.writeInt(indexStats.length);
+            for (IndexStats indexStat : indexStats) {
+                indexStat.writeData(out);
+            }
+        }
     }
 
     @Override
@@ -186,6 +199,15 @@ public class LocalMapStatsImpl
         if (hasNearCache) {
             nearCacheStats = new NearCacheStatsImpl();
             nearCacheStats.readData(in);
+        }
+        boolean hasIndex = in.readBoolean();
+        if (hasIndex) {
+            MapIndexStats.IndexStatsImpl[] stats = new MapIndexStats.IndexStatsImpl[in.readInt()];
+            for (int i = 0; i < stats.length; i++) {
+                MapIndexStats.IndexStatsImpl s = new MapIndexStats.IndexStatsImpl();
+                s.readData(in);
+                stats[i] = s;
+            }
         }
     }
 
@@ -396,12 +418,21 @@ public class LocalMapStatsImpl
     }
 
     @Override
+    public List<IndexStats> getIndexStats() {
+        return Collections.unmodifiableList(Arrays.asList(indexStats));
+    }
+
+    @Override
     public NearCacheStatsImpl getNearCacheStats() {
         return nearCacheStats;
     }
 
     public void setNearCacheStats(NearCacheStatsImpl nearCacheStats) {
         this.nearCacheStats = nearCacheStats;
+    }
+
+    public void setIndexStats(IndexStats[] indexStats) {
+        this.indexStats = indexStats;
     }
 
     @Override

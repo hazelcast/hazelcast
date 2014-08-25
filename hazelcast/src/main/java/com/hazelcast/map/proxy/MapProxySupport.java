@@ -101,6 +101,7 @@ import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.AbstractMap;
@@ -158,7 +159,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     private void initializeIndexes() {
         for (MapIndexConfig index : getMapConfig().getMapIndexConfigs()) {
             if (index.getAttribute() != null) {
-                addIndex(index.getAttribute(), index.isOrdered());
+                addIndex(index.getAttribute(), index.isOrdered(), index.getPredicate());
             }
         }
     }
@@ -1056,13 +1057,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return getMapQuerySupport().query(name, predicate, iterationType, dataResult);
     }
 
-    public void addIndex(final String attribute, final boolean ordered) {
+    public void addIndex(final String attribute, final boolean ordered, Predicate predicate) {
         final NodeEngine nodeEngine = getNodeEngine();
-        if (attribute == null) {
-            throw new IllegalArgumentException("Attribute name cannot be null");
-        }
+        ValidationUtil.isNotNull(attribute, "attribute");
+
         try {
-            AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered);
+            AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered, predicate);
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(addIndexOperation, nodeEngine));
         } catch (Throwable t) {

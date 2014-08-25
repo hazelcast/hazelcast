@@ -29,6 +29,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -113,6 +114,31 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         //check the query result after eviction
         values = imap.values(new SqlPredicate("active"));
         assertEquals(0, values.size());
+    }
+
+    @Test(timeout=1000*60)
+    public void testValues_withAllIndexesPredicate() throws Exception {
+
+        HazelcastInstance h1 = createHazelcastInstance();
+
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("age", false, Predicates.between("salary", 0, 100));
+
+
+        for (int i = 0; i < 1000; i++) {
+            Employee employee = new Employee("activeEmployee" + i, i, true, Double.valueOf(i));
+            imap.put("activeEmployee" + i, employee);
+        }
+
+        for (int i = 0; i < 1000; i++) {
+            Employee employee = new Employee("passiveEmployee" + i, i, false, Double.valueOf(i));
+            imap.put("passiveEmployee" + i, employee);
+        }
+
+
+        Predicate and = Predicates.and(Predicates.between("salary", 0, 100), Predicates.greaterEqual("age", 50));
+        Collection values = imap.values(and);
+        assertEquals(102, values.size());
     }
 
     @Test(timeout=1000*60)

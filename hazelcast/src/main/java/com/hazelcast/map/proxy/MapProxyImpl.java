@@ -606,6 +606,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    public void addIndex(String attribute, boolean ordered) {
+        addIndex(attribute, ordered, null);
+    }
+
+    @Override
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);

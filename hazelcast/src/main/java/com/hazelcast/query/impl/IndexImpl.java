@@ -16,7 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.monitor.impl.MapIndexStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 
 import java.util.HashSet;
@@ -39,12 +41,26 @@ public class IndexImpl implements Index {
     private final String attribute;
     private final boolean ordered;
 
-    private volatile AttributeType attributeType;
+    private final Predicate predicate;
 
-    public IndexImpl(String attribute, boolean ordered) {
+    private volatile AttributeType attributeType;
+    private MapIndexStats localMapIndexStats;
+
+    public int getId() {
+        return id;
+    }
+
+    private int id;
+
+    public IndexImpl(String attribute, boolean ordered, Predicate predicate) {
         this.attribute = attribute;
         this.ordered = ordered;
         indexStore = (ordered) ? new SortedIndexStore() : new UnsortedIndexStore();
+        this.predicate = predicate;
+    }
+
+    public IndexImpl(String attribute, boolean ordered) {
+        this(attribute, ordered, null);
     }
 
     @Override
@@ -80,6 +96,10 @@ public class IndexImpl implements Index {
             // Initialize attribute type by using entry index
             attributeType = e.getAttributeType(attribute);
         }
+        if(predicate!=null && !predicate.apply(e)) {
+            return;
+        }
+
         Data key = e.getIndexKey();
         Comparable oldValue = recordValues.remove(key);
         Comparable newValue = e.getAttribute(attribute);
@@ -100,10 +120,23 @@ public class IndexImpl implements Index {
     }
 
     @Override
+    public Predicate getPredicate() {
+        return predicate;
+    }
+
+    private void onIndexUsage() {
+        if(localMapIndexStats!=null) {
+            localMapIndexStats.incrementIndexUsage(id);
+        }
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparable[] values) {
         if (values.length == 1) {
             if (attributeType != null) {
-                return indexStore.getRecords(convert(values[0]));
+                Set<QueryableEntry> records = indexStore.getRecords(convert(values[0]));
+                onIndexUsage();
+                return records;
             } else {
                 return new SingleResultSet(null);
             }
@@ -115,6 +148,7 @@ public class IndexImpl implements Index {
                     convertedValues.add(convert(value));
                 }
                 indexStore.getRecords(results, convertedValues);
+                onIndexUsage();
             }
             return results;
         }
@@ -123,10 +157,28 @@ public class IndexImpl implements Index {
     @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         if (attributeType != null) {
-            return indexStore.getRecords(convert(value));
+            Set<QueryableEntry> records = indexStore.getRecords(convert(value));
+            onIndexUsage();
+            return records;
         } else {
             return new SingleResultSet(null);
         }
+    }
+
+    @Override
+    public Set<QueryableEntry> getRecords() {
+        if (attributeType != null) {
+            Set<QueryableEntry> records = indexStore.getRecords();
+            onIndexUsage();
+            return records;
+        }else {
+            return new SingleResultSet(null);
+        }
+    }
+
+    @Override
+    public long getRecordCount() {
+        return indexStore.getRecordCount();
     }
 
     @Override
@@ -134,6 +186,7 @@ public class IndexImpl implements Index {
         MultiResultSet results = new MultiResultSet();
         if (attributeType != null) {
             indexStore.getSubRecordsBetween(results, convert(from), convert(to));
+            onIndexUsage();
         }
         return results;
     }
@@ -143,6 +196,7 @@ public class IndexImpl implements Index {
         MultiResultSet results = new MultiResultSet();
         if (attributeType != null) {
             indexStore.getSubRecords(results, comparisonType, convert(searchedValue));
+            onIndexUsage();
         }
         return results;
     }
@@ -166,6 +220,12 @@ public class IndexImpl implements Index {
     @Override
     public boolean isOrdered() {
         return ordered;
+    }
+
+    @Override
+    public void setStatistics(MapIndexStats localMapIndexStats, int index) {
+        this.localMapIndexStats = localMapIndexStats;
+        this.id = index;
     }
 
     /**

@@ -16,20 +16,14 @@
 
 package com.hazelcast.query;
 
-import java.io.Serializable;
-import java.util.Map;
-
 /**
- * Predicate instance must be thread-safe.
- * {@link #apply(java.util.Map.Entry)} is called by multiple threads concurrently.
- *
- * @param <K>
- * @param <V>
+ * Connector predicate interface that in attribute predicates.
  */
-public interface Predicate<K, V> extends Serializable {
-
-    boolean apply(Map.Entry<K, V> mapEntry);
-
-    boolean in(Predicate predicate);
-
+public interface ConnectorPredicate extends Predicate {
+    ConnectorPredicate subtract(Predicate predicates);
+    ConnectorPredicate copy();
+    void removeChild(int index);
+    int getPredicateCount();
+    Predicate[] getPredicates();
+    boolean isSubset(Predicate predicate);
 }

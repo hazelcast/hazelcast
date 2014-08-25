@@ -968,6 +968,11 @@ public class BasicMapTest extends HazelcastTestSupport {
                 return true;
             return false;
         }
+
+        @Override
+        public boolean in(Predicate predicate) {
+            return false;
+        }
     }
 
     @Test

@@ -199,6 +199,13 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getHeapCost();
 
     /**
+     * Usage statistics of map indexes.
+     *
+     * @return IndexStatistics
+     */
+    java.util.List<IndexStats> getIndexStats();
+
+    /**
      * Returns statistics related to the Near Cache.
      *
      * @return statistics object for the Near Cache

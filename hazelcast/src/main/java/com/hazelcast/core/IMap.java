@@ -1079,6 +1079,42 @@ public interface IMap<K, V>
     void addIndex(String attribute, boolean ordered);
 
     /**
+     * Adds a conditional index to this map for the specified entries so
+     * that queries can run faster for specific queries.
+     * <p/>
+     * Let's say your map values are Employee objects.
+     * <pre>
+     *   public class Employee implements Serializable {
+     *       private boolean active = false;
+     *       private int age;
+     *       private String name = null;
+     *       // other fields.
+     *
+     *       // getters setter
+     *
+     *   }
+     * </pre>
+     * <p/>
+     * If you are querying your values mostly based on age and active then
+     * you should consider indexing these fields.
+     * <pre>
+     *   IMap imap = Hazelcast.getMap("employees");
+     *   imap.addIndex("active", Predicates.between("age", 10, 20));
+     *   imap.values(Predicates.and(Predicates.between("age", 10, 20), Predicates.equal("active", true)))
+     * </pre>
+     * <p/>
+     * imap.values searches over all the indexes for IMap and if it finds
+     * a conditional index that an appropriate predicate for this query,
+     * it will be used.
+     *
+     * @param attribute attribute of value
+     * @param ordered   <tt>true</tt> if index should be ordered,
+     *                  <tt>false</tt> otherwise.
+     * @param predicate condition for index
+     */
+    void addIndex(String attribute, boolean ordered, Predicate predicate);
+
+    /**
      * Returns LocalMapStats for this map.
      * LocalMapStats is the statistics for the local portion of this
      * distributed map and contains information such as ownedEntryCount

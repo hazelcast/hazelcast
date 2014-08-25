@@ -68,11 +68,8 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     }
 
     @Override
-    public boolean isIndexed(QueryContext queryContext) {
-        if (predicate instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
-        }
-        return false;
+    public boolean in(Predicate predicate) {
+        return this.predicate.in(predicate);
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * A {@link com.hazelcast.query.Predicate} which always returns true.
@@ -28,5 +29,10 @@ public class TruePredicate implements DataSerializable, Predicate {
     @Override
     public boolean apply(Map.Entry mapEntry) {
         return true;
+    }
+
+    @Override
+    public boolean in(Predicate predicate) {
+        return predicate instanceof TruePredicate;
     }
 }
