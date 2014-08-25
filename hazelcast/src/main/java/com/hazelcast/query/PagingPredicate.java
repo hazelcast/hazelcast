@@ -40,6 +40,34 @@ import java.util.Set;
  * Can be constructed with a page-size, an inner predicate for filtering, A comparator for sorting  \
  * This class is not thread-safe and stateless. To be able to reuse for another query, one should call
  * {@link PagingPredicate#reset()}
+ * <br/>
+ * Example usage could be seen like below;
+ * <pre>
+ * Predicate lessEqualThanFour = Predicates.lessEqual("this", 4);
+ *
+ * // We are constructing our paging predicate with a predicate and page size. In this case query results fetched two
+ * by two.
+ * PagingPredicate predicate = new PagingPredicate(lessEqualThanFour, 2);
+ *
+ * // we are initializing our map with integers from 0 to 10 as keys and values.
+ * IMap map = hazelcastInstance.getMap(...);
+ * for (int i = 0; i < 10; i++) {
+ * map.put(i, i);
+ * }
+ *
+ * // invoking the query
+ * Collection<Integer> values = map.values(predicate);
+ * System.out.println("values = " + values) // will print 'values = [0, 1]'
+ * predicate.nextPage(); // we are setting up paging predicate to fetch next page in the next call.
+ * values = map.values(predicate);
+ * System.out.println("values = " + values);// will print 'values = [2, 3]'
+ * Entry anchor = predicate.getAnchor();
+ * System.out.println("anchor -> " + anchor); // will print 'anchor -> 1=1',  since the anchor is the last entry of
+ * the previous page.
+ * predicate.previousPage(); // we are setting up paging predicate to fetch previous page in the next call
+ * values = map.values(predicate);
+ * System.out.println("values = " + values) // will print 'values = [0, 1]'
+ * </pre>
  */
 public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
 
