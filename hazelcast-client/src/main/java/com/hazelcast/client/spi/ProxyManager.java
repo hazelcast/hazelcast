@@ -151,7 +151,6 @@ public final class ProxyManager {
             register(serviceName, new ClientProxyFactory() {
                 @Override
                 public ClientProxy create(String id) {
-                    String instanceName = client.getName();
                     return instantiateClientProxy(proxyType, serviceName, id);
                 }
             });
