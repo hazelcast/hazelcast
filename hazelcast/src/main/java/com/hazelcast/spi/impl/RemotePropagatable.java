@@ -14,29 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor.impl;
+package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.ResponseHandler;
 
-import java.util.concurrent.Callable;
+public interface RemotePropagatable<T extends RemotePropagatable> {
 
-public final class CallableTaskOperation extends BaseCallableTaskOperation
-        implements IdentifiedDataSerializable {
+    ResponseHandler getResponseHandler();
 
-    public CallableTaskOperation() {
-    }
+    T setResponseHandler(ResponseHandler responseHandler);
 
-    public CallableTaskOperation(String name, String uuid, Callable callable) {
-        super(name, uuid, callable);
-    }
+    long getCallId();
 
-    @Override
-    public int getFactoryId() {
-        return ExecutorDataSerializerHook.F_ID;
-    }
+    boolean returnsResponse();
 
-    @Override
-    public int getId() {
-        return ExecutorDataSerializerHook.CALLABLE_TASK;
-    }
+    Connection getConnection();
+
+    boolean isUrgent();
+
+    Address getCallerAddress();
+
+    void logError(Throwable t);
 }

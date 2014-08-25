@@ -19,20 +19,41 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.executor.impl.CancellationOperation;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.SimpleMemberImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -44,7 +65,8 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class SerializationTest {
+public class SerializationTest
+        extends HazelcastTestSupport {
 
     @Test
     public void testGlobalSerializer() {
@@ -75,6 +97,19 @@ public class SerializationTest {
         SerializationService ss2 = new SerializationServiceBuilder().setConfig(serializationConfig).build();
         Object o = ss2.toObject(data);
         assertEquals(value, o);
+    }
+
+    @Test
+    public void test_callid_on_correct_stream_position() throws Exception {
+        SerializationService serializationService = new SerializationServiceBuilder().build();
+        CancellationOperation operation = new CancellationOperation(UuidUtil.buildRandomUuidString(), true);
+        operation.setCallerUuid(UuidUtil.buildRandomUuidString());
+        OperationAccessor.setCallId(operation, 12345);
+
+        Data data = serializationService.toData(operation);
+        long callId = IOUtil.extractOperationCallId(data, serializationService);
+
+        assertEquals(12345, callId);
     }
 
     private static class DummyValue {
@@ -205,6 +240,78 @@ public class SerializationTest {
         Assert.assertFalse("Objects should not be identical!", foo == foo.getBar().getFoo());
     }
 
+    @Test(expected = ExecutionException.class, timeout = 120000)
+    public void testGithubIssue2509()
+            throws Exception {
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+
+        UnDeserializable unDeserializable = new UnDeserializable(1);
+        IExecutorService executorService = h1.getExecutorService("default");
+        Issue2509Runnable task = new Issue2509Runnable(unDeserializable);
+        Future<?> future = executorService.submitToMember(task, h2.getCluster().getLocalMember());
+        future.get();
+    }
+
+    public static class Issue2509Runnable
+            implements Callable<Integer>, DataSerializable {
+
+        private UnDeserializable unDeserializable;
+
+        public Issue2509Runnable() {
+        }
+
+        public Issue2509Runnable(UnDeserializable unDeserializable) {
+            this.unDeserializable = unDeserializable;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out)
+                throws IOException {
+
+            out.writeObject(unDeserializable);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in)
+                throws IOException {
+
+            unDeserializable = in.readObject();
+        }
+
+        @Override
+        public Integer call() {
+            return unDeserializable.foo;
+        }
+    }
+
+    public static class UnDeserializable
+            implements DataSerializable {
+
+        private int foo;
+
+        public UnDeserializable(int foo) {
+            this.foo = foo;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out)
+                throws IOException {
+
+            out.writeInt(foo);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in)
+                throws IOException {
+
+            foo = in.readInt();
+        }
+    }
+
     private static class Foo implements Serializable {
         public Bar bar;
 
@@ -221,5 +328,45 @@ public class SerializationTest {
                 return Foo.this;
             }
         }
+    }
+
+    @Test
+    public void testMemberLeftException_usingMemberImpl() throws IOException, ClassNotFoundException {
+        String uuid = UuidUtil.buildRandomUuidString();
+        String host = "127.0.0.1";
+        int port = 5000;
+
+        Member member = new MemberImpl(new Address(host, port), false, uuid, null);
+
+        testMemberLeftException(uuid, host, port, member);
+    }
+
+    @Test
+    public void testMemberLeftException_usingSimpleMember() throws IOException, ClassNotFoundException {
+        String uuid = UuidUtil.buildRandomUuidString();
+        String host = "127.0.0.1";
+        int port = 5000;
+
+        Member member = new SimpleMemberImpl(uuid, new InetSocketAddress(host, port));
+        testMemberLeftException(uuid, host, port, member);
+    }
+
+    private void testMemberLeftException(String uuid, String host, int port, Member member)
+            throws IOException, ClassNotFoundException {
+
+        MemberLeftException exception = new MemberLeftException(member);
+
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(bout);
+        out.writeObject(exception);
+
+        ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
+        ObjectInputStream in = new ObjectInputStream(bin);
+        MemberLeftException exception2 = (MemberLeftException) in.readObject();
+        MemberImpl member2 = (MemberImpl) exception2.getMember();
+
+        assertEquals(uuid, member2.getUuid());
+        assertEquals(host, member2.getAddress().getHost());
+        assertEquals(port, member2.getAddress().getPort());
     }
 }

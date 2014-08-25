@@ -660,7 +660,70 @@ This configuration is for ???. It has below attributes.
 
 ### Partition Group Configuration
 
-This configuration is for ???. It only has the attribute `enabled`.
+When you enable partition grouping, Hazelcast presents three choices to configure partition groups at the moment.
+
+-   First one is to group nodes automatically using IP addresses of nodes, so nodes sharing same network interface will be grouped together. All members on the same host (IP address or domain name) will be a single partition group. This helps to avoid data loss when a physical server crashes by not storing multiple replicas of the same partition on the same host. But if there are multiple network interfaces or domain names per physical machine, that will make this assumption invalid.
+
+```xml
+<partition-group enabled="true" group-type="HOST_AWARE" />
+```
+
+```java
+Config config = ...;
+PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
+partitionGroupConfig.setEnabled( true )
+    .setGroupType( MemberGroupType.HOST_AWARE );
+```
+
+-   Second one is custom grouping using Hazelcast's interface matching configuration. This way, you can add different and multiple interfaces to a group. You can also use wildcards in interface addresses. For example, the users can create rack aware or data warehouse partition groups using custom partition grouping.
+
+```xml
+<partition-group enabled="true" group-type="CUSTOM">
+<member-group>
+  <interface>10.10.0.*</interface>
+  <interface>10.10.3.*</interface>
+  <interface>10.10.5.*</interface>
+</member-group>
+<member-group>
+  <interface>10.10.10.10-100</interface>
+  <interface>10.10.1.*</interface>
+  <interface>10.10.2.*</interface>
+</member-group
+</partition-group>
+```
+
+```java
+Config config = ...;
+PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
+partitionGroupConfig.setEnabled( true )
+    .setGroupType( MemberGroupType.CUSTOM );
+
+MemberGroupConfig memberGroupConfig = new MemberGroupConfig();
+memberGroupConfig.addInterface( "10.10.0.*" )
+.addInterface( "10.10.3.*" ).addInterface("10.10.5.*" );
+
+MemberGroupConfig memberGroupConfig2 = new MemberGroupConfig();
+memberGroupConfig2.addInterface( "10.10.10.10-100" )
+.addInterface( "10.10.1.*").addInterface( "10.10.2.*" );
+
+partitionGroupConfig.addMemberGroupConfig( memberGroupConfig );
+partitionGroupConfig.addMemberGroupConfig( memberGroupConfig2 );
+```
+
+-   Third one is to give every member their own group. Meaning that, each member is a group of its own and primary and backup partitions are distributed randomly (not on the same physical member). This gives the least amount of protection and is the default configuration for a Hazelcast cluster.
+
+```xml
+<partition-group enabled="true" group-type="PER_MEMBER" />
+```
+
+```java
+Config config = ...;
+PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
+partitionGroupConfig.setEnabled( true )
+    .setGroupType( MemberGroupType.PER_MEMBER );
+```
+
+
 
 
 
@@ -669,21 +732,77 @@ This configuration is for ???. It only has the attribute `enabled`.
 
 ### Jobtracker Configuration
 
-This configuration is for ???. It has below attributes.
 
-- max-thread-size:
-- queue-size:
-- retry-count:
-- chunk-size:
-- communicate-stats:
-- topology-changed-strategy:
+
+**Declarative:**
+
+```xml
+<job-tracker name="default">
+   <max-thread-size>0</max-thread-size>
+   <queue-size>0</queue-size>
+   <retry-count>0</retry-count>
+   <chunk-size>1000</chunk-size>
+   <communicate-stats>true</communicate-stats>
+   <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
+</job-tracker>
+```
+
+**Programmatic:**
+
+```java
+Config config = new Config();
+JobTrackerConfig JTcfg = config.getJobTrackerConfig()
+   JTcfg.setName( "default" ).setQueueSize( "0" )
+         .setChunkSize( "1000" )
+```
+   
+
+It has below parameters.
+
+
+- `max-thread-size`: Configures the maximum thread pool size of the JobTracker.
+- `queue-size`: Defines the maximum number of tasks that are able to wait to be processed. A value of 0 means unbounded queue. Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate chunks are lost.
+- `retry-count`: Currently not used but reserved for later use where the framework will automatically try to restart / retry operations from an available save point.
+- `chunk-size`: Defines the number of emitted values before a chunk is sent to the reducers. If your emitted values are big or you want to better balance your work, you might want to change this to a lower or higher value. A value of 0 means immediate transmission but remember that low values mean higher traffic costs. A very high value might cause an OutOfMemoryError to occur if emitted values not fit into heap memory before
+being sent to reducers. To prevent this, you might want to use a combiner to pre-reduce values on mapping nodes.
+- `communicate-stats`: Defines if statistics (for example about processed entries) are transmitted to the job emitter. This might be used to show any kind of progress to a user inside of an UI system but produces additional traffic. If not needed, you might want to deactivate this.
+- `topology-changed-strategy`: Defines how the MapReduce framework will react on topology changes while executing a job. Currently, only CANCEL_RUNNING_OPERATION is fully supported which throws an exception to the job emitter (will throw a `com.hazelcast.mapreduce.TopologyChangedException`). DISCARD_AND_RESTART ???
 
 
 
 
 ### Services Configuration
 
-This configuration is for ???. It only has the attribute `enabled`.
+This configuration is used for SPI. 
+
+
+**Declarative:**
+
+```xml
+<services>
+   <service enabled="true">
+      <name>MyService</name>
+      
+   <max-thread-size>0</max-thread-size>
+   <queue-size>0</queue-size>
+   <retry-count>0</retry-count>
+   <chunk-size>1000</chunk-size>
+   <communicate-stats>true</communicate-stats>
+   <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
+</job-tracker>
+```
+
+**Programmatic:**
+
+```java
+Config config = new Config();
+JobTrackerConfig JTcfg = config.getJobTrackerConfig()
+   JTcfg.setName( "default" ).setQueueSize( "0" )
+         .setChunkSize( "1000" )
+```
+   
+
+It has below parameters.
 
 
 
