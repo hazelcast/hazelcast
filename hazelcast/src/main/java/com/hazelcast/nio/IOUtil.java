@@ -18,6 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -46,6 +47,28 @@ public final class IOUtil {
     public static final byte PRIMITIVE_TYPE_UTF = 8;
 
     private IOUtil() {
+    }
+
+    /**
+     * This method has a direct dependency on how objects are serialized in
+     * {@link com.hazelcast.nio.serialization.DataSerializer}! If the stream
+     * format is ever changed this extraction method needs to be changed too!
+     */
+    public static long extractOperationCallId(Data data, SerializationService serializationService) throws IOException {
+        ObjectDataInput input = serializationService.createObjectDataInput(data.getBuffer());
+        boolean identified = input.readBoolean();
+        if (identified) {
+            // read factoryId
+            input.readInt();
+            // read typeId
+            input.readInt();
+        } else {
+            // read classname
+            input.readUTF();
+        }
+
+        // read callId
+        return input.readLong();
     }
 
     public static void writeByteArray(ObjectDataOutput out, byte[] value) throws IOException {

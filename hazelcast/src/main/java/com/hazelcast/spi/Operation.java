@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.impl.RemotePropagatable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
  * An operation could be compared the a {@link Runnable}. So it contains logic that is going to be executed; this logic
  * will be placed in the {@link #run()} method.
  */
-public abstract class Operation implements DataSerializable {
+public abstract class Operation implements DataSerializable, RemotePropagatable<Operation> {
 
     // serialized
     private String serviceName;
@@ -275,10 +276,13 @@ public abstract class Operation implements DataSerializable {
 
     @Override
     public final void writeData(ObjectDataOutput out) throws IOException {
+        // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
+        // It is used to return deserialization exceptions to the caller
+        out.writeLong(callId);
+
         out.writeUTF(serviceName);
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
-        out.writeLong(callId);
         out.writeBoolean(validateTarget);
         out.writeLong(invocationTime);
         out.writeLong(callTimeout);
@@ -290,10 +294,13 @@ public abstract class Operation implements DataSerializable {
 
     @Override
     public final void readData(ObjectDataInput in) throws IOException {
+        // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
+        // It is used to return deserialization exceptions to the caller
+        callId = in.readLong();
+
         serviceName = in.readUTF();
         partitionId = in.readInt();
         replicaIndex = in.readInt();
-        callId = in.readLong();
         validateTarget = in.readBoolean();
         invocationTime = in.readLong();
         callTimeout = in.readLong();
