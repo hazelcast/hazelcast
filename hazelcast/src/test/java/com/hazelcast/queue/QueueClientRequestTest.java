@@ -44,6 +44,7 @@ import com.hazelcast.queue.impl.client.RemoveRequest;
 import com.hazelcast.queue.impl.client.SizeRequest;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -56,9 +57,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -335,7 +338,7 @@ public class QueueClientRequestTest extends ClientTestSupport {
         final SimpleClient client = getClient();
         client.send(new IsEmptyRequest(queueName));
         boolean result = (Boolean) client.receive();
-        assertEquals(0,queue.size());
+        assertEquals(0, queue.size());
         assertTrue(result);
     }
 
@@ -355,21 +358,37 @@ public class QueueClientRequestTest extends ClientTestSupport {
     @Test
     public void testRemoveListener() throws IOException {
         IQueue queue = getQueue();
-        TestListener listener = new TestListener();
-        String registrationId = queue.addItemListener(listener, true);
+        final AtomicInteger addCounter = new AtomicInteger(0);
+        TestListener listener = new TestListener(addCounter);
+        String registrationId = queue.addItemListener(listener, false);
+        queue.add("item1");
+        queue.add("item2");
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(2, addCounter.get());
+            }
+        });
+
         final SimpleClient client = getClient();
         client.send(new RemoveListenerRequest(queueName, registrationId));
         boolean result = (Boolean) client.receive();
 
         assertTrue(result);
+        queue.offer("item3");
+        assertSizeEventually(3, queue);
+        assertNotEquals(3, addCounter.get());
     }
 
     private static class TestListener implements ItemListener {
+        private final AtomicInteger addCounter;
 
-        public TestListener() {
+        public TestListener(AtomicInteger addCounter) {
+            this.addCounter = addCounter;
         }
 
         public void itemAdded(ItemEvent item) {
+            addCounter.getAndIncrement();
         }
 
         public void itemRemoved(ItemEvent item) {
