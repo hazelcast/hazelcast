@@ -16,7 +16,7 @@ import java.util.Properties;
  */
 class MapManagedService implements ManagedService {
 
-    private MapServiceContext mapServiceContext;
+    private final MapServiceContext mapServiceContext;
 
     MapManagedService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;

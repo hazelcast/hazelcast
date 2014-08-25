@@ -12,8 +12,8 @@ import com.hazelcast.transaction.impl.TransactionSupport;
  */
 class MapTransactionalService implements TransactionalService {
 
-    private MapServiceContext mapServiceContext;
-    private NodeEngine nodeEngine;
+    private final MapServiceContext mapServiceContext;
+    private final NodeEngine nodeEngine;
 
     public MapTransactionalService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
