@@ -62,9 +62,8 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
             if (entryRemoved(entry, dataKey, oldValue, now)) {
                 continue;
             }
-            if (entryAddedOrUpdated(entry, dataKey, oldValue, now)) {
-                continue;
-            }
+
+            entryAddedOrUpdated(entry, dataKey, oldValue, now);
         }
     }
 
