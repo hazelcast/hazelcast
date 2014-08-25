@@ -337,11 +337,10 @@ public final class MapReduceUtil {
 
     public static void enforcePartitionTableWarmup(MapReduceService mapReduceService) throws TimeoutException {
         InternalPartitionService partitionService = mapReduceService.getNodeEngine().getPartitionService();
-        InternalPartition[] partitions = partitionService.getPartitions();
-
+        int partitionCount = partitionService.getPartitionCount();
         long startTime = Clock.currentTimeMillis();
-        for (InternalPartition partition : partitions) {
-            while (partitionService.getPartition(partition.getPartitionId(), true).getOwnerOrNull() == null) {
+        for (int p = 0; p < partitionCount; p++) {
+            while (partitionService.getPartitionOwner(p) == null) {
                 try {
                     Thread.sleep(RETRY_PARTITION_TABLE_MILLIS);
                 } catch (Exception ignore) {
