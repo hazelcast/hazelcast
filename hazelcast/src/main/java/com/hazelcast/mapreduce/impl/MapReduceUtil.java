@@ -33,7 +33,6 @@ import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.mapreduce.impl.task.MemberAssigningJobProcessInformationImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
@@ -337,11 +336,10 @@ public final class MapReduceUtil {
 
     public static void enforcePartitionTableWarmup(MapReduceService mapReduceService) throws TimeoutException {
         InternalPartitionService partitionService = mapReduceService.getNodeEngine().getPartitionService();
-        InternalPartition[] partitions = partitionService.getPartitions();
-
+        int partitionCount = partitionService.getPartitionCount();
         long startTime = Clock.currentTimeMillis();
-        for (InternalPartition partition : partitions) {
-            while (partitionService.getPartition(partition.getPartitionId()).getOwner() == null) {
+        for (int p = 0; p < partitionCount; p++) {
+            while (partitionService.getPartitionOwner(p) == null) {
                 try {
                     Thread.sleep(RETRY_PARTITION_TABLE_MILLIS);
                 } catch (Exception ignore) {

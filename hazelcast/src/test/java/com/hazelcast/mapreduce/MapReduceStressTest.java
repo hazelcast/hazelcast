@@ -41,7 +41,6 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
-@Repeat(100)
 public class MapReduceStressTest
         extends HazelcastTestSupport {
 
