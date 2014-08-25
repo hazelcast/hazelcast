@@ -18,15 +18,14 @@ package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,6 +33,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -155,7 +156,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testPollNull() throws Exception {
-       TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -362,7 +363,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
      */
     @Test
     public void testQueueAfterShutdown() throws Exception {
-         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -426,7 +427,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void queueEntriesShouldBeConsistentAfterShutdown2() throws Exception {
-       TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -447,6 +448,112 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         h1.getLifecycleService().shutdown();
 
         assertSizeEventually(2, q2);
+    }
+
+    @Test
+    public void testAddAllBackup() {
+        Config config = new Config();
+        final String name = randomString();
+        config.getQueueConfig(name).setMaxSize(100);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        IQueue<Object> queue = instance.getQueue(name);
+        IQueue<Object> queue2 = instance2.getQueue(name);
+        List<String> list = new ArrayList<String>();
+        for (int i = 0; i < 10; i++) {
+            list.add("item" + i);
+        }
+
+        assertTrue(queue.addAll(list));
+        assertEquals(queue.peek(), "item0");
+        assertEquals(queue2.peek(), "item0");
+    }
+
+    @Test
+    public void testClearBackup() {
+        Config config = new Config();
+        final String name = randomString();
+        QueueConfig queueConfig = config.getQueueConfig(name);
+        queueConfig.setMaxSize(100);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        IQueue<Object> queue = instance.getQueue(name);
+        IQueue<Object> queue2 = instance2.getQueue(name);
+        for (int i = 0; i < 10; i++) {
+            queue.offer("item" + i);
+        }
+
+        queue.clear();
+        assertSizeEventually(0, queue);
+        assertSizeEventually(0, queue2);
+    }
+
+    @Test
+    public void testRemoveBackup() {
+        Config config = new Config();
+        final String name = randomString();
+        QueueConfig queueConfig = config.getQueueConfig(name);
+        queueConfig.setMaxSize(100);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        IQueue<Object> queue = instance.getQueue(name);
+        IQueue<Object> queue2 = instance2.getQueue(name);
+        for (int i = 0; i < 10; i++) {
+            queue.offer("item" + i);
+        }
+
+        assertTrue(queue.remove("item0"));
+        assertSizeEventually(9, queue);
+        assertSizeEventually(9, queue2);
+        assertFalse(queue2.contains("items0"));
+    }
+
+    @Test
+    public void testCompareAndRemoveBackup() {
+        Config config = new Config();
+        final String name = randomString();
+        QueueConfig queueConfig = config.getQueueConfig(name);
+        queueConfig.setMaxSize(100);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        IQueue<Object> queue = instance.getQueue(name);
+        IQueue<Object> queue2 = instance2.getQueue(name);
+        for (int i = 0; i < 10; i++) {
+            queue.offer("item" + i);
+        }
+        List list = new ArrayList<String>();
+        list.add("item1");
+        list.add("item2");
+
+        assertTrue(queue.removeAll(list));
+        assertSizeEventually(8, queue);
+        assertSizeEventually(8, queue2);
+        assertFalse(queue2.contains("items1"));
+    }
+
+    @Test
+    public void testDrainBackup() {
+        Config config = new Config();
+        final String name = randomString();
+        QueueConfig queueConfig = config.getQueueConfig(name);
+        queueConfig.setMaxSize(100);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        IQueue<Object> queue = instance.getQueue(name);
+        IQueue<Object> queue2 = instance2.getQueue(name);
+        for (int i = 0; i < 10; i++) {
+            queue.offer("item" + i);
+        }
+        List list = new ArrayList<String>();
+
+        assertSizeEventually(10, queue2);
+        assertEquals(10, queue.drainTo(list));
+        assertSizeEventually(0, queue2);
     }
 
 }

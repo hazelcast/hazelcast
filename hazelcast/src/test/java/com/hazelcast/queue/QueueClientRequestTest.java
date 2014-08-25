@@ -21,11 +21,27 @@ import com.hazelcast.client.SimpleClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
-import com.hazelcast.queue.impl.client.*;
+import com.hazelcast.queue.impl.client.AddAllRequest;
+import com.hazelcast.queue.impl.client.AddListenerRequest;
+import com.hazelcast.queue.impl.client.ClearRequest;
+import com.hazelcast.queue.impl.client.CompareAndRemoveRequest;
+import com.hazelcast.queue.impl.client.ContainsRequest;
+import com.hazelcast.queue.impl.client.DrainRequest;
+import com.hazelcast.queue.impl.client.IsEmptyRequest;
+import com.hazelcast.queue.impl.client.IteratorRequest;
+import com.hazelcast.queue.impl.client.OfferRequest;
+import com.hazelcast.queue.impl.client.PeekRequest;
+import com.hazelcast.queue.impl.client.PollRequest;
+import com.hazelcast.queue.impl.client.RemainingCapacityRequest;
+import com.hazelcast.queue.impl.client.RemoveListenerRequest;
+import com.hazelcast.queue.impl.client.RemoveRequest;
+import com.hazelcast.queue.impl.client.SizeRequest;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -41,7 +57,10 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -308,4 +327,54 @@ public class QueueClientRequestTest extends ClientTestSupport {
         int result = (Integer) client.receive();
         assertEquals(result, q.size());
     }
+
+    @Test
+    public void testIsEmpty() throws IOException {
+        final IQueue queue = getQueue();
+
+        final SimpleClient client = getClient();
+        client.send(new IsEmptyRequest(queueName));
+        boolean result = (Boolean) client.receive();
+        assertEquals(0,queue.size());
+        assertTrue(result);
+    }
+
+    @Test
+    public void testRemainingCapacity() throws IOException {
+        createConfig();
+        IQueue queue = getQueue();
+        queue.offer("item1");
+        queue.offer("item2");
+
+        final SimpleClient client = getClient();
+        client.send(new RemainingCapacityRequest(queueName));
+        int result = (Integer) client.receive();
+        assertEquals(4, result);
+    }
+
+    @Test
+    public void testRemoveListener() throws IOException {
+        IQueue queue = getQueue();
+        TestListener listener = new TestListener();
+        String registrationId = queue.addItemListener(listener, true);
+        final SimpleClient client = getClient();
+        client.send(new RemoveListenerRequest(queueName, registrationId));
+        boolean result = (Boolean) client.receive();
+
+        assertTrue(result);
+    }
+
+    private static class TestListener implements ItemListener {
+
+        public TestListener() {
+        }
+
+        public void itemAdded(ItemEvent item) {
+        }
+
+        public void itemRemoved(ItemEvent item) {
+        }
+    }
+
+
 }
