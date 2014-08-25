@@ -23,6 +23,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.executor.impl.CancellationOperation;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.SimpleMemberImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.OperationAccessor;
@@ -36,8 +41,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
@@ -318,5 +328,45 @@ public class SerializationTest
                 return Foo.this;
             }
         }
+    }
+
+    @Test
+    public void testMemberLeftException_usingMemberImpl() throws IOException, ClassNotFoundException {
+        String uuid = UuidUtil.buildRandomUuidString();
+        String host = "127.0.0.1";
+        int port = 5000;
+
+        Member member = new MemberImpl(new Address(host, port), false, uuid, null);
+
+        testMemberLeftException(uuid, host, port, member);
+    }
+
+    @Test
+    public void testMemberLeftException_usingSimpleMember() throws IOException, ClassNotFoundException {
+        String uuid = UuidUtil.buildRandomUuidString();
+        String host = "127.0.0.1";
+        int port = 5000;
+
+        Member member = new SimpleMemberImpl(uuid, new InetSocketAddress(host, port));
+        testMemberLeftException(uuid, host, port, member);
+    }
+
+    private void testMemberLeftException(String uuid, String host, int port, Member member)
+            throws IOException, ClassNotFoundException {
+
+        MemberLeftException exception = new MemberLeftException(member);
+
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(bout);
+        out.writeObject(exception);
+
+        ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
+        ObjectInputStream in = new ObjectInputStream(bin);
+        MemberLeftException exception2 = (MemberLeftException) in.readObject();
+        MemberImpl member2 = (MemberImpl) exception2.getMember();
+
+        assertEquals(uuid, member2.getUuid());
+        assertEquals(host, member2.getAddress().getHost());
+        assertEquals(port, member2.getAddress().getPort());
     }
 }
