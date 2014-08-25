@@ -148,7 +148,7 @@ Hazelcast provides paging for defined predicates. For this purpose, `PagingPredi
 
 Below is a sample code where the `greaterEqual` predicate is used to get values from "students" map. This predicate puts a filter such that the objects with value of "age" is greater than or equal to 18 will be retrieved. Then, a `pagingPredicate` is constructed in which the page size is 5. So, there will be 5 objects in each page. 
 
-The first time the values are called will constitute the first page. You can get the subsequent pages by using the `nextPage()` method of `PagingPredicate`.
+The first time the values are called will constitute the first page. You can get the subsequent pages by using the `nextPage()` method of `PagingPredicate` and querying the map again with updated `PagingPredicate`..
 
 
 ```
