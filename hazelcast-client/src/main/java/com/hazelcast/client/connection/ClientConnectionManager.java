@@ -120,8 +120,4 @@ public interface ClientConnectionManager {
      */
     void onDetectingUnresponsiveConnection(ClientConnection connection);
 
-    /**
-     * @return number of max allowed heart beat failures
-     */
-    int getMaxFailedHeartbeatCount();
 }
