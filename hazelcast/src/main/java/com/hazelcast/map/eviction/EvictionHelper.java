@@ -321,8 +321,7 @@ public final class EvictionHelper {
         final int partitionCount = partitionService.getPartitionCount();
         List<Integer> partitionIds = null;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            final boolean owner = isOwnerOrBackup(mapServiceContext, partitionId);
-            if (owner) {
+            if (isOwnerOrBackup(mapServiceContext, partitionId)) {
                 if (partitionIds == null) {
                     partitionIds = new ArrayList<Integer>();
                 }
