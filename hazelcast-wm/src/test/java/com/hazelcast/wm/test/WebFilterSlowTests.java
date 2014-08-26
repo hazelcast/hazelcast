@@ -4,14 +4,13 @@ import com.hazelcast.core.IMap;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
-public abstract class WebFilterSlowTests extends AbstractWebFilterTest{
+public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
 
     protected WebFilterSlowTests(String serverXml1) {
@@ -23,8 +22,21 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest{
     }
 
     @Test
-    public void test_github_issue_2887() throws Exception
-    {
+    public void test_github_issue_3360() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+
+        //Creates session on server1
+        executeRequest("write", serverPort1, cookieStore);
+
+        //Reads value on server 1 (just to check that method works)
+        assertEquals("value", executeRequest("readIfExist", serverPort1, cookieStore));
+
+        //Reads value on server 2
+        assertEquals("value", executeRequest("readIfExist", serverPort2, cookieStore));
+    }
+
+    @Test
+    public void test_github_issue_2887() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         executeRequest("write", serverPort1, cookieStore);
         executeRequest("read", serverPort2, cookieStore);
@@ -178,7 +190,5 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest{
         assertEquals("false", executeRequest("isNew", serverPort1, cookieStore));
         assertEquals("false", executeRequest("isNew", serverPort2, cookieStore));
     }
-
-
 
 }
