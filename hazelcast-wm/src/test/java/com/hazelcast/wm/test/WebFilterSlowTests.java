@@ -19,6 +19,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
     protected WebFilterSlowTests(String serverXml1, String serverXml2) {
         super(serverXml1, serverXml2);
+        isBasicTest = false;
     }
 
     @Test

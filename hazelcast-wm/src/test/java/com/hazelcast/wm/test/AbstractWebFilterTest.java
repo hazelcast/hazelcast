@@ -43,6 +43,7 @@ import java.util.Random;
 
 public abstract class AbstractWebFilterTest extends HazelcastTestSupport{
 
+    public static boolean isBasicTest,isSetup;
     protected enum RequestType {
 
         GET_REQUEST,
@@ -79,11 +80,11 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport{
     protected String serverXml1;
     protected String serverXml2;
     
-    protected int serverPort1;
-    protected int serverPort2;
+    protected static int serverPort1;
+    protected static int serverPort2;
     protected ServletContainer server1;
     protected ServletContainer server2;
-    protected HazelcastInstance hz;
+    protected static HazelcastInstance hz;
 
     protected AbstractWebFilterTest(String serverXml1) {
         this.serverXml1 = serverXml1;
@@ -96,6 +97,9 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport{
 
     @Before
     public void setup() throws Exception {
+        if(isBasicTest == true && isSetup == true){
+            return;
+        }
         final URL root = new URL(TestServlet.class.getResource("/"), "../test-classes");
         final String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
         final String sourceDir = baseDir + "/../../src/test/webapp";
@@ -107,10 +111,14 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport{
             serverPort2 = availablePort();
             server2 = getServletContainer(serverPort2, sourceDir, serverXml2);
         }
+        isSetup = true;
     }
 
     @After
     public void teardown() throws Exception {
+        if(isBasicTest == true){
+            return;
+        }
         server1.stop();
         if (server2 != null) {
             server2.stop();
@@ -118,7 +126,7 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport{
         Hazelcast.shutdownAll();
     }
 
-    private int availablePort() throws IOException {
+    protected int availablePort() throws IOException {
         while (true) {
             int port = (int) (65536 * Math.random());
             try {
