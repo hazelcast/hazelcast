@@ -126,7 +126,7 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport{
         Hazelcast.shutdownAll();
     }
 
-    protected int availablePort() throws IOException {
+    private int availablePort() throws IOException {
         while (true) {
             int port = (int) (65536 * Math.random());
             try {
