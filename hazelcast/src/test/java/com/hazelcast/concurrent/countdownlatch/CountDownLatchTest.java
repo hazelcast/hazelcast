@@ -61,6 +61,16 @@ public class CountDownLatchTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testTrySetCount_whenCountIsNotZero() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+        latch.trySetCount(10);
+        assertFalse(latch.trySetCount(20));
+        assertFalse(latch.trySetCount(0));
+        assertEquals(10, latch.getCount());
+    }
+
+    @Test
     public void testTrySetCount_whenPositive() {
         final HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch(randomString());
@@ -70,7 +80,17 @@ public class CountDownLatchTest extends HazelcastTestSupport {
         assertEquals(10, latch.getCount());
     }
 
-    //TODO: Can we set the latch if the latch is already set before?
+    @Test
+    public void testTrySetCount_whenAlreadySet() {
+        final HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+
+        latch.trySetCount(10);
+        assertFalse(latch.trySetCount(20));
+        assertFalse(latch.trySetCount(100));
+        assertFalse(latch.trySetCount(0));
+        assertEquals(10,latch.getCount());
+    }
 
     // ================= countDown =================================================
 
@@ -173,24 +193,6 @@ public class CountDownLatchTest extends HazelcastTestSupport {
         assertTrue(elapsed >= 100);
         assertEquals(1, latch.getCount());
     }
-
-    // TODO: What is the failure?
-    @Test
-    @ClientCompatibleTest
-    public void testAwait_whenFail() throws InterruptedException {
-        final int k = 3;
-        final Config config = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-        ICountDownLatch latch = instances[0].getCountDownLatch("test");
-        latch.trySetCount(k - 1);
-
-        long t = System.currentTimeMillis();
-        assertFalse(latch.await(100, TimeUnit.MILLISECONDS));
-        final long elapsed = System.currentTimeMillis() - t;
-        assertTrue(elapsed >= 100);
-    }
-
 
     @Test(expected = IllegalStateException.class)
     public void testAwait_whenInstanceShutdown_thenLatchOpened() throws InterruptedException {
