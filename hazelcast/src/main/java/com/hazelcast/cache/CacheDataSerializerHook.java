@@ -54,40 +54,40 @@ import com.hazelcast.util.ConstructorFunction;
  */
 public final class CacheDataSerializerHook
         implements DataSerializerHook {
-    private static short i;
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_DS_FACTORY, -25);
-    public static final short GET = i++;
-    public static final short CONTAINS_KEY = i++;
-    public static final short PUT = i++;
-    public static final short PUT_IF_ABSENT = i++;
-    public static final short REMOVE = i++;
-    public static final short GET_AND_REMOVE = i++;
-    public static final short REPLACE = i++;
-    public static final short GET_AND_REPLACE = i++;
-    public static final short PUT_BACKUP = i++;
-    public static final short PUT_ALL_BACKUP = i++;
-    public static final short REMOVE_BACKUP = i++;
-    public static final short CLEAR_BACKUP = i++;
-    public static final short SIZE = i++;
-    public static final short SIZE_FACTORY = i++;
-    public static final short CLEAR = i++;
-    public static final short CLEAR_FACTORY = i++;
-    public static final short GET_ALL = i++;
-    public static final short GET_ALL_FACTORY = i++;
-    public static final short LOAD_ALL = i++;
-    public static final short LOAD_ALL_FACTORY = i++;
-    public static final short EXPIRY_POLICY = i++;
-    public static final short KEY_ITERATOR = i++;
-    public static final short KEY_ITERATION_RESULT = i++;
-    public static final short ENTRY_PROCESSOR = i++;
-    public static final short CLEAR_RESPONSE = i++;
-    public static final short CREATE_CONFIG = i++;
-    public static final short GET_CONFIG = i++;
-    public static final short MANAGEMENT_CONFIG = i++;
-    //    public static final short EVENT = i++;
-    public static final short LISTENER_REGISTRATION = i++;
 
-    private static final int LEN = i++;
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_DS_FACTORY, -25);
+    public static final short GET = 1;
+    public static final short CONTAINS_KEY = 2;
+    public static final short PUT = 3;
+    public static final short PUT_IF_ABSENT = 4;
+    public static final short REMOVE = 5;
+    public static final short GET_AND_REMOVE = 6;
+    public static final short REPLACE = 7;
+    public static final short GET_AND_REPLACE = 8;
+    public static final short PUT_BACKUP = 9;
+    public static final short PUT_ALL_BACKUP = 10;
+    public static final short REMOVE_BACKUP = 11;
+    public static final short CLEAR_BACKUP = 12;
+    public static final short SIZE = 13;
+    public static final short SIZE_FACTORY = 14;
+    public static final short CLEAR = 15;
+    public static final short CLEAR_FACTORY = 16;
+    public static final short GET_ALL = 17;
+    public static final short GET_ALL_FACTORY = 18;
+    public static final short LOAD_ALL = 19;
+    public static final short LOAD_ALL_FACTORY = 20;
+    public static final short EXPIRY_POLICY = 21;
+    public static final short KEY_ITERATOR = 22;
+    public static final short KEY_ITERATION_RESULT = 23;
+    public static final short ENTRY_PROCESSOR = 24;
+    public static final short CLEAR_RESPONSE = 25;
+    public static final short CREATE_CONFIG = 26;
+    public static final short GET_CONFIG = 27;
+    public static final short MANAGEMENT_CONFIG = 28;
+    //    public static final short EVENT = i++;
+    public static final short LISTENER_REGISTRATION = 29;
+
+    private static final int LEN = 30;
 
     public int getFactoryId() {
         return F_ID;

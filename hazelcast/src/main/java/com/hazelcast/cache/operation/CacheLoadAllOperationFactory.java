@@ -28,6 +28,9 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Provides factory for {@link com.hazelcast.cache.operation.CacheLoadAllOperation}
+ */
 public class CacheLoadAllOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {
 

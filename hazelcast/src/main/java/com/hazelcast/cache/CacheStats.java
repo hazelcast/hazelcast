@@ -2,6 +2,9 @@ package com.hazelcast.cache;
 
 import com.hazelcast.monitor.NearCacheStats;
 
+/**
+ * Statistics for the {@link com.hazelcast.cache.ICache}
+ */
 public interface CacheStats {
 
     /**

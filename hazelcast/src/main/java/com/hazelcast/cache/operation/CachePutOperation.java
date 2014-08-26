@@ -34,7 +34,8 @@ public class CachePutOperation
         implements BackupAwareOperation {
 
     private Data value;
-    private boolean get; // getAndPut
+    // getAndPut
+    private boolean get;
     private ExpiryPolicy expiryPolicy;
 
     public CachePutOperation() {

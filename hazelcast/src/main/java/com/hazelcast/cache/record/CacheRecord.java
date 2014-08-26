@@ -19,6 +19,11 @@ package com.hazelcast.cache.record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 
+/**
+ * Record of the {@link com.hazelcast.cache.ICacheRecordStore}
+ *
+ * @param <V>
+ */
 public interface CacheRecord<V>
         extends DataSerializable {
 

@@ -50,6 +50,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.record.CacheRecordFactory.isExpiredAt;
 
+/**
+ * Implementation of the {@link com.hazelcast.cache.ICacheRecordStore}
+ */
 public class CacheRecordStore
         implements ICacheRecordStore {
 

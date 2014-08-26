@@ -26,6 +26,9 @@ import javax.cache.processor.EntryProcessor;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Record store for the {@link com.hazelcast.cache.ICache}
+ */
 public interface ICacheRecordStore {
 
     Object get(Data key, ExpiryPolicy expiryPolicy);

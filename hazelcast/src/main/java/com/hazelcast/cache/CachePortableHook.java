@@ -47,28 +47,27 @@ public class CachePortableHook
         implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_PORTABLE_FACTORY, -24);
-    public static int i = 1;
-    public static final int GET = i++;
-    public static final int PUT = i++;
-    public static final int PUT_IF_ABSENT = i++;
-    public static final int REMOVE = i++;
-    public static final int GET_AND_REMOVE = i++;
-    public static final int REPLACE = i++;
-    public static final int GET_AND_REPLACE = i++;
-    public static final int SIZE = i++;
-    public static final int CLEAR = i++;
-    public static final int CONTAINS_KEY = i++;
-    public static final int ITERATE = i++;
-    public static final int ADD_INVALIDATION_LISTENER = i++;
-    public static final int INVALIDATION_MESSAGE = i++;
-    public static final int REMOVE_INVALIDATION_LISTENER = i++;
-    public static final int SEND_STATS = i++;
-    public static final int CREATE_CONFIG = i++;
-    public static final int GET_CONFIG = i++;
-    public static final int GET_ALL = i++;
-    public static final int LOAD_ALL = i++;
+    public static final int GET = 2;
+    public static final int PUT = 3;
+    public static final int PUT_IF_ABSENT = 4;
+    public static final int REMOVE = 5;
+    public static final int GET_AND_REMOVE = 6;
+    public static final int REPLACE = 7;
+    public static final int GET_AND_REPLACE = 8;
+    public static final int SIZE = 9;
+    public static final int CLEAR = 10;
+    public static final int CONTAINS_KEY = 11;
+    public static final int ITERATE = 12;
+    public static final int ADD_INVALIDATION_LISTENER = 13;
+    public static final int INVALIDATION_MESSAGE = 14;
+    public static final int REMOVE_INVALIDATION_LISTENER = 15;
+    public static final int SEND_STATS = 16;
+    public static final int CREATE_CONFIG = 17;
+    public static final int GET_CONFIG = 18;
+    public static final int GET_ALL = 19;
+    public static final int LOAD_ALL = 20;
 
-    public static final int LEN = i++;
+    public static final int LEN = 20;
 
     public int getFactoryId() {
         return F_ID;
@@ -134,22 +133,26 @@ public class CachePortableHook
                         return new CacheIterateRequest();
                     }
                 };
-                //                                constructors[ADD_INVALIDATION_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                //                                constructors[ADD_INVALIDATION_LISTENER] =
+                //                                         new ConstructorFunction<Integer, Portable>() {
                 //                                    public Portable createNew(Integer arg) {
                 //                                        return new CacheAddInvalidationListenerRequest();
                 //                                    }
                 //                                };
-                //                                constructors[INVALIDATION_MESSAGE] = new ConstructorFunction<Integer, Portable>() {
+                //                                constructors[INVALIDATION_MESSAGE] =
+                //                                         new ConstructorFunction<Integer, Portable>() {
                 //                                    public Portable createNew(Integer arg) {
                 //                                        return new CacheInvalidationMessage();
                 //                                    }
                 //                                };
-                //                                constructors[REMOVE_INVALIDATION_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                //                                constructors[REMOVE_INVALIDATION_LISTENER] =
+                //                                         new ConstructorFunction<Integer, Portable>() {
                 //                                    public Portable createNew(Integer arg) {
                 //                                        return new CacheRemoveInvalidationListenerRequest();
                 //                                    }
                 //                                };
-                //                                constructors[SEND_STATS] = new ConstructorFunction<Integer, Portable>() {
+                //                                constructors[SEND_STATS] =
+                //                                          new ConstructorFunction<Integer, Portable>() {
                 //                                    public Portable createNew(Integer arg) {
                 //                                        return new CachePushStatsRequest();
                 //                                    }

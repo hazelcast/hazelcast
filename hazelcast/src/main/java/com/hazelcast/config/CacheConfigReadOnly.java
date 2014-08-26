@@ -16,6 +16,12 @@
 
 package com.hazelcast.config;
 
+/**
+ * Contains the configuration for an {@link com.hazelcast.cache.ICache} (read-only).
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     CacheConfigReadOnly(CacheConfig config) {

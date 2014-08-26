@@ -34,7 +34,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
+/**
+ * Triggers cache store load of all given keys.
+ */
 public class CacheLoadAllOperation
         extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable, BackupAwareOperation {

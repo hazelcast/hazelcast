@@ -26,6 +26,9 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
 
+/**
+ * Provides Listener Registration Service.
+ */
 public class CacheListenerRegistrationOperation
         extends AbstractNamedOperation
         implements IdentifiedDataSerializable {

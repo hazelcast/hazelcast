@@ -26,6 +26,12 @@ import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.EventType;
 import java.io.IOException;
 
+/**
+ * Adapter that implement for use of {@link com.hazelcast.cache.ICache} for the EventFilter.
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class CacheEventFilterAdaptor<K, V>
         implements EventFilter, DataSerializable {
 

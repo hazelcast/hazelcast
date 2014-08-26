@@ -28,14 +28,35 @@ import java.util.HashSet;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
+/**
+ * Contains all the configuration for the {@link com.hazelcast.cache.ICache}
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class CacheConfig<K, V>
         extends MutableConfiguration<K, V>
         implements DataSerializable {
 
+    /**
+     * The number of minimum backup counter
+     */
     public static final int MIN_BACKUP_COUNT = 0;
+    /**
+     * The number of maximum backup counter
+     */
     public static final int MAX_BACKUP_COUNT = 6;
+    /**
+     * The number of default backup counter
+     */
     public static final int DEFAULT_BACKUP_COUNT = 1;
+    /**
+     * Default InMemory Format.
+     */
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
+    /**
+     * Default Eviction Policy.
+     */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     //    public final static int MIN_EVICTION_PERCENTAGE = 0;

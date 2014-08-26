@@ -56,6 +56,9 @@ public class CacheService
         implements ManagedService, RemoteService, MigrationAwareService,
         EventPublishingService<CacheEventData, CacheEventListenerAdaptor> {
 
+    /**
+     * Service name
+     */
     public static final String SERVICE_NAME = "hz:impl:cacheService";
     private ILogger logger;
     private NodeEngine nodeEngine;

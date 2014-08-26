@@ -28,6 +28,12 @@ import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.event.EventType;
 import java.util.HashSet;
 
+/**
+ * Adapter for EventListener.
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class CacheEventListenerAdaptor<K, V> {
 
     private CacheEntryCreatedListener cacheEntryCreatedListener;

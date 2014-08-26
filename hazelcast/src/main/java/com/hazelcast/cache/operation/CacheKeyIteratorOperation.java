@@ -25,6 +25,9 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
+/**
+ * Provides iterator functionality for ICache.
+ */
 public class CacheKeyIteratorOperation
         extends AbstractCacheOperation
         implements ReadonlyOperation {

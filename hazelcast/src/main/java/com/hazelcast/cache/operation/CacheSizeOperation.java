@@ -21,6 +21,9 @@ import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICacheRecordStore;
 import com.hazelcast.spi.ReadonlyOperation;
 
+/**
+ * Notify size of the Cache.
+ */
 public class CacheSizeOperation
         extends PartitionWideCacheOperation
         implements ReadonlyOperation {

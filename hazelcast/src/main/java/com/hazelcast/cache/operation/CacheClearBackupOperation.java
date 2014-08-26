@@ -30,6 +30,9 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Store keys as set when ClearOperation run.
+ */
 public class CacheClearBackupOperation
         extends AbstractNamedOperation
         implements BackupOperation, IdentifiedDataSerializable {

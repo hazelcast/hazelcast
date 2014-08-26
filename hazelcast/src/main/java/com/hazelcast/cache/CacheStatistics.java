@@ -23,6 +23,9 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Some statistics of a {@link com.hazelcast.cache.ICache}
+ */
 public class CacheStatistics
         implements DataSerializable {
 

@@ -19,6 +19,12 @@ package com.hazelcast.cache;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 
+/**
+ * Result of the {@link com.hazelcast.cache.CacheEntryProcessorEntry}
+ *
+ * @param <T>
+ */
+
 public class CacheEntryProcessorResult<T>
         implements EntryProcessorResult<T> {
 

@@ -29,6 +29,9 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Get all keys from Cache.
+ */
 public class CacheGetAllOperation
         extends PartitionWideCacheOperation
         implements ReadonlyOperation {

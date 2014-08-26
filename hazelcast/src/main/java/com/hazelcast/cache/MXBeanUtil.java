@@ -23,6 +23,9 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.util.Set;
 
+/**
+ * Provides utility functionality for the MXBean.
+ */
 //FIXME Move this into ManagementService
 public class MXBeanUtil {
 

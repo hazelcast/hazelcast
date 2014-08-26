@@ -19,6 +19,9 @@ package com.hazelcast.cache;
 import javax.cache.management.CacheStatisticsMXBean;
 import java.io.Serializable;
 
+/**
+ * Implementation of the {@link javax.cache.management.CacheStatisticsMXBean}
+ */
 public class CacheStatisticsMXBeanImpl
         implements CacheStatisticsMXBean, Serializable {
 

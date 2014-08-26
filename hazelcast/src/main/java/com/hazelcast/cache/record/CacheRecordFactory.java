@@ -20,6 +20,9 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
+/**
+ * Provides factory for {@link com.hazelcast.cache.record.CacheRecord}
+ */
 public class CacheRecordFactory {
 
     private InMemoryFormat inMemoryFormat;

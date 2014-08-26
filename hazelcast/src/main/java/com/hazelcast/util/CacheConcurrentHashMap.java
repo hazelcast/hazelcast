@@ -27,6 +27,9 @@ import java.util.List;
 
 /**
  * ConcurrentHashMap to extend iterator capability
+ *
+ * @param <K>
+ * @param <V>
  */
 public class CacheConcurrentHashMap<K, V> extends ConcurrentReferenceHashMap<K, V> {
 

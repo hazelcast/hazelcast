@@ -27,6 +27,12 @@ import javax.cache.Cache;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+/**
+ * Provides cluster-wide iterator service for the {@link com.hazelcast.cache.ICache}
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class ClusterWideIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
@@ -53,7 +59,7 @@ public class ClusterWideIterator<K, V>
         this.partitionCount = engine.getPartitionService().getPartitionCount();
 
         //TODO can be made configurable
-        this.fetchSize = 100;
+        this.fetchSize = FETCH_SIZE;
         advance();
     }
 

@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Result of the {@link com.hazelcast.cache.operation.CacheKeyIteratorOperation }
+ */
 public class CacheKeyIteratorResult
         implements IdentifiedDataSerializable {
 
