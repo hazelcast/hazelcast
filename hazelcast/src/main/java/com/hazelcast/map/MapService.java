@@ -39,14 +39,14 @@ import java.util.Properties;
 /**
  * Defines map service behavior.
  *
- * @see com.hazelcast.map.MapManagedService
- * @see com.hazelcast.map.MapMigrationAwareService
- * @see com.hazelcast.map.MapTransactionalService
- * @see com.hazelcast.map.MapRemoteService
- * @see com.hazelcast.map.MapEventPublishingService
- * @see com.hazelcast.map.MapPostJoinAwareService
- * @see com.hazelcast.map.MapSplitBrainHandler
- * @see com.hazelcast.map.MapReplicationSupportingService
+ * @see MapManagedService
+ * @see MapMigrationAwareService
+ * @see MapTransactionalService
+ * @see MapRemoteService
+ * @see MapEventPublishingService
+ * @see MapPostJoinAwareService
+ * @see MapSplitBrainHandlerService
+ * @see MapReplicationSupportingService
  */
 public final class MapService implements ManagedService, MigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
@@ -173,9 +173,9 @@ public final class MapService implements ManagedService, MigrationAwareService,
         final RemoteService remoteService = new MapRemoteService(mapServiceContext);
         final EventPublishingService eventPublisher = new MapEventPublishingService(mapServiceContext);
         final PostJoinAwareService postJoinAwareService = new MapPostJoinAwareService(mapServiceContext);
-        final SplitBrainHandlerService splitBrainHandler = new MapSplitBrainHandler(mapServiceContext);
+        final SplitBrainHandlerService splitBrainHandler = new MapSplitBrainHandlerService(mapServiceContext);
         final ReplicationSupportingService replicationSupportingService
-                = new MapReplicationSupportingService(mapServiceContext, nodeEngine);
+                = new MapReplicationSupportingService(mapServiceContext);
 
         final MapService mapService = new MapService();
         mapService.setManagedService(managedService);
