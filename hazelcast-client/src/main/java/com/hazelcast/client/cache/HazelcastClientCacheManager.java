@@ -124,6 +124,7 @@ public final class HazelcastClientCacheManager
 
     @Override
     protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
+        throw new UnsupportedOperationException("");
         //FIXME REGISTER LISTENERS
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.cache.client;
 
 import com.hazelcast.cache.CachePortableHook;
 import com.hazelcast.cache.operation.CacheGetOperation;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -42,7 +43,7 @@ public class CacheGetRequest
         this.key = key;
     }
 
-    protected CacheGetRequest(String name, Data key, ExpiryPolicy expiryPolicy) {
+    public CacheGetRequest(String name, Data key, ExpiryPolicy expiryPolicy) {
         super(name);
         this.key = key;
         this.expiryPolicy = expiryPolicy;
@@ -66,7 +67,7 @@ public class CacheGetRequest
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
-//        out.writeObject(expiryPolicy);
+        out.writeObject(expiryPolicy);
 
     }
 
@@ -76,7 +77,7 @@ public class CacheGetRequest
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
-//        this.expiryPolicy = in.readObject();
+        this.expiryPolicy = in.readObject();
     }
 
 }

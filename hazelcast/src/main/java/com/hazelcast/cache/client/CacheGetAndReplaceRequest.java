@@ -38,10 +38,11 @@ public class CacheGetAndReplaceRequest
     public CacheGetAndReplaceRequest() {
     }
 
-    public CacheGetAndReplaceRequest(String name, Data key, Data value) {
+    public CacheGetAndReplaceRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
         super(name);
         this.key = key;
         this.value = value;
+        this.expiryPolicy = expiryPolicy;
     }
 
     public int getClassId() {

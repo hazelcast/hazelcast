@@ -17,6 +17,7 @@
 package com.hazelcast.cache.client;
 
 import com.hazelcast.cache.CachePortableHook;
+import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.operation.CacheGetAllOperationFactory;
 import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
@@ -85,7 +86,7 @@ public class CacheGetAllRequest
     }
 
     public String getServiceName() {
-        return MapService.SERVICE_NAME;
+        return CacheService.SERVICE_NAME;
     }
 
     public void write(PortableWriter writer) throws IOException {

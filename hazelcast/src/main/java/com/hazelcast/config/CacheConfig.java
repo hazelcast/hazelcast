@@ -199,6 +199,15 @@ public class CacheConfig<K, V>
         return this;
     }
 
+    public NearCacheConfig getNearCacheConfig() {
+        return nearCacheConfig;
+    }
+
+    public CacheConfig setNearCacheConfig(NearCacheConfig nearCacheConfig) {
+        this.nearCacheConfig = nearCacheConfig;
+        return this;
+    }
+
     /**
      * @return data type that will be used for storing records.
      */

@@ -43,6 +43,7 @@ import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.client.MapGetAllRequest;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -85,7 +86,6 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 //    private CacheLoader<K, V> cacheLoader;
 
     private volatile IClientNearCache<Data, Object> nearCache;
-    private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
     private final boolean cacheOnUpdate;
 
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientCacheDistributedObject delegate, HazelcastClientCacheManager cacheManager) {
@@ -99,10 +99,10 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 //            cacheLoader = cacheLoaderFactory.create();
 //        }
 
-        NearCacheConfig config = delegate.getClientContext().getClientConfig().getNearCacheConfig(name);
-        if (config != null) {
-            nearCache = new ClientHeapNearCache<Data>(name, delegate.getClientContext(), config);
-            cacheOnUpdate = config.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
+        NearCacheConfig nearCacheConfig = cacheConfig.getNearCacheConfig();
+        if (nearCacheConfig != null) {
+            nearCache = new ClientHeapNearCache<Data>(getDistributedObjectName(), delegate.getClientContext(), nearCacheConfig);
+            cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
         } else {
             nearCache = null;
             cacheOnUpdate = false;
@@ -112,24 +112,7 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
     //region JAVAX.CACHE impl
     @Override
     public V get(K key) {
-        ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        final Data keyData = toData(key);
-        final Object cached = nearCache != null ? nearCache.get(keyData) : null;
-        if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
-            return (V) cached;
-        }
-        final CacheGetRequest request = new CacheGetRequest(delegate.getName(), keyData);
-        try {
-            final Data resultData = (Data) invoke(request, keyData);
-            final V result = toObject(resultData);
-            storeInNearCache(keyData, resultData, result);
-            return result;
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        return get(key, null);
     }
 
     @Override
@@ -193,45 +176,12 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 
     @Override
     public void put(K key, V value) {
-        ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
-        validateConfiguredTypes(true, key, value);
-        final Data keyData = delegate.toData(key);
-        final Data valueData = delegate.toData(value);
-        CachePutRequest request = new CachePutRequest(getDistributedObjectName(), keyData, valueData);
-        invoke(request, keyData);
-        if (cacheOnUpdate) {
-            storeInNearCache(keyData, valueData, value);
-        } else {
-            invalidateNearCache(keyData);
-        }
+        put(key, value, null);
     }
 
     @Override
     public V getAndPut(K key, V value) {
-        ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
-        validateConfiguredTypes(true, key, value);
-        final Data keyData = toData(key);
-        final Data valueData = toData(value);
-        CachePutRequest request = new CachePutRequest(getDistributedObjectName(), keyData, valueData, null, true);
-        final Object oldValue = invoke(request, keyData);
-        if (cacheOnUpdate) {
-            storeInNearCache(keyData, valueData, value);
-        } else {
-            invalidateNearCache(keyData);
-        }
-        return toObject(oldValue);
+        return getAndPut(key, value, null);
     }
 
     @Override
@@ -241,29 +191,8 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 
     @Override
     public boolean putIfAbsent(K key, V value) {
-        ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
-        validateConfiguredTypes(true, key, value);
-        final Data keyData = toData(key);
-        final Data valueData = toData(value);
-        CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(getDistributedObjectName(), keyData, valueData, null);
-        Boolean put = toObject(invoke(request, keyData));
-        if (put == null) {
-            return false;
-        }
-        if (put) {
-            if (cacheOnUpdate) {
-                storeInNearCache(keyData, valueData, value);
-            } else {
-                invalidateNearCache(keyData);
-            }
-        }
-        return put;    }
+        return putIfAbsent(key, value, null);
+    }
 
     @Override
     public boolean remove(K key) {
@@ -296,7 +225,7 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
         validateConfiguredTypes(true, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        CacheRemoveRequest request = new CacheRemoveRequest(name, keyData, valueData);
+        CacheRemoveRequest request = new CacheRemoveRequest(getDistributedObjectName(), keyData, valueData);
         Boolean removed = toObject(invoke(request, keyData));
         if (removed == null) {
             return false;
@@ -315,7 +244,7 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
         }
         validateConfiguredTypes(false, key);
         final Data keyData = toData(key);
-        CacheGetAndRemoveRequest request = new CacheGetAndRemoveRequest(name, keyData);
+        CacheGetAndRemoveRequest request = new CacheGetAndRemoveRequest(getDistributedObjectName(), keyData);
         V value = toObject(invoke(request, keyData));
         invalidateNearCache(keyData);
         return value;
@@ -330,10 +259,11 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
         if (value == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
+        validateConfiguredTypes(true,key, currentValue, value);
         final Data keyData = toData(key);
         final Data currentValueData = toData(currentValue);
         final Data valueData = toData(value);
-        CacheReplaceRequest request = new CacheReplaceRequest(name, keyData, currentValueData, valueData, null);
+        CacheReplaceRequest request = new CacheReplaceRequest(getDistributedObjectName(), keyData, currentValueData, valueData, null);
         Boolean replaced = toObject(invoke(request, keyData));
         if (replaced == null) {
             return false;
@@ -345,7 +275,8 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
                 invalidateNearCache(keyData);
             }
         }
-        return replaced;    }
+        return replaced;
+    }
 
     @Override
     public boolean replace(K key, V value) {
@@ -358,7 +289,7 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
         }
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        CacheReplaceRequest request = new CacheReplaceRequest(name, keyData, valueData, null);
+        CacheReplaceRequest request = new CacheReplaceRequest(getDistributedObjectName(), keyData, valueData, null);
         Boolean replaced = toObject(invoke(request, keyData));
         if (replaced == null) {
             return false;
@@ -374,38 +305,22 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 
     @Override
     public V getAndReplace(K key, V value) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
-        final Data keyData = toData(key);
-        final Data valueData = toData(value);
-        CacheGetAndReplaceRequest request = new CacheGetAndReplaceRequest(name, keyData, valueData);
-        V currentValue = toObject(invoke(request, keyData));
-        if (currentValue != null) {
-            if (cacheOnUpdate) {
-                storeInNearCache(keyData, valueData, value);
-            } else {
-                invalidateNearCache(keyData);
-            }
-        }
-        return currentValue;    }
+        return getAndReplace(key, value, null);
+    }
 
     @Override
     public void removeAll(Set<? extends K> keys) {
-
+        throw new UnsupportedOperationException("");
     }
 
     @Override
     public void removeAll() {
-
+        throw new UnsupportedOperationException("");
     }
 
     @Override
     public void clear() {
-
+        throw new UnsupportedOperationException("");
     }
 
     @Override
@@ -419,12 +334,12 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 
     @Override
     public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
-        return null;
+        throw new UnsupportedOperationException("");
     }
 
     @Override
     public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
-        return null;
+        throw new UnsupportedOperationException("");
     }
 
     @Override
@@ -474,32 +389,24 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 
     @Override
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-
+        throw new UnsupportedOperationException("registerCacheEntryListener");
     }
 
     @Override
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-
+        throw new UnsupportedOperationException("deregisterCacheEntryListener");
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator() {
-        return null;
+        throw new UnsupportedOperationException("Iterator");
     }
     //endregion
-
-
-
-    void ensureOpen() {
-        if (isClosed()) {
-            throw new IllegalStateException("Cache operations can not be performed. The cache closed");
-        }
-    }
 
     //region ICACHE imple
     @Override
     public Future<V> getAsync(K key) {
-        return null;
+        return getAsync(key, null);
     }
 
     @Override
@@ -509,7 +416,7 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         if (shouldBeSync()) {
-            V value = get(key);
+            V value = get(key, expiryPolicy);
             return createCompletedFuture(value);
         }
         final Data keyData = toData(key);
@@ -518,7 +425,7 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
             return createCompletedFuture(cached);
         }
 
-        CacheGetRequest request = new CacheGetRequest(name, keyData);
+        CacheGetRequest request = new CacheGetRequest(getDistributedObjectName(), keyData, expiryPolicy);
         ClientCallFuture future;
         final ClientContext context = getContext();
         try {
@@ -541,7 +448,7 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 
     @Override
     public Future<Void> putAsync(K key, V value) {
-        return null;
+        return putAsync(key, value, null);
     }
 
     @Override
@@ -560,7 +467,7 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
         }
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        CachePutRequest request = new CachePutRequest(name, keyData, valueData, expiryPolicy, false);
+        CachePutRequest request = new CachePutRequest(getDistributedObjectName(), keyData, valueData, expiryPolicy, false);
         ICompletableFuture future;
         try {
             future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
@@ -577,7 +484,31 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 
     @Override
     public Future<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return null;
+        ensureOpen();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (value == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+        validateConfiguredTypes(true, key, value);
+
+        if (shouldBeSync()) {
+            final Boolean put = putIfAbsent(key, value, expiryPolicy);
+            return createCompletedFuture(put);
+        }
+
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(getDistributedObjectName(), keyData, valueData, expiryPolicy);
+        ICompletableFuture future;
+        try {
+            future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            invalidateNearCache(keyData);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+        return new DelegatingFuture<Boolean>(future, getContext().getSerializationService());
     }
 
     @Override
@@ -587,19 +518,21 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 
     @Override
     public Future<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        ensureOpen();
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         if (value == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
+        validateConfiguredTypes(true, key, value);
         if (shouldBeSync()) {
             V oldValue = getAndPut(key, value, expiryPolicy);
             return createCompletedFuture(oldValue);
         }
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        CachePutRequest request = new CachePutRequest(name, keyData, valueData, expiryPolicy, true);
+        CachePutRequest request = new CachePutRequest(getDistributedObjectName(), keyData, valueData, expiryPolicy, true);
         ICompletableFuture future;
         try {
             future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
@@ -616,15 +549,33 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 
     @Override
     public Future<Boolean> removeAsync(K key) {
+        return removeAsync(key, null, false);
+
+    }
+
+    @Override
+    public Future<Boolean> removeAsync(K key, V oldValue) {
+        return removeAsync(key, oldValue, true);
+    }
+
+    private Future<Boolean> removeAsync(K key, V oldValue, boolean hasOldValue) {
+        ensureOpen();
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        if (shouldBeSync()) {
-            remove(key);
-            return createCompletedFuture(null);
+        if (hasOldValue && oldValue == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
+        validateConfiguredTypes(hasOldValue, key, oldValue);
+
+        if (shouldBeSync()) {
+            final Boolean isRemoved = remove(key, oldValue);
+            return createCompletedFuture(isRemoved);
+        }
+
         final Data keyData = toData(key);
-        CacheRemoveRequest request = new CacheRemoveRequest(name, keyData);
+        final Data valueData = oldValue != null ? toData(oldValue) : null;
+        CacheRemoveRequest request = new CacheRemoveRequest(getDistributedObjectName(), keyData, valueData);
         ICompletableFuture future;
         try {
             future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
@@ -636,38 +587,161 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
     }
 
     @Override
-    public Future<Boolean> removeAsync(K key, V oldValue) {
-        return null;
-    }
-
-    @Override
     public Future<V> getAndRemoveAsync(K key) {
-        return null;
+        ensureOpen();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (shouldBeSync()) {
+            V value = get(key);
+            return createCompletedFuture(value);
+        }
+        final Data keyData = toData(key);
+        CacheGetAndRemoveRequest request = new CacheGetAndRemoveRequest(getDistributedObjectName(), keyData);
+        ClientCallFuture future;
+        final ClientContext context = getContext();
+        try {
+            future = (ClientCallFuture) context.getInvocationService().invokeOnKeyOwner(request, keyData);
+            invalidateNearCache(keyData);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+        return new DelegatingFuture<V>(future, getContext().getSerializationService());
     }
 
     @Override
     public Future<Boolean> replaceAsync(K key, V oldValue, V newValue) {
-        return null;
+        return replaceAsyncInternal(key, oldValue, newValue, null, true);
     }
 
     @Override
     public Future<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        return null;
+        return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true);
+    }
+
+    private Future<Boolean> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy, boolean hasOldValue){
+        ensureOpen();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (newValue == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+        if (hasOldValue && oldValue == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+        if (hasOldValue) {
+            validateConfiguredTypes(true, key, oldValue, newValue);
+        } else {
+            validateConfiguredTypes(true, key, newValue);
+        }
+
+        if (shouldBeSync()) {
+            final Boolean isRemoved = replaceInternal(key, oldValue, newValue, expiryPolicy, true);
+            return createCompletedFuture(isRemoved);
+        }
+
+        final Data keyData = toData(key);
+        final Data currentValueData = oldValue != null ? toData(oldValue) : null;
+        final Data valueData = newValue != null ? toData(newValue) : null;
+        CacheReplaceRequest request = new CacheReplaceRequest(getDistributedObjectName(), keyData, currentValueData, valueData, expiryPolicy);
+        ICompletableFuture future;
+        try {
+            future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            invalidateNearCache(keyData);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+        return new DelegatingFuture<Boolean>(future, getContext().getSerializationService());
+    }
+
+    private boolean replaceInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy, boolean hasOldValue){
+        ensureOpen();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (newValue == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+        if (hasOldValue && oldValue == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+        if (hasOldValue) {
+            validateConfiguredTypes(true, key, oldValue, newValue);
+        } else {
+            validateConfiguredTypes(true, key, newValue);
+        }
+
+        final Data keyData = toData(key);
+        final Data currentValueData = oldValue != null ? toData(oldValue) : null;
+        final Data valueData = newValue != null ? toData(newValue) : null;
+        CacheReplaceRequest request = new CacheReplaceRequest(getDistributedObjectName(), keyData, currentValueData, valueData, expiryPolicy);
+        Boolean replaced = toObject(invoke(request, keyData));
+        if (replaced == null) {
+            return false;
+        }
+        if (replaced) {
+            if (cacheOnUpdate) {
+                storeInNearCache(keyData, valueData, newValue);
+            } else {
+                invalidateNearCache(keyData);
+            }
+        }
+        return replaced;
     }
 
     @Override
     public Future<V> getAndReplaceAsync(K key, V value) {
-        return null;
+        return getAndReplaceAsync(key,value, null);
     }
 
     @Override
     public Future<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return null;
+        ensureOpen();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (value == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+        validateConfiguredTypes(true,key, value);
+        if (shouldBeSync()) {
+            V oldValue = getAndPut(key, value, expiryPolicy);
+            return createCompletedFuture(oldValue);
+        }
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        CacheGetAndReplaceRequest request = new CacheGetAndReplaceRequest(getDistributedObjectName(), keyData, valueData, expiryPolicy);
+        ICompletableFuture future;
+        try {
+            future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            invalidateNearCache(keyData);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+        return new DelegatingFuture<V>(future, getContext().getSerializationService());
     }
 
     @Override
     public V get(K key, ExpiryPolicy expiryPolicy) {
-        return null;
+        ensureOpen();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        final Data keyData = toData(key);
+        final Object cached = nearCache != null ? nearCache.get(keyData) : null;
+        if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+            return (V) cached;
+        }
+        final CacheGetRequest request = new CacheGetRequest(getDistributedObjectName(), keyData, expiryPolicy);
+        try {
+            final Data resultData = (Data) invoke(request, keyData);
+            final V result = toObject(resultData);
+            storeInNearCache(keyData, resultData, result);
+            return result;
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     @Override
@@ -677,42 +751,116 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
 
     @Override
     public void put(K key, V value, ExpiryPolicy expiryPolicy) {
-
+        ensureOpen();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (value == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+        validateConfiguredTypes(true, key, value);
+        final Data keyData = delegate.toData(key);
+        final Data valueData = delegate.toData(value);
+        CachePutRequest request = new CachePutRequest(getDistributedObjectName(), keyData, valueData, expiryPolicy);
+        invoke(request, keyData);
+        if (cacheOnUpdate) {
+            storeInNearCache(keyData, valueData, value);
+        } else {
+            invalidateNearCache(keyData);
+        }
     }
 
     @Override
     public V getAndPut(K key, V value, ExpiryPolicy expiryPolicy) {
-        return null;
+        ensureOpen();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (value == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+        validateConfiguredTypes(true, key, value);
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        CachePutRequest request = new CachePutRequest(getDistributedObjectName(), keyData, valueData, expiryPolicy, true);
+        final Object oldValue = invoke(request, keyData);
+        if (cacheOnUpdate) {
+            storeInNearCache(keyData, valueData, value);
+        } else {
+            invalidateNearCache(keyData);
+        }
+        return toObject(oldValue);
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
-
+        throw new UnsupportedOperationException("");
     }
 
     @Override
     public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
-        return false;
+        ensureOpen();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (value == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+        validateConfiguredTypes(true, key, value);
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(getDistributedObjectName(), keyData, valueData, expiryPolicy);
+        Boolean put = toObject(invoke(request, keyData));
+        if (put == null) {
+            return false;
+        }
+        if (put) {
+            if (cacheOnUpdate) {
+                storeInNearCache(keyData, valueData, value);
+            } else {
+                invalidateNearCache(keyData);
+            }
+        }
+        return put;
     }
 
     @Override
     public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        return false;
+        return replaceInternal(key,oldValue, newValue, expiryPolicy, true);
     }
 
     @Override
     public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
-        return false;
+        return replaceInternal(key,value, null, expiryPolicy, false);
     }
 
     @Override
     public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
-        return null;
+        ensureOpen();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (value == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+        validateConfiguredTypes(true, key, value);
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        CacheGetAndReplaceRequest request = new CacheGetAndReplaceRequest(getDistributedObjectName(), keyData, valueData, expiryPolicy);
+        V currentValue = toObject(invoke(request, keyData));
+        if (currentValue != null) {
+            if (cacheOnUpdate) {
+                storeInNearCache(keyData, valueData, value);
+            } else {
+                invalidateNearCache(keyData);
+            }
+        }
+        return currentValue;
     }
 
     @Override
     public int size() {
-        CacheSizeRequest request = new CacheSizeRequest(name);
+        CacheSizeRequest request = new CacheSizeRequest(getDistributedObjectName());
         Integer result = invoke(request);
         if (result == null) {
             return 0;
@@ -720,6 +868,12 @@ public class ClientCacheProxy<K, V>  implements ICache<K, V> {
         return result;
     }
     //endregion
+
+    private void ensureOpen() {
+        if (isClosed()) {
+            throw new IllegalStateException("Cache operations can not be performed. The cache closed");
+        }
+    }
 
     private Future createCompletedFuture(Object value) {
         return new CompletedFuture(getContext().getSerializationService(), value,
