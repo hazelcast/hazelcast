@@ -16,24 +16,21 @@
 
 package com.hazelcast.cache.client;
 
+import com.hazelcast.cache.CacheClearResponse;
 import com.hazelcast.cache.CachePortableHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.operation.CacheGetAllOperationFactory;
+import com.hazelcast.cache.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.MapEntrySet;
-import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.operation.MapGetAllOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -43,20 +40,20 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class CacheGetAllRequest
+public class CacheLoadAllRequest
         extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 
     protected String name;
     private Set<Data> keys = new HashSet<Data>();
-    private ExpiryPolicy expiryPolicy=null;
+    private boolean replaceExistingValues;
 
-    public CacheGetAllRequest() {
+    public CacheLoadAllRequest() {
     }
 
-    public CacheGetAllRequest(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {
+    public CacheLoadAllRequest(String name, Set<Data> keys, boolean replaceExistingValues) {
         this.name = name;
         this.keys = keys;
-        this.expiryPolicy = expiryPolicy;
+        this.replaceExistingValues = replaceExistingValues;
     }
 
     public int getFactoryId() {
@@ -64,16 +61,28 @@ public class CacheGetAllRequest
     }
 
     public int getClassId() {
-        return CachePortableHook.GET_ALL;
+        return CachePortableHook.LOAD_ALL;
     }
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new CacheGetAllOperationFactory(name, keys, expiryPolicy);
+        return new CacheLoadAllOperationFactory(name, keys, replaceExistingValues);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
+        for (Object result : map.values()) {
+            if (result != null && result instanceof CacheClearResponse) {
+                final Object response = ((CacheClearResponse) result).getResponse();
+                if (response instanceof Exception) {
+                    if (completionListener != null) {
+                        completionListener.onException((Exception) response);
+                        return;
+                    }
+                }
+            }
+        }
+
         MapEntrySet resultSet = new MapEntrySet();
         CacheService service = getService();
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
@@ -92,28 +101,28 @@ public class CacheGetAllRequest
 
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeBoolean("r", replaceExistingValues);
         writer.writeInt("size", keys.size());
-        ObjectDataOutput output = writer.getRawDataOutput();
         if (!keys.isEmpty()) {
+            ObjectDataOutput output = writer.getRawDataOutput();
             for (Data key : keys) {
                 key.writeData(output);
             }
         }
-        output.writeObject(expiryPolicy);
     }
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        replaceExistingValues = reader.readBoolean("r");
         int size = reader.readInt("size");
-        ObjectDataInput input = reader.getRawDataInput();
         if (size > 0) {
+            ObjectDataInput input = reader.getRawDataInput();
             for (int i = 0; i < size; i++) {
                 Data key = new Data();
                 key.readData(input);
                 keys.add(key);
             }
         }
-        expiryPolicy = input.readObject();
 
     }
 

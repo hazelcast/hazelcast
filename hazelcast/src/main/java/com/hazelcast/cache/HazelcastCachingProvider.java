@@ -20,10 +20,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 
+import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.OptionalFeature;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Properties;
 
 /**
@@ -63,7 +65,12 @@ public final class HazelcastCachingProvider
 
     @Override
     public URI getDefaultURI() {
-        return delegate.getDefaultURI();
+        try {
+            return new URI(this.getClass().getName());
+        } catch (URISyntaxException e) {
+            throw new CacheException("Cannot create Default URI", e);
+        }
+//        return delegate.getDefaultURI();
     }
 
     @Override

@@ -328,20 +328,20 @@ public class CacheProxy<K, V>
     @Override
     public Map<K, V> getAll(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        final NodeEngine engine = getNodeEngine();
-        final SerializationService serializationService = engine.getSerializationService();
 
         if (keys == null || keys.contains(null)) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
+        if (keys.isEmpty()) {
+            return Collections.EMPTY_MAP;
+        }
+        final NodeEngine engine = getNodeEngine();
+        final SerializationService serializationService = engine.getSerializationService();
 
         final Set<Data> ks = new HashSet(keys.size());
         for (K key : keys) {
             final Data k = serializationService.toData(key);
             ks.add(k);
-        }
-        if (keys.isEmpty()) {
-            return Collections.EMPTY_MAP;
         }
         final Map<K, V> result = new HashMap<K, V>();
 

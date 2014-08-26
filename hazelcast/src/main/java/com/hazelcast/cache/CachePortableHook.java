@@ -25,6 +25,7 @@ import com.hazelcast.cache.client.CacheGetAndReplaceRequest;
 import com.hazelcast.cache.client.CacheGetConfigRequest;
 import com.hazelcast.cache.client.CacheGetRequest;
 import com.hazelcast.cache.client.CacheIterateRequest;
+import com.hazelcast.cache.client.CacheLoadAllRequest;
 import com.hazelcast.cache.client.CachePutIfAbsentRequest;
 import com.hazelcast.cache.client.CachePutRequest;
 import com.hazelcast.cache.client.CacheRemoveRequest;
@@ -65,6 +66,7 @@ public class CachePortableHook
     public static final int CREATE_CONFIG = i++;
     public static final int GET_CONFIG = i++;
     public static final int GET_ALL = i++;
+    public static final int LOAD_ALL = i++;
 
     public static final int LEN = i++;
 
@@ -165,6 +167,11 @@ public class CachePortableHook
                 constructors[GET_ALL] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new CacheGetAllRequest();
+                    }
+                };
+                constructors[LOAD_ALL] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new CacheLoadAllRequest();
                     }
                 };
             }
