@@ -24,7 +24,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class MasterClaimOperation extends AbstractOperation implements JoinOperation {
 
-    private transient boolean approvedAsMaster = false;
+    private transient boolean approvedAsMaster;
 
     @Override
     public void run() {
