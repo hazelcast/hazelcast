@@ -24,8 +24,6 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.MutableConfiguration;
 import java.io.IOException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.HashSet;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
@@ -34,23 +32,23 @@ public class CacheConfig<K, V>
         extends MutableConfiguration<K, V>
         implements DataSerializable {
 
-    public final static int MIN_BACKUP_COUNT = 0;
+    public static final int MIN_BACKUP_COUNT = 0;
+    public static final int MAX_BACKUP_COUNT = 6;
+    public static final int DEFAULT_BACKUP_COUNT = 1;
+    public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
+    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
-    public final static int DEFAULT_BACKUP_COUNT = 1;
-    private int backupCount = DEFAULT_BACKUP_COUNT;
-    public final static int MAX_BACKUP_COUNT = 6;
     //    public final static int MIN_EVICTION_PERCENTAGE = 0;
     //    public final static int DEFAULT_EVICTION_PERCENTAGE = 20;
     //    public final static int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = 95;
     //    public final static int MAX_EVICTION_PERCENTAGE = 100;
     //    public final static int DEFAULT_TTL_SECONDS = 0;
-    public final static EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
+    private int backupCount = DEFAULT_BACKUP_COUNT;
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    public final static InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
-    private String name = null;
-    private String managerPrefix = null;
-    private String uriString = null;
+    private String name;
+    private String managerPrefix;
+    private String uriString;
     private NearCacheConfig nearCacheConfig;
 
     private CacheConfigReadOnly<K, V> readOnly;
@@ -273,11 +271,11 @@ public class CacheConfig<K, V>
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
 
-        final int _inMemoryFormat = in.readInt();
-        inMemoryFormat = InMemoryFormat.values()[_inMemoryFormat];
+        final int resultInMemoryFormat = in.readInt();
+        inMemoryFormat = InMemoryFormat.values()[resultInMemoryFormat];
 
-        final int _evictionPolicy = in.readInt();
-        evictionPolicy = EvictionPolicy.values()[_evictionPolicy];
+        final int resultEvictionPolicy = in.readInt();
+        evictionPolicy = EvictionPolicy.values()[resultEvictionPolicy];
 
         //SUPER
         keyType = in.readObject();

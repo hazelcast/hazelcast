@@ -42,10 +42,10 @@ public class CacheLoadAllOperation
     private Set<Data> keys;
     private boolean replaceExistingValues;
 
-    private boolean shouldBackup = false;
+    private boolean shouldBackup;
 
-    transient private Map<Data, CacheRecord> backupRecords;
-    transient private ICacheRecordStore cache;
+    private transient Map<Data, CacheRecord> backupRecords;
+    private transient ICacheRecordStore cache;
 
     private Object response;
 
@@ -76,8 +76,8 @@ public class CacheLoadAllOperation
         }
         try {
             final Set<Data> keysLoaded = cache.loadAll(filteredKeys, replaceExistingValues);
-
-            if (shouldBackup = !keysLoaded.isEmpty()) {
+            shouldBackup = !keysLoaded.isEmpty();
+            if (shouldBackup) {
                 backupRecords = new HashMap<Data, CacheRecord>();
                 for (Data key : keysLoaded) {
                     backupRecords.put(key, cache.getRecord(key));

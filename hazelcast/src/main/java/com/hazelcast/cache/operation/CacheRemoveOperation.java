@@ -33,7 +33,8 @@ public class CacheRemoveOperation
         extends AbstractCacheOperation
         implements BackupAwareOperation {
 
-    private Data currentValue; // if same
+    // if same
+    private Data currentValue;
 
     public CacheRemoveOperation() {
     }

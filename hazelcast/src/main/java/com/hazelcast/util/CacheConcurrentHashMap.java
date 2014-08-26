@@ -19,15 +19,11 @@ package com.hazelcast.util;
 
 import com.hazelcast.cache.CacheKeyIteratorResult;
 import com.hazelcast.cache.record.CacheRecord;
-import com.hazelcast.logging.SystemLog;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 /**
  * ConcurrentHashMap to extend iterator capability
@@ -35,8 +31,10 @@ import java.util.NoSuchElementException;
 public class CacheConcurrentHashMap<K, V> extends ConcurrentReferenceHashMap<K, V> {
 
 
+    private static final float LOAD_FACTOR = 0.91f;
+
     public CacheConcurrentHashMap(int initialCapacity) {
-        this(initialCapacity, 0.91f, 1, ReferenceType.STRONG, ReferenceType.STRONG, null);
+        this(initialCapacity, LOAD_FACTOR, 1, ReferenceType.STRONG, ReferenceType.STRONG, null);
     }
 
     public CacheConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel,
@@ -58,7 +56,7 @@ public class CacheConcurrentHashMap<K, V> extends ConcurrentReferenceHashMap<K, 
 
     public CacheKeyIteratorResult fetchNext(int nextTableIndex, int size) {
         List<Data> keys = new ArrayList<Data>();
-        int tableIndex = fetch(nextTableIndex,size, keys);
+        int tableIndex = fetch(nextTableIndex, size, keys);
 
         return new CacheKeyIteratorResult(keys, tableIndex);
     }
@@ -82,7 +80,7 @@ public class CacheConcurrentHashMap<K, V> extends ConcurrentReferenceHashMap<K, 
                 if (nextEntry.key() != null) {
                     CacheRecord record = (CacheRecord) nextEntry.value();
                     boolean isExpired = record != null && record.isExpiredAt(now);
-                    if(!isExpired){
+                    if (!isExpired) {
                         keys.add((Data) nextEntry.key());
                         counter++;
                     }

@@ -35,8 +35,8 @@ public class CacheClearOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;
-    private Set<Data> keys = null;
-    private boolean isRemoveAll = false;
+    private Set<Data> keys;
+    private boolean isRemoveAll;
 
     public CacheClearOperationFactory() {
     }

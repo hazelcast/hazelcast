@@ -17,7 +17,6 @@
 package com.hazelcast.client.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.monitor.NearCacheStats;
 
 public interface IClientNearCache<K, V> {
 

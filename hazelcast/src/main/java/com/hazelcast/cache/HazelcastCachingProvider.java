@@ -19,7 +19,6 @@ package com.hazelcast.cache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.OptionalFeature;
@@ -35,7 +34,7 @@ public final class HazelcastCachingProvider
 
     // TODO: add a system property to select cache provider to use
     private static final String CLIENT_CACHING_PROVIDER_CLASS = "com.hazelcast.client.cache.HazelcastClientCachingProvider";
-    private static final ILogger logger = Logger.getLogger(HazelcastCachingProvider.class);
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
 
     private final CachingProvider delegate;
 
@@ -44,7 +43,7 @@ public final class HazelcastCachingProvider
         try {
             cp = ClassLoaderUtil.newInstance(getClass().getClassLoader(), CLIENT_CACHING_PROVIDER_CLASS);
         } catch (Exception e) {
-            logger.warning("Could not load client CachingProvider! Fallback to server one... " + e.toString());
+            LOGGER.warning("Could not load client CachingProvider! Fallback to server one... " + e.toString());
         }
         if (cp == null) {
             cp = new HazelcastServerCachingProvider();

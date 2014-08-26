@@ -30,20 +30,21 @@ import java.util.NoSuchElementException;
 public class ClusterWideIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
+    private static final int FETCH_SIZE = 100;
+    CacheKeyIteratorResult result;
+    final SerializationService serializationService;
+
     private final int partitionCount;
     private int partitionIndex = -1;
     private int lastTableIndex;
 
-    final private int fetchSize;
+    private final int fetchSize;
 
     private CacheProxy<K, V> cacheProxy;
 
     private int index;
     private int currentIndex = -1;
 
-    CacheKeyIteratorResult result;
-
-    final SerializationService serializationService;
 
     public ClusterWideIterator(CacheProxy<K, V> cacheProxy) {
         this.cacheProxy = cacheProxy;
@@ -118,8 +119,8 @@ public class ClusterWideIterator<K, V>
         final NodeEngine nodeEngine = cacheProxy.getNodeEngine();
         final Operation op = new CacheKeyIteratorOperation(cacheProxy.getDistributedObjectName(), lastTableIndex, fetchSize);
         final InternalCompletableFuture<CacheKeyIteratorResult> f = nodeEngine.getOperationService()
-                                                                              .invokeOnPartition(CacheService.SERVICE_NAME, op,
-                                                                                      partitionIndex);
+                .invokeOnPartition(CacheService.SERVICE_NAME, op,
+                        partitionIndex);
         return f.getSafely();
     }
 }

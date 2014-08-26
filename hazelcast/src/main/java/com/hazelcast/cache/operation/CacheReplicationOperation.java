@@ -68,7 +68,7 @@ public final class CacheReplicationOperation
     }
 
     @Override
-    public final void beforeRun()
+    public void beforeRun()
             throws Exception {
         //        //migrate CacheConfigs first
         CacheService service = getService();

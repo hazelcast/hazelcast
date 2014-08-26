@@ -32,7 +32,7 @@ public abstract class HazelcastCacheManager
     protected final boolean isDefaultURI;
     protected final boolean isDefaultClassLoader;
 
-    protected volatile boolean closeTriggered = false;
+    protected volatile boolean closeTriggered;
     protected final String cacheNamePrefix;
 
     public HazelcastCacheManager(CachingProvider cachingProvider, URI uri, ClassLoader classLoader, Properties properties) {
@@ -45,8 +45,8 @@ public abstract class HazelcastCacheManager
         this.uri = isDefaultURI ? cachingProvider.getDefaultURI() : uri;
 
         isDefaultClassLoader = classLoader == null || cachingProvider.getDefaultClassLoader().equals(classLoader);
-        final ClassLoader _classLoader = isDefaultClassLoader ? cachingProvider.getDefaultClassLoader() : classLoader;
-        this.classLoaderReference = new WeakReference<ClassLoader>(_classLoader);
+        final ClassLoader localClassLoader = isDefaultClassLoader ? cachingProvider.getDefaultClassLoader() : classLoader;
+        this.classLoaderReference = new WeakReference<ClassLoader>(localClassLoader);
 
         this.properties = properties == null ? new Properties() : new Properties(properties);
 
@@ -67,7 +67,7 @@ public abstract class HazelcastCacheManager
         }
         synchronized (caches) {
             final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-            final CacheConfig<K,V> cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
+            final CacheConfig<K, V> cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
             if (cacheConfig == null) {
                 final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
                 //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
@@ -141,12 +141,12 @@ public abstract class HazelcastCacheManager
                     if (configuration.getValueType() != null && configuration.getValueType().equals(valueType)) {
                         return (ICache<K, V>) cache;
                     } else {
-                        throw new ClassCastException("Incompatible cache value types specified, expected " +
-                                configuration.getValueType() + " but " + valueType + " was specified");
+                        throw new ClassCastException("Incompatible cache value types specified, expected "
+                                + configuration.getValueType() + " but " + valueType + " was specified");
                     }
                 } else {
-                    throw new ClassCastException("Incompatible cache key types specified, expected " +
-                            configuration.getKeyType() + " but " + keyType + " was specified");
+                    throw new ClassCastException("Incompatible cache key types specified, expected "
+                            + configuration.getKeyType() + " but " + keyType + " was specified");
                 }
             }
         }
@@ -165,10 +165,10 @@ public abstract class HazelcastCacheManager
                 if (Object.class.equals(configuration.getKeyType()) && Object.class.equals(configuration.getValueType())) {
                     return (ICache<K, V>) cache;
                 } else {
-                    throw new IllegalArgumentException("Cache " + cacheName + " was " +
-                            "defined with specific types Cache<" +
-                            configuration.getKeyType() + ", " + configuration.getValueType() + "> " +
-                            "in which case CacheManager.getCache(String, Class, Class) must be used");
+                    throw new IllegalArgumentException("Cache " + cacheName + " was "
+                            + "defined with specific types Cache<"
+                            + configuration.getKeyType() + ", " + configuration.getValueType() + "> "
+                            + "in which case CacheManager.getCache(String, Class, Class) must be used");
                 }
             }
         }
@@ -216,7 +216,8 @@ public abstract class HazelcastCacheManager
         //        } else {
         //            names = new LinkedHashSet<String>();
         //            for(String nameWithPrefix:cacheService.getCacheNames()){
-        //                final String name = nameWithPrefix.substring(nameWithPrefix.indexOf(cacheNamePrefix)+cacheNamePrefix.length());
+        //                final String name = nameWithPrefix.substring
+        //                             (nameWithPrefix.indexOf(cacheNamePrefix)+cacheNamePrefix.length());
         //                names.add(name);
         //            }
         //        }

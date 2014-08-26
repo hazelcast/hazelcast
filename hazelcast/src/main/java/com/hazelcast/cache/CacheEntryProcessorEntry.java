@@ -23,6 +23,13 @@ import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
+/**
+ * Entry of Entry Processor for {@link com.hazelcast.cache.CacheEntry}.
+ * @see com.hazelcast.map.EntryProcessor
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class CacheEntryProcessorEntry<K, V>
         implements MutableEntry<K, V> {
 
@@ -108,18 +115,18 @@ public class CacheEntryProcessorEntry<K, V>
     }
 
     private V getRecordValue(CacheRecord theRecord) {
-        final Object _value;
+        final Object objValue;
         switch (cacheRecordStore.cacheConfig.getInMemoryFormat()) {
             case BINARY:
-                _value = cacheRecordStore.cacheService.toObject(theRecord.getValue());
+                objValue = cacheRecordStore.cacheService.toObject(theRecord.getValue());
                 break;
             case OBJECT:
-                _value = theRecord.getValue();
+                objValue = theRecord.getValue();
                 break;
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + cacheRecordStore.cacheConfig.getInMemoryFormat());
         }
-        return (V) _value;
+        return (V) objValue;
     }
 
     public void applyChanges() {

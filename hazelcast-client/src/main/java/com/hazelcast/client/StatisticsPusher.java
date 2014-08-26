@@ -16,21 +16,8 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.cache.CacheService;
-import com.hazelcast.cache.CacheStatsImpl;
-import com.hazelcast.cache.client.CachePushStatsRequest;
-import com.hazelcast.client.proxy.ClientCacheProxy;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.monitor.TimedClientState;
-import com.hazelcast.util.ExceptionUtil;
-
-import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.concurrent.Future;
 
 /**
  * date: 13/03/14
@@ -42,7 +29,8 @@ public class StatisticsPusher implements Runnable {
     private ClientInvocationServiceImpl invocationService;
     private final ProxyManager proxyManager;
 
-    public StatisticsPusher(HazelcastClient hazelcastClient, ClientInvocationServiceImpl invocationService, ProxyManager proxyManager) {
+    public StatisticsPusher(HazelcastClient hazelcastClient, ClientInvocationServiceImpl invocationService,
+                            ProxyManager proxyManager) {
         this.hazelcastClient = hazelcastClient;
         this.invocationService = invocationService;
         this.proxyManager = proxyManager;

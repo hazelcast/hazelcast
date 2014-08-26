@@ -74,7 +74,7 @@ public class CachePortableHook
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[LEN];
+            final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[LEN];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {

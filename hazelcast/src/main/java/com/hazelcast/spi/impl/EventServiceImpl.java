@@ -713,7 +713,7 @@ public class EventServiceImpl implements EventService {
             return localOnly;
         }
 
-        public Object getListener(){
+        public Object getListener() {
             return listener;
         }
 

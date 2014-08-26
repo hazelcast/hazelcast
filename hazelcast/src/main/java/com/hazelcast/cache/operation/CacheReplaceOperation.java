@@ -35,7 +35,8 @@ public class CacheReplaceOperation
         implements BackupAwareOperation {
 
     private Data value;
-    private Data currentValue; // replace if same
+    // replace if same
+    private Data currentValue;
     private ExpiryPolicy expiryPolicy;
 
     public CacheReplaceOperation() {

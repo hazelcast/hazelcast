@@ -33,7 +33,7 @@ import java.util.WeakHashMap;
 public abstract class HazelcastAbstractCachingProvider
         implements CachingProvider {
 
-    protected final static ILogger logger = Logger.getLogger(HazelcastCachingProvider.class);
+    protected static final ILogger logger = Logger.getLogger(HazelcastCachingProvider.class);
     protected static HazelcastInstance hazelcastInstance;
 
     private WeakHashMap<ClassLoader, HashMap<URI, CacheManager>> cacheManagers;

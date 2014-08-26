@@ -20,7 +20,6 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Counter;
@@ -36,6 +35,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
 
+    private static final int SEC_TO_MILISEC = 1000;
+    private static final int HUNDRED_PERCENTAGE = 100;
+
     final int maxSize;
     final long maxIdleMillis;
     final long timeToLiveMillis;
@@ -50,7 +52,7 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
     final NearCacheStatsImpl stats;
 
     private volatile long lastCleanup;
-    private String id = null;
+    private String id;
 
     private final Comparator<CacheRecord<K>> comparator = new Comparator<CacheRecord<K>>() {
         public int compare(CacheRecord<K> o1, CacheRecord<K> o2) {
@@ -67,12 +69,12 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
         this.mapName = mapName;
         this.context = context;
         maxSize = nearCacheConfig.getMaxSize();
-        maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * 1000;
+        maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * SEC_TO_MILISEC;
         inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         if (inMemoryFormat != InMemoryFormat.BINARY && inMemoryFormat != InMemoryFormat.OBJECT) {
             throw new IllegalArgumentException("Illegal in-memory-format: " + inMemoryFormat);
         }
-        timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * 1000;
+        timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * SEC_TO_MILISEC;
         invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         evictionPolicy = com.hazelcast.config.EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
         cache = new ConcurrentHashMap<K, CacheRecord<K>>();
@@ -99,7 +101,7 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
             fireEvictCache();
         }
         Object value;
-        if (object == null){
+        if (object == null) {
             value = NULL_OBJECT;
         } else {
             SerializationService serializationService = context.getSerializationService();
@@ -122,12 +124,13 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
                         try {
                             TreeSet<CacheRecord<K>> records = new TreeSet<CacheRecord<K>>(comparator);
                             records.addAll(cache.values());
-                            int evictSize = cache.size() * EVICTION_PERCENTAGE / 100;
-                            int i=0;
+                            int evictSize = cache.size() * EVICTION_PERCENTAGE / HUNDRED_PERCENTAGE;
+                            int i = 0;
                             for (CacheRecord<K> record : records) {
                                 cache.remove(record.key);
-                                if (++i > evictSize)
+                                if (++i > evictSize) {
                                     break;
+                                }
                             }
                         } finally {
                             canEvict.set(true);
@@ -143,8 +146,9 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
     }
 
     private void fireTtlCleanup() {
-        if (Clock.currentTimeMillis() < (lastCleanup + TTL_CLEANUP_INTERVAL_MILLS))
+        if (Clock.currentTimeMillis() < (lastCleanup + TTL_CLEANUP_INTERVAL_MILLS)) {
             return;
+        }
 
         if (canCleanUp.compareAndSet(true, false)) {
             try {
@@ -180,13 +184,13 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
                 stats.incrementMisses();
                 return null;
             }
-            if (record.value.equals(NULL_OBJECT)){
+            if (record.value.equals(NULL_OBJECT)) {
                 stats.incrementMisses();
                 return NULL_OBJECT;
             }
             stats.incrementHits();
-            return inMemoryFormat.equals(InMemoryFormat.BINARY) ?
-                    context.getSerializationService().toObject(record.value) : record.value;
+            return inMemoryFormat.equals(InMemoryFormat.BINARY)
+                    ? context.getSerializationService().toObject(record.value) : record.value;
         } else {
             stats.incrementMisses();
             return null;

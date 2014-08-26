@@ -39,11 +39,11 @@ public class CacheClearOperation
     private boolean isRemoveAll;
     private Set<Data> keys;
 
-    private boolean shouldBackup = false;
+    private boolean shouldBackup;
 
-    transient private Set<Data> backupKeys;
+    private transient Set<Data> backupKeys = new HashSet<Data>();
 
-    transient private ICacheRecordStore cache;
+    private transient ICacheRecordStore cache;
 
     public CacheClearOperation() {
     }
@@ -76,9 +76,8 @@ public class CacheClearOperation
             } catch (CacheException e) {
                 response = new CacheClearResponse(e);
             }
-
-            if (shouldBackup = !filteredKeys.isEmpty()) {
-                backupKeys = new HashSet<Data>();
+            shouldBackup = !filteredKeys.isEmpty();
+            if (shouldBackup) {
                 for (Data key : filteredKeys) {
                     backupKeys.add(key);
                 }

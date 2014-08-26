@@ -75,7 +75,7 @@ public final class HazelcastClientCacheManager
     protected <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
-            ClientRequest request = new CacheCreateConfigRequest(cacheConfig, true,partitionId);
+            ClientRequest request = new CacheCreateConfigRequest(cacheConfig, true, partitionId);
             final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheConfig.getNameWithPrefix());
             return clientContext.getSerializationService().toObject(future.get());
         } catch (Exception e) {
@@ -96,7 +96,8 @@ public final class HazelcastClientCacheManager
             try {
                 ClientRequest request = new CacheCreateConfigRequest(cacheConfig, true, member.getAddress());
                 final Future future = invocationService.invokeOnTarget(request, member.getAddress());
-                future.get();//make sure all configs are created
+                //make sure all configs are created
+                future.get();
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);
             }
@@ -107,7 +108,7 @@ public final class HazelcastClientCacheManager
     protected <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
         final ClientCacheDistributedObject cacheDistributedObject = hazelcastInstance
                 .getDistributedObject(CacheService.SERVICE_NAME, cacheConfig.getNameWithPrefix());
-        return new ClientCacheProxy<K, V>(cacheConfig,cacheDistributedObject, this);
+        return new ClientCacheProxy<K, V>(cacheConfig, cacheDistributedObject, this);
     }
 
     @Override

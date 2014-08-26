@@ -242,26 +242,29 @@ public class Config {
         }
         return this;
     }
-    public <K,V> CacheConfig<K,V> findCacheConfig(String name){
+
+    public <K, V> CacheConfig<K, V> findCacheConfig(String name) {
         name = getBaseName(name);
-        CacheConfig<K,V> config;
-        if ((config = lookupByPattern(cacheConfigs, name)) != null){
+        CacheConfig<K, V> config = lookupByPattern(cacheConfigs, name);
+        if (config != null) {
             return config.getAsReadOnly();
         }
-        return this.<K,V>getCacheConfig("default").getAsReadOnly();
+        return this.<K, V>getCacheConfig("default").getAsReadOnly();
     }
 
-    public <K,V> CacheConfig<K,V> getCacheConfig(String name) {
+    public <K, V> CacheConfig<K, V> getCacheConfig(String name) {
         name = getBaseName(name);
-        CacheConfig config;
-        if ((config = lookupByPattern(cacheConfigs, name)) != null) return config;
+        CacheConfig config = lookupByPattern(cacheConfigs, name);
+        if (config != null) {
+            return config;
+        }
         CacheConfig defConfig = cacheConfigs.get("default");
         if (defConfig == null) {
             defConfig = new CacheConfig();
             defConfig.setName("default");
             addCacheConfig(defConfig);
         }
-        config = new CacheConfig<K,V>(defConfig);
+        config = new CacheConfig<K, V>(defConfig);
         config.setName(name);
         addCacheConfig(config);
         return config;
@@ -522,7 +525,7 @@ public class Config {
     public TopicConfig findTopicConfig(String name) {
         String baseName = getBaseName(name);
         TopicConfig config = lookupByPattern(topicConfigs, baseName);
-        if (config  != null) {
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getTopicConfig("default").getAsReadOnly();

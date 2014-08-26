@@ -54,9 +54,9 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CacheService
         implements ManagedService, RemoteService, MigrationAwareService,
-                   EventPublishingService<CacheEventData, CacheEventListenerAdaptor> {
+        EventPublishingService<CacheEventData, CacheEventListenerAdaptor> {
 
-    public final static String SERVICE_NAME = "hz:impl:cacheService";
+    public static final String SERVICE_NAME = "hz:impl:cacheService";
     private ILogger logger;
     private NodeEngine nodeEngine;
     private CachePartitionSegment[] segments;
@@ -131,7 +131,7 @@ public class CacheService
     }
 
     @Override
-    public void beforeMigration(PartitionMigrationEvent event) {/*empty*/}
+    public void beforeMigration(PartitionMigrationEvent event) { /*empty*/ }
 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
@@ -164,8 +164,8 @@ public class CacheService
     }
 
     public boolean createCacheConfigIfAbsent(CacheConfig config) {
-        final CacheConfig _config = configs.putIfAbsent(config.getNameWithPrefix(), config);
-        return _config == null;
+        final CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
+        return localConfig == null;
     }
 
     public boolean updateCacheConfig(CacheConfig config) {

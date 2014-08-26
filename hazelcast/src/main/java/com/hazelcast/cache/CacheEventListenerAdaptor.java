@@ -65,7 +65,7 @@ public class CacheEventListenerAdaptor<K, V> {
 
     public void handleEvent(NodeEngine nodeEngine, String cacheName, EventType eventType, K key, V newValue, V oldValue) {
         if (source == null) {
-            //            this.source = nodeEngine.getHazelcastInstance().getDistributedObject(CacheService.SERVICE_NAME, cacheName);
+            //  this.source = nodeEngine.getHazelcastInstance().getDistributedObject(CacheService.SERVICE_NAME, cacheName);
         }
         final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
         switch (eventType) {

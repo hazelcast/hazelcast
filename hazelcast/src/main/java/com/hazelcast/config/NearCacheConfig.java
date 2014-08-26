@@ -25,7 +25,7 @@ import java.io.IOException;
 /**
  * Contains configuration for an NearCache.
  */
-public class NearCacheConfig implements DataSerializable{
+public class NearCacheConfig implements DataSerializable {
     /**
      * Default value of time to live in seconds.
      */
@@ -219,13 +219,13 @@ public class NearCacheConfig implements DataSerializable{
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name= in.readUTF();
-        evictionPolicy= in.readUTF();
+        name = in.readUTF();
+        evictionPolicy = in.readUTF();
         timeToLiveSeconds = in.readInt();
         maxSize = in.readInt();
-        maxSize= in.readInt();
-        invalidateOnChange= in.readBoolean();
-        cacheLocalEntries= in.readBoolean();
+        maxSize = in.readInt();
+        invalidateOnChange = in.readBoolean();
+        cacheLocalEntries = in.readBoolean();
         final int inMemoryFormatInt = in.readInt();
         inMemoryFormat = InMemoryFormat.values()[inMemoryFormatInt];
         final int localUpdatePolicyInt = in.readInt();

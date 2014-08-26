@@ -27,6 +27,9 @@ import com.hazelcast.spi.Operation;
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
 
+/**
+ * Operation of the Cache Entry Processor.
+ */
 public class CacheEntryProcessorOperation
         extends AbstractCacheOperation
         implements BackupAwareOperation {
@@ -34,7 +37,7 @@ public class CacheEntryProcessorOperation
     private EntryProcessor entryProcessor;
     private Object[] arguments;
 
-    transient private CacheRecord backupRecord;
+    private transient CacheRecord backupRecord;
 
     public CacheEntryProcessorOperation() {
     }

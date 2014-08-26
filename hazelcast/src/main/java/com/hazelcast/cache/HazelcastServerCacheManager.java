@@ -125,7 +125,8 @@ public class HazelcastServerCacheManager
                 final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true);
                 final InternalCompletableFuture<Object> f2 = operationService
                         .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
-                f2.getSafely();//make sure all configs are created
+                //make sure all configs are created
+                f2.getSafely();
             }
         }
     }
@@ -143,7 +144,7 @@ public class HazelcastServerCacheManager
         final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
-                                                                   .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.getSafely();
     }
 
@@ -151,7 +152,7 @@ public class HazelcastServerCacheManager
     protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
         //REGISTER LISTENERS
         final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations()
-                                                                                    .iterator();
+                .iterator();
         while (iterator.hasNext()) {
             final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
             cacheService.registerCacheEntryListener(cacheConfig.getNameWithPrefix(), source, listenerConfig);

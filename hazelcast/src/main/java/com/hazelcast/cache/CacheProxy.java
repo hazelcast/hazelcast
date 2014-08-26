@@ -83,7 +83,7 @@ public class CacheProxy<K, V>
     //this will represent the name from the user perspective
     private final String name;
 
-    private boolean isClosed = false;
+    private boolean isClosed;
 
     private CacheDistributedObject delegate;
     private HazelcastCacheManager cacheManager;
@@ -132,7 +132,7 @@ public class CacheProxy<K, V>
         final Data k = serializationService.toData(key);
         final Operation op = new CacheGetOperation(getDistributedObjectName(), k, expiryPolicy);
         final InternalCompletableFuture<Object> f = engine.getOperationService()
-                                                          .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
+                .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
         return new DelegatingFuture<V>(f, serializationService);
     }
 
@@ -245,7 +245,7 @@ public class CacheProxy<K, V>
         final Data k = serializationService.toData(key);
         final Operation op = new CacheGetAndRemoveOperation(getDistributedObjectName(), k);
         final InternalCompletableFuture<Object> f = engine.getOperationService()
-                                                          .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
+                .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
         return new DelegatingFuture<V>(f, serializationService);
     }
 
@@ -277,7 +277,7 @@ public class CacheProxy<K, V>
 
         final Operation op = new CacheGetAndReplaceOperation(getDistributedObjectName(), k, v, expiryPolicy);
         final InternalCompletableFuture<Object> f = engine.getOperationService()
-                                                          .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
+                .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
         return new DelegatingFuture<V>(f, serializationService);
     }
 
@@ -350,7 +350,7 @@ public class CacheProxy<K, V>
             final CacheGetAllOperationFactory factory = new CacheGetAllOperationFactory(getDistributedObjectName(), ks,
                     expiryPolicy);
             final Map<Integer, Object> responses = engine.getOperationService()
-                                                         .invokeOnPartitions(getServiceName(), factory, partitions);
+                    .invokeOnPartitions(getServiceName(), factory, partitions);
             for (Object response : responses.values()) {
                 final Object responseObject = serializationService.toObject(response);
                 final Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) responseObject).getEntrySet();
@@ -361,8 +361,10 @@ public class CacheProxy<K, V>
                     //                    if (nearCacheEnabled) {
                     //                        int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
                     //                        if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                    //                                .equals(nodeEngine.getClusterService().getThisAddress()) || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
-                    //                            mapService.putNearCache(getDistributedObjectName(), entry.getKey(), entry.getValue());
+                    //                                .equals(nodeEngine.getClusterService().getThisAddress())
+                    //                                     || mapConfig.getNearCacheConfig().isCacheLocalEntries()) {
+                    //                            mapService.putNearCache(getDistributedObjectName(),
+                    //                              entry.getKey(), entry.getValue());
                     //                        }
                     //                    }
                 }
@@ -429,7 +431,7 @@ public class CacheProxy<K, V>
             final SerializationService serializationService = nodeEngine.getSerializationService();
             final CacheSizeOperationFactory operationFactory = new CacheSizeOperationFactory(getDistributedObjectName());
             final Map<Integer, Object> results = nodeEngine.getOperationService()
-                                                           .invokeOnAllPartitions(getServiceName(), operationFactory);
+                    .invokeOnAllPartitions(getServiceName(), operationFactory);
             int total = 0;
             for (Object result : results.values()) {
                 Integer size;
@@ -470,7 +472,7 @@ public class CacheProxy<K, V>
 
         final Operation op = new CacheGetOperation(getDistributedObjectName(), key, null);
         final InternalCompletableFuture<Object> f = engine.getOperationService()
-                                                          .invokeOnPartition(getServiceName(), op, getPartitionId(engine, key));
+                .invokeOnPartition(getServiceName(), op, getPartitionId(engine, key));
         Object result = f.getSafely();
         if (result instanceof Data) {
             result = serializationService.toObject((Data) result);
@@ -552,14 +554,15 @@ public class CacheProxy<K, V>
         final Operation op = new CacheRemoveOperation(getDistributedObjectName(), key, null);
         final int partitionId = getPartitionId(engine, key);
         final InternalCompletableFuture<Boolean> f = engine.getOperationService()
-                                                           .invokeOnPartition(getServiceName(), op, partitionId);
+                .invokeOnPartition(getServiceName(), op, partitionId);
         return f.getSafely();
     }
 
     private Collection<Integer> getPartitionsForKeys(Set<Data> keys) {
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         final int partitions = partitionService.getPartitionCount();
-        final int capacity = Math.min(partitions, keys.size()); //todo: is there better way to estimate size?
+        //todo: is there better way to estimate size?
+        final int capacity = Math.min(partitions, keys.size());
         final Set<Integer> partitionIds = new HashSet<Integer>(capacity);
 
         final Iterator<Data> iterator = keys.iterator();
@@ -587,7 +590,7 @@ public class CacheProxy<K, V>
         final Data k = serializationService.toData(key);
         final Operation op = new CacheContainsKeyOperation(getDistributedObjectName(), k);
         final InternalCompletableFuture<Boolean> f = engine.getOperationService()
-                                                           .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
+                .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
 
         return f.getSafely();
     }
@@ -626,17 +629,7 @@ public class CacheProxy<K, V>
         try {
             final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
 
-            for (Object result : results.values()) {
-                if (result != null && result instanceof CacheClearResponse) {
-                    final Object response = ((CacheClearResponse) result).getResponse();
-                    if (response instanceof Exception) {
-                        if (completionListener != null) {
-                            completionListener.onException((Exception) response);
-                            return;
-                        }
-                    }
-                }
-            }
+            loadAllHelper(results, completionListener);
 
             if (completionListener != null) {
                 completionListener.onCompletion();
@@ -647,6 +640,20 @@ public class CacheProxy<K, V>
             }
         }
 
+    }
+
+    public void loadAllHelper(Map<Integer, Object> results, CompletionListener completionListener) {
+        for (Object result : results.values()) {
+            if (result != null && result instanceof CacheClearResponse) {
+                final Object response = ((CacheClearResponse) result).getResponse();
+                if (response instanceof Exception) {
+                    if (completionListener != null) {
+                        completionListener.onException((Exception) response);
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -765,8 +772,8 @@ public class CacheProxy<K, V>
         if (clazz.isInstance(cacheConfig)) {
             return clazz.cast(cacheConfig);
         }
-        throw new IllegalArgumentException("The configuration class " + clazz +
-                " is not supported by this implementation");
+        throw new IllegalArgumentException("The configuration class " + clazz
+                + " is not supported by this implementation");
     }
 
     @Override
@@ -785,7 +792,7 @@ public class CacheProxy<K, V>
         final Operation op = new CacheEntryProcessorOperation(getDistributedObjectName(), k, entryProcessor, arguments);
         try {
             final InternalCompletableFuture<T> f = engine.getOperationService()
-                                                         .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
+                    .invokeOnPartition(getServiceName(), op, getPartitionId(engine, k));
             return f.getSafely();
         } catch (CacheException ce) {
             throw ce;
@@ -883,7 +890,8 @@ public class CacheProxy<K, V>
                         cacheEntryListenerConfiguration, true);
                 final InternalCompletableFuture<Object> f2 = operationService
                         .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
-                f2.getSafely();//make sure all configs are created
+                //make sure all configs are created
+                f2.getSafely();
             }
         }
     }
@@ -908,7 +916,8 @@ public class CacheProxy<K, V>
                         cacheEntryListenerConfiguration, false);
                 final InternalCompletableFuture<Object> f2 = operationService
                         .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
-                f2.getSafely();//make sure all configs are created
+                //make sure all configs are created
+                f2.getSafely();
             }
         }
     }

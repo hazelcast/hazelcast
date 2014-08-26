@@ -84,8 +84,8 @@ public class MXBeanUtil {
             return new ObjectName(
                     "javax.cache:type=Cache" + objectNameType + ",CacheManager=" + cacheManagerName + ",Cache=" + cacheName);
         } catch (MalformedObjectNameException e) {
-            throw new CacheException("Illegal ObjectName for Management Bean. " +
-                    "CacheManager=[" + cacheManagerName + "], Cache=[" + cacheName + "]", e);
+            throw new CacheException("Illegal ObjectName for Management Bean. "
+                    + "CacheManager=[" + cacheManagerName + "], Cache=[" + cacheName + "]", e);
         }
     }
 

@@ -50,6 +50,17 @@
     <suppress checks="" files="com.hazelcast.cluster.FinalizeJoinOperation"/>
     <suppress checks="" files="com.hazelcast.cluster.JoinCheckOperation"/>
 
+    <!-- Cache-->
+    <suppress checks="JavadocMethod" files="com.hazelcast.cache[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.cache[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.cache[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.cache[\\/]"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.cache[\\/]"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.cache[\\/]"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.cache[\\/]"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache[\\/]"/>
+    <suppress checks="" files="com.hazelcast.util.ConcurrentAutoTable"/>
+
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.core[\\/]"/>

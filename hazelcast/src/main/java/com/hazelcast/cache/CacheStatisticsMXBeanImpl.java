@@ -23,6 +23,7 @@ public class CacheStatisticsMXBeanImpl
         implements CacheStatisticsMXBean, Serializable {
 
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
+    private static final float FLOAT_HUNDRED = 100.0f;
 
     private CacheStatistics statistics;
 
@@ -46,7 +47,7 @@ public class CacheStatisticsMXBeanImpl
         if (hits == 0) {
             return 0;
         }
-        return (float) hits / getCacheGets() * 100.0f;
+        return (float) hits / getCacheGets() * FLOAT_HUNDRED;
     }
 
     @Override
@@ -60,7 +61,7 @@ public class CacheStatisticsMXBeanImpl
         if (misses == 0) {
             return 0;
         }
-        return (float) misses / getCacheGets() * 100.0f;
+        return (float) misses / getCacheGets() * FLOAT_HUNDRED;
     }
 
     @Override

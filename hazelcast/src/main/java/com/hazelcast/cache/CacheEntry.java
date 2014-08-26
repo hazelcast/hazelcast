@@ -18,6 +18,12 @@ package com.hazelcast.cache;
 
 import javax.cache.Cache;
 
+/**
+ * Entry for {@link javax.cache.Cache}.
+ *
+ * @param <K>
+ * @param <V>
+ */
 public class CacheEntry<K, V>
         implements Cache.Entry<K, V> {
     private final K key;

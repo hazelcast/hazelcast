@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-public class CacheConfigReadOnly<K,V> extends CacheConfig<K,V> {
+public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     CacheConfigReadOnly(CacheConfig config) {
         super(config);

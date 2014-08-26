@@ -26,7 +26,7 @@ class CacheDistributedObject
         extends AbstractDistributedObject<CacheService> {
 
     private String name;
-    private boolean isDestroy = false;
+    private boolean isDestroy;
 
     protected CacheDistributedObject(String name, NodeEngine nodeEngine, CacheService service) {
         super(nodeEngine, service);

@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * date: 13/03/14
@@ -33,7 +34,7 @@ public class TimedClientState implements DataSerializable {
     private long time;
     private String cluster;
     private String clientAddress;
-    private HashMap<String,CacheStatsImpl> statsMap;
+    private HashMap<String, CacheStatsImpl> statsMap;
 
     public TimedClientState() {
     }
@@ -68,12 +69,12 @@ public class TimedClientState implements DataSerializable {
         this.clientAddress = clientAddress;
     }
 
-    public HashMap<String, CacheStatsImpl> getStatsMap() {
+    public Map<String, CacheStatsImpl> getStatsMap() {
         return statsMap;
     }
 
-    public void setStatsMap(HashMap<String, CacheStatsImpl> statsMap) {
-        this.statsMap = statsMap;
+    public void setStatsMap(Map<String, CacheStatsImpl> statsMap) {
+        this.statsMap = (HashMap) statsMap;
     }
 
 
@@ -84,7 +85,7 @@ public class TimedClientState implements DataSerializable {
         out.writeUTF(cluster);
         int size = statsMap.size();
         out.writeInt(size);
-        for (String key : statsMap.keySet()){
+        for (String key : statsMap.keySet()) {
             out.writeUTF(key);
             statsMap.get(key).writeData(out);
         }
@@ -101,7 +102,7 @@ public class TimedClientState implements DataSerializable {
             String key = in.readUTF();
             CacheStatsImpl stats = new CacheStatsImpl();
             stats.readData(in);
-            statsMap.put(key,stats);
+            statsMap.put(key, stats);
         }
     }
 }

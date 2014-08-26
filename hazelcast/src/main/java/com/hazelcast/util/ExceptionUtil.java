@@ -75,7 +75,8 @@ public final class ExceptionUtil {
         }
     }
 
-    public static <T extends Throwable> RuntimeException rethrowAllowedTypeFirst(final Throwable t, Class<T> allowedType) throws T {
+    public static <T extends Throwable> RuntimeException rethrowAllowedTypeFirst(final Throwable t,
+                                                                                 Class<T> allowedType) throws T {
         if (t instanceof Error) {
             if (t instanceof OutOfMemoryError) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
