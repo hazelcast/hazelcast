@@ -16,9 +16,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * Created by buremba <Burak Emre Kabakcı> on 21/08/14 17:39.
- */
 @RunWith(HazelcastParallelClassRunner.class)
 public class ConditionalQueryTest extends HazelcastTestSupport {
 
@@ -39,7 +36,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         Predicate salaryPredicate = Predicates.between("salary", 0, 100);
         imap.addIndex("age", false, salaryPredicate);
         imap.addIndex("age", false);
@@ -58,9 +55,9 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
         assertEquals(2, indexStats.size());
         for (IndexStats indexStat : indexStats) {
             Predicate predicate = indexStat.getPredicate();
-            if(predicate!=null && predicate.equals(salaryPredicate)) {
+            if (predicate != null && predicate.equals(salaryPredicate)) {
                 assertEquals(1, indexStat.getUsageCount());
-            }else {
+            } else {
                 assertEquals(0, indexStat.getUsageCount());
             }
         }
@@ -71,7 +68,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         imap.addIndex("age", false, Predicates.between("salary", 0, 50));
 
         fillMap(imap);
@@ -93,7 +90,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         imap.addIndex("age", false);
         imap.addIndex("salary", false);
 
@@ -118,7 +115,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         imap.addIndex("age", false, Predicates.between("salary", 0, 100));
 
         fillMap(imap);
@@ -134,13 +131,12 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
     }
 
 
-
     @Test(timeout = 60000)
     public void testQueryOr_whenSomeIndexesPredicate() throws Exception {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         Predicate salaryPredicate = Predicates.between("salary", 0, 100);
         imap.addIndex("age", false, salaryPredicate);
         imap.addIndex("age", false, Predicates.between("salary", 0, 1000));
@@ -167,7 +163,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         imap.addIndex("age", false, Predicates.between("salary", 0, 1000));
 
         fillMap(imap);
@@ -191,7 +187,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         imap.addIndex("name", false, Predicates.between("salary", 0, 100));
 
         fillMap(imap);
@@ -215,7 +211,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         imap.addIndex("name", false, Predicates.between("salary", 0, 100));
 
         fillMap(imap);
@@ -239,7 +235,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         imap.addIndex("name", false, Predicates.between("salary", 0, 50));
 
         fillMap(imap);
@@ -262,7 +258,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         imap.addIndex("name", false, Predicates.between("salary", 0, 50));
 
         fillMap(imap);
@@ -286,7 +282,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         imap.addIndex("age", false, Predicates.between("salary", 0, 1000));
 
         fillMap(imap);
@@ -310,7 +306,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         imap.addIndex("age", false, Predicates.between("salary", 0, 50));
 
         fillMap(imap);
@@ -329,13 +325,12 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
     }
 
 
-
     @Test(timeout = 60000)
     public void testQueryOr_whenNotConditional() throws Exception {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         imap.addIndex("age", false);
         imap.addIndex("salary", false);
 
@@ -359,7 +354,7 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = createHazelcastInstance();
 
-        IMap imap = h1.getMap("employees");
+        IMap imap = h1.getMap(randomString());
         Predicate or = Predicates.or(Predicates.between("salary", 0, 100), Predicates.equal("active", true));
         imap.addIndex("age", false, or);
 
@@ -371,5 +366,88 @@ public class ConditionalQueryTest extends HazelcastTestSupport {
         List<IndexStats> indexStats = imap.getLocalMapStats().getIndexStats();
         assertEquals(1, indexStats.size());
         assertEquals(1, indexStats.get(0).getUsageCount());
+    }
+
+    @Test(timeout = 60000)
+    public void testQuery_whenComplexIndexCondition() throws Exception {
+
+        HazelcastInstance h1 = createHazelcastInstance();
+
+        IMap imap = h1.getMap(randomString());
+        Predicate predicate = Predicates.and(Predicates.between("age", 0, 100), Predicates.and(Predicates.between("salary", 0, 40), Predicates.equal("active", true)));
+
+        imap.addIndex("age", false, predicate);
+
+        fillMap(imap);
+
+        Collection values = imap.values(Predicates.and(
+                Predicates.or(Predicates.between("salary", 0, 100), Predicates.equal("active", true)),
+                predicate,
+                Predicates.greaterEqual("age", 10)));
+        assertEquals(31, values.size());
+
+        List<IndexStats> indexStats = imap.getLocalMapStats().getIndexStats();
+        assertEquals(1, indexStats.size());
+        assertEquals(1, indexStats.get(0).getUsageCount());
+    }
+
+    @Test(timeout = 60000)
+    public void testQuery_whenQueryPartialIndex() throws Exception {
+
+        HazelcastInstance h1 = createHazelcastInstance();
+
+        IMap imap = h1.getMap(randomString());
+
+        imap.addIndex("age", false, Predicates.between("age", 0, 100));
+
+        fillMap(imap);
+
+        Collection values = imap.values(Predicates.between("age", 0, 50));
+        assertEquals(102, values.size());
+
+        List<IndexStats> indexStats = imap.getLocalMapStats().getIndexStats();
+        assertEquals(1, indexStats.size());
+        assertEquals(1, indexStats.get(0).getUsageCount());
+    }
+
+    @Test(timeout = 60000)
+    public void testQueryAnd_whenMultipleSameAttributePredicate() throws Exception {
+
+        HazelcastInstance h1 = createHazelcastInstance();
+
+        IMap imap = h1.getMap(randomString());
+
+        imap.addIndex("age", false, Predicates.between("age", 0, 100));
+
+        fillMap(imap);
+
+        Predicate or = Predicates.and(Predicates.between("age", 0, 100), Predicates.notEqual("age", 100));
+        Collection values = imap.values(or);
+        assertEquals(200, values.size());
+
+        List<IndexStats> indexStats = imap.getLocalMapStats().getIndexStats();
+        assertEquals(1, indexStats.size());
+        assertEquals(1, indexStats.get(0).getUsageCount());
+    }
+
+    // todo: what should we do when index predicate can't be applied to the entries?
+    @Test(timeout = 60000, expected = ClassCastException.class)
+    public void testQuery_whenIllegalIndexCondition() throws Exception {
+
+        HazelcastInstance h1 = createHazelcastInstance();
+
+        IMap imap = h1.getMap(randomString());
+        Predicate predicate = Predicates.regex("active", ".*");
+
+        imap.addIndex("age", false, predicate);
+
+        fillMap(imap);
+    }
+
+    @Test(timeout = 60000)
+    public void testAddIndex_whenPredicateIsNull() throws Exception {
+        HazelcastInstance h1 = createHazelcastInstance();
+        IMap imap = h1.getMap(randomString());
+        imap.addIndex("age", false, null);
     }
 }

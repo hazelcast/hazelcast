@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.query.Predicate;
+import com.hazelcast.util.ValidationUtil;
 
 import static com.hazelcast.util.ValidationUtil.hasText;
 
@@ -143,6 +144,7 @@ public class MapIndexConfig {
      * @return the updated MapIndexConfig.
      */
     public MapIndexConfig setPredicate(Predicate predicate) {
+        ValidationUtil.isNotNull(predicate, "predicate");
         this.predicate = predicate;
         return this;
     }

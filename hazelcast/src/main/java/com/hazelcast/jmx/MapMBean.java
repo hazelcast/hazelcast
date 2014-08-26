@@ -21,7 +21,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;

@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicate;
 
+import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.impl.DateHelperTest;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

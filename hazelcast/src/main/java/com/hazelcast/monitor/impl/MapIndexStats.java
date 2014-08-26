@@ -8,39 +8,51 @@ import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * Created by buremba <Burak Emre Kabakcı> on 23/08/14 22:49.
- */
 public class MapIndexStats {
     private AtomicLongArray indexStats;
+    private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public void incrementIndexUsage(int index) {
-        this.indexStats.incrementAndGet(index);
+        lock.readLock().lock();
+        try {
+            this.indexStats.incrementAndGet(index);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public long getIndexUsageCount(int index) {
-        return indexStats.get(index);
+        lock.readLock().lock();
+        try {
+            return indexStats.get(index);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public void addIndex(int index) {
-//        synchronized (indexStats) {
+        lock.writeLock().lock();
+        try {
             int length = this.indexStats == null ? 0 : this.indexStats.length();
             AtomicLongArray newStats = new AtomicLongArray(length + 1);
             for (int i = 0; i < length; i++) {
-                if(i < index) {
+                if (i < index) {
                     newStats.set(i, this.indexStats.get(i));
-                }else
-                if(i > index) {
-                    newStats.set(i+1, this.indexStats.get(i+1));
+                } else if (i >= index) {
+                    newStats.set(i + 1, this.indexStats.get(i + 1));
                 }
             }
             indexStats = newStats;
-//        }
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     public synchronized void removeIndex(int index) {
-//        synchronized (indexStats) {
+        lock.writeLock().lock();
+        try {
             AtomicLongArray newStats = new AtomicLongArray(this.indexStats.length() - 1);
             for (int i = 0; i < this.indexStats.length() - 1; i++) {
                 if (i < index) {
@@ -50,7 +62,27 @@ public class MapIndexStats {
                 }
             }
             indexStats = newStats;
-//        }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public IndexUsageIncrementer createIndexUsageIncrementer(int index) {
+        return new IndexUsageIncrementer(this, index);
+    }
+
+    public static class IndexUsageIncrementer {
+        private final MapIndexStats indexStats;
+        private final int index;
+
+        public IndexUsageIncrementer(MapIndexStats indexStats, int index) {
+            this.indexStats = indexStats;
+            this.index = index;
+        }
+
+        public void incrementIndexUsage() {
+            indexStats.incrementIndexUsage(index);
+        }
     }
 
     public static class IndexStatsImpl implements IndexStats {
@@ -70,7 +102,7 @@ public class MapIndexStats {
         }
 
         @Override
-        public long getIndexItemCount() {
+        public long getIndexEntryCount() {
             return indexItemCount;
         }
 

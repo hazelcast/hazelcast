@@ -25,7 +25,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.map.MapService;
-import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.impl.predicate.PagingPredicate;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.test.AssertTask;

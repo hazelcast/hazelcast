@@ -18,7 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;

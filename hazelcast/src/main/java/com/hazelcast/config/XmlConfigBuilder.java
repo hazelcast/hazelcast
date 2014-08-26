@@ -26,7 +26,7 @@ import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
@@ -890,9 +890,17 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node indexNode : new IterableNodeList(n.getChildNodes())) {
             if ("index".equals(cleanNodeName(indexNode))) {
                 final NamedNodeMap attrs = indexNode.getAttributes();
-                boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
-                Predicate predicate = new SqlPredicate(getTextContent(attrs.getNamedItem("predicate")));
                 String attribute = getTextContent(indexNode);
+
+                boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
+                Predicate predicate;
+                String predicateStr = getTextContent(attrs.getNamedItem("predicate"));
+                try {
+                    predicate = new SqlPredicate(predicateStr);
+                } catch (Exception e) {
+                    String s = "Partial index predicate (" + predicateStr + ") for attribute '" + attribute + "' is invalid.";
+                    throw new IllegalArgumentException(s);
+                }
                 mapConfig.addMapIndexConfig(new MapIndexConfig(attribute, ordered, predicate));
             }
         }

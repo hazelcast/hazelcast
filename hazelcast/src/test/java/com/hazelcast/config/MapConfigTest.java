@@ -85,6 +85,18 @@ public class MapConfigTest {
     }
 
     /**
+     * Test method for {@link com.hazelcast.config.MapConfig#setMapIndexConfigs(java.util.List)}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testIndexSetPredicate_whenArgumentNull() {
+        MapIndexConfig mapIndexConfig = new MapIndexConfig();
+        mapIndexConfig
+                .setAttribute("test")
+                .setOrdered(true)
+                .setPredicate(null);
+    }
+
+    /**
      * Test method for {@link com.hazelcast.config.MapConfig#setBackupCount(int)}.
      */
     @Test(expected = IllegalArgumentException.class)

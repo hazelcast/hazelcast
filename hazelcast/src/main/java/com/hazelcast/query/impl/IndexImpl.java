@@ -20,6 +20,7 @@ import com.hazelcast.monitor.impl.MapIndexStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.impl.resultset.MultiResultSet;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -44,12 +45,7 @@ public class IndexImpl implements Index {
     private final Predicate predicate;
 
     private volatile AttributeType attributeType;
-    private MapIndexStats localMapIndexStats;
-
-    public int getId() {
-        return id;
-    }
-
+    private MapIndexStats.IndexUsageIncrementer indexUsageIncrementer;
     private int id;
 
     public IndexImpl(String attribute, boolean ordered, Predicate predicate) {
@@ -96,7 +92,7 @@ public class IndexImpl implements Index {
             // Initialize attribute type by using entry index
             attributeType = e.getAttributeType(attribute);
         }
-        if(predicate!=null && !predicate.apply(e)) {
+        if (predicate != null && !predicate.apply(e)) {
             return;
         }
 
@@ -125,8 +121,8 @@ public class IndexImpl implements Index {
     }
 
     private void onIndexUsage() {
-        if(localMapIndexStats!=null) {
-            localMapIndexStats.incrementIndexUsage(id);
+        if (indexUsageIncrementer != null) {
+            indexUsageIncrementer.incrementIndexUsage();
         }
     }
 
@@ -171,7 +167,7 @@ public class IndexImpl implements Index {
             Set<QueryableEntry> records = indexStore.getRecords();
             onIndexUsage();
             return records;
-        }else {
+        } else {
             return new SingleResultSet(null);
         }
     }
@@ -223,9 +219,8 @@ public class IndexImpl implements Index {
     }
 
     @Override
-    public void setStatistics(MapIndexStats localMapIndexStats, int index) {
-        this.localMapIndexStats = localMapIndexStats;
-        this.id = index;
+    public void setStatistics(MapIndexStats.IndexUsageIncrementer localMapIndexStats) {
+        this.indexUsageIncrementer = localMapIndexStats;
     }
 
     /**

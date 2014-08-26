@@ -24,9 +24,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -91,8 +90,6 @@ public class LocalReplicatedMapStatsImpl
 
     private long ownedEntryCount;
     private long creationTime;
-
-    private IndexStats[] indexStats;
 
     public LocalReplicatedMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -386,11 +383,8 @@ public class LocalReplicatedMapStatsImpl
 
     @Override
     public List<IndexStats> getIndexStats() {
-        return Collections.unmodifiableList(Arrays.asList(indexStats));
-    }
-
-    public void setIndexStats(IndexStats[] indexStats) {
-        this.indexStats = indexStats;
+        // todo: should we implement indexing to replicated map?
+        throw new UnsupportedOperationException("Indexes are not implemented in replicated map!");
     }
 
     @Override

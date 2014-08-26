@@ -45,11 +45,11 @@ public class TestPredicate implements IndexAwarePredicate {
     }
 
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        return queryContext.getIndex("attr1").getRecords(value);
+        return queryContext.getIdealIndex(this).getRecords(value);
     }
 
     public boolean isIndexed(QueryContext queryContext) {
-        return queryContext.getIndex("attr1") != null;
+        return queryContext.getIdealIndex(this) != null;
     }
 
     public boolean didApply() {

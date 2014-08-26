@@ -1,6 +1,6 @@
 package com.hazelcast.map;
 
-import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.impl.predicate.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.util.IterationType;

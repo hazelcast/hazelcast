@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * This class in methods which manipulate and access index.
+ * This class contains methods which manipulate and access index.
  */
 public class IndexService {
     private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>();
@@ -43,23 +43,23 @@ public class IndexService {
         for (int i = 0; i < newIndexes.length; i++) {
             Index idx = idxs[i];
 
-            if(idx.getAttributeName().equals(attribute) && idx.getPredicate().equals(predicate)) {
+            if (idx.getAttributeName().equals(attribute) && idx.getPredicate().equals(predicate)) {
                 indexOfIndex = i;
-                if(localMapIndexStats!=null) {
+                if (localMapIndexStats != null) {
                     localMapIndexStats.removeIndex(indexOfIndex);
                 }
                 continue;
             }
 
-            if(indexOfIndex==null) {
+            if (indexOfIndex == null) {
                 newIndexes[i] = idx;
-            }else {
-                newIndexes[i-1] = idx;
+            } else {
+                newIndexes[i - 1] = idx;
             }
         }
-        if(indexOfIndex!=null) {
+        if (indexOfIndex != null) {
             indexes.set(newIndexes);
-        }else {
+        } else {
             return idxs[indexOfIndex];
         }
         return null;
@@ -71,11 +71,11 @@ public class IndexService {
 
 
     public IndexStats[] createStatistics() {
-        if(localMapIndexStats==null) {
+        if (localMapIndexStats == null) {
             return null;
         }
         Index[] idxs = indexes.get();
-        int length = idxs==null ? 0 : idxs.length;
+        int length = idxs == null ? 0 : idxs.length;
 
         ArrayList<IndexStats> objects = new ArrayList<IndexStats>(length);
         for (int i = 0; i < length; i++) {
@@ -91,11 +91,11 @@ public class IndexService {
 
     private Index findIndex(String attribute, Predicate predicate) {
         Index[] idxs = indexes.get();
-        if(idxs==null) {
+        if (idxs == null) {
             return null;
         }
         for (Index idx : idxs) {
-            if(idx.getAttributeName().equals(attribute) && ValidationUtil.equalOrNull(idx.getPredicate(), predicate)) {
+            if (idx.getAttributeName().equals(attribute) && ValidationUtil.equalOrNull(idx.getPredicate(), predicate)) {
                 return idx;
             }
         }
@@ -111,19 +111,19 @@ public class IndexService {
 
         Index[] oldIndexes = indexes.get();
 
-        final int length = oldIndexes==null ? 0 : oldIndexes.length;
-        Index[] newIndexes = new Index[length+1];
+        final int length = oldIndexes == null ? 0 : oldIndexes.length;
+        Index[] newIndexes = new Index[length + 1];
         for (int i = 0; i < length; i++) {
             newIndexes[i] = oldIndexes[i];
         }
         newIndexes[length] = index;
-        if(localMapIndexStats!=null) {
-            index.setStatistics(localMapIndexStats, length);
+        if (localMapIndexStats != null) {
+            index.setStatistics(localMapIndexStats.createIndexUsageIncrementer(length));
         }
 
         indexes.set(newIndexes);
         hasIndex = true;
-        if(localMapIndexStats!=null) {
+        if (localMapIndexStats != null) {
             localMapIndexStats.addIndex(length);
         }
         return index;
@@ -156,8 +156,8 @@ public class IndexService {
     public Set<QueryableEntry> query(Predicate predicate) {
 
         if (hasIndex) {
-            QueryContext queryContext = new QueryContext(this, predicate);
             if (predicate instanceof IndexAwarePredicate) {
+                QueryContext queryContext = new QueryContext(this, (IndexAwarePredicate) predicate);
                 IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
                 if (iap.isIndexed(queryContext)) {
                     return iap.filter(queryContext);

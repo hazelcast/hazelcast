@@ -16,8 +16,15 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;

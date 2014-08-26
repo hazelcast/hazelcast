@@ -83,9 +83,9 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.impl.predicate.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.predicate.TruePredicate;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -101,7 +101,6 @@ import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.ThreadUtil;
-import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.AbstractMap;
@@ -159,7 +158,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     private void initializeIndexes() {
         for (MapIndexConfig index : getMapConfig().getMapIndexConfigs()) {
             if (index.getAttribute() != null) {
-                addIndex(index.getAttribute(), index.isOrdered(), index.getPredicate());
+                addIndexInternal(index.getAttribute(), index.isOrdered(), index.getPredicate());
             }
         }
     }
@@ -1057,9 +1056,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return getMapQuerySupport().query(name, predicate, iterationType, dataResult);
     }
 
-    public void addIndex(final String attribute, final boolean ordered, Predicate predicate) {
+    public void addIndexInternal(final String attribute, final boolean ordered, Predicate predicate) {
         final NodeEngine nodeEngine = getNodeEngine();
-        ValidationUtil.isNotNull(attribute, "attribute");
 
         try {
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered, predicate);

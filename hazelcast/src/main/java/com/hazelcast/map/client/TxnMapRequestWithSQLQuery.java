@@ -19,7 +19,7 @@ import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import java.io.IOException;
 
 /**

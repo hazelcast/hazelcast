@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicate;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.ConnectorPredicate;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.IndexAwarePredicate;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
@@ -36,8 +43,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.toData;
-import static com.hazelcast.query.Predicates.AndPredicate;
-import static com.hazelcast.query.Predicates.EqualPredicate;
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;

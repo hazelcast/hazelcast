@@ -42,7 +42,7 @@ import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.predicate.TruePredicate;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -607,7 +607,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public void addIndex(String attribute, boolean ordered) {
-        addIndex(attribute, ordered, null);
+        addIndexInternal(attribute, ordered, null);
+    }
+
+    @Override
+    public void addIndex(String attribute, boolean ordered, Predicate predicate) {
+        addIndexInternal(attribute, ordered, predicate);
     }
 
     @Override

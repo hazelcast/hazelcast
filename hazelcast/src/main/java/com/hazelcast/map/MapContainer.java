@@ -89,7 +89,7 @@ public class MapContainer extends MapContainerSupport {
         nearCacheSizeEstimator = SizeEstimators.createNearCacheSizeEstimator();
         mapStoreManager = createMapStoreManager(this);
         mapStoreManager.start();
-        if(this.getMapConfig().isStatisticsEnabled()) {
+        if (this.getMapConfig().isStatisticsEnabled()) {
             indexService.enableStatistics();
         }
 

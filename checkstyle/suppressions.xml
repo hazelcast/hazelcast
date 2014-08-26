@@ -15,6 +15,7 @@
     <suppress checks="MethodCountCheck" files="ConsoleApp.java"/>
     <suppress checks="ClassFanOutComplexityCheck" files="ConsoleApp.java"/>
     <suppress checks="CyclomaticComplexityCheck" files="ConsoleApp.java"/>
+    <suppress checks="CyclomaticComplexityCheck" files="ConsoleApp.java"/>
     <suppress checks="NPathComplexityCheck" files="ConsoleApp.java"/>
     <suppress checks="MethodLengthCheck" files="ConsoleApp.java"/>
     <suppress checks="MethodLengthCheck" files="AllTest.java"/>
@@ -173,9 +174,9 @@
 
 
     <!-- Query -->
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.SqlPredicate"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.query.SqlPredicate"/>
-    <suppress checks="MethodLength" files="com.hazelcast.query.SqlPredicate"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.impl.predicate.SqlPredicate"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.query.impl.predicate.SqlPredicate"/>
+    <suppress checks="MethodLength" files="com.hazelcast.query.impl.predicate.SqlPredicate"/>
     <suppress checks="MethodLength" files="com.hazelcast.query.impl.ReflectionHelper"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.impl.ReflectionHelper"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.query.impl.ReflectionHelper"/>

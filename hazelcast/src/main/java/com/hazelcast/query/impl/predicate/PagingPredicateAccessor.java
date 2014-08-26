@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicate;
 
 import java.util.Map;
 

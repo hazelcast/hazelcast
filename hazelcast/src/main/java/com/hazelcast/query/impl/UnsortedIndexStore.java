@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.resultset.MultiResultSet;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

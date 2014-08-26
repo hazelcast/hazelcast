@@ -23,7 +23,7 @@ import com.hazelcast.query.QueryException;
 
 import java.util.Set;
 /**
- * This interface in the methods related to index of Query.
+ * This interface contains the methods related to index of Query.
  */
 public interface Index {
 
@@ -51,5 +51,5 @@ public interface Index {
 
     boolean isOrdered();
 
-    void setStatistics(MapIndexStats localMapIndexStats, int index);
+    void setStatistics(MapIndexStats.IndexUsageIncrementer localMapIndexStats);
 }

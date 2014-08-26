@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.query.impl.resultset;
+
+import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.AbstractSet;
 import java.util.Collections;

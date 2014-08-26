@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 /**
  * This class provides functionality to build predicate.
  */
@@ -52,7 +53,7 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
     @Override
     public boolean in(Predicate predicate) {
         for (Predicate lsPredicate : lsPredicates) {
-            if(!lsPredicate.in(predicate)) {
+            if (!lsPredicate.in(predicate)) {
                 return false;
             }
         }

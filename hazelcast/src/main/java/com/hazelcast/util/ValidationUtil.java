@@ -58,8 +58,8 @@ public final class ValidationUtil {
     }
 
     public static boolean equalOrNull(Object arg0, Object arg1) {
-        if(arg0==null || arg1 == null) {
-            return arg0==arg1;
+        if (arg0 == null || arg1 == null) {
+            return arg0 == arg1;
         }
         return arg0.equals(arg1);
     }
