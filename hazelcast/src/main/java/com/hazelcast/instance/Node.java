@@ -67,12 +67,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -85,8 +82,6 @@ public class Node {
     private volatile boolean active;
 
     private volatile boolean completelyShutdown;
-
-    private final Set<Address> failedConnections = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 
@@ -300,13 +295,6 @@ public class Node {
         return systemLogService;
     }
 
-    public void failedConnection(Address address) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(getThisAddress() + " failed connecting to " + address);
-        }
-        failedConnections.add(address);
-    }
-
     public SerializationService getSerializationService() {
         return serializationService;
     }
@@ -452,7 +440,6 @@ public class Node {
                     thread.interrupt();
                 }
             }
-            failedConnections.clear();
             systemLogService.shutdown();
             logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
@@ -493,10 +480,6 @@ public class Node {
         setActive(false);
     }
 
-    public Set<Address> getFailedConnections() {
-        return failedConnections;
-    }
-
     public ClassLoader getConfigClassLoader() {
         return configClassLoader;
     }
@@ -520,7 +503,8 @@ public class Node {
                         shutdown(true);
                     }
                 } else {
-                    logger.finest("shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
+                    logger.finest(
+                            "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
                 }
             } catch (Exception e) {
                 logger.warning(e);
@@ -552,16 +536,15 @@ public class Node {
     }
 
     public void rejoin() {
-        prepareForRejoin();
+        prepareForJoin();
         join();
     }
 
-    private void prepareForRejoin() {
+    private void prepareForJoin() {
         systemLogService.logJoin("Rejoining!");
         masterAddress = null;
         joined.set(false);
         clusterService.reset();
-        failedConnections.clear();
     }
 
     public void join() {
@@ -571,26 +554,17 @@ public class Node {
             return;
         }
 
-        final long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
-        //This method used to be recursive. The problem is that eventually you can get a stackoverflow if
-        //there are enough retries. With an iterative approach you don't suffer from this problem.
-        int rejoinCount = 0;
-        for (; ; ) {
-            final long joinStartTime = joiner.getStartTime();
-            try {
-                joiner.join();
-                return;
-            } catch (Exception e) {
-                rejoinCount++;
-                if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
-                    logger.warning("Trying to rejoin for the " + rejoinCount + " time: " + e.getMessage());
-                    prepareForRejoin();
-                } else {
-                    logger.severe("Could not join cluster after " + rejoinCount + " attempts, shutting down!", e);
-                    shutdown(true);
-                    return;
-                }
-            }
+        try {
+            prepareForJoin();
+            joiner.join();
+        } catch (Throwable e) {
+            logger.severe("Error while joining the cluster!", e);
+        }
+
+        if (!joined()) {
+            long maxJoinTime = groupProperties.MAX_JOIN_SECONDS.getInteger() * 1000L;
+            logger.severe("Could not join cluster in " + maxJoinTime + " ms. Shutting down now!");
+            shutdown(true);
         }
     }
 

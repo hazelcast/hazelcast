@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,43 +21,39 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class JoinRequestOperation extends AbstractClusterOperation implements JoinOperation {
+public class MasterDiscoveryOperation extends AbstractClusterOperation implements JoinOperation {
 
-    private JoinRequest request;
+    private JoinMessage joinMessage;
 
-    public JoinRequestOperation() {
+    public MasterDiscoveryOperation() {
     }
 
-    public JoinRequestOperation(JoinRequest request) {
-        this.request = request;
+    public MasterDiscoveryOperation(JoinMessage joinMessage) {
+        this.joinMessage = joinMessage;
     }
 
     @Override
     public void run() {
         ClusterServiceImpl cm = getService();
-        cm.handleJoinRequest(request);
-    }
-
-    public JoinRequest getRequest() {
-        return request;
+        cm.answerMasterQuestion(joinMessage);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        request = new JoinRequest();
-        request.readData(in);
+        joinMessage = new JoinMessage();
+        joinMessage.readData(in);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        request.writeData(out);
+        joinMessage.writeData(out);
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("JoinRequestOperation");
-        sb.append("{message=").append(request);
+        sb.append("MasterDiscoveryOperation");
+        sb.append("{message=").append(joinMessage);
         sb.append('}');
         return sb.toString();
     }

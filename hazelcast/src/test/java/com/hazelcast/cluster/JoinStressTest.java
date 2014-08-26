@@ -17,31 +17,36 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ProblematicTest;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author mdogan 6/17/13
@@ -51,148 +56,146 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class JoinStressTest extends HazelcastTestSupport {
 
+    @Before
+    @After
+    public void tearDown() {
+        Hazelcast.shutdownAll();
+    }
+
     @Test
-    public void testTCPIPJoinWithManyNodes() throws UnknownHostException, InterruptedException {
-        final int count = 20;
-        final CountDownLatch latch = new CountDownLatch(count);
-        final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        final Random random = new Random();
-        final ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
-        for (int i = 0; i < count; i++) {
-            final int seed = i;
+    public void testTCPIPJoinWithManyNodes() throws InterruptedException {
+        testJoinWithManyNodes(false);
+    }
+
+    @Test
+    public void testMulticastJoinWithManyNodes() throws InterruptedException {
+        testJoinWithManyNodes(true);
+    }
+
+    public void testJoinWithManyNodes(final boolean multicast) throws InterruptedException {
+        final int nodeCount = 20;
+        final int basePort = 12301;
+        final CountDownLatch latch = new CountDownLatch(nodeCount);
+        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(nodeCount);
+
+        ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+        for (int i = 0; i < nodeCount; i++) {
+            final int portSeed = i;
             ex.execute(new Runnable() {
                 public void run() {
-                    try {
-                        Thread.sleep(random.nextInt(10) * 1000);
-                        final Config config = new Config();
-                        config.setProperty("hazelcast.wait.seconds.before.join", "5");
-                        final NetworkConfig networkConfig = config.getNetworkConfig();
-                        networkConfig.getJoin().getMulticastConfig().setEnabled(false);
-                        TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
-                        tcpIpConfig.setEnabled(true);
-                        int port = 12301;
-                        networkConfig.setPortAutoIncrement(false);
-                        networkConfig.setPort(port + seed);
-                        for (int i = 0; i < count; i++) {
-                            tcpIpConfig.addMember("127.0.0.1:" + (port + i));
-                        }
-                        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-                        mapOfInstances.put(seed, h);
-                        latch.countDown();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-        }
-        try {
-            latch.await(200, TimeUnit.SECONDS);
-        } finally {
-            ex.shutdown();
-        }
-        for (HazelcastInstance h : mapOfInstances.values()) {
-            assertEquals(count, h.getCluster().getMembers().size());
-        }
-    }
+                    sleepRandom(1, 1000);
 
-    @Test
-    @Category(ProblematicTest.class)
-    public void testTCPIPJoinWithManyNodesMultipleGroups() throws UnknownHostException, InterruptedException {
-        final int count = 20;
-        final int groupCount = 3;
-        final CountDownLatch latch = new CountDownLatch(count);
-        final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        final Random random = new Random();
-        final Map<String, AtomicInteger> groups = new ConcurrentHashMap<String, AtomicInteger>();
-        for (int i = 0; i < groupCount; i++) {
-            groups.put("group" + i, new AtomicInteger(0));
-        }
-        final ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
-        for (int i = 0; i < count; i++) {
-            final int seed = i;
-            ex.execute(new Runnable() {
-                public void run() {
-                    try {
-                        Thread.sleep(random.nextInt(10) * 1000);
-                        final Config config = new Config();
-                        config.setProperty("hazelcast.wait.seconds.before.join", "5");
-                        String name = "group" + random.nextInt(groupCount);
-                        groups.get(name).incrementAndGet();
-                        config.getGroupConfig().setName(name);
-                        final NetworkConfig networkConfig = config.getNetworkConfig();
-                        networkConfig.getJoin().getMulticastConfig().setEnabled(false);
-                        TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
-                        tcpIpConfig.setEnabled(true);
-                        int port = 12301;
-                        networkConfig.setPortAutoIncrement(false);
-                        networkConfig.setPort(port + seed);
-                        for (int i = 0; i < count; i++) {
-                            tcpIpConfig.addMember("127.0.0.1:" + (port + i));
-                        }
-                        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-                        mapOfInstances.put(seed, h);
-                        latch.countDown();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-        }
-        try {
-            latch.await(200, TimeUnit.SECONDS);
-        } finally {
-            ex.shutdown();
-        }
-        for (HazelcastInstance h : mapOfInstances.values()) {
-            int clusterSize = h.getCluster().getMembers().size();
-            int shouldBeClusterSize = groups.get(h.getConfig().getGroupConfig().getName()).get();
-            assertEquals(h.getConfig().getGroupConfig().getName() + ": ", shouldBeClusterSize, clusterSize);
-        }
-    }
+                    Config config = new Config();
+                    initNetworkConfig(config.getNetworkConfig(), basePort, portSeed, multicast, nodeCount);
 
-    @Test
-    @Category(ProblematicTest.class)
-    public void testMulticastJoinAtTheSameTime() throws InterruptedException {
-        multicastJoin(10, false);
-    }
-
-    @Test
-    @Category(ProblematicTest.class)
-    public void testMulticastJoinWithRandomStartTime() throws InterruptedException {
-        multicastJoin(10, true);
-    }
-
-    private void multicastJoin(int count, final boolean sleep) throws InterruptedException {
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(count);
-
-        final Config config = new Config();
-        config.setProperty("hazelcast.wait.seconds.before.join", "5");
-        config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(25);
-        final ConcurrentMap<Integer, HazelcastInstance> map = new ConcurrentHashMap<Integer, HazelcastInstance>();
-        final CountDownLatch latch = new CountDownLatch(count);
-        final ExecutorService ex = Executors.newCachedThreadPool();
-        for (int i = 0; i < count; i++) {
-            final int index = i;
-            ex.execute(new Runnable() {
-                public void run() {
-                    if (sleep) {
-                        try {
-                            Thread.sleep((int) (1000 * Math.random()));
-                        } catch (InterruptedException ignored) {
-                        }
-                    }
-                    HazelcastInstance h = nodeFactory.newHazelcastInstance(config);
-                    map.put(index, h);
+                    HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+                    instances.set(portSeed, h);
                     latch.countDown();
                 }
             });
         }
-        assertOpenEventually(latch);
-        for (HazelcastInstance h : map.values()) {
-            assertEquals(count, h.getCluster().getMembers().size());
+
+        try {
+            latch.await(200, TimeUnit.SECONDS);
+        } finally {
+            ex.shutdown();
         }
-        ex.shutdown();
+
+        for (int i = 0; i < nodeCount; i++) {
+            HazelcastInstance hz = instances.get(i);
+            assertNotNull(hz);
+            assertEquals(nodeCount, hz.getCluster().getMembers().size());
+        }
     }
 
+    private static void sleepRandom(int min, int max) {
+        int rand = (int) (Math.random() * (max - min)) + min;
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(rand));
+    }
+
+
+    @Test
+    public void testTCPIPJoinWithManyNodesMultipleGroups() throws InterruptedException {
+        testJoinWithManyNodesMultipleGroups(false);
+    }
+
+    @Test
+    public void testMulticastJoinWithManyNodesMultipleGroups() throws InterruptedException {
+        testJoinWithManyNodesMultipleGroups(true);
+    }
+
+    private void testJoinWithManyNodesMultipleGroups(final boolean multicast) throws InterruptedException {
+        final int nodeCount = 10;
+        final int groupCount = 3;
+        final int basePort = 12301;
+        final CountDownLatch latch = new CountDownLatch(nodeCount);
+        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(nodeCount);
+
+        final Map<String, AtomicInteger> groups = new HashMap<String, AtomicInteger>(groupCount);
+        for (int i = 0; i < groupCount; i++) {
+            groups.put("group-" + i, new AtomicInteger(0));
+        }
+
+        ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+        for (int i = 0; i < nodeCount; i++) {
+            final int portSeed = i;
+            ex.execute(new Runnable() {
+                public void run() {
+                    sleepRandom(1, 1000);
+
+                    Config config = new Config();
+                    String name = "group-" + (int) (Math.random() * groupCount);
+                    config.getGroupConfig().setName(name);
+
+                    groups.get(name).incrementAndGet();
+
+                    initNetworkConfig(config.getNetworkConfig(), basePort, portSeed, multicast, nodeCount);
+
+                    HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+                    instances.set(portSeed, h);
+                    latch.countDown();
+                }
+            });
+        }
+        try {
+            latch.await(200, TimeUnit.SECONDS);
+        } finally {
+            ex.shutdown();
+        }
+
+        for (int i = 0; i < nodeCount; i++) {
+            HazelcastInstance hz = instances.get(i);
+            assertNotNull(hz);
+
+            int clusterSize = hz.getCluster().getMembers().size();
+            String groupName = hz.getConfig().getGroupConfig().getName();
+            int shouldBeClusterSize = groups.get(groupName).get();
+            assertEquals(groupName + ": ", shouldBeClusterSize, clusterSize);
+        }
+    }
+
+    private void initNetworkConfig(NetworkConfig networkConfig, int basePort, int portSeed,
+            boolean multicast, int nodeCount) {
+
+        networkConfig.setPortAutoIncrement(false);
+        networkConfig.setPort(basePort + portSeed);
+
+        JoinConfig join = networkConfig.getJoin();
+
+        MulticastConfig multicastConfig = join.getMulticastConfig();
+        multicastConfig.setEnabled(multicast);
+        multicastConfig.setMulticastTimeoutSeconds(5);
+
+        TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
+        tcpIpConfig.setEnabled(!multicast);
+        tcpIpConfig.setConnectionTimeoutSeconds(5);
+
+        List<String> members = new ArrayList<String>(nodeCount);
+        for (int i = 0; i < nodeCount; i++) {
+            members.add("127.0.0.1:" + (basePort + i));
+        }
+        Collections.sort(members);
+        tcpIpConfig.setMembers(members);
+    }
 
 }
