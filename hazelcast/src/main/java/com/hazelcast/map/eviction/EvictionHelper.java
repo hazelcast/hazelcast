@@ -184,7 +184,7 @@ public final class EvictionHelper {
     }
 
 
-    public static int getEvictableSize(int currentPartitionSize, MapConfig mapConfig, MapServiceContext mapServiceContext) {
+    public static int evictableSize(int currentPartitionSize, MapConfig mapConfig, MapServiceContext mapServiceContext) {
         int evictableSize;
         final MaxSizeConfig.MaxSizePolicy maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
         final int evictionPercentage = mapConfig.getEvictionPercentage();
@@ -325,6 +325,9 @@ public final class EvictionHelper {
         final int partitionCount = partitionService.getPartitionCount();
         List<Integer> partitionIds = null;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            if (!isOwnerOrBackup(mapServiceContext, partitionId)) {
+                continue;
+            }
             final boolean owner = isOwner(mapServiceContext, partitionId);
             boolean valid = backup ? !owner : owner;
             if (valid) {
@@ -341,6 +344,13 @@ public final class EvictionHelper {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final Address owner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
         return nodeEngine.getThisAddress().equals(owner);
+    }
+
+    private static boolean isOwnerOrBackup(MapServiceContext mapServiceContext, int partitionId) {
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
+        final Address thisAddress = nodeEngine.getThisAddress();
+        return partition.isOwnerOrBackup(thisAddress);
     }
 
     private static long getTotalMemory() {

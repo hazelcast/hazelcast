@@ -1,7 +1,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.map.eviction.EvictionHelper;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
@@ -11,6 +10,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.eviction.EvictionHelper.checkEvictable;
+import static com.hazelcast.map.eviction.EvictionHelper.evictableSize;
 import static com.hazelcast.map.eviction.EvictionHelper.fireEvent;
 import static com.hazelcast.map.eviction.EvictionHelper.removeEvictableRecords;
 
@@ -182,11 +182,40 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     }
 
+
+    /**
+     * Force eviction regardless of partition ownership.
+     *
+     * @param now now in millis.
+     */
+    protected void forceEviction(long now) {
+        if (evictionEnabled) {
+            cleanUp(now, true, true);
+        }
+    }
+
+    /**
+     * Makes eviction clean-up logic.
+     *
+     * @param now    now in millis.
+     * @param backup <code>true</code> if running on a backup partition, otherwise <code>false</code>
+     */
     private void cleanUp(long now, boolean backup) {
+        cleanUp(now, backup, false);
+    }
+
+    /**
+     * Makes eviction clean-up logic.
+     *
+     * @param now    now in millis.
+     * @param backup <code>true</code> if running on a backup partition, otherwise <code>false</code>
+     * @param force  when <code>true</code> forces eviction regardless of partition ownership, otherwise <code>false</code>
+     */
+    private void cleanUp(long now, boolean backup, boolean force) {
         if (size() == 0) {
             return;
         }
-        if (inEvictableTimeWindow(now) && isEvictable(backup)) {
+        if ((inEvictableTimeWindow(now) && isEvictable(backup)) || force) {
             removeEvictables(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
@@ -207,8 +236,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size < 1) {
             return 0;
         }
-        final int evictableSize
-                = EvictionHelper.getEvictableSize(size, mapContainer.getMapConfig(), mapServiceContext);
+        final int evictableSize = evictableSize(size, mapContainer.getMapConfig(), mapServiceContext);
         if (evictableSize < 1) {
             return 0;
         }
