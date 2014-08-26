@@ -414,7 +414,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     public boolean setTimeoutMillis(long timeoutMillis) {
 
         if (timeoutMillis < 0) {
-            throw new IllegalArgumentException("Timeout must be positive!");
+            throw new IllegalArgumentException("Timeout can not be negative!");
         }
 
         if (state == NO_TXN && getTimeoutMillis() != timeoutMillis) {
