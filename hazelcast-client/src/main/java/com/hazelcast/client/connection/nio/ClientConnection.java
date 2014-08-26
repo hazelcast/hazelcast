@@ -372,9 +372,9 @@ public class ClientConnection implements Connection, Closeable {
     //failedHeartBeat is incremented in single thread.
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     void heartBeatingFailed() {
-        heartBeating = false;
         final RemoveAllListeners request = new RemoveAllListeners();
         invocationService.send(request, ClientConnection.this);
+        heartBeating = false;
         connectionManager.onDetectingUnresponsiveConnection(this);
         final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
         final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
