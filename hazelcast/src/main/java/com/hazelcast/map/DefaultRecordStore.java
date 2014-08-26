@@ -105,7 +105,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         final Record existingRecord = records.put(key, record);
         updateSizeEstimator(-calculateRecordHeapCost(existingRecord));
         updateSizeEstimator(calculateRecordHeapCost(record));
-        forceEviction(now);
+        evictEntries(now, true);
     }
 
     @Override

@@ -51,22 +51,22 @@ public final class EvictionHelper {
     private EvictionHelper() {
     }
 
-    public static boolean checkEvictable(MapContainer mapContainer, int partitionId, boolean backup) {
+    public static boolean checkEvictable(MapContainer mapContainer, int partitionId) {
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
         final MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
         boolean result;
         switch (maxSizePolicy) {
             case PER_NODE:
-                result = isEvictablePerNode(mapContainer, backup);
+                result = isEvictablePerNode(mapContainer);
                 break;
             case PER_PARTITION:
                 result = isEvictablePerPartition(mapContainer, partitionId);
                 break;
             case USED_HEAP_PERCENTAGE:
-                result = isEvictableHeapPercentage(mapContainer, backup);
+                result = isEvictableHeapPercentage(mapContainer);
                 break;
             case USED_HEAP_SIZE:
-                result = isEvictableHeapSize(mapContainer, backup);
+                result = isEvictableHeapSize(mapContainer);
                 break;
             default:
                 throw new IllegalArgumentException("Not an appropriate max size policy [" + maxSizePolicy + ']');
@@ -258,13 +258,13 @@ public final class EvictionHelper {
         return maxSizeFromConfig * EVICTION_START_THRESHOLD_PERCENTAGE / ONE_HUNDRED_PERCENT;
     }
 
-    private static boolean isEvictablePerNode(MapContainer mapContainer, boolean backup) {
+    private static boolean isEvictablePerNode(MapContainer mapContainer) {
         int nodeTotalSize = 0;
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
         final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
         final String mapName = mapContainer.getName();
         final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
-        final List<Integer> partitionIds = findPartitionIds(mapServiceContext, backup);
+        final List<Integer> partitionIds = findPartitionIds(mapServiceContext);
         for (int partitionId : partitionIds) {
             final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
             if (container == null) {
@@ -283,23 +283,19 @@ public final class EvictionHelper {
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
         final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
         final String mapName = mapContainer.getName();
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
-        if (partition.isOwnerOrBackup(nodeEngine.getThisAddress())) {
-            final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
-            if (container == null) {
-                return false;
-            }
-            final int size = getRecordStoreSize(mapName, container);
-            if (size >= maxSize) {
-                return true;
-            }
+        final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
+        if (container == null) {
+            return false;
+        }
+        final int size = getRecordStoreSize(mapName, container);
+        if (size >= maxSize) {
+            return true;
         }
         return false;
     }
 
-    private static boolean isEvictableHeapSize(final MapContainer mapContainer, boolean backup) {
-        final long usedHeapSize = getUsedHeapSize(mapContainer, backup);
+    private static boolean isEvictableHeapSize(final MapContainer mapContainer) {
+        final long usedHeapSize = getUsedHeapSize(mapContainer);
         if (usedHeapSize == -1L) {
             return false;
         }
@@ -308,8 +304,8 @@ public final class EvictionHelper {
         return maxSize < (usedHeapSize / ONE_KILOBYTE / ONE_KILOBYTE);
     }
 
-    private static boolean isEvictableHeapPercentage(final MapContainer mapContainer, boolean backup) {
-        final long usedHeapSize = getUsedHeapSize(mapContainer, backup);
+    private static boolean isEvictableHeapPercentage(final MapContainer mapContainer) {
+        final long usedHeapSize = getUsedHeapSize(mapContainer);
         if (usedHeapSize == -1L) {
             return false;
         }
@@ -319,18 +315,14 @@ public final class EvictionHelper {
         return maxSize < (1D * ONE_HUNDRED_PERCENT * usedHeapSize / total);
     }
 
-    private static List<Integer> findPartitionIds(MapServiceContext mapServiceContext, boolean backup) {
+    private static List<Integer> findPartitionIds(MapServiceContext mapServiceContext) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
         final int partitionCount = partitionService.getPartitionCount();
         List<Integer> partitionIds = null;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            if (!isOwnerOrBackup(mapServiceContext, partitionId)) {
-                continue;
-            }
-            final boolean owner = isOwner(mapServiceContext, partitionId);
-            boolean valid = backup ? !owner : owner;
-            if (valid) {
+            final boolean owner = isOwnerOrBackup(mapServiceContext, partitionId);
+            if (owner) {
                 if (partitionIds == null) {
                     partitionIds = new ArrayList<Integer>();
                 }
@@ -340,15 +332,10 @@ public final class EvictionHelper {
         return partitionIds == null ? Collections.<Integer>emptyList() : partitionIds;
     }
 
-    private static boolean isOwner(MapServiceContext mapServiceContext, int partitionId) {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final Address owner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-        return nodeEngine.getThisAddress().equals(owner);
-    }
-
     private static boolean isOwnerOrBackup(MapServiceContext mapServiceContext, int partitionId) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
+        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        final InternalPartition partition = partitionService.getPartition(partitionId, false);
         final Address thisAddress = nodeEngine.getThisAddress();
         return partition.isOwnerOrBackup(thisAddress);
     }
@@ -357,11 +344,11 @@ public final class EvictionHelper {
         return Runtime.getRuntime().totalMemory();
     }
 
-    private static long getUsedHeapSize(final MapContainer mapContainer, boolean backup) {
+    private static long getUsedHeapSize(final MapContainer mapContainer) {
         long heapCost = 0L;
-        final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
         final String mapName = mapContainer.getName();
-        final List<Integer> partitionIds = findPartitionIds(mapServiceContext, backup);
+        final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
+        final List<Integer> partitionIds = findPartitionIds(mapServiceContext);
         for (int partitionId : partitionIds) {
             final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
             if (container == null) {
@@ -372,5 +359,4 @@ public final class EvictionHelper {
         heapCost += mapContainer.getNearCacheSizeEstimator().getSize();
         return heapCost;
     }
-
 }

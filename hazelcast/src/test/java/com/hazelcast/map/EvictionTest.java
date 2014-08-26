@@ -801,8 +801,8 @@ public class EvictionTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(config);
 
         IMap<Integer, Integer> map = instances[0].getMap(mapName);
-        // fill map with (2 * maxSize) items.
-        for (int i = 0; i < 2 * maxSize; i++) {
+        // over fill map with (10 * maxSize) items.
+        for (int i = 0; i < 10 * maxSize; i++) {
             map.put(i, i);
         }
 

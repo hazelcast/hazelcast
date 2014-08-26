@@ -182,18 +182,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     }
 
-
-    /**
-     * Force eviction regardless of partition ownership.
-     *
-     * @param now now in millis.
-     */
-    protected void forceEviction(long now) {
-        if (evictionEnabled) {
-            cleanUp(now, true, true);
-        }
-    }
-
     /**
      * Makes eviction clean-up logic.
      *
@@ -201,21 +189,10 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * @param backup <code>true</code> if running on a backup partition, otherwise <code>false</code>
      */
     private void cleanUp(long now, boolean backup) {
-        cleanUp(now, backup, false);
-    }
-
-    /**
-     * Makes eviction clean-up logic.
-     *
-     * @param now    now in millis.
-     * @param backup <code>true</code> if running on a backup partition, otherwise <code>false</code>
-     * @param force  when <code>true</code> forces eviction regardless of partition ownership, otherwise <code>false</code>
-     */
-    private void cleanUp(long now, boolean backup, boolean force) {
         if (size() == 0) {
             return;
         }
-        if ((inEvictableTimeWindow(now) && isEvictable(backup)) || force) {
+        if (inEvictableTimeWindow(now) && isEvictable()) {
             removeEvictables(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
@@ -255,8 +232,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                 || (now - lastEvictionTime) > minEvictionCheckMillis;
     }
 
-    private boolean isEvictable(boolean backup) {
-        return checkEvictable(mapContainer, partitionId, backup);
+    private boolean isEvictable() {
+        return checkEvictable(mapContainer, partitionId);
     }
 
     protected Record nullIfExpired(Record record, boolean backup) {
