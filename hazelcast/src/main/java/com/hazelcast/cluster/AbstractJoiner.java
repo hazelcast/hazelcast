@@ -21,7 +21,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -55,13 +54,11 @@ public abstract class AbstractJoiner implements Joiner {
     protected final Config config;
     protected final Node node;
     protected final ILogger logger;
-    protected final SystemLogService systemLogService;
 
     private volatile Address targetAddress;
 
     public AbstractJoiner(Node node) {
         this.node = node;
-        this.systemLogService = node.getSystemLogService();
         this.logger = node.loggingService.getLogger(getClass());
         this.config = node.config;
     }
@@ -89,7 +86,9 @@ public abstract class AbstractJoiner implements Joiner {
     private void postJoin() {
         blacklistedAddresses.clear();
 
-        systemLogService.logJoin("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
+        if (logger.isFinestEnabled()) {
+            logger.finest("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
+        }
         if (!node.isActive()) {
             return;
         }
@@ -114,7 +113,7 @@ public abstract class AbstractJoiner implements Joiner {
     private void ensureConnectionToAllMembers() {
         boolean allConnected = false;
         if (node.joined()) {
-            systemLogService.logJoin("Waiting for all connections");
+            logger.finest("Waiting for all connections");
             int connectAllWaitSeconds = node.groupProperties.CONNECT_ALL_WAIT_SECONDS.getInteger();
             int checkCount = 0;
             while (checkCount++ < connectAllWaitSeconds && !allConnected) {
@@ -129,7 +128,9 @@ public abstract class AbstractJoiner implements Joiner {
                 for (MemberImpl member : members) {
                     if (!member.localMember() && node.connectionManager.getOrConnect(member.getAddress()) == null) {
                         allConnected = false;
-                        systemLogService.logJoin("Not-connected to " + member.getAddress());
+                        if (logger.isFinestEnabled()) {
+                            logger.finest("Not-connected to " + member.getAddress());
+                        }
                     }
                 }
             }

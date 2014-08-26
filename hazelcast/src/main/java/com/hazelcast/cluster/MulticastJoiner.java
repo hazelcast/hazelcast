@@ -58,9 +58,7 @@ public class MulticastJoiner extends AbstractJoiner {
             }
 
             if (logger.isFinestEnabled()) {
-                String msg = "Joining to master node: " + node.getMasterAddress();
-                logger.finest(msg);
-                systemLogService.logJoin(msg);
+                logger.finest("Joining to master node: " + node.getMasterAddress());
             }
 
             if (!node.getMasterAddress().equals(node.getThisAddress())) {
@@ -81,7 +79,6 @@ public class MulticastJoiner extends AbstractJoiner {
         final BlockingQueue<JoinMessage> q = new LinkedBlockingQueue<JoinMessage>();
         MulticastListener listener = new MulticastListener() {
             public void onMessage(Object msg) {
-                systemLogService.logJoin("MulticastListener onMessage " + msg);
                 if (msg != null && msg instanceof JoinMessage) {
                     JoinMessage joinRequest = (JoinMessage) msg;
                     if (node.getThisAddress() != null && !node.getThisAddress().equals(joinRequest.getAddress())) {
@@ -92,7 +89,6 @@ public class MulticastJoiner extends AbstractJoiner {
         };
         node.multicastService.addMulticastListener(listener);
         node.multicastService.send(node.createJoinRequest());
-        systemLogService.logJoin("Sent multicast join request");
         try {
             JoinMessage joinInfo = q.poll(3, TimeUnit.SECONDS);
             if (joinInfo != null) {
@@ -130,7 +126,6 @@ public class MulticastJoiner extends AbstractJoiner {
         if (logger.isFinestEnabled()) {
             logger.finest("Master connection " + conn);
         }
-        systemLogService.logJoin("Master connection " + conn);
         if (conn != null) {
             return node.clusterService.sendJoinRequest(masterAddress, true);
         } else {

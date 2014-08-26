@@ -53,7 +53,6 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
         if (!connection.live()) {
             String message = "We are being asked to read, but connection is not live so we won't";
             logger.finest(message);
-            systemLogService.logConnection(message);
             return;
         }
         try {

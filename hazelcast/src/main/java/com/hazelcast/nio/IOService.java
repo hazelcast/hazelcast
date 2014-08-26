@@ -21,7 +21,6 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -36,8 +35,6 @@ public interface IOService {
     boolean isActive();
 
     ILogger getLogger(String name);
-
-    SystemLogService getSystemLogService();
 
     void onOutOfMemory(OutOfMemoryError oom);
 
