@@ -1,50 +1,54 @@
 package com.hazelcast.map.merge;
 
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
 
 /**
  * A provider for {@link com.hazelcast.map.merge.MergePolicyProvider} instances.
  */
 public final class MergePolicyProvider {
 
-    private final Map<String, MapMergePolicy> mergePolicyMap;
+    private final ConcurrentMap<String, MapMergePolicy> mergePolicyMap;
 
     private final NodeEngine nodeEngine;
+
+    private final ConstructorFunction<String, MapMergePolicy> policyConstructorFunction
+            = new ConstructorFunction<String, MapMergePolicy>() {
+        @Override
+        public MapMergePolicy createNew(String className) {
+            try {
+                return newInstance(nodeEngine.getConfigClassLoader(), className);
+            } catch (Exception e) {
+                nodeEngine.getLogger(getClass()).severe(e);
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+    };
 
     public MergePolicyProvider(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         mergePolicyMap = new ConcurrentHashMap<String, MapMergePolicy>();
-        addMergePolicies();
+        addOutOfBoxPolicies();
     }
 
-    private void addMergePolicies() {
+    private void addOutOfBoxPolicies() {
         mergePolicyMap.put(PutIfAbsentMapMergePolicy.class.getName(), new PutIfAbsentMapMergePolicy());
         mergePolicyMap.put(HigherHitsMapMergePolicy.class.getName(), new HigherHitsMapMergePolicy());
         mergePolicyMap.put(PassThroughMergePolicy.class.getName(), new PassThroughMergePolicy());
         mergePolicyMap.put(LatestUpdateMapMergePolicy.class.getName(), new LatestUpdateMapMergePolicy());
     }
 
-    public MapMergePolicy getMergePolicy(String mergePolicyName) {
-        MapMergePolicy mergePolicy = mergePolicyMap.get(mergePolicyName);
-        if (mergePolicy == null && mergePolicyName != null) {
-            try {
-                // check if user has entered custom class name instead of policy name
-                mergePolicy = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), mergePolicyName);
-                mergePolicyMap.put(mergePolicyName, mergePolicy);
-            } catch (Exception e) {
-                nodeEngine.getLogger(getClass()).severe(e);
-                throw ExceptionUtil.rethrow(e);
-            }
+    public MapMergePolicy getMergePolicy(String className) {
+        if (className == null) {
+            throw new NullPointerException("Class name is mandatory!");
         }
-        if (mergePolicy == null) {
-            return mergePolicyMap.get(MapConfig.DEFAULT_MAP_MERGE_POLICY);
-        }
-        return mergePolicy;
+        return ConcurrencyUtil.getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
     }
 }
