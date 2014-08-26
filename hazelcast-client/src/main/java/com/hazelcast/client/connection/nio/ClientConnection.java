@@ -17,9 +17,9 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
-import com.hazelcast.client.impl.client.RemoveAllListeners;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.client.RemoveAllListeners;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
@@ -150,12 +150,6 @@ public class ClientConnection implements Connection, Closeable {
         if (!live) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
-            }
-            return false;
-        }
-        if (!isHeartBeating()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Connection is not heart-beating, won't write packet -> " + packet);
             }
             return false;
         }
@@ -382,7 +376,10 @@ public class ClientConnection implements Connection, Closeable {
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     void heartBeatingFailed() {
         failedHeartBeat++;
-        if (failedHeartBeat == connectionManager.getMaxFailedHeartbeatCount()) {
+        final int maxFailedHeartbeatCount = connectionManager.getMaxFailedHeartbeatCount();
+        logger.warning("Heartbeat to connection  " + getRemoteEndpoint() + " is failed. "
+                + "Retry count is  " + failedHeartBeat + " , threshold is  " + maxFailedHeartbeatCount);
+        if (failedHeartBeat == maxFailedHeartbeatCount) {
             connectionManager.onDetectingUnresponsiveConnection(this);
             final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
             final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
