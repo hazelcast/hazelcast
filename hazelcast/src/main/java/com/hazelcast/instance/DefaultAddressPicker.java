@@ -361,7 +361,6 @@ class DefaultAddressPicker implements AddressPicker {
 
     private void log(Level level, String message) {
         logger.log(level, message);
-        node.getSystemLogService().logNode(message);
     }
 
     private class InterfaceDefinition {

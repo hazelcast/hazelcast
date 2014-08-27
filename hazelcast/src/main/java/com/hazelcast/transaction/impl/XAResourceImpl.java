@@ -24,6 +24,8 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.transaction.impl.Transaction.State;
 
 @Beta
@@ -174,13 +176,14 @@ public class XAResourceImpl implements XAResource {
 
     @Override
     public synchronized int getTransactionTimeout() throws XAException {
-        return transactionTimeoutSeconds;
+        long timeoutMillis = transactionContext.getTransaction().getTimeoutMillis();
+        return (int) TimeUnit.MILLISECONDS.toSeconds(timeoutMillis);
     }
 
     @Override
     public synchronized boolean setTransactionTimeout(int seconds) throws XAException {
         if (transactionContext.setTransactionTimeout(seconds)) {
-            this.transactionTimeoutSeconds = seconds;
+            this.transactionTimeoutSeconds = getTransactionTimeout();
             return true;
         }
         return false;

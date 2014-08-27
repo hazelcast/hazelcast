@@ -200,6 +200,5 @@ public class SocketConnector implements Runnable {
 
     private void log(Level level, String message) {
         logger.log(level, message);
-        connectionManager.ioService.getSystemLogService().logConnection(message);
     }
 }

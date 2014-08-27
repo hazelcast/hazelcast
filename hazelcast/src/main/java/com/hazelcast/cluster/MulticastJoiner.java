@@ -17,16 +17,12 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.RandomPicker;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -46,9 +42,8 @@ public class MulticastJoiner extends AbstractJoiner {
 
     @Override
     public void doJoin() {
-        int tryCount = 0;
         long joinStartTime = Clock.currentTimeMillis();
-        long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
+        long maxJoinMillis = getMaxJoinMillis();
 
         while (node.isActive() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
             Address masterAddressNow = getTargetAddress();
@@ -57,27 +52,19 @@ public class MulticastJoiner extends AbstractJoiner {
             }
             node.setMasterAddress(masterAddressNow);
 
-            String msg = "Joining to master node: " + node.getMasterAddress();
-            logger.finest(msg);
-            systemLogService.logJoin(msg);
-
             if (node.getMasterAddress() == null || node.getThisAddress().equals(node.getMasterAddress())) {
-                TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
-                if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {
-                    doTCP();
-                } else {
-                    node.setAsMaster();
-                }
+                node.setAsMaster();
                 return;
             }
-            if (++tryCount > 49) {
-                failedJoiningToMaster(true, tryCount);
+
+            if (logger.isFinestEnabled()) {
+                logger.finest("Joining to master node: " + node.getMasterAddress());
             }
+
             if (!node.getMasterAddress().equals(node.getThisAddress())) {
                 connectAndSendJoinRequest(node.getMasterAddress());
             } else {
                 node.setMasterAddress(null);
-                tryCount = 0;
             }
             try {
                 //noinspection BusyWait
@@ -87,18 +74,11 @@ public class MulticastJoiner extends AbstractJoiner {
         }
     }
 
-    private void doTCP() {
-        node.setMasterAddress(null);
-        logger.warning("Multicast couldn't find cluster. Defaulting to TCP/IP");
-        new TcpIpJoiner(node).join();
-    }
-
     @Override
     public void searchForOtherClusters() {
         final BlockingQueue<JoinMessage> q = new LinkedBlockingQueue<JoinMessage>();
         MulticastListener listener = new MulticastListener() {
             public void onMessage(Object msg) {
-                systemLogService.logJoin("MulticastListener onMessage " + msg);
                 if (msg != null && msg instanceof JoinMessage) {
                     JoinMessage joinRequest = (JoinMessage) msg;
                     if (node.getThisAddress() != null && !node.getThisAddress().equals(joinRequest.getAddress())) {
@@ -109,7 +89,6 @@ public class MulticastJoiner extends AbstractJoiner {
         };
         node.multicastService.addMulticastListener(listener);
         node.multicastService.send(node.createJoinRequest());
-        systemLogService.logJoin("Sent multicast join request");
         try {
             JoinMessage joinInfo = q.poll(3, TimeUnit.SECONDS);
             if (joinInfo != null) {
@@ -147,7 +126,6 @@ public class MulticastJoiner extends AbstractJoiner {
         if (logger.isFinestEnabled()) {
             logger.finest("Master connection " + conn);
         }
-        systemLogService.logJoin("Master connection " + conn);
         if (conn != null) {
             return node.clusterService.sendJoinRequest(masterAddress, true);
         } else {
@@ -160,6 +138,9 @@ public class MulticastJoiner extends AbstractJoiner {
 
      private Address findMasterWithMulticast() {
         try {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Searching for master node. Max tries: " + maxTryCount.get());
+            }
             JoinRequest joinRequest = node.createJoinRequest();
             while (node.isActive() && currentTryCount.incrementAndGet() <= maxTryCount.get()) {
                 joinRequest.setTryCount(currentTryCount.get());

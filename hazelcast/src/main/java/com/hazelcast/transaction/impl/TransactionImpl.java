@@ -412,8 +412,18 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     }
 
     public boolean setTimeoutMillis(long timeoutMillis) {
-        if (state == NO_TXN) {
-            this.timeoutMillis = timeoutMillis;
+
+        if (timeoutMillis < 0) {
+            throw new IllegalArgumentException("Timeout can not be negative!");
+        }
+
+        if (state == NO_TXN && getTimeoutMillis() != timeoutMillis) {
+
+            if (timeoutMillis == 0) {
+                this.timeoutMillis = TransactionOptions.DEFAULT_TIMEOUT_MILLIS;
+            } else {
+                this.timeoutMillis = timeoutMillis;
+            }
             return true;
         }
         return false;

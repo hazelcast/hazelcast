@@ -27,13 +27,14 @@ public class ClientProxyDestroyTest {
 
     @BeforeClass
     public static void init() {
+        destroy();
         server = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
     @AfterClass
     public static void destroy() {
-        client.shutdown();
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
