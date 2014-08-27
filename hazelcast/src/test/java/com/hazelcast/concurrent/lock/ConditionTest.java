@@ -11,6 +11,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Ignore;
@@ -450,13 +451,13 @@ public class ConditionTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(1);
 
-        new Thread(new Runnable() {
+        new TestThread(){
             @Override
-            public void run() {
+            public void doRun() {
                 lock.lock();
                 latch.countDown();
             }
-        }).start();
+        }.start();
 
         latch.await();
 
@@ -734,21 +735,19 @@ public class ConditionTest extends HazelcastTestSupport {
         assertEquals(size, count.get());
     }
 
-    private Thread createThreadWaitsForCondition(final CountDownLatch latch, final ILock lock, final ICondition condition, final CountDownLatch syncLatch) {
-        Thread t = new Thread(new Runnable() {
-            public void run() {
+    private TestThread createThreadWaitsForCondition(final CountDownLatch latch, final ILock lock, final ICondition condition, final CountDownLatch syncLatch) {
+        TestThread t = new TestThread() {
+            public void doRun() throws Exception {
                 try {
                     lock.lock();
                     syncLatch.countDown();
                     condition.await();
                     latch.countDown();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 } finally {
                     lock.unlock();
                 }
             }
-        });
+        };
         return t;
     }
 }

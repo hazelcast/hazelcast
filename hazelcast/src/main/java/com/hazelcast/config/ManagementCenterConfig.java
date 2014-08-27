@@ -21,7 +21,7 @@ package com.hazelcast.config;
  */
 public class ManagementCenterConfig {
 
-    private static final int UPDATE_INTERVAL = 5;
+    static final int UPDATE_INTERVAL = 3;
 
     private boolean enabled;
 

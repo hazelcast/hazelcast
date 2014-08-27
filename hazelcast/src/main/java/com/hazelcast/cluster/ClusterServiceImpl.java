@@ -25,6 +25,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -241,10 +242,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return valid;
     }
 
-    private boolean isValidJoinRequest(JoinRequest joinRequest) {
+    private boolean isValidJoinMessage(JoinMessage joinMessage) {
         boolean validJoinRequest;
         try {
-            validJoinRequest = validateJoinMessage(joinRequest);
+            validJoinRequest = validateJoinMessage(joinMessage);
         } catch (ConfigMismatchException e) {
             throw e;
         } catch (Exception e) {
@@ -452,7 +453,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
         if (!node.joined()) {
-            node.failedConnection(deadAddress);
             return;
         }
         if (deadAddress.equals(thisAddress)) {
@@ -516,7 +516,18 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    void handleJoinRequest(JoinRequestOperation op) {
+    void answerMasterQuestion(JoinMessage joinMessage) {
+
+        if (!ensureValidConfiguration(joinMessage)) {
+            return;
+        }
+
+        if (node.getMasterAddress() != null) {
+            sendMasterAnswer(joinMessage.getAddress());
+        }
+    }
+
+    void handleJoinRequest(JoinRequest joinRequest) {
         if (!node.joined() || !node.isActive()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Node is not ready to process join request...");
@@ -524,16 +535,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
 
-        JoinRequest joinRequest = op.getRequest();
-
-        if (!node.isMaster()) {
-            sendMasterAnswer(joinRequest.getAddress());
+        if (!ensureValidConfiguration(joinRequest)) {
             return;
         }
 
-        Connection conn = op.getConnection();
-
-        if (!ensureValidConfiguration(joinRequest, conn)) {
+        if (!node.isMaster()) {
+            sendMasterAnswer(joinRequest.getAddress());
             return;
         }
 
@@ -590,20 +597,20 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    private boolean ensureValidConfiguration(JoinRequest joinRequest, Connection conn) {
+    private boolean ensureValidConfiguration(JoinMessage joinMessage) {
         try {
-            if (isValidJoinRequest(joinRequest)) {
+            if (isValidJoinMessage(joinMessage)) {
                 return true;
             }
 
-            logger.warning("Received an invalid join request from " + joinRequest.getAddress()
+            logger.warning("Received an invalid join request from " + joinMessage.getAddress()
                     + ", cause: clusters part of different cluster-groups");
 
-            nodeEngine.getOperationService().send(new GroupMismatchOperation(),joinRequest.getAddress());
-            //conn.close();
+            nodeEngine.getOperationService().send(new GroupMismatchOperation(), joinMessage.getAddress());
         } catch (ConfigMismatchException e) {
-            logger.warning("Received an invalid join request from " + joinRequest.getAddress() + ", cause:" + e.getMessage());
-            sendConfigurationMismatchFailure(joinRequest.getAddress(), e.getMessage());
+            logger.warning("Received an invalid join request from " + joinMessage.getAddress()
+                    + ", cause:" + e.getMessage());
+            sendConfigurationMismatchFailure(joinMessage.getAddress(), e.getMessage());
         }
         return false;
     }
@@ -930,8 +937,17 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             toAddress = node.getMasterAddress();
         }
         JoinRequestOperation joinRequest = new JoinRequestOperation(node.createJoinRequest(withCredentials));
-        nodeEngine.getOperationService().send(joinRequest, toAddress);
-        return true;
+        return nodeEngine.getOperationService().send(joinRequest, toAddress);
+    }
+
+    public boolean sendMasterQuestion(Address toAddress) {
+        if (toAddress == null) {
+            throw new NullPointerException("No endpoint is specified!");
+        }
+        BuildInfo buildInfo = node.getBuildInfo();
+        JoinMessage joinMessage = new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), thisAddress,
+                thisMember.getUuid(), node.createConfigCheck(), getSize());
+        return nodeEngine.getOperationService().send(new MasterDiscoveryOperation(joinMessage), toAddress);
     }
 
     @Override
