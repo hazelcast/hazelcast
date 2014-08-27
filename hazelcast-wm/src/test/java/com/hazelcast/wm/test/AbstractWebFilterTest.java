@@ -78,12 +78,12 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
 
     protected String serverXml1;
     protected String serverXml2;
-
-    protected static int serverPort1;
-    protected static int serverPort2;
+    
+    protected int serverPort1;
+    protected int serverPort2;
     protected ServletContainer server1;
     protected ServletContainer server2;
-    protected static HazelcastInstance hz;
+    protected HazelcastInstance hz;
 
     protected AbstractWebFilterTest(String serverXml1) {
         this.serverXml1 = serverXml1;

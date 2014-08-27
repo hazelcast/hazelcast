@@ -18,6 +18,7 @@ package com.hazelcast.wm.test;
 
 import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,6 +27,7 @@ import java.net.URL;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.junit.After;
+import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +46,9 @@ import org.junit.runner.RunWith;
 public class WebFilterBasicTest extends AbstractWebFilterTest {
 
     public static boolean isSetup;
+    private static int serverPort1, serverPort2;
+    private static HazelcastInstance hz;
+
     public WebFilterBasicTest() {
         super("node1-node.xml", "node2-node.xml");
     }
@@ -161,7 +166,7 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
 
     @Before
     public void setup() throws Exception {
-        if(isSetup == true){
+        if (isSetup == true) {
             return;
         }
         final URL root = new URL(TestServlet.class.getResource("/"), "../test-classes");
@@ -180,5 +185,10 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
 
     @After
     public void teardown() throws Exception {
+    }
+
+    @AfterClass
+    public static void shutdownAll() {
+        Hazelcast.shutdownAll();
     }
 }
