@@ -47,6 +47,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static org.junit.Assert.assertEquals;
@@ -272,6 +273,21 @@ public class HazelcastXaTest {
         assertFalse(resource.setTransactionTimeout(120));
         assertEquals(timeout, resource.getTransactionTimeout());
         resource.commit(myXid, true);
+    }
+
+    @Test
+    public void testDefaultTimeoutSetting() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final XAResource resource = instance.newTransactionContext().getXaResource();
+        final boolean result = resource.setTransactionTimeout(100);
+        assertTrue(result);
+        assertEquals(100,resource.getTransactionTimeout());
+
+        // set back to default timeout value
+        resource.setTransactionTimeout(0);
+
+        long defaultTimeoutInSeconds = TimeUnit.MILLISECONDS.toSeconds(TransactionOptions.DEFAULT_TIMEOUT_MILLIS);
+        assertEquals(defaultTimeoutInSeconds,resource.getTransactionTimeout());
     }
 
 
