@@ -6,7 +6,6 @@ function delete {
 	$(rm -rf "./$COPYRIGHT_FILE_NAME")
 	$(rm -rf "./title.txt")
 	$(rm -rf "./src/images")
-	$(rm -rf "./src/hostedmancenter/images")
 }
 
 function createMultiHTML {
@@ -85,7 +84,7 @@ for file in $INDEX
 do
  cat $file >> $MERGED_FILE_NAME
  printf "\n\n\n" >> $MERGED_FILE_NAME
-done 
+done
 
 if [[ -e "./title.txt" ]]; then
 	$(rm -rf "./title.txt")
@@ -139,12 +138,48 @@ echo "Creating single_html documentation"
 createHtml=$(bfdocs --theme=themes/single_html $MANIFEST_FILE_NAME "./"$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR )
 if [[ $? -eq 0 ]]; then
   echo "Single HTML created succesfully "
-  
+
 else
   echo "Error creating Single HTML documentation"
   exit -1
   delete
-fi 
+fi
+}
+
+
+function createNoHeaderSingleHTML {
+
+MANIFEST_FILE_BODY="{\"title\": \"Documentation\",
+\"rootDir\": \".\",
+\"date\": \"$date\",
+\"version\": \"$version\",
+\"maxTocLevel\":3,
+\"files\":[\"./src/$MERGED_FILE_NAME\"]}"
+
+if [[ -e "./$MANIFEST_FILE_NAME" ]]; then
+	$(rm -rf "./$MANIFEST_FILE_NAME")
+fi
+writeManifest=$( echo $MANIFEST_FILE_BODY >> $MANIFEST_FILE_NAME)
+if [[ $? -eq 0 ]]; then
+	echo "Manifest file succesfully written."
+else
+	echo "Error writing manifest file"
+	echo $writeManifest
+	delete
+	exit -1
+fi
+
+echo "Creating no header single_html documentation"
+
+createHtml=$(bfdocs --theme=themes/no_header $MANIFEST_FILE_NAME "./"$OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR )
+if [[ $? -eq 0 ]]; then
+	echo "No Header Single HTML created succesfully "
+
+else
+	echo "Error creating No Header Single HTML documentation"
+	exit -1
+	delete
+fi
 }
 
 function createMancenterDocumentation {
@@ -155,18 +190,11 @@ MANIFEST_FILE_BODY="{\"title\": \"Documentation\",
 \"maxTocLevel\":3,
 \"files\":"
 MANIFEST_FILE_BODY+="["
-echo "Building manifest file for $1"
-if [ "$1" = "mancenter" ] ; then
-	for file in $MANCENTER_INDEX
-	do
-	MANIFEST_FILE_BODY+="\"$file\","
-	done
-else
-	for file in $HOSTED_MANCENTER_INDEX
-	do
-	MANIFEST_FILE_BODY+="\"$file\","
-	done
-fi
+echo "Building manifest file for mancenter"
+for file in $MANCENTER_INDEX
+do
+MANIFEST_FILE_BODY+="\"$file\","
+done
 MANIFEST_FILE_BODY=${MANIFEST_FILE_BODY:0: ${#MANIFEST_FILE_BODY}-1}
 MANIFEST_FILE_BODY+="]}"
 
@@ -181,16 +209,16 @@ else
   delete
   exit -1
 fi
-echo "Creating $1 documentation"
-createHtml=$(bfdocs --theme=themes/no_header $MANIFEST_FILE_NAME "./"$OUTPUT_DIR/$2 )
+echo "Creating Management Center documentation"
+createHtml=$(bfdocs --theme=themes/no_header $MANIFEST_FILE_NAME "./"$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR )
 if [[ $? -eq 0 ]]; then
-  echo "No Header HTML created succesfully "
-  
+  echo "Managemetn Center documentation created succesfully "
+
 else
-  echo "Error creating $1 HTML documentation"
+  echo "Error creating Management Center documentation"
   exit -1
   delete
-fi 
+fi
 
 }
 
@@ -200,7 +228,7 @@ function init {
 	MULTI_HTML_OUTPUT_DIR="html"
 	SINGLE_HTML_OUTPUT_DIR="html-single"
 	MANCENTER_OUTPUT_DIR="mancenter"
-	HOSTED_MANCENTER_OUTPUT_DIR="hostedmancenter"
+	NO_HEADER_SINGLE_HTML_OUTPUT_DIR="no-header"
 	PDF_OUTPUT_DIR="pdf"
 	PDF_FILE_NAME="hazelcast-documentation-$version.pdf"
 	MANIFEST_FILE_NAME="manifest.json"
@@ -210,7 +238,6 @@ function init {
 	year=`date +%Y`
 	INDEX=`awk '{gsub(/^[ \t]+|^([#]+.*)|[ \t]+([#]+.*)\$/,""); print;}' documentation.index`
 	MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|([#]+.*)|[ \t]+([#]+.*)\$/,""); print;}' mancenter.index`
-	HOSTED_MANCENTER_INDEX=`awk '{gsub(/^[ \t]+|^([#]+.*)|[ \t]+([#]+.*)\$/,""); print;}' hostedmancenter.index`
 }
 
 function cleanIfExists {
@@ -221,15 +248,16 @@ function cleanIfExists {
 	echo "Creating $OUTPUT_DIR"
 	mkdir $OUTPUT_DIR
 	echo "Creating $OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"
-	mkdir $OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR	
+	mkdir $OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR
 	echo "Creating $OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"
 	mkdir $OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR
 	echo "Creating $OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"
 	mkdir $OUTPUT_DIR/$MANCENTER_OUTPUT_DIR
-	echo "Creating $OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"
-	mkdir $OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR
 	echo "Creating $OUTPUT_DIR/$PDF_OUTPUT_DIR"
-	mkdir $OUTPUT_DIR/$PDF_OUTPUT_DIR	
+	mkdir $OUTPUT_DIR/$PDF_OUTPUT_DIR
+	echo "Creating $OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR"
+	mkdir $OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR
+
 }
 
 function moveImages {
@@ -241,12 +269,13 @@ function moveImages {
     mkdir ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
     mkdir ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
     mkdir ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
-    mkdir ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
+		mkdir ./$OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR"/images/"
 
     cp -aR ./images/ ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
     cp -aR ./images/ ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
     cp -aR ./images/ ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
-    cp -aR ./images/ ./$OUTPUT_DIR/$HOSTED_MANCENTER_OUTPUT_DIR"/images/"
+		cp -aR ./images/ ./$OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR"/images/"
+
 }
 
 function moveCreatedPDF {
@@ -265,15 +294,7 @@ createPDF
 moveCreatedPDF
 moveMergedMarkDown
 createSingleHTML
-createMancenterDocumentation "hostedmancenter" $HOSTED_MANCENTER_OUTPUT_DIR
-createMancenterDocumentation "mancenter" $MANCENTER_OUTPUT_DIR
+createNoHeaderSingleHTML
+createMancenterDocumentation
 delete
 echo "Done"
-
-
-
-
-
-
-
-
