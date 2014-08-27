@@ -454,19 +454,19 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createHazelcastInstances();
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
-        String name = generateKeyNotOwnedBy(instance1);
+        String name = generateKeyOwnedBy(instance1);
         IQueue<Object> queue1 = instance1.getQueue(name);
         IQueue<Object> queue2 = instance2.getQueue(name);
         List<String> list = new ArrayList<String>();
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 4; i++) {
             list.add("item" + i);
         }
         assertTrue(queue1.addAll(list));
 
         instance1.shutdown();
 
-        assertSizeEventually(10, queue2);
-        assertTrue(queue2.contains("item5") && queue2.contains("item7"));
+        assertSizeEventually(4, queue2);
+        assertIterableEquals(queue2, "item0", "item1", "item2", "item3");
     }
 
     @Test
@@ -474,14 +474,14 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createHazelcastInstances();
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
-        String name = generateKeyNotOwnedBy(instance1);
+        String name = generateKeyOwnedBy(instance1);
         IQueue<Object> queue1 = instance1.getQueue(name);
         IQueue<Object> queue2 = instance2.getQueue(name);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 4; i++) {
             queue1.offer("item" + i);
         }
-        assertSizeEventually(10, queue2);
-        assertTrue(queue2.contains("item1") && queue2.contains("item9"));
+        assertSizeEventually(4, queue2);
+        assertIterableEquals(queue2, "item0", "item1","item2","item3");
         queue1.clear();
 
         instance1.shutdown();
@@ -494,22 +494,22 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createHazelcastInstances();
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
-        String name = generateKeyNotOwnedBy(instance1);
+        String name = generateKeyOwnedBy(instance1);
         IQueue<Object> queue1 = instance1.getQueue(name);
         IQueue<Object> queue2 = instance2.getQueue(name);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 4; i++) {
             queue1.offer("item" + i);
         }
 
-        assertSizeEventually(10, queue2);
-        assertTrue(queue2.contains("item1") && queue2.contains("item2"));
+        assertSizeEventually(4, queue2);
+        assertIterableEquals(queue2, "item0", "item1", "item2", "item3");
+        queue1.remove("item0");
         queue1.remove("item1");
-        queue1.remove("item2");
 
         instance1.shutdown();
 
-        assertSizeEventually(8, queue2);
-        assertFalse(queue2.contains("item1") && queue2.contains("item2"));
+        assertSizeEventually(2, queue2);
+        assertIterableEquals(queue2, "item2", "item3");
     }
 
     @Test
@@ -517,25 +517,24 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createHazelcastInstances();
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
-        String name = generateKeyNotOwnedBy(instance1);
+        String name = generateKeyOwnedBy(instance1);
         IQueue<Object> queue1 = instance1.getQueue(name);
         IQueue<Object> queue2 = instance2.getQueue(name);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 4; i++) {
             queue1.offer("item" + i);
         }
-
-        assertSizeEventually(10, queue2);
-        assertTrue(queue2.contains("item1") && queue2.contains("item2"));
+        assertSizeEventually(4, queue2);
+        assertIterableEquals(queue2, "item0", "item1", "item2", "item3");
 
         List<String> list = new ArrayList<String>();
+        list.add("item0");
         list.add("item1");
         list.add("item2");
-        list.add("item3");
 
         assertTrue(queue1.removeAll(list));
-        assertSizeEventually(7, queue2);
-        assertTrue(queue2.contains("item7") && queue2.contains("item9"));
-        assertFalse(queue2.contains("item1") && queue2.contains("item2") && queue2.contains("item3"));
+        instance1.shutdown();
+        assertSizeEventually(1, queue2);
+        assertIterableEquals(queue2, "item3");
     }
 
     @Test
@@ -543,22 +542,22 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createHazelcastInstances();
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
-        String name = generateKeyNotOwnedBy(instance1);
+        String name = generateKeyOwnedBy(instance1);
         IQueue<Object> queue1 = instance1.getQueue(name);
         IQueue<Object> queue2 = instance2.getQueue(name);
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 4; i++) {
             queue1.offer("item" + i);
         }
         List list = new ArrayList<String>();
 
-        assertSizeEventually(10, queue2);
-        assertTrue(queue2.contains("item0") && queue2.contains("item4"));
-        queue1.drainTo(list, 5);
+        assertSizeEventually(4, queue2);
+        assertIterableEquals(queue2, "item0", "item1", "item2", "item3");
+        queue1.drainTo(list, 2);
 
         instance1.shutdown();
 
-        assertSizeEventually(5, queue2);
-        assertFalse(queue2.contains("item0") && queue2.contains("item4"));
+        assertSizeEventually(2, queue2);
+        assertIterableEquals(queue2, "item2", "item3");
     }
 
     private HazelcastInstance[] createHazelcastInstances() {
