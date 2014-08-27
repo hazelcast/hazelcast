@@ -20,10 +20,13 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ProblematicTest;
@@ -38,9 +41,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -62,6 +68,9 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     static IMap map;
     static int pageSize = 5;
     static int size = 50;
+
+
+    final private SerializationService ss = new SerializationServiceBuilder().build();
 
     @BeforeClass
     public static void createInstances(){
@@ -274,30 +283,80 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         assertEquals(0, values.size());
     }
 
-
-    @Test(timeout = 60000)
+    // https://github.com/hazelcast/hazelcast/issues/3047
+    @Test
     @Category(ProblematicTest.class)
     public void betweenPaginPred_withEmploye_test(){
+        final int minId=10;
+        final int maxId=15;
+        final int pageSz=5;
+
         IMap<Integer, Employee> map = makeEmployeMap(1000);
-        Predicate p = Predicates.between("id", 10, 15);
-        pagingPredicat_withEmployeeObject_test(map, p, 5);
+        Predicate p = Predicates.between("id", minId, maxId);
+
+        List<Employee> expected = new ArrayList<Employee>();
+        for(Employee e : map.values()){
+            if(e.getId() >= minId && e.getId() <= maxId){
+                expected.add(e);
+            }
+        }
+        List<Employee> actual = pagingPredicat_withEmployeeObject_test(map, p, pageSz);
+
+        EmployeeIdComparitor compId = new EmployeeIdComparitor();
+        Collections.sort(expected, compId);
+        Collections.sort(actual, compId);
+        assertEquals(expected, actual);
     }
 
-    @Test(timeout = 60000)
+    // https://github.com/hazelcast/hazelcast/issues/3047
+    @Test
     @Category(ProblematicTest.class)
     public void lessThanPred_withEmploye_test(){
+        final int maxId=500;
+        final int pageSz=5;
+
         IMap<Integer, Employee> map = makeEmployeMap(1000);
-        Predicate p = Predicates.lessThan("id", 500);
-        pagingPredicat_withEmployeeObject_test(map, p, 5);
+        Predicate p = Predicates.lessThan("id", maxId);
+
+        List<Employee> expected = new ArrayList<Employee>();
+        for(Employee e : map.values()){
+            if(e.getId() < maxId){
+                expected.add(e);
+            }
+        }
+        List<Employee> actual = pagingPredicat_withEmployeeObject_test(map, p, pageSz);
+
+        EmployeeIdComparitor compId = new EmployeeIdComparitor();
+        Collections.sort(expected, compId);
+        Collections.sort(actual, compId);
+        assertEquals(expected, actual);
     }
 
-    @Test(timeout = 60000)
+    // https://github.com/hazelcast/hazelcast/issues/3047
+    @Test
     @Category(ProblematicTest.class)
     public void equalsPred_withEmploye_test(){
+        final String name = Employee.getRandomName();
+        final int pageSz=5;
+
         IMap<Integer, Employee> map = makeEmployeMap(1000);
-        Predicate p = Predicates.equal("name", Employee.getRandomName());
-        pagingPredicat_withEmployeeObject_test(map, p, 5);
+        Predicate p = Predicates.equal("name", name);
+
+
+        List<Employee> expected = new ArrayList<Employee>();
+        for(Employee e : map.values()){
+            if(e.getName().equals(name)){
+                expected.add(e);
+            }
+        }
+        List<Employee> actual = pagingPredicat_withEmployeeObject_test(map, p, pageSz);
+
+        EmployeeIdComparitor compId = new EmployeeIdComparitor();
+        Collections.sort(expected, compId);
+        Collections.sort(actual, compId);
+        assertEquals(expected, actual);
     }
+
 
     private IMap<Integer, Employee> makeEmployeMap(int maxEmployees){
         final IMap<Integer, Employee> map = server1.getMap(randomString());
@@ -308,19 +367,22 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         return map;
     }
 
-    private void pagingPredicat_withEmployeeObject_test(IMap<Integer, Employee> map, Predicate predicate, int pageSize){
-
+    private List<Employee> pagingPredicat_withEmployeeObject_test(IMap<Integer, Employee> map, Predicate predicate, int pageSize){
         PagingPredicate pagingPredicate = new PagingPredicate(predicate, pageSize);
         Set<Map.Entry<Integer, Employee>> set;
+        List<Employee> results = new ArrayList<Employee>();
         do{
-            set = map.entrySet();
-
-            for(Map.Entry<Integer, Employee> e: set){
-                //assertTrue(predicate.apply(e));
-                System.out.println(e);
+            set = map.entrySet(pagingPredicate);
+            for(Map.Entry<Integer, Employee> entry: set){
+                Employee e = entry.getValue();
+                QueryEntry qe = new QueryEntry(null, ss.toData(e.getId()), e.getId(), e);
+                assertTrue(predicate.apply(qe));
+                results.add(e);
             }
             pagingPredicate.nextPage();
         }while(! set.isEmpty());
+
+        return results;
     }
 
     // https://github.com/hazelcast/hazelcast/issues/3047
@@ -397,7 +459,11 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     }
 
 
-
+    public static class EmployeeIdComparitor implements Comparator<Employee>{
+        public int compare(Employee e1, Employee e2) {
+            return e1.getId() -  e2.getId();
+        }
+    }
 
     public static class Employee implements Serializable {
 
@@ -436,6 +502,8 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         public String getName() {
             return name;
         }
+
+        public int getId() { return id; }
 
         public int getAge() {
             return age;
