@@ -86,7 +86,7 @@ public class ClientConnection implements Connection, Closeable {
     private final ClientInvocationServiceImpl invocationService;
     private boolean readFromSocket = true;
     private final AtomicInteger packetCount = new AtomicInteger(0);
-    private volatile boolean heartBeating;
+    private volatile boolean heartBeating = true;
 
     public ClientConnection(ClientConnectionManager connectionManager, IOSelector in, IOSelector out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper,
@@ -372,6 +372,9 @@ public class ClientConnection implements Connection, Closeable {
     //failedHeartBeat is incremented in single thread.
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     void heartBeatingFailed() {
+        if (!heartBeating) {
+            return;
+        }
         final RemoveAllListeners request = new RemoveAllListeners();
         invocationService.send(request, ClientConnection.this);
         heartBeating = false;
