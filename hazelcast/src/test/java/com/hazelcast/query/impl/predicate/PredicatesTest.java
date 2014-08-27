@@ -159,15 +159,13 @@ public class PredicatesTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIn_whenComplexPredicate() {
-        ConnectorPredicate and = (ConnectorPredicate) and(equal(null, 3),
-                and(equal(null, 10), equal(null, 15)),
-                equal(null, 99));
-
-        assertTrue(equal(null, 15).in(and));
-        assertFalse(notEqual(null, 15).in(and));
-        assertTrue(notEqual(null, 15).in(and));
-        assertTrue(equal(null, 99).in(and));
+    public void testPredicateIn() {
+        assertTrue(between(null, 15, 20).in(between(null, 12, 20)));
+        assertTrue(Predicates.in("gg", 4, 20,5).in(Predicates.in("gg", 4, 5, 20, 89)));
+        assertTrue(greaterThan(null, 15).in(greaterThan(null, 10)));
+        assertTrue(greaterEqual(null, 99).in(greaterEqual(null, 99)));
+        assertTrue(lessThan(null, 97).in(lessThan(null, 98)));
+        assertTrue(lessEqual(null, 97).in(lessEqual(null, 100)));
     }
 
     @Test

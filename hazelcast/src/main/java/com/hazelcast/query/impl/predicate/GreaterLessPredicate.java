@@ -87,9 +87,11 @@ public class GreaterLessPredicate extends EqualPredicate {
             // todo: equal may differ even though this.in(predicate).
             if (equal == p.equal && less == p.less) {
                 if (less) {
-                    return value.compareTo(p.value) > 0;
+                    int i = value.compareTo(p.value);
+                    return equal ? i <= 0 : i < 0;
                 } else {
-                    return value.compareTo(p.value) < 0;
+                    int i = value.compareTo(p.value);
+                    return equal ? i >= 0 : i > 0;
                 }
             }
         }

@@ -256,7 +256,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         }
 
         Object o = tokens.get(0);
-        if(!(o instanceof ConnectorPredicate)) {
+        if (!(o instanceof ConnectorPredicate)) {
             return new AndPredicate((Predicate) o);
         }
         return (ConnectorPredicate) o;

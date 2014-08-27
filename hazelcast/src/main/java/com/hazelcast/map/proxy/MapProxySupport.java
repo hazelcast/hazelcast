@@ -1059,7 +1059,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public void addIndexInternal(final String attribute, final boolean ordered, Predicate predicate) {
         final NodeEngine nodeEngine = getNodeEngine();
         // todo: this is not the desirable way, maybe we should create FilterPredicate interface and use it in signature.
-        if(predicate instanceof PagingPredicate) {
+        if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("PagingPredicate is not allowed as index condition.");
         }
 
