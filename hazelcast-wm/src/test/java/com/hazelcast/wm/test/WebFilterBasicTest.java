@@ -16,13 +16,18 @@
 
 package com.hazelcast.wm.test;
 
+import com.hazelcast.config.FileSystemXmlConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import java.io.File;
+import java.net.URL;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,9 +43,9 @@ import org.junit.runner.RunWith;
 @Category(QuickTest.class)
 public class WebFilterBasicTest extends AbstractWebFilterTest {
 
+    public static boolean isSetup;
     public WebFilterBasicTest() {
         super("node1-node.xml", "node2-node.xml");
-        isBasicTest = true;
     }
 
     @Test(timeout = 20000)
@@ -111,7 +116,7 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         executeRequest("update", serverPort2, cookieStore);
 
         assertEquals("value-updated", executeRequest("read", serverPort1, cookieStore));
-        assertSizeEventually(2,map);
+        assertSizeEventually(2, map);
     }
 
     @Test(timeout = 20000)
@@ -122,7 +127,7 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         executeRequest("write", serverPort1, cookieStore);
         executeRequest("invalidate", serverPort2, cookieStore);
 
-        assertSizeEventually(0,map);
+        assertSizeEventually(0, map);
     }
 
     @Test(timeout = 20000)
@@ -138,9 +143,9 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         CookieStore cookieStore = new BasicCookieStore();
         IMap<String, Object> map = hz.getMap("default");
 
-        executeRequest("write",serverPort1,cookieStore);
-        executeRequest("timeout",serverPort1,cookieStore);
-        assertSizeEventually(0,map);
+        executeRequest("write", serverPort1, cookieStore);
+        executeRequest("timeout", serverPort1, cookieStore);
+        assertSizeEventually(0, map);
     }
 
     @Override
@@ -152,5 +157,28 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
     public void clearMap() {
         IMap<String, Object> map = hz.getMap("default");
         map.clear();
+    }
+
+    @Before
+    public void setup() throws Exception {
+        if(isSetup == true){
+            return;
+        }
+        final URL root = new URL(TestServlet.class.getResource("/"), "../test-classes");
+        final String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
+        final String sourceDir = baseDir + "/../../src/test/webapp";
+        hz = Hazelcast.newHazelcastInstance(
+                new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
+        serverPort1 = availablePort();
+        server1 = getServletContainer(serverPort1, sourceDir, serverXml1);
+        if (serverXml2 != null) {
+            serverPort2 = availablePort();
+            server2 = getServletContainer(serverPort2, sourceDir, serverXml2);
+        }
+        isSetup = true;
+    }
+
+    @After
+    public void teardown() throws Exception {
     }
 }
