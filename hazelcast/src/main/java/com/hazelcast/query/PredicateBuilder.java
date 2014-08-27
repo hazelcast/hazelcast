@@ -21,6 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicate.AndPredicate;
+import com.hazelcast.query.impl.predicate.OrPredicate;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,7 +33,7 @@ import java.util.Set;
 /**
  * This class provides functionality to build predicate.
  */
-public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
+public class PredicateBuilder implements IndexAwarePredicate, DataSerializable, ConnectorPredicate {
 
     List<Predicate> lsPredicates = new ArrayList<Predicate>();
 
@@ -73,7 +75,7 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
         int index = lsPredicates.size() - 2;
         Predicate first = lsPredicates.remove(index);
         Predicate second = lsPredicates.remove(index);
-        lsPredicates.add(Predicates.and(first, second));
+        lsPredicates.add(new AndPredicate(first, second));
         return this;
     }
 
@@ -86,7 +88,7 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
         int index = lsPredicates.size() - 2;
         Predicate first = lsPredicates.remove(index);
         Predicate second = lsPredicates.remove(index);
-        lsPredicates.add(Predicates.or(first, second));
+        lsPredicates.add(new OrPredicate(first, second));
         return this;
     }
 
@@ -135,5 +137,35 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
         sb.append(lsPredicates.size() == 0 ? "" : lsPredicates.get(0));
         sb.append("\n}");
         return sb.toString();
+    }
+
+    @Override
+    public ConnectorPredicate subtract(Predicate predicates) {
+        return ((ConnectorPredicate) lsPredicates.get(0)).subtract(predicates);
+    }
+
+    @Override
+    public ConnectorPredicate copy() {
+        return ((ConnectorPredicate) lsPredicates.get(0)).copy();
+    }
+
+    @Override
+    public void removeChild(int index) {
+        ((ConnectorPredicate) lsPredicates.get(0)).removeChild(index);
+    }
+
+    @Override
+    public int getPredicateCount() {
+        return ((ConnectorPredicate) lsPredicates.get(0)).getPredicateCount();
+    }
+
+    @Override
+    public Predicate[] getPredicates() {
+        return ((ConnectorPredicate) lsPredicates.get(0)).getPredicates();
+    }
+
+    @Override
+    public boolean isSubset(Predicate predicate) {
+        return ((ConnectorPredicate) lsPredicates.get(0)).isSubset(predicate);
     }
 }

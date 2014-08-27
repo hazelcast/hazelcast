@@ -135,7 +135,7 @@ public class PostJoinMapOperation extends AbstractOperation {
             public void writeData(ObjectDataOutput out) throws IOException {
                 out.writeUTF(attributeName);
                 out.writeBoolean(ordered);
-                out.writeObject(ordered);
+                out.writeObject(predicate);
             }
 
             public void readData(ObjectDataInput in) throws IOException {

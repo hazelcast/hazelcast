@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicate;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.ConnectorPredicate;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -49,15 +50,17 @@ import static com.hazelcast.query.Predicates.regex;
  * This class contains methods related to conversion of sql query to predicate.
  */
 
-public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate {
+public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate, ConnectorPredicate {
 
     private static final long serialVersionUID = 1;
 
-    private transient Predicate predicate;
+    private transient ConnectorPredicate predicate;
     private String sql;
 
     public SqlPredicate(String sql) {
         this.sql = sql;
+        // it's likely a ConnectorPredicate but in order to be sure
+        // we're wrapping generated Predicate with AndPredicate which has no effect on result.
         predicate = createPredicate(sql);
     }
 
@@ -87,7 +90,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         sql = in.readUTF();
-        predicate = createPredicate(sql);
+        predicate = new AndPredicate(createPredicate(sql));
     }
 
     private int getApostropheIndex(String str, int start) {
@@ -105,11 +108,16 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         return i;
     }
 
+    @Override
+    public boolean isIndexed(QueryContext queryContext) {
+        return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
+    }
+
     private String removeEscapes(String phrase) {
         return (phrase.length() > 2) ? phrase.replace("''", "'") : phrase;
     }
 
-    private Predicate createPredicate(String sql) {
+    private ConnectorPredicate createPredicate(String sql) {
         String paramSql = sql;
         Map<String, String> mapPhrases = new HashMap<String, String>(1);
         int apoIndex = getApostropheIndex(paramSql, 0);
@@ -143,7 +151,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
             throw new RuntimeException("Invalid SQL: [" + paramSql + "]");
         }
         if (tokens.size() == 1) {
-            return eval(tokens.get(0));
+            return new AndPredicate(eval(tokens.get(0)));
         }
         root:
         while (tokens.size() > 1) {
@@ -246,7 +254,12 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                 throw new RuntimeException("Invalid SQL: [" + paramSql + "]");
             }
         }
-        return (Predicate) tokens.get(0);
+
+        Object o = tokens.get(0);
+        if(!(o instanceof ConnectorPredicate)) {
+            return new AndPredicate((Predicate) o);
+        }
+        return (ConnectorPredicate) o;
     }
 
     private void validateOperandPosition(int pos) {
@@ -294,7 +307,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
 
     private void readObject(java.io.ObjectInputStream in)
             throws IOException, ClassNotFoundException {
-        predicate = createPredicate(sql);
+        predicate = new AndPredicate(createPredicate(sql));
     }
 
     @Override
@@ -319,5 +332,35 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     @Override
     public int hashCode() {
         return sql.hashCode();
+    }
+
+    @Override
+    public ConnectorPredicate subtract(Predicate predicates) {
+        return predicate.subtract(predicates);
+    }
+
+    @Override
+    public ConnectorPredicate copy() {
+        return predicate.copy();
+    }
+
+    @Override
+    public void removeChild(int index) {
+        predicate.removeChild(index);
+    }
+
+    @Override
+    public int getPredicateCount() {
+        return predicate.getPredicateCount();
+    }
+
+    @Override
+    public Predicate[] getPredicates() {
+        return predicate.getPredicates();
+    }
+
+    @Override
+    public boolean isSubset(Predicate predicate) {
+        return this.predicate.isSubset(predicate);
     }
 }

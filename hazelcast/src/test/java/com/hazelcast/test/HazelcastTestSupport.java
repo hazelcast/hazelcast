@@ -27,6 +27,7 @@ import org.junit.After;
 import org.junit.ComparisonFailure;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -35,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -250,6 +250,16 @@ public abstract class HazelcastTestSupport {
 
     public static void assertTrueEventually(AssertTask task) {
         assertTrueEventually(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertIterableSize(int expected, Collection collection) {
+        Iterator iterator = collection.iterator();
+        int i = 0;
+        while(iterator.hasNext()) {
+            iterator.next();
+            i++;
+        }
+        assertEquals(expected, i);
     }
 
     public static void assertTrueDelayed5sec(AssertTask task) {

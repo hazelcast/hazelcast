@@ -159,6 +159,18 @@ public class PredicatesTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIn_whenComplexPredicate() {
+        ConnectorPredicate and = (ConnectorPredicate) and(equal(null, 3),
+                and(equal(null, 10), equal(null, 15)),
+                equal(null, 99));
+
+        assertTrue(equal(null, 15).in(and));
+        assertFalse(notEqual(null, 15).in(and));
+        assertTrue(notEqual(null, 15).in(and));
+        assertTrue(equal(null, 99).in(and));
+    }
+
+    @Test
     public void tesConnectorPredicateEqual_whenMixedOrder() {
         Predicate and0 = and(equal(null, 3),
                 and(equal(null, 10), or(notEqual(null, 15)), equal(null, 4), equal(null, 5)),

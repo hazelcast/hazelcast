@@ -96,4 +96,12 @@ public class IndexServiceTest {
         indexService.saveEntryIndex(new QueryEntry(null, toData(9), 9, new Value("qwx")));
         assertEquals(8, new HashSet(indexService.query(new SqlPredicate("name > 'aac'"))).size());
     }
+
+
+    @Test(timeout = 60000)
+    public void testAddIndex_whenPredicateIsNull() throws Exception {
+        IndexService indexService = new IndexService();
+
+        indexService.addOrGetIndex("age", false, null);
+    }
 }

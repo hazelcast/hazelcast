@@ -46,7 +46,6 @@ public class IndexImpl implements Index {
 
     private volatile AttributeType attributeType;
     private MapIndexStats.IndexUsageIncrementer indexUsageIncrementer;
-    private int id;
 
     public IndexImpl(String attribute, boolean ordered, Predicate predicate) {
         this.attribute = attribute;

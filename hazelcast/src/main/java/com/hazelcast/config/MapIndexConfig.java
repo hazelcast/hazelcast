@@ -50,7 +50,6 @@ public class MapIndexConfig {
     public MapIndexConfig(String attribute, boolean ordered) {
         setAttribute(attribute);
         setOrdered(ordered);
-        setPredicate(null);
     }
 
     /**
