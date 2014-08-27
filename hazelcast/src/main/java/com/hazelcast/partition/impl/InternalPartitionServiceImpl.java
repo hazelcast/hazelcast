@@ -25,7 +25,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
@@ -122,7 +121,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final BlockingQueue<Runnable> migrationQueue = new LinkedBlockingQueue<Runnable>();
     private final AtomicBoolean migrationActive = new AtomicBoolean(true);
     private final AtomicLong lastRepartitionTime = new AtomicLong();
-    private final SystemLogService systemLogService;
 
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
@@ -142,7 +140,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.logger = node.getLogger(InternalPartitionService.class);
-        this.systemLogService = node.getSystemLogService();
         this.partitions = new InternalPartitionImpl[partitionCount];
         PartitionListener partitionListener = new LocalPartitionListener(this, node.getThisAddress());
         for (int i = 0; i < partitionCount; i++) {
@@ -1576,7 +1573,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 if (logger.isFinestEnabled()) {
                     logger.finest("Started Migration : " + migrationInfo);
                 }
-                systemLogService.logPartition("Started Migration : " + migrationInfo);
                 if (fromMember == null) {
                     // Partition is lost! Assign new owner and exit.
                     logger.warning("Partition is lost! Assign new owner and exit...");
@@ -1599,7 +1595,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 if (logger.isFinestEnabled()) {
                     logger.finest(message);
                 }
-                systemLogService.logPartition(message);
                 processMigrationResult();
             } else {
                 final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
@@ -1623,7 +1618,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         private void migrationTaskFailed() {
-            systemLogService.logPartition("Migration failed: " + migrationInfo);
             lock.lock();
             try {
                 addCompletedMigration(migrationInfo);
@@ -1779,7 +1773,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             String warning = "Owner of partition is being removed! "
                     + "Possible data loss for partition[" + event.getPartitionId() + "]. " + event;
             partitionService.logger.warning(warning);
-            partitionService.systemLogService.logWarningPartition(warning);
         }
     }
 

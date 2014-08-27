@@ -542,7 +542,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private void log(Level level, String message) {
         logger.log(level, message);
-        ioService.getSystemLogService().logConnection(message);
     }
 
     boolean useAnyOutboundPort() {

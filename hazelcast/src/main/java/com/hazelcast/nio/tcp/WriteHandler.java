@@ -146,8 +146,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             writeBuffer();
         } catch (Throwable t) {
             logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
-            connection.getSystemLogService().logConnection("Fatal Error at WriteHandler for endPoint "
-                    + "[" + connection.getEndPoint() + "]: " + t.getMessage());
         } finally {
             ready = false;
             registerWrite();
