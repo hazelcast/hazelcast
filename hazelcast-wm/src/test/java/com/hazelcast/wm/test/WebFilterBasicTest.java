@@ -158,12 +158,6 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         return new JettyServer(port, sourceDir, serverXml);
     }
 
-    @After
-    public void clearMap() {
-        IMap<String, Object> map = hz.getMap("default");
-        map.clear();
-    }
-
     @Before
     public void setup() throws Exception {
         if (isSetup == true) {
@@ -185,6 +179,8 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
 
     @After
     public void teardown() throws Exception {
+        IMap<String, Object> map = hz.getMap("default");
+        map.clear();
     }
 
     @AfterClass
