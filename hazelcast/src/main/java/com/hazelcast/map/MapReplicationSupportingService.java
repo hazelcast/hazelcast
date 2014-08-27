@@ -15,12 +15,12 @@ import java.util.concurrent.Future;
 
 class MapReplicationSupportingService implements ReplicationSupportingService {
 
-    private MapServiceContext mapServiceContext;
-    private NodeEngine nodeEngine;
+    private final MapServiceContext mapServiceContext;
+    private final NodeEngine nodeEngine;
 
-    public MapReplicationSupportingService(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
+    public MapReplicationSupportingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
-        this.nodeEngine = nodeEngine;
+        this.nodeEngine = mapServiceContext.getNodeEngine();
     }
 
     @Override

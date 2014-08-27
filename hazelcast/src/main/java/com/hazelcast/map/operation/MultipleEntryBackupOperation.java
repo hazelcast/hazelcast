@@ -40,14 +40,12 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation
             processBackup(entry);
 
             if (noOp(entry, oldValue)) {
-                return;
+                continue;
             }
             if (entryRemovedBackup(entry, dataKey)) {
-                return;
+                continue;
             }
-            if (entryAddedOrUpdatedBackup(entry, dataKey)) {
-                return;
-            }
+            entryAddedOrUpdatedBackup(entry, dataKey);
         }
     }
 

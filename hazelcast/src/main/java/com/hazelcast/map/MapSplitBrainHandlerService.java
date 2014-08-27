@@ -17,12 +17,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-class MapSplitBrainHandler implements SplitBrainHandlerService {
+class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
-    private MapServiceContext mapServiceContext;
-    private NodeEngine nodeEngine;
+    private final MapServiceContext mapServiceContext;
+    private final NodeEngine nodeEngine;
 
-    public MapSplitBrainHandler(MapServiceContext mapServiceContext) {
+    public MapSplitBrainHandlerService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
     }

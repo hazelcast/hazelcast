@@ -21,8 +21,8 @@ import java.util.List;
  */
 class MapMigrationAwareService implements MigrationAwareService {
 
-    private MapServiceContext mapServiceContext;
-    private SerializationService serializationService;
+    private final MapServiceContext mapServiceContext;
+    private final SerializationService serializationService;
 
     public MapMigrationAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;

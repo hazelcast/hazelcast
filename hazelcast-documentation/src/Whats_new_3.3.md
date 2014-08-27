@@ -13,8 +13,51 @@ This section provides the new features introduced with Hazelcast 3.3 release.
 - WAN Replication improved: Added configurable replication queue size [WAN Replication Queue Size](#wan-replication-queue-size).
 - Data Aggregation implemented: Added common data aggregations, please find [Aggregators](#aggregators) documentation.
 - EvictAll and LoadAll features for IMap: `evictAll` and `loadAll` methods have been introduced to be able to evict all entries except the locked ones and that loads all or a set of keys from a configured map store, respectively.
+- JCache implementation introduced: Please see [Hazelcast JCache Implementation](#hazelcast-jcache-implementation) for details.
 
 ### Fixes
+
+This section lists issues solved for Hazelcast 3.3 release.
+
+- Resource adapter state never reset to isStarted == false, resulting in errors down the line [[#3350]](https://github.com/hazelcast/hazelcast/issues/3350).
+- Parallel execution of MapStore#store method for the same key triggered by IMap#flush [[#3338]](https://github.com/hazelcast/hazelcast/issues/3338).
+- when offer null argument in queue throws an exception but add null arg to collection then addAll() this list to queue it doesn't throw an exception [[#3330]](https://github.com/hazelcast/hazelcast/issues/3330).
+- java.io.FileNotFoundException thrown by MapLoaderTest [[#3324]](https://github.com/hazelcast/hazelcast/issues/3324).
+- MapMaxSizeTest Stabilizer test with SoftKill [[#3291]](https://github.com/hazelcast/hazelcast/issues/3291).
+- Incompatible spring and config xsd's [[#3275]](https://github.com/hazelcast/hazelcast/issues/3275).
+- ExpirationManager partition sorting can fail [[#3271]](https://github.com/hazelcast/hazelcast/issues/3271).
+- Config validation is broken [[#3257]](https://github.com/hazelcast/hazelcast/issues/3257).
+- Code Samples for Spring Security + WebFilter Integration [[#3252]](https://github.com/hazelcast/hazelcast/issues/3252).
+- WebFilter Test Cases are slow [[#3250]](https://github.com/hazelcast/hazelcast/issues/3250).
+- Man. Center + Weblogic Deployment Problem [[#3247]](https://github.com/hazelcast/hazelcast/issues/3247).
+- Enabling Multicast and TCP/IP node discovery methods froze my instances [[#3246]](https://github.com/hazelcast/hazelcast/issues/3246).
+- PagingPredicate.getAnchor doesn't return the correct value [[#3241]](https://github.com/hazelcast/hazelcast/issues/3241).
+- getOldValue and getValue returns same value when removing item from IMap [[#3198]](https://github.com/hazelcast/hazelcast/issues/3198).
+- MapTransactionContextTest: member softKill and Mama, HazelcastSerializationException + IegalStateException: Nested [[#3196]](https://github.com/hazelcast/hazelcast/issues/3196).
+- IMap.delete() should not call MapLoader.load()[[#3178]](https://github.com/hazelcast/hazelcast/issues/3178).
+- 3.3-RC3+: NPE in method connectionMarkedAsNotResponsive [[#3169]](https://github.com/hazelcast/hazelcast/issues/3169).
+- High complexity ActionConstants getPermission [[#3160]](https://github.com/hazelcast/hazelcast/issues/3160).
+- WebFilter.HazelcastHttpSession.isNew() does not check the HC Session Cache [[#3132]](https://github.com/hazelcast/hazelcast/issues/3132).
+- hazelcast-spring xsd files are not version agnostic [[#3131]](https://github.com/hazelcast/hazelcast/issues/3131).
+- ClassCastException: java.lang.Integer cannot be cast to java.lang.String Query [[#3091]](https://github.com/hazelcast/hazelcast/issues/3091).
+- Predicate, returns value, not matching predicate [[#3090]](https://github.com/hazelcast/hazelcast/issues/3090).
+- Modifications made by Entry Processor are lost in 3.3-RC-2 [[#3062]](https://github.com/hazelcast/hazelcast/issues/3062).
+- Hazelcast Session Clustering with Spring Security Problem [[#3049]](https://github.com/hazelcast/hazelcast/issues/3049).
+- PagingPredicate, - returning duplicated elements, resulting in infinite loop [[#3047]](https://github.com/hazelcast/hazelcast/issues/3047).
+- expirationTime on EntryView not set [[#3038]](https://github.com/hazelcast/hazelcast/issues/3038).
+- BasicRecordStoreLoader cannot handle retry responses [[#3033]](https://github.com/hazelcast/hazelcast/issues/3033). 
+- Short await() on condition of contended lock causes IllegalStateException [[#3025]](https://github.com/hazelcast/hazelcast/issues/3025). 
+- Indices and Comparable<T>: not documented [[#3024]](https://github.com/hazelcast/hazelcast/issues/3024). 
+- Marking Heartbeat as healthy is too late [[#3014]](https://github.com/hazelcast/hazelcast/issues/3014).
+- 3.3-RC2: IMap#keySet triggers value deserialization [[#3008]](https://github.com/hazelcast/hazelcast/issues/3008).
+- map.destroy() throws DistributedObjectDestroyedException [[#3001]](https://github.com/hazelcast/hazelcast/issues/3001).
+- Stabilizer tests Final profile, Xlarge cluster OperationTimeoutException [[#2999]](https://github.com/hazelcast/hazelcast/issues/2999).
+- c.h.jca.HazelcastConnection::getExecutorService returns plain ExecutorService [[#2986]](https://github.com/hazelcast/hazelcast/issues/2986).
+- Serialization NPE, stabilizer-MapStoreTest, 3.3-RC3-SNAPSHOT [[#2985]](https://github.com/hazelcast/hazelcast/issues/2985).
+- Bug with IMap.getAll() [[#2982]](https://github.com/hazelcast/hazelcast/issues/2982).
+- Client deadlock on single core machines [[#2971]](https://github.com/hazelcast/hazelcast/issues/2971).
+- Retrieve number of futures in loop in calling thread - question [[#2964]](https://github.com/hazelcast/hazelcast/issues/2964).
+
 
 **RC2 Fixes**
 

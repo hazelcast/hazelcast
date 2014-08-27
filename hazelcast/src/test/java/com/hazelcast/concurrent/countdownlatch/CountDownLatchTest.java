@@ -16,14 +16,15 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -46,14 +47,14 @@ public class CountDownLatchTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void testTrySetCount_whenArgumentNegative() {
-        final HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch("latch");
         latch.trySetCount(-20);
     }
 
     @Test
     public void testTrySetCount_whenCountIsZero() {
-        final HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch(randomString());
 
         assertTrue(latch.trySetCount(40));
@@ -61,8 +62,18 @@ public class CountDownLatchTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testTrySetCount_whenCountIsNotZero() {
+        HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+        latch.trySetCount(10);
+        assertFalse(latch.trySetCount(20));
+        assertFalse(latch.trySetCount(0));
+        assertEquals(10, latch.getCount());
+    }
+
+    @Test
     public void testTrySetCount_whenPositive() {
-        final HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch(randomString());
 
         latch.trySetCount(10);
@@ -70,13 +81,23 @@ public class CountDownLatchTest extends HazelcastTestSupport {
         assertEquals(10, latch.getCount());
     }
 
-    //TODO: Can we set the latch if the latch is already set before?
+    @Test
+    public void testTrySetCount_whenAlreadySet() {
+        HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+
+        latch.trySetCount(10);
+        assertFalse(latch.trySetCount(20));
+        assertFalse(latch.trySetCount(100));
+        assertFalse(latch.trySetCount(0));
+        assertEquals(10, latch.getCount());
+    }
 
     // ================= countDown =================================================
 
     @Test
     public void testCountDown() {
-        final HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch(randomString());
 
         latch.trySetCount(20);
@@ -88,7 +109,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
 
     @Test
     public void testCountDown_whenReachZero_thenLatchRemoved() {
-        final HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch(randomString());
         CountDownLatchService service = getNode(instance).getNodeEngine().getService(CountDownLatchService.SERVICE_NAME);
 
@@ -102,7 +123,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
 
     @Test
     public void testGetCount() {
-        final HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch(randomString());
 
         latch.trySetCount(20);
@@ -113,7 +134,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
 
     @Test
     public void testDestroy() {
-        final HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch(randomString());
         NodeEngineImpl nodeEngine = getNode(instance).getNodeEngine();
         CountDownLatchService service = nodeEngine.getService(CountDownLatchService.SERVICE_NAME);
@@ -125,34 +146,30 @@ public class CountDownLatchTest extends HazelcastTestSupport {
     // ================= await =================================================
     @Test(timeout = 15000)
     public void testAwait() throws InterruptedException {
-        final HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         final ICountDownLatch latch = instance.getCountDownLatch(randomString());
         latch.trySetCount(1);
-        Thread thread = (new Thread() {
-            public void run() {
+        TestThread thread = new TestThread() {
+            public void doRun() {
                 latch.countDown();
             }
-        });
+        };
         thread.start();
         assertOpenEventually(latch);
     }
 
     @Test(timeout = 15000)
     public void testAwait_withManyThreads() {
-        final HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         final ICountDownLatch latch = instance.getCountDownLatch(randomString());
         final CountDownLatch completedLatch = new CountDownLatch(10);
 
         latch.trySetCount(1);
         for (int i = 0; i < 10; i++) {
-            new Thread() {
-                public void run() {
-                    try {
-                        if (latch.await(1, TimeUnit.MINUTES)) {
-                            completedLatch.countDown();
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+            new TestThread() {
+                public void doRun() throws Exception {
+                    if (latch.await(1, TimeUnit.MINUTES)) {
+                        completedLatch.countDown();
                     }
                 }
             }.start();
@@ -163,8 +180,8 @@ public class CountDownLatchTest extends HazelcastTestSupport {
 
     @Test(timeout = 15000)
     public void testAwait_whenTimeOut() throws InterruptedException {
-        final HazelcastInstance instance = createHazelcastInstance();
-        final ICountDownLatch latch = instance.getCountDownLatch(randomString());
+        HazelcastInstance instance = createHazelcastInstance();
+        ICountDownLatch latch = instance.getCountDownLatch(randomString());
 
         latch.trySetCount(1);
         long time = System.currentTimeMillis();
@@ -174,48 +191,33 @@ public class CountDownLatchTest extends HazelcastTestSupport {
         assertEquals(1, latch.getCount());
     }
 
-    // TODO: What is the failure?
     @Test
-    @ClientCompatibleTest
-    public void testAwait_whenFail() throws InterruptedException {
-        final int k = 3;
-        final Config config = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-        ICountDownLatch latch = instances[0].getCountDownLatch("test");
-        latch.trySetCount(k - 1);
-
-        long t = System.currentTimeMillis();
-        assertFalse(latch.await(100, TimeUnit.MILLISECONDS));
-        final long elapsed = System.currentTimeMillis() - t;
-        assertTrue(elapsed >= 100);
-    }
-
-
-    @Test(expected = IllegalStateException.class)
-    public void testAwait_whenInstanceShutdown_thenLatchOpened() throws InterruptedException {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance instance = factory.newHazelcastInstance(new Config());
-        ICountDownLatch latch = instance.getCountDownLatch(randomString());
+    public void testAwait_whenInstanceShutdown_thenHazelcastInstanceNotActiveException() throws InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+        final ICountDownLatch latch = instance.getCountDownLatch(randomString());
         latch.trySetCount(10);
-        Thread thread = (new Thread() {
-            public void run() {
-                instance.shutdown();
-            }
-        });
-        thread.start();
-        assertOpenEventually(latch);
-    }
 
+        final TestThread awaitThread = new TestThread() {
+            @Override
+            public void doRun() throws Exception {
+                latch.await(1, TimeUnit.HOURS);
+            }
+        };
+        awaitThread.start();
+
+        // give the awaitthread some time to get in the waiting state
+        sleepSeconds(5);
+        instance.shutdown();
+        awaitThread.assertFailsEventually(HazelcastInstanceNotActiveException.class);
+    }
     // ================= simple usage =================================================
 
     @Test
     @ClientCompatibleTest
     public void testSimpleUsage() throws InterruptedException {
         final int k = 5;
-        final Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+        final HazelcastInstance[] instances = factory.newInstances();
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
         assertEquals(k - 1, latch.getCount());
@@ -248,13 +250,9 @@ public class CountDownLatchTest extends HazelcastTestSupport {
         final ICountDownLatch latch = hz1.getCountDownLatch("test");
         latch.trySetCount(2);
 
-        new Thread() {
-            public void run() {
-                try {
-                    sleep(1000);
-                } catch (InterruptedException e) {
-                    return;
-                }
+        new TestThread() {
+            public void doRun() throws Exception {
+                sleep(1000);
                 latch.destroy();
             }
         }.start();

@@ -16,8 +16,8 @@ import com.hazelcast.spi.NodeEngine;
  */
 class MapEventPublishingService implements EventPublishingService<EventData, EntryListener> {
 
-    private MapServiceContext mapServiceContext;
-    private NodeEngine nodeEngine;
+    private final MapServiceContext mapServiceContext;
+    private final NodeEngine nodeEngine;
 
     protected MapEventPublishingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;

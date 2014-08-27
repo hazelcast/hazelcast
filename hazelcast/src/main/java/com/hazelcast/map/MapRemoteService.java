@@ -13,8 +13,8 @@ import java.util.Map;
  */
 class MapRemoteService implements RemoteService {
 
-    private MapServiceContext mapServiceContext;
-    private NodeEngine nodeEngine;
+    private final MapServiceContext mapServiceContext;
+    private final NodeEngine nodeEngine;
 
     public MapRemoteService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;

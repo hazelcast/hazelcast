@@ -153,7 +153,7 @@ public class NodeIOService implements IOService {
     @Override
     public void onFailedConnection(Address address) {
         if (!node.joined()) {
-            node.failedConnection(address);
+            node.getJoiner().blacklist(address);
         }
     }
 
