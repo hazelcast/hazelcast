@@ -317,6 +317,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
 
             for(Map.Entry<Integer, Employee> e: set){
                 //assertTrue(predicate.apply(e));
+                System.out.println(e);
             }
             pagingPredicate.nextPage();
         }while(! set.isEmpty());
