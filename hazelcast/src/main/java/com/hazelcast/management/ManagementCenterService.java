@@ -51,6 +51,7 @@ public class ManagementCenterService {
 
     private final static AtomicBoolean DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO = new AtomicBoolean(false);
     public static final int HTTP_SUCCESS = 200;
+    static final int DEFAULT_UPDATE_INTERVAL = 3000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
@@ -355,7 +356,7 @@ public class ManagementCenterService {
 
         private int calcUpdateInterval() {
             int updateInterval = managementCenterConfig.getUpdateInterval();
-            return updateInterval > 0 ? updateInterval * 1000 : 5000;
+            return updateInterval > 0 ? updateInterval * 1000 : DEFAULT_UPDATE_INTERVAL;
         }
 
         @Override

@@ -1094,7 +1094,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
         final Node intervalNode = attrs.getNamedItem("update-interval");
         final int interval = intervalNode != null ? getIntegerValue("update-interval",
-                getTextContent(intervalNode), 5) : 5;
+                getTextContent(intervalNode), ManagementCenterConfig.UPDATE_INTERVAL) : ManagementCenterConfig.UPDATE_INTERVAL;
 
         final Node securityTokenNode = attrs.getNamedItem("security-token");
         final String securityToken = getTextContent(securityTokenNode);
