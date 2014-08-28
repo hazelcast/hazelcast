@@ -16,10 +16,10 @@ package com.hazelcast.client.mapreduce;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.Combiner;
@@ -57,9 +57,8 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         Hazelcast.shutdownAll();
     }
 
-    @Test(timeout = 30000)
-    public void testMapperReducer()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testMapperReducer() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -98,9 +97,8 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         }
     }
 
-    @Test(timeout = 30000)
-    public void testMapperReducerCollator()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testMapperReducerCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -138,9 +136,8 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         }
     }
 
-    @Test(timeout = 30000)
-    public void testAsyncMapperReducer()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testAsyncMapperReducer() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -199,9 +196,8 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
         }
     }
 
-    @Test(timeout = 30000)
-    public void testAsyncMapperReducerCollator()
-            throws Exception {
+    @Test(timeout = 120000)
+    public void testAsyncMapperReducerCollator() throws Exception {
         Config config = buildConfig();
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -301,7 +297,7 @@ public class DistributedMapperClientMapReduceTest extends AbstractClientMapReduc
     public static class TestReducer
             extends Reducer<String, Integer, Integer> {
 
-        private transient int sum;
+        private volatile int sum;
 
         @Override
         public void reduce(Integer value) {

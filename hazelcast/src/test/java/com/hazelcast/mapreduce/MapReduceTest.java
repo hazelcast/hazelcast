@@ -51,15 +51,15 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 @SuppressWarnings("unused")
+//@Repeat(100)
 public class MapReduceTest
         extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testPartitionPostpone()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -92,7 +92,6 @@ public class MapReduceTest
     @Test(timeout = 30000, expected = ExecutionException.class)
     public void testExceptionDistributionWithCollator()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -133,7 +132,6 @@ public class MapReduceTest
     @Test(timeout = 30000, expected = ExecutionException.class)
     public void testExceptionDistribution()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -165,7 +163,6 @@ public class MapReduceTest
     @Test(timeout = 30000, expected = CancellationException.class)
     public void testInProcessCancellation()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -195,10 +192,9 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testMapper()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -226,10 +222,9 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testKeyedMapperCollator()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -254,10 +249,9 @@ public class MapReduceTest
         assertEquals(50, result);
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testKeyPredicateMapperCollator()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -283,10 +277,9 @@ public class MapReduceTest
         assertEquals(50, result);
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testMapperComplexMapping()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -312,10 +305,9 @@ public class MapReduceTest
         assertEquals(25, result.values().iterator().next().size());
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testMapperReducer()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -353,7 +345,6 @@ public class MapReduceTest
     @Test(timeout = 60000)
     public void testMapperReducerChunked()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -400,10 +391,9 @@ public class MapReduceTest
         });
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testMapperCollator()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -436,10 +426,9 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testMapperReducerCollator()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -473,10 +462,9 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testAsyncMapper()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -524,10 +512,9 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testKeyedAsyncMapper()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -575,10 +562,9 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testAsyncMapperReducer()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -633,10 +619,9 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testAsyncMapperCollator()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -689,10 +674,9 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testAsyncMapperReducerCollator()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -746,10 +730,9 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testNullFromObjectCombiner()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -767,7 +750,7 @@ public class MapReduceTest
 
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMap(m1));
-        JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(1).mapper(new GroupingTestMapper())
+        JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(10).mapper(new GroupingTestMapper())
                                                                   .combiner(new ObjectCombinerFactory())
                                                                   .reducer(new ObjectReducerFactory()).submit();
 
@@ -783,10 +766,9 @@ public class MapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void testDataSerializableIntermediateObject()
             throws Exception {
-
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -889,7 +871,7 @@ public class MapReduceTest
     public static class ObjectReducer
             extends Reducer<String, BigInteger, BigInteger> {
 
-        private BigInteger count;
+        private volatile BigInteger count;
 
         @Override
         public void reduce(BigInteger value) {
@@ -945,8 +927,8 @@ public class MapReduceTest
     public static class DataSerializableIntermediateReducer
             extends Reducer<String, TupleIntInt, TupleIntInt> {
 
-        private int count;
-        private int amount;
+        private volatile int count;
+        private volatile int amount;
 
         @Override
         public void reduce(TupleIntInt value) {
@@ -1039,7 +1021,7 @@ public class MapReduceTest
     public static class TestReducer
             extends Reducer<String, Integer, Integer> {
 
-        private transient int sum = 0;
+        private volatile int sum = 0;
 
         @Override
         public void reduce(Integer value) {
