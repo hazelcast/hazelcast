@@ -100,10 +100,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private static final int DEFAULT_PAUSE_MILLIS = 1000;
     private static final int DEFAULT_SLEEP_MILLIS = 10;
     private static final float DEFAULT_MIGRATION_TIMEOUT_MULTIPLICATOR = 1.5f;
-    private static final long MAX_ACTIVATION_DELAY = 1000L;
-
-    private static final int MEMBER_REMOVED_MIN_DELAY_MS = 5000;
-
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -373,15 +369,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             if (node.isMaster() && initialized) {
                 migrationQueue.add(new RepartitioningTask());
             }
-
-            // Add a delay before activating migration, to give other nodes time to notice the dead one.
-            long migrationActivationDelay = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
-                    * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 5;
-
-            long callTimeout = node.groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
-            // delay should be smaller than call timeout, otherwise operations may fail because of invalid partition table
-            migrationActivationDelay = Math.min(migrationActivationDelay, callTimeout / 2);
-            migrationActivationDelay = Math.max(migrationActivationDelay, MAX_ACTIVATION_DELAY);
 
             resumeMigrationEventually();
         } finally {
