@@ -167,6 +167,10 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
                         continue;
                     }
                     list.add(entry);
+                } else {
+                    throw new IllegalArgumentException(
+                            "If there is no comparator, " +
+                                    "objects to compare (keys or values) must be comparable !");
                 }
             }
             if (list.isEmpty()) {
