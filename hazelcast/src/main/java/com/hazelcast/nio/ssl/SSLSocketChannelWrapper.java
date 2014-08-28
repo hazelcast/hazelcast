@@ -32,6 +32,7 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
     private static final boolean DEBUG = false;
 
     private final ByteBuffer applicationBuffer;
+    private final Object lock = new Object();
     private final ByteBuffer emptyBuffer;
     private final ByteBuffer netOutBuffer;
     // "reliable" write transport
@@ -64,7 +65,7 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         if (DEBUG) {
             log("Starting handshake...");
         }
-        synchronized (this) {
+        synchronized (lock) {
             if (handshakeCompleted) {
                 if (DEBUG) {
                     log("Handshake already completed...");
@@ -150,7 +151,9 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
     private ByteBuffer unwrap(ByteBuffer b) throws SSLException {
         applicationBuffer.clear();
         while (b.hasRemaining()) {
-            sslEngineResult = sslEngine.unwrap(b, applicationBuffer);
+            synchronized (lock) {
+                sslEngineResult = sslEngine.unwrap(b, applicationBuffer);
+            }
             if (sslEngineResult.getStatus() == SSLEngineResult.Status.BUFFER_OVERFLOW) {
                 return applicationBuffer;
             }
@@ -182,7 +185,9 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
     }
 
     private int writeInternal(ByteBuffer input) throws IOException {
-        sslEngineResult = sslEngine.wrap(input, netOutBuffer);
+        synchronized (lock) {
+            sslEngineResult = sslEngine.wrap(input, netOutBuffer);
+        }
         netOutBuffer.flip();
         int written = socketChannel.write(netOutBuffer);
         if (netOutBuffer.hasRemaining()) {

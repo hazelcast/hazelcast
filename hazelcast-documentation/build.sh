@@ -228,7 +228,7 @@ function init {
 	MULTI_HTML_OUTPUT_DIR="html"
 	SINGLE_HTML_OUTPUT_DIR="html-single"
 	MANCENTER_OUTPUT_DIR="mancenter"
-	NO_HEADER_SINGLE_HTML_OUTPUT_DIR="no-header"
+	NO_HEADER_SINGLE_HTML_OUTPUT_DIR="no_header"
 	PDF_OUTPUT_DIR="pdf"
 	PDF_FILE_NAME="hazelcast-documentation-$version.pdf"
 	MANIFEST_FILE_NAME="manifest.json"

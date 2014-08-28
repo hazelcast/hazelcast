@@ -19,8 +19,8 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.RandomPicker;
 
 import java.util.concurrent.BlockingQueue;
@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MulticastJoiner extends AbstractJoiner {
 
     private static final int PUBLISH_INTERVAL = 100;
+    private static final long JOIN_RETRY_INTERVAL = 1000L;
 
     private final AtomicInteger currentTryCount = new AtomicInteger(0);
     private final AtomicInteger maxTryCount;
@@ -44,32 +45,52 @@ public class MulticastJoiner extends AbstractJoiner {
     public void doJoin() {
         long joinStartTime = Clock.currentTimeMillis();
         long maxJoinMillis = getMaxJoinMillis();
+        Address thisAddress = node.getThisAddress();
 
         while (node.isActive() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
-            Address masterAddressNow = getTargetAddress();
-            if (masterAddressNow == null) {
-                masterAddressNow = findMasterWithMulticast();
-            }
-            node.setMasterAddress(masterAddressNow);
+            // clear master node
+            node.setMasterAddress(null);
 
-            if (node.getMasterAddress() == null || node.getThisAddress().equals(node.getMasterAddress())) {
+            Address masterAddress = getTargetAddress();
+            if (masterAddress == null) {
+                masterAddress = findMasterWithMulticast();
+            }
+            node.setMasterAddress(masterAddress);
+
+            if (masterAddress == null || thisAddress.equals(masterAddress)) {
                 node.setAsMaster();
                 return;
             }
 
-            if (logger.isFinestEnabled()) {
-                logger.finest("Joining to master node: " + node.getMasterAddress());
+            logger.info("Trying to join to discovered node: " + masterAddress);
+            joinMaster();
+        }
+    }
+
+    private void joinMaster() {
+        long maxMasterJoinTime = getMaxJoinTimeToMasterNode();
+        long start = Clock.currentTimeMillis();
+
+        while (node.isActive() && !node.joined() && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
+            Address master = node.getMasterAddress();
+            if (master != null) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Joining to master " + master);
+                }
+                node.clusterService.sendJoinRequest(master, true);
+            } else {
+                break;
             }
 
-            if (!node.getMasterAddress().equals(node.getThisAddress())) {
-                connectAndSendJoinRequest(node.getMasterAddress());
-            } else {
-                node.setMasterAddress(null);
-            }
             try {
-                //noinspection BusyWait
-                Thread.sleep(500L);
-            } catch (InterruptedException ignored) {
+                Thread.sleep(JOIN_RETRY_INTERVAL);
+            } catch (InterruptedException e) {
+                EmptyStatement.ignore(e);
+            }
+
+            if (isBlacklisted(master)) {
+                node.setMasterAddress(null);
+                return;
             }
         }
     }
@@ -116,24 +137,6 @@ public class MulticastJoiner extends AbstractJoiner {
     @Override
     public String getType() {
         return "multicast";
-    }
-
-    private boolean connectAndSendJoinRequest(Address masterAddress) {
-        if (masterAddress == null || masterAddress.equals(node.getThisAddress())) {
-            throw new IllegalArgumentException();
-        }
-        Connection conn = node.connectionManager.getOrConnect(masterAddress);
-        if (logger.isFinestEnabled()) {
-            logger.finest("Master connection " + conn);
-        }
-        if (conn != null) {
-            return node.clusterService.sendJoinRequest(masterAddress, true);
-        } else {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Connecting to master node: " + masterAddress);
-            }
-            return false;
-        }
     }
 
      private Address findMasterWithMulticast() {
