@@ -150,18 +150,19 @@ Below is a sample code where the `greaterEqual` predicate is used to get values 
 
 The first time the values are called will constitute the first page. You can get the subsequent pages by using the `nextPage()` method of `PagingPredicate` and querying the map again with updated `PagingPredicate`..
 
-
-```
+```java
 final IMap<Integer, Student> map = instance.getMap("students");
-       final Predicate greaterEqual = Predicates.greaterEqual("age", 18);
-       final PagingPredicate pagingPredicate = new PagingPredicate(greaterEqual, 5);
-       Collection<Student> values = map.values(pagingPredicate); //First Page
-       ...
+final Predicate greaterEqual = Predicates.greaterEqual("age", 18);
+final PagingPredicate pagingPredicate = new PagingPredicate(greaterEqual, 5);
+Collection<Student> values = map.values(pagingPredicate); //First Page
+...
        
-       pagingPredicate.nextPage();
-       values = map.values(pagingPredicate); //Second Page
-       ...
+pagingPredicate.nextPage();
+values = map.values(pagingPredicate); //Second Page
+...
 ```
+
+If there is no specified comparator for `PagingPredicate`, collection of keys or values, these you want to get page by page, must be Comparable instance (Must implement `java.lang.Comparable`). Otherwise, `java.lang.IllegalArgument` exception is thrown.
 
 Paging Predicate is not supported in Transactional Context.
 
@@ -186,34 +187,36 @@ imap.addIndex("active", false);    // not ordered, because boolean field cannot 
 Also, you can define `IMap` indexes in configuration, a sample of which is shown below.
 
 
-	```xml
-	<map name="default">
-	    ...
-	    <indexes>
-	        <index ordered="false">name</index>
-	        <index ordered="true">age</index>
-	    </indexes>
-	</map>```
+```xml
+<map name="default">
+    ...
+    <indexes>
+        <index ordered="false">name</index>
+        <index ordered="true">age</index>
+    </indexes>
+</map>
+```
 
 
 This sample in programmatic configuration looks like below.
 
 
 
-	```java
-	mapConfig.addMapIndexConfig(new MapIndexConfig("name", false));
-	mapConfig.addMapIndexConfig(new MapIndexConfig("age", true));```
+```java
+mapConfig.addMapIndexConfig(new MapIndexConfig("name", false));
+mapConfig.addMapIndexConfig(new MapIndexConfig("age", true));
+```
 
 
 And, the following is the Spring declarative configuration for the same sample.
  
 
 
-	```xml
-	<hz:map name="default">
-	    <hz:indexes>
-	        <hz:index attribute="name"/>
-	        <hz:index attribute="age" ordered="true"/>
-	    </hz:indexes>
-	</hz:map>
+```xml
+<hz:map name="default">
+    <hz:indexes>
+        <hz:index attribute="name"/>
+        <hz:index attribute="age" ordered="true"/>
+    </hz:indexes>
+</hz:map>
 ```
