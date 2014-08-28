@@ -1265,4 +1265,29 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertOpenEventually("Not reached expected update event count", expectedUpdateEventCount);
 
     }
+
+    @Test
+    public void testUpdatesInTxnFiresUpdateEventWithNonNullOldValue() throws Exception {
+        final String mapName = randomMapName();
+        final HazelcastInstance node = createHazelcastInstance();
+        final IMap<String, String> map = node.getMap(mapName);
+        final CountDownLatch expectedUpdateEventCount = new CountDownLatch(1);
+        map.put("foo", "one");
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            @Override
+            public void entryUpdated(EntryEvent<String, String> event) {
+                assertEquals("two", event.getValue());
+                assertEquals("one", event.getOldValue());
+                expectedUpdateEventCount.countDown();
+            }
+
+        }, true);
+
+        TransactionContext context = node.newTransactionContext();
+        context.beginTransaction();
+        TransactionalMap<String, String> transactionalMap = context.getMap(mapName);
+        transactionalMap.put("foo", "two");
+        context.commitTransaction();
+        assertOpenEventually("Not reached expected update event count", expectedUpdateEventCount);
+    }
 }
