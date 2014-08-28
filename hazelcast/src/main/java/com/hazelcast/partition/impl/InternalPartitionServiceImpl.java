@@ -377,7 +377,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
             ArrayList<MigrationInfo> migrationInfos = new ArrayList<MigrationInfo>(completedMigrations);
             final long clusterTime = node.getClusterService().getClusterTime();
-            return new PartitionRuntimeState(memberInfos, partitions, migrationInfos, clusterTime, stateVersion.get());
+            ILogger logger = node.getLogger(PartitionRuntimeState.class);
+            return new PartitionRuntimeState(logger, memberInfos, partitions, migrationInfos,
+                    clusterTime, stateVersion.get());
         } finally {
             lock.unlock();
         }
