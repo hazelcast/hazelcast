@@ -295,10 +295,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             return;
         }
 
-        // max join time to found master node,
-        // this should be significantly greater than MAX_WAIT_SECONDS_BEFORE_JOIN property
-        // hence we add 10 seconds more
-        long maxMasterJoinTime = (node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) * 1000L;
+        long maxMasterJoinTime = getMaxJoinTimeToMasterNode();
         long start = Clock.currentTimeMillis();
 
         while (node.isActive() && !node.joined() && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
