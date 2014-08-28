@@ -2,6 +2,7 @@ package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
@@ -106,36 +107,12 @@ public class ClientMultiMapListenerStressTest {
         }
     }
 
-    static class MyEntryListener implements EntryListener {
+    static class MyEntryListener extends EntryAdapter {
         public AtomicInteger add = new AtomicInteger(0);
 
         public void entryAdded(EntryEvent event) {
             add.incrementAndGet();
         }
-
-        public void entryRemoved(EntryEvent event) {
-        }
-
-        public void entryUpdated(EntryEvent event) {
-
-        }
-
-        public void entryEvicted(EntryEvent event) {
-
-        }
-
-        @Override
-        public void mapEvicted(MapEvent event) {
-
-        }
-
-        @Override
-        public void mapCleared(MapEvent event) {
-
-        }
-
-
     }
 
-    ;
 }
