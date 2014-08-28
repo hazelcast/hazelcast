@@ -17,6 +17,7 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.BasePutOperation;
 import com.hazelcast.map.operation.PutBackupOperation;
 import com.hazelcast.map.record.Record;
@@ -24,10 +25,10 @@ import com.hazelcast.map.record.RecordInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
-
 import java.io.IOException;
 
 /**
@@ -46,10 +47,11 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         super(name, dataKey, value);
         this.version = version;
     }
+
     public TxnSetOperation(String name, Data dataKey, Data value, long version, long ttl) {
         super(name, dataKey, value);
         this.version = version;
-        this.ttl  = ttl;
+        this.ttl = ttl;
     }
 
     @Override
@@ -59,12 +61,16 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     @Override
     public void run() {
+        final EventService eventService = getNodeEngine().getEventService();
         recordStore.unlock(dataKey, ownerUuid, getThreadId());
         Record record = recordStore.getRecord(dataKey);
-        if (record == null || version == record.getVersion()){
+        if (record == null || version == record.getVersion()) {
+            if (eventService.hasEventRegistration(MapService.SERVICE_NAME, getName())) {
+                dataOldValue = record == null ? null : mapService.toData(record.getValue());
+            }
+            eventType = record == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
             recordStore.set(dataKey, dataValue, ttl);
             shouldBackup = true;
-            eventType = (record == null ? EntryEventType.ADDED : EntryEventType.UPDATED);
         }
     }
 
