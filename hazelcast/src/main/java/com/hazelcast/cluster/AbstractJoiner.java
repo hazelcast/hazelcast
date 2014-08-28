@@ -139,6 +139,13 @@ public abstract class AbstractJoiner implements Joiner {
 
     protected final long getMaxJoinMillis() {return node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000L;}
 
+    protected final long getMaxJoinTimeToMasterNode() {
+        // max join time to found master node,
+        // this should be significantly greater than MAX_WAIT_SECONDS_BEFORE_JOIN property
+        // hence we add 10 seconds more
+        return (node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) * 1000L;
+    }
+
     boolean shouldMerge(JoinMessage joinRequest) {
         boolean shouldMerge = false;
         if (joinRequest != null) {
