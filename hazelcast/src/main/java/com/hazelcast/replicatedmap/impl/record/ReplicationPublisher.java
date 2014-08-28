@@ -20,6 +20,8 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.replicatedmap.impl.PreReplicationHook;
@@ -60,6 +62,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ReplicationPublisher<K, V>
         implements ReplicationChannel {
+    private static final ILogger LOGGER = Logger.getLogger(ReplicationPublisher.class);
 
     private static final String SERVICE_NAME = ReplicatedMapService.SERVICE_NAME;
     private static final String EVENT_TOPIC_NAME = ReplicatedMapService.EVENT_TOPIC_NAME;
@@ -331,7 +334,7 @@ public class ReplicationPublisher<K, V>
         } else if (VectorClockTimestamp.happenedBefore(updateVectorClockTimestamp, currentVectorClockTimestamp)) {
             // ignore the update. This is an old update
             return;
-        } else {
+        } else if (!updateVectorClockTimestamp.equals(currentVectorClockTimestamp)) {
             if (localEntry.getLatestUpdateHash() >= update.getUpdateHash()) {
                 applyTheUpdate(update, localEntry);
             } else {
@@ -347,6 +350,9 @@ public class ReplicationPublisher<K, V>
 
                 distributeReplicationMessage(message, true);
             }
+        } else {
+            LOGGER.finest("Received an update with the same state of vector clock I currently have. "
+                    + "This can happened during initialization. Ignoring the update.");
         }
     }
 
