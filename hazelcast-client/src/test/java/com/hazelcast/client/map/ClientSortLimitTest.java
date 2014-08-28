@@ -25,11 +25,9 @@ import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
 import org.junit.After;
@@ -244,13 +242,11 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void mapPagingPredicateEmployeeObjectWithOrderedIndexSmallTest() {
         mapPagingPredicateEmployeeObjectWithOrderedIndex(10);
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void mapPagingPredicateEmployeeObjectWithOrderedIndexLargeTest() {
         mapPagingPredicateEmployeeObjectWithOrderedIndex(5000);
     }
@@ -278,7 +274,6 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
 
     // https://github.com/hazelcast/hazelcast/issues/3047
     @Test
-    @Category(ProblematicTest.class)
     public void betweenPagingPredicateWithEmployeeTest() {
         final int minId = 10;
         final int maxId = 15;
@@ -303,7 +298,6 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
 
     // https://github.com/hazelcast/hazelcast/issues/3047
     @Test
-    @Category(ProblematicTest.class)
     public void lessThanPredicateWithEmployeeTest() {
         final int maxId = 500;
         final int pageSz = 5;
@@ -327,7 +321,6 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
 
     // https://github.com/hazelcast/hazelcast/issues/3047
     @Test
-    @Category(ProblematicTest.class)
     public void equalsPredicateWithEmployeeTest() {
         final String name = Employee.getRandomName();
         final int pageSz = 5;
@@ -379,7 +372,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     // https://github.com/hazelcast/hazelcast/issues/3047
     @Test
     public void testIssue3047() {
-        final IMap<Integer, SampleObjects.Employee> map = client.getMap("employeeMap");
+        final IMap<Integer, Employee> map = client.getMap("employeeMap");
         final int PAGE_SIZE = 5;
         final int START_ID_FOR_QUERY = 0;
         final int FINISH_ID_FOR_QUERY = 50;
@@ -389,13 +382,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
                         (queriedElementCount % PAGE_SIZE == 0 ? 0 : 1);
 
         for(int i = 0; i < 1000; i++) {
-            map.put(i,
-                    new SampleObjects.Employee(
-                            i,
-                            "Employee-" + i,
-                            (int)(20 + Math.random() * 60),
-                            true,
-                            Math.random() * 1000));
+            map.put(i, new Employee(i));
         }
 
         map.addIndex("id", true);
@@ -403,7 +390,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         Predicate pred = Predicates.between("id", START_ID_FOR_QUERY, FINISH_ID_FOR_QUERY);
 
         PagingPredicate predicate = new PagingPredicate(pred, PAGE_SIZE);
-        Collection<SampleObjects.Employee> values;
+        Collection<Employee> values;
         int passedPageCount = 0;
 
         for (   values = map.values(predicate); !values.isEmpty() &&
@@ -414,6 +401,32 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         }
 
         assertEquals(expectedPageCount, passedPageCount);
+    }
+
+    // https://github.com/hazelcast/hazelcast/issues/3047
+    @Test(expected = IllegalArgumentException.class)
+    public void testIssue3047ForNonComparableEntitiesThrowsIllegalArgumentException() {
+        final IMap<Integer, BaseEmployee> map = client.getMap("baseEmployeeMap");
+        final int PAGE_SIZE = 5;
+        final int START_ID_FOR_QUERY = 0;
+        final int FINISH_ID_FOR_QUERY = 50;
+
+        for (int i = 0; i < 100; i++) {
+            map.put(i, new BaseEmployee(i));
+        }
+
+        map.addIndex("id", true);
+
+        Predicate pred = Predicates.between("id", START_ID_FOR_QUERY, FINISH_ID_FOR_QUERY);
+
+        PagingPredicate predicate = new PagingPredicate(pred, PAGE_SIZE);
+        Collection<BaseEmployee> values;
+
+        for (   values = map.values(predicate); !values.isEmpty() &&
+                values != null;
+                values = map.values(predicate)) {
+            predicate.nextPage();
+        }
     }
 
     private static class TestComparator implements Comparator<Map.Entry>, Serializable {
@@ -456,7 +469,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         }
     }
 
-    private static class Employee implements Serializable, Comparable<Employee> {
+    private static class BaseEmployee implements Serializable {
 
         public static final int MAX_AGE = 75;
         public static final double MAX_SALARY = 1000.0;
@@ -464,18 +477,18 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         public static final String[] names = {"aaa", "bbb", "ccc", "ddd", "eee", "fff", "ggg"};
         public static Random random = new Random();
 
-        private int id;
-        private String name;
-        private int age;
-        private boolean active;
-        private double salary;
+        protected int id;
+        protected String name;
+        protected int age;
+        protected boolean active;
+        protected double salary;
 
-        public Employee(int id) {
-            this.id = id;
-            setAtributesRandomly();
+        public BaseEmployee() {
         }
 
-        public Employee() {
+        public BaseEmployee(int id) {
+            this.id = id;
+            setAtributesRandomly();
         }
 
         public void setAtributesRandomly(){
@@ -508,11 +521,6 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         }
 
         @Override
-        public int compareTo(Employee employee) {
-            return id - employee.id;
-        }
-
-        @Override
         public boolean equals(Object obj) {
             if (obj instanceof Employee) {
                 return id == ((Employee)obj).getId();
@@ -530,6 +538,23 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
                     ", salary=" + salary +
                     '}';
         }
+
+    }
+
+    private static class Employee extends BaseEmployee implements Comparable<Employee> {
+
+        public Employee() {
+        }
+
+        public Employee(int id) {
+            super(id);
+        }
+
+        @Override
+        public int compareTo(Employee employee) {
+            return id - employee.id;
+        }
+
     }
 
 }
