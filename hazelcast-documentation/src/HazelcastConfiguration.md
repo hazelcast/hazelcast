@@ -68,7 +68,7 @@ config.addMapConfig( mapConfig );
 After creating `Config` object, you can use it to create a new Hazelcast instance.
 
 -   `HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance( config );`
-<a name="named-hazelcastinstance"></a>
+
 -   To create a named `HazelcastInstance` you should set `instanceName` of `Config` object. 
 
 ```java
@@ -80,7 +80,7 @@ After creating `Config` object, you can use it to create a new Hazelcast instanc
 
     `Hazelcast.getHazelcastInstanceByName( "my-instance" );`
 
--   To retrieve all existing`HazelcastInstance`s, use;
+-   To retrieve all existing `HazelcastInstance`s, use;
 
     `Hazelcast.getAllHazelcastInstances();`
 
@@ -688,7 +688,7 @@ partitionGroupConfig.setEnabled( true )
   <interface>10.10.10.10-100</interface>
   <interface>10.10.1.*</interface>
   <interface>10.10.2.*</interface>
-</member-group
+</member-group>
 </partition-group>
 ```
 
@@ -752,8 +752,8 @@ partitionGroupConfig.setEnabled( true )
 ```java
 Config config = new Config();
 JobTrackerConfig JTcfg = config.getJobTrackerConfig()
-   JTcfg.setName( "default" ).setQueueSize( "0" )
-         .setChunkSize( "1000" )
+JTcfg.setName( "default" ).setQueueSize( "0" )
+         .setChunkSize( "1000" );
 ```
    
 
