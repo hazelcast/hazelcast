@@ -19,6 +19,7 @@ This section provides the new features introduced with Hazelcast 3.3 release.
 
 This section lists issues solved for Hazelcast 3.3 release.
 
+- Hazelcast web session replication filter may die if response committed [[#3360]](https://github.com/hazelcast/hazelcast/issues/3360).
 - Resource adapter state never reset to isStarted == false, resulting in errors down the line [[#3350]](https://github.com/hazelcast/hazelcast/issues/3350).
 - Parallel execution of MapStore#store method for the same key triggered by IMap#flush [[#3338]](https://github.com/hazelcast/hazelcast/issues/3338).
 - when offer null argument in queue throws an exception but add null arg to collection then addAll() this list to queue it doesn't throw an exception [[#3330]](https://github.com/hazelcast/hazelcast/issues/3330).

@@ -128,7 +128,7 @@ public class ClientMapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testMapper() throws Exception {
         Config config = buildConfig();
 
@@ -158,7 +158,7 @@ public class ClientMapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testMapperReducer() throws Exception {
         Config config = buildConfig();
 
@@ -195,7 +195,7 @@ public class ClientMapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testMapperCollator() throws Exception {
         Config config = buildConfig();
 
@@ -226,7 +226,7 @@ public class ClientMapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testKeyedMapperCollator() throws Exception {
         Config config = buildConfig();
 
@@ -253,7 +253,7 @@ public class ClientMapReduceTest
         assertEquals(50, result);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testKeyPredicateMapperCollator() throws Exception {
         Config config = buildConfig();
 
@@ -281,7 +281,7 @@ public class ClientMapReduceTest
         assertEquals(50, result);
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testMapperReducerCollator() throws Exception {
         Config config = buildConfig();
 
@@ -317,7 +317,7 @@ public class ClientMapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testAsyncMapper() throws Exception {
         Config config = buildConfig();
 
@@ -364,7 +364,7 @@ public class ClientMapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testKeyedAsyncMapper() throws Exception {
         Config config = buildConfig();
 
@@ -411,7 +411,7 @@ public class ClientMapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testAsyncMapperReducer() throws Exception {
         Config config = buildConfig();
 
@@ -465,7 +465,7 @@ public class ClientMapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testAsyncMapperCollator() throws Exception {
         Config config = buildConfig();
 
@@ -518,7 +518,7 @@ public class ClientMapReduceTest
         }
     }
 
-    @Test(timeout = 60000)
+    @Test(timeout = 120000)
     public void testAsyncMapperReducerCollator() throws Exception {
         Config config = buildConfig();
 
@@ -623,7 +623,7 @@ public class ClientMapReduceTest
     public static class TestReducer
             extends Reducer<Integer, Integer> {
 
-        private transient int sum = 0;
+        private volatile int sum = 0;
 
         @Override
         public void reduce(Integer value) {

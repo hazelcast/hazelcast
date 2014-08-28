@@ -17,10 +17,6 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.impl.client.AuthenticationRequest;
-import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
@@ -32,6 +28,10 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
+import com.hazelcast.client.impl.client.AuthenticationRequest;
+import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
@@ -251,6 +251,8 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         final HeartBeat heartBeat = new HeartBeat();
         executionService.scheduleWithFixedDelay(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
+        final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
+        clusterService.addMembershipListenerWithoutInit(this);
     }
 
     @Override
@@ -265,8 +267,6 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         inSelector.shutdown();
         outSelector.shutdown();
         connectionLockMap.clear();
-        final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
-        clusterService.addMembershipListenerWithoutInit(this);
     }
 
     @Override

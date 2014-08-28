@@ -31,6 +31,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
