@@ -76,12 +76,12 @@ public class CoalescingDelayedTrigger {
         long now = Clock.currentTimeMillis();
         if (delay + now > hardLimit) {
             scheduleNewExecution(now);
-        } else if (!tryPostponeExecution(now)) {
+        } else if (!tryPostponeExecution()) {
             scheduleNewExecution(now);
         }
     }
 
-    private boolean tryPostponeExecution(long now) {
+    private boolean tryPostponeExecution() {
         boolean cancel = future.cancel(false);
         if (!cancel) {
             return false;
