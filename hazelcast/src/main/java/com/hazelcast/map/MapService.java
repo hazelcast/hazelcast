@@ -959,11 +959,19 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void scheduleMapStoreWrite(String mapName, Data key, Object value, long delay) {
-        getMapContainer(mapName).getMapStoreScheduler().schedule(delay, key, value);
+        final MapContainer mapContainer = getMapContainer(mapName);
+        final EntryTaskScheduler mapStoreScheduler = mapContainer.getMapStoreScheduler();
+        if (mapStoreScheduler != null) {
+            mapStoreScheduler.schedule(delay, key, value);
+        }
     }
 
     public void scheduleMapStoreDelete(String mapName, Data key, long delay) {
-        getMapContainer(mapName).getMapStoreScheduler().schedule(delay, key, null);
+        final MapContainer mapContainer = getMapContainer(mapName);
+        final EntryTaskScheduler mapStoreScheduler = mapContainer.getMapStoreScheduler();
+        if (mapStoreScheduler != null) {
+            mapStoreScheduler.schedule(delay, key, null);
+        }
     }
 
     public SerializationService getSerializationService() {

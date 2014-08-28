@@ -94,6 +94,43 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class MapStoreTest extends HazelcastTestSupport {
 
+
+    @Test
+    public void testTwoNodesOnlyOneHasWriteDelayConfigNoNPE() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
+        Config config1= new Config();
+        String mapName = randomMapName();
+        MapConfig mapConfig1 = new MapConfig(mapName);
+        MapStoreConfig mapStoreConfig1 = new MapStoreConfig();
+        MapStoreWithStoreCount mapstoreImpl1 = new MapStoreWithStoreCount(1, 0);
+        mapStoreConfig1.setImplementation(mapstoreImpl1);
+        mapStoreConfig1.setEnabled(true);
+        mapStoreConfig1.setWriteDelaySeconds(5);
+        mapConfig1.setMapStoreConfig(mapStoreConfig1);
+        config1.addMapConfig(mapConfig1);
+
+        Config config2 = new Config();
+        MapConfig mapConfig2 = new MapConfig(mapName);
+        MapStoreConfig mapStoreConfig2 = new MapStoreConfig();
+        mapStoreConfig2.setEnabled(true);
+        MapStoreWithStoreCount mapstoreImpl2 = new MapStoreWithStoreCount(1, 0);
+        mapStoreConfig2.setImplementation(mapstoreImpl2);
+        mapStoreConfig2.setWriteDelaySeconds(0);
+        mapConfig2.setMapStoreConfig(mapStoreConfig2);
+        config2.addMapConfig(mapConfig2);
+
+        final HazelcastInstance instance1 = factory.newHazelcastInstance(config1);
+        final HazelcastInstance instance2 = factory.newHazelcastInstance(config2);
+
+        final IMap<Object, Object> map = instance1.getMap(mapName);
+        final String key = generateKeyOwnedBy(instance1);
+        map.put(key, 1);
+        assertOpenEventually(mapstoreImpl1.latch);
+        assertEquals(0,mapstoreImpl2.count.get());
+
+    }
+
     @Test
     public void testMapGetAll() throws InterruptedException {
 
