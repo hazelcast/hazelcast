@@ -94,11 +94,8 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
 
     @Override
     public Operation getBackupOperation() {
-        long itemId = 0L;
-        if (response != null) {
-            final QueueItem item = (QueueItem) response;
-            itemId = item.getItemId();
-        }
+        final QueueItem item = (QueueItem) response;
+        long itemId = item.getItemId();
         return new TxnReservePollBackupOperation(name, itemId, transactionId);
     }
 }
