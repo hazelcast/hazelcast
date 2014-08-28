@@ -24,7 +24,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,7 +67,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         client1.start();
 
         HazelcastTestSupport.assertJoinable(client1);
-        assertEquals(SimpleMapStore.MAX_KEYS, client1.mapSize);
+        assertSizeEventually(SimpleMapStore.MAX_KEYS, client1.map);
     }
 
     @Test
@@ -84,7 +83,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         HazelcastTestSupport.assertJoinable(clientThreads);
 
         for (ClientThread c : clientThreads) {
-            assertEquals(SimpleMapStore.MAX_KEYS, c.mapSize);
+            assertSizeEventually(SimpleMapStore.MAX_KEYS, c.map);
         }
     }
 
@@ -99,7 +98,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
         HazelcastTestSupport.assertJoinable(client1);
 
-        assertEquals(SimpleMapStore.MAX_KEYS, client1.mapSize);
+        assertSizeEventually(SimpleMapStore.MAX_KEYS, client1.map);
     }
 
     @Test
@@ -269,12 +268,12 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
     private class ClientThread extends Thread {
 
-        public volatile int mapSize = 0;
+        IMap<String, String> map;
 
         public void run() {
             HazelcastInstance client = HazelcastClient.newHazelcastClient();
-            IMap<String, String> map = client.getMap(ClientMapStoreTest.MAP_NAME);
-            mapSize = map.size();
+            map = client.getMap(ClientMapStoreTest.MAP_NAME);
+            map.size();
         }
     }
 
@@ -334,56 +333,55 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     }
 
 
-
     @Test
     public void testIssue3023_testWithSubStringMapNames() throws Exception {
         String mapNameWithStore = "MapStore*";
         String mapNameWithStoreAndSize = "MapStoreMaxSize*";
 
-        String xml ="<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n" +
-                       "                             http://www.hazelcast.com/schema/config/hazelcast-config-3.2.xsd\"\n" +
-                       "                             xmlns=\"http://www.hazelcast.com/schema/config\"\n" +
-                       "                             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
-                       "\n" +
-                       "    <map name=\""+mapNameWithStore+"\">\n" +
-                       "        <map-store enabled=\"true\">\n" +
-                       "            <class-name>com.will.cause.problem.if.used</class-name>\n" +
-                       "            <write-delay-seconds>5</write-delay-seconds>\n" +
-                       "        </map-store>\n" +
-                       "    </map>\n" +
-                       "\n" +
-                       "    <map name=\""+mapNameWithStoreAndSize+"\">\n" +
-                       "        <in-memory-format>BINARY</in-memory-format>\n" +
-                       "        <backup-count>1</backup-count>\n" +
-                       "        <async-backup-count>0</async-backup-count>\n" +
-                       "        <max-idle-seconds>0</max-idle-seconds>\n" +
-                       "        <eviction-policy>LRU</eviction-policy>\n" +
-                       "        <max-size policy=\"PER_NODE\">10</max-size>\n" +
-                       "        <eviction-percentage>50</eviction-percentage>\n" +
-                       "\n" +
-                       "        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n" +
-                       "\n" +
-                       "        <map-store enabled=\"true\">\n" +
-                       "            <class-name>com.hazelcast.client.map.helpers.AMapStore</class-name>\n" +
-                       "            <write-delay-seconds>5</write-delay-seconds>\n" +
-                       "        </map-store>\n" +
-                       "    </map>\n" +
-                       "\n" +
-                       "</hazelcast>";
+        String xml = "<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n" +
+                "                             http://www.hazelcast.com/schema/config/hazelcast-config-3.2.xsd\"\n" +
+                "                             xmlns=\"http://www.hazelcast.com/schema/config\"\n" +
+                "                             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                "\n" +
+                "    <map name=\"" + mapNameWithStore + "\">\n" +
+                "        <map-store enabled=\"true\">\n" +
+                "            <class-name>com.will.cause.problem.if.used</class-name>\n" +
+                "            <write-delay-seconds>5</write-delay-seconds>\n" +
+                "        </map-store>\n" +
+                "    </map>\n" +
+                "\n" +
+                "    <map name=\"" + mapNameWithStoreAndSize + "\">\n" +
+                "        <in-memory-format>BINARY</in-memory-format>\n" +
+                "        <backup-count>1</backup-count>\n" +
+                "        <async-backup-count>0</async-backup-count>\n" +
+                "        <max-idle-seconds>0</max-idle-seconds>\n" +
+                "        <eviction-policy>LRU</eviction-policy>\n" +
+                "        <max-size policy=\"PER_NODE\">10</max-size>\n" +
+                "        <eviction-percentage>50</eviction-percentage>\n" +
+                "\n" +
+                "        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n" +
+                "\n" +
+                "        <map-store enabled=\"true\">\n" +
+                "            <class-name>com.hazelcast.client.map.helpers.AMapStore</class-name>\n" +
+                "            <write-delay-seconds>5</write-delay-seconds>\n" +
+                "        </map-store>\n" +
+                "    </map>\n" +
+                "\n" +
+                "</hazelcast>";
 
         Config config = buildConfig(xml);
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
-        IMap map = client.getMap(mapNameWithStoreAndSize+"1");
-        map.put(1,1);
+        IMap map = client.getMap(mapNameWithStoreAndSize + "1");
+        map.put(1, 1);
 
-        final AMapStore store = (AMapStore) (hz.getConfig().getMapConfig(mapNameWithStoreAndSize+"1").getMapStoreConfig().getImplementation());
+        final AMapStore store = (AMapStore) (hz.getConfig().getMapConfig(mapNameWithStoreAndSize + "1").getMapStoreConfig().getImplementation());
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals( 1,  store.store.get(1));
+                assertEquals(1, store.store.get(1));
             }
         });
     }
