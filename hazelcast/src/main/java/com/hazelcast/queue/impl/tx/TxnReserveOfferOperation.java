@@ -18,9 +18,10 @@ package com.hazelcast.queue.impl.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.queue.impl.QueueBackupAwareOperation;
 import com.hazelcast.queue.impl.QueueContainer;
 import com.hazelcast.queue.impl.QueueDataSerializerHook;
-import com.hazelcast.queue.impl.QueueOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
@@ -29,7 +30,7 @@ import java.io.IOException;
 /**
  * Reserve offer operation for the transactional queue.
  */
-public class TxnReserveOfferOperation extends QueueOperation implements WaitSupport {
+public class TxnReserveOfferOperation extends QueueBackupAwareOperation implements WaitSupport {
 
     private int txSize;
 
@@ -86,5 +87,15 @@ public class TxnReserveOfferOperation extends QueueOperation implements WaitSupp
         super.readInternal(in);
         txSize = in.readInt();
         transactionId = in.readUTF();
+    }
+
+    @Override
+    public boolean shouldBackup() {
+        return response != null;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new TxnReserveOfferBackupOperation(name, (Long) response, transactionId);
     }
 }
