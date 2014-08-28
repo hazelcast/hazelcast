@@ -308,7 +308,7 @@ public class GroupProperties {
         MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_MAX_NO_HEARTBEAT_SECONDS, "300");
         MASTER_CONFIRMATION_INTERVAL_SECONDS
                 = new GroupProperty(config, PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "30");
-        MAX_NO_MASTER_CONFIRMATION_SECONDS = new GroupProperty(config, PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "300");
+        MAX_NO_MASTER_CONFIRMATION_SECONDS = new GroupProperty(config, PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "500");
         MEMBER_LIST_PUBLISH_INTERVAL_SECONDS
                 = new GroupProperty(config, PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "300");
         ICMP_ENABLED = new GroupProperty(config, PROP_ICMP_ENABLED, "false");
