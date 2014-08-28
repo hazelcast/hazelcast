@@ -16,44 +16,49 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ServiceLoaderTest {
 
     @Test
-    public void selectingSimpleSingleClassLoader()
-            throws Exception {
+    public void selectingSimpleSingleClassLoader() {
 
         List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(null);
         assertEquals(1, classLoaders.size());
     }
 
     @Test
-    public void selectingSimpleGivenClassLoader()
-            throws Exception {
+    public void selectingSimpleGivenClassLoader() {
 
         List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(new URLClassLoader(new URL[0]));
         assertEquals(2, classLoaders.size());
     }
 
     @Test
-    public void selectingSimpleDifferentThreadContextClassLoader()
-            throws Exception {
+    public void selectingSimpleDifferentThreadContextClassLoader() {
 
         Thread currentThread = Thread.currentThread();
         ClassLoader tccl = currentThread.getContextClassLoader();
@@ -64,8 +69,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void selectingTcclAndGivenClassLoader()
-            throws Exception {
+    public void selectingTcclAndGivenClassLoader() {
 
         Thread currentThread = Thread.currentThread();
         ClassLoader tccl = currentThread.getContextClassLoader();
@@ -76,8 +80,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void selectingSameTcclAndGivenClassLoader()
-            throws Exception {
+    public void selectingSameTcclAndGivenClassLoader() {
 
         ClassLoader same = new URLClassLoader(new URL[0]);
 
@@ -90,8 +93,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSingleClassLoader()
-            throws Exception {
+    public void loadServicesSingleClassLoader() {
 
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
@@ -106,8 +108,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSimpleGivenClassLoader()
-            throws Exception {
+    public void loadServicesSimpleGivenClassLoader() {
 
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
@@ -124,8 +125,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSimpleDifferentThreadContextClassLoader()
-            throws Exception {
+    public void loadServicesSimpleDifferentThreadContextClassLoader() {
 
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
@@ -145,8 +145,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesTcclAndGivenClassLoader()
-            throws Exception {
+    public void loadServicesTcclAndGivenClassLoader() {
 
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
@@ -168,8 +167,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSameTcclAndGivenClassLoader()
-            throws Exception {
+    public void loadServicesSameTcclAndGivenClassLoader() {
 
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
@@ -190,10 +188,111 @@ public class ServiceLoaderTest {
         assertEquals(1, implementations.size());
     }
 
+    @Test
+    public void loadServicesGivenClassLoaderWithChildFirstOrdering() throws ClassNotFoundException {
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+        String className = "com.hazelcast.util.ServiceLoaderTest$ServiceLoaderTestInterface";
+
+        URLClassLoader parentClassLoader = (URLClassLoader)ServiceLoaderTest.class.getClassLoader();
+        ClassLoader childClassLoader = new ChildFirstClassLoader(parentClassLoader);
+        Class<?> serviceType = childClassLoader.loadClass(className);
+
+        Set<Object> implementations = new HashSet<Object>();
+        Iterator<?> iterator = ServiceLoader.iterator(serviceType, factoryId, childClassLoader);
+        while (iterator.hasNext()) {
+            Object serviceImpl = iterator.next();
+            serviceImpl.getClass().isAssignableFrom(serviceType);
+            implementations.add(serviceImpl);
+        }
+
+        assertEquals(1, implementations.size());
+    }
+
+    @Test(expected=NoSuchElementException.class)
+    public void iteratorExhaustedTest() {
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, null);
+        try {
+            assertTrue(iterator.hasNext());
+            assertNotNull(iterator.next());
+            assertFalse(iterator.hasNext());
+        }
+        catch (NoSuchElementException e) {
+            fail("Methods must not throw NoSuchElementException");
+        }
+        iterator.next();
+    }
+
+    @Test(expected=NoSuchElementException.class)
+    public void iteratorExhaustedTestNoPrefetching() {
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, null);
+        try {
+            assertNotNull(iterator.next());
+        }
+        catch (NoSuchElementException e) {
+            fail("Methods must not throw NoSuchElementException");
+        }
+        iterator.next();
+    }
+
+    @Test
+    public void iteratorHasNextDoesNotAdvance() {
+        Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
+
+        Iterator<ServiceLoaderTestInterface> iterator = ServiceLoader.iterator(type, factoryId, null);
+        assertTrue(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+    }
+
     public static interface ServiceLoaderTestInterface {
     }
 
     public static class ServiceLoaderTestInterfaceImpl
             implements ServiceLoaderTestInterface {
+    }
+
+    /**
+     * This classloader loads any class name starting with com.hazelcast.util itself instead of asking the parent.
+     * Other classes are loaded parent first.
+     */
+    public static class ChildFirstClassLoader extends URLClassLoader {
+        private static final Pattern pattern = Pattern.compile("^com\\.hazelcast\\.util\\..*$");
+        public ChildFirstClassLoader(URLClassLoader classLoader) {
+            super(classLoader.getURLs(), classLoader);
+        }
+
+        @Override
+        protected Class<?> loadClass(final String name,
+            final boolean resolve)
+            throws ClassNotFoundException {
+
+            final Matcher matcher = pattern.matcher(name);
+            if (matcher.matches()) {
+                return loadFromThisClassLoader(name, resolve);
+            }
+            else {
+                return super.loadClass(name, resolve);
+            }
+        }
+
+        private synchronized Class<?> loadFromThisClassLoader(String name, boolean resolve)
+                throws ClassNotFoundException {
+
+            Class<?> c = findLoadedClass(name);
+            if (c == null) {
+                c = findClass(name);
+            }
+            if (resolve) {
+                resolveClass(c);
+            }
+            return c;
+        }
     }
 }
