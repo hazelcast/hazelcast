@@ -25,7 +25,15 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
+import java.util.List;
 
 /**
  * This class is a special Predicate which helps to get a page-by-page result of a query
@@ -167,15 +175,15 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
             for (QueryableEntry entry : set) {
                 // For comparison, objects to compare must be Comparable instance
                 if (SortingUtil.isSuitableForCompare(comparator, iterationType, entry)) {
-                    if (anchor != null &&
-                            SortingUtil.compare(comparator, iterationType, anchor, entry) >= 0) {
+                    if (anchor != null
+                            && SortingUtil.compare(comparator, iterationType, anchor, entry) >= 0) {
                         continue;
                     }
                     list.add(entry);
                 } else {
                     throw new IllegalArgumentException(
-                            "If there is no comparator, " +
-                                    "objects to compare (keys or values) must be comparable !");
+                            "If there is no comparator, "
+                                    + "objects to compare (keys or values) must be comparable !");
                 }
             }
             if (list.isEmpty()) {
