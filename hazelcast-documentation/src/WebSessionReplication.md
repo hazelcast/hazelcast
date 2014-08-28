@@ -5,7 +5,7 @@ If you are using Tomcat as your web container, please see our [Tomcat based Web 
 
 ### Sample Code
 
-please see our sample application for [Filter Based Web Session Replication](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/filter-based-session-replication)
+Please see our sample application for [Filter Based Web Session Replication](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/filter-based-session-replication).
 
 ### Filter Based Web Session Replication
 
@@ -172,7 +172,7 @@ It is that easy. All HTTP requests will go through Hazelcast `WebFilter` and it 
 
 ### Spring Security Support
 
-please see our sample application for [Spring Security Support](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-security)
+Please see our sample application for [Spring Security Support](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-security).
 
 If Spring based security is used for application, you should use `com.hazelcast.web.spring.SpringAwareWebFilter` instead of `com.hazelcast.web.WebFilter` in your filter definition.
 

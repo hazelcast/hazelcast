@@ -54,6 +54,6 @@ try {
 
 ### Sample Code
 
-please see our sample application for [J2EE Integration](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/jca-ra)
+Please see our sample application for [J2EE Integration](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/jca-ra).
 
 

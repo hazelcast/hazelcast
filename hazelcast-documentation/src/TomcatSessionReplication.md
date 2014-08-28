@@ -7,7 +7,7 @@
 
 ### Sample Code
 
-please see our sample application for [Tomcat Based Web Session Replication](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/tomcat-session-replication)
+Please see our sample application for [Tomcat Based Web Session Replication](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/tomcat-session-replication).
 
 #### Overview
 
