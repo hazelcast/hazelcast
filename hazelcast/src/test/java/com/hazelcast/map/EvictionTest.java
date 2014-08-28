@@ -79,7 +79,7 @@ public class EvictionTest extends HazelcastTestSupport {
         Thread.sleep(5000);
         assertEquals(true, map.containsKey(1));
         map.put(1, "value2", 10, TimeUnit.SECONDS);
-        Thread.sleep(2000);
+        Thread.sleep(7500);
         assertEquals(true, map.containsKey(1));
         map.put(1, "value3", 10, TimeUnit.SECONDS);
         assertEquals(true, map.containsKey(1));
