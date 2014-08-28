@@ -26,7 +26,6 @@ import java.util.Set;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
-import static junit.framework.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -62,7 +61,7 @@ public class ClientMapStoreTest {
         client1.start();
 
         HazelcastTestSupport.assertJoinable(client1);
-        assertEquals(SimpleMapStore.MAX_KEYS, client1.mapSize);
+        assertSizeEventually(SimpleMapStore.MAX_KEYS, client1.map);
     }
 
     @Test
@@ -78,7 +77,7 @@ public class ClientMapStoreTest {
         HazelcastTestSupport.assertJoinable(clientThreads);
 
         for (ClientThread c : clientThreads) {
-            assertEquals(SimpleMapStore.MAX_KEYS, c.mapSize);
+            assertSizeEventually(SimpleMapStore.MAX_KEYS, c.map);
         }
     }
 
@@ -93,7 +92,7 @@ public class ClientMapStoreTest {
 
         HazelcastTestSupport.assertJoinable(client1);
 
-        assertEquals(SimpleMapStore.MAX_KEYS, client1.mapSize);
+        assertSizeEventually(SimpleMapStore.MAX_KEYS, client1.map);
     }
 
     @Test
@@ -164,12 +163,11 @@ public class ClientMapStoreTest {
 
     class ClientThread extends Thread {
 
-        public volatile int mapSize = 0;
+        IMap<String, String> map;
 
         public void run() {
             HazelcastInstance client = HazelcastClient.newHazelcastClient();
-            IMap<String, String> map = client.getMap(ClientMapStoreTest.MAP_NAME);
-            mapSize = map.size();
+            map = client.getMap(ClientMapStoreTest.MAP_NAME);
         }
     }
 }
