@@ -18,17 +18,19 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class HazelcastTest {
+public class HazelcastTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void getOrCreateHazelcastInstance_nullConfig() {
@@ -43,8 +45,8 @@ public class HazelcastTest {
 
     @Test
     public void getOrCreateHazelcastInstance_noneExisting() {
-        Config config = new Config(uniqueName());
-        config.getGroupConfig().setName(uniqueName());
+        Config config = new Config(randomString());
+        config.getGroupConfig().setName(randomString());
 
         HazelcastInstance hz = Hazelcast.getOrCreateHazelcastInstance(config);
 
@@ -56,17 +58,14 @@ public class HazelcastTest {
 
     @Test
     public void getOrCreateHazelcastInstance_existing() {
-        Config config = new Config(uniqueName());
-        config.getGroupConfig().setName(uniqueName());
+        Config config = new Config(randomString());
+        config.getGroupConfig().setName(randomString());
 
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+
         HazelcastInstance hz2 = Hazelcast.getOrCreateHazelcastInstance(config);
 
         assertSame(hz1, hz2);
         hz1.shutdown();
-    }
-
-    public String uniqueName() {
-        return UuidUtil.buildRandomUuidString();
     }
 }

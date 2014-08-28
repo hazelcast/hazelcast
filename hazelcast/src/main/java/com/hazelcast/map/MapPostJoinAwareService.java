@@ -8,7 +8,7 @@ import java.util.Map;
 
 class MapPostJoinAwareService implements PostJoinAwareService {
 
-    private MapServiceContext mapServiceContext;
+    private final MapServiceContext mapServiceContext;
 
     public MapPostJoinAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;

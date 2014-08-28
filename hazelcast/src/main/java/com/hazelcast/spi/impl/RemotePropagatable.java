@@ -14,33 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.logging;
+package com.hazelcast.spi.impl;
 
-import com.hazelcast.util.Clock;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.ResponseHandler;
 
-public abstract class SystemLog {
-    enum Type {
-        NODE,
-        JOIN,
-        CONNECTION,
-        PARTITION,
-        CALL,
-        NONE
-    }
+public interface RemotePropagatable<T extends RemotePropagatable> {
 
-    protected long date = Clock.currentTimeMillis();
+    ResponseHandler getResponseHandler();
 
-    protected Type type = Type.NONE;
+    T setResponseHandler(ResponseHandler responseHandler);
 
-    public long getDate() {
-        return date;
-    }
+    long getCallId();
 
-    public Type getType() {
-        return type;
-    }
+    boolean returnsResponse();
 
-    public void setType(Type type) {
-        this.type = type;
-    }
+    Connection getConnection();
+
+    boolean isUrgent();
+
+    Address getCallerAddress();
+
+    void logError(Throwable t);
 }

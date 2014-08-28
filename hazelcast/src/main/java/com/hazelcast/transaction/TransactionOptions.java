@@ -28,11 +28,15 @@ import java.util.concurrent.TimeUnit;
  */
 public final class TransactionOptions implements DataSerializable {
 
+    /** 2 minutes as default timeout value */
+    public static final long DEFAULT_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(2);
+
     private long timeoutMillis;
 
     private int durability;
 
     private TransactionType transactionType;
+
 
     /**
      * Creates a new default configured TransactionsOptions.
@@ -40,7 +44,7 @@ public final class TransactionOptions implements DataSerializable {
      * It will be configured with a timeout of 2 minutes, durability of 1 and a TransactionType.TWO_PHASE.
      */
     public TransactionOptions() {
-        setTimeout(2, TimeUnit.MINUTES).setDurability(1).setTransactionType(TransactionType.TWO_PHASE);
+        setDurability(1).setTransactionType(TransactionType.TWO_PHASE).setDefaultTimeout();
     }
 
     /**
@@ -95,13 +99,17 @@ public final class TransactionOptions implements DataSerializable {
      * @see #getTimeoutMillis()
      */
     public TransactionOptions setTimeout(long timeout, TimeUnit timeUnit) {
-        if (timeout <= 0) {
-            throw new IllegalArgumentException("Timeout must be positive!");
+        if (timeout < 0) {
+            throw new IllegalArgumentException("Timeout can not be negative!");
         }
         if (timeUnit == null) {
             throw new IllegalArgumentException("timeunit can't be null");
         }
-        this.timeoutMillis = timeUnit.toMillis(timeout);
+        if (timeout == 0) {
+            setDefaultTimeout();
+        } else {
+            this.timeoutMillis = timeUnit.toMillis(timeout);
+        }
         return this;
     }
 
@@ -142,6 +150,11 @@ public final class TransactionOptions implements DataSerializable {
     public static TransactionOptions getDefault() {
         return new TransactionOptions();
     }
+
+    private void setDefaultTimeout() {
+        timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
+    }
+
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {

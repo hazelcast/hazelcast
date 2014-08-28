@@ -4,6 +4,7 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -63,6 +64,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
         assertEquals(10, stats.getRejectedOfferOperationCount());
     }
 
+
     @Test
     public void testPollOperationCount() throws InterruptedException {
         IQueue queue = newQueue();
@@ -80,8 +82,15 @@ public class QueueStatisticsTest extends AbstractQueueTest {
             queue.poll();
         }
 
-        LocalQueueStats stats = queue.getLocalQueueStats();
-        assertEquals(30, stats.getPollOperationCount());
+
+        final LocalQueueStats stats = queue.getLocalQueueStats();
+        AssertTask task = new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(30, stats.getPollOperationCount());
+            }
+        };
+        assertTrueEventually(task);
     }
 
     @Test
@@ -92,8 +101,14 @@ public class QueueStatisticsTest extends AbstractQueueTest {
             queue.poll();
         }
 
-        LocalQueueStats stats = queue.getLocalQueueStats();
-        assertEquals(10, stats.getEmptyPollOperationCount());
+        final LocalQueueStats stats = queue.getLocalQueueStats();
+        AssertTask task = new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(10, stats.getEmptyPollOperationCount());
+            }
+        };
+        assertTrueEventually(task);
     }
 
     @Test

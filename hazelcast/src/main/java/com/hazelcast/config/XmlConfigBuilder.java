@@ -58,7 +58,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     private static final int DEFAULT_VALUE = 5;
     private static final int THOUSAND_FACTOR = 5;
-    private static final int FIVE = 5;
 
     private Config config;
     private InputStream in;
@@ -1137,7 +1136,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
         final Node intervalNode = attrs.getNamedItem("update-interval");
         final int interval = intervalNode != null ? getIntegerValue("update-interval",
-                getTextContent(intervalNode), DEFAULT_VALUE) : FIVE;
+                getTextContent(intervalNode), ManagementCenterConfig.UPDATE_INTERVAL) : ManagementCenterConfig.UPDATE_INTERVAL;
 
         final String url = getTextContent(node);
         ManagementCenterConfig managementCenterConfig = config.getManagementCenterConfig();

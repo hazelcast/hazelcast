@@ -81,7 +81,7 @@ final class TransactionProxy {
     }
 
     public boolean setTimeoutMillis(long timeoutMillis) {
-        if (state == NO_TXN) {
+        if (state == NO_TXN && options.getTimeoutMillis() != timeoutMillis) {
             options.setTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
             return true;
         }

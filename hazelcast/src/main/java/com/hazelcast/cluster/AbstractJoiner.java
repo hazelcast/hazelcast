@@ -17,14 +17,11 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
@@ -33,8 +30,8 @@ import com.hazelcast.util.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -52,18 +49,17 @@ public abstract class AbstractJoiner implements Joiner {
 
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
     private final AtomicInteger tryCount = new AtomicInteger(0);
-    private final Set<Address> blacklistedAddresses = Collections.synchronizedSet(new HashSet<Address>());
+    protected final Set<Address> blacklistedAddresses
+            = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
     protected final Config config;
     protected final Node node;
     protected final ILogger logger;
-    protected final SystemLogService systemLogService;
 
     private volatile Address targetAddress;
 
     public AbstractJoiner(Node node) {
         this.node = node;
-        this.systemLogService = node.getSystemLogService();
-        this.logger = node.loggingService.getLogger(this.getClass().getName());
+        this.logger = node.loggingService.getLogger(getClass());
         this.config = node.config;
     }
 
@@ -81,7 +77,7 @@ public abstract class AbstractJoiner implements Joiner {
     public abstract void doJoin();
 
     @Override
-    public void join() {
+    public final void join() {
         blacklistedAddresses.clear();
         doJoin();
         postJoin();
@@ -90,7 +86,9 @@ public abstract class AbstractJoiner implements Joiner {
     private void postJoin() {
         blacklistedAddresses.clear();
 
-        systemLogService.logJoin("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
+        if (logger.isFinestEnabled()) {
+            logger.finest("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
+        }
         if (!node.isActive()) {
             return;
         }
@@ -98,72 +96,54 @@ public abstract class AbstractJoiner implements Joiner {
             logger.warning("Join try count exceed limit, setting this node as master!");
             node.setAsMaster();
         }
-        if (!node.isMaster()) {
-            boolean allConnected = false;
+
+        if (node.joined()) {
+            if (!node.isMaster()) {
+                ensureConnectionToAllMembers();
+            }
+
+            if (node.getClusterService().getSize() == 1) {
+                final StringBuilder sb = new StringBuilder("\n");
+                sb.append(node.clusterService.membersString());
+                logger.info(sb.toString());
+            }
+        }
+    }
+
+    private void ensureConnectionToAllMembers() {
+        boolean allConnected = false;
+        if (node.joined()) {
+            logger.finest("Waiting for all connections");
+            int connectAllWaitSeconds = node.groupProperties.CONNECT_ALL_WAIT_SECONDS.getInteger();
             int checkCount = 0;
-            final long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
-            if (node.joined()) {
-                systemLogService.logJoin("Waiting for all connections");
-                while (checkCount++ < node.groupProperties.CONNECT_ALL_WAIT_SECONDS.getInteger() && !allConnected) {
-                    try {
-                        //noinspection BusyWait
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ignored) {
-                    }
-                    Set<Member> members = node.getClusterService().getMembers();
-                    allConnected = true;
-                    for (Member member : members) {
-                        MemberImpl memberImpl = (MemberImpl) member;
-                        if (!memberImpl.localMember() && node.connectionManager.getOrConnect(memberImpl.getAddress()) == null) {
-                            allConnected = false;
-                            systemLogService.logJoin("Not-connected to " + memberImpl.getAddress());
+            while (checkCount++ < connectAllWaitSeconds && !allConnected) {
+                try {
+                    //noinspection BusyWait
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {
+                }
+
+                allConnected = true;
+                Collection<MemberImpl> members = node.getClusterService().getMemberList();
+                for (MemberImpl member : members) {
+                    if (!member.localMember() && node.connectionManager.getOrConnect(member.getAddress()) == null) {
+                        allConnected = false;
+                        if (logger.isFinestEnabled()) {
+                            logger.finest("Not-connected to " + member.getAddress());
                         }
                     }
                 }
             }
-            if (!node.joined() || !allConnected) {
-                if (Clock.currentTimeMillis() - getStartTime() < maxJoinMillis) {
-                    logger.warning("Failed to connect, node joined= " + node.joined() + ", allConnected= " +
-                            allConnected + " to all other members after " + checkCount + " seconds.");
-                    logger.warning("Rebooting after 10 seconds.");
-                    try {
-                        Thread.sleep(10000);
-                        node.rejoin();
-                    } catch (InterruptedException e) {
-                        logger.warning(e);
-                        node.shutdown(false);
-                    }
-                } else {
-                    throw new HazelcastException("Failed to join in " + (maxJoinMillis / 1000) + " seconds!");
-                }
-                return;
-            }
-        }
-        if (node.getClusterService().getSize() == 1) {
-            final StringBuilder sb = new StringBuilder("\n");
-            sb.append(node.clusterService.membersString());
-            logger.info(sb.toString());
         }
     }
 
-    protected void failedJoiningToMaster(boolean multicast, int tryCount) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n");
-        sb.append("======================================================");
-        sb.append("\n");
-        sb.append("Couldn't connect to discovered master! tryCount: ").append(tryCount);
-        sb.append("\n");
-        sb.append("address: ").append(node.getThisAddress());
-        sb.append("\n");
-        sb.append("masterAddress: ").append(node.getMasterAddress());
-        sb.append("\n");
-        sb.append("multicast: ").append(multicast);
-        sb.append("\n");
-        sb.append("connection: ").append(node.connectionManager.getConnection(node.getMasterAddress()));
-        sb.append("\n");
-        sb.append("======================================================");
-        sb.append("\n");
-        throw new IllegalStateException(sb.toString());
+    protected final long getMaxJoinMillis() {return node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000L;}
+
+    protected final long getMaxJoinTimeToMasterNode() {
+        // max join time to found master node,
+        // this should be significantly greater than MAX_WAIT_SECONDS_BEFORE_JOIN property
+        // hence we add 10 seconds more
+        return (node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) * 1000L;
     }
 
     boolean shouldMerge(JoinMessage joinRequest) {
@@ -223,18 +203,6 @@ public abstract class AbstractJoiner implements Joiner {
             }
         }
         return shouldMerge;
-    }
-
-    protected void connectAndSendJoinRequest(Collection<Address> colPossibleAddresses) {
-        for (Address possibleAddress : colPossibleAddresses) {
-            final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
-            if (conn != null) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("sending join request for " + possibleAddress);
-                }
-                node.clusterService.sendJoinRequest(possibleAddress, true);
-            }
-        }
     }
 
     @Override

@@ -1,7 +1,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.map.eviction.EvictionHelper;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
@@ -11,6 +10,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.eviction.EvictionHelper.checkEvictable;
+import static com.hazelcast.map.eviction.EvictionHelper.evictableSize;
 import static com.hazelcast.map.eviction.EvictionHelper.fireEvent;
 import static com.hazelcast.map.eviction.EvictionHelper.removeEvictableRecords;
 
@@ -182,11 +182,17 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     }
 
+    /**
+     * Makes eviction clean-up logic.
+     *
+     * @param now    now in millis.
+     * @param backup <code>true</code> if running on a backup partition, otherwise <code>false</code>
+     */
     private void cleanUp(long now, boolean backup) {
         if (size() == 0) {
             return;
         }
-        if (inEvictableTimeWindow(now) && isEvictable(backup)) {
+        if (inEvictableTimeWindow(now) && isEvictable()) {
             removeEvictables(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
@@ -207,8 +213,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size < 1) {
             return 0;
         }
-        final int evictableSize
-                = EvictionHelper.getEvictableSize(size, mapContainer.getMapConfig(), mapServiceContext);
+        final int evictableSize = evictableSize(size, mapContainer.getMapConfig(), mapServiceContext);
         if (evictableSize < 1) {
             return 0;
         }
@@ -227,8 +232,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                 || (now - lastEvictionTime) > minEvictionCheckMillis;
     }
 
-    private boolean isEvictable(boolean backup) {
-        return checkEvictable(mapContainer, partitionId, backup);
+    private boolean isEvictable() {
+        return checkEvictable(mapContainer, partitionId);
     }
 
     protected Record nullIfExpired(Record record, boolean backup) {

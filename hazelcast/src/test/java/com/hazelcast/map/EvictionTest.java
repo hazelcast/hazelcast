@@ -322,7 +322,6 @@ public class EvictionTest extends HazelcastTestSupport {
             }
             map.put(i, i);
         }
-        System.out.println(map.size());
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -333,41 +332,43 @@ public class EvictionTest extends HazelcastTestSupport {
 
 
     @Test
-    public void testEvictionLRU() {
-        final int k = 2;
-        final int size = 10000;
+    public void testEvictionLRU_sweepsLeastRecentlyUseds() {
+        final int nodeCount = 2;
+        final int perNodeMaxSize = 1000;
 
-        final String mapName = "testEvictionLRU";
+        final String mapName = randomMapName();
         Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
         MapConfig mc = cfg.getMapConfig(mapName);
         mc.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
-        mc.setEvictionPercentage(10);
+        mc.setEvictionPercentage(20);
+        mc.setMinEvictionCheckMillis(0L);
         MaxSizeConfig msc = new MaxSizeConfig();
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
-        msc.setSize(size);
+        msc.setSize(perNodeMaxSize);
         mc.setMaxSizeConfig(msc);
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
         IMap<Object, Object> map = instances[0].getMap(mapName);
-        sleepSeconds(1);
 
-        for (int i = size / 2; i < size; i++) {
-            map.put(i, i);
-        }
-        sleepSeconds(2);
-        for (int i = 0; i < size / 2; i++) {
-            map.put(i, i);
-        }
-        sleepSeconds(1);
-
+        // 1. Use only first half of entries by getting them.
         int recentlyUsedEvicted = 0;
-        for (int i = 0; i < size / 2; i++) {
+        for (int i = 0; i < perNodeMaxSize / 2; i++) {
+            map.put(i, i);
+            map.get(i);
+        }
+        // 2. Over fill map to trigger eviction.
+        for (int i = perNodeMaxSize / 2; i < 5 * perNodeMaxSize; i++) {
+            map.put(i, i);
+        }
+        // 3. These entries should not be evicted.
+        for (int i = 0; i < perNodeMaxSize / 2; i++) {
             if (map.get(i) == null) {
                 recentlyUsedEvicted++;
             }
         }
-        assertTrue(recentlyUsedEvicted == 0);
+        assertEquals(0, recentlyUsedEvicted);
     }
 
 
@@ -801,15 +802,15 @@ public class EvictionTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(config);
 
         IMap<Integer, Integer> map = instances[0].getMap(mapName);
-        // fill map with (2 * maxSize) items.
-        for (int i = 0; i < 2 * maxSize; i++) {
+        // over fill map with (10 * maxSize) items.
+        for (int i = 0; i < 1; i++) {
             map.put(i, i);
         }
 
-        assertBackupsSweepedOnAllNodes(mapName, maxSize, instances);
+        assertBackupsSweptOnAllNodes(mapName, maxSize, instances);
     }
 
-    private void assertBackupsSweepedOnAllNodes(String mapName, int maxSize, HazelcastInstance[] instances) {
+    private void assertBackupsSweptOnAllNodes(String mapName, int maxSize, HazelcastInstance[] instances) {
 
         for (HazelcastInstance instance : instances) {
             final IMap<Integer, Integer> map = instance.getMap(mapName);

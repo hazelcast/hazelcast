@@ -23,6 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.SampleObjects;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ProblematicTest;
@@ -321,7 +322,45 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
         }while(! set.isEmpty());
     }
 
+    // https://github.com/hazelcast/hazelcast/issues/3047
+    @Test
+    public void testIssue3047() {
+        final IMap<Integer, SampleObjects.Employee> map = client.getMap("employeeMap");
+        final int PAGE_SIZE = 5;
+        final int START_ID_FOR_QUERY = 0;
+        final int FINISH_ID_FOR_QUERY = 50;
+        final int queriedElementCount = FINISH_ID_FOR_QUERY - START_ID_FOR_QUERY + 1;
+        final int expectedPageCount =
+                (queriedElementCount / PAGE_SIZE) +
+                        (queriedElementCount % PAGE_SIZE == 0 ? 0 : 1);
 
+        for(int i = 0; i < 1000; i++) {
+            map.put(i,
+                    new SampleObjects.Employee(
+                            i,
+                            "Employee-" + i,
+                            (int)(20 + Math.random() * 60),
+                            true,
+                            Math.random() * 1000));
+        }
+
+        map.addIndex("id", true);
+
+        Predicate pred = Predicates.between("id", START_ID_FOR_QUERY, FINISH_ID_FOR_QUERY);
+
+        PagingPredicate predicate = new PagingPredicate(pred, PAGE_SIZE);
+        Collection<SampleObjects.Employee> values;
+        int passedPageCount = 0;
+
+        for (   values = map.values(predicate); !values.isEmpty() &&
+                passedPageCount <= expectedPageCount; // To prevent from infinite loop
+                values = map.values(predicate)) {
+            predicate.nextPage();
+            passedPageCount++;
+        }
+
+        assertEquals(expectedPageCount, passedPageCount);
+    }
 
     static class TestComparator implements Comparator<Map.Entry>, Serializable {
 

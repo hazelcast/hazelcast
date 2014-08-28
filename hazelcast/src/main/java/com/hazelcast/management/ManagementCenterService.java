@@ -84,7 +84,7 @@ public class ManagementCenterService {
     static final int HTTP_SUCCESS = 200;
     static final int CONNECTION_TIMEOUT_MILLIS = 5000;
     static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
-    static final long DEFAULT_UPDATE_INTERVAL = 5000;
+    static final long DEFAULT_UPDATE_INTERVAL = 3000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;

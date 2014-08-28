@@ -67,6 +67,9 @@ public class XAResourceWrapper implements XAResource {
     public void end(Xid xid, int flags) throws XAException {
         managedConnection.log(Level.FINEST, "XA end: " + xid + ", " + flags);
         validateInner();
+        if (flags != TMSUSPEND) {
+            isStarted = false;
+        }
         inner.end(xid, flags);
     }
 

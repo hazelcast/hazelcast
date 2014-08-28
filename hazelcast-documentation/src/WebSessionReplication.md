@@ -3,6 +3,10 @@
 
 If you are using Tomcat as your web container, please see our [Tomcat based Web Session Replication](#tomcat-based-web-session-replication).
 
+### Sample Code
+
+Please see our sample application for [Filter Based Web Session Replication](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/filter-based-session-replication).
+
 ### Filter Based Web Session Replication
 
 Assume that you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down, your users on that server will be directed to one of the live servers (B or C), but their sessions will be lost.
@@ -162,7 +166,15 @@ Here are the steps to setup Hazelcast Session Clustering:
 </listener>
 ```
 
-- If Spring based security is used for application, you should use `com.hazelcast.web.spring.SpringAwareWebFilter` instead of `com.hazelcast.web.WebFilter` in your filter definition.
+- Package and deploy your `war` file as you would normally do.
+
+It is that easy. All HTTP requests will go through Hazelcast `WebFilter` and it will put the session objects into Hazelcast distributed map if needed.
+
+### Spring Security Support
+
+Please see our sample application for [Spring Security Support](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-security).
+
+If Spring based security is used for application, you should use `com.hazelcast.web.spring.SpringAwareWebFilter` instead of `com.hazelcast.web.WebFilter` in your filter definition.
 
 ```xml
 ...
@@ -176,13 +188,12 @@ Here are the steps to setup Hazelcast Session Clustering:
 ...
 ```
 
-`SpringAwareWebFilter` makes Spring aware about Hazelcast based sessions by publishing events to Spring context and these events are used by `org.springframework.security.core.session.SessionRegistry` instance. 
+`SpringAwareWebFilter` notifies Spring by publishing events to Spring context and these events are used by `org.springframework.security.core.session.SessionRegistry` instance. 
 
 As like before, you must also define `com.hazelcast.web.SessionListener` in your `web.xml`. However, it is not needed to define `org.springframework.security.web.session.HttpSessionEventPublisher` in your `web.xml` as before, since `SpringAwareWebFilter` already informs Spring about session based events like create or destroy. 
 
-- Package and deploy your `war` file as you would normally do.
 
-It is that easy. All HTTP requests will go through Hazelcast `WebFilter` and it will put the session objects into Hazelcast distributed map if needed.
+
 
 #### Client Mode vs. P2P Mode
 

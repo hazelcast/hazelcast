@@ -209,6 +209,14 @@ public final class HazelcastInstanceFactory {
     }
 
     public static void shutdownAll() {
+        shutdownAll(false);
+    }
+
+    public static void terminateAll() {
+        shutdownAll(true);
+    }
+
+    private static void shutdownAll(boolean terminate) {
         final List<HazelcastInstanceProxy> instances = new LinkedList<HazelcastInstanceProxy>();
         for (InstanceFuture f : INSTANCE_MAP.values()) {
             try {
@@ -227,7 +235,11 @@ public final class HazelcastInstanceFactory {
             }
         });
         for (HazelcastInstanceProxy proxy : instances) {
-            proxy.getLifecycleService().shutdown();
+            if (terminate) {
+                proxy.getLifecycleService().terminate();
+            } else {
+                proxy.getLifecycleService().shutdown();
+            }
             proxy.original = null;
         }
     }

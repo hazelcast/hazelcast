@@ -135,13 +135,6 @@ public class NodeMulticastListener implements MulticastListener {
         if (isMessageToSelf(joinMessage)) {
             return false;
         }
-
-//        try {
-//            return node.getClusterService().validateJoinMessage(joinMessage);
-//        } catch (Exception e) {
-//            return false;
-//        }
-
         return true;
     }
 
