@@ -51,9 +51,9 @@ import java.util.concurrent.TimeUnit;
 public class QueueContainer implements IdentifiedDataSerializable {
 
     private LinkedList<QueueItem> itemQueue;
-    private HashMap<Long, QueueItem> backupMap;
+    private Map<Long, QueueItem> backupMap;
     private final Map<Long, TxQueueItem> txMap = new HashMap<Long, TxQueueItem>();
-    private final HashMap<Long, Data> dataMap = new HashMap<Long, Data>();
+    private final Map<Long, Data> dataMap = new HashMap<Long, Data>();
 
     private QueueConfig config;
     private QueueStoreWrapper store;

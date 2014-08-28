@@ -66,7 +66,6 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
     }
 
     public boolean offerInternal(Data data, long timeout) {
-        throwExceptionIfNull(data);
         TxnReserveOfferOperation operation
                 = new TxnReserveOfferOperation(name, timeout, offeredQueue.size(), tx.getTxnId());
         try {
@@ -161,11 +160,5 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
 
     public final String getServiceName() {
         return QueueService.SERVICE_NAME;
-    }
-
-    private void throwExceptionIfNull(Object o) {
-        if (o == null) {
-            throw new NullPointerException("Object is null");
-        }
     }
 }
