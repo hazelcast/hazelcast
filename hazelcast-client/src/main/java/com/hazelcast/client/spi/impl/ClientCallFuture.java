@@ -32,7 +32,6 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.LinkedList;
@@ -54,7 +53,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private final int heartBeatInterval;
     private final int retryCount;
     private final int retryWaitTime;
-
 
     private Object response;
 
@@ -245,8 +243,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         if (handler == null && reSendCount.incrementAndGet() > retryCount) {
             return false;
         }
-        sleep();
-        executionService.execute(new ReSendTask());
+        executionService.schedule(new ReSendTask(), retryWaitTime, TimeUnit.MILLISECONDS);
         return true;
     }
 
@@ -264,14 +261,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     public void setConnection(ClientConnection connection) {
         this.connection = connection;
-    }
-
-    private void sleep() {
-        try {
-            Thread.sleep(retryWaitTime);
-        } catch (InterruptedException ignored) {
-            EmptyStatement.ignore(ignored);
-        }
     }
 
     class ReSendTask implements Runnable {
