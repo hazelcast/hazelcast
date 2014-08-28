@@ -6,14 +6,42 @@ import java.util.Comparator;
 import java.util.Map;
 
 /**
- * @author ali 10/12/13
+ *  Utility class for generating Comparators to be used in sort methods specific to hazelcast classes.
  */
 public final class SortingUtil {
 
     private SortingUtil() {
     }
 
-    public static int compare(Comparator<Map.Entry> comparator, IterationType iterationType, Map.Entry entry1, Map.Entry entry2){
+    public static boolean isSuitableForCompare(Comparator<Map.Entry> comparator,
+                                               IterationType iterationType,
+                                               Map.Entry entry) {
+        if (comparator != null) {
+            return true;
+        }
+        Object comparable;
+        switch (iterationType) {
+            case KEY:
+                comparable = entry.getKey();
+                break;
+            case VALUE:
+                comparable = entry.getValue();
+                break;
+            default: // Possibly ENTRY
+                // If entry is comparable, we can compare them
+                if (entry instanceof Comparable) {
+                    comparable = entry;
+                } else {
+                    // Otherwise, comparing entries directly is not meaningful.
+                    // So keys can be used instead of entries.
+                    comparable = entry.getKey();
+                }
+        }
+        return comparable instanceof Comparable;
+    }
+
+    public static int compare(Comparator<Map.Entry> comparator, IterationType iterationType,
+                              Map.Entry entry1, Map.Entry entry2) {
         if (comparator != null) {
             int result = comparator.compare(entry1, entry2);
             if (result != 0) {
@@ -33,9 +61,17 @@ public final class SortingUtil {
                 comparable1 = entry1.getValue();
                 comparable2 = entry2.getValue();
                 break;
-            default:
-                comparable1 = entry1;
-                comparable2 = entry2;
+            default: // Possibly ENTRY
+                // If entries are comparable, we can compare them
+                if (entry1 instanceof Comparable && entry2 instanceof Comparable) {
+                    comparable1 = entry1;
+                    comparable2 = entry2;
+                } else {
+                    // Otherwise, comparing entries directly is not meaningful.
+                    // So keys can be used instead of map entries.
+                    comparable1 = entry1.getKey();
+                    comparable2 = entry2.getKey();
+                }
                 break;
         }
 
@@ -83,18 +119,20 @@ public final class SortingUtil {
         }
     }
 
-    public static Comparator<Map.Entry> newComparator(final Comparator<Map.Entry> comparator, final IterationType iterationType){
-        return new Comparator<Map.Entry>(){
+    public static Comparator<Map.Entry> newComparator(final Comparator<Map.Entry> comparator,
+                                                      final IterationType iterationType) {
+        return new Comparator<Map.Entry>() {
             public int compare(Map.Entry entry1, Map.Entry entry2) {
                 return SortingUtil.compare(comparator, iterationType, entry1, entry2);
             }
         };
     }
 
-    public static Comparator<Map.Entry> newComparator(final PagingPredicate pagingPredicate){
-        return new Comparator<Map.Entry>(){
+    public static Comparator<Map.Entry> newComparator(final PagingPredicate pagingPredicate) {
+        return new Comparator<Map.Entry>() {
             public int compare(Map.Entry entry1, Map.Entry entry2) {
-                return SortingUtil.compare(pagingPredicate.getComparator(), pagingPredicate.getIterationType(), entry1, entry2);
+                return SortingUtil.compare(pagingPredicate.getComparator(),
+                        pagingPredicate.getIterationType(), entry1, entry2);
             }
         };
     }
