@@ -124,6 +124,8 @@ public class GroupProperties {
     public static final String PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY = "hazelcast.map.write.behind.queue.capacity";
     public static final String PROP_ENTERPRISE_WAN_REP_QUEUESIZE = "hazelcast.enterprise.wanrep.queuesize";
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
+    public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
+            = "hazelcast.migration.min.delay.on.member.removed.seconds";
 
     public final GroupProperty CLIENT_ENGINE_THREAD_COUNT;
 
@@ -261,6 +263,8 @@ public class GroupProperties {
 
     public final GroupProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS;
 
+    public final GroupProperty MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS;
+
     /**
      * @param config
      */
@@ -340,6 +344,8 @@ public class GroupProperties {
                 = new GroupProperty(config, PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY, "50000");
         ENTERPRISE_WAN_REP_QUEUESIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_QUEUESIZE, "100000");
         CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
+        MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
+                = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
     }
 
     public static class GroupProperty {
