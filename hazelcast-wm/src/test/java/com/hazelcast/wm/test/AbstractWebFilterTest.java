@@ -41,7 +41,7 @@ import java.net.URL;
 import java.util.Map.Entry;
 import java.util.Random;
 
-public abstract class AbstractWebFilterTest extends HazelcastTestSupport{
+public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
 
     protected enum RequestType {
 
@@ -118,7 +118,7 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport{
         Hazelcast.shutdownAll();
     }
 
-    private int availablePort() throws IOException {
+    protected int availablePort() throws IOException {
         while (true) {
             int port = (int) (65536 * Math.random());
             try {

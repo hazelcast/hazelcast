@@ -235,7 +235,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             } catch (Exception e) {
                 final String message = "Invalid join request from: " + joinMessage.getAddress() + ", reason:" + e.getMessage();
                 logger.warning(message);
-                node.getSystemLogService().logJoin(message);
                 throw e;
             }
         }

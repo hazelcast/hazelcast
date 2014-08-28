@@ -41,7 +41,6 @@ import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -115,8 +114,6 @@ public class Node {
 
     public final LoggingServiceImpl loggingService;
 
-    private final SystemLogService systemLogService;
-
     private final Joiner joiner;
 
     public final NodeInitializer initializer;
@@ -141,11 +138,9 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         buildInfo = BuildInfoProvider.getBuildInfo();
         serializationService = (SerializationServiceImpl) createSerializationService(hazelcastInstance, config);
-        systemLogService = new SystemLogService(groupProperties.SYSTEM_LOG_ENABLED.getBoolean());
 
         String loggingType = groupProperties.LOGGING_TYPE.getString();
-        loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(),
-                loggingType, buildInfo);
+        loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, buildInfo);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
             addressPicker.pickAddress();
@@ -289,10 +284,6 @@ public class Node {
 
     public ManagementCenterService getManagementCenterService() {
         return managementCenterService;
-    }
-
-    public SystemLogService getSystemLogService() {
-        return systemLogService;
     }
 
     public SerializationService getSerializationService() {
@@ -440,7 +431,6 @@ public class Node {
                     thread.interrupt();
                 }
             }
-            systemLogService.shutdown();
             logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
     }
@@ -514,7 +504,6 @@ public class Node {
 
     public void setJoined() {
         joined.set(true);
-        systemLogService.logJoin("setJoined() master: " + masterAddress);
     }
 
     public JoinRequest createJoinRequest() {
@@ -541,7 +530,6 @@ public class Node {
     }
 
     private void prepareForJoin() {
-        systemLogService.logJoin("Rejoining!");
         masterAddress = null;
         joined.set(false);
         clusterService.reset();
@@ -578,11 +566,9 @@ public class Node {
 
         if (join.getMulticastConfig().isEnabled() && multicastService != null) {
             logger.info("Creating MulticastJoiner");
-            systemLogService.logJoin("Creating MulticastJoiner");
             return new MulticastJoiner(this);
         } else if (join.getTcpIpConfig().isEnabled()) {
             logger.info("Creating TcpIpJoiner");
-            systemLogService.logJoin("Creating TcpIpJoiner");
             return new TcpIpJoiner(this);
         } else if (join.getAwsConfig().isEnabled()) {
             Class clazz;
@@ -590,7 +576,6 @@ public class Node {
                 logger.info("Creating AWSJoiner");
                 clazz = Class.forName("com.hazelcast.cluster.TcpIpJoinerOverAWS");
                 Constructor constructor = clazz.getConstructor(Node.class);
-                systemLogService.logJoin("Creating AWSJoiner");
                 return (Joiner) constructor.newInstance(this);
             } catch (Exception e) {
                 logger.severe("Error while creating AWSJoiner!", e);
@@ -602,7 +587,6 @@ public class Node {
 
     public void setAsMaster() {
         logger.finest("This node is being set as the master");
-        systemLogService.logJoin("No master node found! Setting this node as the master.");
         masterAddress = address;
         setJoined();
     }
