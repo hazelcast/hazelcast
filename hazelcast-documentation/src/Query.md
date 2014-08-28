@@ -162,7 +162,7 @@ values = map.values(pagingPredicate); //Second Page
 ...
 ```
 
-If there is no specified comparator for `PagingPredicate`, collection of keys or values, these you want to get page by page, must be Comparable instance (Must implement `java.lang.Comparable`). Otherwise, `java.lang.IllegalArgument` exception is thrown.
+If a comparator is not specified for `PagingPredicate` and when you want to get collection of keys or values page by page, this collection must be an instance of `Comparable` (i.e. it must implement `java.lang.Comparable`). Otherwise, `java.lang.IllegalArgument` exception is thrown.
 
 Paging Predicate is not supported in Transactional Context.
 
