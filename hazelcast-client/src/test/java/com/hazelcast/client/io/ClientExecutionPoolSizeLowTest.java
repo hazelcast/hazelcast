@@ -91,20 +91,13 @@ public class ClientExecutionPoolSizeLowTest {
     @Test
     public void testOwnerNodeTerminateWithAsyncOperations() throws InterruptedException, ExecutionException {
         for (int i = 0; i < COUNT; i++) {
-            DelegatingFuture f = (DelegatingFuture) map.putAsync(i, i);
+            map.putAsync(i, i);
 
             if (i == COUNT / 2) {
                 server1.getLifecycleService().terminate();
             }
         }
 
-        try {
-            assertSizeEventually(COUNT, map);
-        }finally {
-            System.out.println("-----------------------------");
-//            System.out.println(" total number of retried calls:"+ClientCallFuture.RESEND_COUNT.get());
-//            System.out.println(" retried futures:"+ClientCallFuture.retriedCalls.size());
-        }
+        assertSizeEventually(COUNT, map);
     }
-
 }
