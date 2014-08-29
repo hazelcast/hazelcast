@@ -25,11 +25,11 @@ import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.queue.DataAwareItemEvent;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.security.permission.SetPermission;
@@ -77,10 +77,9 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
 
             private void send(ItemEvent event) {
                 if (endpoint.live()) {
-                    Data item = serializationService.toData(event.getItem());
-                    final ItemEventType eventType = event.getEventType();
-                    final String uuid = event.getMember().getUuid();
-                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, eventType, uuid);
+                    DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
+                    Data item = dataAwareItemEvent.getItemData();
+                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableItemEvent, getCallId());
                 }
             }

@@ -28,6 +28,7 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.queue.DataAwareItemEvent;
 import com.hazelcast.queue.impl.proxy.QueueProxyImpl;
 import com.hazelcast.queue.impl.tx.QueueTransactionRollbackOperation;
 import com.hazelcast.queue.impl.tx.TransactionalQueueProxy;
@@ -205,10 +206,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     @Override
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
-        Object item = nodeEngine.toObject(event.data);
         final MemberImpl member = nodeEngine.getClusterService().getMember(event.caller);
-        ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, item,
-                member);
+        ItemEvent itemEvent = new DataAwareItemEvent(event.name, event.eventType, event.data,
+                member, nodeEngine.getSerializationService());
         if (member == null) {
             if (logger.isLoggable(Level.INFO)) {
                 logger.info("Dropping event " + itemEvent + " from unknown address:" + event.caller);
