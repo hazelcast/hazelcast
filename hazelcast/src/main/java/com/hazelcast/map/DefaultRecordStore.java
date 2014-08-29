@@ -279,7 +279,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         checkIfLoaded();
         Record record = getRecord(key, false);
         if (record == null) {
-            record = loadAndCreateRecordOrNull(key, true);
+            record = loadRecordOrNull(key, true);
         } else {
             accessRecord(record);
         }
@@ -294,7 +294,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         checkIfLoaded();
         Record record = getRecord(dataKey, true);
         if (record == null) {
-            record = loadAndCreateRecordOrNull(dataKey, false);
+            record = loadRecordOrNull(dataKey, false);
         } else {
             accessRecord(record);
         }
@@ -302,7 +302,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
     }
 
-    private Record loadAndCreateRecordOrNull(Data key, boolean enableIndex) {
+    private Record loadRecordOrNull(Data key, boolean enableIndex) {
         Record record = null;
         final Object value = mapDataStore.load(key);
         if (value != null) {
@@ -578,7 +578,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
         Record record = getRecord(key, false);
         if (record == null) {
-            record = loadAndCreateRecordOrNull(key, true);
+            record = loadRecordOrNull(key, true);
         } else {
             accessRecord(record, now);
         }
