@@ -109,8 +109,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     @Override
     public void dispatchEvent(Object event, Object listener) {
         TopicEvent topicEvent = (TopicEvent) event;
-        Object msgObject = nodeEngine.toObject(topicEvent.data);
-        Message message = new Message(topicEvent.name, msgObject, topicEvent.publishTime, topicEvent.publishingMember);
+        Message message = new DataAwareMessage(topicEvent.name, topicEvent.data, topicEvent.publishTime,
+                topicEvent.publishingMember, nodeEngine.getSerializationService());
         incrementReceivedMessages(topicEvent.name);
         MessageListener messageListener = (MessageListener) listener;
         messageListener.onMessage(message);

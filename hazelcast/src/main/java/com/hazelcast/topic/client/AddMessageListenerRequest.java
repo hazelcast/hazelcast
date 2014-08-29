@@ -18,7 +18,6 @@ package com.hazelcast.topic.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.Message;
@@ -29,6 +28,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
+import com.hazelcast.topic.DataAwareMessage;
 import com.hazelcast.topic.TopicPortableHook;
 import com.hazelcast.topic.TopicService;
 
@@ -50,9 +50,8 @@ public class AddMessageListenerRequest extends CallableClientRequest
     @Override
     public String call() throws Exception {
         TopicService service = getService();
-        ClientEngine clientEngine = getClientEngine();
         ClientEndpoint endpoint = getEndpoint();
-        MessageListener listener = new MessageListenerImpl(endpoint, clientEngine, getCallId());
+        MessageListener listener = new MessageListenerImpl(endpoint, getCallId());
         String registrationId = service.addMessageListener(name, listener);
         endpoint.setListenerRegistration(TopicService.SERVICE_NAME, name, registrationId);
         return registrationId;
@@ -90,12 +89,10 @@ public class AddMessageListenerRequest extends CallableClientRequest
 
     private static class MessageListenerImpl implements MessageListener {
         private final ClientEndpoint endpoint;
-        private final ClientEngine clientEngine;
         private final int callId;
 
-        public MessageListenerImpl(ClientEndpoint endpoint, ClientEngine clientEngine, int callId) {
+        public MessageListenerImpl(ClientEndpoint endpoint, int callId) {
             this.endpoint = endpoint;
-            this.clientEngine = clientEngine;
             this.callId = callId;
         }
 
@@ -104,7 +101,8 @@ public class AddMessageListenerRequest extends CallableClientRequest
             if (!endpoint.live()) {
                 return;
             }
-            Data messageData = clientEngine.toData(message.getMessageObject());
+            DataAwareMessage dataAwareMessage = (DataAwareMessage) message;
+            Data messageData = dataAwareMessage.getMessageData();
             String publisherUuid = message.getPublishingMember().getUuid();
             PortableMessage portableMessage = new PortableMessage(messageData, message.getPublishTime(), publisherUuid);
             endpoint.sendEvent(portableMessage, callId);

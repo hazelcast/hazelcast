@@ -16,13 +16,17 @@
 
 package com.hazelcast.queue.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.queue.DataAwareItemEvent;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.security.permission.ActionConstants;
@@ -61,8 +65,8 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeBoolean("i",includeValue);
+        writer.writeUTF("n", name);
+        writer.writeBoolean("i", includeValue);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -72,7 +76,6 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
 
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
         final QueueService service = getService();
 
         ItemListener listener = new ItemListener() {
@@ -84,9 +87,10 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
                 send(item);
             }
 
-            private void send(ItemEvent event){
-                if (endpoint.live()){
-                    Data item = clientEngine.toData(event.getItem());
+            private void send(ItemEvent event) {
+                if (endpoint.live()) {
+                    DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
+                    Data item = dataAwareItemEvent.getItemData();
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableItemEvent, getCallId());
                 }

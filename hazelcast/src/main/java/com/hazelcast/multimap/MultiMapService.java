@@ -26,6 +26,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.DataAwareEntryEvent;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.txn.TransactionalMultiMapProxy;
@@ -51,6 +52,7 @@ import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -193,8 +195,9 @@ public class MultiMapService implements ManagedService, RemoteService,
     public void dispatchEvent(MultiMapEvent event, EventListener listener) {
         EntryListener entryListener = (EntryListener) listener;
         final MemberImpl member = nodeEngine.getClusterService().getMember(event.getCaller());
-        EntryEvent entryEvent = new EntryEvent(event.getName(), member,
-                event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
+        EntryEvent entryEvent = new DataAwareEntryEvent(member, event.getEventType().getType(), event.getName(), event.getKey(),
+                event.getValue(), null, getSerializationService());
+
         if (member == null) {
             if (logger.isLoggable(Level.INFO)) {
                 logger.info("Dropping event " + entryEvent + " from unknown address:" + event.getCaller());
