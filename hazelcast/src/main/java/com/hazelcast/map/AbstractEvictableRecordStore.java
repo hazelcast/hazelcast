@@ -326,29 +326,15 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (ttl < 1L) {
             return record;
         }
-
-        assert time > 0L : String.format("wrong time %d", time);
-
         final long creationTime = record.getCreationTime();
 
-        // If expiration time is exist, check it
-        if (record.getStatistics() != null && record.getStatistics().getExpirationTime() > 0L) {
-            final long expirationTime = record.getStatistics().getExpirationTime();
+        assert ttl > 0L : String.format("must ttl (%d) > 0", ttl);
+        assert creationTime > 0L : String.format("must creationTime (%d) > 0", creationTime);
+        assert time > 0L : String.format("must time (%d) > 0", time);
+        assert time >= creationTime : String.format("Must time (%d) >= creationTime (%d)",
+                time, creationTime);
 
-            assert expirationTime > creationTime : String.format("must expirationTime > creationTime (%d > %d)",
-                    expirationTime, creationTime);
-
-            result = time > expirationTime;
-        } else {
-            // Otherwise, use creation time
-            assert ttl > 0L : String.format("must ttl > 0 (%d > 0)", ttl);
-            assert creationTime > 0L : String.format("must creationTime > 0 (%d > 0)", creationTime);
-            assert time >= creationTime : String.format("must time >= creationTime (%d >= %d)",
-                    time, creationTime);
-
-            result = time - creationTime >= ttl;
-        }
-
+        result = time - creationTime >= ttl;
         return result ? null : record;
     }
 
