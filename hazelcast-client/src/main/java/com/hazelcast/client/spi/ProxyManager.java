@@ -233,6 +233,10 @@ public final class ProxyManager {
             }
 
             @Override
+            public void beforeListenerRegister() {
+            }
+
+            @Override
             public void onListenerRegister() {
 
             }

@@ -243,6 +243,9 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         if (handler == null && reSendCount.incrementAndGet() > retryCount) {
             return false;
         }
+        if (handler != null) {
+            handler.beforeListenerRegister();
+        }
         executionService.schedule(new ReSendTask(), retryWaitTime, TimeUnit.MILLISECONDS);
         return true;
     }
