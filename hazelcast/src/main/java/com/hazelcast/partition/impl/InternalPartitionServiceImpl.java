@@ -38,6 +38,7 @@ import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
 import com.hazelcast.spi.Callback;
+import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -99,7 +100,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private static final int DEFAULT_PAUSE_MILLIS = 1000;
     private static final int DEFAULT_SLEEP_MILLIS = 10;
     private static final float DEFAULT_MIGRATION_TIMEOUT_MULTIPLICATOR = 1.5f;
-    private static final long MAX_ACTIVATION_DELAY = 1000L;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -121,6 +121,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final BlockingQueue<Runnable> migrationQueue = new LinkedBlockingQueue<Runnable>();
     private final AtomicBoolean migrationActive = new AtomicBoolean(true);
     private final AtomicLong lastRepartitionTime = new AtomicLong();
+    private final CoalescingDelayedTrigger delayedResumeMigrationTrigger;
 
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
@@ -162,9 +163,41 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         proxy = new PartitionServiceProxy(this);
 
         replicaSyncRequests = new AtomicReferenceArray<ReplicaSyncInfo>(new ReplicaSyncInfo[partitionCount]);
-        ScheduledExecutorService scheduledExecutor = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        ScheduledExecutorService scheduledExecutor = executionService.getDefaultScheduledExecutor();
         replicaSyncScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor,
                 new ReplicaSyncEntryProcessor(this), ScheduleType.SCHEDULE_IF_NEW);
+
+
+        long maxMigrationDelayMs = calculateMaxMigrationDelayOnMemberRemoved();
+        long minMigrationDelayMs = calculateMigrationDelayOnMemberRemoved(maxMigrationDelayMs);
+        this.delayedResumeMigrationTrigger = new CoalescingDelayedTrigger(
+                executionService, minMigrationDelayMs, maxMigrationDelayMs, new Runnable() {
+            @Override
+            public void run() {
+                resumeMigration();
+            }
+        });
+
+    }
+
+    private long calculateMaxMigrationDelayOnMemberRemoved() {
+        //hard limit for migration pause is half of the call timeout. otherwise we might experience timeouts
+        return node.groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong() / 2;
+    }
+
+    private long calculateMigrationDelayOnMemberRemoved(long maxDelayMs) {
+        long migrationDelayMs = node.groupProperties.MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS.getLong() * 1000;
+
+        long connectionErrorDetectionIntervalMs = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
+                * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 5;
+        migrationDelayMs = Math.max(migrationDelayMs, connectionErrorDetectionIntervalMs);
+
+        long heartbeatIntervalMs = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getLong() * 1000;
+        migrationDelayMs = Math.max(migrationDelayMs, heartbeatIntervalMs * 3);
+
+        migrationDelayMs = Math.min(migrationDelayMs, maxDelayMs);
+        return migrationDelayMs;
     }
 
     @Override
@@ -337,24 +370,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 migrationQueue.add(new RepartitioningTask());
             }
 
-            // Add a delay before activating migration, to give other nodes time to notice the dead one.
-            long migrationActivationDelay = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
-                    * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 5;
-
-            long callTimeout = node.groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
-            // delay should be smaller than call timeout, otherwise operations may fail because of invalid partition table
-            migrationActivationDelay = Math.min(migrationActivationDelay, callTimeout / 2);
-            migrationActivationDelay = Math.max(migrationActivationDelay, MAX_ACTIVATION_DELAY);
-
-            nodeEngine.getExecutionService().schedule(new Runnable() {
-                @Override
-                public void run() {
-                    resumeMigration();
-                }
-            }, migrationActivationDelay, TimeUnit.MILLISECONDS);
+            resumeMigrationEventually();
         } finally {
             lock.unlock();
         }
+    }
+
+    private void resumeMigrationEventually() {
+        delayedResumeMigrationTrigger.executeWithDelay();
     }
 
     private void promoteFromBackups(Address deadAddress, Address thisAddress) {
