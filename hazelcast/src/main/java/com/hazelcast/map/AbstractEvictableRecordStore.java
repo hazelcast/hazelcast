@@ -236,10 +236,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return checkEvictable(mapContainer, partitionId);
     }
 
-    protected Record nullIfExpired(Record record, boolean backup) {
-        return evictIfNotReachable(record, backup);
-    }
-
     protected void markRecordStoreExpirable(long ttl) {
         if (ttl > 0L) {
             expirable = true;
@@ -256,7 +252,10 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * @param record {@link com.hazelcast.map.record.Record}
      * @return null if evictable.
      */
-    private Record evictIfNotReachable(Record record, boolean backup) {
+    protected Record getOrNullIfExpired(Record record, boolean backup) {
+        if (!expirable) {
+            return record;
+        }
         if (record == null) {
             return null;
         }
