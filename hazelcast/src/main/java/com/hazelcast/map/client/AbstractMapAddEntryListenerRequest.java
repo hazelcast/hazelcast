@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.DataAwareEntryEvent;
 import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -66,13 +67,16 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService();
 
-        EntryListener listener = new EntryAdapter() {
+
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+
             @Override
-            public void onEntryEvent(EntryEvent event) {
+            public void onEntryEvent(EntryEvent<Object, Object> event) {
+                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
                 if (endpoint.live()) {
-                    Data key = serializationService.toData(event.getKey());
-                    Data value = serializationService.toData(event.getValue());
-                    Data oldValue = serializationService.toData(event.getOldValue());
+                    Data key = dataAwareEntryEvent.getKeyData();
+                    Data value = dataAwareEntryEvent.getNewValueData();
+                    Data oldValue = dataAwareEntryEvent.getOldValueData();
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue,
                             event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableEntryEvent, getCallId());
