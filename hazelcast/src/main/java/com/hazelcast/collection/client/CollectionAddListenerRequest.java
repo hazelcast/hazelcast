@@ -64,7 +64,17 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
         final ClientEndpoint endpoint = getEndpoint();
         final ClientEngine clientEngine = getClientEngine();
 
-        ItemListener listener = new ItemListener() {
+        ItemListener listener = createItemListener(endpoint);
+        final EventService eventService = clientEngine.getEventService();
+        final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
+        final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
+        final String registrationId = registration.getId();
+        endpoint.setListenerRegistration(getServiceName(), name, registrationId);
+        return registrationId;
+    }
+
+    private ItemListener createItemListener(final ClientEndpoint endpoint) {
+        return new ItemListener() {
             @Override
             public void itemAdded(ItemEvent item) {
                 send(item);
@@ -79,17 +89,12 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
                 if (endpoint.live()) {
                     DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
                     Data item = dataAwareItemEvent.getItemData();
-                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
+                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(),
+                            event.getMember().getUuid());
                     endpoint.sendEvent(portableItemEvent, getCallId());
                 }
             }
         };
-        final EventService eventService = clientEngine.getEventService();
-        final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
-        final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
-        final String registrationId = registration.getId();
-        endpoint.setListenerRegistration(getServiceName(), name, registrationId);
-        return registrationId;
     }
 
     @Override

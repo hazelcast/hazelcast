@@ -98,7 +98,8 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
                 if (endpoint.live()) {
                     DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
                     Data item = dataAwareItemEvent.getItemData();
-                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
+                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(),
+                            event.getMember().getUuid());
                     endpoint.sendEvent(portableItemEvent, getCallId());
                 }
             }

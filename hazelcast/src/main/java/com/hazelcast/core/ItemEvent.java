@@ -27,9 +27,9 @@ import java.util.EventObject;
 
 public class ItemEvent<E> extends EventObject {
 
+    protected E item;
     private final ItemEventType eventType;
     private final Member member;
-    protected E item;
 
     public ItemEvent(String name, ItemEventType itemEventType, E item, Member member) {
         super(name);

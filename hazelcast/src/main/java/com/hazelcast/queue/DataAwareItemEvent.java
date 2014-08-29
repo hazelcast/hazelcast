@@ -11,12 +11,14 @@ public class DataAwareItemEvent extends ItemEvent {
     protected final Data dataItem;
     private final transient SerializationService serializationService;
 
-    public DataAwareItemEvent(String name, ItemEventType itemEventType, Data dataItem, Member member, SerializationService serializationService) {
+    public DataAwareItemEvent(String name, ItemEventType itemEventType, Data dataItem, Member member,
+                              SerializationService serializationService) {
         super(name, itemEventType, null, member);
         this.dataItem = dataItem;
         this.serializationService = serializationService;
     }
 
+    @Override
     public Object getItem() {
         if (item == null && dataItem != null) {
             item = serializationService.toObject(dataItem);
