@@ -234,17 +234,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         return endpoints.get(conn);
     }
 
-    ClientEndpoint createEndpoint(Connection conn) {
-        if (!conn.live()) {
-            logger.severe("Can't create and endpoint for a dead connection");
-            return null;
-        }
-
-        ClientEndpoint endpoint = new ClientEndpoint(ClientEngineImpl.this, conn);
+    void registerEndpoint(ClientEndpoint endpoint) {
+        final Connection conn = endpoint.getConnection();
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
             logger.severe("An endpoint already exists for connection:" + conn);
         }
-        return endpoint;
     }
 
     ClientEndpoint removeEndpoint(final Connection connection) {
@@ -432,8 +426,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
                 if (request == null) {
                     handlePacketWithNullRequest();
                 } else if (request instanceof AuthenticationRequest) {
-                    endpoint = createEndpoint(conn);
-                    if (endpoint != null) {
+                    if (conn.live()) {
+                        endpoint = new ClientEndpoint(ClientEngineImpl.this, conn);
                         processRequest(endpoint, request);
                     } else {
                         handleEndpointNotCreatedConnectionNotAlive();
