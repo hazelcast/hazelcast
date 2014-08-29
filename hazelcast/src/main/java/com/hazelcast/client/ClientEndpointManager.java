@@ -17,6 +17,8 @@ public interface ClientEndpointManager {
 
     void clear();
 
+    void registerEndpoint(ClientEndpoint endpoint);
+
     void removeEndpoint(ClientEndpoint endpoint);
 
     void removeEndpoint(ClientEndpoint endpoint, boolean closeImmediately);

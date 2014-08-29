@@ -31,9 +31,9 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 
 /**
  * This class is a special Predicate which helps to get a page-by-page result of a query
@@ -82,7 +82,6 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     private final Map<Integer, Map.Entry> anchorMap = new LinkedHashMap<Integer, Map.Entry>();
 
     private IterationType iterationType;
-
 
     /**
      * Used for serialization internally
@@ -174,12 +173,22 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
             List<QueryableEntry> list = new LinkedList<QueryableEntry>();
             Map.Entry anchor = getAnchor();
             for (QueryableEntry entry : set) {
-                if (anchor != null && SortingUtil.compare(comparator, iterationType, anchor, entry) >= 0) {
-                    continue;
+                // For comparison, objects to compare must be Comparable instance
+                if (SortingUtil.isSuitableForCompare(comparator, iterationType, entry)) {
+                    if (anchor != null
+                            && SortingUtil.compare(comparator, iterationType, anchor, entry) >= 0) {
+                        continue;
+                    }
+                    list.add(entry);
+                } else {
+                    throw new IllegalArgumentException(
+                            "If there is no comparator, "
+                                    + "objects to compare (keys or values) must be comparable !");
                 }
-                list.add(entry);
             }
-
+            if (list.isEmpty()) {
+                return null;
+            }
             Collections.sort(list, SortingUtil.newComparator(this));
             if (list.size() > pageSize) {
                 list = list.subList(0, pageSize);
@@ -223,7 +232,6 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      *
      * @param anchor
      */
-
     void setAnchor(Map.Entry anchor) {
         if (anchor == null) {
             previousPage();
@@ -322,4 +330,5 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
             anchorMap.put(key, new AbstractMap.SimpleImmutableEntry(anchorKey, anchorValue));
         }
     }
+
 }
