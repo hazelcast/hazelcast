@@ -51,6 +51,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     public String listen(ClientRequest request, Object key, EventHandler handler) {
         final Future future;
         try {
+            handler.beforeListenerRegister();
             if (key == null) {
                 future = invocationService.invokeOnRandomTarget(request, handler);
             } else {

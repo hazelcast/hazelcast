@@ -33,7 +33,6 @@ import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
@@ -44,10 +43,6 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipAdapter;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -89,7 +84,7 @@ import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_TIMEOU
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 
-public class ClientConnectionManagerImpl extends MembershipAdapter implements ClientConnectionManager, MembershipListener {
+public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
 
     private static final int TIMEOUT_PLUS = 2000;
@@ -242,8 +237,6 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         final HeartBeat heartBeat = new HeartBeat();
         executionService.scheduleWithFixedDelay(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
-        final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
-        clusterService.addMembershipListenerWithoutInit(this);
     }
 
     @Override
@@ -587,14 +580,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         }
     }
 
-    @Override
-    public void memberRemoved(final MembershipEvent event) {
-        final MemberImpl member = (MemberImpl) event.getMember();
-        final Address address = member.getAddress();
-        if (address == null) {
-            LOGGER.warning("Member's address is null " + member);
-            return;
-        }
+    public void removeEndpoint(Address address) {
         final ClientConnection clientConnection = connections.get(address);
         if (clientConnection != null) {
             clientConnection.close();

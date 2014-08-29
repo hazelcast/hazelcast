@@ -1024,6 +1024,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             }
 
             @Override
+            public void beforeListenerRegister() {
+            }
+
+            @Override
             public void onListenerRegister() {
 
             }

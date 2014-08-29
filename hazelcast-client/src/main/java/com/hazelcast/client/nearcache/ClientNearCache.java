@@ -129,6 +129,11 @@ public class ClientNearCache<K> {
                     }
 
                     @Override
+                    public void beforeListenerRegister() {
+                        cache.clear();
+                    }
+
+                    @Override
                     public void onListenerRegister() {
                         cache.clear();
                     }

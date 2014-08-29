@@ -82,6 +82,12 @@ public interface ClientConnectionManager {
     void onConnectionClose(ClientConnection clientConnection);
 
     /**
+     * Called when a member left the cluster
+     * @param address address of the member
+     */
+    void removeEndpoint(Address address);
+
+    /**
      * Removes event handler corresponding to callId from responsible ClientConnection
      *
      * @param callId of event handler registration request

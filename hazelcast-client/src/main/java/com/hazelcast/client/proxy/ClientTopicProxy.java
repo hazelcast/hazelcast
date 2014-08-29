@@ -67,6 +67,10 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
             }
 
             @Override
+            public void beforeListenerRegister() {
+            }
+
+            @Override
             public void onListenerRegister() {
 
             }
