@@ -25,7 +25,7 @@ import java.util.EventObject;
  */
 public class Message<E> extends EventObject {
 
-    private final E messageObject;
+    protected E messageObject;
     private final long publishTime;
     private final Member publishingMember;
 
@@ -38,6 +38,7 @@ public class Message<E> extends EventObject {
 
     /**
      * Returns published message
+     *
      * @return message object
      */
     public E getMessageObject() {
@@ -46,6 +47,7 @@ public class Message<E> extends EventObject {
 
     /**
      * Return the time when the message is published
+     *
      * @return publish time
      */
     public long getPublishTime() {
@@ -54,6 +56,7 @@ public class Message<E> extends EventObject {
 
     /**
      * Returns the member that published the message
+     *
      * @return publishing member
      */
     public Member getPublishingMember() {

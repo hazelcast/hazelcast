@@ -16,10 +16,14 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.map.DataAwareEntryEvent;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.IOUtil;
@@ -56,7 +60,6 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
 
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
         final MultiMapService service = getService();
         EntryListener listener = new EntryAdapter() {
             @Override
@@ -66,10 +69,10 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
 
             private void send(EntryEvent event) {
                 if (endpoint.live()) {
-                    Data key = clientEngine.toData(event.getKey());
-                    Data value = clientEngine.toData(event.getValue());
-                    Data oldValue = clientEngine.toData(event.getOldValue());
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, event.getEventType(), event.getMember().getUuid());
+                    DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+                    Data key = dataAwareEntryEvent.getKeyData();
+                    Data value = dataAwareEntryEvent.getNewValueData();
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, null, event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }
