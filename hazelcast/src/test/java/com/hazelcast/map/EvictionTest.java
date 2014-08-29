@@ -66,22 +66,47 @@ public class EvictionTest extends HazelcastTestSupport {
      */
     @Test
     public void testMapPutWithTTL() throws Exception {
-        int n = 1;
+        final int TTL_IN_SECONDS = 10;
+        final int TTL_IN_MSECS = TTL_IN_SECONDS * 1000;
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         IMap<Integer, String> map = factory.newHazelcastInstance(null).getMap("testMapPutWithTTL");
+
         map.put(1, "value0", 100, TimeUnit.MILLISECONDS);
+
+        // Record is newly added, so it must be there
         assertEquals(true, map.containsKey(1));
+
         Thread.sleep(2500);
+
+        // Anymore, record is evicted, so it mustn't be there
         assertEquals(false, map.containsKey(1));
-        map.put(1, "value1", 10, TimeUnit.SECONDS);
+
+        map.put(1, "value1", TTL_IN_SECONDS, TimeUnit.SECONDS);
+        long creationTime = System.currentTimeMillis();
+
         assertEquals(true, map.containsKey(1));
-        Thread.sleep(5000);
-        assertEquals(true, map.containsKey(1));
-        map.put(1, "value2", 10, TimeUnit.SECONDS);
-        Thread.sleep(7500);
-        assertEquals(true, map.containsKey(1));
-        map.put(1, "value3", 10, TimeUnit.SECONDS);
+
+        // At the end of this loop minimum passed time is 12 seconds, so record must be evicted
+        for (int i = 0; i < 3; i++) {
+            Thread.sleep(4000);
+            if (System.currentTimeMillis() - creationTime > TTL_IN_MSECS) {
+                // TTL Expired, so it mustn't be there
+                assertEquals(false, map.containsKey(1));
+            } else {
+                // Not yet TTL expired, so it must be there
+                assertEquals(true, map.containsKey(1));
+                // Update TTL
+                map.put(1, "value2." + i, TTL_IN_SECONDS, TimeUnit.SECONDS);
+            }
+        }
+
+        // Anymore, record must be evicted because of TTL expiration, so it mustn't be there
+        assertEquals(false, map.containsKey(1));
+
+        map.put(1, "value3", TTL_IN_SECONDS, TimeUnit.SECONDS);
+
+        // Record is newly added, so it must be there
         assertEquals(true, map.containsKey(1));
     }
 
