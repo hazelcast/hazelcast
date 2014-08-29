@@ -23,7 +23,7 @@
 
     <vendor-name>Hazelcast.com</vendor-name>
     <eis-type>Hazelcast</eis-type>
-    <resourceadapter-version>3.3-RC4-SNAPSHOT</resourceadapter-version>
+    <resourceadapter-version>3.4-SNAPSHOT</resourceadapter-version>
 
     <license>
         <description>Copyright (c) 2008-2013, Hazelcast, Inc.</description>
