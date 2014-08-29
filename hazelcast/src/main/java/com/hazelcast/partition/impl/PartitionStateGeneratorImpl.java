@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -565,10 +566,10 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
                 for (PartitionTable table : nodeTables) {
                     Set<Integer> partitions = table.getPartitions(index);
                     if (partitions.size() > avgCount) {
-                        Iterator<Integer> iter = partitions.iterator();
+                        Integer[] partitionArray = partitions.toArray(new Integer[partitions.size()]);
                         while (partitions.size() > avgCount) {
-                            Integer partitionId = iter.next();
-                            iter.remove();
+                            int partitionId = partitionArray[partitions.size() - 1];
+                            partitions.remove(partitionId);
                             partitionQ.add(partitionId);
                         }
                     } else {
@@ -698,7 +699,7 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
             check(index);
             Set<Integer> set = partitions[index];
             if (set == null) {
-                set = new HashSet<Integer>();
+                set = new LinkedHashSet<Integer>();
                 partitions[index] = set;
             }
             return set;
