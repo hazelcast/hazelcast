@@ -25,7 +25,7 @@ public class WatchedOperationExecutor {
         execute(runnable, seconds, latches, eventType, replicatedMaps);
     }
 
-    public void execute(Runnable runnable, int seconds, EntryEventType eventType, int operations, double minimalExpectation, ReplicatedMap... replicatedMaps)
+    public void execute(Runnable runnable, int timeoutSeconds, EntryEventType eventType, int operations, double minimalExpectation, ReplicatedMap... replicatedMaps)
             throws TimeoutException {
 
         if (minimalExpectation < 0. || minimalExpectation > 1.) {
@@ -34,10 +34,10 @@ public class WatchedOperationExecutor {
         int atLeast = (int) (operations * minimalExpectation);
         int[] latches = new int[replicatedMaps.length];
         Arrays.fill(latches, atLeast);
-        execute(runnable, seconds, latches, eventType, replicatedMaps);
+        execute(runnable, timeoutSeconds, latches, eventType, replicatedMaps);
     }
 
-    public void execute(Runnable runnable, int seconds, int[] latches, EntryEventType eventType, ReplicatedMap... replicatedMaps) throws TimeoutException {
+    public void execute(Runnable runnable, int timeoutSeconds, int[] latches, EntryEventType eventType, ReplicatedMap... replicatedMaps) throws TimeoutException {
         final String[] registrationIds = new String[latches.length];
         final WatcherDefinition[] watcherDefinitions = new WatcherDefinition[latches.length];
         for (int i = 0; i < replicatedMaps.length; i++) {
@@ -49,13 +49,13 @@ public class WatchedOperationExecutor {
         }
         try {
             runnable.run();
-            long deadline = TimeUnit.SECONDS.toNanos(seconds);
+            long deadline = TimeUnit.SECONDS.toNanos(timeoutSeconds);
             for (WatcherDefinition definition : watcherDefinitions) {
                 long start = System.nanoTime();
                 definition.await(deadline, TimeUnit.NANOSECONDS);
                 deadline -= System.nanoTime() - start;
                 if (deadline <= 0) {
-                    throw new TimeoutException("Deadline reached");
+                    throw new TimeoutException("Deadline reached. Remaining: "+definition.latch.getCount());
                 }
             }
         } catch (InterruptedException e) {
