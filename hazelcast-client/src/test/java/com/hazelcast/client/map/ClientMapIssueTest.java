@@ -22,8 +22,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.MapService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.spi.EventRegistration;
@@ -38,7 +37,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -62,26 +60,31 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
     @Test
     @Category(ProblematicTest.class)
     public void testListenerRegistrations() throws Exception {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
         final String mapName = randomMapName();
-        final IMap<Object, Object> map = client.getMap(mapName);
+        IMap<Object, Object> map = client.getMap(mapName);
         map.addEntryListener(new EntryAdapter<Object, Object>(), true);
-        Hazelcast.newHazelcastInstance();
-        instance.getLifecycleService().terminate();
-        instance = Hazelcast.newHazelcastInstance();
-        final Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
-        original.setAccessible(true);
-        final HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(instance);
-        final EventService eventService = impl.node.nodeEngine.getEventService();
+
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        instance1.getLifecycleService().terminate();
+        instance1 = Hazelcast.newHazelcastInstance();
+
+        final EventService eventService1 = TestUtil.getNode(instance1).nodeEngine.getEventService();
+        final EventService eventService2 = TestUtil.getNode(instance2).nodeEngine.getEventService();
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final Collection<EventRegistration> regs =
-                        eventService.getRegistrations(MapService.SERVICE_NAME, mapName);
-                assertEquals("there should be only one registrations", 1, regs.size());
+                Collection<EventRegistration> regs1 = eventService1.getRegistrations(MapService.SERVICE_NAME, mapName);
+                Collection<EventRegistration> regs2 = eventService2.getRegistrations(MapService.SERVICE_NAME, mapName);
+
+                assertEquals("there should be only one registration", 1, regs1.size());
+                assertEquals("there should be only one registration", 1, regs2.size());
             }
-        });
+        }, 10);
     }
 
     @Test
