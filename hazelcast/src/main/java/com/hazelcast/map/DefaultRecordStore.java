@@ -208,7 +208,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         checkIfLoaded();
         final long now = getNow();
         for (Record record : records.values()) {
-            if (nullIfExpired(record, false) == null) {
+            if (getOrNullIfExpired(record, false) == null) {
                 continue;
             }
             if (mapServiceContext.compare(name, value, record.getValue())) {
@@ -262,7 +262,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         checkIfLoaded();
         Map<Data, Data> temp = new HashMap<Data, Data>(records.size());
         for (Record record : records.values()) {
-            record = nullIfExpired(record, false);
+            record = getOrNullIfExpired(record, false);
             if (record == null) {
                 continue;
             }
@@ -321,7 +321,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         checkIfLoaded();
         Set<Data> keySet = new HashSet<Data>(records.size());
         for (Record record : records.values()) {
-            record = nullIfExpired(record, false);
+            record = getOrNullIfExpired(record, false);
             if (record == null) {
                 continue;
             }
@@ -335,7 +335,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         checkIfLoaded();
         Collection<Data> values = new ArrayList<Data>(records.size());
         for (Record record : records.values()) {
-            record = nullIfExpired(record, false);
+            record = getOrNullIfExpired(record, false);
             if (record == null) {
                 continue;
             }
@@ -987,7 +987,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     private Record getRecord(Data key, boolean backup) {
         Record record = records.get(key);
-        return nullIfExpired(record, backup);
+        return getOrNullIfExpired(record, backup);
     }
 
 }

@@ -252,7 +252,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * @param record {@link com.hazelcast.map.record.Record}
      * @return null if evictable.
      */
-    protected Record nullIfExpired(Record record, boolean backup) {
+    protected Record getOrNullIfExpired(Record record, boolean backup) {
         if (!expirable) {
             return record;
         }
