@@ -13,6 +13,34 @@ public final class SortingUtil {
     private SortingUtil() {
     }
 
+    public static boolean isSuitableForCompare(Comparator<Map.Entry> comparator,
+                                               IterationType iterationType,
+                                               Map.Entry entry) {
+        if (comparator != null) {
+            return true;
+        }
+        Object comparable;
+        switch (iterationType) {
+            case KEY:
+                comparable = entry.getKey();
+                break;
+            case VALUE:
+                comparable = entry.getValue();
+                break;
+            // Possibly ENTRY
+            default:
+                // If entry is comparable, we can compare them
+                if (entry instanceof Comparable) {
+                    comparable = entry;
+                } else {
+                    // Otherwise, comparing entries directly is not meaningful.
+                    // So keys can be used instead of entries.
+                    comparable = entry.getKey();
+                }
+        }
+        return comparable instanceof Comparable;
+    }
+
     public static int compare(Comparator<Map.Entry> comparator, IterationType iterationType,
                               Map.Entry entry1, Map.Entry entry2) {
         if (comparator != null) {
@@ -35,8 +63,17 @@ public final class SortingUtil {
                 comparable2 = entry2.getValue();
                 break;
             default:
-                comparable1 = entry1;
-                comparable2 = entry2;
+                // Possibly ENTRY
+                // If entries are comparable, we can compare them
+                if (entry1 instanceof Comparable && entry2 instanceof Comparable) {
+                    comparable1 = entry1;
+                    comparable2 = entry2;
+                } else {
+                    // Otherwise, comparing entries directly is not meaningful.
+                    // So keys can be used instead of map entries.
+                    comparable1 = entry1.getKey();
+                    comparable2 = entry2.getKey();
+                }
                 break;
         }
 
