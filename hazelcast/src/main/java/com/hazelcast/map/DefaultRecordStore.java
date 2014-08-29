@@ -279,7 +279,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         checkIfLoaded();
         Record record = getRecord(key, false);
         if (record == null) {
-            record = loadAndCreateRecord(key, true);
+            record = loadAndCreateRecordOrNull(key, true);
         } else {
             accessRecord(record);
         }
@@ -292,10 +292,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey) {
         checkIfLoaded();
-        Record record = records.get(dataKey);
-        record = nullIfExpired(record, true);
+        Record record = getRecord(dataKey, true);
         if (record == null) {
-            record = loadAndCreateRecord(dataKey, false);
+            record = loadAndCreateRecordOrNull(dataKey, false);
         } else {
             accessRecord(record);
         }
@@ -303,7 +302,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
     }
 
-    private Record loadAndCreateRecord(Data key, boolean enableIndex) {
+    private Record loadAndCreateRecordOrNull(Data key, boolean enableIndex) {
         Record record = null;
         final Object value = mapDataStore.load(key);
         if (value != null) {
@@ -576,27 +575,17 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     public Object get(Data key) {
         checkIfLoaded();
         long now = getNow();
-        final Object value = getInternal(key, now);
-        postReadCleanUp(now, false);
-        return value;
-    }
 
-    private Object getInternal(Data key, long now) {
         Record record = getRecord(key, false);
-        Object value;
         if (record == null) {
-            value = mapDataStore.load(key);
-            if (value != null) {
-                record = createRecord(key, value, now);
-                records.put(key, record);
-                saveIndex(record);
-                updateSizeEstimator(calculateRecordHeapCost(record));
-            }
+            record = loadAndCreateRecordOrNull(key, true);
         } else {
             accessRecord(record, now);
-            value = record.getValue();
         }
+        Object value = record == null ? null : record.getValue();
         value = mapServiceContext.interceptGet(name, value);
+
+        postReadCleanUp(now, false);
         return value;
     }
 
