@@ -39,16 +39,7 @@ public class ClientProperties {
     /**
      * Default value of PROP_HEARTBEAT_INTERVAL when user not set it explicitly
      */
-    public static final String PROP_HEARTBEAT_INTERVAL_DEFAULT = "10000";
-
-    /**
-     * Connection is assumed that when max failed heartbeat count exceeds given failed heartbeat count.
-     */
-    public static final String PROP_MAX_FAILED_HEARTBEAT_COUNT = "hazelcast.client.max.failed.heartbeat.count";
-    /**
-     * Default value of PROP_MAX_FAILED_HEARTBEAT_COUNT when user not set it explicitly
-     */
-    public static final String PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT = "3";
+    public static final String PROP_HEARTBEAT_INTERVAL_DEFAULT = "5000";
 
     /**
      * Client will retry requests which either inherently retryable(idempotent client)
@@ -97,7 +88,6 @@ public class ClientProperties {
 
     private final ClientProperty heartbeatTimeout;
     private final ClientProperty heartbeatInterval;
-    private final ClientProperty maxFailedHeartbeatCount;
     private final ClientProperty retryCount;
     private final ClientProperty retryWaitTime;
     private final ClientProperty eventThreadCount;
@@ -107,8 +97,6 @@ public class ClientProperties {
     public ClientProperties(ClientConfig clientConfig) {
         heartbeatTimeout = new ClientProperty(clientConfig, PROP_HEARTBEAT_TIMEOUT, PROP_HEARTBEAT_TIMEOUT_DEFAULT);
         heartbeatInterval = new ClientProperty(clientConfig, PROP_HEARTBEAT_INTERVAL, PROP_HEARTBEAT_INTERVAL_DEFAULT);
-        maxFailedHeartbeatCount = new ClientProperty(clientConfig
-                , PROP_MAX_FAILED_HEARTBEAT_COUNT, PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
         retryCount = new ClientProperty(clientConfig, PROP_REQUEST_RETRY_COUNT, PROP_REQUEST_RETRY_COUNT_DEFAULT);
         retryWaitTime = new ClientProperty(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
         eventThreadCount = new ClientProperty(clientConfig, PROP_EVENT_THREAD_COUNT, PROP_EVENT_THREAD_COUNT_DEFAULT);
@@ -121,10 +109,6 @@ public class ClientProperties {
 
     public ClientProperty getHeartbeatInterval() {
         return heartbeatInterval;
-    }
-
-    public ClientProperty getMaxFailedHeartbeatCount() {
-        return maxFailedHeartbeatCount;
     }
 
     public ClientProperty getRetryCount() {
