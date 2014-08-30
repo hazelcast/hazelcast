@@ -17,7 +17,7 @@
 package com.hazelcast.cache.client;
 
 import com.hazelcast.cache.CachePortableHook;
-import com.hazelcast.cache.operation.CachePutIfAbsentOperation;
+import com.hazelcast.cache.operation.CacheEntryProcessorOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -25,29 +25,29 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
 
-import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
 
-public class CachePutIfAbsentRequest
+public class CacheEntryProcessorRequest
         extends AbstractCacheRequest {
 
     protected Data key;
-    protected Data value;
-    protected ExpiryPolicy expiryPolicy;
-    private int completionId;
+    private EntryProcessor entryProcessor;
+    private Object[] arguments;
 
-    public CachePutIfAbsentRequest() {
+    public CacheEntryProcessorRequest() {
     }
 
-    public CachePutIfAbsentRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
+    public CacheEntryProcessorRequest(String name, Data key, javax.cache.processor.EntryProcessor entryProcessor,
+                                      Object... arguments) {
         super(name);
         this.key = key;
-        this.value = value;
-        this.expiryPolicy = expiryPolicy;
+        this.entryProcessor = entryProcessor;
+        this.arguments = arguments;
     }
 
     public int getClassId() {
-        return CachePortableHook.PUT_IF_ABSENT;
+        return CachePortableHook.ENTRY_PROCESSOR;
     }
 
     protected Object getKey() {
@@ -56,7 +56,7 @@ public class CachePutIfAbsentRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CachePutIfAbsentOperation(name, key, value, expiryPolicy, completionId);
+        return new CacheEntryProcessorOperation(name, key, -1, entryProcessor, arguments);
     }
 
     public void write(PortableWriter writer)
@@ -64,8 +64,14 @@ public class CachePutIfAbsentRequest
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
-        value.writeData(out);
-        out.writeObject(expiryPolicy);
+        out.writeObject(entryProcessor);
+        out.writeBoolean(arguments != null);
+        if (arguments != null) {
+            out.writeInt(arguments.length);
+            for (Object arg : arguments) {
+                out.writeObject(arg);
+            }
+        }
     }
 
     public void read(PortableReader reader)
@@ -74,8 +80,15 @@ public class CachePutIfAbsentRequest
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
-        value = new Data();
-        value.readData(in);
-        expiryPolicy = in.readObject();
+        entryProcessor = in.readObject();
+        final boolean hasArguments = in.readBoolean();
+        if (hasArguments) {
+            final int size = in.readInt();
+            arguments = new Object[size];
+            for (int i = 0; i < size; i++) {
+                arguments[i] = in.readObject();
+            }
+        }
     }
+
 }

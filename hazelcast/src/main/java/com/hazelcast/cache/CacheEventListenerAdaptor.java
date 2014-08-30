@@ -16,11 +16,14 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
+import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryCreatedListener;
 import javax.cache.event.CacheEntryEvent;
+import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.CacheEntryExpiredListener;
 import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryRemovedListener;
@@ -34,17 +37,24 @@ import java.util.HashSet;
  * @param <K>
  * @param <V>
  */
-public class CacheEventListenerAdaptor<K, V> {
+public class CacheEventListenerAdaptor<K, V>  implements CacheEventListener {
 
-    private CacheEntryCreatedListener cacheEntryCreatedListener;
-    private CacheEntryRemovedListener cacheEntryRemovedListener;
-    private CacheEntryUpdatedListener cacheEntryUpdatedListener;
-    private CacheEntryExpiredListener cacheEntryExpiredListener;
+    private final CacheEntryCreatedListener cacheEntryCreatedListener;
+    private final CacheEntryRemovedListener cacheEntryRemovedListener;
+    private final CacheEntryUpdatedListener cacheEntryUpdatedListener;
+    private final CacheEntryExpiredListener cacheEntryExpiredListener;
+    private final CacheEntryEventFilter<? super K, ? super V> filter;
+    private final boolean isOldValueRequired;
 
-    private transient ICache<K, V> source;
+    private SerializationService serializationService;
 
-    public CacheEventListenerAdaptor(ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    private transient ICache<K,V> source;
+
+    public CacheEventListenerAdaptor(ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
+                                     SerializationService serializationService) {
         this.source = source;
+        this.serializationService = serializationService;
+
         final CacheEntryListener<? super K, ? super V> cacheEntryListener = cacheEntryListenerConfiguration
                 .getCacheEntryListenerFactory().create();
         if (cacheEntryListener instanceof CacheEntryCreatedListener) {
@@ -67,43 +77,76 @@ public class CacheEventListenerAdaptor<K, V> {
         } else {
             this.cacheEntryExpiredListener = null;
         }
+        final Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory = cacheEntryListenerConfiguration
+                .getCacheEntryEventFilterFactory();
+        if(filterFactory != null){
+            filter = filterFactory.create();
+        } else {
+            filter = null;
+        }
+        isOldValueRequired = cacheEntryListenerConfiguration.isOldValueRequired();
     }
 
-    public void handleEvent(NodeEngine nodeEngine, String cacheName, EventType eventType, K key, V newValue, V oldValue) {
-        if (source == null) {
-            //  this.source = nodeEngine.getHazelcastInstance().getDistributedObject(CacheService.SERVICE_NAME, cacheName);
+    @Override
+    public void handleEvent(Object eventObject) {
+        if(eventObject instanceof CacheEventSet){
+            CacheEventSet cacheEventSet = (CacheEventSet) eventObject;
+            handleEvent(cacheEventSet);
         }
-        final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
-        switch (eventType) {
+    }
+
+    private void handleEvent(CacheEventSet cacheEventSet) {
+        final Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvent = createCacheEntryEvent(cacheEventSet);
+
+        switch (cacheEventSet.getEventType()) {
             case CREATED:
                 if (this.cacheEntryCreatedListener != null) {
-                    this.cacheEntryCreatedListener.onCreated(createEventWrapper(event));
+                    this.cacheEntryCreatedListener.onCreated(cacheEntryEvent);
                 }
                 break;
             case UPDATED:
                 if (this.cacheEntryUpdatedListener != null) {
-                    this.cacheEntryUpdatedListener.onUpdated(createEventWrapper(event));
+                    this.cacheEntryUpdatedListener.onUpdated(cacheEntryEvent);
                 }
                 break;
             case REMOVED:
                 if (this.cacheEntryRemovedListener != null) {
-                    this.cacheEntryRemovedListener.onRemoved(createEventWrapper(event));
+                    this.cacheEntryRemovedListener.onRemoved(cacheEntryEvent);
                 }
                 break;
             case EXPIRED:
                 if (this.cacheEntryExpiredListener != null) {
-                    this.cacheEntryExpiredListener.onExpired(createEventWrapper(event));
+                    this.cacheEntryExpiredListener.onExpired(cacheEntryEvent);
                 }
                 break;
             default:
-                throw new IllegalArgumentException("Invalid event type: " + eventType.name());
+                throw new IllegalArgumentException("Invalid event type: " + cacheEventSet.getEventType().name());
         }
     }
 
-    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createEventWrapper(CacheEntryEvent<K, V> event) {
+    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(CacheEventSet cacheEventSet){
         HashSet<CacheEntryEvent<? extends K, ? extends V>> evt = new HashSet<CacheEntryEvent<? extends K, ? extends V>>();
-        evt.add(event);
+        for(CacheEventData cacheEventData:cacheEventSet.getEvents()){
+            final EventType eventType = CacheEventType.convertToEventType(cacheEventData.getCacheEventType());
+            final K key = toObject( cacheEventData.getDataKey() );
+            final V newValue = toObject( cacheEventData.getDataValue() );
+            final V oldValue;
+            if(isOldValueRequired){
+                oldValue = toObject( cacheEventData.getDataOldValue() );
+            } else {
+                oldValue= null;
+            }
+            final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
+            if(filter == null || filter.evaluate(event)){
+                evt.add(event);
+            }
+        }
         return evt;
     }
+
+    private <T> T toObject(Data data){
+        return serializationService.toObject(data);
+    }
+
 
 }

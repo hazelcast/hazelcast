@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 import java.io.IOException;
 
 /**
- * @author mdogan 05/02/14
+ * Cache CreateConfig Operation
  */
 public class CacheCreateConfigOperation
         extends AbstractNamedOperation

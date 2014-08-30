@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 import java.io.IOException;
 
 /**
- * @author mdogan 05/02/14
+ * Cache ManagementConfig Operation
  */
 public class CacheManagementConfigOperation
         extends AbstractNamedOperation
@@ -57,7 +57,7 @@ public class CacheManagementConfigOperation
 
     @Override
     public boolean returnsResponse() {
-        return false;
+        return true;
     }
 
     @Override

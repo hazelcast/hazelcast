@@ -87,4 +87,6 @@ public interface ICacheRecordStore {
 
     CacheStatistics getCacheStats();
 
+    void publishCompletedEvent(String cacheName, int completionId, Data dataKey, int orderKey);
+
 }

@@ -16,54 +16,47 @@
 
 package com.hazelcast.cache.operation;
 
-import com.hazelcast.cache.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupAwareOperation;
 
 import java.io.IOException;
 
 /**
- * Factory for CacheSizeOperation
+ * Base modifying cache operation, this operation publishes COMPLETE events
  */
-public class CacheSizeOperationFactory
-        implements OperationFactory, IdentifiedDataSerializable {
+abstract class AbstractMutatingCacheOperation
+        extends AbstractCacheOperation
+        implements BackupAwareOperation {
 
-    private String name;
+    protected int completionId;
 
-    public CacheSizeOperationFactory() {
+    protected AbstractMutatingCacheOperation() {
     }
 
-    public CacheSizeOperationFactory(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public Operation createOperation() {
-        return new CacheSizeOperation(name);
+    protected AbstractMutatingCacheOperation(String name, Data key, int completionId) {
+        super(name, key);
+        this.completionId = completionId;
     }
 
     @Override
-    public int getFactoryId() {
-        return CacheDataSerializerHook.F_ID;
+    public void afterRun() throws Exception {
+        cache.publishCompletedEvent(name,completionId, key, key.hashCode());
     }
 
     @Override
-    public int getId() {
-        return CacheDataSerializerHook.SIZE_FACTORY;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out)
+    protected void writeInternal(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(name);
+        super.writeInternal(out);
+        out.writeInt(completionId);
     }
 
     @Override
-    public void readData(ObjectDataInput in)
+    protected void readInternal(ObjectDataInput in)
             throws IOException {
-        name = in.readUTF();
+        super.readInternal(in);
+        completionId = in.readInt();
     }
+
 }

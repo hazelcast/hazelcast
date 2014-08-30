@@ -23,7 +23,6 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;

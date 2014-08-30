@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author mdogan 06/02/14
+ * Cache Clear, remove all operation with or without a set of keys provided
  */
 public class CacheClearOperation
         extends PartitionWideCacheOperation
@@ -38,6 +38,7 @@ public class CacheClearOperation
 
     private boolean isRemoveAll;
     private Set<Data> keys;
+    private int completionId;
 
     private boolean shouldBackup;
 
@@ -48,10 +49,11 @@ public class CacheClearOperation
     public CacheClearOperation() {
     }
 
-    public CacheClearOperation(String name, Set<Data> keys, boolean isRemoveAll) {
+    public CacheClearOperation(String name, Set<Data> keys, boolean isRemoveAll, int completionId) {
         super(name);
         this.keys = keys;
         this.isRemoveAll = isRemoveAll;
+        this.completionId = completionId;
     }
 
     @Override
@@ -72,6 +74,9 @@ public class CacheClearOperation
             try {
                 if (keys == null || !filteredKeys.isEmpty()) {
                     cache.clear(filteredKeys, isRemoveAll);
+                    response =  new CacheClearResponse(Boolean.TRUE);
+                    int orderKey = keys != null ? keys.hashCode() : 1;
+                    cache.publishCompletedEvent(name,completionId, new Data(), orderKey);
                 }
             } catch (CacheException e) {
                 response = new CacheClearResponse(e);

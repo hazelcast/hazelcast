@@ -23,17 +23,12 @@ import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.MapEntrySet;
-import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.operation.MapGetAllOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -44,11 +39,12 @@ import java.util.Map;
 import java.util.Set;
 
 public class CacheGetAllRequest
-        extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
+        extends AllPartitionsClientRequest
+        implements Portable, RetryableRequest, SecureRequest {
 
     protected String name;
     private Set<Data> keys = new HashSet<Data>();
-    private ExpiryPolicy expiryPolicy=null;
+    private ExpiryPolicy expiryPolicy = null;
 
     public CacheGetAllRequest() {
     }
@@ -90,7 +86,8 @@ public class CacheGetAllRequest
         return CacheService.SERVICE_NAME;
     }
 
-    public void write(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer)
+            throws IOException {
         writer.writeUTF("n", name);
         writer.writeInt("size", keys.size());
         ObjectDataOutput output = writer.getRawDataOutput();
@@ -102,7 +99,8 @@ public class CacheGetAllRequest
         output.writeObject(expiryPolicy);
     }
 
-    public void read(PortableReader reader) throws IOException {
+    public void read(PortableReader reader)
+            throws IOException {
         name = reader.readUTF("n");
         int size = reader.readInt("size");
         ObjectDataInput input = reader.getRawDataInput();

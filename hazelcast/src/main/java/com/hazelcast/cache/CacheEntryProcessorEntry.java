@@ -163,6 +163,7 @@ public class CacheEntryProcessorEntry<K, V>
                 break;
             case NONE:
                 //NOOP
+                break;
             default:
                 break;
         }

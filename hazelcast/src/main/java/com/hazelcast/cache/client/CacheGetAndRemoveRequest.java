@@ -31,6 +31,7 @@ public class CacheGetAndRemoveRequest
         extends AbstractCacheRequest {
 
     protected Data key;
+    private int completionId;
 
     public CacheGetAndRemoveRequest() {
     }
@@ -50,7 +51,7 @@ public class CacheGetAndRemoveRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheGetAndRemoveOperation(name, key);
+        return new CacheGetAndRemoveOperation(name, key, completionId);
     }
 
     public void write(PortableWriter writer)

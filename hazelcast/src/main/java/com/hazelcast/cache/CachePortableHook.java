@@ -19,6 +19,7 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.client.CacheClearRequest;
 import com.hazelcast.cache.client.CacheContainsKeyRequest;
 import com.hazelcast.cache.client.CacheCreateConfigRequest;
+import com.hazelcast.cache.client.CacheEntryProcessorRequest;
 import com.hazelcast.cache.client.CacheGetAllRequest;
 import com.hazelcast.cache.client.CacheGetAndRemoveRequest;
 import com.hazelcast.cache.client.CacheGetAndReplaceRequest;
@@ -26,11 +27,13 @@ import com.hazelcast.cache.client.CacheGetConfigRequest;
 import com.hazelcast.cache.client.CacheGetRequest;
 import com.hazelcast.cache.client.CacheIterateRequest;
 import com.hazelcast.cache.client.CacheLoadAllRequest;
+import com.hazelcast.cache.client.CacheManagementConfigRequest;
 import com.hazelcast.cache.client.CachePutIfAbsentRequest;
 import com.hazelcast.cache.client.CachePutRequest;
 import com.hazelcast.cache.client.CacheRemoveRequest;
 import com.hazelcast.cache.client.CacheReplaceRequest;
 import com.hazelcast.cache.client.CacheSizeRequest;
+import com.hazelcast.multimap.impl.operations.client.AddEntryListenerRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
@@ -41,33 +44,36 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collection;
 
 /**
- * @author enesakar 2/11/14
+ * Cache Portble factory hook
  */
 public class CachePortableHook
         implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_PORTABLE_FACTORY, -24);
-    public static final int GET = 2;
-    public static final int PUT = 3;
-    public static final int PUT_IF_ABSENT = 4;
-    public static final int REMOVE = 5;
-    public static final int GET_AND_REMOVE = 6;
-    public static final int REPLACE = 7;
-    public static final int GET_AND_REPLACE = 8;
-    public static final int SIZE = 9;
-    public static final int CLEAR = 10;
-    public static final int CONTAINS_KEY = 11;
-    public static final int ITERATE = 12;
-    public static final int ADD_INVALIDATION_LISTENER = 13;
-    public static final int INVALIDATION_MESSAGE = 14;
-    public static final int REMOVE_INVALIDATION_LISTENER = 15;
-    public static final int SEND_STATS = 16;
-    public static final int CREATE_CONFIG = 17;
-    public static final int GET_CONFIG = 18;
-    public static final int GET_ALL = 19;
-    public static final int LOAD_ALL = 20;
+    public static final int GET = 1;
+    public static final int PUT = 2;
+    public static final int PUT_IF_ABSENT = 3;
+    public static final int REMOVE = 4;
+    public static final int GET_AND_REMOVE = 5;
+    public static final int REPLACE = 6;
+    public static final int GET_AND_REPLACE = 7;
+    public static final int SIZE = 8;
+    public static final int CLEAR = 9;
+    public static final int CONTAINS_KEY = 10;
+    public static final int ITERATE = 11;
+    public static final int ADD_INVALIDATION_LISTENER = 12;
+    public static final int INVALIDATION_MESSAGE = 13;
+    public static final int REMOVE_INVALIDATION_LISTENER = 14;
+    public static final int SEND_STATS = 15;
+    public static final int CREATE_CONFIG = 16;
+    public static final int GET_CONFIG = 17;
+    public static final int GET_ALL = 18;
+    public static final int LOAD_ALL = 19;
+    public static final int ENTRY_PROCESSOR = 20;
+    public static final int MANAGEMENT_CONFIG = 21;
+    public static final int ADD_ENTRY_LISTENER = 22;
 
-    public static final int LEN = 20;
+    public static final int LEN = 23;
 
     public int getFactoryId() {
         return F_ID;
@@ -133,30 +139,26 @@ public class CachePortableHook
                         return new CacheIterateRequest();
                     }
                 };
-                //                                constructors[ADD_INVALIDATION_LISTENER] =
-                //                                         new ConstructorFunction<Integer, Portable>() {
-                //                                    public Portable createNew(Integer arg) {
-                //                                        return new CacheAddInvalidationListenerRequest();
-                //                                    }
-                //                                };
-                //                                constructors[INVALIDATION_MESSAGE] =
-                //                                         new ConstructorFunction<Integer, Portable>() {
-                //                                    public Portable createNew(Integer arg) {
-                //                                        return new CacheInvalidationMessage();
-                //                                    }
-                //                                };
-                //                                constructors[REMOVE_INVALIDATION_LISTENER] =
-                //                                         new ConstructorFunction<Integer, Portable>() {
-                //                                    public Portable createNew(Integer arg) {
-                //                                        return new CacheRemoveInvalidationListenerRequest();
-                //                                    }
-                //                                };
-                //                                constructors[SEND_STATS] =
-                //                                          new ConstructorFunction<Integer, Portable>() {
-                //                                    public Portable createNew(Integer arg) {
-                //                                        return new CachePushStatsRequest();
-                //                                    }
-                //                                };
+//                constructors[ADD_INVALIDATION_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+//                    public Portable createNew(Integer arg) {
+//                        return new CacheAddInvalidationListenerRequest();
+//                    }
+//                };
+//                constructors[INVALIDATION_MESSAGE] = new ConstructorFunction<Integer, Portable>() {
+//                    public Portable createNew(Integer arg) {
+//                        return new CacheInvalidationMessage();
+//                    }
+//                };
+//                constructors[REMOVE_INVALIDATION_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+//                    public Portable createNew(Integer arg) {
+//                        return new CacheRemoveInvalidationListenerRequest();
+//                    }
+//                };
+//                constructors[SEND_STATS] = new ConstructorFunction<Integer, Portable>() {
+//                    public Portable createNew(Integer arg) {
+//                        return new CachePushStatsRequest();
+//                    }
+//                };
                 constructors[CREATE_CONFIG] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new CacheCreateConfigRequest();
@@ -175,6 +177,21 @@ public class CachePortableHook
                 constructors[LOAD_ALL] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new CacheLoadAllRequest();
+                    }
+                };
+                constructors[ENTRY_PROCESSOR] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new CacheEntryProcessorRequest();
+                    }
+                };
+                constructors[MANAGEMENT_CONFIG] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new CacheManagementConfigRequest();
+                    }
+                };
+                constructors[ADD_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new AddEntryListenerRequest();
                     }
                 };
             }

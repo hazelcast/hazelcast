@@ -16,18 +16,12 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * Cache event data object used in publish - dispatch
+ * Cache Event Listener
  */
-public interface CacheEventData extends DataSerializable {
+public interface CacheEventListener {
 
-    CacheEventType getCacheEventType();
-    String getName();
-    Data getDataKey();
-    Data getDataValue();
-    Data getDataOldValue();
-    boolean isOldValueAvailable();
+    void handleEvent(Object eventObject);
+
 }

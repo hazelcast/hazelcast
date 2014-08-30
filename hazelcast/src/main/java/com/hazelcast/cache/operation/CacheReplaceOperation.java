@@ -28,11 +28,10 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * @author mdogan 05/02/14
+ * Cache Replace Operation
  */
 public class CacheReplaceOperation
-        extends AbstractCacheOperation
-        implements BackupAwareOperation {
+        extends AbstractMutatingCacheOperation {
 
     private Data value;
     // replace if same
@@ -42,8 +41,8 @@ public class CacheReplaceOperation
     public CacheReplaceOperation() {
     }
 
-    public CacheReplaceOperation(String name, Data key, Data oldValue, Data newValue, ExpiryPolicy expiryPolicy) {
-        super(name, key);
+    public CacheReplaceOperation(String name, Data key, Data oldValue, Data newValue, ExpiryPolicy expiryPolicy, int completionId) {
+        super(name, key, completionId);
         this.value = newValue;
         this.currentValue = oldValue;
         this.expiryPolicy = expiryPolicy;

@@ -27,11 +27,10 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * @author mdogan 05/02/14
+ * Cache Remove Operation
  */
 public class CacheRemoveOperation
-        extends AbstractCacheOperation
-        implements BackupAwareOperation {
+        extends AbstractMutatingCacheOperation {
 
     // if same
     private Data currentValue;
@@ -39,12 +38,12 @@ public class CacheRemoveOperation
     public CacheRemoveOperation() {
     }
 
-    public CacheRemoveOperation(String name, Data key) {
-        super(name, key);
+    public CacheRemoveOperation(String name, Data key, int completionId) {
+        super(name, key, completionId);
     }
 
-    public CacheRemoveOperation(String name, Data key, Data currentValue) {
-        super(name, key);
+    public CacheRemoveOperation(String name, Data key, Data currentValue, int completionId) {
+        super(name, key, completionId);
         this.currentValue = currentValue;
     }
 

@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ReadonlyOperation;
 
 /**
- * @author mdogan 05/02/14
+ * Cache ContainsKey Operation
  */
 public class CacheContainsKeyOperation
         extends AbstractCacheOperation

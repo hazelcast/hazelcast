@@ -22,7 +22,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -33,19 +32,11 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.impl.EventServiceImpl;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
-import javax.cache.event.EventType;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -54,19 +45,18 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CacheService
         implements ManagedService, RemoteService, MigrationAwareService,
-        EventPublishingService<CacheEventData, CacheEventListenerAdaptor> {
+                   EventPublishingService<Object, CacheEventListener> {
 
     /**
      * Service name
      */
     public static final String SERVICE_NAME = "hz:impl:cacheService";
+    private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
+    private final ConcurrentMap<String, CacheStatistics> statistics = new ConcurrentHashMap<String, CacheStatistics>();
     private ILogger logger;
     private NodeEngine nodeEngine;
     private CachePartitionSegment[] segments;
     private ConcurrentMap<String, Map<CacheEntryListenerConfiguration, EventRegistration>> eventRegistrationMap;
-
-    private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
-    private final ConcurrentMap<String, CacheStatistics> statistics = new ConcurrentHashMap<String, CacheStatistics>();
 
     //region ManagedService
     @Override
@@ -116,7 +106,7 @@ public class CacheService
         for (CachePartitionSegment segment : segments) {
             segment.deleteCache(objectName);
         }
-        unregisterAllCacheEntryListener(objectName);
+        deregisterAllListener(objectName);
         enableStatistics(objectName, false);
         enableManagement(objectName, false);
 
@@ -255,68 +245,48 @@ public class CacheService
         }
     }
 
-    public void publishEvent(String cacheName, EventType eventType, Data dataKey, Object oldValue, Object value) {
-        //TODO clean up this event publish thing
-        EventService eventService = getNodeEngine().getEventService();
-        Collection<EventRegistration> candidates = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
+    public void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue, Data dataOldValue,
+                             boolean isOldValueAvailable, int orderKey) {
+        final EventService eventService = getNodeEngine().getEventService();
+        final Collection<EventRegistration> candidates = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
 
         if (candidates.isEmpty()) {
             return;
         }
-        ArrayList<CacheEventListenerAdaptor> syncListWithOldValue = new ArrayList<CacheEventListenerAdaptor>();
-        ArrayList<CacheEventListenerAdaptor> syncListWithoutOldValue = new ArrayList<CacheEventListenerAdaptor>();
-        Set<EventRegistration> registrationsWithOldValue = new HashSet<EventRegistration>();
-        Set<EventRegistration> registrationsWithoutOldValue = new HashSet<EventRegistration>();
-        Object objectValue = toObject(value);
-        Object objectOldValue = toObject(oldValue);
-        for (EventRegistration candidate : candidates) {
-            EventFilter filter = candidate.getFilter();
-
-            final Object key = toObject(dataKey);
-            if (filter instanceof CacheEventFilterAdaptor) {
-                final CacheEventFilterAdaptor<Object, Object> ceFilter = (CacheEventFilterAdaptor<Object, Object>) filter;
-                if (ceFilter.filterEventData(eventType, key, objectValue, objectOldValue)) {
-                    if (ceFilter.isSynchronous()) {
-                        final Object listener = ((EventServiceImpl.Registration) candidate).getListener();
-                        if (ceFilter.isOldValueRequired()) {
-                            syncListWithOldValue.add((CacheEventListenerAdaptor) listener);
-                        } else {
-                            syncListWithoutOldValue.add((CacheEventListenerAdaptor) listener);
-                        }
-                    } else {
-                        if (ceFilter.isOldValueRequired()) {
-                            registrationsWithOldValue.add(candidate);
-                        } else {
-                            registrationsWithoutOldValue.add(candidate);
-                        }
-                    }
-                }
-            }
+        final Object eventData;
+        switch (eventType){
+            case CREATED:
+            case UPDATED:
+            case REMOVED:
+            case EXPIRED:
+                final CacheEventData cacheEventData = new CacheEventDataImpl(cacheName, eventType, dataKey, dataValue, dataOldValue,isOldValueAvailable);
+                CacheEventSet eventSet = new CacheEventSet(eventType);
+                eventSet.addEventData(cacheEventData);
+                eventData = eventSet;
+                break;
+            case EVICTED:
+                eventData = new CacheEventDataImpl(cacheName, CacheEventType.EVICTED, dataKey, null, null, false);
+                break;
+            case INVALIDATED:
+                eventData = new CacheEventDataImpl(cacheName, CacheEventType.INVALIDATED, dataKey, null, null, false);
+                break;
+            case COMPLETED:
+                eventData = new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED, dataKey, dataValue, null, false);
+                break;
+            default:
+                throw new IllegalArgumentException("Event Type not defined to create an eventData during publish : " + eventType.name());
         }
-        if (registrationsWithOldValue.isEmpty() && registrationsWithoutOldValue.isEmpty() && syncListWithOldValue.isEmpty()
-                && syncListWithoutOldValue.isEmpty()) {
+        nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventData, orderKey);
+    }
+
+    public void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
+        final EventService eventService = getNodeEngine().getEventService();
+        final Collection<EventRegistration> candidates = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
+
+        if (candidates.isEmpty()) {
             return;
         }
-        Data dataValue = toData(value);
-        Data dataOldValue = toData(oldValue);
-        if (eventType == EventType.REMOVED || eventType == EventType.EXPIRED) {
-            dataValue = dataValue != null ? dataValue : dataOldValue;
-        }
-        //        final Address caller=null;
-        int orderKey = dataKey.hashCode();
-        CacheEventData eventWithOldValue = new CacheEventData(cacheName, dataKey, dataValue, dataOldValue, eventType);
-        CacheEventData eventWithOutOldValue = new CacheEventData(cacheName, dataKey, dataValue, null, eventType);
-
-        nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithOldValue, eventWithOldValue, orderKey);
-        nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutOldValue, eventWithOutOldValue, orderKey);
-
-        //EXECUTE SYNC LISTENERs
-        for (CacheEventListenerAdaptor listener : syncListWithOldValue) {
-            dispatchEvent(eventWithOldValue, listener);
-        }
-        for (CacheEventListenerAdaptor listener : syncListWithoutOldValue) {
-            dispatchEvent(eventWithOutOldValue, listener);
-        }
+        nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventSet, orderKey);
     }
 
     public NodeEngine getNodeEngine() {
@@ -324,61 +294,25 @@ public class CacheService
     }
 
     @Override
-    public void dispatchEvent(CacheEventData eventData, CacheEventListenerAdaptor listener) {
-        //Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
-        final EventType eventType = eventData.getEventType();
-        final Object key = toObject(eventData.getDataKey());
-        final Object newValue = toObject(eventData.getDataNewValue());
-        final Object oldValue = toObject(eventData.getDataOldValue());
-        listener.handleEvent(nodeEngine, eventData.getName(), eventType, key, newValue, oldValue);
+    public void dispatchEvent(Object event, CacheEventListener listener) {
+        listener.handleEvent(event);
+
     }
 
-    public <K, V> void registerCacheEntryListener(String name, ICache<K, V> source,
-                                                  CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        final CacheEventFilterAdaptor<K, V> eventFilter = new CacheEventFilterAdaptor<K, V>(source,
-                cacheEntryListenerConfiguration);
-        final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(source,
-                cacheEntryListenerConfiguration);
+    public String registerListener(String distributedObjectName, CacheEventListener listener) {
         final EventService eventService = getNodeEngine().getEventService();
         final EventRegistration registration = eventService
-                .registerListener(CacheService.SERVICE_NAME, name, eventFilter, entryListener);
-        Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.get(name);
-        if (map == null) {
-            map = new HashMap<CacheEntryListenerConfiguration, EventRegistration>();
-            eventRegistrationMap.put(name, map);
-        }
-        map.put(cacheEntryListenerConfiguration, registration);
+                .registerListener(CacheService.SERVICE_NAME, distributedObjectName, listener);
+        return registration.getId();
     }
 
-    public <K, V> void unregisterCacheEntryListener(String name,
-                                                    CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.get(name);
-        if (map != null) {
-            final EventRegistration eventRegistration = map.remove(cacheEntryListenerConfiguration);
-            if (eventRegistration != null) {
-                final EventService eventService = getNodeEngine().getEventService();
-                eventService.deregisterListener(SERVICE_NAME, name, eventRegistration.getId());
-            }
-        }
+    public boolean deregisterListener(String name, String registrationId) {
+        final EventService eventService = getNodeEngine().getEventService();
+        return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }
 
-    public void unregisterAllCacheEntryListener(String name) {
-        Map<CacheEntryListenerConfiguration, EventRegistration> map = eventRegistrationMap.remove(name);
-        if (map != null) {
-            final EventService eventService = getNodeEngine().getEventService();
-            for (EventRegistration eventRegistration : map.values()) {
-                eventService.deregisterListener(SERVICE_NAME, name, eventRegistration.getId());
-
-                //try to close the listener
-                if (((EventServiceImpl.Registration) eventRegistration).getListener() instanceof Closeable) {
-                    try {
-                        ((Closeable) eventRegistration).close();
-                    } catch (IOException e) {
-                        //log
-                    }
-                }
-            }
-        }
+    public void deregisterAllListener(String name) {
+        nodeEngine.getEventService().deregisterAllListeners(CacheService.SERVICE_NAME, name);
     }
 
     //endregion

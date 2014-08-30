@@ -33,6 +33,7 @@ public class CacheRemoveRequest
 
     protected Data key;
     protected Data currentValue = null;
+    private int completionId;
 
     public CacheRemoveRequest() {
     }
@@ -58,7 +59,7 @@ public class CacheRemoveRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheRemoveOperation(name, key, currentValue);
+        return new CacheRemoveOperation(name, key, currentValue, completionId);
     }
 
     public void write(PortableWriter writer)

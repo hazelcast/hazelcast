@@ -21,12 +21,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Provides the response service for {@link com.hazelcast.cache.operation.CacheClearOperation}
  */
 public class CacheClearResponse
-        implements IdentifiedDataSerializable {
+        implements IdentifiedDataSerializable, Serializable {
 
     private Object response;
 

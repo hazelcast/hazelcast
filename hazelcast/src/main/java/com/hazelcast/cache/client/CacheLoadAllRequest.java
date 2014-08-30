@@ -16,15 +16,12 @@
 
 package com.hazelcast.cache.client;
 
-import com.hazelcast.cache.CacheClearResponse;
 import com.hazelcast.cache.CachePortableHook;
 import com.hazelcast.cache.CacheService;
-import com.hazelcast.cache.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -33,7 +30,6 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
 
-import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.HashSet;
@@ -41,7 +37,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class CacheLoadAllRequest
-        extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
+        extends AllPartitionsClientRequest
+        implements Portable, RetryableRequest, SecureRequest {
 
     protected String name;
     private Set<Data> keys = new HashSet<Data>();
@@ -71,35 +68,23 @@ public class CacheLoadAllRequest
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        for (Object result : map.values()) {
-            if (result != null && result instanceof CacheClearResponse) {
-                final Object response = ((CacheClearResponse) result).getResponse();
-                if (response instanceof Exception) {
-                    if (completionListener != null) {
-                        completionListener.onException((Exception) response);
-                        return;
-                    }
-                }
-            }
-        }
-
-        MapEntrySet resultSet = new MapEntrySet();
-        CacheService service = getService();
-        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) service.toObject(entry.getValue());
-            Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-            for (Map.Entry<Data, Data> dataEntry : entrySet) {
-                resultSet.add(dataEntry);
-            }
-        }
-        return resultSet;
+        //        for (Object result : map.values()) {
+        //            if (result != null && result instanceof CacheClearResponse) {
+        //                final Object response = ((CacheClearResponse) result).getResponse();
+        //                if (response instanceof Throwable) {
+        //                    throw ExceptionUtil.rethrow((Throwable) response);
+        //                }
+        //            }
+        //        }
+        return map;
     }
 
     public String getServiceName() {
         return CacheService.SERVICE_NAME;
     }
 
-    public void write(PortableWriter writer) throws IOException {
+    public void write(PortableWriter writer)
+            throws IOException {
         writer.writeUTF("n", name);
         writer.writeBoolean("r", replaceExistingValues);
         writer.writeInt("size", keys.size());
@@ -111,7 +96,8 @@ public class CacheLoadAllRequest
         }
     }
 
-    public void read(PortableReader reader) throws IOException {
+    public void read(PortableReader reader)
+            throws IOException {
         name = reader.readUTF("n");
         replaceExistingValues = reader.readBoolean("r");
         int size = reader.readInt("size");
@@ -123,7 +109,6 @@ public class CacheLoadAllRequest
                 keys.add(key);
             }
         }
-
     }
 
     public Permission getRequiredPermission() {

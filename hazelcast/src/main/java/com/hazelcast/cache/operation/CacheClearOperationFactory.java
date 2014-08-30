@@ -29,7 +29,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author mdogan 06/02/14
+ * Factory for Clear Operation
  */
 public class CacheClearOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {
@@ -37,19 +37,21 @@ public class CacheClearOperationFactory
     private String name;
     private Set<Data> keys;
     private boolean isRemoveAll;
+    private int completionId;
 
     public CacheClearOperationFactory() {
     }
 
-    public CacheClearOperationFactory(String name, Set<Data> keys, boolean isRemoveAll) {
+    public CacheClearOperationFactory(String name, Set<Data> keys, boolean isRemoveAll, int completionId) {
         this.name = name;
         this.keys = keys;
         this.isRemoveAll = isRemoveAll;
+        this.completionId = completionId;
     }
 
     @Override
     public Operation createOperation() {
-        return new CacheClearOperation(name, keys, isRemoveAll);
+        return new CacheClearOperation(name, keys, isRemoveAll, completionId);
     }
 
     @Override
@@ -67,6 +69,7 @@ public class CacheClearOperationFactory
             throws IOException {
         out.writeUTF(name);
         out.writeBoolean(isRemoveAll);
+        out.writeInt(completionId);
         out.writeBoolean(keys != null);
         if (keys != null) {
             out.writeInt(keys.size());
@@ -81,6 +84,7 @@ public class CacheClearOperationFactory
             throws IOException {
         name = in.readUTF();
         isRemoveAll = in.readBoolean();
+        completionId = in.readInt();
         boolean isKeysNotNull = in.readBoolean();
         if (isKeysNotNull) {
             int size = in.readInt();

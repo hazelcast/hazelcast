@@ -34,6 +34,7 @@ public class CacheGetAndReplaceRequest
     protected Data key;
     protected Data value;
     protected ExpiryPolicy expiryPolicy;
+    private int completionId;
 
     public CacheGetAndReplaceRequest() {
     }
@@ -55,7 +56,7 @@ public class CacheGetAndReplaceRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheGetAndReplaceOperation(name, key, value, expiryPolicy);
+        return new CacheGetAndReplaceOperation(name, key, value, expiryPolicy, completionId);
     }
 
     public void write(PortableWriter writer)

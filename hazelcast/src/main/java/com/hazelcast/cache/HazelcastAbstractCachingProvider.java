@@ -118,7 +118,9 @@ public abstract class HazelcastAbstractCachingProvider
     }
 
     protected void shutdownHazelcastInstance() {
-        hazelcastInstance.shutdown();
+        if(hazelcastInstance != null){
+            hazelcastInstance.shutdown();
+        }
         hazelcastInstance = null;
     }
 

@@ -19,8 +19,9 @@ package com.hazelcast.cache;
 import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.EventType;
 
-class CacheEntryEventImpl<K, V>
+public class CacheEntryEventImpl<K, V>
         extends CacheEntryEvent<K, V> {
+
     private final K key;
     private final V newValue;
     private final V oldValue;
@@ -59,4 +60,5 @@ class CacheEntryEventImpl<K, V>
         }
         throw new IllegalArgumentException("Unwrapping to " + clazz + " is not supported by this implementation");
     }
+
 }

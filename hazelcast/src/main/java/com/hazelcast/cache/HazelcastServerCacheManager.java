@@ -148,15 +148,16 @@ public class HazelcastServerCacheManager
         return f.getSafely();
     }
 
-    @Override
-    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
-        //REGISTER LISTENERS
-        final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations()
-                .iterator();
-        while (iterator.hasNext()) {
-            final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
-            cacheService.registerCacheEntryListener(cacheConfig.getNameWithPrefix(), source, listenerConfig);
-        }
-    }
+//    @Override
+//    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
+//        //REGISTER LISTENERS
+//        final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations()
+//                .iterator();
+//        while (iterator.hasNext()) {
+//            final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
+//            source.registerCacheEntryListener(listenerConfig);
+////            cacheService.registerCacheEntryListener(cacheConfig.getNameWithPrefix(), source, listenerConfig);
+//        }
+//    }
 
 }

@@ -36,6 +36,7 @@ public class CacheReplaceRequest
     protected Data value;
     protected Data currentValue = null;
     protected ExpiryPolicy expiryPolicy;
+    private int completionId;
 
     public CacheReplaceRequest() {
     }
@@ -65,7 +66,7 @@ public class CacheReplaceRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheReplaceOperation(name, key, currentValue, value, expiryPolicy);
+        return new CacheReplaceOperation(name, key, currentValue, value, expiryPolicy, completionId);
     }
 
     public void write(PortableWriter writer)

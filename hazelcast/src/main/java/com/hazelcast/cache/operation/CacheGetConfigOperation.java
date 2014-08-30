@@ -26,6 +26,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 import java.io.IOException;
 
 /**
+ * Cache GetConfig Operation
  */
 public class CacheGetConfigOperation
         extends PartitionWideCacheOperation

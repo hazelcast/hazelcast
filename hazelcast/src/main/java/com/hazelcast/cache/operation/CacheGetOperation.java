@@ -26,7 +26,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * @author mdogan 05/02/14
+ * Cache Get Operation
  */
 public class CacheGetOperation
         extends AbstractCacheOperation

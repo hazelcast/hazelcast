@@ -6,6 +6,7 @@ import com.hazelcast.core.HazelcastInstance;
 import javax.cache.Cache;
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
+import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
@@ -13,6 +14,7 @@ import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -179,8 +181,11 @@ public abstract class HazelcastCacheManager
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
         if (cache == null) {
-            //remote check
-            final CacheConfig<K, V> cacheConfig = getCacheConfigFromPartition(cacheNameWithPrefix);
+            CacheConfig<K, V> cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
+            if( cacheConfig == null){
+                //remote check
+                cacheConfig = getCacheConfigFromPartition(cacheNameWithPrefix);
+            }
             if (cacheConfig == null) {
                 //no cache found
                 return null;
@@ -333,6 +338,15 @@ public abstract class HazelcastCacheManager
 
     protected abstract <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName);
 
-    protected abstract <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source);
+    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
+        //REGISTER LISTENERS
+        final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations().iterator();
+        while (iterator.hasNext()) {
+            final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
+            iterator.remove();
+            source.registerCacheEntryListener(listenerConfig);
+            //cacheService.registerCacheEntryListener(cacheConfig.getNameWithPrefix(), source, listenerConfig);
+        }
+    }
 
 }

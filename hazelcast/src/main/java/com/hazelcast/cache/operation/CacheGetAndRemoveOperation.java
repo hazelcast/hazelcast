@@ -17,22 +17,24 @@
 package com.hazelcast.cache.operation;
 
 import com.hazelcast.cache.CacheDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
+import java.io.IOException;
+
 /**
- * @author mdogan 05/02/14
+ * Cache GetAndRemove Operation
  */
 public class CacheGetAndRemoveOperation
-        extends AbstractCacheOperation
-        implements BackupAwareOperation {
+        extends AbstractMutatingCacheOperation {
 
     public CacheGetAndRemoveOperation() {
     }
 
-    public CacheGetAndRemoveOperation(String name, Data key) {
-        super(name, key);
+    public CacheGetAndRemoveOperation(String name, Data key, int completionId) {
+        super(name, key, completionId);
     }
 
     @Override

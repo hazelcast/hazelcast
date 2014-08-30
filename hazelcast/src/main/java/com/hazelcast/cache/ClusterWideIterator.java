@@ -25,108 +25,46 @@ import com.hazelcast.spi.Operation;
 
 import javax.cache.Cache;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 /**
- * Provides cluster-wide iterator service for the {@link com.hazelcast.cache.ICache}
+ * Cluster-wide iterator for the {@link com.hazelcast.cache.ICache}
  *
- * @param <K>
- * @param <V>
+ * @param <K> key
+ * @param <V> value
  */
 public class ClusterWideIterator<K, V>
+        extends AbstractClusterWideIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
-    private static final int FETCH_SIZE = 100;
-    CacheKeyIteratorResult result;
     final SerializationService serializationService;
 
-    private final int partitionCount;
-    private int partitionIndex = -1;
-    private int lastTableIndex;
-
-    private final int fetchSize;
-
-    private CacheProxy<K, V> cacheProxy;
-
-    private int index;
-    private int currentIndex = -1;
-
-
     public ClusterWideIterator(CacheProxy<K, V> cacheProxy) {
-        this.cacheProxy = cacheProxy;
+        super(cacheProxy, cacheProxy.getNodeEngine().getPartitionService().getPartitionCount());
         final NodeEngine engine = cacheProxy.getNodeEngine();
         this.serializationService = engine.getSerializationService();
-        this.partitionCount = engine.getPartitionService().getPartitionCount();
-
-        //TODO can be made configurable
-        this.fetchSize = FETCH_SIZE;
         advance();
     }
 
-    @Override
-    public boolean hasNext() {
-        cacheProxy.ensureOpen();
-        if (result != null && index < result.getCount()) {
-            return true;
-        }
-        return advance();
-    }
-
-    @Override
-    public Cache.Entry<K, V> next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
-        }
-        currentIndex = index;
-        index++;
-        final Data keyData = result.getKey(currentIndex);
-        final K key = serializationService.toObject(keyData);
-        final V value = cacheProxy.get(key);
-        return new CacheEntry<K, V>(key, value);
-    }
-
-    @Override
-    public void remove() {
-        cacheProxy.ensureOpen();
-        if (result == null || currentIndex < 0) {
-            throw new IllegalStateException("Iterator.next() must be called before remove()!");
-        }
-        Data keyData = result.getKey(currentIndex);
-        final K key = serializationService.toObject(keyData);
-        cacheProxy.remove(key);
-        currentIndex = -1;
-    }
-
-    private boolean advance() {
-        while (partitionIndex < getPartitionCount()) {
-            if (result == null || result.getCount() < fetchSize || lastTableIndex < 0) {
-                partitionIndex++;
-                lastTableIndex = Integer.MAX_VALUE;
-                result = null;
-                if (partitionIndex == getPartitionCount()) {
-                    return false;
-                }
-            }
-            result = fetch();
-            if (result != null && result.getCount() > 0) {
-                index = 0;
-                lastTableIndex = result.getTableIndex();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected int getPartitionCount() {
-        return partitionCount;
-    }
-
     protected CacheKeyIteratorResult fetch() {
-        final NodeEngine nodeEngine = cacheProxy.getNodeEngine();
-        final Operation op = new CacheKeyIteratorOperation(cacheProxy.getDistributedObjectName(), lastTableIndex, fetchSize);
+        final NodeEngine nodeEngine = getCacheProxy().getNodeEngine();
+        final Operation op = new CacheKeyIteratorOperation(getCacheProxy().getDistributedObjectName(), lastTableIndex, fetchSize);
         final InternalCompletableFuture<CacheKeyIteratorResult> f = nodeEngine.getOperationService()
-                .invokeOnPartition(CacheService.SERVICE_NAME, op,
-                        partitionIndex);
+                                                                              .invokeOnPartition(CacheService.SERVICE_NAME, op,
+                                                                                      partitionIndex);
         return f.getSafely();
+    }
+
+    @Override
+    protected Data toData(Object obj) {
+        return serializationService.toData(obj);
+    }
+
+    @Override
+    protected <T> T toObject(Object data) {
+        return serializationService.toObject(data);
+    }
+
+    private CacheProxy<K, V> getCacheProxy() {
+        return (CacheProxy) cache;
     }
 }

@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
 /**
- * @author mdogan 05/02/14
+ * Cache RemoveBackup Operation
  */
 public class CacheRemoveBackupOperation
         extends AbstractCacheOperation

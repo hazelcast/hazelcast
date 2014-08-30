@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author mdogan 05/02/14
+ * Cache Replication Operation for migration
  */
 public final class CacheReplicationOperation
         extends AbstractOperation {

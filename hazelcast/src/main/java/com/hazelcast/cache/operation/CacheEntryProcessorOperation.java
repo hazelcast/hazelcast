@@ -31,8 +31,7 @@ import java.io.IOException;
  * Operation of the Cache Entry Processor.
  */
 public class CacheEntryProcessorOperation
-        extends AbstractCacheOperation
-        implements BackupAwareOperation {
+        extends AbstractMutatingCacheOperation{
 
     private EntryProcessor entryProcessor;
     private Object[] arguments;
@@ -42,11 +41,12 @@ public class CacheEntryProcessorOperation
     public CacheEntryProcessorOperation() {
     }
 
-    public CacheEntryProcessorOperation(String name, Data key, javax.cache.processor.EntryProcessor entryProcessor,
-                                        Object... arguments) {
-        super(name, key);
+    public CacheEntryProcessorOperation(String name, Data key, int completionId,
+                                        javax.cache.processor.EntryProcessor entryProcessor, Object... arguments) {
+        super(name, key, completionId);
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;
+        this.completionId = completionId;
     }
 
     @Override
@@ -68,7 +68,6 @@ public class CacheEntryProcessorOperation
     public void run()
             throws Exception {
         response = cache.invoke(key, entryProcessor, arguments);
-
         backupRecord = cache.getRecord(key);
     }
 
@@ -91,13 +90,12 @@ public class CacheEntryProcessorOperation
             throws IOException {
         super.readInternal(in);
         entryProcessor = in.readObject();
-
         final boolean hasArguments = in.readBoolean();
         if (hasArguments) {
             final int size = in.readInt();
-            Object[] args = new Object[size];
+            arguments = new Object[size];
             for (int i = 0; i < size; i++) {
-                args[i] = in.readObject();
+                arguments[i] = in.readObject();
             }
         }
     }

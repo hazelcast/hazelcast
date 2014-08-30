@@ -16,39 +16,56 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.cache.CacheClearResponse;
+import com.hazelcast.cache.CacheEntryEventImpl;
+import com.hazelcast.cache.CacheEntryProcessorResult;
+import com.hazelcast.cache.CacheEventListenerAdaptor;
 import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.client.CacheAddEntryListenerRequest;
+import com.hazelcast.cache.client.CacheClearRequest;
 import com.hazelcast.cache.client.CacheContainsKeyRequest;
+import com.hazelcast.cache.client.CacheEntryProcessorRequest;
 import com.hazelcast.cache.client.CacheGetAllRequest;
 import com.hazelcast.cache.client.CacheGetAndRemoveRequest;
 import com.hazelcast.cache.client.CacheGetAndReplaceRequest;
 import com.hazelcast.cache.client.CacheGetRequest;
+import com.hazelcast.cache.client.CacheLoadAllRequest;
 import com.hazelcast.cache.client.CachePutIfAbsentRequest;
 import com.hazelcast.cache.client.CachePutRequest;
 import com.hazelcast.cache.client.CacheRemoveRequest;
 import com.hazelcast.cache.client.CacheReplaceRequest;
 import com.hazelcast.cache.client.CacheSizeRequest;
+import com.hazelcast.client.cache.ClientClusterWideIterator;
 import com.hazelcast.client.cache.HazelcastClientCacheManager;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.nearcache.IClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.Member;
 import com.hazelcast.map.MapEntrySet;
-import com.hazelcast.nio.Address;
+import com.hazelcast.map.client.MapAddEntryListenerRequest;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
 
+import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
+import javax.cache.configuration.Factory;
+import javax.cache.event.CacheEntryEventFilter;
+import javax.cache.event.CacheEntryListener;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
@@ -61,6 +78,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.cache.CacheProxy.loadAllHelper;
 
 public class ClientCacheProxy<K, V>
         implements ICache<K, V> {
@@ -130,7 +149,30 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
-        throw new UnsupportedOperationException("loadAll");
+        ensureOpen();
+        if (keys == null || keys.contains(null)) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        for (K key : keys) {
+            validateConfiguredTypes(false, key);
+        }
+        HashSet<Data> keysData = new HashSet<Data>();
+        for (K key : keys) {
+            keysData.add(toData(key));
+        }
+        CacheLoadAllRequest request = new CacheLoadAllRequest(getDistributedObjectName(), keysData, replaceExistingValues);
+        try {
+            final Map<Integer, Object> results = invoke(request);
+            loadAllHelper(results);
+            if (completionListener != null) {
+                completionListener.onCompletion();
+            }
+
+        } catch (Exception e) {
+            if (completionListener != null) {
+                completionListener.onException(e);
+            }
+        }
     }
 
     @Override
@@ -271,17 +313,44 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public void removeAll(Set<? extends K> keys) {
-        throw new UnsupportedOperationException("");
+        ensureOpen();
+        if (keys == null || keys.contains(null)) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        HashSet<Data> keysData = new HashSet<Data>();
+        for (K key : keys) {
+            keysData.add(toData(key));
+        }
+        removeAllInternal(keysData, true);
     }
 
     @Override
     public void removeAll() {
-        throw new UnsupportedOperationException("");
+        ensureOpen();
+        removeAllInternal(null, true);
     }
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException("");
+        ensureOpen();
+        removeAllInternal(null, false);
+    }
+
+    private void removeAllInternal(Set<Data> keysData, boolean isRemoveAll) {
+        CacheClearRequest request = new CacheClearRequest(getDistributedObjectName(), keysData, isRemoveAll);
+        try {
+            final Map<Integer, Object> results = invoke(request);
+            for (Object result : results.values()) {
+                if (result != null && result instanceof CacheClearResponse) {
+                    final Object response = ((CacheClearResponse) result).getResponse();
+                    if (response instanceof Throwable) {
+                        throw (Throwable) response;
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
+        }
     }
 
     @Override
@@ -296,13 +365,51 @@ public class ClientCacheProxy<K, V>
     @Override
     public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments)
             throws EntryProcessorException {
-        throw new UnsupportedOperationException("");
+        ensureOpen();
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (entryProcessor == null) {
+            throw new NullPointerException();
+        }
+        final Data keyData = toData(key);
+        final CacheEntryProcessorRequest request = new CacheEntryProcessorRequest(getDistributedObjectName(), keyData,
+                entryProcessor, arguments);
+        try {
+            final Data resultData = (Data) invoke(request, keyData);
+            return toObject(resultData);
+        } catch (CacheException ce) {
+            throw ce;
+        } catch (Exception e) {
+            throw new EntryProcessorException(e);
+        }
     }
 
     @Override
     public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
                                                          Object... arguments) {
-        throw new UnsupportedOperationException("");
+        //TODO implement a Multiple invoke operation and its factory
+        ensureOpen();
+        if (keys == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (entryProcessor == null) {
+            throw new NullPointerException();
+        }
+        Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
+        for (K key : keys) {
+            CacheEntryProcessorResult<T> ceResult;
+            try {
+                final T result = this.invoke(key, entryProcessor, arguments);
+                ceResult = result != null ? new CacheEntryProcessorResult<T>(result) : null;
+            } catch (Exception e) {
+                ceResult = new CacheEntryProcessorResult<T>(e);
+            }
+            if (ceResult != null) {
+                allResult.put(key, ceResult);
+            }
+        }
+        return allResult;
     }
 
     @Override
@@ -352,6 +459,18 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+//        final Factory<CacheEntryListener<? super K, ? super V>> factory = cacheEntryListenerConfiguration
+//                .getCacheEntryListenerFactory();
+//        final CacheEntryListener<? super K, ? super V> listener = factory.create();
+//
+//        CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(name, includeValue);
+//
+////        CacheEventListenerAdaptor<K,V> handler = new CacheEventListenerAdaptor<K, V>(meta, cacheEntryListenerConfiguration);
+//
+//        EventHandler<PortableEntryEvent> handler = createHandler(listener);
+//
+//        final String regId = getContext().getListenerService().listen(registrationRequest, null, handler);
+
         //        throw new UnsupportedOperationException("registerCacheEntryListener");
     }
 
@@ -360,9 +479,61 @@ public class ClientCacheProxy<K, V>
         //        throw new UnsupportedOperationException("deregisterCacheEntryListener");
     }
 
+    private EventHandler<PortableEntryEvent> createHandler(CacheEntryListener<? super K, ? super V> listener){
+        return new EventHandler<PortableEntryEvent>() {
+            @Override
+            public void handle(PortableEntryEvent event) {
+//                event
+//                final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
+//                switch (eventType) {
+//                    case CREATED:
+//                        if (this.cacheEntryCreatedListener != null) {
+//                            this.cacheEntryCreatedListener.onCreated(createEventWrapper(event));
+//                        }
+//                        break;
+//                    case UPDATED:
+//                        if (this.cacheEntryUpdatedListener != null) {
+//                            this.cacheEntryUpdatedListener.onUpdated(createEventWrapper(event));
+//                        }
+//                        break;
+//                    case REMOVED:
+//                        if (this.cacheEntryRemovedListener != null) {
+//                            this.cacheEntryRemovedListener.onRemoved(createEventWrapper(event));
+//                        }
+//                        break;
+//                    case EXPIRED:
+//                        if (this.cacheEntryExpiredListener != null) {
+//                            this.cacheEntryExpiredListener.onExpired(createEventWrapper(event));
+//                        }
+//                        break;
+//                    default:
+//                        throw new IllegalArgumentException("Invalid event type: " + eventType.name());
+//                }
+            }
+
+            @Override
+            public void onListenerRegister() {
+
+            }
+
+//            private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
+//                V value = null;
+//                V oldValue = null;
+//                if (includeValue) {
+//                    value = toObject(event.getValue());
+//                    oldValue = toObject(event.getOldValue());
+//                }
+//                K key = toObject(event.getKey());
+//                return new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
+//                return new EntryEvent<K, V>(name, member,event.getEventType().getType(), key, oldValue, value);
+//            }
+        };
+    }
+
     @Override
     public Iterator<Entry<K, V>> iterator() {
-        throw new UnsupportedOperationException("Iterator");
+        ensureOpen();
+        return new ClientClusterWideIterator<K, V>(this, getContext());
     }
     //endregion
 
@@ -952,7 +1123,7 @@ public class ClientCacheProxy<K, V>
         return sync;
     }
 
-    private String getDistributedObjectName() {
+    public String getDistributedObjectName() {
         return delegate.getName();
     }
 
@@ -964,17 +1135,8 @@ public class ClientCacheProxy<K, V>
         return delegate.toData(o);
     }
 
-    private <T> T invoke(ClientRequest req, Address address) {
-        return delegate.invoke(req, address);
-    }
-
     private <T> T invoke(ClientRequest req) {
         return delegate.invoke(req);
-    }
-
-    private <T> T invokeInterruptibly(ClientRequest req, Object key)
-            throws InterruptedException {
-        return delegate.invokeInterruptibly(req, key);
     }
 
     private Object invoke(ClientRequest req, Object key) {

@@ -41,6 +41,7 @@ public class CacheClearRequest
     private String name;
     private Set<Data> keys = null;
     private boolean isRemoveAll = false;
+    private int completionId;
 
     public CacheClearRequest() {
     }
@@ -67,43 +68,46 @@ public class CacheClearRequest
     public void write(PortableWriter writer)
             throws IOException {
         writer.writeUTF("n", name);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeBoolean(isRemoveAll);
-        out.writeBoolean(keys != null);
+        writer.writeBoolean("r", isRemoveAll);
+        writer.writeBoolean("k", keys != null);
         if (keys != null) {
-            out.write(keys.size());
-            for (Data key : keys) {
-                key.writeData(out);
+            if (!keys.isEmpty()) {
+                ObjectDataOutput output = writer.getRawDataOutput();
+                output.writeInt(keys.size());
+                for (Data key : keys) {
+                    key.writeData(output);
+                }
             }
         }
-
     }
 
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
-        final ObjectDataInput in = reader.getRawDataInput();
-        isRemoveAll = in.readBoolean();
-        boolean isKeysNotNull = in.readBoolean();
+        isRemoveAll = reader.readBoolean("r");
+        final boolean isKeysNotNull = reader.readBoolean("k");
         if (isKeysNotNull) {
-            int size = in.readInt();
+            ObjectDataInput input = reader.getRawDataInput();
+            final int size = input.readInt();
             keys = new HashSet<Data>(size);
-            for (int i = 0; i < size; i++) {
-                Data key = new Data();
-                key.readData(in);
-                keys.add(key);
+            if (size > 0) {
+                for (int i = 0; i < size; i++) {
+                    Data key = new Data();
+                    key.readData(input);
+                    keys.add(key);
+                }
             }
         }
     }
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new CacheClearOperationFactory(name, keys, isRemoveAll);
+        return new CacheClearOperationFactory(name, keys, isRemoveAll, completionId);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        return null;
+        return map;
     }
 
     @Override

@@ -34,7 +34,8 @@ public class CachePutRequest
     protected Data key;
     protected Data value;
     protected boolean get = false; // getAndPut
-    protected ExpiryPolicy expiryPolicy=null;
+    protected ExpiryPolicy expiryPolicy = null;
+    private int completionId;
 
     public CachePutRequest() {
     }
@@ -71,7 +72,7 @@ public class CachePutRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CachePutOperation(name, key, value, expiryPolicy, get);
+        return new CachePutOperation(name, key, value, expiryPolicy, get, completionId);
     }
 
     public void write(PortableWriter writer)

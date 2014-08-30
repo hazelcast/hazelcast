@@ -21,6 +21,7 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.client.CacheCreateConfigRequest;
 import com.hazelcast.cache.client.CacheGetConfigRequest;
+import com.hazelcast.cache.client.CacheManagementConfigRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.proxy.ClientCacheDistributedObject;
 import com.hazelcast.client.proxy.ClientCacheProxy;
@@ -56,36 +57,68 @@ public final class HazelcastClientCacheManager
 
     @Override
     public void enableManagement(String cacheName, boolean enabled) {
-        //FIXME enableManagement
-        throw new UnsupportedOperationException("enableManagement");
-    }
+        if (isClosed()) {
+            throw new IllegalStateException();
+        }
+        if (cacheName == null) {
+            throw new NullPointerException();
+        }
+        final ClientInvocationService invocationService = clientContext.getInvocationService();
+        final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
+        for (MemberImpl member : members) {
+            try {
+                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), false, enabled, member.getAddress());
+                final Future future = invocationService.invokeOnTarget(request, member.getAddress());
+                //make sure all configs are created
+                future.get();
+            } catch (Exception e) {
+                ExceptionUtil.sneakyThrow(e);
+            }
+        }    }
 
     @Override
     public void enableStatistics(String cacheName, boolean enabled) {
-        //FIXME enableStatistics
-        throw new UnsupportedOperationException("enableStatistics");
+        if (isClosed()) {
+            throw new IllegalStateException();
+        }
+        if (cacheName == null) {
+            throw new NullPointerException();
+        }
+        final ClientInvocationService invocationService = clientContext.getInvocationService();
+        final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
+        for (MemberImpl member : members) {
+            try {
+                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), true, enabled, member.getAddress());
+                final Future future = invocationService.invokeOnTarget(request, member.getAddress());
+                //make sure all configs are created
+                future.get();
+            } catch (Exception e) {
+                ExceptionUtil.sneakyThrow(e);
+            }
+        }
     }
 
     @Override
     protected <K, V> CacheConfig<K, V> getCacheConfigLocal(String cacheName) {
+        //TODO implimenent it if we cache configs locally
         return null;
+    }
+
+    @Override
+    protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
+        //TODO implemenent it if we cache configs locally
     }
 
     @Override
     protected <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
-            ClientRequest request = new CacheCreateConfigRequest(cacheConfig, true, partitionId);
+            CacheCreateConfigRequest request = new CacheCreateConfigRequest(cacheConfig, true, partitionId);
             final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheConfig.getNameWithPrefix());
             return clientContext.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-    }
-
-    @Override
-    protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
-        //TODO implemenent it if we cache configs locally
     }
 
     @Override
@@ -123,10 +156,10 @@ public final class HazelcastClientCacheManager
         return null;
     }
 
-    @Override
-    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
-        //throw new UnsupportedOperationException("");
-        //FIXME REGISTER LISTENERS
-    }
+//    @Override
+//    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
+//        //throw new UnsupportedOperationException("");
+//        //FIXME REGISTER LISTENERS
+//    }
 
 }

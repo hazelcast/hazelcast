@@ -27,11 +27,10 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * @author mdogan 05/02/14
+ * Cache Put operation
  */
 public class CachePutOperation
-        extends AbstractCacheOperation
-        implements BackupAwareOperation {
+        extends AbstractMutatingCacheOperation {
 
     private Data value;
     // getAndPut
@@ -41,15 +40,8 @@ public class CachePutOperation
     public CachePutOperation() {
     }
 
-    public CachePutOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
-        super(name, key);
-        this.value = value;
-        this.expiryPolicy = expiryPolicy;
-        get = false;
-    }
-
-    public CachePutOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, boolean get) {
-        super(name, key);
+    public CachePutOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, boolean get, int completionId) {
+        super(name, key, completionId);
         this.value = value;
         this.expiryPolicy = expiryPolicy;
         this.get = get;

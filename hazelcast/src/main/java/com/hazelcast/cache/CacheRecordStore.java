@@ -29,7 +29,6 @@ import com.hazelcast.util.CacheConcurrentHashMap;
 import com.hazelcast.util.Clock;
 
 import javax.cache.configuration.Factory;
-import javax.cache.event.EventType;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CacheLoader;
@@ -77,7 +76,11 @@ public class CacheRecordStore
     private boolean hasExpiringEntry;
     private boolean isEventsEnabled = true;
 
+    private boolean isEventBatchingEnabled = false;
+
     private ExpiryPolicy defaultExpiryPolicy;
+
+    private Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
 
     CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine, final CacheService cacheService) {
         this.name = name;
@@ -277,16 +280,17 @@ public class CacheRecordStore
         CacheRecord record = records.get(key);
         boolean isExpired = record != null && record.isExpiredAt(now);
 
+        boolean result = true;
         if (record == null || isExpired) {
-            return false;
+            result= false;
         } else {
             deleteRecord(key);
         }
-        if (isStatisticsEnabled()) {
+        if (result && isStatisticsEnabled()) {
             statistics.increaseCacheRemovals(1);
             statistics.addRemoveTimeNano(System.nanoTime() - start);
         }
-        return true;
+        return result;
     }
 
     @Override
@@ -299,11 +303,12 @@ public class CacheRecordStore
         boolean isExpired = record != null && record.isExpiredAt(now);
         int hitCount = 0;
 
+        boolean result = true;
         if (record == null || isExpired) {
             if (isStatisticsEnabled()) {
                 statistics.increaseCacheMisses(1);
             }
-            return false;
+            result=false;
         } else {
             hitCount++;
             if (compare(record.getValue(), value)) {
@@ -323,10 +328,10 @@ public class CacheRecordStore
                 if (isExpiredAt(et, now)) {
                     processExpiredEntry(key, record);
                 }
-                return false;
+                result=false;
             }
         }
-        if (isStatisticsEnabled()) {
+        if (result && isStatisticsEnabled()) {
             statistics.increaseCacheRemovals(1);
             statistics.addRemoveTimeNano(System.nanoTime() - start);
             if (hitCount == 1) {
@@ -363,7 +368,6 @@ public class CacheRecordStore
                 statistics.increaseCacheMisses(1);
             }
         }
-
         return result;
     }
 
@@ -480,12 +484,10 @@ public class CacheRecordStore
             final Set<Data> localKeys = new HashSet<Data>(keys.isEmpty() ? records.keySet() : keys);
             try {
                 deleteAllCacheEntry(localKeys);
-                //                if (isStatisticsEnabled()) {
-                //                    statistics.increaseCacheRemovals(localKeys.size());
-                //                }
             } finally {
                 final Set<Data> keysToClean = new HashSet<Data>(keys.isEmpty() ? records.keySet() : keys);
                 for (Data key : keysToClean) {
+                    isEventBatchingEnabled = true;
                     final CacheRecord record = records.get(key);
                     if (localKeys.contains(key) && record != null) {
                         boolean isExpired = record.isExpiredAt(now);
@@ -500,6 +502,9 @@ public class CacheRecordStore
                     } else {
                         keys.remove(key);
                     }
+                    isEventBatchingEnabled = false;
+                    int orderKey = keys != null ? keys.hashCode() : 1;
+                    publishBatchedEvents(name, CacheEventType.REMOVED, orderKey);
                 }
             }
         } else {
@@ -623,9 +628,6 @@ public class CacheRecordStore
                     final Object value = entry.getValue();
                     if (value != null) {
                         getAndPut(key, value, null, null, false, true);
-                        //                        this.disableWriteThrough = false;
-                        //                        put(key, value, null, null);
-                        //                        this.disableWriteThrough = true;//cacheConfig.isWriteThrough();
                         keysLoadad.add(key);
                     }
                 }
@@ -634,9 +636,7 @@ public class CacheRecordStore
                     final Data key = entry.getKey();
                     final Object value = entry.getValue();
                     if (value != null) {
-                        //                        this.disableWriteThrough = false;
                         final boolean hasPut = putIfAbsent(key, value, null, null, true);
-                        //                        this.disableWriteThrough = true;//cacheConfig.isWriteThrough();
                         if (hasPut) {
                             keysLoadad.add(key);
                         }
@@ -712,7 +712,7 @@ public class CacheRecordStore
             } else {
                 dataValue = (Data) recordValue;
             }
-            cacheService.publishEvent(name, EventType.CREATED, record.getKey(), null, dataValue);
+            publishEvent(name, CacheEventType.CREATED, record.getKey(), null, dataValue, false);
         }
         return record;
     }
@@ -766,15 +766,27 @@ public class CacheRecordStore
         }
         record.setValue(v);
         if (isEventsEnabled) {
-            cacheService.publishEvent(name, EventType.UPDATED, record.getKey(), dataOldValue, dataValue);
+            publishEvent(name, CacheEventType.UPDATED, record.getKey(), dataOldValue, dataValue, true);
         }
         return record;
     }
 
     void deleteRecord(Data key) {
         final CacheRecord record = records.remove(key);
+        final Data dataOldValue;
+        switch (cacheConfig.getInMemoryFormat()) {
+            case BINARY:
+                dataOldValue = (Data) record.getValue();
+                break;
+            case OBJECT:
+                dataOldValue = cacheService.toData(record.getValue());
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
+        }
+
         if (isEventsEnabled) {
-            cacheService.publishEvent(name, EventType.REMOVED, record.getKey(), null, record.getValue());
+            publishEvent(name, CacheEventType.REMOVED, record.getKey(), dataOldValue, null, true);
         }
     }
 
@@ -937,8 +949,46 @@ public class CacheRecordStore
     void processExpiredEntry(Data key, CacheRecord record) {
         records.remove(key);
         if (isEventsEnabled) {
-            cacheService.publishEvent(name, EventType.EXPIRED, key, record.getValue(), null);
+            final Data dataOldValue;
+            switch (cacheConfig.getInMemoryFormat()) {
+                case BINARY:
+                    dataOldValue = (Data) record.getValue();
+                    break;
+                case OBJECT:
+                    dataOldValue = cacheService.toData(record.getValue());
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
+            }
+            publishEvent(name, CacheEventType.EXPIRED, key, dataOldValue, null, true);
         }
+    }
+
+    public void publishCompletedEvent(String cacheName, int completionId, Data dataKey, int orderKey){
+        if(completionId>0){
+            cacheService.publishEvent(cacheName, CacheEventType.COMPLETED, dataKey, cacheService.toData(completionId), null, false, orderKey);
+        }
+    }
+
+    protected void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataOldValue, Data dataValue, boolean isOldValueAvailable) {
+        if(isEventBatchingEnabled){
+            final CacheEventDataImpl cacheEventData = new CacheEventDataImpl(cacheName, eventType, dataKey, dataValue, dataOldValue,
+                    isOldValueAvailable);
+            Set<CacheEventData> cacheEventDatas = batchEvent.get(eventType);
+            if(cacheEventDatas == null){
+                cacheEventDatas = new HashSet<CacheEventData>();
+                batchEvent.put(eventType,cacheEventDatas);
+            }
+            cacheEventDatas.add(cacheEventData);
+        } else {
+            cacheService.publishEvent(cacheName, eventType, dataKey, dataValue, dataOldValue,isOldValueAvailable, dataKey.hashCode());
+        }
+    }
+
+    private void publishBatchedEvents(String cacheName, CacheEventType cacheEventType, int orderKey){
+        final Set<CacheEventData> cacheEventDatas = batchEvent.get(cacheEventType);
+        CacheEventSet ces = new CacheEventSet(cacheEventType,cacheEventDatas);
+        cacheService.publishEvent(cacheName, ces, orderKey);
     }
 
     private boolean compare(Object v1, Object v2) {
@@ -955,11 +1005,11 @@ public class CacheRecordStore
 
     }
 
-    public boolean isReadThrough() {
+    private boolean isReadThrough() {
         return cacheConfig.isReadThrough();
     }
 
-    public boolean isWriteThrough() {
+    private boolean isWriteThrough() {
         return cacheConfig.isWriteThrough();
     }
 
@@ -967,7 +1017,7 @@ public class CacheRecordStore
     //        return isEventsEnabled;
     //    }
 
-    public boolean isStatisticsEnabled() {
+    private boolean isStatisticsEnabled() {
         if (!cacheConfig.isStatisticsEnabled()) {
             return false;
         }

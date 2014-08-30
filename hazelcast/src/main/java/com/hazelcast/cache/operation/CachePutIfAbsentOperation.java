@@ -29,11 +29,10 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * @author mdogan 05/02/14
+ * Cache PutIfAbsent Operation
  */
 public class CachePutIfAbsentOperation
-        extends AbstractCacheOperation
-        implements BackupAwareOperation {
+        extends AbstractMutatingCacheOperation {
 
     private Data value;
     private ExpiryPolicy expiryPolicy;
@@ -41,8 +40,8 @@ public class CachePutIfAbsentOperation
     public CachePutIfAbsentOperation() {
     }
 
-    public CachePutIfAbsentOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
-        super(name, key);
+    public CachePutIfAbsentOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, int completionId) {
+        super(name, key, completionId);
         this.value = value;
         this.expiryPolicy = expiryPolicy;
     }
