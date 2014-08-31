@@ -245,7 +245,10 @@ public abstract class HazelcastCacheManager
                 destroy.close();
             }
         }
+        removeCacheConfigFromLocal(cacheNameWithPrefix);
     }
+
+    protected void removeCacheConfigFromLocal(String cacheName) { }
 
     @Override
     public void close() {

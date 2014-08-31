@@ -41,6 +41,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -49,6 +50,7 @@ import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
 import javax.cache.configuration.Factory;
+import javax.cache.event.CacheEntryListener;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
@@ -93,8 +95,8 @@ public class CacheProxy<K, V>
 
     private HazelcastCacheManager cacheManager;
     private CacheLoader<K, V> cacheLoader;
-    private ConcurrentHashMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
 
+    private ConcurrentHashMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private ConcurrentHashMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
     private ConcurrentHashMap<Integer, CountDownLatch> syncLocks;
 
@@ -216,7 +218,7 @@ public class CacheProxy<K, V>
             f.get();
             waitCompletionLatch(completionId);
         } catch (Throwable e) {
-            deregisterCompletionListener();
+            deregisterCompletionLatch(completionId);
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
@@ -276,7 +278,7 @@ public class CacheProxy<K, V>
             waitCompletionLatch(completionId);
             return serializationService.toObject(oldValueData);
         } catch (Throwable e) {
-            deregisterCompletionListener();
+            deregisterCompletionLatch(completionId);
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
@@ -569,7 +571,7 @@ public class CacheProxy<K, V>
             waitCompletionLatch(completionId);
             return serializationService.toObject(oldValue);
         } catch (Throwable e) {
-            deregisterCompletionListener();
+            deregisterCompletionLatch(completionId);
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
@@ -821,7 +823,7 @@ public class CacheProxy<K, V>
             waitCompletionLatch(completionId);
             return serializationService.toObject(oldValue);
         } catch (Throwable e) {
-            deregisterCompletionListener();
+            deregisterCompletionLatch(completionId);
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
@@ -930,10 +932,10 @@ public class CacheProxy<K, V>
             waitCompletionLatch(completionId);
             return safely;
         } catch (CacheException ce) {
-            deregisterCompletionListener();
+            deregisterCompletionLatch(completionId);
             throw ce;
         } catch (Exception e) {
-            deregisterCompletionListener();
+            deregisterCompletionLatch(completionId);
             throw new EntryProcessorException(e);
         }
     }
@@ -991,6 +993,8 @@ public class CacheProxy<K, V>
             }
         }
         deregisterCompletionListener();
+
+
     }
 
     @Override
@@ -1028,7 +1032,6 @@ public class CacheProxy<K, V>
             }
 
             //CREATE ON OTHERS TOO
-//            final NodeEngine nodeEngine = getNodeEngine();
             final OperationService operationService = nodeEngine.getOperationService();
             final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
             for (MemberImpl member : members) {
@@ -1062,8 +1065,8 @@ public class CacheProxy<K, V>
                 regs.putIfAbsent(cacheEntryListenerConfiguration, regId);
             } else {
                 cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-                //CREATE ON OTHERS TOO
-//                final NodeEngine nodeEngine = getNodeEngine();
+                deregisterCompletionListener();
+                //REMOVE ON OTHERS TOO
                 final OperationService operationService = nodeEngine.getOperationService();
                 final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
                 for (MemberImpl member : members) {
@@ -1143,7 +1146,10 @@ public class CacheProxy<K, V>
     private void deregisterCompletionListener() {
         if(syncListenerRegistrations.isEmpty() && completionRegistrationId != null){
             final CacheService service = getService();
-            service.deregisterListener(getDistributedObjectName(), completionRegistrationId);
+            final boolean isDeregistered = service.deregisterListener(getDistributedObjectName(), completionRegistrationId);
+            if(isDeregistered){
+                completionRegistrationId = null;
+            }
         }
     }
 

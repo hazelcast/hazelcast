@@ -18,38 +18,46 @@ package com.hazelcast.cache.client;
 
 import com.hazelcast.cache.CachePortableHook;
 import com.hazelcast.cache.CacheService;
-import com.hazelcast.client.impl.client.KeyBasedClientRequest;
-import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.map.MapPortableHook;
+import com.hazelcast.map.MapService;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
 
-public abstract class AbstractCacheRequest
-        extends KeyBasedClientRequest
-        implements RetryableRequest {
+public class CacheRemoveEntryListenerRequest
+        extends BaseClientRemoveListenerRequest {
 
-    protected String name;
 
-    public AbstractCacheRequest() {
+    public CacheRemoveEntryListenerRequest() {
     }
 
-    public AbstractCacheRequest(String name) {
-        this.name = name;
+    public CacheRemoveEntryListenerRequest(String name, String registrationId) {
+        super(name, registrationId);
     }
 
-    public final int getFactoryId() {
-        return CachePortableHook.F_ID;
+    public Object call() throws Exception {
+        final CacheService service = getService();
+        return service.deregisterListener(name, registrationId);
     }
 
-    public final String getServiceName() {
+    public String getServiceName() {
         return CacheService.SERVICE_NAME;
     }
 
-    public void setCompletionId(Integer completionId){
+    @Override
+    public int getFactoryId() {
+        return CachePortableHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return CachePortableHook.REMOVE_ENTRY_LISTENER;
     }
 
     @Override
     public Permission getRequiredPermission() {
         return null;
     }
-
 }

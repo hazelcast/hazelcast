@@ -350,16 +350,16 @@ public class BasicCacheTest
 
     }
 
-    class SimpleEntryListener<K, V>
+    public static class SimpleEntryListener<K, V>
             implements CacheEntryListener<K, V>, CacheEntryCreatedListener<K, V>, CacheEntryUpdatedListener<K, V>,
                        CacheEntryRemovedListener<K, V>, CacheEntryExpiredListener<K, V>, Serializable {
 
-        AtomicInteger created = new AtomicInteger();
-        AtomicInteger expired = new AtomicInteger();
-        AtomicInteger removed = new AtomicInteger();
-        AtomicInteger updated = new AtomicInteger();
+        public AtomicInteger created = new AtomicInteger();
+        public AtomicInteger expired = new AtomicInteger();
+        public AtomicInteger removed = new AtomicInteger();
+        public AtomicInteger updated = new AtomicInteger();
 
-        SimpleEntryListener() {
+        public SimpleEntryListener() {
         }
 
         @Override

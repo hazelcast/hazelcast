@@ -63,7 +63,7 @@ public class CacheListenerRegistrationOperation
 
     @Override
     public boolean returnsResponse() {
-        return false;
+        return true;
     }
 
     @Override

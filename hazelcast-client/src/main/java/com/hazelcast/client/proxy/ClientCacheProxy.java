@@ -19,8 +19,14 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.cache.CacheClearResponse;
 import com.hazelcast.cache.CacheEntryEventImpl;
 import com.hazelcast.cache.CacheEntryProcessorResult;
+import com.hazelcast.cache.CacheEventData;
+import com.hazelcast.cache.CacheEventListener;
 import com.hazelcast.cache.CacheEventListenerAdaptor;
+import com.hazelcast.cache.CacheEventSet;
+import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.cache.CacheService;
 import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.client.AbstractCacheRequest;
 import com.hazelcast.cache.client.CacheAddEntryListenerRequest;
 import com.hazelcast.cache.client.CacheClearRequest;
 import com.hazelcast.cache.client.CacheContainsKeyRequest;
@@ -29,12 +35,16 @@ import com.hazelcast.cache.client.CacheGetAllRequest;
 import com.hazelcast.cache.client.CacheGetAndRemoveRequest;
 import com.hazelcast.cache.client.CacheGetAndReplaceRequest;
 import com.hazelcast.cache.client.CacheGetRequest;
+import com.hazelcast.cache.client.CacheListenerRegistrationRequest;
 import com.hazelcast.cache.client.CacheLoadAllRequest;
+import com.hazelcast.cache.client.CacheManagementConfigRequest;
 import com.hazelcast.cache.client.CachePutIfAbsentRequest;
 import com.hazelcast.cache.client.CachePutRequest;
+import com.hazelcast.cache.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.client.CacheRemoveRequest;
 import com.hazelcast.cache.client.CacheReplaceRequest;
 import com.hazelcast.cache.client.CacheSizeRequest;
+import com.hazelcast.cache.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.client.cache.ClientClusterWideIterator;
 import com.hazelcast.client.cache.HazelcastClientCacheManager;
 import com.hazelcast.client.impl.client.ClientRequest;
@@ -42,6 +52,7 @@ import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.nearcache.IClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.config.CacheConfig;
@@ -51,9 +62,13 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.client.MapAddEntryListenerRequest;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -71,13 +86,19 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.CacheProxy.loadAllHelper;
 
@@ -88,6 +109,8 @@ public class ClientCacheProxy<K, V>
 
     private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    private static final int IGNORE_COMPLETION = -1;
+
     private final CacheConfig<K, V> cacheConfig;
     private final boolean cacheOnUpdate;
     protected ClientCacheDistributedObject delegate;
@@ -99,17 +122,19 @@ public class ClientCacheProxy<K, V>
     private HazelcastClientCacheManager cacheManager;
     private volatile IClientNearCache<Data, Object> nearCache;
 
+    private ConcurrentHashMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
+    private ConcurrentHashMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
+    private ConcurrentHashMap<Integer, CountDownLatch> syncLocks;
+
+    private AtomicInteger completionIdCounter = new AtomicInteger();
+    private String completionRegistrationId;
+
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientCacheDistributedObject delegate,
                             HazelcastClientCacheManager cacheManager) {
         this.name = cacheConfig.getName();
         this.cacheConfig = cacheConfig;
         this.delegate = delegate;
         this.cacheManager = cacheManager;
-        //TODO DO WE NEED A CACHE LOADER HERE
-        //        if (cacheConfig.getCacheLoaderFactory() != null) {
-        //            final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
-        //            cacheLoader = cacheLoaderFactory.create();
-        //        }
 
         NearCacheConfig nearCacheConfig = cacheConfig.getNearCacheConfig();
         if (nearCacheConfig != null) {
@@ -119,6 +144,11 @@ public class ClientCacheProxy<K, V>
             nearCache = null;
             cacheOnUpdate = false;
         }
+
+        asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
+        syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
+        syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
+
     }
 
     //region JAVAX.CACHE impl
@@ -204,7 +234,7 @@ public class ClientCacheProxy<K, V>
         validateConfiguredTypes(false, key);
         final Data keyData = delegate.toData(key);
         CacheRemoveRequest request = new CacheRemoveRequest(delegate.getName(), keyData);
-        Boolean removed = toObject(invoke(request, keyData));
+        Boolean removed = toObject(invokeWithCompletion(request, keyData));
         if (removed == null) {
             return false;
         }
@@ -227,7 +257,7 @@ public class ClientCacheProxy<K, V>
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         CacheRemoveRequest request = new CacheRemoveRequest(getDistributedObjectName(), keyData, valueData);
-        Boolean removed = toObject(invoke(request, keyData));
+        Boolean removed = toObject(invokeWithCompletion(request, keyData));
         if (removed == null) {
             return false;
         }
@@ -246,7 +276,7 @@ public class ClientCacheProxy<K, V>
         validateConfiguredTypes(false, key);
         final Data keyData = toData(key);
         CacheGetAndRemoveRequest request = new CacheGetAndRemoveRequest(getDistributedObjectName(), keyData);
-        V value = toObject(invoke(request, keyData));
+        V value = toObject(invokeWithCompletion(request, keyData));
         invalidateNearCache(keyData);
         return value;
     }
@@ -266,7 +296,7 @@ public class ClientCacheProxy<K, V>
         final Data valueData = toData(value);
         CacheReplaceRequest request = new CacheReplaceRequest(getDistributedObjectName(), keyData, currentValueData, valueData,
                 null);
-        Boolean replaced = toObject(invoke(request, keyData));
+        Boolean replaced = toObject(invokeWithCompletion(request, keyData));
         if (replaced == null) {
             return false;
         }
@@ -292,7 +322,7 @@ public class ClientCacheProxy<K, V>
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         CacheReplaceRequest request = new CacheReplaceRequest(getDistributedObjectName(), keyData, valueData, null);
-        Boolean replaced = toObject(invoke(request, keyData));
+        Boolean replaced = toObject(invokeWithCompletion(request, keyData));
         if (replaced == null) {
             return false;
         }
@@ -337,18 +367,33 @@ public class ClientCacheProxy<K, V>
     }
 
     private void removeAllInternal(Set<Data> keysData, boolean isRemoveAll) {
-        CacheClearRequest request = new CacheClearRequest(getDistributedObjectName(), keysData, isRemoveAll);
+        final int partitionCount = getContext().getPartitionService().getPartitionCount();
+        final Integer completionId = registerCompletionLatch(partitionCount);
+        CacheClearRequest request = new CacheClearRequest(getDistributedObjectName(), keysData, isRemoveAll, completionId);
         try {
             final Map<Integer, Object> results = invoke(request);
+            int completionCount=0;
             for (Object result : results.values()) {
                 if (result != null && result instanceof CacheClearResponse) {
                     final Object response = ((CacheClearResponse) result).getResponse();
+                    if(response instanceof Boolean){
+                        completionCount++;
+                    }
                     if (response instanceof Throwable) {
                         throw (Throwable) response;
                     }
                 }
             }
+            //fix completion count
+            final CountDownLatch countDownLatch = syncLocks.get(completionId);
+            if (countDownLatch != null) {
+                for(int i=0; i< partitionCount-completionCount; i++){
+                    countDownLatch.countDown();
+                }
+            }
+            waitCompletionLatch(completionId);
         } catch (Throwable t) {
+            deregisterCompletionLatch(completionId);
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
@@ -376,7 +421,7 @@ public class ClientCacheProxy<K, V>
         final CacheEntryProcessorRequest request = new CacheEntryProcessorRequest(getDistributedObjectName(), keyData,
                 entryProcessor, arguments);
         try {
-            final Data resultData = (Data) invoke(request, keyData);
+            final Data resultData = (Data) invokeWithCompletion(request, keyData);
             return toObject(resultData);
         } catch (CacheException ce) {
             throw ce;
@@ -434,6 +479,8 @@ public class ClientCacheProxy<K, V>
         isClosed = true;
         delegate.destroy();
 
+        deregisterAllListeners();
+        deregisterCompletionListener();
         //close the configured CacheLoader
         //        if (cacheLoader instanceof Closeable) {
         //            try {
@@ -459,74 +506,117 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-//        final Factory<CacheEntryListener<? super K, ? super V>> factory = cacheEntryListenerConfiguration
-//                .getCacheEntryListenerFactory();
-//        final CacheEntryListener<? super K, ? super V> listener = factory.create();
-//
-//        CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(name, includeValue);
-//
-////        CacheEventListenerAdaptor<K,V> handler = new CacheEventListenerAdaptor<K, V>(meta, cacheEntryListenerConfiguration);
-//
-//        EventHandler<PortableEntryEvent> handler = createHandler(listener);
-//
-//        final String regId = getContext().getListenerService().listen(registrationRequest, null, handler);
+        if (cacheEntryListenerConfiguration == null) {
+            throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
+        }
+        final CacheEventListenerAdaptor adaptor = new CacheEventListenerAdaptor(this, cacheEntryListenerConfiguration, getContext().getSerializationService());
+        final EventHandler<Object> handler = createHandler(adaptor);
 
-        //        throw new UnsupportedOperationException("registerCacheEntryListener");
+        final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(getDistributedObjectName());
+        final String regId = getContext().getListenerService().listen(registrationRequest, null, handler);
+        if (regId != null) {
+            cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+            if (cacheEntryListenerConfiguration.isSynchronous()) {
+                syncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
+                registerCompletionListener();
+            } else {
+                asyncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
+            }
+            //CREATE ON OTHERS TOO
+            final ClientInvocationService invocationService = getContext().getInvocationService();
+            final Collection<MemberImpl> members = getContext().getClusterService().getMemberList();
+            for (MemberImpl member : members) {
+                try {
+                    final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(getDistributedObjectName(), cacheEntryListenerConfiguration, true,  member.getAddress());
+                    final Future future = invocationService.invokeOnTarget(request, member.getAddress());
+                    //make sure all configs are created
+                    future.get();
+                } catch (Exception e) {
+                    ExceptionUtil.sneakyThrow(e);
+                }
+            }
+        }
     }
 
     @Override
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        //        throw new UnsupportedOperationException("deregisterCacheEntryListener");
+        if (cacheEntryListenerConfiguration == null) {
+            throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
+        }
+        final ConcurrentHashMap<CacheEntryListenerConfiguration, String> regs;
+        if(cacheEntryListenerConfiguration.isSynchronous()){
+            regs=syncListenerRegistrations;
+        } else {
+            regs=asyncListenerRegistrations;
+        }
+        final String regId = regs.remove(cacheEntryListenerConfiguration);
+        if (regId != null) {
+            CacheRemoveEntryListenerRequest removeRequest = new CacheRemoveEntryListenerRequest(getDistributedObjectName(), regId);
+            boolean isDeregistered = getContext().getListenerService().stopListening(removeRequest, regId);
+            if (!isDeregistered) {
+                regs.putIfAbsent(cacheEntryListenerConfiguration, regId);
+            } else {
+                cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+                deregisterCompletionListener();
+                //REMOVE ON OTHERS TOO
+                final ClientInvocationService invocationService = getContext().getInvocationService();
+                final Collection<MemberImpl> members = getContext().getClusterService().getMemberList();
+                for (MemberImpl member : members) {
+                    try {
+                        final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(getDistributedObjectName(), cacheEntryListenerConfiguration, false,  member.getAddress());
+                        final Future future = invocationService.invokeOnTarget(request, member.getAddress());
+                        //make sure all configs are created
+                        future.get();
+                    } catch (Exception e) {
+                        ExceptionUtil.sneakyThrow(e);
+                    }
+                }
+            }
+        }
     }
 
-    private EventHandler<PortableEntryEvent> createHandler(CacheEntryListener<? super K, ? super V> listener){
-        return new EventHandler<PortableEntryEvent>() {
+    private void deregisterAllListeners(){
+        final Iterator<CacheEntryListenerConfiguration> iterator = syncListenerRegistrations.keySet().iterator();
+        while (iterator.hasNext()){
+            final CacheEntryListenerConfiguration<K,V> listenerConfiguration = iterator.next();
+            deregisterCacheEntryListener(listenerConfiguration);
+            final Factory<CacheEntryListener<? super K, ? super V>> listenerFactory = listenerConfiguration
+                    .getCacheEntryListenerFactory();
+            final CacheEntryListener<? super K, ? super V> listener = listenerFactory.create();
+            if (listener instanceof Closeable) {
+                try {
+                    ((Closeable) listener).close();
+                } catch (IOException e) {
+                    //log
+                }
+            }
+        }
+        final Iterator<CacheEntryListenerConfiguration> iterator2 = asyncListenerRegistrations.keySet().iterator();
+        while (iterator2.hasNext()){
+            final CacheEntryListenerConfiguration<K,V> listenerConfiguration = iterator2.next();
+            deregisterCacheEntryListener(listenerConfiguration);
+            final Factory<CacheEntryListener<? super K, ? super V>> listenerFactory = listenerConfiguration
+                    .getCacheEntryListenerFactory();
+            final CacheEntryListener<? super K, ? super V> listener = listenerFactory.create();
+            if (listener instanceof Closeable) {
+                try {
+                    ((Closeable) listener).close();
+                } catch (IOException e) {
+                    //log
+                }
+            }
+        }
+    }
+
+    private EventHandler<Object> createHandler(final CacheEventListenerAdaptor adaptor){
+        return new EventHandler<Object>() {
             @Override
-            public void handle(PortableEntryEvent event) {
-//                event
-//                final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
-//                switch (eventType) {
-//                    case CREATED:
-//                        if (this.cacheEntryCreatedListener != null) {
-//                            this.cacheEntryCreatedListener.onCreated(createEventWrapper(event));
-//                        }
-//                        break;
-//                    case UPDATED:
-//                        if (this.cacheEntryUpdatedListener != null) {
-//                            this.cacheEntryUpdatedListener.onUpdated(createEventWrapper(event));
-//                        }
-//                        break;
-//                    case REMOVED:
-//                        if (this.cacheEntryRemovedListener != null) {
-//                            this.cacheEntryRemovedListener.onRemoved(createEventWrapper(event));
-//                        }
-//                        break;
-//                    case EXPIRED:
-//                        if (this.cacheEntryExpiredListener != null) {
-//                            this.cacheEntryExpiredListener.onExpired(createEventWrapper(event));
-//                        }
-//                        break;
-//                    default:
-//                        throw new IllegalArgumentException("Invalid event type: " + eventType.name());
-//                }
+            public void handle(Object event) {
+                    adaptor.handleEvent(event);
             }
 
             @Override
-            public void onListenerRegister() {
-
-            }
-
-//            private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
-//                V value = null;
-//                V oldValue = null;
-//                if (includeValue) {
-//                    value = toObject(event.getValue());
-//                    oldValue = toObject(event.getOldValue());
-//                }
-//                K key = toObject(event.getKey());
-//                return new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
-//                return new EntryEvent<K, V>(name, member,event.getEventType().getType(), key, oldValue, value);
-//            }
+            public void onListenerRegister() { }
         };
     }
 
@@ -813,7 +903,7 @@ public class ClientCacheProxy<K, V>
         final Data valueData = newValue != null ? toData(newValue) : null;
         CacheReplaceRequest request = new CacheReplaceRequest(getDistributedObjectName(), keyData, currentValueData, valueData,
                 expiryPolicy);
-        Boolean replaced = toObject(invoke(request, keyData));
+        Boolean replaced = toObject(invokeWithCompletion(request, keyData));
         if (replaced == null) {
             return false;
         }
@@ -938,7 +1028,7 @@ public class ClientCacheProxy<K, V>
         final Data keyData = delegate.toData(key);
         final Data valueData = delegate.toData(value);
         CachePutRequest request = new CachePutRequest(getDistributedObjectName(), keyData, valueData, expiryPolicy);
-        invoke(request, keyData);
+        invokeWithCompletion(request, keyData);
         if (cacheOnUpdate) {
             storeInNearCache(keyData, valueData, value);
         } else {
@@ -959,7 +1049,7 @@ public class ClientCacheProxy<K, V>
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         CachePutRequest request = new CachePutRequest(getDistributedObjectName(), keyData, valueData, expiryPolicy, true);
-        final Object oldValue = invoke(request, keyData);
+        final Object oldValue = invokeWithCompletion(request, keyData);
         if (cacheOnUpdate) {
             storeInNearCache(keyData, valueData, value);
         } else {
@@ -1002,7 +1092,7 @@ public class ClientCacheProxy<K, V>
         final Data valueData = toData(value);
         CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(getDistributedObjectName(), keyData, valueData,
                 expiryPolicy);
-        Boolean isPut = toObject(invoke(request, keyData));
+        Boolean isPut = toObject(invokeWithCompletion(request, keyData));
         if (isPut == null) {
             return false;
         }
@@ -1040,7 +1130,7 @@ public class ClientCacheProxy<K, V>
         final Data valueData = toData(value);
         CacheGetAndReplaceRequest request = new CacheGetAndReplaceRequest(getDistributedObjectName(), keyData, valueData,
                 expiryPolicy);
-        V currentValue = toObject(invoke(request, keyData));
+        V currentValue = toObject(invokeWithCompletion(request, keyData));
         if (currentValue != null) {
             if (cacheOnUpdate) {
                 storeInNearCache(keyData, valueData, value);
@@ -1060,6 +1150,75 @@ public class ClientCacheProxy<K, V>
         }
         return result;
     }
+    //endregion
+
+    //region sync listeners
+    private Integer registerCompletionLatch(int count) {
+        if (!syncListenerRegistrations.isEmpty()) {
+            final int id = completionIdCounter.incrementAndGet();
+            CountDownLatch countDownLatch = new CountDownLatch(count);
+            syncLocks.put(id, countDownLatch);
+            return id;
+        }
+        return IGNORE_COMPLETION;
+    }
+
+    private void deregisterCompletionLatch(Integer countDownLatchId){
+        syncLocks.remove(countDownLatchId);
+    }
+
+    private void waitCompletionLatch(Integer countDownLatchId) {
+        if(countDownLatchId != -1){
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch != null) {
+                try {
+                    countDownLatch.await();
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+        }
+    }
+
+    private void countDownCompletionLatch(int id) {
+        final CountDownLatch countDownLatch = syncLocks.get(id);
+        countDownLatch.countDown();
+        if(countDownLatch.getCount() == 0){
+            deregisterCompletionLatch(id);
+        }
+    }
+
+    private void registerCompletionListener() {
+        if(!syncListenerRegistrations.isEmpty() && completionRegistrationId == null){
+            final EventHandler<Object> handler = new EventHandler<Object>() {
+                @Override
+                public void handle(Object eventObject) {
+                    if(eventObject instanceof CacheEventData){
+                        CacheEventData cacheEventData = (CacheEventData) eventObject;
+                        if(cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
+                            int completionId = toObject(cacheEventData.getDataValue());
+                            countDownCompletionLatch(completionId);
+                        }
+                    }
+                }
+
+                @Override
+                public void onListenerRegister() { }
+            };
+            final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(getDistributedObjectName());
+            completionRegistrationId = getContext().getListenerService().listen(registrationRequest, null, handler);
+        }
+    }
+    private void deregisterCompletionListener() {
+        if(syncListenerRegistrations.isEmpty() && completionRegistrationId != null){
+            CacheRemoveEntryListenerRequest removeRequest = new CacheRemoveEntryListenerRequest(getDistributedObjectName(), completionRegistrationId);
+            boolean isDeregistered = getContext().getListenerService().stopListening(removeRequest, completionRegistrationId);
+            if(isDeregistered){
+                completionRegistrationId = null;
+            }
+        }
+    }
+
     //endregion
 
     private void ensureOpen() {
@@ -1144,6 +1303,19 @@ public class ClientCacheProxy<K, V>
             final Future future = delegate.getClientContext().getInvocationService().invokeOnKeyOwner(req, key);
             return future.get();
         } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+    private Object invokeWithCompletion(AbstractCacheRequest req, Object key) {
+        final Integer completionId = registerCompletionLatch(1);
+        req.setCompletionId(completionId);
+        try {
+            final Future future = delegate.getClientContext().getInvocationService().invokeOnKeyOwner(req, key);
+            final Object result = future.get();
+            waitCompletionLatch(completionId);
+            return result;
+        } catch (Exception e) {
+            deregisterCompletionLatch(completionId);
             throw ExceptionUtil.rethrow(e);
         }
     }

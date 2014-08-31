@@ -31,7 +31,7 @@ public class CacheGetAndRemoveRequest
         extends AbstractCacheRequest {
 
     protected Data key;
-    private int completionId;
+    private int completionId = -1;
 
     public CacheGetAndRemoveRequest() {
     }
@@ -57,6 +57,7 @@ public class CacheGetAndRemoveRequest
     public void write(PortableWriter writer)
             throws IOException {
         writer.writeUTF("n", name);
+        writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
@@ -64,8 +65,14 @@ public class CacheGetAndRemoveRequest
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
+        completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
     }
+
+    public void setCompletionId(Integer completionId){
+        this.completionId = completionId != null ? completionId : -1;
+    }
+
 }

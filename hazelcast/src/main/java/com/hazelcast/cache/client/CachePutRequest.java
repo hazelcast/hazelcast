@@ -78,6 +78,7 @@ public class CachePutRequest
     public void write(PortableWriter writer)
             throws IOException {
         writer.writeUTF("n", name);
+        writer.writeInt("c", completionId);
         writer.writeBoolean("g", get);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
@@ -88,6 +89,7 @@ public class CachePutRequest
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
+        completionId = reader.readInt("c");
         get = reader.readBoolean("g");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
@@ -95,5 +97,9 @@ public class CachePutRequest
         value = new Data();
         value.readData(in);
         expiryPolicy = in.readObject();
+    }
+
+    public void setCompletionId(Integer completionId){
+        this.completionId = completionId != null ? completionId : -1;
     }
 }

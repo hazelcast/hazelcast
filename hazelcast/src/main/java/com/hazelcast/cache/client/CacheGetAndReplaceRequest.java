@@ -62,6 +62,7 @@ public class CacheGetAndReplaceRequest
     public void write(PortableWriter writer)
             throws IOException {
         writer.writeUTF("n", name);
+        writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         value.writeData(out);
@@ -71,6 +72,7 @@ public class CacheGetAndReplaceRequest
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
+        completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
@@ -78,4 +80,9 @@ public class CacheGetAndReplaceRequest
         value.readData(in);
         expiryPolicy = in.readObject();
     }
+
+    public void setCompletionId(Integer completionId){
+        this.completionId = completionId != null ? completionId : -1;
+    }
+
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.cache;
 
+import com.hazelcast.cache.BasicCacheTest;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
@@ -33,6 +34,11 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
+import javax.cache.configuration.FactoryBuilder;
+import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -83,4 +89,40 @@ public class ClientCacheTest
         assertNull(cache2);
     }
 
+    @Test
+    public void testCompletionTest()
+            throws InterruptedException {
+        final String cacheName = "simpleCache";
+
+        final CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
+
+        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        BasicCacheTest.SimpleEntryListener<Integer, String> listener = new BasicCacheTest.SimpleEntryListener<Integer, String>();
+        final MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
+                new MutableCacheEntryListenerConfiguration<Integer, String>(FactoryBuilder.factoryOf(listener), null, true, true);
+
+        config.addCacheEntryListenerConfiguration(listenerConfiguration);
+
+        Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
+        assertNotNull(cache);
+
+        Integer key1 = 1;
+        String value1 = "value1";
+        cache.put(key1, value1);
+        assertEquals(1, listener.created.get());
+
+        Integer key2 = 2;
+        String value2 = "value2";
+        cache.put(key2, value2);
+        assertEquals(2, listener.created.get());
+
+        Set<Integer> keys = new HashSet<Integer>();
+        keys.add(key1);
+        keys.add(key2);
+        cache.removeAll(keys);
+
+        assertEquals(2, listener.removed.get());
+
+        //        cacheManager.destroyCache(cacheName);
+    }
 }

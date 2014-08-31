@@ -35,12 +35,15 @@ import com.hazelcast.util.ExceptionUtil;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 public final class HazelcastClientCacheManager
         extends HazelcastCacheManager {
 
     private final ClientContext clientContext;
+    private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
 
     public HazelcastClientCacheManager(HazelcastClientCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
@@ -67,14 +70,16 @@ public final class HazelcastClientCacheManager
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
-                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), false, enabled, member.getAddress());
+                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), false,
+                        enabled, member.getAddress());
                 final Future future = invocationService.invokeOnTarget(request, member.getAddress());
                 //make sure all configs are created
                 future.get();
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);
             }
-        }    }
+        }
+    }
 
     @Override
     public void enableStatistics(String cacheName, boolean enabled) {
@@ -88,7 +93,8 @@ public final class HazelcastClientCacheManager
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
-                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), true, enabled, member.getAddress());
+                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), true,
+                        enabled, member.getAddress());
                 final Future future = invocationService.invokeOnTarget(request, member.getAddress());
                 //make sure all configs are created
                 future.get();
@@ -100,13 +106,17 @@ public final class HazelcastClientCacheManager
 
     @Override
     protected <K, V> CacheConfig<K, V> getCacheConfigLocal(String cacheName) {
-        //TODO implimenent it if we cache configs locally
-        return null;
+        return configs.get(cacheName);
     }
 
     @Override
     protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
-        //TODO implemenent it if we cache configs locally
+        configs.putIfAbsent(cacheConfig.getNameWithPrefix(), cacheConfig);
+    }
+
+    @Override
+    protected void removeCacheConfigFromLocal(String cacheName) {
+        configs.remove(cacheName);
     }
 
     @Override
@@ -156,10 +166,10 @@ public final class HazelcastClientCacheManager
         return null;
     }
 
-//    @Override
-//    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
-//        //throw new UnsupportedOperationException("");
-//        //FIXME REGISTER LISTENERS
-//    }
+    //    @Override
+    //    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
+    //        //throw new UnsupportedOperationException("");
+    //        //FIXME REGISTER LISTENERS
+    //    }
 
 }

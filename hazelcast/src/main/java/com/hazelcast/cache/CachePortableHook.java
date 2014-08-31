@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.client.CacheAddEntryListenerRequest;
 import com.hazelcast.cache.client.CacheClearRequest;
 import com.hazelcast.cache.client.CacheContainsKeyRequest;
 import com.hazelcast.cache.client.CacheCreateConfigRequest;
@@ -26,14 +27,15 @@ import com.hazelcast.cache.client.CacheGetAndReplaceRequest;
 import com.hazelcast.cache.client.CacheGetConfigRequest;
 import com.hazelcast.cache.client.CacheGetRequest;
 import com.hazelcast.cache.client.CacheIterateRequest;
+import com.hazelcast.cache.client.CacheListenerRegistrationRequest;
 import com.hazelcast.cache.client.CacheLoadAllRequest;
 import com.hazelcast.cache.client.CacheManagementConfigRequest;
 import com.hazelcast.cache.client.CachePutIfAbsentRequest;
 import com.hazelcast.cache.client.CachePutRequest;
+import com.hazelcast.cache.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.client.CacheRemoveRequest;
 import com.hazelcast.cache.client.CacheReplaceRequest;
 import com.hazelcast.cache.client.CacheSizeRequest;
-import com.hazelcast.multimap.impl.operations.client.AddEntryListenerRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
@@ -72,8 +74,10 @@ public class CachePortableHook
     public static final int ENTRY_PROCESSOR = 20;
     public static final int MANAGEMENT_CONFIG = 21;
     public static final int ADD_ENTRY_LISTENER = 22;
+    public static final int REMOVE_ENTRY_LISTENER = 23;
+    public static final int LISTENER_REGISTRATION = 24;
 
-    public static final int LEN = 23;
+    public static final int LEN = 25;
 
     public int getFactoryId() {
         return F_ID;
@@ -82,7 +86,6 @@ public class CachePortableHook
     public PortableFactory createFactory() {
         return new PortableFactory() {
             final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[LEN];
-
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
@@ -191,7 +194,17 @@ public class CachePortableHook
                 };
                 constructors[ADD_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
-                        return new AddEntryListenerRequest();
+                        return new CacheAddEntryListenerRequest();
+                    }
+                };
+                constructors[REMOVE_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new CacheRemoveEntryListenerRequest();
+                    }
+                };
+                constructors[LISTENER_REGISTRATION] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new CacheListenerRegistrationRequest();
                     }
                 };
             }

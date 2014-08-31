@@ -65,6 +65,7 @@ public class CacheRemoveRequest
     public void write(PortableWriter writer)
             throws IOException {
         writer.writeUTF("n", name);
+        writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         IOUtil.writeNullableData(out, currentValue);
@@ -73,9 +74,15 @@ public class CacheRemoveRequest
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
+        completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
         currentValue = IOUtil.readNullableData(in);
     }
+
+    public void setCompletionId(Integer completionId){
+        this.completionId = completionId != null ? completionId : -1;
+    }
+
 }

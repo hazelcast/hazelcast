@@ -34,6 +34,7 @@ public class CacheEntryProcessorRequest
     protected Data key;
     private EntryProcessor entryProcessor;
     private Object[] arguments;
+    private int completionId;
 
     public CacheEntryProcessorRequest() {
     }
@@ -56,12 +57,13 @@ public class CacheEntryProcessorRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheEntryProcessorOperation(name, key, -1, entryProcessor, arguments);
+        return new CacheEntryProcessorOperation(name, key, completionId, entryProcessor, arguments);
     }
 
     public void write(PortableWriter writer)
             throws IOException {
         writer.writeUTF("n", name);
+        writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         out.writeObject(entryProcessor);
@@ -77,6 +79,7 @@ public class CacheEntryProcessorRequest
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
+        completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
@@ -90,5 +93,10 @@ public class CacheEntryProcessorRequest
             }
         }
     }
+
+    public void setCompletionId(Integer completionId){
+        this.completionId = completionId != null ? completionId : -1;
+    }
+
 
 }

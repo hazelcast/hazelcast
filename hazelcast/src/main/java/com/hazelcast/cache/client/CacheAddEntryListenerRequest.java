@@ -17,18 +17,15 @@
 package com.hazelcast.cache.client;
 
 import com.hazelcast.cache.CacheEventListener;
+import com.hazelcast.cache.CacheEventSet;
 import com.hazelcast.cache.CachePortableHook;
 import com.hazelcast.cache.CacheService;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.map.MapService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
-import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
 import java.security.Permission;
 
@@ -37,7 +34,7 @@ public class CacheAddEntryListenerRequest
         implements RetryableRequest {
 
     private String name;
-    private CacheEntryListenerConfiguration configuration;
+//    private CacheEntryListenerConfiguration configuration;
 
     public CacheAddEntryListenerRequest() {
     }
@@ -48,14 +45,17 @@ public class CacheAddEntryListenerRequest
 
     @Override
     public Object call() {
-        ClientEndpoint endpoint = getEndpoint();
-        CacheService cacheService = getService();
-        //CacheInvalidationListener listener = new CacheInvalidationListener(endpoint, getCallId());
-        //FIXME CLIENT LISTNER FIX
-        CacheEventListener listener = null;
-        String registrationId = cacheService.registerListener(name, listener);
-        endpoint.setListenerRegistration(MapService.SERVICE_NAME, name, registrationId);
-        return registrationId;
+        final ClientEndpoint endpoint = getEndpoint();
+        final CacheService service = getService();
+        CacheEventListener entryListener = new CacheEventListener() {
+            @Override
+            public void handleEvent(Object eventObject) {
+                if (endpoint.live()) {
+                    endpoint.sendEvent(eventObject, getCallId());
+                }
+            }
+        };
+        return service.registerListener(name, entryListener);
     }
 
     public String getServiceName() {
@@ -77,8 +77,6 @@ public class CacheAddEntryListenerRequest
             throws IOException {
         super.write(writer);
         writer.writeUTF("n", name);
-        final ObjectDataOutput output = writer.getRawDataOutput();
-        output.writeObject(configuration);
     }
 
     @Override
@@ -86,8 +84,6 @@ public class CacheAddEntryListenerRequest
             throws IOException {
         super.read(reader);
         name = reader.readUTF("n");
-        final ObjectDataInput input = reader.getRawDataInput();
-        configuration = input.readObject();
     }
 
     @Override
@@ -95,22 +91,4 @@ public class CacheAddEntryListenerRequest
         return null;
     }
 
-    //    class CacheEventListenerAdaptorWrapper<K,V> extends CacheEventListenerAdaptor<K,V>{
-    //
-    //        public CacheEventListenerAdaptorWrapper(CacheMeta cacheMeta, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-    //            super(cacheMeta, cacheEntryListenerConfiguration);
-    //        }
-    //
-    //        @Override
-    //        public void handleEvent(EventType eventType, K key, V newValue, V oldValue, Class<K> keyClass, Class<V> valueClass) {
-    ////            super.handleEvent(eventType, key, newValue, oldValue, keyClass, valueClass);
-    //            if (endpoint.live()) {
-    //                Data dataKey = serializationService.toData(key);
-    //                Data dataNewValue = serializationService.toData(newValue);
-    //                Data dataOldValue = serializationService.toData(oldValue);
-    //                CacheEventDataImpl cacheEventData = new CacheEventDataImpl(cacheMeta.getDistributedObjectName(), dataKey,  dataNewValue,  dataOldValue,  eventType);
-    //                endpoint.sendEvent(cacheEventData, getCallId());
-    //            }
-    //        }
-    //    }
 }

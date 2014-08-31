@@ -30,6 +30,9 @@ public class CacheEventSet implements  DataSerializable {
     private CacheEventType eventType;
     private Set<CacheEventData> events;
 
+    public CacheEventSet() {
+    }
+
     public CacheEventSet(CacheEventType eventType, Set<CacheEventData> events) {
         this.eventType = eventType;
         this.events = events;

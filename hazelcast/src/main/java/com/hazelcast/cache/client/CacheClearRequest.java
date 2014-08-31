@@ -46,10 +46,11 @@ public class CacheClearRequest
     public CacheClearRequest() {
     }
 
-    public CacheClearRequest(String name, Set<Data> keys, boolean isRemoveAll) {
+    public CacheClearRequest(String name, Set<Data> keys, boolean isRemoveAll, int completionId) {
         this.name = name;
         this.keys = keys;
         this.isRemoveAll = isRemoveAll;
+        this.completionId = completionId;
     }
 
     public String getServiceName() {
@@ -68,6 +69,7 @@ public class CacheClearRequest
     public void write(PortableWriter writer)
             throws IOException {
         writer.writeUTF("n", name);
+        writer.writeInt("c", completionId);
         writer.writeBoolean("r", isRemoveAll);
         writer.writeBoolean("k", keys != null);
         if (keys != null) {
@@ -84,6 +86,7 @@ public class CacheClearRequest
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
+        completionId = reader.readInt("c");
         isRemoveAll = reader.readBoolean("r");
         final boolean isKeysNotNull = reader.readBoolean("k");
         if (isKeysNotNull) {
