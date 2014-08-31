@@ -146,10 +146,6 @@ public class CacheEntryProcessorEntry<K, V>
                 break;
             case REMOVE:
                 cacheRecordStore.remove(keyData, null);
-                //                if (isStatisticsEnabled) {
-                //                    statistics.increaseCacheRemovals(1);
-                //                    statistics.addGetTimeNano(System.nanoTime() - start);
-                //                }
                 break;
             case CREATE:
                 if (isStatisticsEnabled) {

@@ -341,7 +341,7 @@ public class CacheRecordStore
             }
 
         }
-        return true;
+        return result;
     }
 
     @Override
@@ -773,20 +773,20 @@ public class CacheRecordStore
 
     void deleteRecord(Data key) {
         final CacheRecord record = records.remove(key);
-        final Data dataOldValue;
+        final Data dataValue;
         switch (cacheConfig.getInMemoryFormat()) {
             case BINARY:
-                dataOldValue = (Data) record.getValue();
+                dataValue = (Data) record.getValue();
                 break;
             case OBJECT:
-                dataOldValue = cacheService.toData(record.getValue());
+                dataValue = cacheService.toData(record.getValue());
                 break;
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
         }
 
         if (isEventsEnabled) {
-            publishEvent(name, CacheEventType.REMOVED, record.getKey(), dataOldValue, null, true);
+            publishEvent(name, CacheEventType.REMOVED, record.getKey(), null, dataValue, false);
         }
     }
 
@@ -949,18 +949,18 @@ public class CacheRecordStore
     void processExpiredEntry(Data key, CacheRecord record) {
         records.remove(key);
         if (isEventsEnabled) {
-            final Data dataOldValue;
+            final Data dataValue;
             switch (cacheConfig.getInMemoryFormat()) {
                 case BINARY:
-                    dataOldValue = (Data) record.getValue();
+                    dataValue = (Data) record.getValue();
                     break;
                 case OBJECT:
-                    dataOldValue = cacheService.toData(record.getValue());
+                    dataValue = cacheService.toData(record.getValue());
                     break;
                 default:
                     throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
             }
-            publishEvent(name, CacheEventType.EXPIRED, key, dataOldValue, null, true);
+            publishEvent(name, CacheEventType.EXPIRED, key, null, dataValue, false);
         }
     }
 
