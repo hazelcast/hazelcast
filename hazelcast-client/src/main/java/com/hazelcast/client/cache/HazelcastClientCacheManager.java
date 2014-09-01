@@ -16,12 +16,12 @@
 
 package com.hazelcast.client.cache;
 
-import com.hazelcast.cache.CacheService;
-import com.hazelcast.cache.HazelcastCacheManager;
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.HazelcastCacheManager;
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.client.CacheCreateConfigRequest;
-import com.hazelcast.cache.client.CacheGetConfigRequest;
-import com.hazelcast.cache.client.CacheManagementConfigRequest;
+import com.hazelcast.cache.impl.client.CacheCreateConfigRequest;
+import com.hazelcast.cache.impl.client.CacheGetConfigRequest;
+import com.hazelcast.cache.impl.client.CacheManagementConfigRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.proxy.ClientCacheDistributedObject;
 import com.hazelcast.client.proxy.ClientCacheProxy;
@@ -31,7 +31,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.util.ExceptionUtil;
-import com.sun.swing.internal.plaf.synth.resources.synth_sv;
 
 import java.net.URI;
 import java.util.Collection;

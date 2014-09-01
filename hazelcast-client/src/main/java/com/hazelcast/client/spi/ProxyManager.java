@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.cache.CacheService;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -26,7 +26,6 @@ import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
 import com.hazelcast.client.proxy.ClientCacheDistributedObject;
-import com.hazelcast.client.proxy.ClientCacheProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
 import com.hazelcast.client.proxy.ClientExecutorServiceProxy;
 import com.hazelcast.client.proxy.ClientIdGeneratorProxy;

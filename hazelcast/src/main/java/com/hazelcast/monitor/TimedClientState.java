@@ -16,7 +16,7 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.cache.CacheStatsImpl;
+import com.hazelcast.cache.impl.CacheStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;

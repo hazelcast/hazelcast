@@ -16,20 +16,13 @@
 
 package com.hazelcast.client.cache;
 
-import com.hazelcast.cache.AbstractClusterWideIterator;
-import com.hazelcast.cache.CacheKeyIteratorResult;
-import com.hazelcast.cache.CacheProxy;
-import com.hazelcast.cache.CacheService;
-import com.hazelcast.cache.client.CacheIterateRequest;
-import com.hazelcast.cache.operation.CacheKeyIteratorOperation;
+import com.hazelcast.cache.impl.AbstractClusterWideIterator;
+import com.hazelcast.cache.impl.CacheKeyIteratorResult;
+import com.hazelcast.cache.impl.client.CacheIterateRequest;
 import com.hazelcast.client.proxy.ClientCacheProxy;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.Cache;

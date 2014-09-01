@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cache.CacheService;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.list.ListService;
@@ -132,7 +132,7 @@ final class ServiceManager {
             ClassLoader classLoader = nodeEngine.getConfigClassLoader();
             Class theClass = ClassLoaderUtil.loadClass(classLoader, localClassName);
             if (theClass != null) {
-                final Object serviceObject = createServiceObject("com.hazelcast.cache.CacheService");
+                final Object serviceObject = createServiceObject("com.hazelcast.cache.impl.CacheService");
                 registerService(CacheService.SERVICE_NAME, serviceObject);
             }
         } catch (ClassNotFoundException e) {

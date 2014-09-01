@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.cache;
 
-import com.hazelcast.cache.HazelcastAbstractCachingProvider;
+import com.hazelcast.cache.impl.HazelcastAbstractCachingProvider;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
