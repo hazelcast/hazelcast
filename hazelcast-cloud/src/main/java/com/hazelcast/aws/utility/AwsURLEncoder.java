@@ -28,7 +28,11 @@ public final class AwsURLEncoder {
     public static String urlEncode(String string) {
         String encoded;
         try {
-            encoded = URLEncoder.encode(string, "UTF-8").replace("+", "%20");
+            encoded =
+                    URLEncoder.
+                            encode(string, "UTF-8").
+                                replace("+", "%20").
+                                replace("/", "%2F");
         } catch (UnsupportedEncodingException e) {
             throw new HazelcastException(e);
         }
