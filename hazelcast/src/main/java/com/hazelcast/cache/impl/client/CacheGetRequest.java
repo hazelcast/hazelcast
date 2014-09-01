@@ -32,7 +32,7 @@ public class CacheGetRequest
         extends AbstractCacheRequest {
 
     protected Data key;
-    protected ExpiryPolicy expiryPolicy = null;
+    protected ExpiryPolicy expiryPolicy;
 
     public CacheGetRequest() {
     }

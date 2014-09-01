@@ -25,7 +25,6 @@ import java.security.Permission;
 public class CacheRemoveEntryListenerRequest
         extends BaseClientRemoveListenerRequest {
 
-
     public CacheRemoveEntryListenerRequest() {
     }
 
@@ -33,7 +32,8 @@ public class CacheRemoveEntryListenerRequest
         super(name, registrationId);
     }
 
-    public Object call() throws Exception {
+    public Object call()
+            throws Exception {
         final CacheService service = getService();
         return service.deregisterListener(name, registrationId);
     }

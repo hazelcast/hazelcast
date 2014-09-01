@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.cache;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastCacheManager;
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.client.CacheCreateConfigRequest;
 import com.hazelcast.cache.impl.client.CacheGetConfigRequest;
 import com.hazelcast.cache.impl.client.CacheManagementConfigRequest;
@@ -106,19 +106,19 @@ public final class HazelcastClientCacheManager
 
     @Override
     protected <K, V> CacheConfig<K, V> getCacheConfigLocal(String cacheName) {
-        System.out.println("GET FROM LOCAL CACHE name:"+ cacheName + " status:" + configs.containsKey(cacheName));
+        System.out.println("GET FROM LOCAL CACHE name:" + cacheName + " status:" + configs.containsKey(cacheName));
         return configs.get(cacheName);
     }
 
     @Override
     protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
-        System.out.println("ADDING LOCAL CACHE name:"+ cacheConfig.getNameWithPrefix() );
+        System.out.println("ADDING LOCAL CACHE name:" + cacheConfig.getNameWithPrefix());
         configs.putIfAbsent(cacheConfig.getNameWithPrefix(), cacheConfig);
     }
 
     @Override
     protected void removeCacheConfigFromLocal(String cacheName) {
-//        System.out.println("REMOVING LOCAL CACHE name:"+ cacheName );
+        //        System.out.println("REMOVING LOCAL CACHE name:"+ cacheName );
         configs.remove(cacheName);
     }
 

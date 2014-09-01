@@ -44,8 +44,7 @@ import java.util.concurrent.ConcurrentMap;
  * Cache Service
  */
 public class CacheService
-        implements ManagedService, RemoteService, MigrationAwareService,
-                   EventPublishingService<Object, CacheEventListener> {
+        implements ManagedService, RemoteService, MigrationAwareService, EventPublishingService<Object, CacheEventListener> {
 
     /**
      * Service name
@@ -215,9 +214,9 @@ public class CacheService
         return configs.get(name);
     }
 
-    public Iterable<String> getCacheNames() {
-        return configs.keySet();
-    }
+//    public Iterable<String> getCacheNames() {
+//        return configs.keySet();
+//    }
 
     public Collection<CacheConfig> getCacheConfigs() {
         return configs.values();
@@ -254,12 +253,13 @@ public class CacheService
             return;
         }
         final Object eventData;
-        switch (eventType){
+        switch (eventType) {
             case CREATED:
             case UPDATED:
             case REMOVED:
             case EXPIRED:
-                final CacheEventData cacheEventData = new CacheEventDataImpl(cacheName, eventType, dataKey, dataValue, dataOldValue,isOldValueAvailable);
+                final CacheEventData cacheEventData = new CacheEventDataImpl(cacheName, eventType, dataKey, dataValue,
+                        dataOldValue, isOldValueAvailable);
                 CacheEventSet eventSet = new CacheEventSet(eventType);
                 eventSet.addEventData(cacheEventData);
                 eventData = eventSet;
@@ -274,7 +274,8 @@ public class CacheService
                 eventData = new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED, dataKey, dataValue, null, false);
                 break;
             default:
-                throw new IllegalArgumentException("Event Type not defined to create an eventData during publish : " + eventType.name());
+                throw new IllegalArgumentException(
+                        "Event Type not defined to create an eventData during publish : " + eventType.name());
         }
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventData, orderKey);
     }

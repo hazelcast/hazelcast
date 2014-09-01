@@ -44,7 +44,7 @@ public abstract class AbstractCacheRequest
         return CacheService.SERVICE_NAME;
     }
 
-    public void setCompletionId(Integer completionId){
+    public void setCompletionId(Integer completionId) {
     }
 
     @Override

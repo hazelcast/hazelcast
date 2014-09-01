@@ -143,20 +143,20 @@ public class HazelcastServerCacheManager
         final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
-                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+                                                                   .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.getSafely();
     }
 
-//    @Override
-//    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
-//        //REGISTER LISTENERS
-//        final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations()
-//                .iterator();
-//        while (iterator.hasNext()) {
-//            final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
-//            source.registerCacheEntryListener(listenerConfig);
-////            cacheService.registerCacheEntryListener(cacheConfig.getNameWithPrefix(), source, listenerConfig);
-//        }
-//    }
+    //    @Override
+    //    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
+    //        //REGISTER LISTENERS
+    //        final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations()
+    //                .iterator();
+    //        while (iterator.hasNext()) {
+    //            final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
+    //            source.registerCacheEntryListener(listenerConfig);
+    ////            cacheService.registerCacheEntryListener(cacheConfig.getNameWithPrefix(), source, listenerConfig);
+    //        }
+    //    }
 
 }

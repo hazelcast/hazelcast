@@ -26,8 +26,8 @@ import javax.cache.CacheManager;
 import java.net.URI;
 import java.util.Properties;
 
-public final class HazelcastClientCachingProvider extends HazelcastAbstractCachingProvider {
-
+public final class HazelcastClientCachingProvider
+        extends HazelcastAbstractCachingProvider {
 
     public HazelcastClientCachingProvider() {
         super();
@@ -36,15 +36,13 @@ public final class HazelcastClientCachingProvider extends HazelcastAbstractCachi
     @Override
     protected HazelcastInstance initHazelcast() {
         ClientConfig config = new XmlClientConfigBuilder().build();
-        return  HazelcastClient.newHazelcastClient(config);
+        return HazelcastClient.newHazelcastClient(config);
     }
 
     @Override
     protected CacheManager getHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
-       return new HazelcastClientCacheManager(this, getHazelcastInstance(), uri, classLoader, managerProperties);
+        return new HazelcastClientCacheManager(this, getHazelcastInstance(), uri, classLoader, managerProperties);
     }
-
-
 
     @Override
     public String toString() {

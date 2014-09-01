@@ -39,8 +39,8 @@ public class CacheClearRequest
         implements RetryableRequest {
 
     private String name;
-    private Set<Data> keys = null;
-    private boolean isRemoveAll = false;
+    private Set<Data> keys;
+    private boolean isRemoveAll;
     private int completionId;
 
     public CacheClearRequest() {

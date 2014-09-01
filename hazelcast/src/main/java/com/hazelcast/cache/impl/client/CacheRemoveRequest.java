@@ -32,7 +32,7 @@ public class CacheRemoveRequest
         extends AbstractCacheRequest {
 
     protected Data key;
-    protected Data currentValue = null;
+    protected Data currentValue;
     private int completionId;
 
     public CacheRemoveRequest() {
@@ -81,7 +81,7 @@ public class CacheRemoveRequest
         currentValue = IOUtil.readNullableData(in);
     }
 
-    public void setCompletionId(Integer completionId){
+    public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
     }
 

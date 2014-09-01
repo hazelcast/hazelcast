@@ -22,9 +22,10 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
-public class ClientCacheDistributedObject extends ClientProxy {
+public class ClientCacheDistributedObject
+        extends ClientProxy {
 
-    public ClientCacheDistributedObject( String serviceName, String objectName) {
+    public ClientCacheDistributedObject(String serviceName, String objectName) {
         super(serviceName, objectName);
     }
 

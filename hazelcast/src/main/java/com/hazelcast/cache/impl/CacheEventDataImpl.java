@@ -36,7 +36,8 @@ public class CacheEventDataImpl
     public CacheEventDataImpl() {
     }
 
-    public CacheEventDataImpl(String name, CacheEventType eventType, Data dataKey, Data dataNewValue, Data dataOldValue, boolean isOldValueAvailable) {
+    public CacheEventDataImpl(String name, CacheEventType eventType, Data dataKey, Data dataNewValue, Data dataOldValue,
+                              boolean isOldValueAvailable) {
         this.name = name;
         this.eventType = eventType;
         this.dataKey = dataKey;

@@ -25,10 +25,10 @@ import javax.cache.processor.MutableEntry;
 
 /**
  * Entry of Entry Processor for {@link CacheEntry}.
- * @see com.hazelcast.map.EntryProcessor
  *
  * @param <K>
  * @param <V>
+ * @see com.hazelcast.map.EntryProcessor
  */
 public class CacheEntryProcessorEntry<K, V>
         implements MutableEntry<K, V> {

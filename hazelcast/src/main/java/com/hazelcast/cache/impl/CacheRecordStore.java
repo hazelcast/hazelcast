@@ -76,7 +76,7 @@ public class CacheRecordStore
     private boolean hasExpiringEntry;
     private boolean isEventsEnabled = true;
 
-    private boolean isEventBatchingEnabled = false;
+    private boolean isEventBatchingEnabled;
 
     private ExpiryPolicy defaultExpiryPolicy;
 
@@ -97,7 +97,8 @@ public class CacheRecordStore
             cacheWriter = cacheWriterFactory.create();
         }
         evictionTaskFuture = nodeEngine.getExecutionService()
-                .scheduleWithFixedDelay("hz:cache", new EvictionTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+                                       .scheduleWithFixedDelay("hz:cache", new EvictionTask(), INITIAL_DELAY, PERIOD,
+                                               TimeUnit.SECONDS);
 
         this.cacheRecordFactory = new CacheRecordFactory(cacheConfig.getInMemoryFormat(), nodeEngine.getSerializationService());
         final Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
@@ -139,14 +140,6 @@ public class CacheRecordStore
             } catch (Throwable t) {
                 //leave the expiry time untouched when we can't determine a duration
             }
-            //TODO check this
-            //            if(isExpiredAt(et, now)){
-            //                processExpiredEntry(key, record);
-            //                if (isStatisticsEnabled()) {
-            //                    statistics.increaseCacheMisses(1);
-            //                }
-            //                return null;
-            //            }
             if (isStatisticsEnabled()) {
                 statistics.increaseCacheHits(1);
             }
@@ -282,7 +275,7 @@ public class CacheRecordStore
 
         boolean result = true;
         if (record == null || isExpired) {
-            result= false;
+            result = false;
         } else {
             deleteRecord(key);
         }
@@ -308,7 +301,7 @@ public class CacheRecordStore
             if (isStatisticsEnabled()) {
                 statistics.increaseCacheMisses(1);
             }
-            result=false;
+            result = false;
         } else {
             hitCount++;
             if (compare(record.getValue(), value)) {
@@ -328,7 +321,7 @@ public class CacheRecordStore
                 if (isExpiredAt(et, now)) {
                     processExpiredEntry(key, record);
                 }
-                result=false;
+                result = false;
             }
         }
         if (result && isStatisticsEnabled()) {
@@ -680,8 +673,8 @@ public class CacheRecordStore
         //TODO EVICT EXPIRED RECORDS
     }
 
-    boolean createRecordWithExpiry(Data key, Object value, ExpiryPolicy localExpiryPolicy,
-                                   long now, boolean disableWriteThrough) {
+    boolean createRecordWithExpiry(Data key, Object value, ExpiryPolicy localExpiryPolicy, long now,
+                                   boolean disableWriteThrough) {
         Duration expiryDuration;
         try {
             expiryDuration = localExpiryPolicy.getExpiryForCreation();
@@ -964,30 +957,34 @@ public class CacheRecordStore
         }
     }
 
-    public void publishCompletedEvent(String cacheName, int completionId, Data dataKey, int orderKey){
-        if(completionId>0){
-            cacheService.publishEvent(cacheName, CacheEventType.COMPLETED, dataKey, cacheService.toData(completionId), null, false, orderKey);
+    public void publishCompletedEvent(String cacheName, int completionId, Data dataKey, int orderKey) {
+        if (completionId > 0) {
+            cacheService
+                    .publishEvent(cacheName, CacheEventType.COMPLETED, dataKey, cacheService.toData(completionId), null, false,
+                            orderKey);
         }
     }
 
-    protected void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataOldValue, Data dataValue, boolean isOldValueAvailable) {
-        if(isEventBatchingEnabled){
-            final CacheEventDataImpl cacheEventData = new CacheEventDataImpl(cacheName, eventType, dataKey, dataValue, dataOldValue,
-                    isOldValueAvailable);
+    protected void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataOldValue, Data dataValue,
+                                boolean isOldValueAvailable) {
+        if (isEventBatchingEnabled) {
+            final CacheEventDataImpl cacheEventData = new CacheEventDataImpl(cacheName, eventType, dataKey, dataValue,
+                    dataOldValue, isOldValueAvailable);
             Set<CacheEventData> cacheEventDatas = batchEvent.get(eventType);
-            if(cacheEventDatas == null){
+            if (cacheEventDatas == null) {
                 cacheEventDatas = new HashSet<CacheEventData>();
-                batchEvent.put(eventType,cacheEventDatas);
+                batchEvent.put(eventType, cacheEventDatas);
             }
             cacheEventDatas.add(cacheEventData);
         } else {
-            cacheService.publishEvent(cacheName, eventType, dataKey, dataValue, dataOldValue,isOldValueAvailable, dataKey.hashCode());
+            cacheService.publishEvent(cacheName, eventType, dataKey, dataValue, dataOldValue, isOldValueAvailable,
+                    dataKey.hashCode());
         }
     }
 
-    private void publishBatchedEvents(String cacheName, CacheEventType cacheEventType, int orderKey){
+    private void publishBatchedEvents(String cacheName, CacheEventType cacheEventType, int orderKey) {
         final Set<CacheEventData> cacheEventDatas = batchEvent.get(cacheEventType);
-        CacheEventSet ces = new CacheEventSet(cacheEventType,cacheEventDatas);
+        CacheEventSet ces = new CacheEventSet(cacheEventType, cacheEventDatas);
         cacheService.publishEvent(cacheName, ces, orderKey);
     }
 

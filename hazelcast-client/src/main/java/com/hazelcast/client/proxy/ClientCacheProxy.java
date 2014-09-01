@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheEventSet;
 import com.hazelcast.cache.impl.CacheEventType;
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
 import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
@@ -97,13 +97,13 @@ public class ClientCacheProxy<K, V>
     private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     private static final int IGNORE_COMPLETION = -1;
+    protected ClientCacheDistributedObject delegate;
 
     private final CacheConfig<K, V> cacheConfig;
     private final boolean cacheOnUpdate;
-    protected ClientCacheDistributedObject delegate;
     //this will represent the name from the user perspective
     private String name;
-    private boolean isClosed = false;
+    private boolean isClosed;
 
     //    private CacheLoader<K, V> cacheLoader;
     private HazelcastClientCacheManager cacheManager;
@@ -359,11 +359,11 @@ public class ClientCacheProxy<K, V>
         CacheClearRequest request = new CacheClearRequest(getDistributedObjectName(), keysData, isRemoveAll, completionId);
         try {
             final Map<Integer, Object> results = invoke(request);
-            int completionCount=0;
+            int completionCount = 0;
             for (Object result : results.values()) {
                 if (result != null && result instanceof CacheClearResponse) {
                     final Object response = ((CacheClearResponse) result).getResponse();
-                    if(response instanceof Boolean){
+                    if (response instanceof Boolean) {
                         completionCount++;
                     }
                     if (response instanceof Throwable) {
@@ -374,7 +374,7 @@ public class ClientCacheProxy<K, V>
             //fix completion count
             final CountDownLatch countDownLatch = syncLocks.get(completionId);
             if (countDownLatch != null) {
-                for(int i=0; i< partitionCount-completionCount; i++){
+                for (int i = 0; i < partitionCount - completionCount; i++) {
                     countDownLatch.countDown();
                 }
             }
@@ -390,8 +390,7 @@ public class ClientCacheProxy<K, V>
         if (clazz.isInstance(cacheConfig)) {
             return clazz.cast(cacheConfig);
         }
-        throw new IllegalArgumentException("The configuration class " + clazz +
-                " is not supported by this implementation");
+        throw new IllegalArgumentException("The configuration class " + clazz + " is not supported by this implementation");
     }
 
     @Override
@@ -496,7 +495,8 @@ public class ClientCacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
         }
-        final CacheEventListenerAdaptor adaptor = new CacheEventListenerAdaptor(this, cacheEntryListenerConfiguration, getContext().getSerializationService());
+        final CacheEventListenerAdaptor adaptor = new CacheEventListenerAdaptor(this, cacheEntryListenerConfiguration,
+                getContext().getSerializationService());
         final EventHandler<Object> handler = createHandler(adaptor);
 
         final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(getDistributedObjectName());
@@ -514,7 +514,8 @@ public class ClientCacheProxy<K, V>
             final Collection<MemberImpl> members = getContext().getClusterService().getMemberList();
             for (MemberImpl member : members) {
                 try {
-                    final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(getDistributedObjectName(), cacheEntryListenerConfiguration, true,  member.getAddress());
+                    final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(
+                            getDistributedObjectName(), cacheEntryListenerConfiguration, true, member.getAddress());
                     final Future future = invocationService.invokeOnTarget(request, member.getAddress());
                     //make sure all configs are created
                     future.get();
@@ -531,14 +532,15 @@ public class ClientCacheProxy<K, V>
             throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
         }
         final ConcurrentHashMap<CacheEntryListenerConfiguration, String> regs;
-        if(cacheEntryListenerConfiguration.isSynchronous()){
-            regs=syncListenerRegistrations;
+        if (cacheEntryListenerConfiguration.isSynchronous()) {
+            regs = syncListenerRegistrations;
         } else {
-            regs=asyncListenerRegistrations;
+            regs = asyncListenerRegistrations;
         }
         final String regId = regs.remove(cacheEntryListenerConfiguration);
         if (regId != null) {
-            CacheRemoveEntryListenerRequest removeRequest = new CacheRemoveEntryListenerRequest(getDistributedObjectName(), regId);
+            CacheRemoveEntryListenerRequest removeRequest = new CacheRemoveEntryListenerRequest(getDistributedObjectName(),
+                    regId);
             boolean isDeregistered = getContext().getListenerService().stopListening(removeRequest, regId);
             if (!isDeregistered) {
                 regs.putIfAbsent(cacheEntryListenerConfiguration, regId);
@@ -550,7 +552,8 @@ public class ClientCacheProxy<K, V>
                 final Collection<MemberImpl> members = getContext().getClusterService().getMemberList();
                 for (MemberImpl member : members) {
                     try {
-                        final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(getDistributedObjectName(), cacheEntryListenerConfiguration, false,  member.getAddress());
+                        final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(
+                                getDistributedObjectName(), cacheEntryListenerConfiguration, false, member.getAddress());
                         final Future future = invocationService.invokeOnTarget(request, member.getAddress());
                         //make sure all configs are created
                         future.get();
@@ -562,10 +565,10 @@ public class ClientCacheProxy<K, V>
         }
     }
 
-    private void deregisterAllListeners(){
+    private void deregisterAllListeners() {
         final Iterator<CacheEntryListenerConfiguration> iterator = syncListenerRegistrations.keySet().iterator();
-        while (iterator.hasNext()){
-            final CacheEntryListenerConfiguration<K,V> listenerConfiguration = iterator.next();
+        while (iterator.hasNext()) {
+            final CacheEntryListenerConfiguration<K, V> listenerConfiguration = iterator.next();
             deregisterCacheEntryListener(listenerConfiguration);
             final Factory<CacheEntryListener<? super K, ? super V>> listenerFactory = listenerConfiguration
                     .getCacheEntryListenerFactory();
@@ -579,8 +582,8 @@ public class ClientCacheProxy<K, V>
             }
         }
         final Iterator<CacheEntryListenerConfiguration> iterator2 = asyncListenerRegistrations.keySet().iterator();
-        while (iterator2.hasNext()){
-            final CacheEntryListenerConfiguration<K,V> listenerConfiguration = iterator2.next();
+        while (iterator2.hasNext()) {
+            final CacheEntryListenerConfiguration<K, V> listenerConfiguration = iterator2.next();
             deregisterCacheEntryListener(listenerConfiguration);
             final Factory<CacheEntryListener<? super K, ? super V>> listenerFactory = listenerConfiguration
                     .getCacheEntryListenerFactory();
@@ -595,13 +598,13 @@ public class ClientCacheProxy<K, V>
         }
     }
 
-    private EventHandler<Object> createHandler(final CacheEventListenerAdaptor adaptor){
+    private EventHandler<Object> createHandler(final CacheEventListenerAdaptor adaptor) {
         return new EventHandler<Object>() {
             @Override
             public void handle(Object event) {
-                if(event instanceof CacheEventSet){
+                if (event instanceof CacheEventSet) {
                     CacheEventSet ces = (CacheEventSet) event;
-                    System.out.println("EVENT RECEIVED type:" +   ces.getEventType() );
+                    System.out.println("EVENT RECEIVED type:" + ces.getEventType());
                 }
                 adaptor.handleEvent(event);
             }
@@ -612,7 +615,8 @@ public class ClientCacheProxy<K, V>
             }
 
             @Override
-            public void onListenerRegister() { }
+            public void onListenerRegister() {
+            }
         };
     }
 
@@ -1159,12 +1163,12 @@ public class ClientCacheProxy<K, V>
         return IGNORE_COMPLETION;
     }
 
-    private void deregisterCompletionLatch(Integer countDownLatchId){
+    private void deregisterCompletionLatch(Integer countDownLatchId) {
         syncLocks.remove(countDownLatchId);
     }
 
     private void waitCompletionLatch(Integer countDownLatchId) {
-        if(countDownLatchId != -1){
+        if (countDownLatchId != -1) {
             final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
             if (countDownLatch != null) {
                 try {
@@ -1180,19 +1184,19 @@ public class ClientCacheProxy<K, V>
     private void countDownCompletionLatch(int id) {
         final CountDownLatch countDownLatch = syncLocks.get(id);
         countDownLatch.countDown();
-        if(countDownLatch.getCount() == 0){
+        if (countDownLatch.getCount() == 0) {
             deregisterCompletionLatch(id);
         }
     }
 
     private void registerCompletionListener() {
-        if(!syncListenerRegistrations.isEmpty() && completionRegistrationId == null){
+        if (!syncListenerRegistrations.isEmpty() && completionRegistrationId == null) {
             final EventHandler<Object> handler = new EventHandler<Object>() {
                 @Override
                 public void handle(Object eventObject) {
-                    if(eventObject instanceof CacheEventData){
+                    if (eventObject instanceof CacheEventData) {
                         CacheEventData cacheEventData = (CacheEventData) eventObject;
-                        if(cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
+                        if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
                             int completionId = toObject(cacheEventData.getDataValue());
                             countDownCompletionLatch(completionId);
                             System.out.println("COMPLETION EVENT RECEIVED id:" + completionId);
@@ -1206,17 +1210,20 @@ public class ClientCacheProxy<K, V>
                 }
 
                 @Override
-                public void onListenerRegister() { }
+                public void onListenerRegister() {
+                }
             };
             final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(getDistributedObjectName());
             completionRegistrationId = getContext().getListenerService().listen(registrationRequest, null, handler);
         }
     }
+
     private void deregisterCompletionListener() {
-        if(syncListenerRegistrations.isEmpty() && completionRegistrationId != null){
-            CacheRemoveEntryListenerRequest removeRequest = new CacheRemoveEntryListenerRequest(getDistributedObjectName(), completionRegistrationId);
+        if (syncListenerRegistrations.isEmpty() && completionRegistrationId != null) {
+            CacheRemoveEntryListenerRequest removeRequest = new CacheRemoveEntryListenerRequest(getDistributedObjectName(),
+                    completionRegistrationId);
             boolean isDeregistered = getContext().getListenerService().stopListening(removeRequest, completionRegistrationId);
-            if(isDeregistered){
+            if (isDeregistered) {
                 completionRegistrationId = null;
             }
         }
@@ -1309,6 +1316,7 @@ public class ClientCacheProxy<K, V>
             throw ExceptionUtil.rethrow(e);
         }
     }
+
     private Object invokeWithCompletion(AbstractCacheRequest req, Object key) {
         final Integer completionId = registerCompletionLatch(1);
         req.setCompletionId(completionId);

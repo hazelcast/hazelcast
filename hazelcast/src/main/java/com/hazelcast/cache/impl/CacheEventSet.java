@@ -24,7 +24,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CacheEventSet implements  DataSerializable {
+public class CacheEventSet
+        implements DataSerializable {
 
     private CacheEventType eventType;
     private Set<CacheEventData> events;
@@ -49,8 +50,8 @@ public class CacheEventSet implements  DataSerializable {
         return eventType;
     }
 
-    public void addEventData(CacheEventData cacheEventData){
-        if(events == null){
+    public void addEventData(CacheEventData cacheEventData) {
+        if (events == null) {
             events = new HashSet<CacheEventData>();
         }
         this.events.add(cacheEventData);
@@ -61,7 +62,7 @@ public class CacheEventSet implements  DataSerializable {
             throws IOException {
         out.writeInt(eventType.getType());
         out.writeInt(events.size());
-        for(CacheEventData ced:events){
+        for (CacheEventData ced : events) {
             out.writeObject(ced);
         }
     }
@@ -72,7 +73,7 @@ public class CacheEventSet implements  DataSerializable {
         eventType = CacheEventType.getByType(in.readInt());
         final int size = in.readInt();
         events = new HashSet<CacheEventData>(size);
-        for(int i=0;i < size; i++ ){
+        for (int i = 0; i < size; i++) {
             CacheEventData ced = in.readObject();
             events.add(ced);
         }

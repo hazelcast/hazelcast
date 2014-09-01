@@ -30,7 +30,7 @@ import java.io.IOException;
  * Operation of the Cache Entry Processor.
  */
 public class CacheEntryProcessorOperation
-        extends AbstractMutatingCacheOperation{
+        extends AbstractMutatingCacheOperation {
 
     private EntryProcessor entryProcessor;
     private Object[] arguments;

@@ -71,7 +71,14 @@ public class NearCacheConfig implements DataSerializable {
      * Local Update Policy enum.
      */
     public enum LocalUpdatePolicy {
-        INVALIDATE, CACHE
+        /**
+         *INVALIDATE POLICY
+         */
+        INVALIDATE,
+        /**
+         *CACHE ON UPDATE POLICY
+         */
+        CACHE
     }
 
     public NearCacheConfig() {

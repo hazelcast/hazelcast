@@ -20,7 +20,14 @@ import com.hazelcast.config.InMemoryFormat;
 
 public interface IClientNearCache<K, V> {
 
+    /**
+     * Eviction percentage
+     */
     int EVICTION_PERCENTAGE = 20;
+
+    /**
+     * TTL Clean up interval
+     */
     int TTL_CLEANUP_INTERVAL_MILLS = 5000;
 
     Object NULL_OBJECT = new Object();

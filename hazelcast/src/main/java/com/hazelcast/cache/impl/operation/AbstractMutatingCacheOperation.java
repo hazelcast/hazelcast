@@ -41,8 +41,9 @@ abstract class AbstractMutatingCacheOperation
     }
 
     @Override
-    public void afterRun() throws Exception {
-        cache.publishCompletedEvent(name,completionId, key, key.hashCode());
+    public void afterRun()
+            throws Exception {
+        cache.publishCompletedEvent(name, completionId, key, key.hashCode());
     }
 
     @Override

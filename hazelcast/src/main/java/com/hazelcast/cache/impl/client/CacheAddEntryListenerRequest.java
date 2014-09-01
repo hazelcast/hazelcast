@@ -33,7 +33,7 @@ public class CacheAddEntryListenerRequest
         implements RetryableRequest {
 
     private String name;
-//    private CacheEntryListenerConfiguration configuration;
+    //    private CacheEntryListenerConfiguration configuration;
 
     public CacheAddEntryListenerRequest() {
     }

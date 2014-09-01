@@ -69,10 +69,7 @@ public class CacheGetAllOperation
 
     @Override
     public String toString() {
-        return "CacheGetAllOperation{"
-                + "keys:" + keys.toString()
-                + "expiryPolicy:" + expiryPolicy
-                + '}';
+        return "CacheGetAllOperation{" + "keys:" + keys.toString() + "expiryPolicy:" + expiryPolicy + '}';
     }
 
     @Override

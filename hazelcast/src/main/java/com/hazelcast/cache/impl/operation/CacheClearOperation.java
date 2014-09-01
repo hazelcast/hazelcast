@@ -74,9 +74,9 @@ public class CacheClearOperation
             try {
                 if (keys == null || !filteredKeys.isEmpty()) {
                     cache.clear(filteredKeys, isRemoveAll);
-                    response =  new CacheClearResponse(Boolean.TRUE);
+                    response = new CacheClearResponse(Boolean.TRUE);
                     int orderKey = keys != null ? keys.hashCode() : 1;
-                    cache.publishCompletedEvent(name,completionId, new Data(), orderKey);
+                    cache.publishCompletedEvent(name, completionId, new Data(), orderKey);
                 }
             } catch (CacheException e) {
                 response = new CacheClearResponse(e);

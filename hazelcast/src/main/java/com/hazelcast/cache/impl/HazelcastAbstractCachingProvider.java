@@ -30,11 +30,10 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.WeakHashMap;
 
-
 public abstract class HazelcastAbstractCachingProvider
         implements CachingProvider {
 
-    protected static final ILogger logger = Logger.getLogger(HazelcastCachingProvider.class);
+    protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
     protected static HazelcastInstance hazelcastInstance;
 
     private WeakHashMap<ClassLoader, HashMap<URI, CacheManager>> cacheManagers;
@@ -59,7 +58,7 @@ public abstract class HazelcastAbstractCachingProvider
                 cacheManager = getHazelcastCacheManager(uri, classLoader, managerProperties);
                 cacheManagersByURI.put(managerURI, cacheManager);
             } catch (Throwable t) {
-                logger.warning("Error opening URI" + managerURI.toString() + ". Caused by :" + t.getMessage());
+                LOGGER.warning("Error opening URI" + managerURI.toString() + ". Caused by :" + t.getMessage());
             }
         }
         if (!cacheManagers.containsKey(managerClassLoader)) {
@@ -118,7 +117,7 @@ public abstract class HazelcastAbstractCachingProvider
     }
 
     protected void shutdownHazelcastInstance() {
-        if(hazelcastInstance != null){
+        if (hazelcastInstance != null) {
             hazelcastInstance.shutdown();
         }
         hazelcastInstance = null;
@@ -151,8 +150,9 @@ public abstract class HazelcastAbstractCachingProvider
         switch (optionalFeature) {
             case STORE_BY_REFERENCE:
                 return false;
+            default:
+                return false;
         }
-        return false;
     }
 
     public synchronized void releaseCacheManager(URI uri, ClassLoader classLoader) {

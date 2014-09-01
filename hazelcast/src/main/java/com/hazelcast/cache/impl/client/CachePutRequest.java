@@ -33,8 +33,9 @@ public class CachePutRequest
 
     protected Data key;
     protected Data value;
-    protected boolean get = false; // getAndPut
-    protected ExpiryPolicy expiryPolicy = null;
+    protected ExpiryPolicy expiryPolicy;
+    // getAndPut
+    protected boolean get;
     private int completionId;
 
     public CachePutRequest() {
@@ -99,7 +100,7 @@ public class CachePutRequest
         expiryPolicy = in.readObject();
     }
 
-    public void setCompletionId(Integer completionId){
+    public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
     }
 }

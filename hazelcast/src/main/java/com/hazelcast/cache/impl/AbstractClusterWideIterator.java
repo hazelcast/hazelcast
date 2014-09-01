@@ -47,14 +47,13 @@ public abstract class AbstractClusterWideIterator<K, V>
     protected int index;
     protected int currentIndex = -1;
 
-
     public AbstractClusterWideIterator(ICache<K, V> cache, int partitionCount) {
         this.cache = cache;
         this.partitionCount = partitionCount;
 
         //TODO can be made configurable
         this.fetchSize = FETCH_SIZE;
-//        advance();
+        //        advance();
     }
 
     @Override
@@ -125,5 +124,5 @@ public abstract class AbstractClusterWideIterator<K, V>
 
     protected abstract Data toData(Object obj);
 
-    protected abstract<T> T toObject(Object data);
+    protected abstract <T> T toObject(Object data);
 }

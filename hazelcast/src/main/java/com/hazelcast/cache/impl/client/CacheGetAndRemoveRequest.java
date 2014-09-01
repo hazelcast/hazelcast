@@ -71,7 +71,7 @@ public class CacheGetAndRemoveRequest
         key.readData(in);
     }
 
-    public void setCompletionId(Integer completionId){
+    public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
     }
 

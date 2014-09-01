@@ -34,6 +34,9 @@ public class MXBeanUtil {
 
     //    private static MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
+    public MXBeanUtil() {
+    }
+
     public static void registerCacheObject(Object mxbean, String uri, String name, boolean stats) {
         //these can change during runtime, so always look it up
         ObjectName registeredObjectName = calculateObjectName(uri, name, stats);
@@ -87,8 +90,9 @@ public class MXBeanUtil {
             return new ObjectName(
                     "javax.cache:type=Cache" + objectNameType + ",CacheManager=" + cacheManagerName + ",Cache=" + cacheName);
         } catch (MalformedObjectNameException e) {
-            throw new CacheException("Illegal ObjectName for Management Bean. "
-                    + "CacheManager=[" + cacheManagerName + "], Cache=[" + cacheName + "]", e);
+            throw new CacheException(
+                    "Illegal ObjectName for Management Bean. " + "CacheManager=[" + cacheManagerName + "], Cache=[" + cacheName
+                            + "]", e);
         }
     }
 

@@ -47,7 +47,8 @@ public class ClientClusterWideIterator<K, V>
     }
 
     protected CacheKeyIteratorResult fetch() {
-        CacheIterateRequest request = new CacheIterateRequest(getCacheProxy().getDistributedObjectName(), partitionIndex,lastTableIndex,fetchSize);
+        CacheIterateRequest request = new CacheIterateRequest(getCacheProxy().getDistributedObjectName(), partitionIndex,
+                lastTableIndex, fetchSize);
         try {
             final ICompletableFuture<Object> f = context.getInvocationService().invokeOnRandomTarget(request);
             return toObject(f.get());

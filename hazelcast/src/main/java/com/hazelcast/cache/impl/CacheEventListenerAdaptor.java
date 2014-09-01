@@ -38,7 +38,8 @@ import java.util.HashSet;
  * @param <K>
  * @param <V>
  */
-public class CacheEventListenerAdaptor<K, V>  implements CacheEventListener {
+public class CacheEventListenerAdaptor<K, V>
+        implements CacheEventListener {
 
     private final CacheEntryCreatedListener cacheEntryCreatedListener;
     private final CacheEntryRemovedListener cacheEntryRemovedListener;
@@ -49,7 +50,7 @@ public class CacheEventListenerAdaptor<K, V>  implements CacheEventListener {
 
     private SerializationService serializationService;
 
-    private transient ICache<K,V> source;
+    private transient ICache<K, V> source;
 
     public CacheEventListenerAdaptor(ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                      SerializationService serializationService) {
@@ -80,7 +81,7 @@ public class CacheEventListenerAdaptor<K, V>  implements CacheEventListener {
         }
         final Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory = cacheEntryListenerConfiguration
                 .getCacheEntryEventFilterFactory();
-        if(filterFactory != null){
+        if (filterFactory != null) {
             filter = filterFactory.create();
         } else {
             filter = null;
@@ -90,7 +91,7 @@ public class CacheEventListenerAdaptor<K, V>  implements CacheEventListener {
 
     @Override
     public void handleEvent(Object eventObject) {
-        if(eventObject instanceof CacheEventSet){
+        if (eventObject instanceof CacheEventSet) {
             CacheEventSet cacheEventSet = (CacheEventSet) eventObject;
             handleEvent(cacheEventSet);
         }
@@ -125,29 +126,28 @@ public class CacheEventListenerAdaptor<K, V>  implements CacheEventListener {
         }
     }
 
-    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(CacheEventSet cacheEventSet){
+    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(CacheEventSet cacheEventSet) {
         HashSet<CacheEntryEvent<? extends K, ? extends V>> evt = new HashSet<CacheEntryEvent<? extends K, ? extends V>>();
-        for(CacheEventData cacheEventData:cacheEventSet.getEvents()){
+        for (CacheEventData cacheEventData : cacheEventSet.getEvents()) {
             final EventType eventType = CacheEventType.convertToEventType(cacheEventData.getCacheEventType());
-            final K key = toObject( cacheEventData.getDataKey() );
-            final V newValue = toObject( cacheEventData.getDataValue() );
+            final K key = toObject(cacheEventData.getDataKey());
+            final V newValue = toObject(cacheEventData.getDataValue());
             final V oldValue;
-            if(isOldValueRequired){
-                oldValue = toObject( cacheEventData.getDataOldValue() );
+            if (isOldValueRequired) {
+                oldValue = toObject(cacheEventData.getDataOldValue());
             } else {
-                oldValue= null;
+                oldValue = null;
             }
             final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
-            if(filter == null || filter.evaluate(event)){
+            if (filter == null || filter.evaluate(event)) {
                 evt.add(event);
             }
         }
         return evt;
     }
 
-    private <T> T toObject(Data data){
+    private <T> T toObject(Data data) {
         return serializationService.toObject(data);
     }
-
 
 }

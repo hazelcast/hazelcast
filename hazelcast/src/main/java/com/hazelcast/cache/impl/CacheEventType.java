@@ -34,12 +34,10 @@ public enum CacheEventType {
      */
     UPDATED(2),
 
-
     /**
      * An event type indicating that the cache entry was removed.
      */
     REMOVED(3),
-
 
     /**
      * An event type indicating that the cache entry has expired.
@@ -61,7 +59,6 @@ public enum CacheEventType {
      */
     COMPLETED(7);
 
-
     private int type;
 
     private CacheEventType(final int type) {
@@ -81,9 +78,8 @@ public enum CacheEventType {
         return null;
     }
 
-    public static EventType convertToEventType(CacheEventType cacheEventType){
+    public static EventType convertToEventType(CacheEventType cacheEventType) {
         return EventType.valueOf(cacheEventType.name());
     }
-
 
 }

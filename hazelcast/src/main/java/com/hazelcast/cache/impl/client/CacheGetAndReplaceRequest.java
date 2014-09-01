@@ -81,7 +81,7 @@ public class CacheGetAndReplaceRequest
         expiryPolicy = in.readObject();
     }
 
-    public void setCompletionId(Integer completionId){
+    public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
     }
 

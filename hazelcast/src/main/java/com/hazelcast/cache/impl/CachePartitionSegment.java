@@ -39,10 +39,10 @@ public final class CachePartitionSegment {
 
     private final ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction =
             new ConstructorFunction<String, ICacheRecordStore>() {
-                public ICacheRecordStore createNew(String name) {
-                    return new CacheRecordStore(name, partitionId, nodeEngine, cacheService);
-                }
-            };
+        public ICacheRecordStore createNew(String name) {
+            return new CacheRecordStore(name, partitionId, nodeEngine, cacheService);
+        }
+    };
 
     CachePartitionSegment(NodeEngine nodeEngine, CacheService cacheService, int partitionId) {
         this.nodeEngine = nodeEngine;

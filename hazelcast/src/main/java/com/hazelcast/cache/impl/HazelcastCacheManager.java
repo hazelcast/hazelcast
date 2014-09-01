@@ -144,12 +144,14 @@ public abstract class HazelcastCacheManager
                     if (configuration.getValueType() != null && configuration.getValueType().equals(valueType)) {
                         return (ICache<K, V>) cache;
                     } else {
-                        throw new ClassCastException("Incompatible cache value types specified, expected "
-                                + configuration.getValueType() + " but " + valueType + " was specified");
+                        throw new ClassCastException(
+                                "Incompatible cache value types specified, expected " + configuration.getValueType() + " but "
+                                        + valueType + " was specified");
                     }
                 } else {
-                    throw new ClassCastException("Incompatible cache key types specified, expected "
-                            + configuration.getKeyType() + " but " + keyType + " was specified");
+                    throw new ClassCastException(
+                            "Incompatible cache key types specified, expected " + configuration.getKeyType() + " but " + keyType
+                                    + " was specified");
                 }
             }
         }
@@ -168,10 +170,10 @@ public abstract class HazelcastCacheManager
                 if (Object.class.equals(configuration.getKeyType()) && Object.class.equals(configuration.getValueType())) {
                     return (ICache<K, V>) cache;
                 } else {
-                    throw new IllegalArgumentException("Cache " + cacheName + " was "
-                            + "defined with specific types Cache<"
-                            + configuration.getKeyType() + ", " + configuration.getValueType() + "> "
-                            + "in which case CacheManager.getCache(String, Class, Class) must be used");
+                    throw new IllegalArgumentException(
+                            "Cache " + cacheName + " was " + "defined with specific types Cache<" + configuration.getKeyType()
+                                    + ", " + configuration.getValueType() + "> "
+                                    + "in which case CacheManager.getCache(String, Class, Class) must be used");
                 }
             }
         }
@@ -183,7 +185,7 @@ public abstract class HazelcastCacheManager
         ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
         if (cache == null) {
             CacheConfig<K, V> cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
-            if( cacheConfig == null){
+            if (cacheConfig == null) {
                 //remote check
                 cacheConfig = getCacheConfigFromPartition(cacheNameWithPrefix);
             }
@@ -249,7 +251,8 @@ public abstract class HazelcastCacheManager
         removeCacheConfigFromLocal(cacheNameWithPrefix);
     }
 
-    protected void removeCacheConfigFromLocal(String cacheName) { }
+    protected void removeCacheConfigFromLocal(String cacheName) {
+    }
 
     @Override
     public void close() {
@@ -344,7 +347,8 @@ public abstract class HazelcastCacheManager
 
     protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
         //REGISTER LISTENERS
-        final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations().iterator();
+        final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations()
+                                                                                    .iterator();
         while (iterator.hasNext()) {
             final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
             iterator.remove();

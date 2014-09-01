@@ -44,7 +44,7 @@ public class CacheGetAllRequest
 
     protected String name;
     private Set<Data> keys = new HashSet<Data>();
-    private ExpiryPolicy expiryPolicy = null;
+    private ExpiryPolicy expiryPolicy;
 
     public CacheGetAllRequest() {
     }

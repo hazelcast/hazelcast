@@ -22,12 +22,18 @@ import com.hazelcast.nio.serialization.DataSerializable;
 /**
  * Cache event data object used in publish - dispatch
  */
-public interface CacheEventData extends DataSerializable {
+public interface CacheEventData
+        extends DataSerializable {
 
     CacheEventType getCacheEventType();
+
     String getName();
+
     Data getDataKey();
+
     Data getDataValue();
+
     Data getDataOldValue();
+
     boolean isOldValueAvailable();
 }
