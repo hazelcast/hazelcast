@@ -19,6 +19,14 @@ package com.hazelcast.map;
 import java.io.Serializable;
 import java.util.Map;
 
+/**
+ * Processes an entry on a backup partition.
+ *
+ * @param <K> Type of key of a {@link java.util.Map.Entry}
+ * @param <V> Type of value of a {@link java.util.Map.Entry}
+ * @see com.hazelcast.map.EntryProcessor
+ * @see com.hazelcast.map.AbstractEntryProcessor
+ */
 public interface EntryBackupProcessor<K, V> extends Serializable {
 
     void processBackup(Map.Entry<K, V> entry);
