@@ -180,6 +180,7 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.impl.ReflectionHelper"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.query.impl.ReflectionHelper"/>
     <suppress checks="ReturnCount" files="com.hazelcast.query.impl.ReflectionHelper"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.impl.QueryContext"/>
 
     <!-- hazelcast-wm -->
     <suppress checks="JavadocMethod" files="com.hazelcast.web[\\/]"/>
