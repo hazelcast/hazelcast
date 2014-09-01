@@ -1,8 +1,8 @@
 package com.hazelcast.multimap.impl;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.EntryEventData;
-import com.hazelcast.map.MapEventData;
+import com.hazelcast.map.impl.EntryEventData;
+import com.hazelcast.map.impl.MapEventData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
