@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.map.impl.mapstore.MapStoreTest.newConfig;
+import static com.hazelcast.map.mapstore.MapStoreTest.newConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
