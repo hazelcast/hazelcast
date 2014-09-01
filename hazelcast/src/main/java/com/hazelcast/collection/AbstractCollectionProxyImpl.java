@@ -33,6 +33,7 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -171,7 +172,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     public Iterator<E> iterator() {
-        return getAll().iterator();
+        return Collections.unmodifiableCollection(getAll()).iterator();
     }
 
     public Object[] toArray() {
