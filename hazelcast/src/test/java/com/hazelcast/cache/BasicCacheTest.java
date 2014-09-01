@@ -365,6 +365,11 @@ public class BasicCacheTest
         @Override
         public void onCreated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             created.incrementAndGet();
         }
 

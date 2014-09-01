@@ -122,12 +122,12 @@ public class ClientCacheProxy<K, V>
     private HazelcastClientCacheManager cacheManager;
     private volatile IClientNearCache<Data, Object> nearCache;
 
-    private ConcurrentHashMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
-    private ConcurrentHashMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
-    private ConcurrentHashMap<Integer, CountDownLatch> syncLocks;
+    private final ConcurrentHashMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
+    private final ConcurrentHashMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
+    private final ConcurrentHashMap<Integer, CountDownLatch> syncLocks;
 
-    private AtomicInteger completionIdCounter = new AtomicInteger();
-    private String completionRegistrationId;
+    private final AtomicInteger completionIdCounter = new AtomicInteger();
+    private volatile String completionRegistrationId;
 
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientCacheDistributedObject delegate,
                             HazelcastClientCacheManager cacheManager) {
@@ -612,7 +612,16 @@ public class ClientCacheProxy<K, V>
         return new EventHandler<Object>() {
             @Override
             public void handle(Object event) {
-                    adaptor.handleEvent(event);
+                if(event instanceof CacheEventSet){
+                    CacheEventSet ces = (CacheEventSet) event;
+                    System.out.println("EVENT RECEIVED type:" +   ces.getEventType() );
+                }
+                adaptor.handleEvent(event);
+            }
+
+            @Override
+            public void beforeListenerRegister() {
+
             }
 
             @Override
@@ -1174,6 +1183,7 @@ public class ClientCacheProxy<K, V>
                 try {
                     countDownLatch.await();
                 } catch (InterruptedException e) {
+                    e.printStackTrace();
                     return;
                 }
             }
@@ -1198,8 +1208,14 @@ public class ClientCacheProxy<K, V>
                         if(cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
                             int completionId = toObject(cacheEventData.getDataValue());
                             countDownCompletionLatch(completionId);
+                            System.out.println("COMPLETION EVENT RECEIVED id:" + completionId);
                         }
                     }
+                }
+
+                @Override
+                public void beforeListenerRegister() {
+
                 }
 
                 @Override

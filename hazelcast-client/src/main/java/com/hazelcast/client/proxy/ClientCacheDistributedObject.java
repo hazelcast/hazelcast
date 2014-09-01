@@ -24,8 +24,8 @@ import com.hazelcast.nio.serialization.Data;
 
 public class ClientCacheDistributedObject extends ClientProxy {
 
-    public ClientCacheDistributedObject(String instanceName, String serviceName, String objectName) {
-        super(instanceName, serviceName, objectName);
+    public ClientCacheDistributedObject( String serviceName, String objectName) {
+        super(serviceName, objectName);
     }
 
     public ClientContext getClientContext() {

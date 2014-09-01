@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.cache.CacheService;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;

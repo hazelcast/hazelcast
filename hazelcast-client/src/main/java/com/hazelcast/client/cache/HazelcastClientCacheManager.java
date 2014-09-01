@@ -31,6 +31,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.util.ExceptionUtil;
+import com.sun.swing.internal.plaf.synth.resources.synth_sv;
 
 import java.net.URI;
 import java.util.Collection;
@@ -106,16 +107,19 @@ public final class HazelcastClientCacheManager
 
     @Override
     protected <K, V> CacheConfig<K, V> getCacheConfigLocal(String cacheName) {
+        System.out.println("GET FROM LOCAL CACHE name:"+ cacheName + " status:" + configs.containsKey(cacheName));
         return configs.get(cacheName);
     }
 
     @Override
     protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
+        System.out.println("ADDING LOCAL CACHE name:"+ cacheConfig.getNameWithPrefix() );
         configs.putIfAbsent(cacheConfig.getNameWithPrefix(), cacheConfig);
     }
 
     @Override
     protected void removeCacheConfigFromLocal(String cacheName) {
+//        System.out.println("REMOVING LOCAL CACHE name:"+ cacheName );
         configs.remove(cacheName);
     }
 
