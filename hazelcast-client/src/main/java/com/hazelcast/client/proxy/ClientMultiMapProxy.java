@@ -395,6 +395,10 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             }
 
             @Override
+            public void beforeListenerRegister() {
+            }
+
+            @Override
             public void onListenerRegister() {
             }
         };

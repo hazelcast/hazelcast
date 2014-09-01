@@ -3,4 +3,16 @@
         <name>foobar</name>
         <password>dev-pass</password>
     </group>
+    <network>
+        <ssl enabled="true">
+            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
+        </ssl>
+        <socket-options>
+            <buffer-size>32</buffer-size>
+            <keep-alive>false</keep-alive>
+            <tcp-no-delay>false</tcp-no-delay>
+            <reuse-address>false</reuse-address>
+            <linger-seconds>3</linger-seconds>
+        </socket-options>
+    </network>
 </hazelcast-client>

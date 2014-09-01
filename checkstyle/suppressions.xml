@@ -159,6 +159,7 @@
     <!-- Queue -->
     <suppress checks="" files="com.hazelcast.queue.impl.QueuePortableHook"/>
     <suppress checks="" files="com.hazelcast.queue.impl.QueueDataSerializerHook"/>
+    <suppress checks="" files="com.hazelcast.queue.DataAwareItemEvent"/>
     <suppress checks="MethodCount" files="com.hazelcast.queue.impl.QueueContainer"/>
 
     <!-- jca -->
@@ -255,7 +256,8 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.security[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.security[\\/]"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com.hazelcast.security.permission.QueuePermission"/>
-    <suppress checks="BooleanExpressionComplexityCheck" files="com.hazelcast.security.permission.ReplicatedMapPermission"/>
+    <suppress checks="BooleanExpressionComplexityCheck"
+              files="com.hazelcast.security.permission.ReplicatedMapPermission"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com.hazelcast.security.permission.MapPermission"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com.hazelcast.security.permission.ListPermission"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.security.permission.InstancePermission"/>
@@ -294,6 +296,7 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.topic.impl[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.topic.impl[\\/]"/>
     <suppress checks="VisibilityModifier" files="com.hazelcast.topic.impl.TopicEvent"/>
+    <suppress checks="" files="com.hazelcast.topic.DataAwareMessage"/>
     <suppress checks="Todo" files="com.hazelcast.topic.impl.TopicEvent"/>
 
     <!-- Ascii-->

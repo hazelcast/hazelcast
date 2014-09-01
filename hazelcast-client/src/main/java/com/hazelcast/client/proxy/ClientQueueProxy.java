@@ -79,6 +79,10 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
             }
 
             @Override
+            public void beforeListenerRegister() {
+            }
+
+            @Override
             public void onListenerRegister() {
 
             }

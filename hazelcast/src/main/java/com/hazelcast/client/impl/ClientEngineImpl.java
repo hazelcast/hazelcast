@@ -340,6 +340,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(conn);
             ClientRequest request = null;
             try {
+                if (!node.joined()) {
+                    throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
+                }
                 request = loadRequest();
                 if (request == null) {
                     handlePacketWithNullRequest();

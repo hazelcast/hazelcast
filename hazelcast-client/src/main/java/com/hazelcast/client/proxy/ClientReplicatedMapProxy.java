@@ -208,35 +208,7 @@ public class ClientReplicatedMapProxy<K, V>
     }
 
     private EventHandler<ReplicatedMapPortableEntryEvent> createHandler(final EntryListener<K, V> listener) {
-        return new EventHandler<ReplicatedMapPortableEntryEvent>() {
-            public void handle(ReplicatedMapPortableEntryEvent event) {
-                V value = (V) event.getValue();
-                V oldValue = (V) event.getOldValue();
-                K key = (K) event.getKey();
-                Member member = getContext().getClusterService().getMember(event.getUuid());
-                EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(getName(), member, event.getEventType().getType(), key,
-                        oldValue, value);
-                switch (event.getEventType()) {
-                    case ADDED:
-                        listener.entryAdded(entryEvent);
-                        break;
-                    case REMOVED:
-                        listener.entryRemoved(entryEvent);
-                        break;
-                    case UPDATED:
-                        listener.entryUpdated(entryEvent);
-                        break;
-                    case EVICTED:
-                        listener.entryEvicted(entryEvent);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Not a known event type " + event.getEventType());
-                }
-            }
-            @Override
-            public void onListenerRegister() {
-            }
-        };
+        return new ReplicatedMapEventHandler(listener);
     }
 
     private void initNearCache() {
@@ -254,5 +226,46 @@ public class ClientReplicatedMapProxy<K, V>
     @Override
     public String toString() {
         return "ReplicatedMap{" + "name='" + getName() + '\'' + '}';
+    }
+
+    private class ReplicatedMapEventHandler implements EventHandler<ReplicatedMapPortableEntryEvent> {
+        private final EntryListener<K, V> listener;
+
+        public ReplicatedMapEventHandler(EntryListener<K, V> listener) {
+            this.listener = listener;
+        }
+
+        public void handle(ReplicatedMapPortableEntryEvent event) {
+            V value = (V) event.getValue();
+            V oldValue = (V) event.getOldValue();
+            K key = (K) event.getKey();
+            Member member = getContext().getClusterService().getMember(event.getUuid());
+            EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(getName(), member, event.getEventType().getType(), key,
+                    oldValue, value);
+            switch (event.getEventType()) {
+                case ADDED:
+                    listener.entryAdded(entryEvent);
+                    break;
+                case REMOVED:
+                    listener.entryRemoved(entryEvent);
+                    break;
+                case UPDATED:
+                    listener.entryUpdated(entryEvent);
+                    break;
+                case EVICTED:
+                    listener.entryEvicted(entryEvent);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+            }
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+        }
+
+        @Override
+        public void onListenerRegister() {
+        }
     }
 }

@@ -27,7 +27,7 @@ import java.nio.ByteBuffer;
  */
 public final class Packet extends DataAdapter implements SocketWritable, SocketReadable {
 
-    public static final byte VERSION = 1;
+    public static final byte VERSION = 2;
     public static final int HEADER_OP = 0;
     public static final int HEADER_RESPONSE = 1;
     public static final int HEADER_EVENT = 2;

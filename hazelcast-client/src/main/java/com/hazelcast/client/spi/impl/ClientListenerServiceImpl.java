@@ -1,11 +1,11 @@
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
@@ -51,6 +51,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     public String listen(ClientRequest request, Object key, EventHandler handler) {
         final Future future;
         try {
+            handler.beforeListenerRegister();
             if (key == null) {
                 future = invocationService.invokeOnRandomTarget(request, handler);
             } else {

@@ -169,6 +169,10 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
             }
 
             @Override
+            public void beforeListenerRegister() {
+            }
+
+            @Override
             public void onListenerRegister() {
 
             }
