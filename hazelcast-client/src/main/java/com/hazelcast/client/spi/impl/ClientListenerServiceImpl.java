@@ -16,6 +16,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.util.executor.StripedRunnable;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -127,7 +128,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
         eventExecutor.shutdown();
     }
 
-    private final class ClientEventProcessor implements Runnable {
+    private final class ClientEventProcessor implements StripedRunnable {
         final Packet packet;
 
         private ClientEventProcessor(Packet packet) {
@@ -151,6 +152,11 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
                 return;
             }
             eventHandler.handle(eventObject);
+        }
+
+        @Override
+        public int getKey() {
+            return packet.getPartitionId();
         }
     }
 }
