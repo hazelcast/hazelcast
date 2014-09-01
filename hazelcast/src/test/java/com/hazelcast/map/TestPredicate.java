@@ -40,7 +40,7 @@ public class TestPredicate implements IndexAwarePredicate {
     }
 
     @Override
-    public boolean in(Predicate predicate) {
+    public boolean isSubSet(Predicate predicate) {
         return false;
     }
 

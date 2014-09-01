@@ -81,7 +81,7 @@ public class GreaterLessPredicate extends EqualPredicate {
     }
 
     @Override
-    public boolean in(Predicate predicate) {
+    public boolean isSubSet(Predicate predicate) {
         if (predicate instanceof GreaterLessPredicate) {
             GreaterLessPredicate p = (GreaterLessPredicate) predicate;
             // todo: equal may differ even though this.in(predicate).

@@ -52,8 +52,8 @@ public class NotPredicate implements Predicate, DataSerializable {
     }
 
     @Override
-    public boolean in(Predicate predicate) {
-        return this.predicate.in(predicate);
+    public boolean isSubSet(Predicate predicate) {
+        return this.predicate.isSubSet(predicate);
     }
 
     @Override

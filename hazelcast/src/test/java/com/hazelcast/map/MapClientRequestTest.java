@@ -50,7 +50,7 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
@@ -305,7 +305,7 @@ public class MapClientRequestTest extends ClientTestSupport {
         map.put(1, new Employee("enes", 29, true, 100d));
         map.put(2, new Employee("serra", 3, true, 100d));
         map.put(3, new Employee("met", 7, true, 100d));
-        MapQueryRequest request = new MapQueryRequest(mapName, new SqlPredicate("age < 10"), IterationType.VALUE);
+        MapQueryRequest request = new MapQueryRequest(mapName, SqlPredicate.createPredicate("age < 10"), IterationType.VALUE);
         final SimpleClient client = getClient();
         client.send(request);
         Object receive = client.receive();
@@ -327,7 +327,7 @@ public class MapClientRequestTest extends ClientTestSupport {
         }
         EntryProcessor entryProcessor = new ChangeStateEntryProcessor();
         EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate p = e.get("id").lessThan(5);
+        Predicate p = e.get("id").lessThan(5).build();
 
         MapExecuteWithPredicateRequest request = new MapExecuteWithPredicateRequest(map.getName(), entryProcessor, p);
         final SimpleClient client = getClient();

@@ -50,7 +50,7 @@ public class InPredicate extends AbstractPredicate {
     }
 
     @Override
-    public boolean in(Predicate predicate) {
+    public boolean isSubSet(Predicate predicate) {
         boolean found;
         if (predicate instanceof InPredicate) {
             Comparable[] pValues = ((InPredicate) predicate).getValues();

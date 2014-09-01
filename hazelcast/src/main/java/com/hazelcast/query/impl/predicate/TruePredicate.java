@@ -32,7 +32,7 @@ public class TruePredicate implements DataSerializable, Predicate {
     }
 
     @Override
-    public boolean in(Predicate predicate) {
+    public boolean isSubSet(Predicate predicate) {
         return predicate instanceof TruePredicate;
     }
 }

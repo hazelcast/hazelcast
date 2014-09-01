@@ -278,7 +278,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
     public String values(String query) {
         Collection coll;
         if (query != null && !query.isEmpty()) {
-            Predicate predicate = new SqlPredicate(query);
+            Predicate predicate = SqlPredicate.createPredicate(query);
             coll = managedObject.values(predicate);
         } else {
             coll = managedObject.values();
@@ -301,7 +301,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
     public String entrySet(String query) {
         Set<Map.Entry> entrySet;
         if (query != null && !query.isEmpty()) {
-            Predicate predicate = new SqlPredicate(query);
+            Predicate predicate = SqlPredicate.createPredicate(query);
             entrySet = managedObject.entrySet(predicate);
         } else {
             entrySet = managedObject.entrySet();

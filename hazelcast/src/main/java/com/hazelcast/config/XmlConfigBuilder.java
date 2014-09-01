@@ -896,7 +896,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 Predicate predicate;
                 String predicateStr = getTextContent(attrs.getNamedItem("predicate"));
                 try {
-                    predicate = new SqlPredicate(predicateStr);
+                    predicate = SqlPredicate.createPredicate(predicateStr);
                 } catch (Exception e) {
                     String s = "Partial index predicate (" + predicateStr + ") for attribute '" + attribute + "' is invalid.";
                     throw new IllegalArgumentException(s);

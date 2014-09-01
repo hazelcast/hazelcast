@@ -15,7 +15,6 @@
     <suppress checks="MethodCountCheck" files="ConsoleApp.java"/>
     <suppress checks="ClassFanOutComplexityCheck" files="ConsoleApp.java"/>
     <suppress checks="CyclomaticComplexityCheck" files="ConsoleApp.java"/>
-    <suppress checks="CyclomaticComplexityCheck" files="ConsoleApp.java"/>
     <suppress checks="NPathComplexityCheck" files="ConsoleApp.java"/>
     <suppress checks="MethodLengthCheck" files="ConsoleApp.java"/>
     <suppress checks="MethodLengthCheck" files="AllTest.java"/>

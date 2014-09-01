@@ -99,8 +99,7 @@ public class IndexServiceQueryTest extends HazelcastTestSupport {
 
         fillIndexes(indexService);
 
-        Predicate and = Predicates.and(Predicates.between("salary", 0, 100));
-        Set<QueryableEntry> query = indexService.query(and);
+        Set<QueryableEntry> query = indexService.query(Predicates.between("salary", 0, 100));
 
         assertNotNull(query);
 

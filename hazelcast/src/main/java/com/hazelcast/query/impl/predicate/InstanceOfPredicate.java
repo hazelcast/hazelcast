@@ -60,7 +60,7 @@ public class InstanceOfPredicate implements Predicate, DataSerializable {
     }
 
     @Override
-    public boolean in(Predicate predicate) {
+    public boolean isSubSet(Predicate predicate) {
         return equals(predicate);
     }
 

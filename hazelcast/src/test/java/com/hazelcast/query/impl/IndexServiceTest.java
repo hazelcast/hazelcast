@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -54,7 +55,7 @@ public class IndexServiceTest {
             ages.add(String.valueOf(i));
         }
         final EntryObject entryObject = new PredicateBuilder().getEntryObject();
-        final PredicateBuilder predicate = entryObject.get("name").equal("140Name").and(entryObject.get("age").in(ages.toArray(new String[0])));
+        final Predicate predicate = entryObject.get("name").equal("140Name").and(entryObject.get("age").in(ages.toArray(new String[0]))).build();
         long total = Runtime.getRuntime().totalMemory();
         long free = Runtime.getRuntime().freeMemory();
         long start = Clock.currentTimeMillis();
@@ -75,7 +76,7 @@ public class IndexServiceTest {
             indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, employee));
         }
         for (int i = 0; i < 10; i++) {
-            SqlPredicate predicate = new SqlPredicate("salary=161 and age >20 and age <23");
+            Predicate predicate = SqlPredicate.createPredicate("salary=161 and age >20 and age <23");
             Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexService.query(predicate));
             assertEquals(5, results.size());
         }
@@ -94,7 +95,7 @@ public class IndexServiceTest {
         indexService.saveEntryIndex(new QueryEntry(null, toData(7), 7, new Value("prs")));
         indexService.saveEntryIndex(new QueryEntry(null, toData(8), 8, new Value("def")));
         indexService.saveEntryIndex(new QueryEntry(null, toData(9), 9, new Value("qwx")));
-        assertEquals(8, new HashSet(indexService.query(new SqlPredicate("name > 'aac'"))).size());
+        assertEquals(8, new HashSet(indexService.query(SqlPredicate.createPredicate("name > 'aac'"))).size());
     }
 
 

@@ -69,7 +69,7 @@ public class RegexPredicate implements AttributePredicate, DataSerializable {
     }
 
     @Override
-    public boolean in(Predicate predicate) {
+    public boolean isSubSet(Predicate predicate) {
         // TODO:a sophisticated comparison algorithm for regex queries
         return equals(predicate);
     }

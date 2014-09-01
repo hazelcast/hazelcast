@@ -51,7 +51,7 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
 
     protected Predicate getPredicate() {
         if (cachedPredicate == null && predicate != null) {
-            cachedPredicate = new SqlPredicate(predicate);
+            cachedPredicate = SqlPredicate.createPredicate(predicate);
         }
         return cachedPredicate;
     }

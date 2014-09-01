@@ -82,7 +82,7 @@ public class LikePredicate implements AttributePredicate, DataSerializable {
     }
 
     @Override
-    public boolean in(Predicate predicate) {
+    public boolean isSubSet(Predicate predicate) {
         // TODO: a sophisticated comparison algorithm for like queries
         return equals(predicate);
     }

@@ -30,6 +30,6 @@ public interface Predicate<K, V> extends Serializable {
 
     boolean apply(Map.Entry<K, V> mapEntry);
 
-    boolean in(Predicate predicate);
+    boolean isSubSet(Predicate predicate);
 
 }

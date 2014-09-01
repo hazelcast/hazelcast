@@ -16,24 +16,16 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicate.AndPredicate;
 import com.hazelcast.query.impl.predicate.OrPredicate;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * This class provides functionality to build predicate.
  */
-public class PredicateBuilder implements IndexAwarePredicate, DataSerializable, ConnectorPredicate {
+public class PredicateBuilder {
 
     List<Predicate> lsPredicates = new ArrayList<Predicate>();
 
@@ -47,27 +39,20 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable, 
         this.attribute = attribute;
     }
 
-    @Override
-    public boolean apply(Map.Entry mapEntry) {
-        return lsPredicates.get(0).apply(mapEntry);
-    }
-
-    @Override
-    public boolean in(Predicate predicate) {
-        for (Predicate lsPredicate : lsPredicates) {
-            if (!lsPredicate.in(predicate)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public EntryObject getEntryObject() {
         return new EntryObject(this);
     }
 
+    public PredicateBuilder and(PredicateBuilder predicateBuilder) {
+        return and(predicateBuilder.build());
+    }
+
+    public PredicateBuilder or(PredicateBuilder predicateBuilder) {
+        return or(predicateBuilder.build());
+    }
+
     public PredicateBuilder and(Predicate predicate) {
-        if (predicate != PredicateBuilder.this) {
+        if (predicate != PredicateBuilder.this.build()) {
             throw new QueryException("Illegal and statement expected: "
                     + PredicateBuilder.class.getSimpleName() + ", found: "
                     + ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
@@ -93,43 +78,6 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable, 
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Predicate p = lsPredicates.get(0);
-        if (p instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) p).filter(queryContext);
-        }
-        return null;
-    }
-
-    @Override
-    public boolean isIndexed(QueryContext queryContext) {
-        Predicate p = lsPredicates.get(0);
-        if (p instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) p).isIndexed(queryContext);
-        }
-        return false;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attribute);
-        out.writeInt(lsPredicates.size());
-        for (Predicate predicate : lsPredicates) {
-            out.writeObject(predicate);
-        }
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        attribute = in.readUTF();
-        int size = in.readInt();
-        lsPredicates = new ArrayList<Predicate>(size);
-        for (int i = 0; i < size; i++) {
-            lsPredicates.add((Predicate) in.readObject());
-        }
-    }
-
-    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("PredicateBuilder");
@@ -139,33 +87,8 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable, 
         return sb.toString();
     }
 
-    @Override
-    public ConnectorPredicate subtract(Predicate predicates) {
-        return ((ConnectorPredicate) lsPredicates.get(0)).subtract(predicates);
-    }
-
-    @Override
-    public ConnectorPredicate copy() {
-        return ((ConnectorPredicate) lsPredicates.get(0)).copy();
-    }
-
-    @Override
-    public void removeChild(int index) {
-        ((ConnectorPredicate) lsPredicates.get(0)).removeChild(index);
-    }
-
-    @Override
-    public int getPredicateCount() {
-        return ((ConnectorPredicate) lsPredicates.get(0)).getPredicateCount();
-    }
-
-    @Override
-    public Predicate[] getPredicates() {
-        return ((ConnectorPredicate) lsPredicates.get(0)).getPredicates();
-    }
-
-    @Override
-    public boolean isSubset(Predicate predicate) {
-        return ((ConnectorPredicate) lsPredicates.get(0)).isSubset(predicate);
+    // should we create a copy of inline predicate?
+    public Predicate build() {
+        return lsPredicates.size() > 0 ? lsPredicates.get(0) : null;
     }
 }

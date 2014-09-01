@@ -192,8 +192,8 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     @Override
-    public boolean in(Predicate predicate) {
-        return predicate.in(predicate);
+    public boolean isSubSet(Predicate predicate) {
+        return predicate.isSubSet(predicate);
     }
 
     /**

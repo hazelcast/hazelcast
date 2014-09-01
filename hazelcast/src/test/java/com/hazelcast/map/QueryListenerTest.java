@@ -124,7 +124,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean in(Predicate predicate) {
+        public boolean isSubSet(Predicate predicate) {
             return false;
         }
     }
@@ -148,7 +148,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
             }
         };
 
-        Predicate predicate = new SqlPredicate("age >= 50");
+        Predicate predicate = SqlPredicate.createPredicate("age >= 50");
         map.addEntryListener(listener, predicate, null, false);
         int size = 100;
         for (int i = 0; i < size; i++) {

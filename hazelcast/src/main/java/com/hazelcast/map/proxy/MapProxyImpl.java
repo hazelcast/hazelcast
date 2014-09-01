@@ -612,6 +612,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public void addIndex(String attribute, boolean ordered, Predicate predicate) {
+        ValidationUtil.isNotNull(predicate, "predicate");
         addIndexInternal(attribute, ordered, predicate);
     }
 

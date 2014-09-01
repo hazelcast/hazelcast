@@ -509,7 +509,7 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                Iterator it = map.entrySet(new SqlPredicate("year=" + random.nextInt(100))).iterator();
+                Iterator it = map.entrySet(SqlPredicate.createPredicate("year=" + random.nextInt(100))).iterator();
                 while (it.hasNext()) {
                     it.next();
                 }
@@ -518,7 +518,7 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                Iterator it = map.entrySet(new SqlPredicate("name=" + random.nextInt(10000))).iterator();
+                Iterator it = map.entrySet(SqlPredicate.createPredicate("name=" + random.nextInt(10000))).iterator();
                 while (it.hasNext()) {
                     it.next();
                 }
@@ -527,7 +527,7 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                Iterator it = map.keySet(new SqlPredicate("name=" + random.nextInt(10000))).iterator();
+                Iterator it = map.keySet(SqlPredicate.createPredicate("name=" + random.nextInt(10000))).iterator();
                 while (it.hasNext()) {
                     it.next();
                 }
@@ -545,7 +545,7 @@ public class AllTest {
         addOperation(operations, new Runnable() {
             public void run() {
                 IMap map = hazelcast.getMap("myMap");
-                Iterator it = map.localKeySet(new SqlPredicate("name=" + random.nextInt(10000))).iterator();
+                Iterator it = map.localKeySet(SqlPredicate.createPredicate("name=" + random.nextInt(10000))).iterator();
                 while (it.hasNext()) {
                     it.next();
                 }

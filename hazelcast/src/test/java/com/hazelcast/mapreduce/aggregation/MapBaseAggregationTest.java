@@ -228,7 +228,7 @@ public class MapBaseAggregationTest
         }
 
         @Override
-        public boolean in(Predicate predicate) {
+        public boolean isSubSet(Predicate predicate) {
             return false;
         }
     }

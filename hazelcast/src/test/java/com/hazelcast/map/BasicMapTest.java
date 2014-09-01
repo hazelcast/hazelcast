@@ -970,7 +970,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean in(Predicate predicate) {
+        public boolean isSubSet(Predicate predicate) {
             return false;
         }
     }
@@ -1142,7 +1142,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             map.put(i, new SampleIndexableObject("My-" + i, i));
         }
 
-        SqlPredicate predicate = new SqlPredicate("name='My-5'");
+        Predicate predicate = SqlPredicate.createPredicate("name='My-5'");
         Set<Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
         assertEquals(1, result.size());
         assertEquals(5, (int) result.iterator().next().getValue().value);
@@ -1152,7 +1152,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
         assertFalse(map.isEmpty());
 
-        predicate = new SqlPredicate("name='My-5'");
+        predicate = SqlPredicate.createPredicate("name='My-5'");
         result = map.entrySet(predicate);
         assertEquals(1, result.size());
         assertEquals(5, (int) result.iterator().next().getValue().value);

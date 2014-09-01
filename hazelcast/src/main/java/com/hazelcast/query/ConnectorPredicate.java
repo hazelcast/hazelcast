@@ -20,10 +20,11 @@ package com.hazelcast.query;
  * Connector predicate interface that in attribute predicates.
  */
 public interface ConnectorPredicate extends Predicate {
-    ConnectorPredicate subtract(Predicate predicates);
-    ConnectorPredicate copy();
-    void removeChild(int index);
+    Predicate subtract(Predicate predicate);
+
     int getPredicateCount();
+
     Predicate[] getPredicates();
-    boolean isSubset(Predicate predicate);
+
+    boolean contains(Predicate predicate);
 }

@@ -50,9 +50,9 @@ public class PortablePredicatesTest {
     @Test
     public void testPortablePredicate() {
         PortableData data = createData("1", "Clark", "Kent", "Superman", 100);
-        assertTrue(new SqlPredicate("strength >= 75").apply(toQueryEntry("1", data)));
-        assertTrue(new SqlPredicate("firstName like C% and lastName like K%").apply(toQueryEntry("1", data)));
-        assertFalse(new SqlPredicate("character == 'Bizarro'").apply(toQueryEntry("1", data)));
+        assertTrue(SqlPredicate.createPredicate("strength >= 75").apply(toQueryEntry("1", data)));
+        assertTrue(SqlPredicate.createPredicate("firstName like C% and lastName like K%").apply(toQueryEntry("1", data)));
+        assertFalse(SqlPredicate.createPredicate("character == 'Bizarro'").apply(toQueryEntry("1", data)));
     }
 
     private PortableData createData(String id,

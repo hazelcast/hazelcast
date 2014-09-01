@@ -105,14 +105,14 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
 
         //check the query result before eviction
-        Collection values = imap.values(new SqlPredicate("active"));
+        Collection values = imap.values(SqlPredicate.createPredicate("active"));
         assertEquals(activeEmployees, values.size());
 
         //wait until eviction is completed
         assertOpenEventually(latch);
 
         //check the query result after eviction
-        values = imap.values(new SqlPredicate("active"));
+        values = imap.values(SqlPredicate.createPredicate("active"));
         assertEquals(0, values.size());
     }
 
@@ -159,7 +159,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Collection<Employee> values = employees.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+                Collection<Employee> values = employees.values(SqlPredicate.createPredicate("active and name LIKE 'joe15%'"));
                 for (Employee employee : values) {
                     assertTrue(employee.isActive());
                 }
@@ -190,7 +190,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Collection<Employee> values = employees.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+                Collection<Employee> values = employees.values(SqlPredicate.createPredicate("active and name LIKE 'joe15%'"));
                 for (Employee employee : values) {
                     assertTrue(employee.isActive());
                 }
@@ -217,7 +217,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             imap.putAll(temp);
         }
         assertEquals(500, imap.size());
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
+        Set<Map.Entry> entries = imap.entrySet(SqlPredicate.createPredicate("active=true and age>44"));
         assertEquals(30, entries.size());
 
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
@@ -225,7 +225,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance h4 = nodeFactory.newHazelcastInstance();
         long startNow = Clock.currentTimeMillis();
         while ((Clock.currentTimeMillis() - startNow) < 10000) {
-            entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
+            entries = imap.entrySet(SqlPredicate.createPredicate("active=true and age>44"));
             assertEquals(30, entries.size());
         }
     }
@@ -249,20 +249,20 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        Collection<Employee> entries = imap.values(new SqlPredicate("name='name3' and city='city3' and age > 2"));
+        Collection<Employee> entries = imap.values(SqlPredicate.createPredicate("name='name3' and city='city3' and age > 2"));
         assertEquals(5, entries.size());
         for (Employee e : entries) {
             assertEquals("name3", e.getName());
             assertEquals("city3", e.getCity());
         }
-        entries = imap.values(new SqlPredicate("name LIKE '%name3' and city like '%city3' and age > 2"));
+        entries = imap.values(SqlPredicate.createPredicate("name LIKE '%name3' and city like '%city3' and age > 2"));
         assertEquals(5, entries.size());
         for (Employee e : entries) {
             assertEquals("name3", e.getName());
             assertEquals("city3", e.getCity());
             assertTrue(e.getAge() > 2);
         }
-        entries = imap.values(new SqlPredicate("name LIKE '%name3%' and city like '%city30%'"));
+        entries = imap.values(SqlPredicate.createPredicate("name LIKE '%name3%' and city like '%city30%'"));
         assertEquals(5, entries.size());
         for (Employee e : entries) {
             assertTrue(e.getName().startsWith("name3"));
@@ -291,20 +291,20 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("city", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        Collection<Employee> entries = imap.values(new SqlPredicate("name='name3' and city='city3' and age > 2"));
+        Collection<Employee> entries = imap.values(SqlPredicate.createPredicate("name='name3' and city='city3' and age > 2"));
         assertEquals(50, entries.size());
         for (Employee e : entries) {
             assertEquals("name3", e.getName());
             assertEquals("city3", e.getCity());
         }
-        entries = imap.values(new SqlPredicate("name LIKE '%name3' and city like '%city3' and age > 2"));
+        entries = imap.values(SqlPredicate.createPredicate("name LIKE '%name3' and city like '%city3' and age > 2"));
         assertEquals(50, entries.size());
         for (Employee e : entries) {
             assertEquals("name3", e.getName());
             assertEquals("city3", e.getCity());
             assertTrue(e.getAge() > 2);
         }
-        entries = imap.values(new SqlPredicate("name LIKE '%name3%' and city like '%city30%'"));
+        entries = imap.values(SqlPredicate.createPredicate("name LIKE '%name3%' and city like '%city30%'"));
         assertEquals(50, entries.size());
         for (Employee e : entries) {
             assertTrue(e.getName().startsWith("name3"));
@@ -335,7 +335,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance h1 = createHazelcastInstance();
         IMap imap = h1.getMap("employees");
         doFunctionalSQLQueryTest(imap);
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age>23"));
+        Set<Map.Entry> entries = imap.entrySet(SqlPredicate.createPredicate("active and age>23"));
         assertEquals(27, entries.size());
     }
 
@@ -356,7 +356,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
 
         EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate predicate = e.is("active").and(e.get("name").equal(null).and(e.get("city").isNull()));
+        Predicate predicate = e.is("active").and(e.get("name").equal(null).and(e.get("city").isNull())).build();
 
         IMap imap1 = h1.getMap("employees");
         IMap imap2 = h2.getMap("employees");
@@ -436,7 +436,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(101, imap.size());
         h2.getLifecycleService().shutdown();
         assertEquals(101, imap.size());
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
+        Set<Map.Entry> entries = imap.entrySet(SqlPredicate.createPredicate("active and age=23"));
         assertEquals(2, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -460,7 +460,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         h1.getLifecycleService().shutdown();
         imap = h2.getMap("employees");
         assertEquals(101, imap.size());
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
+        Set<Map.Entry> entries = imap.entrySet(SqlPredicate.createPredicate("active and age=23"));
         assertEquals(2, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -485,7 +485,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         h1.getLifecycleService().shutdown();
         imap = h2.getMap("employees");
         assertEquals(101, imap.size());
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age=23"));
+        Set<Map.Entry> entries = imap.entrySet(SqlPredicate.createPredicate("active and age=23"));
         assertEquals(2, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
@@ -526,7 +526,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             map.put(i, new ValueType("typex"));
         }
 
-        Collection typexValues = map.values(new SqlPredicate("typeName = typex"));
+        Collection typexValues = map.values(SqlPredicate.createPredicate("typeName = typex"));
         assertEquals(SAMPLE_SIZE_2, typexValues.size());
 
         instances[1].shutdown();
@@ -534,7 +534,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(TOTAL_SIZE, map.size());
         assertTrueEventually(new AssertTask() {
             public void run() {
-                final Collection values = map.values(new SqlPredicate("typeName = typex"));
+                final Collection values = map.values(SqlPredicate.createPredicate("typeName = typex"));
                 assertEquals(SAMPLE_SIZE_2, values.size());
             }
         });
@@ -544,7 +544,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(TOTAL_SIZE, map.size());
         assertTrueEventually(new AssertTask() {
             public void run() {
-                final Collection values = map.values(new SqlPredicate("typeName = typex"));
+                final Collection values = map.values(SqlPredicate.createPredicate("typeName = typex"));
                 assertEquals(SAMPLE_SIZE_2, values.size());
             }
         });
@@ -591,7 +591,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
                             Value v1 = map.get(name);
                             assertEquals(v, v1);
                             EntryObject e = new PredicateBuilder().getEntryObject();
-                            Predicate<?, ?> predicate = e.get("name").equal(name);
+                            Predicate<?, ?> predicate = e.get("name").equal(name).build();
                             Collection<Value> values = map.values(predicate);
                             assertEquals(1, values.size());
                             Value v2 = values.iterator().next();
@@ -652,7 +652,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Collection values = map.values(new SqlPredicate("active = true"));
+                Collection values = map.values(SqlPredicate.createPredicate("active = true"));
                 assertEquals(size, values.size());
             }
         });
@@ -707,7 +707,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         for (HazelcastInstance hz : instances) {
             IMap<Object, Object> map = hz.getMap(name);
             EntryObject e = new PredicateBuilder().getEntryObject();
-            Predicate p = e.get("name").equal(FIND_ME);
+            Predicate p = e.get("name").equal(FIND_ME).build();
             for (int i = 0; i < 10; i++) {
                 int size = map.values(p).size();
                 Assert.assertEquals(expected, size);

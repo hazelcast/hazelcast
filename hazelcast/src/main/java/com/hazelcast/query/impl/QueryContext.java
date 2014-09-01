@@ -22,7 +22,6 @@ import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -53,13 +52,19 @@ public class QueryContext {
         this.predicate = predicate;
     }
 
-    private AttributePredicate findPredicate(ConnectorPredicate predicate, String attribute) {
-        for (Predicate predicate1 : predicate.getPredicates()) {
-            if (predicate1 instanceof AttributePredicate) {
-                String attr = ((AttributePredicate) predicate1).getAttribute();
-                if (attr.equals(attribute)) {
-                    return (AttributePredicate) predicate1;
+    private AttributePredicate findPredicate(Predicate predicate, String attribute) {
+        if (predicate instanceof ConnectorPredicate) {
+            for (Predicate predicate1 : ((ConnectorPredicate) predicate).getPredicates()) {
+                if (predicate1 instanceof AttributePredicate) {
+                    String attr = ((AttributePredicate) predicate1).getAttribute();
+                    if (attr.equals(attribute)) {
+                        return (AttributePredicate) predicate1;
+                    }
                 }
+            }
+        } else if (predicate instanceof AttributePredicate) {
+            if (((AttributePredicate) predicate).getAttribute().equals(attribute)) {
+                return (AttributePredicate) predicate;
             }
         }
         return null;
@@ -67,16 +72,40 @@ public class QueryContext {
 
     public QueryPlan getQueryPlan(boolean useIndexForSubsetPredicates) {
         if (queryPlan == null) {
-            if (predicate instanceof ConnectorPredicate) {
-                planQueryForConnectorPredicate(getIdealIndexes((ConnectorPredicate) predicate), useIndexForSubsetPredicates);
-            } else {
-                planQueryForSinglePredicate(useIndexForSubsetPredicates);
-            }
+            planQuery(getIdealIndexes(predicate), useIndexForSubsetPredicates);
         }
         return queryPlan;
     }
 
-    private Queue<Map.Entry<Integer, Index>> getIdealIndexes(ConnectorPredicate predicate) {
+    private Integer getRankOfIndex(Index index) {
+        Predicate indexPredicate = index.getPredicate();
+        if (predicate instanceof ConnectorPredicate) {
+            ConnectorPredicate p = (ConnectorPredicate) predicate;
+            if (p.contains(indexPredicate)) {
+                int count;
+                Predicate subtracted = p.subtract(indexPredicate);
+                if (subtracted instanceof ConnectorPredicate) {
+                    count = ((ConnectorPredicate) subtracted).getPredicateCount();
+                } else {
+                    count = 1;
+                }
+
+                int rank = p.getPredicateCount() - count;
+                if (findPredicate(predicate, index.getAttributeName()) != null) {
+                    rank++;
+                }
+                return rank;
+            } else if (predicate.isSubSet(indexPredicate)) {
+                return 0;
+            } else {
+                return null;
+            }
+        } else {
+            return 1;
+        }
+    }
+
+    private Queue<Map.Entry<Integer, Index>> getIdealIndexes(Predicate predicate) {
         // we sort indexes for our query in order to optimize the count of indexes
         // that will be used.
         Index[] indexes = indexService.getIndexes();
@@ -87,19 +116,10 @@ public class QueryContext {
 
             Predicate indexPredicate = index.getPredicate();
             if (indexPredicate != null) {
-                ConnectorPredicate subtracted = predicate.subtract(indexPredicate);
-                int rank;
-                if (subtracted != null) {
-                    rank = predicate.getPredicateCount() - subtracted.getPredicateCount();
-                    if (findPredicate(predicate, index.getAttributeName()) != null) {
-                        rank++;
-                    }
-                } else if (predicate.in(indexPredicate)) {
-                    rank = 0;
-                } else {
-                    continue;
+                Integer rank = getRankOfIndex(index);
+                if (rank != null) {
+                    q.add(new AbstractMap.SimpleEntry<Integer, Index>(rank, index));
                 }
-                q.add(new AbstractMap.SimpleEntry<Integer, Index>(rank, index));
             } else {
 
                 if (findPredicate(predicate, index.getAttributeName()) != null) {
@@ -112,86 +132,60 @@ public class QueryContext {
         return q;
     }
 
-    private void planQueryForSinglePredicate(boolean useIndexForSubsetPredicates) {
-        List<IndexPredicate> plan = new ArrayList<IndexPredicate>(1);
-        Index[] indexes = indexService.getIndexes();
-
-        for (Index index : indexes) {
-            Predicate p = index.getPredicate();
-            if (p != null) {
-                if ((p instanceof ConnectorPredicate && ((ConnectorPredicate) p).isSubset(predicate))
-                        || p.equals(predicate)) {
-                    plan.add(new IndexPredicate(predicate, index));
-                    queryPlan = new QueryPlan(plan);
-                    return;
-                }
-            }
-        }
-
-        if (useIndexForSubsetPredicates) {
-            for (Index index : indexes) {
-                Predicate p = index.getPredicate();
-                if (p != null) {
-                    if (predicate.in(p)) {
-                        plan.add(new IndexPredicate(predicate, index));
-                        HashMap<Predicate, Predicate> notIndexedPredicates = new HashMap<Predicate, Predicate>(1);
-                        notIndexedPredicates.put(predicate, p);
-                        queryPlan = new QueryPlan(plan, notIndexedPredicates);
-                        return;
-                    }
-                }
-            }
-        }
-
-
-    }
-
-    private void planQueryForConnectorPredicate(Queue<Map.Entry<Integer, Index>> q, boolean useIndexForSubsetPredicates) {
-        if (indexService == null && !(predicate instanceof ConnectorPredicate)) {
-            return;
-        }
-
-        HashMap<Predicate, Predicate> mappedNotIndexedPredicatesList = new HashMap<Predicate, Predicate>();
-        ConnectorPredicate lastPredicate = ((ConnectorPredicate) predicate).copy();
+    private void planQuery(Queue<Map.Entry<Integer, Index>> q, boolean useIndexForSubsetPredicates) {
+        HashMap<Predicate, Predicate> mappedNotIndexedPredicates = new HashMap<Predicate, Predicate>();
+        Predicate remainedPredicates = predicate;
         LinkedList<IndexPredicate> plan = new LinkedList<IndexPredicate>();
 
-        Map.Entry<Integer, Index> entry = q.poll();
-        Index index;
-        while (entry != null) {
-            index = entry.getValue();
-            // since the indexes are sorted, if predicate of the index doesn't have any common predicate
-            // we can pass the other indexes
-            AttributePredicate inlinePredicate = findPredicate(lastPredicate, index.getAttributeName());
+        for (Map.Entry<Integer, Index> entry : q) {
+            Index index = entry.getValue();
 
-            ConnectorPredicate subtractIndex = null;
+            Predicate subtractIndex = null;
             Predicate indexPredicate = index.getPredicate();
+            boolean indexContains = false;
+
             if (indexPredicate != null) {
-                subtractIndex = lastPredicate.subtract(indexPredicate);
-                // if subtract is null, then lastPredicate is in indexPredicate. (only happens in AndPredicate)
-                if (subtractIndex != null) {
-                    lastPredicate = subtractIndex;
-                } else if (entry.getKey() == 0 && useIndexForSubsetPredicates) {
-                    Predicate predicates = extractInPredicate(lastPredicate, indexPredicate);
-                    mappedNotIndexedPredicatesList.put(indexPredicate, predicates);
+                if (remainedPredicates instanceof ConnectorPredicate
+                        && ((ConnectorPredicate) remainedPredicates).contains(indexPredicate)) {
+                    subtractIndex = ((ConnectorPredicate) remainedPredicates).subtract(indexPredicate);
+                    indexContains = true;
+                } else {
+                    indexContains = remainedPredicates.equals(indexPredicate);
                 }
 
+                if (indexContains && (subtractIndex instanceof ConnectorPredicate || subtractIndex == null)) {
+                    remainedPredicates = subtractIndex;
+                } else if (entry.getKey() == 0 && useIndexForSubsetPredicates) {
+                    Predicate p = extractInPredicate(remainedPredicates, indexPredicate);
+                    mappedNotIndexedPredicates.put(indexPredicate, p);
+                    remainedPredicates = subtract(remainedPredicates, p);
+                }
             }
 
-            if (inlinePredicate != null && inlinePredicate instanceof IndexAwarePredicate) {
-                IndexAwarePredicate indexAware = (IndexAwarePredicate) inlinePredicate;
-                plan.add(new IndexPredicate(indexAware, index));
-                ConnectorPredicate subtractedInline = lastPredicate.subtract(inlinePredicate);
-                if (subtractedInline != null) {
-                    lastPredicate = subtractedInline;
-                }
-            } else if (subtractIndex != null) {
+            AttributePredicate inlinePredicate = findPredicate(remainedPredicates, index.getAttributeName());
+            if (remainedPredicates != null && inlinePredicate != null && inlinePredicate instanceof IndexAwarePredicate) {
+                remainedPredicates = subtract(remainedPredicates, inlinePredicate);
+                plan.add(new IndexPredicate((IndexAwarePredicate) inlinePredicate, index));
+            } else if (indexContains) {
                 plan.add(new IndexPredicate(null, index));
             }
-            entry = q.poll();
         }
 
+        if (remainedPredicates == null) {
+            queryPlan = new QueryPlan(plan, mappedNotIndexedPredicates);
+        } else {
+            queryPlan = new QueryPlan(plan, mappedNotIndexedPredicates, Arrays.asList(remainedPredicates));
+        }
+    }
 
-        queryPlan = new QueryPlan(plan, mappedNotIndexedPredicatesList, Arrays.asList(lastPredicate.getPredicates()));
+    private Predicate subtract(Predicate predicate, Predicate compare) {
+        if (predicate instanceof ConnectorPredicate) {
+            return ((ConnectorPredicate) predicate).subtract(compare);
+        } else if (predicate.equals(compare)) {
+            return null;
+        } else {
+            throw new IllegalArgumentException();
+        }
     }
 
     public Index getIdealIndex(Predicate predicate) {
@@ -203,7 +197,10 @@ public class QueryContext {
         }
         List<IndexPredicate> plan = queryPlan.getPlan();
         for (IndexPredicate indexPredicate : plan) {
-            if (indexPredicate.getPredicate().equals(predicate)) {
+            IndexAwarePredicate p = indexPredicate.getPredicate();
+            if (p == null && predicate.equals(indexPredicate.getIndex().getPredicate())) {
+                return indexPredicate.getIndex();
+            } else if (p.equals(predicate)) {
                 return indexPredicate.getIndex();
             }
 
@@ -211,18 +208,25 @@ public class QueryContext {
         return null;
     }
 
-    private Predicate extractInPredicate(ConnectorPredicate listPredicate, Predicate indexPredicate) {
-        Predicate[] predicates = listPredicate.getPredicates();
-        Predicate predicate;
-        for (int i = 0; i < predicates.length; i++) {
-            predicate = predicates[i];
-            if (predicate instanceof ConnectorPredicate) {
-                return extractInPredicate(listPredicate, indexPredicate);
-            } else {
-                if (predicate.in(indexPredicate)) {
-                    listPredicate.removeChild(i);
-                    return predicate;
+    // the array just contains the reference of lastPredicate in its first index.
+    private Predicate extractInPredicate(Predicate listPredicates, Predicate indexPredicate) {
+        if (listPredicates instanceof ConnectorPredicate) {
+            ConnectorPredicate p = (ConnectorPredicate) listPredicates;
+            Predicate[] predicates = p.getPredicates();
+            for (Predicate predicate : predicates) {
+                if (predicate instanceof ConnectorPredicate) {
+                    return extractInPredicate(predicate, indexPredicate);
+                } else {
+                    if (predicate.isSubSet(indexPredicate)) {
+                        return predicate;
+                    }
                 }
+            }
+        } else {
+            if (listPredicates.isSubSet(indexPredicate)) {
+                return listPredicates;
+            } else {
+                return null;
             }
         }
         return null;
@@ -244,12 +248,6 @@ public class QueryContext {
             this.mappedNotIndexedPredicates = Collections.unmodifiableMap(mappedNotIndexedPredicates);
         }
 
-        public QueryPlan(List<IndexPredicate> queryPlan) {
-            this.notIndexedPredicates = null;
-            this.mappedNotIndexedPredicates = null;
-            this.plan = Collections.unmodifiableList(queryPlan);
-        }
-
         public QueryPlan(List<IndexPredicate> queryPlan, Map<Predicate, Predicate> mappedNotIndexedPredicates) {
             this.notIndexedPredicates = null;
             this.mappedNotIndexedPredicates = Collections.unmodifiableMap(mappedNotIndexedPredicates);
@@ -265,6 +263,9 @@ public class QueryContext {
         }
 
         public Predicate getMappedNotIndexedPredicate(Predicate predicate) {
+            if (mappedNotIndexedPredicates == null) {
+                return null;
+            }
             return mappedNotIndexedPredicates.get(predicate);
         }
 

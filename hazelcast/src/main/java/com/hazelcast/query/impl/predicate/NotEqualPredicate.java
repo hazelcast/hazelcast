@@ -44,6 +44,11 @@ public class NotEqualPredicate extends EqualPredicate {
     }
 
     @Override
+    public boolean isSubSet(Predicate predicate) {
+        return equals(predicate);
+    }
+
+    @Override
     public boolean equals(Object predicate) {
         if (predicate instanceof NotEqualPredicate) {
             NotEqualPredicate p = (NotEqualPredicate) predicate;

@@ -31,8 +31,8 @@ public final class Predicates {
         return new InstanceOfPredicate(klass);
     }
 
-    public static Predicate and(Predicate... predicates) {
-        return new com.hazelcast.query.impl.predicate.AndPredicate(predicates);
+    public static Predicate and(Predicate predicate1, Predicate predicate2, Predicate... predicates) {
+        return new com.hazelcast.query.impl.predicate.AndPredicate(predicate1, predicate2, predicates);
     }
 
     public static Predicate not(Predicate predicate) {
@@ -45,8 +45,8 @@ public final class Predicates {
      * @param predicates
      * @return
      */
-    public static Predicate or(Predicate... predicates) {
-        return new com.hazelcast.query.impl.predicate.OrPredicate(predicates);
+    public static Predicate or(Predicate predicate1, Predicate predicate2, Predicate... predicates) {
+        return new com.hazelcast.query.impl.predicate.OrPredicate(predicate1, predicate2, predicates);
     }
 
     public static Predicate notEqual(String attribute, Comparable y) {
@@ -154,8 +154,16 @@ public final class Predicates {
         public AndPredicate() {
         }
 
+        public AndPredicate(Predicate predicate1, Predicate predicate2, Predicate... predicates) {
+            super(predicate1, predicate2, predicates);
+        }
+
+        @Deprecated
         public AndPredicate(Predicate... predicates) {
-            super(predicates);
+            if (predicates.length < 2) {
+                throw new IllegalArgumentException("And predicate takes at least 2 predicate.");
+            }
+            this.predicates = predicates;
         }
     }
 
@@ -238,8 +246,16 @@ public final class Predicates {
         public OrPredicate() {
         }
 
+        public OrPredicate(Predicate predicate1, Predicate predicate2, Predicate... predicates) {
+            super(predicate1, predicate2, predicates);
+        }
+
+        @Deprecated
         public OrPredicate(Predicate... predicates) {
-            super(predicates);
+            if (predicates.length < 2) {
+                throw new IllegalArgumentException("And predicate takes at least 2 predicate.");
+            }
+            this.predicates = predicates;
         }
     }
 

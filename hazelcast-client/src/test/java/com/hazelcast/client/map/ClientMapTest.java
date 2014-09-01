@@ -37,7 +37,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -478,7 +478,7 @@ public class ClientMapTest {
         final IMap map = createMap();
         fillMap(map);
 
-        final Collection values = map.values(new SqlPredicate("this == value1"));
+        final Collection values = map.values(SqlPredicate.createPredicate("this == value1"));
         assertEquals(1, values.size());
         assertEquals("value1", values.iterator().next());
     }
@@ -610,11 +610,11 @@ public class ClientMapTest {
     public void testBasicPredicate() {
         final IMap map = createMap();
         fillMap(map);
-        final Collection collection = map.values(new SqlPredicate("this == value1"));
+        final Collection collection = map.values(SqlPredicate.createPredicate("this == value1"));
         assertEquals("value1", collection.iterator().next());
-        final Set set = map.keySet(new SqlPredicate("this == value1"));
+        final Set set = map.keySet(SqlPredicate.createPredicate("this == value1"));
         assertEquals("key1", set.iterator().next());
-        final Set<Map.Entry<String, String>> set1 = map.entrySet(new SqlPredicate("this == value1"));
+        final Set<Map.Entry<String, String>> set1 = map.entrySet(SqlPredicate.createPredicate("this == value1"));
         assertEquals("key1", set1.iterator().next().getKey());
         assertEquals("value1", set1.iterator().next().getValue());
     }
@@ -724,7 +724,7 @@ public class ClientMapTest {
 
         final EntryListener listener = new EntListener(gateAdd, gateRemove, gateEvict, gateUpdate, gateClearAll, gateEvictAll);
 
-        clientMap.addEntryListener(listener, new SqlPredicate("id=1"), 2, true);
+        clientMap.addEntryListener(listener, SqlPredicate.createPredicate("id=1"), 2, true);
         clientMap.put(2, new Deal(1));
         clientMap.put(2, new Deal(1));
         clientMap.remove(2);
@@ -883,6 +883,11 @@ public class ClientMapTest {
         public boolean apply(Map.Entry<Object, Object> mapEntry) {
             assert mapEntry != null;
             return mapEntry.getKey().equals("A");
+        }
+
+        @Override
+        public boolean isSubSet(Predicate predicate) {
+            return false;
         }
     }
 

@@ -488,7 +488,7 @@ public class ListenerTest extends HazelcastTestSupport {
             }
 
             @Override
-            public boolean in(Predicate predicate) {
+            public boolean isSubSet(Predicate predicate) {
                 return false;
             }
         };
@@ -502,7 +502,7 @@ public class ListenerTest extends HazelcastTestSupport {
             }
 
             @Override
-            public boolean in(Predicate predicate) {
+            public boolean isSubSet(Predicate predicate) {
                 return false;
             }
         };

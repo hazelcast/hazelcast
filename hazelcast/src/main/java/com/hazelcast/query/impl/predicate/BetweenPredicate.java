@@ -79,7 +79,7 @@ public class BetweenPredicate extends AbstractPredicate {
     }
 
     @Override
-    public boolean in(Predicate predicate) {
+    public boolean isSubSet(Predicate predicate) {
         if (super.equals(predicate) && predicate instanceof BetweenPredicate) {
             BetweenPredicate p = (BetweenPredicate) predicate;
             if (to == null || p.to == null || from == null || p.from == null) {

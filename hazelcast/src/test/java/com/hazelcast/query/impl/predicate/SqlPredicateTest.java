@@ -16,9 +16,9 @@
 
 package com.hazelcast.query.impl.predicate;
 
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.impl.DateHelperTest;
-import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,34 +45,28 @@ import static org.junit.Assert.assertTrue;
 public class SqlPredicateTest {
     @Test
     public void testEqualsWhenSqlMatches() throws Exception {
-        SqlPredicate sql1 = new SqlPredicate("foo='bar'");
-        SqlPredicate sql2 = new SqlPredicate("foo='bar'");
+        Predicate sql1 = SqlPredicate.createPredicate("foo='bar'");
+        Predicate sql2 = SqlPredicate.createPredicate("foo='bar'");
         assertEquals(sql1, sql2);
     }
 
     @Test
     public void testEqualsWhenSqlDifferent() throws Exception {
-        SqlPredicate sql1 = new SqlPredicate("foo='bar'");
-        SqlPredicate sql2 = new SqlPredicate("foo='baz'");
+        Predicate sql1 = SqlPredicate.createPredicate("foo='bar'");
+        Predicate sql2 = SqlPredicate.createPredicate("foo='baz'");
         assertNotEquals(sql1, sql2);
     }
 
     @Test
     public void testEqualsNull() throws Exception {
-        SqlPredicate sql = new SqlPredicate("foo='bar'");
+        Predicate sql = SqlPredicate.createPredicate("foo='bar'");
         assertNotEquals(sql, null);
     }
 
     @Test
     public void testEqualsSameObject() throws Exception {
-        SqlPredicate sql = new SqlPredicate("foo='bar'");
+        Predicate sql = SqlPredicate.createPredicate("foo='bar'");
         assertEquals(sql, sql);
-    }
-
-    @Test
-    public void testHashCode() throws Exception {
-        SqlPredicate sql = new SqlPredicate("foo='bar'");
-        assertEquals("foo='bar'".hashCode(), sql.hashCode());
     }
 
     @Test
@@ -212,16 +206,16 @@ public class SqlPredicateTest {
 
     @Test(expected = RuntimeException.class)
     public void testInvalidSqlPredicate1() {
-        new SqlPredicate("invalid sql");
+        SqlPredicate.createPredicate("invalid sql");
     }
 
     @Test(expected = RuntimeException.class)
     public void testInvalidSqlPredicate2() {
-        new SqlPredicate("");
+        SqlPredicate.createPredicate("");
     }
 
     private String sql(String sql) {
-        return new SqlPredicate(sql).toString();
+        return SqlPredicate.createPredicate(sql).toString();
     }
 
     private static Map.Entry createEntry(final Object key, final Object value) {
@@ -229,13 +223,13 @@ public class SqlPredicateTest {
     }
 
     private void assertSqlTrue(String s, Object value) {
-        final SqlPredicate predicate = new SqlPredicate(s);
+        final Predicate predicate = SqlPredicate.createPredicate(s);
         final Map.Entry entry = createEntry("1", value);
         assertTrue(predicate.apply(entry));
     }
 
     private void assertSqlFalse(String s, Object value) {
-        final SqlPredicate predicate = new SqlPredicate(s);
+        final Predicate predicate = SqlPredicate.createPredicate(s);
         final Map.Entry entry = createEntry("1", value);
         assertFalse(predicate.apply(entry));
     }

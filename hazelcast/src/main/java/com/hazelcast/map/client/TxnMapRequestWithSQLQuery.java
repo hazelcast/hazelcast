@@ -40,7 +40,7 @@ public class TxnMapRequestWithSQLQuery extends AbstractTxnMapRequest {
     }
 
     protected Predicate getPredicate() {
-        return new SqlPredicate(predicate);
+        return SqlPredicate.createPredicate(predicate);
     }
 
     public int getClassId() {

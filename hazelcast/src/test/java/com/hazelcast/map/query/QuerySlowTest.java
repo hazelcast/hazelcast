@@ -39,7 +39,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
             imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate predicate = e.is("active").and(e.get("age").equal(23));
+        Predicate predicate = e.is("active").and(e.get("age").equal(23)).build();
         long start = Clock.currentTimeMillis();
         Set<Map.Entry> entries = imap.entrySet(predicate);
         long tookWithout = (Clock.currentTimeMillis() - start);
@@ -58,7 +58,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
             imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         e = new PredicateBuilder().getEntryObject();
-        predicate = e.is("active").and(e.get("age").equal(23));
+        predicate = e.is("active").and(e.get("age").equal(23)).build();
         start = Clock.currentTimeMillis();
         entries = imap.entrySet(predicate);
         long tookWithIndex = (Clock.currentTimeMillis() - start);
@@ -81,7 +81,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
             imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         long start = Clock.currentTimeMillis();
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age=23"));
+        Set<Map.Entry> entries = imap.entrySet(SqlPredicate.createPredicate("active=true and age=23"));
         long tookWithout = (Clock.currentTimeMillis() - start);
         assertEquals(83, entries.size());
         for (Map.Entry entry : entries) {
@@ -98,7 +98,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
             imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         start = Clock.currentTimeMillis();
-        entries = imap.entrySet(new SqlPredicate("active and age=23"));
+        entries = imap.entrySet(SqlPredicate.createPredicate("active and age=23"));
         long tookWithIndex = (Clock.currentTimeMillis() - start);
         assertEquals(83, entries.size());
         for (Map.Entry entry : entries) {
@@ -119,7 +119,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
             imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         long start = Clock.currentTimeMillis();
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and salary between 4010.99 and 4032.01"));
+        Set<Map.Entry> entries = imap.entrySet(SqlPredicate.createPredicate("active and salary between 4010.99 and 4032.01"));
         long tookWithout = (Clock.currentTimeMillis() - start);
         assertEquals(11, entries.size());
         for (Map.Entry entry : entries) {
@@ -138,7 +138,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
         imap.put(String.valueOf(10), new SampleObjects.Employee("name" + 10, 10, true, 44010.99D));
         imap.put(String.valueOf(11), new SampleObjects.Employee("name" + 11, 11, true, 44032.01D));
         start = Clock.currentTimeMillis();
-        entries = imap.entrySet(new SqlPredicate("active and salary between 44010.99 and 44032.01"));
+        entries = imap.entrySet(SqlPredicate.createPredicate("active and salary between 44010.99 and 44032.01"));
         long tookWithIndex = (Clock.currentTimeMillis() - start);
         assertEquals(2, entries.size());
         boolean foundFirst = false;
@@ -159,7 +159,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
         for (int i = 0; i < 50000; i++) {
             imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), 100.25D));
         }
-        entries = imap.entrySet(new SqlPredicate("salary between 99.99 and 100.25"));
+        entries = imap.entrySet(SqlPredicate.createPredicate("salary between 99.99 and 100.25"));
         assertEquals(50000, entries.size());
         for (Map.Entry entry : entries) {
             SampleObjects.Employee c = (SampleObjects.Employee) entry.getValue();
@@ -182,7 +182,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
             imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate predicate = e.is("active").and(e.get("age").equal(23));
+        Predicate predicate = e.is("active").and(e.get("age").equal(23)).build();
         long start = Clock.currentTimeMillis();
         Set<Map.Entry> entries = imap.entrySet(predicate);
         long tookWithout = (Clock.currentTimeMillis() - start);
@@ -199,7 +199,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
             imap.put(String.valueOf(i), new SampleObjects.Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
         e = new PredicateBuilder().getEntryObject();
-        predicate = e.is("active").and(e.get("age").equal(23));
+        predicate = e.is("active").and(e.get("age").equal(23)).build();
         start = Clock.currentTimeMillis();
         entries = imap.entrySet(predicate);
         long tookWithIndex = (Clock.currentTimeMillis() - start);

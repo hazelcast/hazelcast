@@ -38,7 +38,7 @@ public final class MapSQLQueryRequest extends AbstractMapQueryRequest {
 
     @Override
     protected Predicate getPredicate() {
-        return new SqlPredicate(sql);
+        return SqlPredicate.createPredicate(sql);
     }
 
     public int getClassId() {
