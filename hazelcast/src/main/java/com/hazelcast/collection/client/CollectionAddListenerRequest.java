@@ -87,6 +87,11 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
 
             private void send(ItemEvent event) {
                 if (endpoint.live()) {
+                    if (!(event instanceof DataAwareItemEvent)) {
+                        throw new IllegalArgumentException("Expecting: DataAwareItemEvent, Found: "
+                                + event.getClass().getSimpleName());
+                    }
+
                     DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
                     Data item = dataAwareItemEvent.getItemData();
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(),

@@ -99,6 +99,11 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
                 return;
             }
 
+            if (!(message instanceof DataAwareMessage)) {
+                throw new IllegalArgumentException("Expecting: DataAwareMessage, Found: "
+                        + message.getClass().getSimpleName());
+            }
+
             DataAwareMessage dataAwareMessage = (DataAwareMessage) message;
             Data messageData = dataAwareMessage.getMessageData();
             String publisherUuid = message.getPublishingMember().getUuid();
