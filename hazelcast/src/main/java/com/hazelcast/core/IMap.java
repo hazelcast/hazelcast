@@ -17,7 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.impl.MapInterceptor;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;

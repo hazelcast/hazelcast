@@ -1,5 +1,8 @@
 package com.hazelcast.map.mapstore.writebehind;
 
+import com.hazelcast.map.impl.mapstore.writebehind.DelayedEntry;
+import com.hazelcast.map.impl.mapstore.writebehind.ReachedMaxSizeException;
+import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
@@ -13,8 +16,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.map.mapstore.writebehind.WriteBehindQueues.createSafeBoundedArrayWriteBehindQueue;
-import static com.hazelcast.map.mapstore.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
+import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
+import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createSafeBoundedArrayWriteBehindQueue;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
