@@ -1,5 +1,7 @@
 package com.hazelcast.map.impl;
 
+import com.hazelcast.map.MapInterceptor;
+
 /**
  * Helper interceptor methods for {@link MapServiceContext}.
  */

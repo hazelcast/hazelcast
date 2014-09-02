@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.client;
 import com.hazelcast.client.impl.client.MultiTargetClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.impl.MapInterceptor;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.AddInterceptorOperationFactory;

@@ -2,6 +2,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
