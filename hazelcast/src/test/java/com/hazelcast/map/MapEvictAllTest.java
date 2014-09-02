@@ -1,9 +1,11 @@
 package com.hazelcast.map;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -50,7 +52,9 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         int numberOfLockedKeys = 123;
         int expectedNumberOfEvictedKeys = numberOfEntries - numberOfLockedKeys;
         final CountDownLatch countDownLatch = new CountDownLatch(expectedNumberOfEvictedKeys);
-        HazelcastInstance node = createHazelcastInstance();
+        Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
+        HazelcastInstance node = createHazelcastInstance(cfg);
         IMap<Integer, Integer> map = node.getMap(randomMapName());
         map.addLocalEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
@@ -72,7 +76,11 @@ public class MapEvictAllTest extends HazelcastTestSupport {
 
         assertOpenEventually(countDownLatch);
         assertEquals(0, countDownLatch.getCount());
+        assertEquals(numberOfLockedKeys, map.size());
     }
+
+
+
 
     @Test
     public void testEvictAll_onBackup() throws Exception {
