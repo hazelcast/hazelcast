@@ -258,14 +258,6 @@ public abstract class HazelcastCacheManager
     public void close() {
         if (!closeTriggered) {
             releaseCacheManager(uri, classLoaderReference.get());
-
-            //            HazelcastInstance hz = hazelcastInstance;
-            //            Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
-            //            for (DistributedObject distributedObject : distributedObjects) {
-            //                if (distributedObject instanceof CacheDistributedObject) {
-            //                    distributedObject.destroy();
-            //                }
-            //            }
             for (ICache cache : caches.values()) {
                 cache.close();
             }
@@ -302,8 +294,9 @@ public abstract class HazelcastCacheManager
 
     protected String cacheNamePrefix() {
         final StringBuilder sb = new StringBuilder("/hz");
-        if (!isDefaultClassLoader) {
-            sb.append("/").append(classLoaderReference.get().toString());
+        final ClassLoader classLoader = getClassLoader();
+        if (!isDefaultClassLoader && classLoader != null) {
+            sb.append("/").append(classLoader.toString());
         }
         if (!isDefaultURI) {
             sb.append("/").append(uri.toASCIIString());

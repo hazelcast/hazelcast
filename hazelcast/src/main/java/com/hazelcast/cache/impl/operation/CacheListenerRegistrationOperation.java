@@ -36,8 +36,6 @@ public class CacheListenerRegistrationOperation
     private CacheEntryListenerConfiguration cacheEntryListenerConfiguration;
     private boolean register;
 
-    private transient Object response;
-
     public CacheListenerRegistrationOperation() {
     }
 
@@ -68,7 +66,7 @@ public class CacheListenerRegistrationOperation
 
     @Override
     public Object getResponse() {
-        return response;
+        return null;
     }
 
     @Override

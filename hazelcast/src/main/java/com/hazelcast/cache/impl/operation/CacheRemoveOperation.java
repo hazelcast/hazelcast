@@ -62,7 +62,7 @@ public class CacheRemoveOperation
 
     @Override
     public boolean shouldBackup() {
-        return response == Boolean.TRUE;
+        return Boolean.TRUE.equals(response);
     }
 
     @Override

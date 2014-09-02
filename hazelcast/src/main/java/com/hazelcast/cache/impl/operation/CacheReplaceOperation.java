@@ -57,7 +57,7 @@ public class CacheReplaceOperation
             } else {
                 response = cache.replace(key, currentValue, value, expiryPolicy, getCallerUuid());
             }
-            if (response == Boolean.TRUE) {
+            if (Boolean.TRUE.equals(response)) {
                 backupRecord = cache.getRecord(key);
             }
         } else {
@@ -67,7 +67,7 @@ public class CacheReplaceOperation
 
     @Override
     public boolean shouldBackup() {
-        return response == Boolean.TRUE;
+        return Boolean.TRUE.equals(response);
     }
 
     @Override

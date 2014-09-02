@@ -51,14 +51,14 @@ public class CachePutIfAbsentOperation
         CacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
         response = cache.putIfAbsent(key, value, expiryPolicy, getCallerUuid());
-        if (response == Boolean.TRUE) {
+        if (Boolean.TRUE.equals(response)) {
             backupRecord = cache.getRecord(key);
         }
     }
 
     @Override
     public boolean shouldBackup() {
-        return response == Boolean.TRUE;
+        return Boolean.TRUE.equals(response);
     }
 
     @Override
