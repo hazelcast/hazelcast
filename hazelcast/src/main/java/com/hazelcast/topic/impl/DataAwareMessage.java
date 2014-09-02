@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.topic;
+package com.hazelcast.topic.impl;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
