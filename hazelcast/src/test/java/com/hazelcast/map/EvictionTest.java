@@ -58,32 +58,45 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class EvictionTest extends HazelcastTestSupport {
+
+
+    @Test
+    public void testTTL_entryShouldNotBeReachableAfterTTL() throws Exception {
+        IMap<Integer, String> map = createSimpleMap();
+
+        map.put(1, "value0", 1, TimeUnit.SECONDS);
+        sleepSeconds(1);
+
+        assertFalse(map.containsKey(1));
+    }
+
+
+    @Test
+    public void testTTL_affectedByUpdates() throws Exception {
+        IMap<Integer, String> map = createSimpleMap();
+
+        map.put(1, "value0", 2, TimeUnit.SECONDS);
+        map.put(1, "value1", 100, TimeUnit.SECONDS);
+        sleepSeconds(3);
+
+        assertTrue(map.containsKey(1));
+    }
+
+
     /**
-     * Test for the issue 477.
-     * Updates should also update the TTL
-     *
-     * @throws Exception
+     * We are defining TTL as time being passed since creation time of an entry.
      */
     @Test
-    public void testMapPutWithTTL() throws Exception {
-        int n = 1;
+    public void testTTL_appliedFromCreationTime() throws Exception {
+        IMap<Integer, String> map = createSimpleMap();
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
-        IMap<Integer, String> map = factory.newHazelcastInstance(null).getMap("testMapPutWithTTL");
-        map.put(1, "value0", 100, TimeUnit.MILLISECONDS);
-        assertEquals(true, map.containsKey(1));
-        Thread.sleep(2500);
-        assertEquals(false, map.containsKey(1));
-        map.put(1, "value1", 10, TimeUnit.SECONDS);
-        assertEquals(true, map.containsKey(1));
-        Thread.sleep(5000);
-        assertEquals(true, map.containsKey(1));
-        map.put(1, "value2", 10, TimeUnit.SECONDS);
-        Thread.sleep(2000);
-        assertEquals(true, map.containsKey(1));
-        map.put(1, "value3", 10, TimeUnit.SECONDS);
-        assertEquals(true, map.containsKey(1));
+        map.put(1, "value0");
+        sleepSeconds(2);
+        map.put(1, "value1", 2, TimeUnit.SECONDS);
+
+        assertFalse(map.containsKey(1));
     }
+
 
     /*
        github issue 455
@@ -912,6 +925,12 @@ public class EvictionTest extends HazelcastTestSupport {
         map.put(3, 1, 100, TimeUnit.MILLISECONDS);
         sleepSeconds(1);
         return map;
+    }
+
+    private IMap<Integer, String> createSimpleMap() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
+        return hazelcastInstance.getMap(randomMapName());
     }
 
 
