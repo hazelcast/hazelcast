@@ -91,6 +91,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public static final String SERVICE_NAME = "hz:core:clientEngine";
     private static final int ENDPOINT_REMOVE_DELAY_MS = 10;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
+    private static final int THREADS_PER_CORE = 20;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -123,7 +124,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         int threadCount = node.getGroupProperties().CLIENT_ENGINE_THREAD_COUNT.getInteger();
         if (threadCount <= 0) {
-            threadCount = coreSize * 2;
+            threadCount = coreSize * THREADS_PER_CORE;
         }
 
         return executionService.register(ExecutionService.CLIENT_EXECUTOR,
