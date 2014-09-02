@@ -29,7 +29,6 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.topic.DataAwareMessage;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;

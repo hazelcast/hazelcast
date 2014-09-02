@@ -21,16 +21,19 @@ import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
-@edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
+
 public class DataAwareEntryEvent extends EntryEvent {
 
     private static final long serialVersionUID = 1;
 
-    protected final Data dataKey;
+    private final transient Data dataKey;
 
-    protected final Data dataNewValue;
+    private final transient Data dataNewValue;
 
-    protected final Data dataOldValue;
+    private final transient Data dataOldValue;
 
     private final transient SerializationService serializationService;
 
@@ -78,7 +81,7 @@ public class DataAwareEntryEvent extends EntryEvent {
         return value;
     }
 
-    public String getLongName() {
-        return name;
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        throw new NotSerializableException();
     }
 }
