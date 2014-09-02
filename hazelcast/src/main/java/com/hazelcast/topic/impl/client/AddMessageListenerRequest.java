@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
-import com.hazelcast.topic.DataAwareMessage;
+import com.hazelcast.topic.impl.DataAwareMessage;
 import com.hazelcast.topic.impl.TopicPortableHook;
 import com.hazelcast.topic.impl.TopicService;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.collection.common;
 
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;

@@ -25,7 +25,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.DataAwareItemEvent;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.security.permission.ActionConstants;
