@@ -34,7 +34,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntrySet;
-import com.hazelcast.map.impl.MapInterceptor;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapValueCollection;
 import com.hazelcast.map.impl.SimpleEntryView;

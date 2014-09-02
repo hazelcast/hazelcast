@@ -23,6 +23,7 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.impl.record.DataRecordFactory;
