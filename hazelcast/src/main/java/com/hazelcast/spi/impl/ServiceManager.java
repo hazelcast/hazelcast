@@ -126,8 +126,9 @@ final class ServiceManager {
         registerService(MapReduceService.SERVICE_NAME, new MapReduceService(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
 
-        //try to init optional JCACHE
+        //CacheService Optional initialization
         try {
+            //search for jcache api jar on classpath
             final String localClassName = "javax.cache.Caching";
             ClassLoader classLoader = nodeEngine.getConfigClassLoader();
             Class theClass = ClassLoaderUtil.loadClass(classLoader, localClassName);
@@ -136,7 +137,7 @@ final class ServiceManager {
                 registerService(CacheService.SERVICE_NAME, serviceObject);
             }
         } catch (ClassNotFoundException e) {
-            logger.finest("javax.cache api not found.");
+            logger.finest("javax.cache api not detected on classpath.");
         }
 
     }
