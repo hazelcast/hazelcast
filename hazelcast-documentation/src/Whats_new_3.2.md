@@ -27,6 +27,20 @@ Please see the list of all enhancement issues [here](https://github.com/hazelcas
 
 ### Fixes
 
+**3.2.6 Fixes**
+
+This section lists issues solved for Hazelcast 3.2.6 release.
+
+-	MapStore in write-behind mode throws Exception (Spring configured) [[#3397]](https://github.com/hazelcast/hazelcast/issues/3397).
+-	Wildcard pattern of the map (map is configured with a wildcard in its name) should be respected during evictions [[#3345]](https://github.com/hazelcast/hazelcast/issues/3345).
+-	Map eviction does not work when the policy is "USED_HEAP_PERCENTAGE" or "USED_HESAP SIZE" [[#3321]](https://github.com/hazelcast/hazelcast/issues/3321).
+-	Exceptions when using Portable serialization [[#3313]](https://github.com/hazelcast/hazelcast/issues/3313).
+-	When Hazelcast is used as drop-in replacement for Memcached, it causes errors [[#3182]](https://github.com/hazelcast/hazelcast/issues/3182).
+-	Null Pointer Exception is thrown by `MapService.dispatchEvent` [[#3101]](https://github.com/hazelcast/hazelcast/issues/3101).
+-	PagingPredicate returnes duplicated elements which result in an infinite loop [[#3047]](https://github.com/hazelcast/hazelcast/issues/3047).
+-	`ContextClassLoader` is by default only set on some cached operation threads, not on most others [[#2721]](https://github.com/hazelcast/hazelcast/issues/2721).
+
+
 **3.2.5 Fixes**
 
 This section lists issues solved for Hazelcast 3.2.5 release.
