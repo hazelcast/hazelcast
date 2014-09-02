@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
-
-import com.hazelcast.map.impl.operation.MapOperationType;
-import com.hazelcast.nio.serialization.Data;
-import java.util.Map;
-
-public interface MapInterceptorContext {
-    String getMapName();
-
-    MapOperationType getOperationType();
-
-    Data getKey();
-
-    Object getNewValue();
-
-    Map.Entry getExistingEntry();
-}
+/**
+ * <p>This package contains common classes related to all collections </p>
+ */
+package com.hazelcast.collection.common;

@@ -410,30 +410,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public int evictAll(boolean backup) {
         checkIfLoaded();
-        final int size = size();
-        final Set<Data> keysToPreserve = evictAllInternal(backup);
-        removeIndexByPreservingKeys(keysToPreserve);
-        return size - keysToPreserve.size();
-    }
+        final int sizeBeforeEviction = size();
 
-    /**
-     * Internal evict all provides common functionality to all {@link #evictAll(boolean)} ()}
-     *
-     * @return preserved keys.
-     */
-    private Set<Data> evictAllInternal(boolean backup) {
         resetSizeEstimator();
         resetAccessSequenceNumber();
 
-        Set<Data> keysToPreserve = Collections.emptySet();
-        final Map<Data, Record> recordsToPreserve = getLockedRecords(backup);
-        if (!recordsToPreserve.isEmpty()) {
-            keysToPreserve = recordsToPreserve.keySet();
-            updateSizeEstimator(calculateRecordHeapCost(recordsToPreserve.values()));
-        }
+        Map<Data, Record> recordsToPreserve = getLockedRecords(backup);
+        updateSizeEstimator(calculateRecordHeapCost(recordsToPreserve.values()));
+
         flush(recordsToPreserve, backup);
+        removeIndexByPreservingKeys(records.keySet(), recordsToPreserve.keySet());
         clearRecordsMap(recordsToPreserve);
-        return keysToPreserve;
+
+        final int numberOfEvictedEntries = sizeBeforeEviction - recordsToPreserve.size();
+        return numberOfEvictedEntries;
     }
 
     /**
@@ -452,18 +442,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 mapDataStore.flush(key, record.getValue(), lastUpdateTime, backup);
             }
         }
-    }
-
-    /**
-     * Removes indexes by excluding keysToPreserve.
-     *
-     * @param keysToPreserve should not be removed from index.
-     */
-    private void removeIndexByPreservingKeys(Set<Data> keysToPreserve) {
-        final Set<Data> currentKeySet = records.keySet();
-        currentKeySet.removeAll(keysToPreserve);
-
-        removeIndex(currentKeySet);
     }
 
     /**

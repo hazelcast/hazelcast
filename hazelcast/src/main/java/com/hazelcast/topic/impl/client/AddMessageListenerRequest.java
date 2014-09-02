@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
-import com.hazelcast.topic.DataAwareMessage;
+import com.hazelcast.topic.impl.DataAwareMessage;
 import com.hazelcast.topic.impl.TopicPortableHook;
 import com.hazelcast.topic.impl.TopicService;
 
@@ -97,6 +97,11 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
         public void onMessage(Message message) {
             if (!endpoint.live()) {
                 return;
+            }
+
+            if (!(message instanceof DataAwareMessage)) {
+                throw new IllegalArgumentException("Expecting: DataAwareMessage, Found: "
+                        + message.getClass().getSimpleName());
             }
 
             DataAwareMessage dataAwareMessage = (DataAwareMessage) message;

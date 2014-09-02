@@ -95,7 +95,7 @@ abstract class AbstractRecordStore implements RecordStore {
     /**
      * Returns total heap cost of collection.
      *
-     * @param collection which's size to be calculated.
+     * @param collection size to be calculated.
      * @return total size of collection.
      */
     protected long calculateRecordHeapCost(Collection<Record> collection) {
@@ -157,6 +157,23 @@ abstract class AbstractRecordStore implements RecordStore {
         if (indexService.hasIndex()) {
             for (Data key : keys) {
                 indexService.removeEntryIndex(key);
+            }
+        }
+    }
+
+    /**
+     * Removes indexes by excluding keysToPreserve.
+     *
+     * @param keysToRemove   remove these keys from index.
+     * @param keysToPreserve do not remove these keys.
+     */
+    protected void removeIndexByPreservingKeys(Set<Data> keysToRemove, Set<Data> keysToPreserve) {
+        final IndexService indexService = mapContainer.getIndexService();
+        if (indexService.hasIndex()) {
+            for (Data key : keysToRemove) {
+                if (!keysToPreserve.contains(key)) {
+                    indexService.removeEntryIndex(key);
+                }
             }
         }
     }
