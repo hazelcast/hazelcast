@@ -193,9 +193,11 @@ public final class BasicOperationScheduler {
 
         if (currentThread instanceof OperationThread) {
             if (partitionId > -1) {
-                //todo: we need to check for isPartitionSpecific
-                int threadId = ((OperationThread) currentThread).threadId;
-                return toPartitionThreadIndex(partitionId) == threadId;
+                OperationThread operationThread = (OperationThread) currentThread;
+                if (operationThread.isPartitionSpecific) {
+                    int threadId = operationThread.threadId;
+                    return toPartitionThreadIndex(partitionId) == threadId;
+                }
             }
             return true;
         }
