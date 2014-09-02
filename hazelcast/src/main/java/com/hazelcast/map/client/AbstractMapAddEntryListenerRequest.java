@@ -72,8 +72,12 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
             @Override
             public void onEntryEvent(EntryEvent<Object, Object> event) {
-                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
                 if (endpoint.live()) {
+                    if (!(event instanceof DataAwareEntryEvent)) {
+                        throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
+                                + event.getClass().getSimpleName());
+                    }
+                    DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
                     Data key = dataAwareEntryEvent.getKeyData();
                     Data value = dataAwareEntryEvent.getNewValueData();
                     Data oldValue = dataAwareEntryEvent.getOldValueData();
