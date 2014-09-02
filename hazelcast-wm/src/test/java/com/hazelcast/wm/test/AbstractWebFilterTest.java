@@ -38,6 +38,7 @@ import org.junit.Before;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.util.HashMap;
@@ -74,6 +75,15 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
         int g2 = rand.nextInt(255);
         int g3 = rand.nextInt(255);
         System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
+
+        try {
+            final URL root = new URL(TestServlet.class.getResource("/"), "../test-classes");
+            final String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
+            sourceDir = baseDir + "/../../src/test/webapp";
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            throw new IllegalStateException("Couldn't initialize AbstractWebFilterTest");
+        }
     }
 
     protected static final String HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR = "::hz::";
@@ -84,6 +94,8 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
 
     protected static final Map<Class<? extends AbstractWebFilterTest>, ContainerContext> CONTAINER_CONTEXT_MAP =
             new HashMap<Class<? extends AbstractWebFilterTest>, ContainerContext>();
+
+    protected static final String sourceDir;
 
     protected String serverXml1;
     protected String serverXml2;
@@ -108,9 +120,9 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
         ContainerContext cc = CONTAINER_CONTEXT_MAP.get(getClass());
         // If container is not exist yet or
         // Hazelcast instance is not active (because of such as server shutdown)
-        if (cc == null || isInstanceNotActive(cc.hz)) {
+        if (cc == null) {
             // Build a new instance
-            buildInstance();
+            ensureInstanceIsUp();
             CONTAINER_CONTEXT_MAP.put(
                     getClass(),
                     new ContainerContext(
@@ -122,43 +134,54 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
                             server1,
                             server2,
                             hz));
-            // If there is no previously created container
-            // Instance maybe shutdown but container may be created before.
-            // So "onTestStart" method must be called only for case that there is no container
-            // Otherwise, it maybe called several times
-            // since this code block is executed for every instance creation.
-            if (cc == null) {
-                onTestStart();
-            }
-            // New container created and started
-            onContainerStart();
         } else {
             // For every test method a different test class can be constructed for parallel runs by JUnit.
             // So container can be exist, but configurations of current test may not be exist.
             // For this reason, we should copy container context information (such as ports, servers, ...)
             // to current test.
             cc.copyInto(this);
+
+            // Ensure that instance is up and running
+            ensureInstanceIsUp();
+
+            // After ensuring that system is up, new containers or instance may be created.
+            // So, we should copy current information from test to current context.
+            cc.copyFrom(this);
         }
         // Clear map
         IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         map.clear();
     }
 
-    protected void buildInstance() throws Exception {
-        final URL root = new URL(TestServlet.class.getResource("/"), "../test-classes");
-        final String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
-        final String sourceDir = baseDir + "/../../src/test/webapp";
-        hz = Hazelcast.newHazelcastInstance(
-                new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
-        serverPort1 = availablePort();
-        server1 = getServletContainer(serverPort1, sourceDir, serverXml1);
+    protected void ensureInstanceIsUp() throws Exception {
+        if (isInstanceNotActive(hz)) {
+            hz = Hazelcast.newHazelcastInstance(
+                    new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
+        }
+        if (serverXml1 != null) {
+            if (server1 == null) {
+                serverPort1 = availablePort();
+                server1 = getServletContainer(serverPort1, sourceDir, serverXml1);
+            }
+            else if (!server1.isRunning()) {
+                server1.start();
+            }
+        }
         if (serverXml2 != null) {
-            serverPort2 = availablePort();
-            server2 = getServletContainer(serverPort2, sourceDir, serverXml2);
+            if (server2 == null) {
+                serverPort2 = availablePort();
+                server2 = getServletContainer(serverPort2, sourceDir, serverXml2);
+            }
+            else if (!server2.isRunning()) {
+                server2.start();
+            }
         }
     }
 
     protected boolean isInstanceNotActive(HazelcastInstance hz) {
+        if (hz == null) {
+            return true;
+        }
         Node node = TestUtil.getNode(hz);
         if (node == null) {
             return true;
@@ -173,10 +196,6 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
                 CONTAINER_CONTEXT_MAP.entrySet()) {
             ContainerContext cc = ccEntry.getValue();
             try {
-                // Call "onTestFinish" methods of all tests.
-                if (cc.test != null) {
-                    cc.test.onTestFinish();
-                }
                 // Stop servers
                 cc.server1.stop();
                 if (cc.server2 != null) {
@@ -188,21 +207,6 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
         }
         // Shutdown all instances
         Hazelcast.shutdownAll();
-    }
-
-    // Called on test class startup
-    protected void onTestStart() {
-
-    }
-
-    // Called on every container/hz instance creation
-    protected void onContainerStart() {
-
-    }
-
-    // Called on test class terminate
-    protected void onTestFinish() {
-
     }
 
     protected int availablePort() throws IOException {
@@ -315,6 +319,16 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
             awft.server1 = server1;
             awft.server2 = server2;
             awft.hz = hz;
+        }
+
+        protected void copyFrom(AbstractWebFilterTest awft) {
+            serverXml1 = awft.serverXml1;
+            serverXml2 = awft.serverXml2;
+            serverPort1 = awft.serverPort1;
+            serverPort2 = awft.serverPort2;
+            server1 = awft.server1;
+            server2 = awft.server2;
+            hz = awft.hz;
         }
 
     }
