@@ -21,11 +21,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Contains configuration for an NearCache.
  */
-public class NearCacheConfig implements DataSerializable {
+public class NearCacheConfig implements DataSerializable , Serializable{
     /**
      * Default value of time to live in seconds.
      */
@@ -201,21 +202,6 @@ public class NearCacheConfig implements DataSerializable {
     }
 
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("NearCacheConfig{");
-        sb.append("timeToLiveSeconds=").append(timeToLiveSeconds);
-        sb.append(", maxSize=").append(maxSize);
-        sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
-        sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
-        sb.append(", invalidateOnChange=").append(invalidateOnChange);
-        sb.append(", inMemoryFormat=").append(inMemoryFormat);
-        sb.append(", cacheLocalEntries=").append(cacheLocalEntries);
-        sb.append(", localUpdatePolicy=").append(localUpdatePolicy);
-        sb.append('}');
-        return sb.toString();
-    }
-
-    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(evictionPolicy);
@@ -240,5 +226,20 @@ public class NearCacheConfig implements DataSerializable {
         inMemoryFormat = InMemoryFormat.values()[inMemoryFormatInt];
         final int localUpdatePolicyInt = in.readInt();
         localUpdatePolicy = LocalUpdatePolicy.values()[localUpdatePolicyInt];
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("NearCacheConfig{");
+        sb.append("timeToLiveSeconds=").append(timeToLiveSeconds);
+        sb.append(", maxSize=").append(maxSize);
+        sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
+        sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
+        sb.append(", invalidateOnChange=").append(invalidateOnChange);
+        sb.append(", inMemoryFormat=").append(inMemoryFormat);
+        sb.append(", cacheLocalEntries=").append(cacheLocalEntries);
+        sb.append(", localUpdatePolicy=").append(localUpdatePolicy);
+        sb.append('}');
+        return sb.toString();
     }
 }

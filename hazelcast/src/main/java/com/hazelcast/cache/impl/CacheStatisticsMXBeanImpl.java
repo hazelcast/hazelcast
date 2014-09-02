@@ -25,10 +25,15 @@ import java.io.Serializable;
 public class CacheStatisticsMXBeanImpl
         implements CacheStatisticsMXBean, Serializable {
 
+    private static final long serialVersionUID = -1;
+
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
     private static final float FLOAT_HUNDRED = 100.0f;
 
-    private CacheStatistics statistics;
+    private transient CacheStatistics statistics;
+
+    private CacheStatisticsMXBeanImpl(){
+    }
 
     public CacheStatisticsMXBeanImpl(CacheStatistics statistics) {
         this.statistics = statistics;
@@ -92,7 +97,7 @@ public class CacheStatisticsMXBeanImpl
         if (statistics.getGetTimeTakenNanos() == 0 || getCacheGets() == 0) {
             return 0;
         }
-        float avgGetTime = (float) (statistics.getGetTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        float avgGetTime = ((1f * statistics.getGetTimeTakenNanos()) / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
         return avgGetTime;
     }
 
@@ -101,7 +106,7 @@ public class CacheStatisticsMXBeanImpl
         if (statistics.getPutTimeTakenNanos() == 0 || getCacheGets() == 0) {
             return 0;
         }
-        float avgPutTime = (float) (statistics.getPutTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        float avgPutTime = ((1f * statistics.getPutTimeTakenNanos()) / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
         return avgPutTime;
     }
 
@@ -110,7 +115,7 @@ public class CacheStatisticsMXBeanImpl
         if (statistics.getRemoveTimeTakenNanos() == 0 || getCacheGets() == 0) {
             return 0;
         }
-        float avgRemoveTime = (float) (statistics.getRemoveTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        float avgRemoveTime = ((1f * statistics.getRemoveTimeTakenNanos()) / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
         return avgRemoveTime;
     }
 }

@@ -42,6 +42,7 @@ public class CacheConfig<K, V>
      * The number of minimum backup counter
      */
     public static final int MIN_BACKUP_COUNT = 0;
+    private int asyncBackupCount = MIN_BACKUP_COUNT;
     /**
      * The number of maximum backup counter
      */
@@ -50,23 +51,22 @@ public class CacheConfig<K, V>
      * The number of default backup counter
      */
     public static final int DEFAULT_BACKUP_COUNT = 1;
-    /**
-     * Default InMemory Format.
-     */
-    public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
-    /**
-     * Default Eviction Policy.
-     */
-    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
-    private int asyncBackupCount = MIN_BACKUP_COUNT;
     //    public final static int MIN_EVICTION_PERCENTAGE = 0;
     //    public final static int DEFAULT_EVICTION_PERCENTAGE = 20;
     //    public final static int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = 95;
     //    public final static int MAX_EVICTION_PERCENTAGE = 100;
     //    public final static int DEFAULT_TTL_SECONDS = 0;
     private int backupCount = DEFAULT_BACKUP_COUNT;
-    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
+    /**
+     * Default InMemory Format.
+     */
+    public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
+    /**
+     * Default Eviction Policy.
+     */
+    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
+    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
     private String name;
     private String managerPrefix;
     private String uriString;
@@ -260,6 +260,8 @@ public class CacheConfig<K, V>
         out.writeInt(inMemoryFormat.ordinal());
         out.writeInt(evictionPolicy.ordinal());
 
+        out.writeObject(nearCacheConfig);
+
         //SUPER
         out.writeObject(keyType);
         out.writeObject(valueType);
@@ -298,6 +300,8 @@ public class CacheConfig<K, V>
         final int resultEvictionPolicy = in.readInt();
         evictionPolicy = EvictionPolicy.values()[resultEvictionPolicy];
 
+        nearCacheConfig = in.readObject();
+
         //SUPER
         keyType = in.readObject();
         valueType = in.readObject();
@@ -319,6 +323,38 @@ public class CacheConfig<K, V>
             }
         }
 
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (managerPrefix != null ? managerPrefix.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof CacheConfig)) {
+            return false;
+        }
+        if (!super.equals(obj)) {
+            return false;
+        }
+
+        CacheConfig other = (CacheConfig) obj;
+        return (this.name != null ? this.name.equals(other.name) : other.name == null) && (
+                this.managerPrefix != null ? this.managerPrefix.equals(other.managerPrefix) : other.managerPrefix == null) && (
+                this.uriString != null ? this.uriString.equals(other.uriString) : other.uriString == null)
+                && this.backupCount == other.backupCount && this.asyncBackupCount == other.asyncBackupCount && (
+                this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat) : other.inMemoryFormat == null)
+                && (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy) : other.evictionPolicy == null)
+                && (
+                this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig) :
+                        other.nearCacheConfig == null);
     }
 
 }
