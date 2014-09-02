@@ -72,7 +72,11 @@ public class MapEvictAllTest extends HazelcastTestSupport {
 
         assertOpenEventually(countDownLatch);
         assertEquals(0, countDownLatch.getCount());
+        assertEquals(numberOfLockedKeys, map.size());
     }
+
+
+
 
     @Test
     public void testEvictAll_onBackup() throws Exception {
