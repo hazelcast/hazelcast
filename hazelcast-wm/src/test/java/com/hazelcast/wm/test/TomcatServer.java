@@ -9,9 +9,11 @@ import org.apache.catalina.startup.Tomcat;
 import java.io.File;
 
 public class TomcatServer implements ServletContainer {
+
     Tomcat tomcat;
     String serverXml;
     String sourceDir;
+    volatile boolean running;
 
     public TomcatServer(int port, String sourceDir, String serverXml) throws Exception {
         this.serverXml = serverXml;
@@ -22,21 +24,25 @@ public class TomcatServer implements ServletContainer {
     @Override
     public void stop() throws LifecycleException {
         tomcat.stop();
+        running = false;
     }
 
     @Override
     public void start() throws Exception {
         tomcat.start();
+        running = true;
     }
 
     @Override
     public void restart() throws LifecycleException, InterruptedException {
         int port = tomcat.getConnector().getLocalPort();
         tomcat.stop();
+        running = false;
         tomcat.destroy();
         Thread.sleep(5000);
         buildTomcat(port, sourceDir, serverXml);
         Thread.sleep(5000);
+        running = true;
     }
 
     public void buildTomcat(int port, String sourceDir, String serverXml) throws LifecycleException {
@@ -54,6 +60,11 @@ public class TomcatServer implements ServletContainer {
         tomcat.getEngine().setJvmRoute("tomcat" + port);
         tomcat.getEngine().setName("tomcat-test" + port);
         tomcat.start();
+        running = true;
+    }
 
+    @Override
+    public boolean isRunning() {
+        return running;
     }
 }
