@@ -39,6 +39,7 @@ public class MapStoreWithPredicateTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         final IMap map = instance.getMap("default");
 
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {

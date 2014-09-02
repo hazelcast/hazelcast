@@ -1,6 +1,6 @@
 package com.hazelcast.client.helpers;
 
-import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.impl.MapInterceptor;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;

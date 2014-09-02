@@ -8,10 +8,10 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.DataAwareEntryEvent;
-import com.hazelcast.map.EntryEventData;
-import com.hazelcast.map.EventData;
-import com.hazelcast.map.MapEventData;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.EntryEventData;
+import com.hazelcast.map.impl.EventData;
+import com.hazelcast.map.impl.MapEventData;
 
 import java.util.logging.Level;
 
