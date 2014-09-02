@@ -25,7 +25,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.DataAwareItemEvent;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.security.permission.ActionConstants;
@@ -96,6 +96,12 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
 
             private void send(ItemEvent event) {
                 if (endpoint.live()) {
+
+                    if (!(event instanceof DataAwareItemEvent)) {
+                        throw new IllegalArgumentException("Expecting: DataAwareItemEvent, Found: "
+                                + event.getClass().getSimpleName());
+                    }
+
                     DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
                     Data item = dataAwareItemEvent.getItemData();
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(),
