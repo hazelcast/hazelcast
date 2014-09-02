@@ -38,7 +38,7 @@ public class CacheRemoveBackupOperation
     public void run()
             throws Exception {
         if (cache != null) {
-            response = cache.remove(key, null);
+            response = cache.removeRecord(key);
         } else {
             response = Boolean.FALSE;
         }
