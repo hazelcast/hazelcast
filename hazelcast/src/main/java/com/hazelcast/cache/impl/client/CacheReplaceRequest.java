@@ -34,7 +34,7 @@ public class CacheReplaceRequest
 
     protected Data key;
     protected Data value;
-    protected Data currentValue = null;
+    protected Data currentValue;
     protected ExpiryPolicy expiryPolicy;
     private int completionId;
 

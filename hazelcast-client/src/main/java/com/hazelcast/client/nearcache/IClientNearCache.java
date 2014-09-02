@@ -30,6 +30,9 @@ public interface IClientNearCache<K, V> {
      */
     int TTL_CLEANUP_INTERVAL_MILLS = 5000;
 
+    /**
+     * NULL Object
+     */
     Object NULL_OBJECT = new Object();
 
     V get(K key);

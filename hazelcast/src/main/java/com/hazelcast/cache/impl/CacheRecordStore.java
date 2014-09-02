@@ -27,6 +27,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.util.CacheConcurrentHashMap;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.Duration;
@@ -138,6 +139,7 @@ public class CacheRecordStore
                     record.setExpirationTime(et);
                 }
             } catch (Throwable t) {
+                EmptyStatement.ignore(t);
                 //leave the expiry time untouched when we can't determine a duration
             }
             if (isStatisticsEnabled()) {
@@ -316,6 +318,7 @@ public class CacheRecordStore
                         record.setExpirationTime(et);
                     }
                 } catch (Throwable t) {
+                    EmptyStatement.ignore(t);
                     //leave the expiry time untouched when we can't determine a duration
                 }
                 if (isExpiredAt(et, now)) {
@@ -390,6 +393,7 @@ public class CacheRecordStore
                         record.setExpirationTime(et);
                     }
                 } catch (Throwable t) {
+                    EmptyStatement.ignore(t);
                     //leave the expiry time untouched when we can't determine a duration
                 }
                 result = false;
@@ -496,7 +500,7 @@ public class CacheRecordStore
                         keys.remove(key);
                     }
                     isEventBatchingEnabled = false;
-                    int orderKey = keys != null ? keys.hashCode() : 1;
+                    int orderKey = keys.hashCode();
                     publishBatchedEvents(name, CacheEventType.REMOVED, orderKey);
                 }
             }
@@ -515,6 +519,7 @@ public class CacheRecordStore
             try {
                 ((Closeable) cacheWriter).close();
             } catch (IOException e) {
+                EmptyStatement.ignore(e);
                 //log
             }
         }
@@ -524,6 +529,7 @@ public class CacheRecordStore
             try {
                 ((Closeable) cacheLoader).close();
             } catch (IOException e) {
+                EmptyStatement.ignore(e);
                 //log
             }
         }
@@ -533,6 +539,7 @@ public class CacheRecordStore
             try {
                 ((Closeable) defaultExpiryPolicy).close();
             } catch (IOException e) {
+                EmptyStatement.ignore(e);
                 //log
             }
         }
@@ -546,6 +553,7 @@ public class CacheRecordStore
                 try {
                     ((Closeable) registration).close();
                 } catch (IOException e) {
+                    EmptyStatement.ignore(e);
                     //log
                 }
             }
@@ -720,6 +728,7 @@ public class CacheRecordStore
                 record.setExpirationTime(et);
             }
         } catch (Throwable t) {
+            EmptyStatement.ignore(t);
             //leave the expiry time untouched when we can't determine a duration
         }
         if (!disableWriteThrough) {
@@ -793,6 +802,7 @@ public class CacheRecordStore
                 record.setExpirationTime(et);
             }
         } catch (Throwable t) {
+            EmptyStatement.ignore(t);
             //leave the expiry time untouched when we can't determine a duration
         }
         return record;
@@ -929,7 +939,7 @@ public class CacheRecordStore
                 }
             }
             Map<Data, Object> result = new HashMap<Data, Object>();
-            for (Object keyObj : keysToLoad.keySet()) {
+            for (Object keyObj : keysToLoad.entrySet()) {
                 final Object valueObject = loaded.get(keyObj);
                 final Data key = keysToLoad.get(keyObj);
                 result.put(key, valueObject);

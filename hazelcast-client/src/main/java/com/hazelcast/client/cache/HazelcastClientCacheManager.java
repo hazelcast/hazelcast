@@ -30,6 +30,7 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.net.URI;
@@ -164,6 +165,7 @@ public final class HazelcastClientCacheManager
             final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheName);
             return clientContext.getSerializationService().toObject(future.get());
         } catch (Exception e) {
+            EmptyStatement.ignore(e);
             //throw ExceptionUtil.rethrow(e);
         }
         return null;

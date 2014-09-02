@@ -27,14 +27,13 @@ import java.util.Set;
  * Provides utility functionality for the MXBean.
  */
 //FIXME Move this into ManagementService
-public class MXBeanUtil {
+public final class MXBeanUtil {
 
     //ensure everything gets put in one MBeanServer
     private static MBeanServer mBeanServer = MBeanServerFactory.createMBeanServer();
 
     //    private static MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-
-    public MXBeanUtil() {
+    private MXBeanUtil() {
     }
 
     public static void registerCacheObject(Object mxbean, String uri, String name, boolean stats) {

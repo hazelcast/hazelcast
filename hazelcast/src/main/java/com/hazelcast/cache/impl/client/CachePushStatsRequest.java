@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.security.Permission;
@@ -66,6 +67,8 @@ public class CachePushStatsRequest
         final Node node = ((NodeEngineImpl) nodeEngine).getNode();
         final ManagementCenterService managementCenterService = node.getManagementCenterService();
         if (managementCenterService != null) {
+            // todo remove wan management integration implemented.
+            EmptyStatement.ignore(new Throwable());
             //            managementCenterService.addClientState(clientState);
         }
         return null;

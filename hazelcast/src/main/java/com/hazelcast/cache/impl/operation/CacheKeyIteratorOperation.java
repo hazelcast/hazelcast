@@ -53,7 +53,7 @@ public class CacheKeyIteratorOperation
     public void run()
             throws Exception {
         final CacheKeyIteratorResult iterator = this.cache.iterator(tableIndex, size);
-        response = cache != null ? iterator : null;
+        response = iterator;
     }
 
     @Override

@@ -92,7 +92,8 @@ public class CacheStatisticsMXBeanImpl
         if (statistics.getGetTimeTakenNanos() == 0 || getCacheGets() == 0) {
             return 0;
         }
-        return (statistics.getGetTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        float avgGetTime = (float) (statistics.getGetTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        return avgGetTime;
     }
 
     @Override
@@ -100,7 +101,8 @@ public class CacheStatisticsMXBeanImpl
         if (statistics.getPutTimeTakenNanos() == 0 || getCacheGets() == 0) {
             return 0;
         }
-        return (statistics.getPutTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        float avgPutTime = (float) (statistics.getPutTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        return avgPutTime;
     }
 
     @Override
@@ -108,6 +110,7 @@ public class CacheStatisticsMXBeanImpl
         if (statistics.getRemoveTimeTakenNanos() == 0 || getCacheGets() == 0) {
             return 0;
         }
-        return (statistics.getRemoveTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        float avgRemoveTime = (float) (statistics.getRemoveTimeTakenNanos() / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
+        return avgRemoveTime;
     }
 }

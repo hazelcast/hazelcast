@@ -27,6 +27,7 @@ import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.WeakHashMap;
 
@@ -108,8 +109,8 @@ public abstract class HazelcastAbstractCachingProvider
         WeakHashMap<ClassLoader, HashMap<URI, CacheManager>> managersByClassLoader = this.cacheManagers;
         this.cacheManagers = new WeakHashMap<ClassLoader, HashMap<URI, CacheManager>>();
 
-        for (ClassLoader classLoader : managersByClassLoader.keySet()) {
-            for (CacheManager cacheManager : managersByClassLoader.get(classLoader).values()) {
+        for (Map.Entry<ClassLoader, HashMap<URI, CacheManager>> entry : managersByClassLoader.entrySet()) {
+            for (CacheManager cacheManager : entry.getValue().values()) {
                 cacheManager.close();
             }
         }

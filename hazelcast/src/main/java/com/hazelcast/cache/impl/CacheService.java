@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventPublishingService;
@@ -33,9 +32,7 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 
-import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -52,22 +49,18 @@ public class CacheService
     public static final String SERVICE_NAME = "hz:impl:cacheService";
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     private final ConcurrentMap<String, CacheStatistics> statistics = new ConcurrentHashMap<String, CacheStatistics>();
-    private ILogger logger;
     private NodeEngine nodeEngine;
     private CachePartitionSegment[] segments;
-    private ConcurrentMap<String, Map<CacheEntryListenerConfiguration, EventRegistration>> eventRegistrationMap;
 
     //region ManagedService
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         segments = new CachePartitionSegment[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
             segments[i] = new CachePartitionSegment(nodeEngine, this, i);
         }
-        eventRegistrationMap = new ConcurrentHashMap<String, Map<CacheEntryListenerConfiguration, EventRegistration>>();
     }
 
     @Override

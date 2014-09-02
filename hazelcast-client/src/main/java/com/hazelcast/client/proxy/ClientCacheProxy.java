@@ -58,6 +58,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
@@ -577,6 +578,7 @@ public class ClientCacheProxy<K, V>
                 try {
                     ((Closeable) listener).close();
                 } catch (IOException e) {
+                    EmptyStatement.ignore(e);
                     //log
                 }
             }
@@ -592,6 +594,7 @@ public class ClientCacheProxy<K, V>
                 try {
                     ((Closeable) listener).close();
                 } catch (IOException e) {
+                    EmptyStatement.ignore(e);
                     //log
                 }
             }

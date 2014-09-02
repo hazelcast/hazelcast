@@ -42,6 +42,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -993,6 +994,7 @@ public class CacheProxy<K, V>
             try {
                 ((Closeable) cacheLoader).close();
             } catch (IOException e) {
+                EmptyStatement.ignore(e);
                 //log
             }
         }

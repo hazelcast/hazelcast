@@ -39,7 +39,7 @@ public class TCKMBeanServerBuilder
         return super.newMBeanServer(defaultDomain, outer, new RIMBeanServerDelegate(delegate));
     }
 
-    public class RIMBeanServerDelegate
+    public static class RIMBeanServerDelegate
             extends MBeanServerDelegate {
 
         private MBeanServerDelegate delegate;
