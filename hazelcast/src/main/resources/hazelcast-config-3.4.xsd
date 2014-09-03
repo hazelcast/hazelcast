@@ -35,6 +35,7 @@
                 <xs:element name="queue" type="queue" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="multimap" type="multimap" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="replicatedmap" type="replicatedmap" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="list" type="list" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
@@ -292,6 +293,57 @@
             </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
             <!--<xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />-->
+        </xs:sequence>
+        <xs:attribute name="name" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="replicatedmap">
+        <xs:annotation>
+            <xs:documentation>
+                A replicated map is a fully vector clock based, eventually consistent implementation of the map
+                interface. In difference to all other Hazelcast data structures this implementation is not
+                partitioned but fully replicates all data to all members.
+                Due to the nature of eventually consistency there is a chance of reading staled data and no
+                guarantee is given to retrieve the same value on multiple get calls.
+                ReplicatedMap was added in Hazelcast 3.2.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="OBJECT"/>
+            <xs:element name="concurrency-level" type="concurrency-level" minOccurs="0" maxOccurs="1" default="32">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of parallel mutexes to minimize contention on keys. The default value is 32 which
+                        is a good number for lots of applications. If higher contention is seen on writes to values
+                        inside of the replicated map this value can be adjusted to the needs.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="replication-delay-millis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="100">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines a number of milliseconds after a put is executed before the value is replicated
+                        to other nodes. In this time multiple puts can be operated and are cached up to be send
+                        at once. This highers the latency for eventually consistency but lowers IO operations.
+                        Default value is 100ms before a replication is operated, if set to 0 no delay is used and
+                        all values are replicated one by one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-fillup" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        This value defines it the replicated map is available for reads before the initial
+                        replication is completed. Default is true. If set to false no Exception will be
+                        thrown when replicated map is not yet ready but call will block until finished.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
