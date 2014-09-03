@@ -116,7 +116,7 @@ public class MultiMapContainer extends AbstractMultiMapContainerSupport {
         MultiMapWrapper wrapper = multiMapWrappers.get(dataKey);
         if (wrapper == null) {
             final Collection<MultiMapRecord> collection
-                    = pickAndCreateCollection(config.getValueCollectionType());
+                    = createCollection(config.getValueCollectionType());
             wrapper = new MultiMapWrapper(collection);
             multiMapWrappers.put(dataKey, wrapper);
         }

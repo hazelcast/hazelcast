@@ -25,25 +25,28 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Contains various {@link com.hazelcast.multimap.impl.MultiMapContainer} support methods.
+ */
 public abstract class AbstractMultiMapContainerSupport {
 
     /**
      * Picks right collection type, like {@link java.util.Set} or {@link java.util.List}
-     * depending on the configuration and creates it.
+     * depending on the {@link com.hazelcast.config.MultiMapConfig#valueCollectionType} and creates it.
      *
      * @param collectionType one of {@link MultiMapConfig.ValueCollectionType#SET}
      *                       or {@link MultiMapConfig.ValueCollectionType#LIST}
      * @return {@link java.util.Set} or {@link java.util.List} depending on the collectionType argument
      * @throws java.lang.IllegalArgumentException
      */
-    public static <T> Collection<T> pickAndCreateCollection(MultiMapConfig.ValueCollectionType collectionType) {
-        return pickAndCreateCollection(collectionType, -1);
+    public static <T> Collection<T> createCollection(MultiMapConfig.ValueCollectionType collectionType) {
+        return createCollection(collectionType, -1);
     }
 
 
     /**
      * Picks right collection type, like {@link java.util.Set} or {@link java.util.List}
-     * depending on the configuration and creates it.
+     * depending on the {@link com.hazelcast.config.MultiMapConfig#valueCollectionType} and creates it.
      *
      * @param collectionType  one of {@link MultiMapConfig.ValueCollectionType#SET}
      *                        or {@link MultiMapConfig.ValueCollectionType#LIST}
@@ -51,8 +54,8 @@ public abstract class AbstractMultiMapContainerSupport {
      * @return {@link java.util.Set} or {@link java.util.List} depending on the collectionType argument
      * @throws java.lang.IllegalArgumentException
      */
-    public static <T> Collection<T> pickAndCreateCollection(MultiMapConfig.ValueCollectionType collectionType,
-                                                            int initialCapacity) {
+    public static <T> Collection<T> createCollection(MultiMapConfig.ValueCollectionType collectionType,
+                                                     int initialCapacity) {
         switch (collectionType) {
             case SET:
                 return initialCapacity <= 0 ? new HashSet<T>() : new HashSet<T>(initialCapacity);
@@ -66,49 +69,49 @@ public abstract class AbstractMultiMapContainerSupport {
 
 
     /**
-     * Picks right collection type, like {@link java.util.Set} or {@link java.util.List}
-     * depending on the configuration and creates it.
+     * Creates a same type collection with the given collection depending on the
+     * {@link com.hazelcast.config.MultiMapConfig#valueCollectionType}.
      *
-     * @param collectionType one of {@link MultiMapConfig.ValueCollectionType#SET}
-     *                       or {@link MultiMapConfig.ValueCollectionType#LIST}
-     * @return {@link java.util.Collections.EmptySet} or {@link java.util.Collections.EmptyList}
-     * depending on the collectionType argument
-     * @throws java.lang.IllegalArgumentException
-     */
-    public static <T> Collection<T> pickEmptyCollection(MultiMapConfig.ValueCollectionType collectionType) {
-        switch (collectionType) {
-            case SET:
-                return Collections.emptySet();
-            case LIST:
-                return Collections.emptyList();
-            default:
-                throw new IllegalArgumentException("[" + collectionType + "]"
-                        + " is not a known MultiMapConfig.ValueCollectionType!");
-        }
-    }
-
-
-    /**
-     * Picks right collection type, like {@link java.util.Set} or {@link java.util.List}
-     * depending on the configuration and creates it.
-     *
-     * @param collection      to be asked to return appropriate implementation
+     * @param collection      to be asked to return a new appropriate implementation instance
      *                        according to {@link MultiMapConfig.ValueCollectionType}
      * @param initialCapacity if smaller than or equals to 0 falls back to default initial capacity
      *                        of corresponding collection.
      * @return {@link java.util.Set} or {@link java.util.List} depending on the collectionType argument
      * @throws java.lang.IllegalArgumentException
      */
-    public static <T> Collection<T> pickAndCreateCollection(Collection collection, int initialCapacity) {
-        MultiMapConfig.ValueCollectionType collectionType = findValueCollectionType(collection);
+    public static <T> Collection<T> createCollection(Collection collection, int initialCapacity) {
+        final MultiMapConfig.ValueCollectionType collectionType = findCollectionType(collection);
         if (collection == null || collection.isEmpty()) {
-            return pickEmptyCollection(collectionType);
+            return emptyCollection(collectionType);
         }
         switch (collectionType) {
             case SET:
                 return initialCapacity <= 0 ? new HashSet<T>() : new HashSet<T>(initialCapacity);
             case LIST:
                 return new LinkedList<T>();
+            default:
+                throw new IllegalArgumentException("[" + collectionType + "]"
+                        + " is not a known MultiMapConfig.ValueCollectionType!");
+        }
+    }
+
+    /**
+     * Picks right empty collection type, like {@link java.util.Collections#emptySet()}
+     * or {@link java.util.Collections#emptyList()} )} depending on the
+     * {@link com.hazelcast.config.MultiMapConfig#valueCollectionType}
+     *
+     * @param collectionType one of {@link MultiMapConfig.ValueCollectionType#SET}
+     *                       or {@link MultiMapConfig.ValueCollectionType#LIST}
+     * @return empty collection like {@link java.util.Collections#emptySet()}
+     * depending on the collectionType argument
+     * @throws java.lang.IllegalArgumentException
+     */
+    public static <T> Collection<T> emptyCollection(MultiMapConfig.ValueCollectionType collectionType) {
+        switch (collectionType) {
+            case SET:
+                return Collections.emptySet();
+            case LIST:
+                return Collections.emptyList();
             default:
                 throw new IllegalArgumentException("[" + collectionType + "]"
                         + " is not a known MultiMapConfig.ValueCollectionType!");
@@ -123,7 +126,7 @@ public abstract class AbstractMultiMapContainerSupport {
      * @return corresponding {@link MultiMapConfig.ValueCollectionType} of a {@link java.util.Collection}
      * @throws java.lang.IllegalArgumentException
      */
-    private static MultiMapConfig.ValueCollectionType findValueCollectionType(Collection collection) {
+    private static MultiMapConfig.ValueCollectionType findCollectionType(Collection collection) {
         if (collection instanceof Set) {
             return MultiMapConfig.ValueCollectionType.SET;
         } else if (collection instanceof List) {

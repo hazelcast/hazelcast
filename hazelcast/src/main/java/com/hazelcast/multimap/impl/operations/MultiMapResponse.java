@@ -26,8 +26,8 @@ import com.hazelcast.spi.NodeEngine;
 import java.io.IOException;
 import java.util.Collection;
 
-import static com.hazelcast.multimap.impl.AbstractMultiMapContainerSupport.pickAndCreateCollection;
-import static com.hazelcast.multimap.impl.AbstractMultiMapContainerSupport.pickEmptyCollection;
+import static com.hazelcast.multimap.impl.AbstractMultiMapContainerSupport.createCollection;
+import static com.hazelcast.multimap.impl.AbstractMultiMapContainerSupport.emptyCollection;
 
 public class MultiMapResponse implements DataSerializable {
 
@@ -67,14 +67,14 @@ public class MultiMapResponse implements DataSerializable {
     }
 
     public Collection getCollection() {
-        return collection == null ? pickEmptyCollection(collectionType) : collection;
+        return collection == null ? emptyCollection(collectionType) : collection;
     }
 
     public Collection getObjectCollection(NodeEngine nodeEngine) {
         if (collection == null) {
-            return pickEmptyCollection(collectionType);
+            return emptyCollection(collectionType);
         }
-        final Collection newCollection = pickAndCreateCollection(collectionType, collection.size());
+        final Collection newCollection = createCollection(collectionType, collection.size());
         for (Object obj : collection) {
             MultiMapRecord record = nodeEngine.toObject(obj);
             newCollection.add(nodeEngine.toObject(record.getObject()));
@@ -84,10 +84,10 @@ public class MultiMapResponse implements DataSerializable {
 
     public Collection<MultiMapRecord> getRecordCollection(NodeEngine nodeEngine) {
         if (collection == null) {
-            return pickEmptyCollection(collectionType);
+            return emptyCollection(collectionType);
         }
         final Collection<MultiMapRecord> newCollection
-                = pickAndCreateCollection(collectionType, collection.size());
+                = createCollection(collectionType, collection.size());
         for (Object obj : collection) {
             MultiMapRecord record = nodeEngine.toObject(obj);
             newCollection.add(record);
@@ -118,10 +118,10 @@ public class MultiMapResponse implements DataSerializable {
         txVersion = in.readLong();
         int size = in.readInt();
         if (size == -1) {
-            collection = pickEmptyCollection(collectionType);
+            collection = emptyCollection(collectionType);
             return;
         }
-        collection = pickAndCreateCollection(collectionType, size);
+        collection = createCollection(collectionType, size);
         for (int i = 0; i < size; i++) {
             collection.add(in.readObject());
         }
