@@ -1,6 +1,6 @@
 ## Advanced Configuration Properties
 
-There are some advanced configuration properties to tune some aspects of Hazelcast. These can be set as property name and value pairs through declarative configuration, programmatic configuration or JVM system property.
+Hazelcast has advanced configuration properties to tune some aspects of it. These can be set as property name and value pairs through declarative configuration, programmatic configuration or JVM system property.
 
 ### Declarative Configuration
 
@@ -68,7 +68,7 @@ Property Name | Default Value | Type | Description
 `hazelcast.max.join.merge.target.seconds`|20|int|Split-brain merge timeout for a specific target.
 `hazelcast.max.wait.seconds.before.join` | 20 | int  |   Maximum wait time before join operation.
 `hazelcast.heartbeat.interval.seconds` | 1 | int  |   Heartbeat send interval in seconds.
-`hazelcast.max.no.heartbeat.seconds` | 300 | int  |   Max timeout of heartbeat in seconds for a node to assume it is dead.
+`hazelcast.max.no.heartbeat.seconds` | 500 | int  |   Max timeout of heartbeat in seconds for a node to assume it is dead.
 `hazelcast.max.no.master.confirmation.seconds` | 450 | int  |   Max timeout of master confirmation from other nodes.
 `hazelcast.master.confirmation.interval.seconds` | 30 | int  |   Interval at which nodes send master confirmation.
 `hazelcast.member.list.publish.interval.seconds` | 600 | int  |   Interval at which master node publishes a member list.
@@ -92,6 +92,7 @@ Property Name | Default Value | Type | Description
 `hazelcast.partition.table.send.interval`|15|int|Interval for publishing partition table periodically to all cluster members.
 `hazelcast.partition.backup.sync.interval`|30|int|Interval for syncing backup replicas.
 `hazelcast.partitioning.strategy.class`|null|string|Class name implementing `com.hazelcast.core.PartitioningStrategy`, which defines key to partition mapping.
+`hazelcast.migration.min.delay.on.member.removed.seconds`|5|int|Minimum delay (in seconds) between detection of a member that has left and start of the rebalancing process.
 `hazelcast.graceful.shutdown.max.wait` | 600 | int  |   Maximum wait seconds during graceful shutdown.
 `hazelcast.system.log.enabled` | true | bool  |   Enable system logs.
 `hazelcast.elastic.memory.enabled` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) off-heap storage.
@@ -107,3 +108,4 @@ Property Name | Default Value | Type | Description
 `hazelcast.client.request.retry.wait.time`|250|string|The frequency of the connection retries.
 `hazelcast.client.event.thread.count`|5|string|Thread count for handling incoming event packets.
 `hazelcast.client.event.queue.capacity`|1000000|string|Default value of the capacity of executor that handles incoming event packets.
+
