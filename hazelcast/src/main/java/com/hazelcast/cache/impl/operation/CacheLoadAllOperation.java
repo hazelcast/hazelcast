@@ -77,6 +77,9 @@ public class CacheLoadAllOperation
                 }
             }
         }
+        if(filteredKeys.isEmpty()){
+            return;
+        }
         try {
             final Set<Data> keysLoaded = cache.loadAll(filteredKeys, replaceExistingValues);
             shouldBackup = !keysLoaded.isEmpty();

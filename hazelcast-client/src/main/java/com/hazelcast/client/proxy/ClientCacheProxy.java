@@ -567,6 +567,7 @@ public class ClientCacheProxy<K, V>
     }
 
     private void deregisterAllListeners() {
+        //TODO clean up below code duplicate
         final Iterator<CacheEntryListenerConfiguration> iterator = syncListenerRegistrations.keySet().iterator();
         while (iterator.hasNext()) {
             final CacheEntryListenerConfiguration<K, V> listenerConfiguration = iterator.next();

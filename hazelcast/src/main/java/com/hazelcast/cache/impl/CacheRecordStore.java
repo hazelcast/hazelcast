@@ -939,7 +939,7 @@ public class CacheRecordStore
                 }
             }
             Map<Data, Object> result = new HashMap<Data, Object>();
-            for (Object keyObj : keysToLoad.entrySet()) {
+            for (Object keyObj : keysToLoad.keySet()) {
                 final Object valueObject = loaded.get(keyObj);
                 final Data key = keysToLoad.get(keyObj);
                 result.put(key, valueObject);
