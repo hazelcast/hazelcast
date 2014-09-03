@@ -30,8 +30,9 @@ import com.hazelcast.spi.impl.PortableCollection;
 
 import java.io.IOException;
 import java.security.Permission;
-import java.util.ArrayList;
 import java.util.Collection;
+
+import static com.hazelcast.multimap.impl.AbstractMultiMapContainerSupport.pickAndCreateCollection;
 
 public class RemoveAllRequest extends MultiMapKeyBasedRequest {
 
@@ -69,7 +70,7 @@ public class RemoveAllRequest extends MultiMapKeyBasedRequest {
             if (coll == null) {
                 return new PortableCollection();
             }
-            Collection<Data> collection = new ArrayList<Data>(coll.size());
+            Collection<Data> collection = pickAndCreateCollection(coll, coll.size());
             for (MultiMapRecord record : coll) {
                 collection.add(serializationService.toData(record.getObject()));
             }

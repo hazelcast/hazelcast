@@ -64,13 +64,13 @@ import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.multimap.impl.AbstractMultiMapContainerSupport.pickAndCreateCollection;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
@@ -106,7 +106,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data keyData = toData(key);
         GetAllRequest request = new GetAllRequest(name, keyData);
         PortableCollection result = invoke(request, keyData);
-        return toObjectCollection(result, true);
+        return toObjectCollection(result);
     }
 
     public boolean remove(Object key, Object value) {
@@ -126,7 +126,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         Data keyData = toData(key);
         RemoveAllRequest request = new RemoveAllRequest(name, keyData, ThreadUtil.getThreadId());
         PortableCollection result = invoke(request, keyData);
-        return toObjectCollection(result, true);
+        return toObjectCollection(result);
     }
 
     public Set<K> localKeySet() {
@@ -136,13 +136,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public Set<K> keySet() {
         KeySetRequest request = new KeySetRequest(name);
         PortableCollection result = invoke(request);
-        return (Set) toObjectCollection(result, false);
+        return (Set) toObjectCollection(result);
     }
 
     public Collection<V> values() {
         ValuesRequest request = new ValuesRequest(name);
         PortableCollection result = invoke(request);
-        return toObjectCollection(result, true);
+        return toObjectCollection(result);
     }
 
     public Set<Map.Entry<K, V>> entrySet() {
@@ -338,21 +338,14 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     protected void onDestroy() {
     }
 
-    private Collection toObjectCollection(PortableCollection result, boolean list) {
-        Collection<Data> coll = result.getCollection();
-        Collection collection;
-        if (list) {
-            collection = new ArrayList(coll == null ? 0 : coll.size());
-        } else {
-            collection = new HashSet(coll == null ? 0 : coll.size());
+    private Collection toObjectCollection(PortableCollection result) {
+        final Collection<Data> resultCollection = result.getCollection();
+        // create a fresh collection.
+        final Collection newCollection = pickAndCreateCollection(resultCollection, resultCollection.size());
+        for (Data data : resultCollection) {
+            newCollection.add(toObject(data));
         }
-        if (coll == null) {
-            return collection;
-        }
-        for (Data data : coll) {
-            collection.add(toObject(data));
-        }
-        return collection;
+        return newCollection;
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {

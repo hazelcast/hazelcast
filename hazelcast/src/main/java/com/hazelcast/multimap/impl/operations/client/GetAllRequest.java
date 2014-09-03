@@ -24,8 +24,10 @@ import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
-import java.util.ArrayList;
+
 import java.util.Collection;
+
+import static com.hazelcast.multimap.impl.AbstractMultiMapContainerSupport.pickAndCreateCollection;
 
 public class GetAllRequest extends MultiMapKeyBasedRequest implements RetryableRequest {
 
@@ -50,7 +52,7 @@ public class GetAllRequest extends MultiMapKeyBasedRequest implements RetryableR
             if (coll == null) {
                 return new PortableCollection();
             }
-            Collection<Data> collection = new ArrayList<Data>(coll.size());
+            Collection<Data> collection = pickAndCreateCollection(coll, coll.size());
             for (MultiMapRecord record : coll) {
                 collection.add(serializationService.toData(record.getObject()));
             }

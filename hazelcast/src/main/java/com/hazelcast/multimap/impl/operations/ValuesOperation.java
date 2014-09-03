@@ -32,7 +32,7 @@ public class ValuesOperation extends MultiMapOperation {
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
-        response = new MultiMapResponse(container.values());
+        response = new MultiMapResponse(container.values(), getValueCollectionType(container));
     }
 
     public int getId() {

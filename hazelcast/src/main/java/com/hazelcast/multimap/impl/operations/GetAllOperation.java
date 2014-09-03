@@ -16,10 +16,12 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapWrapper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ResponseHandler;
+
 import java.util.Collection;
 
 public class GetAllOperation extends MultiMapKeyBasedOperation {
@@ -32,14 +34,15 @@ public class GetAllOperation extends MultiMapKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        MultiMapWrapper wrapper = getOrCreateContainer().getMultiMapWrapper(dataKey);
+        MultiMapContainer container = getOrCreateContainer();
+        MultiMapWrapper wrapper = container.getMultiMapWrapper(dataKey);
         Collection coll = null;
         if (wrapper != null) {
             wrapper.incrementHit();
             final ResponseHandler responseHandler = getResponseHandler();
             coll = wrapper.getCollection(responseHandler.isLocal());
         }
-        response = new MultiMapResponse(coll);
+        response = new MultiMapResponse(coll, getValueCollectionType(container));
     }
 
     public int getId() {
