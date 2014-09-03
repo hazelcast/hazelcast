@@ -89,22 +89,17 @@ public class CacheProxy<K, V>
     private final CacheConfig<K, V> cacheConfig;
     //this will represent the name from the user perspective
     private final String name;
+    private final NodeEngine nodeEngine;
+    private final SerializationService serializationService;
     private boolean isClosed;
-
     private CacheDistributedObject delegate;
-
     private HazelcastCacheManager cacheManager;
     private CacheLoader<K, V> cacheLoader;
-
     private ConcurrentHashMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private ConcurrentHashMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
     private ConcurrentHashMap<Integer, CountDownLatch> syncLocks;
-
     private AtomicInteger completionIdCounter = new AtomicInteger();
     private String completionRegistrationId;
-
-    private final NodeEngine nodeEngine;
-    private final SerializationService serializationService;
 
     protected CacheProxy(CacheConfig cacheConfig, CacheDistributedObject delegate, HazelcastServerCacheManager cacheManager) {
         this.name = cacheConfig.getName();
@@ -132,9 +127,6 @@ public class CacheProxy<K, V>
             if (result != null && result instanceof CacheClearResponse) {
                 final Object response = ((CacheClearResponse) result).getResponse();
                 if (response instanceof Throwable) {
-                    //                    if (completionListener != null) {
-                    //                        completionListener.onException((Exception) response);
-                    //                    }
                     ExceptionUtil.sneakyThrow((Throwable) response);
                 }
             }
@@ -163,12 +155,9 @@ public class CacheProxy<K, V>
     @Override
     public Future<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        //        final NodeEngine engine = getNodeEngine();
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        //        final SerializationService serializationService = engine.getSerializationService();
-
         final Data k = serializationService.toData(key);
         final Operation op = new CacheGetOperation(getDistributedObjectName(), k, expiryPolicy);
         final InternalCompletableFuture<Object> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), op,
@@ -190,12 +179,7 @@ public class CacheProxy<K, V>
     @Override
     public Future<Void> putAsync(K key, V value) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
         return putAsyncInternal(key, value, null, false, IGNORE_COMPLETION);
     }
@@ -203,12 +187,7 @@ public class CacheProxy<K, V>
     @Override
     public void put(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
 
         final Integer completionId = registerCompletionLatch(1);
@@ -226,12 +205,7 @@ public class CacheProxy<K, V>
     @Override
     public Future<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
         return putAsyncInternal(key, value, expiryPolicy, false, IGNORE_COMPLETION);
     }
@@ -239,13 +213,7 @@ public class CacheProxy<K, V>
     @Override
     public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        //        final NodeEngine engine = getNodeEngine();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
 
         final Data k = serializationService.toData(key);
@@ -263,12 +231,7 @@ public class CacheProxy<K, V>
     @Override
     public V getAndPut(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
 
         final Integer completionId = registerCompletionLatch(1);
@@ -286,12 +249,7 @@ public class CacheProxy<K, V>
     @Override
     public Future<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
         final InternalCompletableFuture<Object> f = putAsyncInternal(key, value, expiryPolicy, true, IGNORE_COMPLETION);
         final SerializationService serializationService = nodeEngine.getSerializationService();
@@ -301,9 +259,7 @@ public class CacheProxy<K, V>
     @Override
     public InternalCompletableFuture<Boolean> removeAsync(K key) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key);
         validateConfiguredTypes(false, key);
         return removeAsyncInternal(key, null, IGNORE_COMPLETION);
     }
@@ -311,12 +267,7 @@ public class CacheProxy<K, V>
     @Override
     public InternalCompletableFuture<Boolean> removeAsync(K key, V oldValue) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (oldValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, oldValue);
         validateConfiguredTypes(true, key, oldValue);
         return removeAsyncInternal(key, oldValue, IGNORE_COMPLETION);
     }
@@ -333,11 +284,7 @@ public class CacheProxy<K, V>
     @Override
     public Future<V> getAndRemoveAsync(K key) {
         ensureOpen();
-        //        final NodeEngine engine = getNodeEngine();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        //        final SerializationService serializationService = nodeEngine.getSerializationService();
+        validateNotNull(key);
         final Data k = serializationService.toData(key);
         final Operation op = new CacheGetAndRemoveOperation(getDistributedObjectName(), k, IGNORE_COMPLETION);
         final InternalCompletableFuture<Object> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), op,
@@ -358,12 +305,7 @@ public class CacheProxy<K, V>
     @Override
     public DelegatingFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
 
         final Data k = serializationService.toData(key);
@@ -383,18 +325,11 @@ public class CacheProxy<K, V>
     private InternalCompletableFuture<Boolean> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
                                                                     boolean hasOldValue) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (newValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
-        if (hasOldValue && oldValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
         if (hasOldValue) {
+            validateNotNull(key, oldValue, newValue);
             validateConfiguredTypes(true, key, oldValue, newValue);
         } else {
+            validateNotNull(key, newValue);
             validateConfiguredTypes(true, key, newValue);
         }
 
@@ -426,8 +361,6 @@ public class CacheProxy<K, V>
         if (keys.isEmpty()) {
             return Collections.EMPTY_MAP;
         }
-        //        final NodeEngine engine = getNodeEngine();
-        //        final SerializationService serializationService = engine.getSerializationService();
 
         final Set<Data> ks = new HashSet(keys.size());
         for (K key : keys) {
@@ -460,8 +393,9 @@ public class CacheProxy<K, V>
     @Override
     public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
         ensureOpen();
+        //as javadoc of putAll state: null map or any key or value should throw NPE
         if (map == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+            throw new NullPointerException("map is null");
         }
         if (map.keySet().contains(null)) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
@@ -470,22 +404,15 @@ public class CacheProxy<K, V>
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
 
-        final Iterator<? extends Map.Entry<? extends K, ? extends V>> iter = map.entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry<? extends K, ? extends V> next = iter.next();
-            put(next.getKey(), next.getValue(), expiryPolicy);
+        for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
+            put(entry.getKey(), entry.getValue(), expiryPolicy);
         }
     }
 
     @Override
     public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
 
         final Integer completionId = registerCompletionLatch(1);
@@ -502,15 +429,7 @@ public class CacheProxy<K, V>
     @Override
     public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (newValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
-        if (oldValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, oldValue, newValue);
         validateConfiguredTypes(true, key, oldValue, newValue);
 
         final Data k = serializationService.toData(key);
@@ -529,12 +448,7 @@ public class CacheProxy<K, V>
     @Override
     public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
 
         final Data k = serializationService.toData(key);
@@ -552,12 +466,7 @@ public class CacheProxy<K, V>
     @Override
     public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
 
         final Data k = serializationService.toData(key);
@@ -581,7 +490,6 @@ public class CacheProxy<K, V>
     @Override
     public int size() {
         ensureOpen();
-        //        final NodeEngine nodeEngine = getNodeEngine();
         try {
             final SerializationService serializationService = nodeEngine.getSerializationService();
             final CacheSizeOperationFactory operationFactory = new CacheSizeOperationFactory(getDistributedObjectName());
@@ -603,24 +511,6 @@ public class CacheProxy<K, V>
         }
     }
 
-    public V get(Data key) {
-        ensureOpen();
-        //        final NodeEngine engine = getNodeEngine();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        final SerializationService serializationService = nodeEngine.getSerializationService();
-
-        final Operation op = new CacheGetOperation(getDistributedObjectName(), key, null);
-        final InternalCompletableFuture<Object> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), op,
-                getPartitionId(nodeEngine, key));
-        Object result = f.getSafely();
-        if (result instanceof Data) {
-            result = serializationService.toObject((Data) result);
-        }
-        return (V) result;
-    }
-
     private <T> InternalCompletableFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean getValue,
                                                               int completionId) {
         final Data keyData = serializationService.toData(key);
@@ -634,6 +524,17 @@ public class CacheProxy<K, V>
     //endregion
 
     //region javax.cache.Cache<K, V> IMPL
+
+    private void validateNotNull(K key, Object... values) {
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        for (Object value : values) {
+            if (value == null) {
+                throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+            }
+        }
+    }
 
     private void validateConfiguredTypes(boolean validateValues, K key, V... values)
             throws ClassCastException {
@@ -672,18 +573,6 @@ public class CacheProxy<K, V>
         }
     }
 
-    //    public boolean remove(Data key) {
-    //        ensureOpen();
-    //        if (key == null) {
-    //            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-    //        }
-    //        final Operation op = new CacheRemoveOperation(getDistributedObjectName(), key, null, IGNORE_COMPLETION);
-    //        final int partitionId = getPartitionId(nodeEngine, key);
-    //        final InternalCompletableFuture<Boolean> f = nodeEngine.getOperationService()
-    //                                                           .invokeOnPartition(getServiceName(), op, partitionId);
-    //        return f.getSafely();
-    //    }
-
     private Collection<Integer> getPartitionsForKeys(Set<Data> keys) {
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
         final int partitions = partitionService.getPartitionCount();
@@ -707,12 +596,7 @@ public class CacheProxy<K, V>
     @Override
     public boolean containsKey(K key) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        //        final NodeEngine engine = getNodeEngine();
-        //        final SerializationService serializationService = engine.getSerializationService();
-
+        validateNotNull(key);
         final Data k = serializationService.toData(key);
         final Operation op = new CacheContainsKeyOperation(getDistributedObjectName(), k);
         final InternalCompletableFuture<Boolean> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), op,
@@ -722,10 +606,9 @@ public class CacheProxy<K, V>
     }
 
     @Override
-    public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
+    public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, final CompletionListener completionListener) {
         ensureOpen();
-        //        final NodeEngine nodeEngine = getNodeEngine();
-        final OperationService operationService = nodeEngine.getOperationService();
+
         if (keys == null || keys.contains(null)) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
@@ -738,23 +621,37 @@ public class CacheProxy<K, V>
             }
             return;
         }
-        final SerializationService ss = nodeEngine.getSerializationService();
         HashSet<Data> keysData = new HashSet<Data>();
         for (K key : keys) {
-            keysData.add(ss.toData(key));
+            keysData.add(serializationService.toData(key));
         }
-        OperationFactory operationFactory = new CacheLoadAllOperationFactory(getDistributedObjectName(), keysData,
+        final OperationFactory operationFactory = new CacheLoadAllOperationFactory(getDistributedObjectName(), keysData,
                 replaceExistingValues);
         try {
-            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
-            loadAllHelper(results);
-            if (completionListener != null) {
-                completionListener.onCompletion();
-            }
+
+            nodeEngine.getExecutionService().execute("loadAll runner", new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        final OperationService operationService = nodeEngine.getOperationService();
+                        final Map<Integer, Object> results = operationService
+                                .invokeOnAllPartitions(getServiceName(), operationFactory);
+                        loadAllHelper(results);
+                        if (completionListener != null) {
+                            completionListener.onCompletion();
+                        }
+                    } catch (Exception e) {
+                        if (completionListener != null) {
+                            completionListener.onException(e);
+                        }
+                    }
+                }
+            });
         } catch (Exception e) {
             if (completionListener != null) {
                 completionListener.onException(e);
             }
+            throw new CacheException(e);
         }
     }
 
@@ -781,9 +678,7 @@ public class CacheProxy<K, V>
     @Override
     public boolean remove(K key) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key);
         validateConfiguredTypes(false, key);
         final Integer completionId = registerCompletionLatch(1);
         final InternalCompletableFuture<Boolean> f = removeAsyncInternal(key, null, completionId);
@@ -795,12 +690,7 @@ public class CacheProxy<K, V>
     @Override
     public boolean remove(K key, V oldValue) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (oldValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, oldValue);
         validateConfiguredTypes(true, key, oldValue);
         final Integer completionId = registerCompletionLatch(1);
         final InternalCompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, completionId);
@@ -812,9 +702,7 @@ public class CacheProxy<K, V>
     @Override
     public V getAndRemove(K key) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key);
         validateConfiguredTypes(false, key);
         final Data k = serializationService.toData(key);
         final Integer completionId = registerCompletionLatch(1);
@@ -920,11 +808,9 @@ public class CacheProxy<K, V>
     public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments)
             throws EntryProcessorException {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key);
         if (entryProcessor == null) {
-            throw new NullPointerException();
+            throw new NullPointerException("Entry Processor is null");
         }
         final Data k = serializationService.toData(key);
         final Integer completionId = registerCompletionLatch(1);
@@ -954,7 +840,7 @@ public class CacheProxy<K, V>
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         if (entryProcessor == null) {
-            throw new NullPointerException();
+            throw new NullPointerException("Entry Processor is null");
         }
         Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
         for (K key : keys) {

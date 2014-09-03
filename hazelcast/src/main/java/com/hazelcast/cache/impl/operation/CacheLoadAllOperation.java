@@ -64,9 +64,7 @@ public class CacheLoadAllOperation
     @Override
     public void run()
             throws Exception {
-        CacheService service = getService();
         final int partitionId = getPartitionId();
-        cache = service.getOrCreateCache(name, partitionId);
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
 
         Set<Data> filteredKeys = new HashSet<Data>();
@@ -81,6 +79,8 @@ public class CacheLoadAllOperation
             return;
         }
         try {
+            final CacheService service = getService();
+            cache = service.getOrCreateCache(name, partitionId);
             final Set<Data> keysLoaded = cache.loadAll(filteredKeys, replaceExistingValues);
             shouldBackup = !keysLoaded.isEmpty();
             if (shouldBackup) {

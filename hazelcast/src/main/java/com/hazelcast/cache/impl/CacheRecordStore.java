@@ -131,12 +131,12 @@ public class CacheRecordStore
             return value;
         } else {
             value = record.getValue();
-            final long et;
+            final long expiryTime;
             try {
                 Duration expiryDuration = localExpiryPolicy.getExpiryForAccess();
                 if (expiryDuration != null) {
-                    et = expiryDuration.getAdjustedTime(now);
-                    record.setExpirationTime(et);
+                    expiryTime = expiryDuration.getAdjustedTime(now);
+                    record.setExpirationTime(expiryTime);
                 }
             } catch (Throwable t) {
                 EmptyStatement.ignore(t);
@@ -310,18 +310,18 @@ public class CacheRecordStore
                 deleteCacheEntry(key);
                 deleteRecord(key);
             } else {
-                long et = -1L;
+                long expiryTime = -1L;
                 try {
                     Duration expiryDuration = localExpiryPolicy.getExpiryForAccess();
                     if (expiryDuration != null) {
-                        et = expiryDuration.getAdjustedTime(now);
-                        record.setExpirationTime(et);
+                        expiryTime = expiryDuration.getAdjustedTime(now);
+                        record.setExpirationTime(expiryTime);
                     }
                 } catch (Throwable t) {
                     EmptyStatement.ignore(t);
                     //leave the expiry time untouched when we can't determine a duration
                 }
-                if (isExpiredAt(et, now)) {
+                if (isExpiredAt(expiryTime, now)) {
                     processExpiredEntry(key, record);
                 }
                 result = false;
@@ -389,8 +389,8 @@ public class CacheRecordStore
                 try {
                     Duration expiryDuration = localExpiryPolicy.getExpiryForAccess();
                     if (expiryDuration != null) {
-                        long et = expiryDuration.getAdjustedTime(now);
-                        record.setExpirationTime(et);
+                        long expiryTime = expiryDuration.getAdjustedTime(now);
+                        record.setExpirationTime(expiryTime);
                     }
                 } catch (Throwable t) {
                     EmptyStatement.ignore(t);
@@ -620,7 +620,7 @@ public class CacheRecordStore
 
     @Override
     public Set<Data> loadAll(Set<Data> keys, boolean replaceExistingValues) {
-        Set<Data> keysLoadad = new HashSet<Data>();
+        Set<Data> keysLoaded = new HashSet<Data>();
         Map<Data, Object> loaded = loadAllCacheEntry(keys);
         if (loaded != null && !loaded.isEmpty()) {
             if (replaceExistingValues) {
@@ -629,7 +629,7 @@ public class CacheRecordStore
                     final Object value = entry.getValue();
                     if (value != null) {
                         getAndPut(key, value, null, null, false, true);
-                        keysLoadad.add(key);
+                        keysLoaded.add(key);
                     }
                 }
             } else {
@@ -639,13 +639,13 @@ public class CacheRecordStore
                     if (value != null) {
                         final boolean hasPut = putIfAbsent(key, value, null, null, true);
                         if (hasPut) {
-                            keysLoadad.add(key);
+                            keysLoaded.add(key);
                         }
                     }
                 }
             }
         }
-        return keysLoadad;
+        return keysLoaded;
     }
 
     @Override
@@ -689,14 +689,14 @@ public class CacheRecordStore
         } catch (Throwable t) {
             expiryDuration = Duration.ETERNAL;
         }
-        long et = expiryDuration.getAdjustedTime(now);
+        long expiryTime = expiryDuration.getAdjustedTime(now);
 
         if (!disableWriteThrough) {
             writeThroughCache(key, value);
         }
 
-        if (!isExpiredAt(et, now)) {
-            CacheRecord record = createRecord(key, value, et);
+        if (!isExpiredAt(expiryTime, now)) {
+            CacheRecord record = createRecord(key, value, expiryTime);
             records.put(key, record);
             return true;
         }
@@ -720,12 +720,12 @@ public class CacheRecordStore
 
     boolean updateRecordWithExpiry(Data key, Object value, CacheRecord record, ExpiryPolicy localExpiryPolicy, long now,
                                    boolean disableWriteThrough) {
-        long et = -1L;
+        long expiryTime = -1L;
         try {
             Duration expiryDuration = localExpiryPolicy.getExpiryForUpdate();
             if (expiryDuration != null) {
-                et = expiryDuration.getAdjustedTime(now);
-                record.setExpirationTime(et);
+                expiryTime = expiryDuration.getAdjustedTime(now);
+                record.setExpirationTime(expiryTime);
             }
         } catch (Throwable t) {
             EmptyStatement.ignore(t);
@@ -736,7 +736,7 @@ public class CacheRecordStore
         }
         updateRecord(record, value);
 
-        if (isExpiredAt(et, now)) {
+        if (isExpiredAt(expiryTime, now)) {
             processExpiredEntry(key, record);
         } else {
             return true;
@@ -759,8 +759,10 @@ public class CacheRecordStore
             case OBJECT:
                 if (value instanceof Data) {
                     v = cacheService.toObject(value);
+                    dataValue = (Data) value;
+                } else {
+                    dataValue = cacheService.toData(value);
                 }
-                dataValue = (Data) value;
                 dataOldValue = cacheService.toData(record.getValue());
                 break;
             default:
@@ -794,12 +796,12 @@ public class CacheRecordStore
 
     CacheRecord accessRecord(CacheRecord record, ExpiryPolicy expiryPolicy, long now) {
         final ExpiryPolicy localExpiryPolicy = expiryPolicy != null ? expiryPolicy : defaultExpiryPolicy;
-        final long et;
+        final long expiryTime;
         try {
             Duration expiryDuration = localExpiryPolicy.getExpiryForAccess();
             if (expiryDuration != null) {
-                et = expiryDuration.getAdjustedTime(now);
-                record.setExpirationTime(et);
+                expiryTime = expiryDuration.getAdjustedTime(now);
+                record.setExpirationTime(expiryTime);
             }
         } catch (Throwable t) {
             EmptyStatement.ignore(t);
@@ -820,13 +822,13 @@ public class CacheRecordStore
         } catch (Throwable t) {
             expiryDuration = Duration.ETERNAL;
         }
-        long et = expiryDuration.getAdjustedTime(now);
+        long expiryTime = expiryDuration.getAdjustedTime(now);
 
-        if (isExpiredAt(et, now)) {
+        if (isExpiredAt(expiryTime, now)) {
             return null;
         }
         //TODO below createRecord may fire create event, is it OK?
-        final CacheRecord record = createRecord(key, value, et);
+        final CacheRecord record = createRecord(key, value, expiryTime);
         return record;
     }
 
@@ -1019,10 +1021,6 @@ public class CacheRecordStore
     private boolean isWriteThrough() {
         return cacheConfig.isWriteThrough();
     }
-
-    //    public boolean isEventsEnabled() {
-    //        return isEventsEnabled;
-    //    }
 
     private boolean isStatisticsEnabled() {
         if (!cacheConfig.isStatisticsEnabled()) {

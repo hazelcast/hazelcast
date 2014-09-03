@@ -75,6 +75,9 @@ public final class ExceptionUtil {
         }
     }
 
+    /**
+     * This rethrow the exception providing an allowed Exception in first priority, even it is a Runtime exception
+     */
     public static <T extends Throwable> RuntimeException rethrowAllowedTypeFirst(final Throwable t,
                                                                                  Class<T> allowedType) throws T {
         if (t instanceof Error) {
