@@ -42,7 +42,6 @@ public class CacheConfig<K, V>
      * The number of minimum backup counter
      */
     public static final int MIN_BACKUP_COUNT = 0;
-    private int asyncBackupCount = MIN_BACKUP_COUNT;
     /**
      * The number of maximum backup counter
      */
@@ -51,21 +50,18 @@ public class CacheConfig<K, V>
      * The number of default backup counter
      */
     public static final int DEFAULT_BACKUP_COUNT = 1;
-    //    public final static int MIN_EVICTION_PERCENTAGE = 0;
-    //    public final static int DEFAULT_EVICTION_PERCENTAGE = 20;
-    //    public final static int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = 95;
-    //    public final static int MAX_EVICTION_PERCENTAGE = 100;
-    //    public final static int DEFAULT_TTL_SECONDS = 0;
-    private int backupCount = DEFAULT_BACKUP_COUNT;
     /**
      * Default InMemory Format.
      */
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
-    private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     /**
      * Default Eviction Policy.
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
+
+    private int asyncBackupCount = MIN_BACKUP_COUNT;
+    private int backupCount = DEFAULT_BACKUP_COUNT;
+    private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
     private String name;
     private String managerPrefix;
@@ -344,17 +340,16 @@ public class CacheConfig<K, V>
         if (!super.equals(obj)) {
             return false;
         }
-
-        CacheConfig other = (CacheConfig) obj;
-        return (this.name != null ? this.name.equals(other.name) : other.name == null) && (
-                this.managerPrefix != null ? this.managerPrefix.equals(other.managerPrefix) : other.managerPrefix == null) && (
-                this.uriString != null ? this.uriString.equals(other.uriString) : other.uriString == null)
-                && this.backupCount == other.backupCount && this.asyncBackupCount == other.asyncBackupCount && (
-                this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat) : other.inMemoryFormat == null)
-                && (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy) : other.evictionPolicy == null)
-                && (
-                this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig) :
-                        other.nearCacheConfig == null);
+        return equalsInternal((CacheConfig) obj);
     }
 
+    private boolean equalsInternal(CacheConfig other) {
+        final boolean strsEqual = (this.name != null ? this.name.equals(other.name) : other.name == null) && (
+                this.managerPrefix != null ? this.managerPrefix.equals(other.managerPrefix) : other.managerPrefix == null) && (
+                this.uriString != null ? this.uriString.equals(other.uriString) : other.uriString == null);
+        return strsEqual && this.asyncBackupCount == other.asyncBackupCount && this.inMemoryFormat.equals(other.inMemoryFormat)
+                && this.evictionPolicy.equals(other.evictionPolicy) && (
+                this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig)
+                        : other.nearCacheConfig == null);
+    }
 }

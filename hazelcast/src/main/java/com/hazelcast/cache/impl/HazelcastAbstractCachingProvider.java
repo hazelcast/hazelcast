@@ -35,7 +35,7 @@ public abstract class HazelcastAbstractCachingProvider
         implements CachingProvider {
 
     protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
-    volatile static HazelcastInstance hazelcastInstance;
+    static volatile HazelcastInstance hazelcastInstance;
 
     private WeakHashMap<ClassLoader, HashMap<URI, CacheManager>> cacheManagers;
 
@@ -70,8 +70,8 @@ public abstract class HazelcastAbstractCachingProvider
 
     protected HazelcastInstance getHazelcastInstance() {
         if (hazelcastInstance == null) {
-            synchronized(this){
-                if(hazelcastInstance == null){
+            synchronized (this) {
+                if (hazelcastInstance == null) {
                     hazelcastInstance = initHazelcast();
                 }
             }

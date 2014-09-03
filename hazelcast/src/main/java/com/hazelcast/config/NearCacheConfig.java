@@ -26,7 +26,7 @@ import java.io.Serializable;
 /**
  * Contains configuration for an NearCache.
  */
-public class NearCacheConfig implements DataSerializable , Serializable{
+public class NearCacheConfig implements DataSerializable , Serializable {
     /**
      * Default value of time to live in seconds.
      */

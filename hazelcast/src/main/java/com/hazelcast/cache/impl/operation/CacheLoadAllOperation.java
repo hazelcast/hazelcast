@@ -77,7 +77,7 @@ public class CacheLoadAllOperation
                 }
             }
         }
-        if(filteredKeys.isEmpty()){
+        if (filteredKeys.isEmpty()) {
             return;
         }
         try {

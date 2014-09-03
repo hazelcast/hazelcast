@@ -32,7 +32,7 @@ public class CacheStatisticsMXBeanImpl
 
     private transient CacheStatistics statistics;
 
-    private CacheStatisticsMXBeanImpl(){
+    private CacheStatisticsMXBeanImpl() {
     }
 
     public CacheStatisticsMXBeanImpl(CacheStatistics statistics) {
