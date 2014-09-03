@@ -60,7 +60,8 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
     }
 
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(new MultiMapResponse(null, null));
+        MultiMapContainer container = getOrCreateContainer();
+        getResponseHandler().sendResponse(new MultiMapResponse(null, getValueCollectionType(container)));
     }
 
     public int getId() {
