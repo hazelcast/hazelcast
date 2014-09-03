@@ -825,7 +825,7 @@ public class CacheRecordStore
         if (isExpiredAt(et, now)) {
             return null;
         }
-        //TODO below create may fire create event, is it OK?
+        //TODO below createRecord may fire create event, is it OK?
         final CacheRecord record = createRecord(key, value, et);
         return record;
     }

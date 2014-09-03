@@ -107,19 +107,16 @@ public final class HazelcastClientCacheManager
 
     @Override
     protected <K, V> CacheConfig<K, V> getCacheConfigLocal(String cacheName) {
-        System.out.println("GET FROM LOCAL CACHE name:" + cacheName + " status:" + configs.containsKey(cacheName));
         return configs.get(cacheName);
     }
 
     @Override
     protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
-        System.out.println("ADDING LOCAL CACHE name:" + cacheConfig.getNameWithPrefix());
         configs.putIfAbsent(cacheConfig.getNameWithPrefix(), cacheConfig);
     }
 
     @Override
     protected void removeCacheConfigFromLocal(String cacheName) {
-        //        System.out.println("REMOVING LOCAL CACHE name:"+ cacheName );
         configs.remove(cacheName);
     }
 
@@ -170,11 +167,5 @@ public final class HazelcastClientCacheManager
         }
         return null;
     }
-
-    //    @Override
-    //    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
-    //        //throw new UnsupportedOperationException("");
-    //        //FIXME REGISTER LISTENERS
-    //    }
 
 }

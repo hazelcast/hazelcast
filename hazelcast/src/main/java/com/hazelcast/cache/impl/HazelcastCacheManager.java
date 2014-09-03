@@ -203,7 +203,7 @@ public abstract class HazelcastCacheManager
 
     @Override
     public Iterable<String> getCacheNames() {
-        //TODO should this return all cluster names, or just the managed ones
+        //TODO implementation decision: should this return all cluster names, or just the managed ones
 /* OPTION 1: */
         Set<String> names;
         if (isClosed()) {

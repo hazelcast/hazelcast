@@ -607,7 +607,6 @@ public class ClientCacheProxy<K, V>
             public void handle(Object event) {
                 if (event instanceof CacheEventSet) {
                     CacheEventSet ces = (CacheEventSet) event;
-                    System.out.println("EVENT RECEIVED type:" + ces.getEventType());
                 }
                 adaptor.handleEvent(event);
             }
@@ -1202,7 +1201,6 @@ public class ClientCacheProxy<K, V>
                         if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
                             int completionId = toObject(cacheEventData.getDataValue());
                             countDownCompletionLatch(completionId);
-                            System.out.println("COMPLETION EVENT RECEIVED id:" + completionId);
                         }
                     }
                 }
