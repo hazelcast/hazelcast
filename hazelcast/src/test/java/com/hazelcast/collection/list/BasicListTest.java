@@ -59,16 +59,6 @@ public class BasicListTest extends HazelcastTestSupport {
         assertFalse(list.isEmpty());
     }
 
-    @Test
-    public void testIsEmpty_whenNull() {
-        IList list = null;
-        try {
-            assertTrue(list.isEmpty());
-            fail();
-        } catch (NullPointerException e) {
-        }
-    }
-
 //    =================== Add ===================
 
     @Test
@@ -97,7 +87,6 @@ public class BasicListTest extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             list.add("item" + i);
         }
-        assertSizeEventually(10, list);
 
         boolean added = list.add("item10");
         assertFalse(added);
@@ -266,15 +255,22 @@ public class BasicListTest extends HazelcastTestSupport {
 //    ====================== Clear =======================
 
     @Test
-    public void testClear() {
+    public void testClear_whenNotEmpty() {
         IList list = newList();
         for (int i = 0; i < 10; i++) {
             list.add(i, "item" + i);
         }
 
-        assertSizeEventually(10, list);
         list.clear();
-        assertSizeEventually(0, list);
+        assertEquals(0,list.size());
+    }
+
+    @Test
+    public void testClear_whenEmpty() {
+        IList list = newList();
+        assertEquals(0,list.size());
+        list.clear();
+        assertEquals(0,list.size());
     }
 
 //    ===================== Contains ========================
