@@ -44,9 +44,6 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
     }
 
-    protected void shutdown() {
-    }
-
     final void handleSocketException(Throwable e) {
         if (e instanceof OutOfMemoryError) {
             connectionManager.ioService.onOutOfMemory((OutOfMemoryError) e);
