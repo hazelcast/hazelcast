@@ -16,20 +16,15 @@
 
 package com.hazelcast.wm.test;
 
-import com.hazelcast.config.FileSystemXmlConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.File;
-import java.net.URL;
+
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
-import org.junit.After;
-import org.junit.AfterClass;
+
 import static org.junit.Assert.assertEquals;
-import org.junit.Before;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,10 +39,6 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class WebFilterBasicTest extends AbstractWebFilterTest {
-
-    public static boolean isSetup;
-    private static int serverPort1, serverPort2;
-    private static HazelcastInstance hz;
 
     public WebFilterBasicTest() {
         super("node1-node.xml", "node2-node.xml");
@@ -95,7 +86,7 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
     @Test(timeout = 20000)
     public void test_clusterMapSize() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
-        IMap<String, Object> map = hz.getMap("default");
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         executeRequest("write", serverPort1, cookieStore);
 
         assertEquals(2, map.size());
@@ -104,7 +95,7 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
     @Test(timeout = 20000)
     public void test_clusterMapSizeAfterRemove() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
-        IMap<String, Object> map = hz.getMap("default");
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
 
         executeRequest("write", serverPort1, cookieStore);
         executeRequest("remove", serverPort2, cookieStore);
@@ -114,7 +105,7 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
 
     @Test(timeout = 20000)
     public void test_updateAttribute() throws Exception {
-        IMap<String, Object> map = hz.getMap("default");
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         CookieStore cookieStore = new BasicCookieStore();
 
         executeRequest("write", serverPort1, cookieStore);
@@ -126,7 +117,7 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
 
     @Test(timeout = 20000)
     public void test_invalidateSession() throws Exception {
-        IMap<String, Object> map = hz.getMap("default");
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         CookieStore cookieStore = new BasicCookieStore();
 
         executeRequest("write", serverPort1, cookieStore);
@@ -146,7 +137,7 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
     @Test(timeout = 20000)
     public void test_sessionTimeout() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
-        IMap<String, Object> map = hz.getMap("default");
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
 
         executeRequest("write", serverPort1, cookieStore);
         executeRequest("timeout", serverPort1, cookieStore);
@@ -156,35 +147,5 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
     @Override
     protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception {
         return new JettyServer(port, sourceDir, serverXml);
-    }
-
-    @Before
-    public void setup() throws Exception {
-        if (isSetup == true) {
-            return;
-        }
-        final URL root = new URL(TestServlet.class.getResource("/"), "../test-classes");
-        final String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
-        final String sourceDir = baseDir + "/../../src/test/webapp";
-        hz = Hazelcast.newHazelcastInstance(
-                new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
-        serverPort1 = availablePort();
-        server1 = getServletContainer(serverPort1, sourceDir, serverXml1);
-        if (serverXml2 != null) {
-            serverPort2 = availablePort();
-            server2 = getServletContainer(serverPort2, sourceDir, serverXml2);
-        }
-        isSetup = true;
-    }
-
-    @After
-    public void teardown() throws Exception {
-        IMap<String, Object> map = hz.getMap("default");
-        map.clear();
-    }
-
-    @AfterClass
-    public static void shutdownAll() {
-        Hazelcast.shutdownAll();
     }
 }

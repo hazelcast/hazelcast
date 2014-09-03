@@ -18,10 +18,10 @@ package com.hazelcast.client.impl.client.txn.proxy;
 
 import com.hazelcast.client.impl.client.txn.TransactionContextProxy;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.map.MapKeySet;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapValueCollection;
-import com.hazelcast.map.client.TxnMapRequest;
+import com.hazelcast.map.impl.MapKeySet;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapValueCollection;
+import com.hazelcast.map.impl.client.TxnMapRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 

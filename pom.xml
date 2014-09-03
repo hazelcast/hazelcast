@@ -480,9 +480,8 @@
                                 <include>com/hazelcast/jca/**</include>
                                 <include>com/hazelcast/buildutils/**</include>
 
-                                <include>com/hazelcast/map/EntryProcessor.java</include>
-                                <include>com/hazelcast/map/AbstractEntryProcessor.java</include>
-                                <include>com/hazelcast/map/merge/MapMergePolicy.java</include>
+                                <include>com/hazelcast/map/*</include>
+                                <include>com/hazelcast/map/merge/*</include>
 
                                 <include>com/hazelcast/nio/serialization/ClassDefinition.java</include>
                                 <include>com/hazelcast/nio/serialization/ClassDefinitionBuilder.java</include>
@@ -577,9 +576,8 @@
                                 <include>com/hazelcast/jca/**</include>
                                 <include>com/hazelcast/buildutils/**</include>
 
-                                <include>com/hazelcast/map/EntryProcessor.java</include>
-                                <include>com/hazelcast/map/AbstractEntryProcessor.java</include>
-                                <include>com/hazelcast/map/merge/MapMergePolicy.java</include>
+                                <include>com/hazelcast/map/*</include>
+                                <include>com/hazelcast/map/merge/*</include>
 
                                 <include>com/hazelcast/nio/serialization/ClassDefinition.java</include>
                                 <include>com/hazelcast/nio/serialization/ClassDefinitionBuilder.java</include>

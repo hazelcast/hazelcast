@@ -100,3 +100,10 @@ Property Name | Default Value | Type | Description
 `hazelcast.elastic.memory.shared.storage` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) shared storage.
 `hazelcast.elastic.memory.unsafe.enabled`|false|bool|Enable usage of `sun.misc.Unsafe` when allocating, reading and modifying off-heap storage.
 `hazelcast.enterprise.license.key` | null | string  |   [Hazelcast Enterprise](http://www.hazelcast.com/products.jsp) license key.
+`hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If there is no any message passing between client and member within the given time via this property in milliseconds the connection will be closed.
+`hazelcast.client.heartbeat.interval`|10000|string|The frequency of heartbeat messages sent by the clients to members.
+`hazelcast.client.max.failed.heartbeat.count`|3|string|When the count of failed heartbeats sent to members reaches this value, the cluster is deemed as dead by the client.
+`hazelcast.client.request.retry.count`|20|string|The retry count of the connection requests by the client to the members.
+`hazelcast.client.request.retry.wait.time`|250|string|The frequency of the connection retries.
+`hazelcast.client.event.thread.count`|5|string|Thread count for handling incoming event packets.
+`hazelcast.client.event.queue.capacity`|1000000|string|Default value of the capacity of executor that handles incoming event packets.

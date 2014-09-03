@@ -42,6 +42,7 @@ import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -79,7 +80,7 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     public Iterator<E> iterator() {
-        return getAll().iterator();
+        return Collections.unmodifiableCollection(getAll()).iterator();
     }
 
     public Object[] toArray() {
