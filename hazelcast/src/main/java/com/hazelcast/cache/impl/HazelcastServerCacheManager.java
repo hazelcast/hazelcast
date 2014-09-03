@@ -34,8 +34,6 @@ import java.util.Properties;
 public class HazelcastServerCacheManager
         extends HazelcastCacheManager {
 
-    //    protected HazelcastInstanceImpl hazelcastInstance;
-    //    private HazelcastServerCachingProvider cachingProvider;
     private NodeEngine nodeEngine;
     private CacheService cacheService;
 
@@ -50,7 +48,9 @@ public class HazelcastServerCacheManager
         final CacheDistributedObject setupRef = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         nodeEngine = setupRef.getNodeEngine();
         cacheService = setupRef.getService();
-        //        setupRef.destroy();
+
+        //TODO: should we destroy the ref ?
+        //setupRef.destroy();
     }
 
     @Override
@@ -146,17 +146,5 @@ public class HazelcastServerCacheManager
                                                                    .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.getSafely();
     }
-
-    //    @Override
-    //    protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
-    //        //REGISTER LISTENERS
-    //        final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations()
-    //                .iterator();
-    //        while (iterator.hasNext()) {
-    //            final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
-    //            source.registerCacheEntryListener(listenerConfig);
-    ////            cacheService.registerCacheEntryListener(cacheConfig.getNameWithPrefix(), source, listenerConfig);
-    //        }
-    //    }
 
 }

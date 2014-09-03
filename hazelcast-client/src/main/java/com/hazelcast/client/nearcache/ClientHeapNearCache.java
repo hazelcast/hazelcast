@@ -22,7 +22,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.Counter;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Comparator;
@@ -33,7 +32,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
+public class ClientHeapNearCache<K>
+        implements IClientNearCache<K, Object> {
 
     private static final int SEC_TO_MILISEC = 1000;
     private static final int HUNDRED_PERCENTAGE = 100;
@@ -51,19 +51,23 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
     final ConcurrentMap<K, CacheRecord<K>> cache;
     final NearCacheStatsImpl stats;
 
-    private volatile long lastCleanup;
-    private String id;
-
     private final Comparator<CacheRecord<K>> comparator = new Comparator<CacheRecord<K>>() {
         public int compare(CacheRecord<K> o1, CacheRecord<K> o2) {
             if (com.hazelcast.config.EvictionPolicy.LRU.equals(evictionPolicy)) {
                 return ((Long) o1.lastAccessTime).compareTo((o2.lastAccessTime));
-            } else if (com.hazelcast.config.EvictionPolicy.LFU.equals(evictionPolicy)) {
+            }
+            /*
+            TODO: if LFU policy implemented enable here
+            else if (com.hazelcast.config.EvictionPolicy.LFU.equals(evictionPolicy)) {
                 return ((Long) o1.hit.get()).compareTo((o2.hit.get()));
             }
+            */
             return 0;
         }
     };
+
+    private volatile long lastCleanup;
+    private String id;
 
     public ClientHeapNearCache(String mapName, ClientContext context, NearCacheConfig nearCacheConfig) {
         this.mapName = mapName;
@@ -84,12 +88,12 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
         stats = new NearCacheStatsImpl();
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public String getId() {
         return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void put(K key, Object object) {
@@ -189,8 +193,8 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
                 return NULL_OBJECT;
             }
             stats.incrementHits();
-            return inMemoryFormat.equals(InMemoryFormat.BINARY)
-                    ? context.getSerializationService().toObject(record.value) : record.value;
+            return inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService()
+                                                                         .toObject(record.value) : record.value;
         } else {
             stats.incrementMisses();
             return null;
@@ -204,19 +208,6 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
     public void invalidate(K key) {
         cache.remove(key);
     }
-
-//    public NearCacheStatsImpl getNearCacheStats() {
-//        long ownedEntryCount = 0;
-//        long ownedEntryMemory = 0;
-//        for (CacheRecord record : cache.values())
-//        {
-//            ownedEntryCount++;
-//            ownedEntryMemory += record.getCost();
-//        }
-//        stats.setOwnedEntryCount(ownedEntryCount);
-//        stats.setOwnedEntryMemoryCost(ownedEntryMemory);
-//        return stats;
-//    }
 
     public void clear() {
         cache.clear();
@@ -239,7 +230,6 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
         final K key;
         final Object value;
         final long creationTime;
-        final Counter hit;
         volatile long lastAccessTime;
 
         CacheRecord(K key, Object value) {
@@ -248,32 +238,17 @@ public class ClientHeapNearCache<K> implements IClientNearCache<K, Object> {
             long time = Clock.currentTimeMillis();
             this.lastAccessTime = time;
             this.creationTime = time;
-            this.hit = new Counter();
+            //            this.hit = new Counter();
         }
 
         void access() {
-            hit.increment();
             lastAccessTime = Clock.currentTimeMillis();
         }
 
-//        public long getCost() {
-//            // todo find object size  if not a Data instance.
-//            if (!(value instanceof Data)) return 0;
-//            if (!(key instanceof Data)) return 0;
-//            // value is Data
-//            return ((Data)key).heapCost()
-//                    + ((Data) value).heapCost()
-//                    + 2 * (Long.SIZE / Byte.SIZE)
-//                    // sizeof atomic long
-//                    + (Long.SIZE / Byte.SIZE)
-//                    // object references (key, value, hit)
-//                    + 3 * (Integer.SIZE / Byte.SIZE);
-//        }
-
         boolean expired() {
             long time = Clock.currentTimeMillis();
-            return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis)
-                    || (timeToLiveMillis > 0 && time > creationTime + timeToLiveMillis);
+            return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis) || (timeToLiveMillis > 0
+                    && time > creationTime + timeToLiveMillis);
         }
 
     }

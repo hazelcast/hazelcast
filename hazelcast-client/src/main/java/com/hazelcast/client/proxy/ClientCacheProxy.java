@@ -23,6 +23,7 @@ import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheEventSet;
 import com.hazelcast.cache.impl.CacheEventType;
+import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
 import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
@@ -89,6 +90,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.impl.CacheProxy.loadAllHelper;
+import static com.hazelcast.cache.impl.CacheProxy.validateNotNull;
 
 public class ClientCacheProxy<K, V>
         implements ICache<K, V> {
@@ -98,23 +100,18 @@ public class ClientCacheProxy<K, V>
     private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     private static final int IGNORE_COMPLETION = -1;
-    protected ClientCacheDistributedObject delegate;
-
     private final CacheConfig<K, V> cacheConfig;
     private final boolean cacheOnUpdate;
-    //this will represent the name from the user perspective
-    private String name;
-    private boolean isClosed;
-
-    //    private CacheLoader<K, V> cacheLoader;
-    private HazelcastClientCacheManager cacheManager;
-    private volatile IClientNearCache<Data, Object> nearCache;
-
     private final ConcurrentHashMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private final ConcurrentHashMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
     private final ConcurrentHashMap<Integer, CountDownLatch> syncLocks;
-
     private final AtomicInteger completionIdCounter = new AtomicInteger();
+    private final IClientNearCache<Data, Object> nearCache;
+    private final ClientCacheDistributedObject delegate;
+    //this will represent the name from the user perspective
+    private final String name;
+    private final HazelcastClientCacheManager cacheManager;
+    private boolean isClosed;
     private volatile String completionRegistrationId;
 
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientCacheDistributedObject delegate,
@@ -132,7 +129,6 @@ public class ClientCacheProxy<K, V>
             nearCache = null;
             cacheOnUpdate = false;
         }
-
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
@@ -153,9 +149,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public boolean containsKey(K key) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key);
         final Data keyData = toData(key);
         Object cached = nearCache != null ? nearCache.get(keyData) : null;
         if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
@@ -216,9 +210,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public boolean remove(K key) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key);
         validateConfiguredTypes(false, key);
         final Data keyData = delegate.toData(key);
         CacheRemoveRequest request = new CacheRemoveRequest(delegate.getName(), keyData);
@@ -235,12 +227,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public boolean remove(K key, V value) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
@@ -258,9 +245,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public V getAndRemove(K key) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key);
         validateConfiguredTypes(false, key);
         final Data keyData = toData(key);
         CacheGetAndRemoveRequest request = new CacheGetAndRemoveRequest(getDistributedObjectName(), keyData);
@@ -272,12 +257,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public boolean replace(K key, V currentValue, V value) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, currentValue, value);
         final Data keyData = toData(key);
         final Data currentValueData = toData(currentValue);
@@ -301,12 +281,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public boolean replace(K key, V value) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         CacheReplaceRequest request = new CacheReplaceRequest(getDistributedObjectName(), keyData, valueData, null);
@@ -398,9 +373,7 @@ public class ClientCacheProxy<K, V>
     public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments)
             throws EntryProcessorException {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key);
         if (entryProcessor == null) {
             throw new NullPointerException();
         }
@@ -468,14 +441,6 @@ public class ClientCacheProxy<K, V>
 
         deregisterAllListeners();
         deregisterCompletionListener();
-        //close the configured CacheLoader
-        //        if (cacheLoader instanceof Closeable) {
-        //            try {
-        //                ((Closeable) cacheLoader).close();
-        //            } catch (IOException e) {
-        //                //log
-        //            }
-        //        }
     }
 
     @Override
@@ -639,9 +604,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public Future<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key);
         if (shouldBeSync()) {
             V value = get(key, expiryPolicy);
             return createCompletedFuture(value);
@@ -681,13 +644,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public Future<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
-
+        validateNotNull(key, value);
         if (shouldBeSync()) {
             put(key, value, expiryPolicy);
             return createCompletedFuture(null);
@@ -712,12 +669,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public Future<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
 
         if (shouldBeSync()) {
@@ -747,12 +699,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public Future<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
         if (shouldBeSync()) {
             V oldValue = getAndPut(key, value, expiryPolicy);
@@ -788,11 +735,10 @@ public class ClientCacheProxy<K, V>
 
     private Future<Boolean> removeAsync(K key, V oldValue, boolean hasOldValue) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (hasOldValue && oldValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        if (hasOldValue) {
+            validateNotNull(key, oldValue);
+        } else {
+            validateNotNull(key);
         }
         validateConfiguredTypes(hasOldValue, key, oldValue);
 
@@ -817,9 +763,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public Future<V> getAndRemoveAsync(K key) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key);
         if (shouldBeSync()) {
             V value = get(key);
             return createCompletedFuture(value);
@@ -849,18 +793,11 @@ public class ClientCacheProxy<K, V>
 
     private Future<Boolean> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy, boolean hasOldValue) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (newValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
-        if (hasOldValue && oldValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
         if (hasOldValue) {
+            validateNotNull(key, newValue, oldValue);
             validateConfiguredTypes(true, key, oldValue, newValue);
         } else {
+            validateNotNull(key, newValue);
             validateConfiguredTypes(true, key, newValue);
         }
 
@@ -886,18 +823,11 @@ public class ClientCacheProxy<K, V>
 
     private boolean replaceInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy, boolean hasOldValue) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (newValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
-        if (hasOldValue && oldValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
         if (hasOldValue) {
+            validateNotNull(key, newValue, oldValue);
             validateConfiguredTypes(true, key, oldValue, newValue);
         } else {
+            validateNotNull(key, newValue);
             validateConfiguredTypes(true, key, newValue);
         }
 
@@ -928,12 +858,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public Future<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
         if (shouldBeSync()) {
             V oldValue = getAndPut(key, value, expiryPolicy);
@@ -956,9 +881,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public V get(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key);
         final Data keyData = toData(key);
         final Object cached = nearCache != null ? nearCache.get(keyData) : null;
         if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
@@ -1021,12 +944,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public void put(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
         final Data keyData = delegate.toData(key);
         final Data valueData = delegate.toData(value);
@@ -1042,12 +960,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public V getAndPut(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
@@ -1084,12 +997,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
@@ -1122,12 +1030,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
         ensureOpen();
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        validateNotNull(key, value);
         validateConfiguredTypes(true, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
@@ -1246,24 +1149,7 @@ public class ClientCacheProxy<K, V>
 
     private void validateConfiguredTypes(boolean validateValues, K key, V... values)
             throws ClassCastException {
-        final Class keyType = cacheConfig.getKeyType();
-        final Class valueType = cacheConfig.getValueType();
-        if (Object.class != keyType) {
-            //means type checks required
-            if (!keyType.isAssignableFrom(key.getClass())) {
-                throw new ClassCastException("Key " + key + "is not assignable to " + keyType);
-            }
-        }
-        if (validateValues) {
-            for (V value : values) {
-                if (Object.class != valueType) {
-                    //means type checks required
-                    if (!valueType.isAssignableFrom(value.getClass())) {
-                        throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
-                    }
-                }
-            }
-        }
+        CacheProxy.validateConfiguredTypes(cacheConfig, validateValues, key, values);
     }
 
     private ClientContext getContext() {

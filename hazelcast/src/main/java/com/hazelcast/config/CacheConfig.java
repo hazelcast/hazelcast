@@ -344,12 +344,8 @@ public class CacheConfig<K, V>
     }
 
     private boolean equalsInternal(CacheConfig other) {
-        final boolean strsEqual = (this.name != null ? this.name.equals(other.name) : other.name == null) && (
+        return (this.name != null ? this.name.equals(other.name) : other.name == null) && (
                 this.managerPrefix != null ? this.managerPrefix.equals(other.managerPrefix) : other.managerPrefix == null) && (
                 this.uriString != null ? this.uriString.equals(other.uriString) : other.uriString == null);
-        return strsEqual && this.asyncBackupCount == other.asyncBackupCount && this.inMemoryFormat.equals(other.inMemoryFormat)
-                && this.evictionPolicy.equals(other.evictionPolicy) && (
-                this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig)
-                        : other.nearCacheConfig == null);
     }
 }

@@ -63,11 +63,6 @@ public final class HazelcastCachingProvider
 
     @Override
     public URI getDefaultURI() {
-        //        try {
-        //            return new URI(this.getClass().getName());
-        //        } catch (URISyntaxException e) {
-        //            throw new CacheException("Cannot create Default URI", e);
-        //        }
         return delegate.getDefaultURI();
     }
 

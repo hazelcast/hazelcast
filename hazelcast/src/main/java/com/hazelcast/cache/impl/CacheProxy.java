@@ -133,6 +133,40 @@ public class CacheProxy<K, V>
         }
     }
 
+    public static <K, V> void validateNotNull(K key, V... values) {
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        for (Object value : values) {
+            if (value == null) {
+                throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+            }
+        }
+    }
+
+    public static <K, V> void validateConfiguredTypes(CacheConfig cacheConfig, boolean validateValues, K key, V... values)
+            throws ClassCastException {
+        final Class keyType = cacheConfig.getKeyType();
+        final Class valueType = cacheConfig.getValueType();
+        if (Object.class != keyType) {
+            //means type checks required
+            if (!keyType.isAssignableFrom(key.getClass())) {
+                throw new ClassCastException("Key " + key + "is not assignable to " + keyType);
+            }
+        }
+        if (validateValues) {
+            for (V value : values) {
+                if (Object.class != valueType) {
+                    //means type checks required
+                    if (!valueType.isAssignableFrom(value.getClass())) {
+                        throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
+                    }
+                }
+            }
+        }
+    }
+    //endregion
+
     public String getDistributedObjectName() {
         return delegate.getName();
     }
@@ -141,7 +175,6 @@ public class CacheProxy<K, V>
     protected String getServiceName() {
         return delegate.getServiceName();
     }
-    //endregion
 
     protected CacheService getService() {
         return delegate.getService();
@@ -486,6 +519,9 @@ public class CacheProxy<K, V>
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
+    //endregion
+
+    //region javax.cache.Cache<K, V> IMPL
 
     @Override
     public int size() {
@@ -521,41 +557,10 @@ public class CacheProxy<K, V>
         final int partitionId = getPartitionId(nodeEngine, keyData);
         return nodeEngine.getOperationService().invokeOnPartition(getServiceName(), op, partitionId);
     }
-    //endregion
-
-    //region javax.cache.Cache<K, V> IMPL
-
-    private void validateNotNull(K key, Object... values) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        for (Object value : values) {
-            if (value == null) {
-                throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-            }
-        }
-    }
 
     private void validateConfiguredTypes(boolean validateValues, K key, V... values)
             throws ClassCastException {
-        final Class keyType = cacheConfig.getKeyType();
-        final Class valueType = cacheConfig.getValueType();
-        if (Object.class != keyType) {
-            //means type checks required
-            if (!keyType.isAssignableFrom(key.getClass())) {
-                throw new ClassCastException("Key " + key + "is not assignable to " + keyType);
-            }
-        }
-        if (validateValues) {
-            for (V value : values) {
-                if (Object.class != valueType) {
-                    //means type checks required
-                    if (!valueType.isAssignableFrom(value.getClass())) {
-                        throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
-                    }
-                }
-            }
-        }
+        validateConfiguredTypes(cacheConfig, validateValues, key, values);
     }
 
     @Override
