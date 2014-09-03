@@ -30,17 +30,20 @@ import java.util.logging.LogRecord;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class LoggingServiceImpl implements LoggingService {
+
     private volatile MemberImpl thisMember = new MemberImpl();
     private final SystemLogService systemLogService;
     private final String groupName;
     private final CopyOnWriteArrayList<LogListenerRegistration> listeners
             = new CopyOnWriteArrayList<LogListenerRegistration>();
-    private volatile String thisAddressString;
+    private volatile String thisAddressString = "[LOCAL]";
 
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
 
     private final ConstructorFunction<String, ILogger> loggerConstructor
             = new ConstructorFunction<String, ILogger>() {
+
+        @Override
         public ILogger createNew(String key) {
             return new DefaultLogger(key);
         }
