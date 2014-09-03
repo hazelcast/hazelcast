@@ -45,7 +45,7 @@ import com.hazelcast.management.request.MemberConfigRequest;
 import com.hazelcast.management.request.RunGcRequest;
 import com.hazelcast.management.request.ShutdownMemberRequest;
 import com.hazelcast.management.request.ThreadDumpRequest;
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;

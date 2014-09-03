@@ -65,7 +65,7 @@ LogListener listener = new LogListener() {
 }
 HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 LoggingService loggingService = instance.getLoggingService();
-loggingService.addLogListener( Level.INFO, listener ):
+loggingService.addLogListener( Level.INFO, listener );
 ```
 Through the `LoggingService`, you can get the current used ILogger implementation and log your own messages, too.
 

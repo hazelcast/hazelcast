@@ -52,8 +52,9 @@ import java.util.Map;
  * </pre>
  * otherwise EntryProcessor does not guarantee to modify the entry.
  *
- * @param <K>
- * @param <V>
+ * @param <K> Type of key of a {@link java.util.Map.Entry}
+ * @param <V> Type of value of a {@link java.util.Map.Entry}
+ * @see AbstractEntryProcessor
  */
 public interface EntryProcessor<K, V> extends Serializable {
 
