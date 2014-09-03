@@ -81,7 +81,7 @@ public class ListSplitBrainTest extends HazelcastTestSupport {
 
         IList<Object> list3 = h3.getList(name);
         for (int i = 0; i < 50; i++) {
-            list3.add("lostQueueItem" + i);
+            list3.add("lostListItem" + i);
         }
 
         assertTrue(lifeCycleListener.mergeLatch.await(60, TimeUnit.SECONDS));
@@ -90,8 +90,8 @@ public class ListSplitBrainTest extends HazelcastTestSupport {
         assertEquals(3, h3.getCluster().getMembers().size());
 
         IList<Object> testList = h1.getList(name);
-        assertFalse(testList.contains("lostQueueItem0"));
-        assertFalse(testList.contains("lostQueueItem49"));
+        assertFalse(testList.contains("lostListItem0"));
+        assertFalse(testList.contains("lostListItem49"));
         assertTrue(testList.contains("item0"));
         assertTrue(testList.contains("item199"));
         assertTrue(testList.contains("item121"));

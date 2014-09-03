@@ -262,15 +262,15 @@ public class BasicListTest extends HazelcastTestSupport {
         }
 
         list.clear();
-        assertEquals(0,list.size());
+        assertEquals(0, list.size());
     }
 
     @Test
     public void testClear_whenEmpty() {
         IList list = newList();
-        assertEquals(0,list.size());
+        assertEquals(0, list.size());
         list.clear();
-        assertEquals(0,list.size());
+        assertEquals(0, list.size());
     }
 
 //    ===================== Contains ========================
@@ -743,9 +743,9 @@ public class BasicListTest extends HazelcastTestSupport {
         }
         ListIterator iterator = list.listIterator();
         int i = 0;
-        while(iterator.hasNext()){
+        while (iterator.hasNext()) {
             Object o = iterator.next();
-            assertEquals(o,"item" + i++);
+            assertEquals(o, "item" + i++);
         }
     }
 
@@ -757,9 +757,9 @@ public class BasicListTest extends HazelcastTestSupport {
         }
         int i = 0;
         ListIterator iterator = list.listIterator(4);
-        while(iterator.hasNext()){
+        while (iterator.hasNext()) {
             Object o = iterator.next();
-            assertEquals(o,"item" + (4 + i++));
+            assertEquals(o, "item" + (4 + i++));
         }
     }
 
