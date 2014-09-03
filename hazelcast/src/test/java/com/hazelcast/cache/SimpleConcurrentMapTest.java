@@ -16,18 +16,6 @@
 
 package com.hazelcast.cache;
 
-//import com.hazelcast.config.CacheConfig;
-//import com.hazelcast.config.Config;
-//import com.hazelcast.config.XmlConfigBuilder;
-//import com.hazelcast.core.Hazelcast;
-//import com.hazelcast.core.HazelcastInstance;
-//import com.hazelcast.core.HazelcastInstanceNotActiveException;
-//import com.hazelcast.logging.ILogger;
-//
-//import javax.cache.Cache;
-//import javax.cache.CacheManager;
-//import javax.cache.Caching;
-//import javax.cache.spi.CachingProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;

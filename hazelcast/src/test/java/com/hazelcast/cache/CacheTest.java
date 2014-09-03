@@ -16,9 +16,12 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.impl.HazelcastServerCacheManager;
+import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -42,21 +45,13 @@ import static junit.framework.TestCase.assertNull;
 public class CacheTest
         extends HazelcastTestSupport {
 
-//    private HazelcastInstance client;
     private CacheManager cacheManager;
 
     @Before
     public void init() {
-
-        Config config = new Config();
-        Hazelcast.newHazelcastInstance(config);
-//        Hazelcast.newHazelcastInstance(config);
-
-//        ClientConfig clientConfig = new ClientConfig();
-
-//        client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        cacheManager = Caching.getCachingProvider().getCacheManager();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        HazelcastServerCachingProvider hcp = new HazelcastServerCachingProvider();
+        cacheManager = new HazelcastServerCacheManager(hcp, hazelcastInstance, hcp.getDefaultURI(), hcp.getDefaultClassLoader(), null);
     }
 
     @After
