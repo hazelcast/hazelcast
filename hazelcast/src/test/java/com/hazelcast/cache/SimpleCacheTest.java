@@ -34,7 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * A simple test of a map.
+ * A simple test of a cache benchmark.
  */
 public final class SimpleCacheTest {
 

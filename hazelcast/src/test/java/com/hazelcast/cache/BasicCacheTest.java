@@ -30,6 +30,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.CacheConcurrentHashMap;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -63,6 +64,7 @@ import static junit.framework.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
+@Ignore
 public class BasicCacheTest
         extends HazelcastTestSupport {
 
@@ -73,7 +75,7 @@ public class BasicCacheTest
     public void init() {
 
         //        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        Config config = new Config();
+//        Config config = new Config();
         //        hz=Hazelcast.newHazelcastInstance(config);
         //        hz2=Hazelcast.newHazelcastInstance(config);
         //        Hazelcast.newHazelcastInstance(config);
