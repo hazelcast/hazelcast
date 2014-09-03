@@ -41,63 +41,81 @@ public class AtomicLongTest extends HazelcastTestSupport {
 
     @Test
     @ClientCompatibleTest
+    public void testSet(){
+        HazelcastInstance hzInstance = createHazelcastInstance();
+        IAtomicLong al = hzInstance.getAtomicLong("testAtomicLong");
+        al.set(271);
+        assertEquals(271,al.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
     public void testGet(){
         HazelcastInstance hzInstance = createHazelcastInstance();
-        IAtomicLong atomicLong = hzInstance.getAtomicLong("testAtomicLong");
-        assertEquals(0,atomicLong.get());
+        IAtomicLong al = hzInstance.getAtomicLong("testAtomicLong");
+        assertEquals(0,al.get());
     }
 
     @Test
     @ClientCompatibleTest
     public void testDecrementAndGet(){
         HazelcastInstance hzInstance = createHazelcastInstance();
-        IAtomicLong atomicLong = hzInstance.getAtomicLong("testAtomicLong");
-        assertEquals(-1,atomicLong.decrementAndGet());
-        assertEquals(-2,atomicLong.decrementAndGet());
+        IAtomicLong al = hzInstance.getAtomicLong("testAtomicLong");
+        assertEquals(-1,al.decrementAndGet());
+        assertEquals(-2,al.decrementAndGet());
     }
 
     @Test
     @ClientCompatibleTest
     public void testIncrementAndGet(){
         HazelcastInstance hzInstance = createHazelcastInstance();
-        IAtomicLong atomicLong = hzInstance.getAtomicLong("testAtomicLong");
-        assertEquals(1,atomicLong.incrementAndGet());
+        IAtomicLong al = hzInstance.getAtomicLong("testAtomicLong");
+        assertEquals(1,al.incrementAndGet());
+        assertEquals(2,al.incrementAndGet());
     }
 
     @Test
     @ClientCompatibleTest
     public void testGetAndSet(){
         HazelcastInstance hzInstance = createHazelcastInstance();
-        IAtomicLong atomicLong = hzInstance.getAtomicLong("testAtomicLong");
-        assertEquals(0,atomicLong.getAndSet(271));
-        assertEquals(271,atomicLong.get());
+        IAtomicLong al = hzInstance.getAtomicLong("testAtomicLong");
+        assertEquals(0,al.getAndSet(271));
+        assertEquals(271,al.get());
     }
 
     @Test
     @ClientCompatibleTest
     public void testAddAndGet(){
         HazelcastInstance hzInstance = createHazelcastInstance();
-        IAtomicLong atomicLong = hzInstance.getAtomicLong("testAtomicLong");
-        assertEquals(271,atomicLong.addAndGet(271));
+        IAtomicLong al = hzInstance.getAtomicLong("testAtomicLong");
+        assertEquals(271,al.addAndGet(271));
     }
 
     @Test
     @ClientCompatibleTest
     public void testGetAndAdd(){
         HazelcastInstance hzInstance = createHazelcastInstance();
-        IAtomicLong atomicLong = hzInstance.getAtomicLong("testAtomicLong");
-        assertEquals(0,atomicLong.getAndAdd(271));
-        assertEquals(271,atomicLong.get());
+        IAtomicLong al = hzInstance.getAtomicLong("testAtomicLong");
+        assertEquals(0,al.getAndAdd(271));
+        assertEquals(271,al.get());
     }
 
     @Test
     @ClientCompatibleTest
-    public void testCompareAndSet(){
+    public void testCompareAndSet_whenSuccess(){
         HazelcastInstance hzInstance = createHazelcastInstance();
-        IAtomicLong atomicLong = hzInstance.getAtomicLong("testAtomicLong");
-        assertTrue(atomicLong.compareAndSet(0, 271));
-        assertEquals(271,atomicLong.get());
-        assertFalse(atomicLong.compareAndSet(172, 0));
+        IAtomicLong al = hzInstance.getAtomicLong("testAtomicLong");
+        assertTrue(al.compareAndSet(0, 271));
+        assertEquals(271,al.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void testCompareAndSet_whenNotSuccess(){
+        HazelcastInstance hzInstance = createHazelcastInstance();
+        IAtomicLong al = hzInstance.getAtomicLong("testAtomicLong");
+        assertFalse(al.compareAndSet(172, 0));
+        assertEquals(0,al.get());
     }
 
     @Test
