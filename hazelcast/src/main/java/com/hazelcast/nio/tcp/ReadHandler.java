@@ -134,4 +134,18 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
         ioSelector.addTask(this);
         ioSelector.wakeup();
     }
+
+    void shutdown() {
+        ioSelector.addTask(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    socketChannel.closeInbound();
+                } catch (IOException e) {
+                    logger.finest("Error while closing inbound", e);
+                }
+            }
+        });
+        ioSelector.wakeup();
+    }
 }
