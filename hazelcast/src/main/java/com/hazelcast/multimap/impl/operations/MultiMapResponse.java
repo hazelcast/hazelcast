@@ -37,7 +37,8 @@ public class MultiMapResponse implements DataSerializable {
 
     private long txVersion = -1;
 
-    private MultiMapConfig.ValueCollectionType collectionType;
+    private MultiMapConfig.ValueCollectionType collectionType
+            = MultiMapConfig.DEFAULT_VALUE_COLLECTION_TYPE;
 
     public MultiMapResponse() {
     }
