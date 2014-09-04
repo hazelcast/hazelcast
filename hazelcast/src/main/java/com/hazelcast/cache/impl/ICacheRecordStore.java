@@ -61,10 +61,6 @@ public interface ICacheRecordStore {
 
     void destroy();
 
-    //    boolean hasExpiringEntry();
-    //
-    //    Callback<Data> createEvictionCallback();
-
     CacheConfig getConfig();
 
     String getName();
@@ -82,8 +78,6 @@ public interface ICacheRecordStore {
     Object invoke(Data key, EntryProcessor entryProcessor, Object[] arguments);
 
     Set<Data> loadAll(Set<Data> keys, boolean replaceExistingValues);
-
-    //    void setRecordStoreMode(boolean storeOrBackup);
 
     CacheStatistics getCacheStats();
 

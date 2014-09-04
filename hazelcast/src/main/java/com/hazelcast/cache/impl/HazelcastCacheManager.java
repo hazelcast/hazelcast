@@ -59,6 +59,8 @@ public abstract class HazelcastCacheManager
     @Override
     public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration)
             throws IllegalArgumentException {
+
+        //TODO: WARNING REVIEW IT line by line, most importatn method, handles dynamic cache config
         if (isClosed()) {
             throw new IllegalStateException();
         }
@@ -218,6 +220,7 @@ public abstract class HazelcastCacheManager
         return Collections.unmodifiableCollection(names);
         //        return Collections.unmodifiableCollection(caches.keySet());
 /* OPTION 2:*/
+        //TODO see above todo comment for this code block
         //        Set<String> names;
         //        if (isClosed()) {
         //            names = Collections.emptySet();

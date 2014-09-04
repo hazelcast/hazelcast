@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by asim on 28.04.2014.
+ * Custom Expiry Policy helper class for general usa
  */
 public class HazelcastExpiryPolicy
         implements ExpiryPolicy, IdentifiedDataSerializable {

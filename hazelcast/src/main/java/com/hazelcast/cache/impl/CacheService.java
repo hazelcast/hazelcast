@@ -71,17 +71,16 @@ public class CacheService
                 partitionSegment.clear();
             }
         }
-        //        for (NearCache nearCache : nearCacheMap.values()) {
-        //            nearCache.clear();
-        //        }
+        //TODO: near cache not implemented yet. enable wen ready
+//        for (NearCache nearCache : nearCacheMap.values()) {
+//            nearCache.clear();
+//        }
 
     }
 
     @Override
     public void shutdown(boolean terminate) {
         if (!terminate) {
-            //flushWriteCacheBeforeShutdown();
-            //destroyMapStores();
             this.reset();
         }
     }
@@ -206,10 +205,6 @@ public class CacheService
     public CacheConfig getCacheConfig(String name) {
         return configs.get(name);
     }
-
-//    public Iterable<String> getCacheNames() {
-//        return configs.keySet();
-//    }
 
     public Collection<CacheConfig> getCacheConfigs() {
         return configs.values();

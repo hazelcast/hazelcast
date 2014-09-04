@@ -73,7 +73,7 @@ public class CacheEntryProcessorEntry<K, V>
     @Override
     public void setValue(V value) {
         if (value == null) {
-            throw new NullPointerException();
+            throw new NullPointerException("Null value not allowed");
         }
         if (this.record == null) {
             this.state = State.CREATE;

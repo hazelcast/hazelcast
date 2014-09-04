@@ -65,12 +65,9 @@ public class CacheRecordStore
     final CacheService cacheService;
     final CacheConfig cacheConfig;
     final CacheConcurrentHashMap<Data, CacheRecord> records = new CacheConcurrentHashMap<Data, CacheRecord>(1000);
-
-    CacheStatistics statistics;
-
     final CacheRecordFactory cacheRecordFactory;
     final ScheduledFuture<?> evictionTaskFuture;
-
+    CacheStatistics statistics;
     private CacheLoader cacheLoader;
     private CacheWriter cacheWriter;
 
@@ -167,11 +164,8 @@ public class CacheRecordStore
         if (isExpired) {
             processExpiredEntry(key, record);
         }
-
-        //RI-COMMENT
         // check that new entry is not already expired, in which case it should
         // not be added to the cache or listeners called or writers called.
-
         if (record == null || isExpired) {
             isPutSucceed = createRecordWithExpiry(key, value, localExpiryPolicy, now, disableWriteThrough);
         } else {
@@ -246,7 +240,7 @@ public class CacheRecordStore
         CacheRecord record = records.get(key);
         boolean isExpired = record != null && record.isExpiredAt(now);
 
-        Object result = null;
+        final Object result;
         if (record == null || isExpired) {
             result = null;
         } else {
@@ -398,7 +392,6 @@ public class CacheRecordStore
                 }
                 result = false;
             }
-
         }
         if (isStatisticsEnabled()) {
             if (result) {
@@ -459,7 +452,6 @@ public class CacheRecordStore
         //we don not call loadAll. shouldn't we ?
         final ExpiryPolicy localExpiryPolicy = expiryPolicy != null ? expiryPolicy : defaultExpiryPolicy;
         final MapEntrySet result = new MapEntrySet();
-
         for (Data key : keySet) {
             final Object value = get(key, localExpiryPolicy);
             if (value != null) {
@@ -667,16 +659,6 @@ public class CacheRecordStore
         return Collections.unmodifiableMap(records);
     }
 
-    private class EvictionTask
-            implements Runnable {
-
-        public void run() {
-            if (hasExpiringEntry) {
-                evictExpiredRecords();
-            }
-        }
-    }
-
     public void evictExpiredRecords() {
         //TODO EVICT EXPIRED RECORDS
     }
@@ -788,7 +770,6 @@ public class CacheRecordStore
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
         }
-
         if (isEventsEnabled) {
             publishEvent(name, CacheEventType.REMOVED, record.getKey(), null, dataValue, false);
         }
@@ -816,7 +797,7 @@ public class CacheRecordStore
         if (value == null) {
             return null;
         }
-        Duration expiryDuration = null;
+        Duration expiryDuration;
         try {
             expiryDuration = localExpiryPolicy.getExpiryForCreation();
         } catch (Throwable t) {
@@ -1030,6 +1011,16 @@ public class CacheRecordStore
             this.statistics = cacheService.createCacheStatIfAbsent(name);
         }
         return true;
+    }
+
+    private class EvictionTask
+            implements Runnable {
+
+        public void run() {
+            if (hasExpiringEntry) {
+                evictExpiredRecords();
+            }
+        }
     }
 
 }

@@ -84,7 +84,6 @@ public final class CacheDataSerializerHook
     public static final short CREATE_CONFIG = 26;
     public static final short GET_CONFIG = 27;
     public static final short MANAGEMENT_CONFIG = 28;
-    //    public static final short EVENT = i++;
     public static final short LISTENER_REGISTRATION = 29;
 
     private static final int LEN = 30;
@@ -195,6 +194,7 @@ public final class CacheDataSerializerHook
                 return new CacheLoadAllOperationFactory();
             }
         };
+        //TODO we may need this just keeping it for now
         //        constructors[EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
         //            public IdentifiedDataSerializable createNew(Integer arg) {
         ////                        return new CacheEntryEventImpl<>();

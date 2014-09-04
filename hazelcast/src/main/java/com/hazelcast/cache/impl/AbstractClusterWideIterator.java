@@ -53,7 +53,6 @@ public abstract class AbstractClusterWideIterator<K, V>
 
         //TODO can be made configurable
         this.fetchSize = FETCH_SIZE;
-        //        advance();
     }
 
     @Override
