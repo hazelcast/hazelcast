@@ -44,7 +44,6 @@ public class JettyWebFilterTest extends WebFilterSlowTests {
         super(serverXml1, serverXml2);
     }
 
-
     @Override
     protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception{
         return new JettyServer(port,sourceDir,serverXml);

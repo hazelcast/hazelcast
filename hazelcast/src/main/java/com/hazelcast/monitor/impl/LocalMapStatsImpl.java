@@ -18,7 +18,7 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.map.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -104,12 +104,12 @@ public class LocalMapStatsImpl
 
 
     /**
-     * Only init these fields for every {@link com.hazelcast.map.LocalMapStatsProvider#createLocalMapStats}
+     * Only init these fields for every {@link com.hazelcast.map.impl.LocalMapStatsProvider#createLocalMapStats}
      * call since they represent current map state.
      * However other fields hold historical data from the creation of a map like {@link #putCount#getCount}
      * and they should not be touched here.
      *
-     * @see com.hazelcast.map.LocalMapStatsProvider#createLocalMapStats
+     * @see com.hazelcast.map.impl.LocalMapStatsProvider#createLocalMapStats
      */
     public void init() {
         ownedEntryCount = 0;

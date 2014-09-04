@@ -22,8 +22,10 @@ import java.util.Map;
  * An abstract {@link EntryProcessor} that already has implemented the {@link #getBackupProcessor()}. In a most cases you
  * want the same logic to be executed on the primary and on the backup. This implementation has this behavior.
  *
- * @param <K>
- * @param <V>
+ * @param <K> Type of key of a {@link java.util.Map.Entry}
+ * @param <V> Type of value of a {@link java.util.Map.Entry}
+ * @see com.hazelcast.map.EntryProcessor
+ * @see com.hazelcast.map.EntryBackupProcessor
  */
 public abstract class AbstractEntryProcessor<K, V> implements EntryProcessor<K, V> {
 

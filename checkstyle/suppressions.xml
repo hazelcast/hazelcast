@@ -502,24 +502,24 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.map[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.map[\\/]"/>
 
-    <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.map.MapPortableHook"/>
-    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.map.MapPortableHook"/>
-    <suppress checks="MethodLengthCheck" files="com.hazelcast.map.MapPortableHook"/>
-    <suppress checks="MethodCountCheck" files="com.hazelcast.map.MapPortableHook"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.MapPortableHook"/>
-    <suppress checks="ExecutableStatementCount" files="com.hazelcast.map.MapPortableHook"/>
-    <suppress checks="MethodLengthCheck" files="com.hazelcast.map.MapDataSerializerHook"/>
-    <suppress checks="MethodCountCheck" files="com.hazelcast.map.RecordStore"/>
-    <suppress checks="MethodCountCheck" files="com.hazelcast.map.DefaultRecordStore"/>
-    <suppress checks="MethodCountCheck" files="com.hazelcast.map.proxy.MapProxyImpl"/>
-    <suppress checks="MethodCountCheck" files="com.hazelcast.map.proxy.MapProxySupport"/>
-    <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.map.proxy.MapProxySupport"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.proxy.MapProxySupport"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.client.AbstractTxnMapRequest"/>
+    <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.map.impl.MapPortableHook"/>
+    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.map.impl.MapPortableHook"/>
+    <suppress checks="MethodLengthCheck" files="com.hazelcast.map.impl.MapPortableHook"/>
+    <suppress checks="MethodCountCheck" files="com.hazelcast.map.impl.MapPortableHook"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.impl.MapPortableHook"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.map.impl.MapPortableHook"/>
+    <suppress checks="MethodLengthCheck" files="com.hazelcast.map.impl.MapDataSerializerHook"/>
+    <suppress checks="MethodCountCheck" files="com.hazelcast.map.impl.RecordStore"/>
+    <suppress checks="MethodCountCheck" files="com.hazelcast.map.impl.DefaultRecordStore"/>
+    <suppress checks="MethodCountCheck" files="com.hazelcast.map.impl.proxy.MapProxyImpl"/>
+    <suppress checks="MethodCountCheck" files="com.hazelcast.map.impl.proxy.MapProxySupport"/>
+    <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.map.impl.proxy.MapProxySupport"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.impl.proxy.MapProxySupport"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.impl.client.AbstractTxnMapRequest"/>
 
     <!-- map.proxy-->
-    <!--<suppress checks="" files="com.hazelcast.map.proxy[\\/]"/>-->
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.tx.TransactionalMapProxySupport"/>
+    <!--<suppress checks="" files="com.hazelcast.map.impl.proxy[\\/]"/>-->
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.impl.tx.TransactionalMapProxySupport"/>
 
     <!-- build utils -->
     <!-- Taken from JBOSS project, suppress checkstyles -->
