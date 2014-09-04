@@ -21,6 +21,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.mapreduce.helpers.Employee;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -29,6 +30,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,8 +40,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
@@ -804,6 +808,138 @@ public class MapReduceTest
 
         assertEquals(expectedResult, (int) future.get());
     }
+
+    @Category(ProblematicTest.class)
+    @Test(timeout = 60000)
+    public void employeeMapReduceTest() throws Exception{
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+        final IMap map = h1.getMap(randomString());
+
+        final int keyCount=100;
+        for (int id = 0; id < keyCount; id++) {
+            map.put(id, new Employee(id));
+        }
+
+        JobTracker tracker = h1.getJobTracker(randomString());
+        Job<Integer, Employee> job = tracker.newJob(KeyValueSource.fromMap(map));
+
+        ICompletableFuture< Map< Integer, Set<Employee>> > future = job
+                .mapper( new ModIdMapper(2) )
+                .combiner(new RangeIdCombinerFactory(10, 30))
+                .reducer(new IdReducerFactory(10, 20, 30))
+                .submit();
+
+        Map<Integer, Set<Employee>> result = future.get();
+
+        assertEquals("expected 8 Employees with id's ending 2, 4, 6, 8", 8, result.size());
+    }
+
+
+
+    public static class ModIdMapper implements Mapper<Integer, Employee, Integer, Employee> {
+
+        private int mod=0;
+
+        public ModIdMapper(int mod){
+            this.mod=mod;
+        }
+
+        public void map(Integer key, Employee e, Context<Integer, Employee> context) {
+            if(e.getId()%mod==0){
+                context.emit(key, e);
+            }
+        }
+    }
+
+    public static class RangeIdCombinerFactory implements CombinerFactory<Integer, Employee, Set<Employee>> {
+
+        private int min=0, max=0;
+
+        public RangeIdCombinerFactory(int min, int max){
+            this.min=min;
+            this.max=max;
+        }
+
+        public Combiner<Employee, Set<Employee>> newCombiner(Integer key) {
+            return new  EmployeeCombiner();
+        }
+
+        private class  EmployeeCombiner extends Combiner<Employee, Set<Employee> >{
+            private Set<Employee> passed = new HashSet<Employee>();
+
+            public void combine(Employee e) {
+                if(e.getId() >= min && e.getId() <= max){
+                    passed.add(e);
+                }
+            }
+
+            public Set<Employee> finalizeChunk() {
+                return passed;
+            }
+
+            public void reset() {
+                passed = new HashSet<Employee>();
+            }
+        }
+    }
+
+
+
+    public static class IdReducerFactory implements ReducerFactory<Integer, Set<Employee>, Set<Employee>> {
+
+        private int[] removeIds=null;
+
+        public IdReducerFactory(int... removeIds){
+            this.removeIds=removeIds;
+        }
+
+        public Reducer<Set<Employee>, Set<Employee>> newReducer(Integer key) {
+            return new EmployeeReducer();
+        }
+
+        private class EmployeeReducer extends Reducer<Set<Employee>, Set<Employee> >{
+
+            private volatile Set<Employee> passed = new HashSet<Employee>();
+
+            public void reduce(Set<Employee> set) {
+                for(Employee e : set){
+                    boolean add=true;
+                    for(int id : removeIds){
+                        if(e.getId()==id){
+                            add=false;
+                            break;
+                        }
+                    }
+                    if(add){
+                        passed.add(e);
+                    }
+                }
+            }
+
+            public Set<Employee> finalizeReduce() {
+                return passed;
+            }
+        }
+    }
+
+
+    public static class EmployeeCollator implements Collator<Map.Entry<Integer, Set<Employee>>, Map<Integer, Set<Employee>> > {
+
+        public Map<Integer, Set<Employee>> collate( Iterable< Map.Entry<Integer, Set<Employee>> > values) {
+            Map<Integer, Set<Employee>> result = new HashMap();
+            for (Map.Entry<Integer, Set<Employee>> entry : values) {
+                for (Employee e : entry.getValue()) {
+                    result.put(e.getId(), entry.getValue());
+                }
+            }
+            return result;
+        }
+    }
+
 
     public static class TupleIntInt
             implements DataSerializable {
