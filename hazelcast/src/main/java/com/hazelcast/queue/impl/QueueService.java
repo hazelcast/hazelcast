@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue.impl;
 
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
@@ -28,7 +29,6 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.queue.DataAwareItemEvent;
 import com.hazelcast.queue.impl.proxy.QueueProxyImpl;
 import com.hazelcast.queue.impl.tx.QueueTransactionRollbackOperation;
 import com.hazelcast.queue.impl.tx.TransactionalQueueProxy;

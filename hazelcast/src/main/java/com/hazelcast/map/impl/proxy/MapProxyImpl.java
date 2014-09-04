@@ -26,7 +26,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.impl.MapInterceptor;
+import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.mapreduce.Collator;

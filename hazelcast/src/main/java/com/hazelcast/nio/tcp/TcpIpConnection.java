@@ -186,11 +186,12 @@ public final class TcpIpConnection implements Connection {
             return;
         }
         live = false;
+
         if (socketChannel != null && socketChannel.isOpen()) {
+            readHandler.shutdown();
+            writeHandler.shutdown();
             socketChannel.close();
         }
-        readHandler.shutdown();
-        writeHandler.shutdown();
     }
 
     @Override

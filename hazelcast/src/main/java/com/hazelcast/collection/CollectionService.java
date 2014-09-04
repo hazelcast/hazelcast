@@ -24,7 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.queue.DataAwareItemEvent;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;

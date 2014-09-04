@@ -85,7 +85,9 @@ clientAwsConfig.setInsideAws( false )
                .setHostHeader( "ec2.amazonaws.com" )
                .setSecurityGroupName( ">hazelcast-sg" )
                .setTagKey( "type" )
-               .setTagValue( "hz-nodes" );
+               .setTagValue( "hz-nodes" )
+               .setEnabled(true);
+
 clientConfig.getNetworkConfig().setAwsConfig( clientAwsConfig );
 HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 ```

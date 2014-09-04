@@ -47,5 +47,26 @@ public interface SocketChannelWrapper extends Closeable {
 
     boolean isOpen();
 
+    /**
+     * Closes inbound.
+     *
+     * <p>Not thread safe. Should be called in channel reader thread.</p>
+     * @throws IOException
+     */
+    void closeInbound() throws IOException;
+
+    /**
+     * Closes outbound.
+     *
+     * <p>Not thread safe. Should be called in channel writer thread.</p>
+     * @throws IOException
+     */
+    void closeOutbound() throws IOException;
+
+    /**
+     * Closes socket channel.
+     *
+     * @throws IOException
+     */
     void close() throws IOException;
 }
