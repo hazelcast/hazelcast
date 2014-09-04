@@ -110,5 +110,4 @@ public class ClientReconnectTest extends HazelcastTestSupport {
             }
         }, 30);
     }
-
 }
