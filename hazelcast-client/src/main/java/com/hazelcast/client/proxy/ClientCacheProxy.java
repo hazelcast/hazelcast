@@ -156,7 +156,7 @@ public class ClientCacheProxy<K, V>
             return true;
         }
         CacheContainsKeyRequest request = new CacheContainsKeyRequest(getDistributedObjectName(), keyData);
-        return toObject(invoke(request, keyData));
+        return (Boolean) toObject(invoke(request, keyData));
     }
 
     @Override
@@ -1103,7 +1103,7 @@ public class ClientCacheProxy<K, V>
                     if (eventObject instanceof CacheEventData) {
                         CacheEventData cacheEventData = (CacheEventData) eventObject;
                         if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
-                            int completionId = toObject(cacheEventData.getDataValue());
+                            Integer completionId = toObject(cacheEventData.getDataValue());
                             countDownCompletionLatch(completionId);
                         }
                     }

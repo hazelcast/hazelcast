@@ -1000,7 +1000,7 @@ public class CacheProxy<K, V>
                     if (eventObject instanceof CacheEventData) {
                         CacheEventData cacheEventData = (CacheEventData) eventObject;
                         if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
-                            int completionId = serializationService.toObject(cacheEventData.getDataValue());
+                            Integer completionId = serializationService.toObject(cacheEventData.getDataValue());
                             countDownCompletionLatch(completionId);
                         }
                     }
