@@ -396,9 +396,6 @@
     <!-- Too complex to change, I am leaving it to implementer -->
     <suppress checks="" files="com.hazelcast.util.Base64"/>
 
-    <!-- Written by Cliff Click  using as is-->
-    <suppress checks="" files="com.hazelcast.util.ConcurrentAutoTable"/>
-
     <!-- Util executor package javadocs, leaving javadocs to someone who can explain better -->
     <suppress checks="JavadocMethod" files="com.hazelcast.util.executor[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.util.executor[\\/]"/>
