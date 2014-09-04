@@ -59,7 +59,6 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class EvictionTest extends HazelcastTestSupport {
 
-
     @Test
     public void testTTL_entryShouldNotBeReachableAfterTTL() throws Exception {
         IMap<Integer, String> map = createSimpleMap();

@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.list.ListService;
@@ -124,6 +125,21 @@ final class ServiceManager {
         registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
         registerService(MapReduceService.SERVICE_NAME, new MapReduceService(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
+
+        //CacheService Optional initialization
+        try {
+            //search for jcache api jar on classpath
+            final String localClassName = "javax.cache.Caching";
+            ClassLoader classLoader = nodeEngine.getConfigClassLoader();
+            Class theClass = ClassLoaderUtil.loadClass(classLoader, localClassName);
+            if (theClass != null) {
+                final Object serviceObject = createServiceObject("com.hazelcast.cache.impl.CacheService");
+                registerService(CacheService.SERVICE_NAME, serviceObject);
+            }
+        } catch (ClassNotFoundException e) {
+            logger.finest("javax.cache api not detected on classpath.");
+        }
+
     }
 
     private void initServices(Map<String, Properties> serviceProps, Map<String, Object> serviceConfigObjects) {

@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.4-SNAPSHOT</version>
+    <version>3.3.1-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -77,6 +77,7 @@
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
         <animal.sniffer.plugin.version>1.11</animal.sniffer.plugin.version>
+        <jsr107.api.version>1.0.0</jsr107.api.version>
     </properties>
     <licenses>
         <license>
@@ -790,6 +791,13 @@
     </distributionManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>${jsr107.api.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

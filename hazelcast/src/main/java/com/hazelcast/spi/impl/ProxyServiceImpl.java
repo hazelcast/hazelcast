@@ -48,6 +48,7 @@ import com.hazelcast.util.executor.StripedRunnable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -194,6 +195,18 @@ public class ProxyServiceImpl
             }
         }
         return objects;
+    }
+
+    @Override
+    public Collection<String> getDistributedObjectNames(String serviceName) {
+        if (serviceName == null) {
+            throw new NullPointerException("Service name is required!");
+        }
+        ProxyRegistry registry = registries.get(serviceName);
+        if (registry != null) {
+            return registry.proxies.keySet();
+        }
+        return Collections.EMPTY_SET;
     }
 
     @Override

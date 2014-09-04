@@ -411,7 +411,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     public int evictAll(boolean backup) {
         checkIfLoaded();
         final int sizeBeforeEviction = size();
-
         resetSizeEstimator();
         resetAccessSequenceNumber();
 
