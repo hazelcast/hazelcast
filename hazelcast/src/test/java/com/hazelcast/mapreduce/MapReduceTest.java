@@ -32,6 +32,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.jruby.RubyProcess;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -809,7 +810,6 @@ public class MapReduceTest
         assertEquals(expectedResult, (int) future.get());
     }
 
-    @Category(ProblematicTest.class)
     @Test(timeout = 60000)
     public void employeeMapReduceTest() throws Exception{
 
@@ -834,8 +834,6 @@ public class MapReduceTest
                 .submit();
 
         Map<Integer, Set<Employee>> result = future.get();
-
-        System.out.println(result);
 
         assertEquals("expected 8 Employees with id's ending 2, 4, 6, 8", 8, result.size());
     }
