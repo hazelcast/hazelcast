@@ -618,6 +618,7 @@ final class BasicOperationService implements InternalOperationService {
                 op.setNodeEngine(nodeEngine);
                 setCallerAddress(op, caller);
                 setConnection(op, conn);
+                setCallerUuidIfNotSet(caller, op);
                 setRemoteResponseHandler(nodeEngine, op);
                 return op;
             } catch (Throwable throwable) {
@@ -630,6 +631,17 @@ final class BasicOperationService implements InternalOperationService {
                 ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, exceptionHandler);
                 operationHandler.handleOperationError(exceptionHandler, throwable);
                 throw ExceptionUtil.rethrow(throwable);
+            }
+        }
+
+        private void setCallerUuidIfNotSet(Address caller, Operation op) {
+            if (op.getCallerUuid() != null) {
+                return;
+
+            }
+            MemberImpl callerMember = node.clusterService.getMember(caller);
+            if (callerMember != null) {
+                op.setCallerUuid(callerMember.getUuid());
             }
         }
 
