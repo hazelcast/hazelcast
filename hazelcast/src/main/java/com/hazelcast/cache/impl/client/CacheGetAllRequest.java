@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

@@ -21,7 +21,6 @@ import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
-import com.hazelcast.cache.impl.CacheEventSet;
 import com.hazelcast.cache.impl.CacheEventType;
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
@@ -57,7 +56,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
@@ -156,7 +155,7 @@ public class ClientCacheProxy<K, V>
             return true;
         }
         CacheContainsKeyRequest request = new CacheContainsKeyRequest(getDistributedObjectName(), keyData);
-        return toObject(invoke(request, keyData));
+        return (Boolean) toObject(invoke(request, keyData));
     }
 
     @Override
@@ -571,9 +570,13 @@ public class ClientCacheProxy<K, V>
         return new EventHandler<Object>() {
             @Override
             public void handle(Object event) {
+                // below is a commented code block
+                // it does not do anything, but my gut feeling says that some logic has forgotten here
+                /*
                 if (event instanceof CacheEventSet) {
                     CacheEventSet ces = (CacheEventSet) event;
                 }
+                */
                 adaptor.handleEvent(event);
             }
 
@@ -1103,7 +1106,7 @@ public class ClientCacheProxy<K, V>
                     if (eventObject instanceof CacheEventData) {
                         CacheEventData cacheEventData = (CacheEventData) eventObject;
                         if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
-                            int completionId = toObject(cacheEventData.getDataValue());
+                            Integer completionId = toObject(cacheEventData.getDataValue());
                             countDownCompletionLatch(completionId);
                         }
                     }

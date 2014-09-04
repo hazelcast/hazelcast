@@ -19,7 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -95,8 +95,8 @@ public class CacheRecordStore
             cacheWriter = cacheWriterFactory.create();
         }
         evictionTaskFuture = nodeEngine.getExecutionService()
-                                       .scheduleWithFixedDelay("hz:cache", new EvictionTask(), INITIAL_DELAY, PERIOD,
-                                               TimeUnit.SECONDS);
+                .scheduleWithFixedDelay("hz:cache", new EvictionTask(), INITIAL_DELAY, PERIOD,
+                        TimeUnit.SECONDS);
 
         this.cacheRecordFactory = new CacheRecordFactory(cacheConfig.getInMemoryFormat(), nodeEngine.getSerializationService());
         final Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
@@ -922,9 +922,9 @@ public class CacheRecordStore
                 }
             }
             Map<Data, Object> result = new HashMap<Data, Object>();
-            for (Object keyObj : keysToLoad.keySet()) {
-                final Object valueObject = loaded.get(keyObj);
-                final Data key = keysToLoad.get(keyObj);
+            for (Map.Entry<Object, Data> entry : keysToLoad.entrySet()) {
+                final Object valueObject = loaded.get(entry.getKey());
+                final Data key = entry.getValue();
                 result.put(key, valueObject);
             }
             return result;

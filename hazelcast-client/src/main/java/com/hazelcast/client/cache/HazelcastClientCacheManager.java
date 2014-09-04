@@ -126,7 +126,7 @@ public final class HazelcastClientCacheManager
             int partitionId = clientContext.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
             CacheCreateConfigRequest request = new CacheCreateConfigRequest(cacheConfig, true, partitionId);
             final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheConfig.getNameWithPrefix());
-            return clientContext.getSerializationService().toObject(future.get());
+            return (Boolean) clientContext.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

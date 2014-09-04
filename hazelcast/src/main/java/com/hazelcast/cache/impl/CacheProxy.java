@@ -33,7 +33,7 @@ import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
@@ -1000,7 +1000,7 @@ public class CacheProxy<K, V>
                     if (eventObject instanceof CacheEventData) {
                         CacheEventData cacheEventData = (CacheEventData) eventObject;
                         if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
-                            int completionId = serializationService.toObject(cacheEventData.getDataValue());
+                            Integer completionId = serializationService.toObject(cacheEventData.getDataValue());
                             countDownCompletionLatch(completionId);
                         }
                     }
