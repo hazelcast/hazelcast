@@ -835,6 +835,8 @@ public class MapReduceTest
 
         Map<Integer, Set<Employee>> result = future.get();
 
+        System.out.println(result);
+
         assertEquals("expected 8 Employees with id's ending 2, 4, 6, 8", 8, result.size());
     }
 
@@ -878,6 +880,9 @@ public class MapReduceTest
             }
 
             public Set<Employee> finalizeChunk() {
+                if(passed.isEmpty()){
+                    return null;
+                }
                 return passed;
             }
 
@@ -921,6 +926,9 @@ public class MapReduceTest
             }
 
             public Set<Employee> finalizeReduce() {
+                if(passed.isEmpty()){
+                    return null;
+                }
                 return passed;
             }
         }
