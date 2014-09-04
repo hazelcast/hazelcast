@@ -16,10 +16,17 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
+import java.io.Serializable;
+
 /**
  * Contains configuration for an NearCache.
  */
-public class NearCacheConfig {
+public class NearCacheConfig implements DataSerializable , Serializable {
     /**
      * Default value of time to live in seconds.
      */
@@ -59,6 +66,22 @@ public class NearCacheConfig {
 
     private boolean cacheLocalEntries;
 
+    private LocalUpdatePolicy localUpdatePolicy = LocalUpdatePolicy.INVALIDATE;
+
+    /**
+     * Local Update Policy enum.
+     */
+    public enum LocalUpdatePolicy {
+        /**
+         *INVALIDATE POLICY
+         */
+        INVALIDATE,
+        /**
+         *CACHE ON UPDATE POLICY
+         */
+        CACHE
+    }
+
     public NearCacheConfig() {
     }
 
@@ -81,6 +104,7 @@ public class NearCacheConfig {
         maxSize = config.getMaxSize();
         timeToLiveSeconds = config.getTimeToLiveSeconds();
         cacheLocalEntries = config.isCacheLocalEntries();
+        localUpdatePolicy = config.localUpdatePolicy;
     }
 
     public NearCacheConfigReadOnly getAsReadOnly() {
@@ -94,8 +118,9 @@ public class NearCacheConfig {
         return name;
     }
 
-    public void setName(String name) {
+    public NearCacheConfig setName(String name) {
         this.name = name;
+        return this;
     }
 
     public int getTimeToLiveSeconds() {
@@ -161,10 +186,46 @@ public class NearCacheConfig {
         return this;
     }
 
+    public LocalUpdatePolicy getLocalUpdatePolicy() {
+        return localUpdatePolicy;
+    }
+
+    public NearCacheConfig setLocalUpdatePolicy(LocalUpdatePolicy localUpdatePolicy) {
+        this.localUpdatePolicy = localUpdatePolicy;
+        return this;
+    }
+
     // this setter is for reflection based configuration building
     public NearCacheConfig setInMemoryFormat(String inMemoryFormat) {
         this.inMemoryFormat = InMemoryFormat.valueOf(inMemoryFormat);
         return this;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(evictionPolicy);
+        out.writeInt(timeToLiveSeconds);
+        out.writeInt(maxSize);
+        out.writeBoolean(invalidateOnChange);
+        out.writeBoolean(cacheLocalEntries);
+        out.writeInt(inMemoryFormat.ordinal());
+        out.writeInt(localUpdatePolicy.ordinal());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        evictionPolicy = in.readUTF();
+        timeToLiveSeconds = in.readInt();
+        maxSize = in.readInt();
+        maxSize = in.readInt();
+        invalidateOnChange = in.readBoolean();
+        cacheLocalEntries = in.readBoolean();
+        final int inMemoryFormatInt = in.readInt();
+        inMemoryFormat = InMemoryFormat.values()[inMemoryFormatInt];
+        final int localUpdatePolicyInt = in.readInt();
+        localUpdatePolicy = LocalUpdatePolicy.values()[localUpdatePolicyInt];
     }
 
     @Override
@@ -177,6 +238,7 @@ public class NearCacheConfig {
         sb.append(", invalidateOnChange=").append(invalidateOnChange);
         sb.append(", inMemoryFormat=").append(inMemoryFormat);
         sb.append(", cacheLocalEntries=").append(cacheLocalEntries);
+        sb.append(", localUpdatePolicy=").append(localUpdatePolicy);
         sb.append('}');
         return sb.toString();
     }

@@ -50,6 +50,32 @@
     <suppress checks="" files="com.hazelcast.cluster.FinalizeJoinOperation"/>
     <suppress checks="" files="com.hazelcast.cluster.JoinCheckOperation"/>
 
+    <!-- Cache-->
+    <suppress checks="JavadocMethod" files="com.hazelcast.cache.impl[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.cache.impl[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.cache.impl[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.cache.impl[\\/]"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.cache.impl.CacheRecordStore"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.cache.impl.HazelcastAbstractCachingProvider"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.cache.impl.CacheRecordStore"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.cache.impl.CacheProxy"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.cache.impl.CacheProxy"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CachePortableHook"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CacheProxy"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
+    <suppress checks="AnonInnerLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheRecordStore"/>
+    <suppress checks="NestedIfDepth" files="com.hazelcast.cache.impl.CacheRecordStore"/>
+    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheProxy"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
+    <suppress checks="NestedIfDepth" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
+    <suppress checks="IllegalType" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
+
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.core[\\/]"/>
@@ -369,6 +395,9 @@
 
     <!-- Too complex to change, I am leaving it to implementer -->
     <suppress checks="" files="com.hazelcast.util.Base64"/>
+
+    <!-- Written by Cliff Click  using as is-->
+    <suppress checks="" files="com.hazelcast.util.ConcurrentAutoTable"/>
 
     <!-- Util executor package javadocs, leaving javadocs to someone who can explain better -->
     <suppress checks="JavadocMethod" files="com.hazelcast.util.executor[\\/]"/>
