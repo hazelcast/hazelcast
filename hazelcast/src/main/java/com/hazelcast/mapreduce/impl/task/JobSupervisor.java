@@ -222,7 +222,10 @@ public class JobSupervisor {
             int mapSize = MapReduceUtil.mapSize(reducers.size());
             result = new HashMapAdapter<Object, Object>(mapSize);
             for (Map.Entry<Object, Reducer> entry : reducers.entrySet()) {
-                result.put(entry.getKey(), entry.getValue().finalizeReduce());
+                Object reducedResults = entry.getValue().finalizeReduce();
+                if (reducedResults != null) {
+                    result.put(entry.getKey(), reducedResults);
+                }
             }
         } else {
             DefaultContext currentContext = context.get();

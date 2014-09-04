@@ -771,6 +771,34 @@ public class MapReduceTest
     }
 
     @Test(timeout = 60000)
+    public void testNullFromObjectReducer()
+            throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker jobTracker = h1.getJobTracker("default");
+        Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMap(m1));
+        JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(10).mapper(new GroupingTestMapper())
+                                                                  .combiner(new ObjectCombinerFactory())
+                                                                  .reducer(new NullReducerFactory()).submit();
+
+        Map<String, BigInteger> map = future.get();
+        assertEquals(0, map.size());
+    }
+
+    @Test(timeout = 60000)
     public void testDataSerializableIntermediateObject()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -1078,6 +1106,28 @@ public class MapReduceTest
                 sum += entry.getValue();
             }
             return sum;
+        }
+    }
+
+    public static class NullReducerFactory
+            implements ReducerFactory<String, BigInteger, BigInteger> {
+
+        @Override
+        public Reducer<BigInteger, BigInteger> newReducer(String key) {
+            return new NullReducer();
+        }
+    }
+
+    public static class NullReducer
+            extends Reducer<BigInteger, BigInteger> {
+
+        @Override
+        public void reduce(BigInteger value) {
+        }
+
+        @Override
+        public BigInteger finalizeReduce() {
+            return null;
         }
     }
 
