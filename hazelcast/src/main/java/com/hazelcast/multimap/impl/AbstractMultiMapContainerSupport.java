@@ -72,27 +72,17 @@ public abstract class AbstractMultiMapContainerSupport {
      * Creates a same type collection with the given collection depending on the
      * {@link com.hazelcast.config.MultiMapConfig#valueCollectionType}.
      *
-     * @param collection      to be asked to return a new appropriate implementation instance
-     *                        according to {@link MultiMapConfig.ValueCollectionType}
-     * @param initialCapacity if smaller than or equals to 0 falls back to default initial capacity
-     *                        of corresponding collection.
+     * @param collection to be asked to return a new appropriate implementation instance
+     *                   according to {@link MultiMapConfig.ValueCollectionType}
      * @return {@link java.util.Set} or {@link java.util.List} depending on the collectionType argument
      * @throws java.lang.IllegalArgumentException
      */
-    public static <T> Collection<T> createCollection(Collection collection, int initialCapacity) {
+    public static <T> Collection<T> createCollection(Collection collection) {
         final MultiMapConfig.ValueCollectionType collectionType = findCollectionType(collection);
         if (collection == null || collection.isEmpty()) {
             return emptyCollection(collectionType);
         }
-        switch (collectionType) {
-            case SET:
-                return initialCapacity <= 0 ? new HashSet<T>() : new HashSet<T>(initialCapacity);
-            case LIST:
-                return new LinkedList<T>();
-            default:
-                throw new IllegalArgumentException("[" + collectionType + "]"
-                        + " is not a known MultiMapConfig.ValueCollectionType!");
-        }
+        return createCollection(collectionType, collection.size());
     }
 
     /**

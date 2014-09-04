@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
@@ -61,7 +62,8 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
 
     public void onWaitExpire() {
         MultiMapContainer container = getOrCreateContainer();
-        getResponseHandler().sendResponse(new MultiMapResponse(null, getValueCollectionType(container)));
+        MultiMapConfig.ValueCollectionType valueCollectionType = getValueCollectionType(container);
+        getResponseHandler().sendResponse(new MultiMapResponse(null, valueCollectionType));
     }
 
     public int getId() {

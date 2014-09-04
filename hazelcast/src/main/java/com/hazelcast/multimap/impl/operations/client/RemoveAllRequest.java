@@ -70,7 +70,7 @@ public class RemoveAllRequest extends MultiMapKeyBasedRequest {
             if (responseCollection == null) {
                 return new PortableCollection();
             }
-            Collection<Data> collection = createCollection(responseCollection, responseCollection.size());
+            Collection<Data> collection = createCollection(responseCollection);
             for (MultiMapRecord record : responseCollection) {
                 collection.add(serializationService.toData(record.getObject()));
             }

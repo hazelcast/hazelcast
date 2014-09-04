@@ -342,7 +342,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     private Collection toObjectCollection(PortableCollection result) {
         final Collection<Data> resultCollection = result.getCollection();
         // create a fresh instance of same collection type.
-        final Collection newCollection = createCollection(resultCollection, resultCollection.size());
+        final Collection newCollection = createCollection(resultCollection);
         for (Data data : resultCollection) {
             newCollection.add(toObject(data));
         }
