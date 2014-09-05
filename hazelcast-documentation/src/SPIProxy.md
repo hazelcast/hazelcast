@@ -62,9 +62,7 @@ public class CounterService implements ManagedService, RemoteService {
 The `CounterProxy` returned by the method `createDistributedObject` is a local representation to (potentially) remote managed data and logic.
 <br></br>
 
-***NOTE***
-
-*Note that caching and removing the proxy instance are done outside of this service.*
+***NOTE:*** *Note that caching and removing the proxy instance are done outside of this service.*
 <br></br>
 
 Now, it is time to implement the `CounterProxy` as shown below.
