@@ -7,7 +7,8 @@
 |[Chapter 1 - Introduction](#introduction)|[Configuring Hazelcast](#configuring-hazelcast)|The section 'Wildcard Configuration' previously placed under Configuration chapter moved to this section with the heading 'Using Wildcard', also the content improved.|
 |[Chapter 3 - Distributed Data Structures](#distributed-data-structures)|[IdGenerator](#idgenerator), [ICountDownLatch](#icountdownlatch), [IAtomicReference](#iatomic-reference)| Added as new sections.|
 ||[MultiMap](#multimap)| Section improved by adding information about how it is implemented and by providing configuration information.|
-||[Map](#map)|Eviction section improved by adding the detailed policy and parameter explanations. A subsection on how to evict particular map entries added *([Evicting Specific Entries](#evicting-specific-entries))*. Also [Map Overview](#map-overview) and [Backups](#backups) sections enhanced with "how it works" information. Added [Entry Listener](#entry-listener) and [Map Locks](#map-locks) as new sections.|
+||[Map](#map)|Eviction section improved by adding the detailed policy and parameter explanations. A subsection on how to evict particular map entries added *([Evicting Specific Entries](#evicting-specific-entries))*. Also [Map Overview](#map-overview) and [Backups](#backups) sections enhanced with "how it works" information. Added [Entry Listener](#entry-listener) and [Map Locks](#map-locks) as new sections. Added [Evicting All Entries](#evicting-all-entries) and [Forcing All Keys To Be Loaded](#forcing-all-keys-to-be-loaded) sections to explain the methods `evictAll` and `loadAll`.|
+||[Map Persistence](#map-persistence)|Added [Forcing All Keys To Be Loaded](#forcing-all-keys-to-be-loaded) section to explain the method `loadAll`. Also, added [Read-Through](#read-through), [Write-Through](#write-through) and [Write-Behind](#write-behind) sections. 
 ||[Queue](#queue)|Section improved with new subsections.|
 ||[Lock](#lock), [ISemaphore](#isemaphore)|Sections updated by adding fairness related warnings.
 |[Chapter 5 - Distributed Computing](#distributed-computing)|[User Defined Services](#user-defined-services)| Added as a new section. Provides information on Hazelcast SPI.
@@ -22,7 +23,7 @@
 |[Chapter 12 - Serialization](#serialization)||All sections under this chapter re-written and enhanced. Also added HazelcastInstanceAware, Stream & ByteArray Serializer, Serializable & Externalizable sections.|
 ||[Null Portable Serialization](#null-portable-serialization)| Added as a new section.|
 |[Chapter 13 - Management](#management)|[Clustered JMX](#clustered-jmx)|Added as a new section explaining how to monitor the statistics of distributed objects from a JMX interface (Enterprise Only feature).|
-||[Cluster Utilities](#cluster-utilities)|[Member Attributes](#member-attributes) added as a new section.|
+||[Cluster Utilities](#cluster-utilities)|[Member Attributes](#member-attributes) added as a new section. Also, [Cluster-Member Safety Check](#cluster-member-safety-check) section added explaining the PartitionService interface of Hazelcast.|
 ||[Clustered REST](#clustered-rest)|Added as a new section (Enterprise Only feature).|
 |[Chapter 15 - Performance](#performance)|[Threading Model](#threading-model)| Added as a new section.|
 |[Chapter 16 - WAN](#wan)|[WAN Replication Queue Size](#wan-replication-queue-size)| Added as a new section (Enterprise only feature).|
