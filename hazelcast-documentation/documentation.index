@@ -86,6 +86,8 @@ src/Management.md
 	src/JMXAPIPerNode.md
 	src/MonitoringWithJMX.md
 	src/ClusterUtilities.md
+		src/MemberAttributes.md
+		src/PartitionService.md
 	src/ManagementCenter.md
 	src/ClusteredJMX.md
 	src/ClusteredREST.md
