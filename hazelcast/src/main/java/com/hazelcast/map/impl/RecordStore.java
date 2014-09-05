@@ -18,8 +18,8 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -61,7 +61,13 @@ public interface RecordStore {
      */
     void removeBackup(Data dataKey);
 
-    Object get(Data dataKey);
+    /**
+     * Gets record from {@link com.hazelcast.map.impl.RecordStore}
+     * @param dataKey key.
+     * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @return value of an entry in {@link com.hazelcast.map.impl.RecordStore}
+     */
+    Object get(Data dataKey, boolean backup);
 
     MapEntrySet getAll(Set<Data> keySet);
 

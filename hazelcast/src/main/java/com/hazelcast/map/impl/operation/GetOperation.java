@@ -34,7 +34,7 @@ public final class GetOperation extends KeyBasedMapOperation
     }
 
     public void run() {
-        result = mapService.getMapServiceContext().toData(recordStore.get(dataKey));
+        result = mapService.getMapServiceContext().toData(recordStore.get(dataKey, false));
     }
 
     public void afterRun() {
