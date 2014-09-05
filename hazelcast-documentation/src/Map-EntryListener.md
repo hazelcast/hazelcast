@@ -42,6 +42,12 @@ public class Listen {
     public void mapEvicted( MapEvent event ) {
       System.out.println( "Map Evicted:" + event );
     }
+   
+    @Override
+    public void mapCleared( MapEvent event ) {
+      System.out.println( "Map Cleared:" + event );
+    }
+
   }
 }
 ```

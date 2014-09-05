@@ -86,6 +86,8 @@
                                             javax.security.*;resolution:=optional,
                                             org.slf4j.*;resolution:=optional,
                                             org.apache.log4j.*;resolution:=optional,
+                                            org.apache.logging.log4j;resolution:=optional,
+                                            org.apache.logging.log4j.*;resolution:=optional,
                                             javax.script.*;resolution:=optional
                                         </Import-Package>
                                     </overrideInstructions>

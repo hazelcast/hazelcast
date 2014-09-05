@@ -223,9 +223,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                     .setPartitionId(partitionId)
                     .setReplicaIndex(replicaIndex)
                     .setExecutorName(executorName);
-            if (op.getCallerUuid() == null) {
-                op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-            }
+
             if (!operationService.scheduler.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
@@ -274,6 +272,10 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     }
 
     private void doInvokeLocal() {
+        if (op.getCallerUuid() == null) {
+            op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+        }
+
         if (op instanceof BackupAwareOperation) {
             operationService.registerInvocation(this);
         }
