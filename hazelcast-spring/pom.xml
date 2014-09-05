@@ -105,6 +105,8 @@
                                     !com.hazelcast.*,
                                     org.apache.log4j;resolution:=optional,
                                     org.apache.log4j.*;resolution:=optional,
+                                    org.apache.logging.log4j;resolution:=optional,
+                                    org.apache.logging.log4j.*;resolution:=optional,
                                     org.slf4j;resolution:=optional,
                                     com.hazelcast.client;resolution:=optional,
                                     com.hazelcast.hibernate;resolution:=optional,
