@@ -419,16 +419,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
             outSelectors[i].start();
         }
 
-        if (serverSocketChannel != null) {
-            if (socketAcceptorThread != null) {
-                logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
-                shutdownSocketAcceptor();
-            }
-            Runnable acceptRunnable = new SocketAcceptor(serverSocketChannel, this);
-            socketAcceptorThread = new Thread(ioService.getThreadGroup(), acceptRunnable,
-                    ioService.getThreadPrefix() + "Acceptor");
-            socketAcceptorThread.start();
+        if (socketAcceptorThread != null) {
+            logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
+            shutdownSocketAcceptor();
         }
+        Runnable acceptRunnable = new SocketAcceptor(serverSocketChannel, this);
+        socketAcceptorThread = new Thread(ioService.getThreadGroup(), acceptRunnable,
+                ioService.getThreadPrefix() + "Acceptor");
+        socketAcceptorThread.start();
     }
 
     @Override
@@ -439,29 +437,30 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     @Override
     public synchronized void shutdown() {
+        if (!live) {
+            return;
+        }
+        live = false;
+        shutdownSocketAcceptor();
+        closeServerSocket();
+        stop();
+        connectionListeners.clear();
+    }
+
+    private void closeServerSocket() {
         try {
-            if (live) {
-                stop();
-                connectionListeners.clear();
+            if (logger.isFinestEnabled()) {
+                log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
             }
-        } finally {
-            if (serverSocketChannel != null) {
-                try {
-                    if (logger.isFinestEnabled()) {
-                        log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
-                    }
-                    serverSocketChannel.close();
-                } catch (IOException ignore) {
-                    logger.finest(ignore);
-                }
-            }
+            serverSocketChannel.close();
+        } catch (IOException ignore) {
+            logger.finest(ignore);
         }
     }
 
     private void stop() {
         live = false;
         log(Level.FINEST, "Stopping ConnectionManager");
-        // interrupt acceptor thread after live=false
         shutdownSocketAcceptor();
         for (SocketChannelWrapper socketChannel : acceptedSockets) {
             IOUtil.closeResource(socketChannel);
