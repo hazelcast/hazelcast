@@ -16,16 +16,22 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
  *
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class TopicConfigTest {
 
     /**
@@ -52,7 +58,7 @@ public class TopicConfigTest {
     @Test
     public void testIsGlobalOrderingEnabled() {
         TopicConfig topicConfig = new TopicConfig();
-        assertTrue(TopicConfig.DEFAULT_GLOBAL_ORDERING_ENABLED == topicConfig.isGlobalOrderingEnabled());
+        assertFalse(topicConfig.isGlobalOrderingEnabled());
     }
 
     /**
@@ -60,7 +66,7 @@ public class TopicConfigTest {
      */
     @Test
     public void testSetGlobalOrderingEnabled() {
-        TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(!TopicConfig.DEFAULT_GLOBAL_ORDERING_ENABLED);
-        assertTrue(TopicConfig.DEFAULT_GLOBAL_ORDERING_ENABLED != topicConfig.isGlobalOrderingEnabled());
+        TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(true);
+        assertTrue(topicConfig.isGlobalOrderingEnabled());
     }
 }

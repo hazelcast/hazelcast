@@ -17,14 +17,14 @@
 package com.hazelcast.spring.context;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.impl.DistributedRunnableAdapter;
+import com.hazelcast.executor.impl.RunnableAdapter;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 /**
- * @mdogan 4/6/12
+ * @author mdogan 4/6/12
  */
 public class SpringManagedContext implements ManagedContext, ApplicationContextAware {
 
@@ -35,27 +35,33 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
     }
 
     public Object initialize(Object obj) {
+        Object resultObject = obj;
         if (obj != null) {
-            if (obj instanceof DistributedRunnableAdapter) {
-                DistributedRunnableAdapter adapter = (DistributedRunnableAdapter) obj;
+            if (obj instanceof RunnableAdapter) {
+                RunnableAdapter adapter = (RunnableAdapter) obj;
                 Object runnable = adapter.getRunnable();
                 runnable = initializeIfSpringAwareIsPresent(runnable);
                 adapter.setRunnable((Runnable) runnable);
             } else {
-                obj = initializeIfSpringAwareIsPresent(obj);
+                resultObject = initializeIfSpringAwareIsPresent(obj);
             }
         }
-        return obj;
+        return resultObject;
     }
 
     private Object initializeIfSpringAwareIsPresent(Object obj) {
         Class clazz = obj.getClass();
-        if (clazz.isAnnotationPresent(SpringAware.class)) {
-            final String name = clazz.getName();
+        SpringAware s = (SpringAware) clazz.getAnnotation(SpringAware.class);
+        Object resultObject = obj;
+        if (s != null) {
+            String name = s.beanName();
+            if (name == null || name.length() == 0) {
+                name = clazz.getName();
+            }
             beanFactory.autowireBean(obj);
-            obj = beanFactory.initializeBean(obj, name);
+            resultObject = beanFactory.initializeBean(obj, name);
         }
-        return obj;
+        return resultObject;
     }
 
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {

@@ -24,12 +24,13 @@ import java.util.logging.LogRecord;
 
 public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory {
 
+    @Override
     protected ILogger createLogger(String name) {
         final Logger l = Logger.getLogger(name);
         return new Log4jLogger(l);
     }
 
-    class Log4jLogger implements ILogger {
+    static class Log4jLogger extends AbstractLogger {
         private final Logger logger;
         private final Level level;
 
@@ -48,6 +49,7 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
             }
         }
 
+        @Override
         public void log(Level level, String message) {
             if (Level.FINEST == level) {
                 logger.debug(message);
@@ -60,12 +62,16 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
             }
         }
 
+        @Override
         public Level getLevel() {
             return level;
         }
 
+        @Override
         public boolean isLoggable(Level level) {
-            if (Level.FINEST == level) {
+            if (Level.OFF == level) {
+                return false;
+            } else if (Level.FINEST == level) {
                 return logger.isDebugEnabled();
             } else if (Level.WARNING == level) {
                 return logger.isEnabledFor(org.apache.log4j.Level.WARN);
@@ -76,6 +82,7 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
             }
         }
 
+        @Override
         public void log(Level level, String message, Throwable thrown) {
             if (Level.FINEST == level) {
                 logger.debug(message, thrown);
@@ -88,11 +95,12 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
             }
         }
 
+        @Override
         public void log(LogEvent logEvent) {
             LogRecord logRecord = logEvent.getLogRecord();
             String name = logEvent.getLogRecord().getLoggerName();
             org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(name);
-            org.apache.log4j.Level level = null;
+            org.apache.log4j.Level level;
             if (logRecord.getLevel() == Level.FINEST) {
                 level = org.apache.log4j.Level.DEBUG;
             } else if (logRecord.getLevel() == Level.INFO) {

@@ -18,28 +18,28 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.hazelcast</groupId>
-        <artifactId>hazelcast-root</artifactId>
-        <version>2.5.2-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-
     <name>hazelcast-spring</name>
     <artifactId>hazelcast-spring</artifactId>
     <packaging>jar</packaging>
 
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
+        <version>3.4-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <properties>
-        <!--<org.springframework.version>2.5.6</org.springframework.version>-->
         <org.springframework.version>3.1.0.RELEASE</org.springframework.version>
         <jsr250.api.version>1.0</jsr250.api.version>
         <hibernate.core.version>3.5.0-Final</hibernate.core.version>
-        <org.mongodb.version>2.7.3</org.mongodb.version>
-        <org.springframework.data.mongodb>1.0.1.RELEASE</org.springframework.data.mongodb>
+        <!-- needed for checkstyle/findbugs -->
+        <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -50,20 +50,21 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>1.7</version>
+                <version>${animal.sniffer.plugin.version}</version>
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java15</artifactId>
+                        <artifactId>java16</artifactId>
                         <version>1.0</version>
                     </signature>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>source-java5-check</id>
+                        <id>source-java6-check</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>check</goal>
@@ -71,6 +72,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -99,9 +101,8 @@
                         <configuration>
                             <instructions>
                                 <Import-Package>
-                                    !junit.framework,
                                     !org.junit,
-                                    !org.mockito,
+                                    !com.hazelcast.*,
                                     org.apache.log4j;resolution:=optional,
                                     org.apache.log4j.*;resolution:=optional,
                                     org.slf4j;resolution:=optional,
@@ -109,6 +110,7 @@
                                     com.hazelcast.hibernate;resolution:=optional,
                                     *
                                 </Import-Package>
+                                <Fragment-Host>com.hazelcast</Fragment-Host>
                                 <!--<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>-->
                             </instructions>
                         </configuration>
@@ -182,15 +184,8 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-hibernate</artifactId>
+            <artifactId>hazelcast-hibernate3</artifactId>
             <version>${project.parent.version}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
-            <version>${org.mongodb.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -200,22 +195,12 @@
             <version>${org.springframework.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-mongodb</artifactId>
-            <version>${org.springframework.data.mongodb}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <artifactId>spring-tx</artifactId>
-                    <groupId>org.springframework</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>mongo-java-driver</artifactId>
-                    <groupId>org.mongodb</groupId>
-                </exclusion>
-            </exclusions>
+         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${project.parent.version}</version>
+            <classifier>tests</classifier>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
@@ -224,12 +209,5 @@
             <scope>test</scope>
             <optional>true</optional>
         </dependency>
-        <!-- Spring 2.5.x is not compatible with junit versions after 4.4 -->
-        <!--<dependency>-->
-            <!--<groupId>junit</groupId>-->
-            <!--<artifactId>junit</artifactId>-->
-            <!--<version>4.4</version>-->
-            <!--<scope>test</scope>-->
-        <!--</dependency>-->
     </dependencies>
 </project>

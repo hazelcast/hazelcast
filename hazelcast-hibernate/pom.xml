@@ -18,30 +18,28 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>hazelcast-hibernate</name>
+    <artifactId>hazelcast-hibernate</artifactId>
+    <packaging>pom</packaging>
+
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>2.5.2-SNAPSHOT</version>
+        <version>3.4-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>hazelcast-hibernate</name>
-    <artifactId>hazelcast-hibernate</artifactId>
-    <packaging>jar</packaging>
+    <modules>
+        <module>hazelcast-hibernate3</module>
+        <module>hazelcast-hibernate4</module>
+    </modules>
 
     <properties>
-        <hibernate.core.version>3.5.0-Final</hibernate.core.version>
-        <!--<hibernate.core.version>3.6.10.Final</hibernate.core.version>-->
-        <hsqldb.version>1.8.0.10</hsqldb.version>
+        <hsqldb.version>2.2.9</hsqldb.version>
         <javaassist.version>3.12.1.GA</javaassist.version>
+        <!-- needed for checkstyle/findbugs -->
+        <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>jboss</id>
-            <url>http://repository.jboss.org/maven2/</url>
-        </repository>
-    </repositories>
 
     <build>
         <plugins>
@@ -58,17 +56,20 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>1.7</version>
+                <version>${animal.sniffer.plugin.version}</version>
                 <configuration>
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java15</artifactId>
+                        <artifactId>java16</artifactId>
                         <version>1.0</version>
                     </signature>
+                    <ignores>
+                        <ignore>sun.misc.Unsafe</ignore>
+                    </ignores>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>source-java5-check</id>
+                        <id>source-java6-check</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>check</goal>
@@ -102,15 +103,18 @@
                         </goals>
                         <configuration>
                             <instructions>
+                                <Export-Package>
+                                    com.hazelcast.*
+                                </Export-Package>
                                 <Import-Package>
-                                    !junit.framework,
                                     !org.junit,
-                                    !org.mockito,
+                                    !com.hazelcast.*,
                                     org.apache.log4j;resolution:=optional,
                                     org.apache.log4j.*;resolution:=optional,
                                     org.slf4j;resolution:=optional,
                                     *
                                 </Import-Package>
+                                <Fragment-Host>com.hazelcast</Fragment-Host>
                                 <!--<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>-->
                             </instructions>
                         </configuration>
@@ -135,11 +139,6 @@
                     </archive>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven.surefire.plugin.version}</version>
-            </plugin>
         </plugins>
     </build>
 
@@ -148,7 +147,6 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -157,19 +155,14 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-core</artifactId>
-            <version>${hibernate.core.version}</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>slf4j-api</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-            </exclusions>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${project.parent.version}</version>
+            <classifier>tests</classifier>
         </dependency>
         <dependency>
-            <groupId>hsqldb</groupId>
+            <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
             <version>${hsqldb.version}</version>
             <type>jar</type>

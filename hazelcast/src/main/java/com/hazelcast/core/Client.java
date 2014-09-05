@@ -16,11 +16,35 @@
 
 package com.hazelcast.core;
 
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 
-public interface Client {
+/**
+ * Client interface allows to get information about
+ * a connected clients socket address, type and uuid.
+ *
+ * @see ClientService
+ * @see ClientListener
+ */
+public interface Client extends Endpoint {
 
-    public SocketAddress getSocketAddress();
+    /**
+     * Returns unique uuid for this client
+     *
+     * @return unique uuid for this client
+     */
+    String getUuid();
 
-    public ClientType getClientType();
+    /**
+     * Returns socket address of this client
+     *
+     * @return socket address of this client
+     */
+    InetSocketAddress getSocketAddress();
+
+    /**
+     * Returns type of this client
+     *
+     * @return type of this client
+     */
+    ClientType getClientType();
 }

@@ -21,12 +21,13 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Properties;
 
 /**
  *
  */
 public class DummySocketInterceptor implements MemberSocketInterceptor {
-    public void init(final SocketInterceptorConfig socketInterceptorConfig) {
+    public void init(final Properties properties) {
     }
 
     public void onAccept(final Socket acceptedSocket) throws IOException {

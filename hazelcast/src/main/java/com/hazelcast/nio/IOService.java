@@ -16,29 +16,27 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.config.AsymmetricEncryptionConfig;
+import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.impl.ascii.TextCommandService;
-import com.hazelcast.impl.base.SystemLogService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.PortableContext;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.EventService;
 
 import java.util.Collection;
 
 public interface IOService {
 
+    int KILO_BYTE = 1024;
+
     boolean isActive();
 
     ILogger getLogger(String name);
 
-    SystemLogService getSystemLogService();
-
     void onOutOfMemory(OutOfMemoryError oom);
-
-    void handleInterruptedException(Thread thread, RuntimeException e);
-
-    void onIOThreadStart();
 
     Address getThisAddress();
 
@@ -48,13 +46,11 @@ public interface IOService {
 
     SymmetricEncryptionConfig getSymmetricEncryptionConfig();
 
-    AsymmetricEncryptionConfig getAsymmetricEncryptionConfig();
-
     SSLConfig getSSLConfig();
 
-    void handleClientPacket(Packet p);
-
     void handleMemberPacket(Packet p);
+
+    void handleClientPacket(Packet p);
 
     TextCommandService getTextCommandService();
 
@@ -72,13 +68,9 @@ public interface IOService {
 
     void shouldConnectTo(Address address);
 
-    boolean isReuseSocketAddress();
-
-    int getSocketPort();
+    boolean isSocketBind();
 
     boolean isSocketBindAny();
-
-    boolean isSocketPortAutoIncrement();
 
     int getSocketReceiveBufferSize();
 
@@ -96,13 +88,21 @@ public interface IOService {
 
     int getConnectionMonitorMaxFaults();
 
-    void disconnectExistingCalls(Address deadEndpoint);
+    void onDisconnect(Address endpoint);
 
     boolean isClient();
 
-    void onShutdown();
-
     void executeAsync(Runnable runnable);
 
+    EventService getEventService();
+
     Collection<Integer> getOutboundPorts();
+
+    Data toData(Object obj);
+
+    Object toObject(Data data);
+
+    SerializationService getSerializationService();
+
+    PortableContext getPortableContext();
 }

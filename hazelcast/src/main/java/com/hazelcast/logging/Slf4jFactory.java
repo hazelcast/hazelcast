@@ -24,18 +24,20 @@ import java.util.logging.LogRecord;
 
 public class Slf4jFactory extends LoggerFactorySupport {
 
+    @Override
     protected ILogger createLogger(String name) {
         final Logger l = LoggerFactory.getLogger(name);
         return new Slf4jLogger(l);
     }
 
-    class Slf4jLogger implements ILogger {
+    static class Slf4jLogger extends AbstractLogger {
         private final Logger logger;
 
         public Slf4jLogger(Logger logger) {
             this.logger = logger;
         }
 
+        @Override
         public void log(Level level, String message) {
             if (Level.FINEST == level) {
                 logger.debug(message);
@@ -48,6 +50,7 @@ public class Slf4jFactory extends LoggerFactorySupport {
             }
         }
 
+        @Override
         public Level getLevel() {
             if (logger.isErrorEnabled()) {
                 return Level.SEVERE;
@@ -60,8 +63,11 @@ public class Slf4jFactory extends LoggerFactorySupport {
             }
         }
 
+        @Override
         public boolean isLoggable(Level level) {
-            if (Level.FINEST == level) {
+            if (Level.OFF == level) {
+                return false;
+            } else if (Level.FINEST == level) {
                 return logger.isDebugEnabled();
             } else if (Level.INFO == level) {
                 return logger.isInfoEnabled();
@@ -74,6 +80,7 @@ public class Slf4jFactory extends LoggerFactorySupport {
             }
         }
 
+        @Override
         public void log(Level level, String message, Throwable thrown) {
             if (Level.FINEST == level) {
                 logger.debug(message, thrown);
@@ -88,6 +95,7 @@ public class Slf4jFactory extends LoggerFactorySupport {
             }
         }
 
+        @Override
         public void log(LogEvent logEvent) {
             LogRecord logRecord = logEvent.getLogRecord();
             Level level = logEvent.getLogRecord().getLevel();

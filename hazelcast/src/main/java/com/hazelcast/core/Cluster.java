@@ -26,16 +26,22 @@ public interface Cluster {
     /**
      * Adds MembershipListener to listen for membership updates.
      *
+     * If the MembershipListener implements the {@link InitialMembershipListener} interface, it will also receive
+     * the {@link InitialMembershipEvent}.
+     *
      * @param listener membership listener
+     * @return returns registration id.
      */
-    void addMembershipListener(MembershipListener listener);
+    String addMembershipListener(MembershipListener listener);
 
     /**
      * Removes the specified membership listener.
      *
-     * @param listener membership listener to remove
+     * @param registrationId Id of listener registration.
+     *
+     * @return true if registration is removed, false otherwise
      */
-    void removeMembershipListener(MembershipListener listener);
+    boolean removeMembershipListener(String registrationId);
 
     /**
      * Set of current members of the cluster.
@@ -55,14 +61,14 @@ public interface Cluster {
     Member getLocalMember();
 
     /**
-     * Returns the cluster-wide time.
+     * Returns the cluster-wide time in milliseconds.
      * <p/>
      * Cluster tries to keep a cluster-wide time which is
      * might be different than the member's own system time.
      * Cluster-wide time is -almost- the same on all members
      * of the cluster.
      *
-     * @return
+     * @return cluster-wide time
      */
     long getClusterTime();
 }

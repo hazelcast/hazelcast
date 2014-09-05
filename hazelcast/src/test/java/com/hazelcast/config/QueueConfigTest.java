@@ -16,7 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
@@ -25,7 +28,8 @@ import static org.junit.Assert.assertNull;
 /**
  *
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class QueueConfigTest {
 
     /**
@@ -45,8 +49,16 @@ public class QueueConfigTest {
         String name = "a test name";
         QueueConfig queueConfig = new QueueConfig().setName(name);
         assertEquals(name, queueConfig.getName());
-        assertEquals("q:" + name, queueConfig.getBackingMapRef());
-        queueConfig.setBackingMapRef("backingMap");
-        assertEquals("backingMap", queueConfig.getBackingMapRef());
     }
+
+    /**
+     * Test method for {@link com.hazelcast.config.QueueConfig#setName(java.lang.String)}.
+     */
+    @Test(expected = java.lang.UnsupportedOperationException.class)
+    public void testReadOnlySetName() {
+        String name = "a test name";
+        QueueConfig queueConfig = new QueueConfigReadOnly(new QueueConfig()).setName(name);
+    }
+
+
 }

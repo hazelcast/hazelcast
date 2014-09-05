@@ -19,20 +19,21 @@ package com.hazelcast.monitor;
 /**
  * Local queue statistics.
  */
-public interface LocalQueueStats extends LocalInstanceStats<LocalQueueOperationStats> {
+public interface LocalQueueStats extends LocalInstanceStats {
+
     /**
      * Returns the number of owned items in this member.
      *
      * @return number of owned items.
      */
-    int getOwnedItemCount();
+    long getOwnedItemCount();
 
     /**
      * Returns the number of backup items in this member.
      *
      * @return number of backup items.
      */
-    int getBackupItemCount();
+    long getBackupItemCount();
 
     /**
      * Returns the min age of the items in this member.
@@ -53,5 +54,56 @@ public interface LocalQueueStats extends LocalInstanceStats<LocalQueueOperationS
      *
      * @return average age
      */
-    long getAveAge();
+    long getAvgAge();
+
+    /**
+     * Returns the number of offer/put/add operations.
+     * Offers returning false will be included.
+     * #getRejectedOfferOperationCount can be used
+     * to get the rejected offers.
+     *
+     * @return number offer/put/add operations
+     */
+    long getOfferOperationCount();
+
+    /**
+     * Returns the number of rejected offers. Offer
+     * can be rejected because of max-size limit
+     * on the queue.
+     *
+     * @return number of rejected offers.
+     */
+    long getRejectedOfferOperationCount();
+
+    /**
+     * Returns the number of poll/take/remove operations.
+     * Polls returning null (empty) will be included.
+     * #getEmptyPollOperationCount can be used to get the
+     * number of polls returned null.
+     *
+     * @return number of poll/take/remove operations.
+     */
+    long getPollOperationCount();
+
+    /**
+     * Returns number of null returning poll operations.
+     * Poll operation might return null, if the queue is empty.
+     *
+     * @return number of null returning poll operations.
+     */
+    long getEmptyPollOperationCount();
+
+    /**
+     * Returns number of other operations
+     *
+     * @return number of other operations
+     */
+    long getOtherOperationsCount();
+
+    /**
+     * Returns number of event operations
+     *
+     * @return number of event operations
+     */
+    long getEventOperationCount();
 }

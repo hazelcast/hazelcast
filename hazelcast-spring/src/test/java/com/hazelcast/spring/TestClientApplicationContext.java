@@ -16,31 +16,70 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.client.HazelcastClientProxy;
+import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.config.ClientAwsConfig;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.ClientSecurityConfig;
+import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.nio.ByteOrder;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
+@Category(QuickTest.class)
 public class TestClientApplicationContext {
 
-    @Resource (name = "client")
-    private HazelcastClient client;
+    @Resource(name = "client")
+    private HazelcastClientProxy client;
 
-    @Resource (name = "client2")
-    private HazelcastClient client2;
+    @Resource(name = "client2")
+    private HazelcastClientProxy client2;
+
+    @Resource(name = "client3")
+    private HazelcastClientProxy client3;
+
+    @Resource(name = "client4")
+    private HazelcastClientProxy client4;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -72,8 +111,11 @@ public class TestClientApplicationContext {
     @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
 
-    @Resource(name = "atomicNumber")
-    private AtomicNumber atomicLong;
+    @Resource(name = "atomicLong")
+    private IAtomicLong atomicLong;
+
+    @Resource(name = "atomicReference")
+    private IAtomicReference atomicReference;
 
     @Resource(name = "countDownLatch")
     private ICountDownLatch countDownLatch;
@@ -95,17 +137,16 @@ public class TestClientApplicationContext {
     public void testClient() {
         assertNotNull(client);
         assertNotNull(client2);
+        assertNotNull(client3);
 
         ClientConfig config = client.getClientConfig();
-        assertEquals(3, config.getInitialConnectionAttemptLimit());
-        assertEquals(2, config.getReconnectionAttemptLimit());
-        assertEquals(10000, config.getConnectionTimeout());
-        assertEquals(3000, config.getReConnectionTimeOut());
-        assertFalse(config.isUpdateAutomatic());
-        assertTrue(config.isShuffle());
+        assertEquals("13", config.getProperty("hazelcast.client.retry.count"));
+        assertEquals(3, config.getNetworkConfig().getConnectionAttemptLimit());
+        assertEquals(1000, config.getNetworkConfig().getConnectionTimeout());
+        assertEquals(3000, config.getNetworkConfig().getConnectionAttemptPeriod());
 
         ClientConfig config2 = client2.getClientConfig();
-        assertEquals(credentials, config2.getCredentials());
+        assertEquals(credentials, config2.getSecurityConfig().getCredentials());
 
         client.getMap("default").put("Q", "q");
         client2.getMap("default").put("X", "x");
@@ -113,6 +154,77 @@ public class TestClientApplicationContext {
         final IMap<Object, Object> map = instance.getMap("default");
         assertEquals("q", map.get("Q"));
         assertEquals("x", map.get("X"));
+
+        ClientConfig config3 = client3.getClientConfig();
+        final SerializationConfig serConf = config3.getSerializationConfig();
+
+        assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
+        assertEquals(false, serConf.isAllowUnsafe());
+        assertEquals(false, serConf.isCheckClassDefErrors());
+        assertEquals(false, serConf.isEnableCompression());
+        assertEquals(false, serConf.isEnableSharedObject());
+        assertEquals(false, serConf.isUseNativeByteOrder());
+        assertEquals(10, serConf.getPortableVersion());
+
+        final Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
+        assertNotNull(map1);
+        assertTrue(map1.containsKey(1));
+        assertEquals("com.hazelcast.spring.serialization.DummyDataSerializableFactory", map1.get(1));
+
+        final Map<Integer, String> portableFactoryClasses = serConf.getPortableFactoryClasses();
+        assertNotNull(portableFactoryClasses);
+        assertTrue(portableFactoryClasses.containsKey(2));
+        assertEquals("com.hazelcast.spring.serialization.DummyPortableFactory", portableFactoryClasses.get(2));
+
+        final Collection<SerializerConfig> serializerConfigs = serConf.getSerializerConfigs();
+
+        assertNotNull(serializerConfigs);
+
+        final SerializerConfig serializerConfig = serializerConfigs.iterator().next();
+        assertNotNull(serializerConfig);
+        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer", serializerConfig.getClassName());
+        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$Foo", serializerConfig.getTypeClassName());
+
+        final List<ProxyFactoryConfig> proxyFactoryConfigs = config3.getProxyFactoryConfigs();
+        assertNotNull(proxyFactoryConfigs);
+        final ProxyFactoryConfig proxyFactoryConfig = proxyFactoryConfigs.get(0);
+        assertNotNull(proxyFactoryConfig);
+        assertEquals("com.hazelcast.spring.DummyProxyFactory", proxyFactoryConfig.getClassName());
+        assertEquals("MyService", proxyFactoryConfig.getService());
+
+        final LoadBalancer loadBalancer = config3.getLoadBalancer();
+        assertNotNull(loadBalancer);
+
+        assertTrue(loadBalancer instanceof RoundRobinLB);
+
+        final NearCacheConfig nearCacheConfig = config3.getNearCacheConfig("default");
+
+        assertNotNull(nearCacheConfig);
+
+        assertEquals(1, nearCacheConfig.getTimeToLiveSeconds());
+        assertEquals(70, nearCacheConfig.getMaxIdleSeconds());
+        assertEquals("LRU", nearCacheConfig.getEvictionPolicy());
+        assertEquals(4000, nearCacheConfig.getMaxSize());
+        assertEquals(true, nearCacheConfig.isInvalidateOnChange());
+
+
+    }
+
+    @Test
+    public void testAwsClientConfig() {
+        assertNotNull(client4);
+        ClientConfig config = client4.getClientConfig();
+        final ClientNetworkConfig networkConfig = config.getNetworkConfig();
+
+        final ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
+        assertFalse(awsConfig.isEnabled());
+        assertTrue(awsConfig.isInsideAws());
+        assertEquals("sample-access-key", awsConfig.getAccessKey());
+        assertEquals("sample-secret-key", awsConfig.getSecretKey());
+        assertEquals("sample-region", awsConfig.getRegion());
+        assertEquals("sample-group", awsConfig.getSecurityGroupName());
+        assertEquals("sample-tag-key", awsConfig.getTagKey());
+        assertEquals("sample-tag-value", awsConfig.getTagValue());
     }
 
     @Test
@@ -127,6 +239,7 @@ public class TestClientApplicationContext {
         assertNotNull(executorService);
         assertNotNull(idGenerator);
         assertNotNull(atomicLong);
+        assertNotNull(atomicReference);
         assertNotNull(countDownLatch);
         assertNotNull(semaphore);
         assertEquals("map1", map1.getName());
@@ -137,7 +250,8 @@ public class TestClientApplicationContext {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
-        assertEquals("atomicNumber", atomicLong.getName());
+        assertEquals("atomicLong", atomicLong.getName());
+        assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
     }

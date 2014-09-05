@@ -16,9 +16,14 @@
 
 package com.hazelcast.security;
 
-import java.io.DataInput;
-import java.io.DataOutput;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.impl.SpiPortableHook;
+
 import java.io.IOException;
+
+import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
  * Simple implementation of {@link Credentials} using
@@ -36,19 +41,19 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
 
     public UsernamePasswordCredentials(String username, String password) {
         super(username);
-        this.password = password.getBytes();
+        this.password = stringToBytes(password);
     }
 
     public String getUsername() {
         return getPrincipal();
     }
 
-    public byte[] getRawPassword() {
-        return password;
-    }
-
     public String getPassword() {
-        return password==null? "": new String(password);
+        if (password == null) {
+            return "";
+        } else {
+            return bytesToString(password);
+        }
     }
 
     public void setUsername(String username) {
@@ -56,22 +61,26 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
     }
 
     public void setPassword(String password) {
-        this.password = password.getBytes();
+        this.password = stringToBytes(password);
     }
 
-    public void writeDataInternal(DataOutput out) throws IOException {
-        out.writeInt(password != null ? password.length : 0);
-        if (password != null) {
-            out.write(password);
-        }
+    @Override
+    protected void writePortableInternal(PortableWriter writer) throws IOException {
+        writer.writeByteArray("pwd", password);
     }
 
-    public void readDataInternal(DataInput in) throws IOException {
-        int s = in.readInt();
-        if (s > 0) {
-            password = new byte[s];
-            in.readFully(password);
-        }
+    @Override
+    protected void readPortableInternal(PortableReader reader) throws IOException {
+        password = reader.readByteArray("pwd");
+    }
+
+    public int getFactoryId() {
+        return SpiPortableHook.ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SpiPortableHook.USERNAME_PWD_CRED;
     }
 
     @Override

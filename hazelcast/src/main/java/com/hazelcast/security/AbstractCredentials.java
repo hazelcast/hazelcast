@@ -16,16 +16,16 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
  * Abstract implementation of {@link Credentials}
  */
-public abstract class AbstractCredentials implements Credentials, DataSerializable {
+public abstract class AbstractCredentials implements Credentials, Portable {
 
     private static final long serialVersionUID = 3587995040707072446L;
 
@@ -36,18 +36,20 @@ public abstract class AbstractCredentials implements Credentials, DataSerializab
     }
 
     public AbstractCredentials(String principal) {
-        super();
         this.principal = principal;
     }
 
+    @Override
     public final String getEndpoint() {
         return endpoint;
     }
 
+    @Override
     public final void setEndpoint(String endpoint) {
         this.endpoint = endpoint;
     }
 
+    @Override
     public String getPrincipal() {
         return principal;
     }
@@ -60,41 +62,51 @@ public abstract class AbstractCredentials implements Credentials, DataSerializab
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result
-                + ((principal == null) ? 0 : principal.hashCode());
+        if (principal == null) {
+            result = prime * result;
+        } else {
+            result = prime * result + principal.hashCode();
+        }
         return result;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         AbstractCredentials other = (AbstractCredentials) obj;
         if (principal == null) {
-            if (other.principal != null)
+            if (other.principal != null) {
                 return false;
-        } else if (!principal.equals(other.principal))
+            }
+        } else if (!principal.equals(other.principal)) {
             return false;
+        }
         return true;
     }
 
-    public final void writeData(DataOutput out) throws IOException {
-        out.writeUTF(principal);
-        out.writeUTF(endpoint);
-        writeDataInternal(out);
+    @Override
+    public final void writePortable(PortableWriter writer) throws IOException {
+        writer.writeUTF("principal", principal);
+        writer.writeUTF("endpoint", endpoint);
+        writePortableInternal(writer);
     }
 
-    public final void readData(DataInput in) throws IOException {
-        principal = in.readUTF();
-        endpoint = in.readUTF();
-        readDataInternal(in);
+    @Override
+    public final void readPortable(PortableReader reader) throws IOException {
+        principal = reader.readUTF("principal");
+        endpoint = reader.readUTF("endpoint");
+        readPortableInternal(reader);
     }
 
-    protected abstract void writeDataInternal(DataOutput out) throws IOException;
+    protected abstract void writePortableInternal(PortableWriter writer) throws IOException;
 
-    protected abstract void readDataInternal(DataInput in) throws IOException;
+    protected abstract void readPortableInternal(PortableReader reader) throws IOException;
 }

@@ -19,6 +19,7 @@ package com.hazelcast.spring.cache;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
+import com.hazelcast.core.MapStore;
 
 import java.util.Collection;
 import java.util.Map;
@@ -26,9 +27,9 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
- * @mdogan 4/3/12
+ * @author mdogan 4/3/12
  */
-public class CacheMapLoader implements MapLoader, MapLoaderLifecycleSupport {
+public class CacheMapLoader implements MapStore, MapLoaderLifecycleSupport {
 
     private String type;
 
@@ -50,5 +51,21 @@ public class CacheMapLoader implements MapLoader, MapLoaderLifecycleSupport {
 
     public Set loadAllKeys() {
         return null;
+    }
+
+    @Override
+    public void store(Object key, Object value) {
+    }
+
+    @Override
+    public void storeAll(Map map) {
+    }
+
+    @Override
+    public void delete(Object key) {
+    }
+
+    @Override
+    public void deleteAll(Collection keys) {
     }
 }

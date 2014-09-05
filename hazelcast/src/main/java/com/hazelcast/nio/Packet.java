@@ -16,449 +16,175 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.*;
-import com.hazelcast.impl.base.CallState;
-import com.hazelcast.impl.base.CallStateAware;
-import com.hazelcast.util.ByteUtil;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataAdapter;
+import com.hazelcast.nio.serialization.PortableContext;
 
 import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.nio.IOUtil.toObject;
+/**
+ * A Packet is a piece of data send over the line.
+ */
+public final class Packet extends DataAdapter implements SocketWritable, SocketReadable {
 
-public final class Packet implements SocketWritable, CallStateAware {
+    public static final byte VERSION = 2;
+    public static final int HEADER_OP = 0;
+    public static final int HEADER_RESPONSE = 1;
+    public static final int HEADER_EVENT = 2;
+    public static final int HEADER_WAN_REPLICATION = 3;
+    public static final int HEADER_URGENT = 4;
 
-    public static final byte PACKET_VERSION = GroupProperties.PACKET_VERSION.getByte();
+    private static final int ST_VERSION = 11;
+    private static final int ST_HEADER = 12;
+    private static final int ST_PARTITION = 13;
 
-    public String name;
+    private short header;
+    private int partitionId;
 
-    public ClusterOperation operation = ClusterOperation.NONE;
+    private transient Connection conn;
 
-    public final ByteBuffer bbSizes = ByteBuffer.allocate(13);
-
-    public final ByteBuffer bbHeader = ByteBuffer.allocate(500);
-
-    private DataHolder key = null;
-
-    private DataHolder value = null;
-
-    public Long[] indexes = null;
-
-    public byte[] indexTypes = null;
-
-    public long txnId = -1;
-
-    public int threadId = -1;
-
-    public int lockCount = 0;
-
-    public Address lockAddress = null;
-
-    public long timeout = -1;
-
-    public long ttl = -1;
-
-    public int blockId = -1;
-
-    public byte responseType = Constants.ResponseTypes.RESPONSE_NONE;
-
-    public long longValue = Long.MIN_VALUE;
-
-    public long version = -1;
-
-    public long callId = -1;
-
-    public Connection conn;
-
-    public int totalSize = 0;
-
-    boolean sizeRead = false;
-
-    int totalWritten = 0;
-
-    public byte redoData = 0; // used for both redo-count and redo-type-code
-
-    public boolean client = false;
-
-    public CallState callState = null;
-
-    public Packet() {
+    public Packet(PortableContext context) {
+        super(context);
     }
 
-    public CallState getCallState() {
-        return callState;
+    public Packet(Data value, PortableContext context) {
+        this(value, -1, context);
     }
 
-    private static final Map<String, byte[]> mapStringByteCache = new ConcurrentHashMap<String, byte[]>(1000);
+    public Packet(Data value, int partitionId, PortableContext context) {
+        super(value, context);
+        this.partitionId = partitionId;
+    }
 
     /**
-     * only ServiceThread should call
+     * Gets the Connection this Packet was send with.
+     *
+     * @return the Connection. Could be null.
      */
-    private static void putString(ByteBuffer bb, String str) {
-        if (str == null) {
-            bb.putInt(0);
-        } else {
-            // this part is not atomic but
-            // it doesn't have to be.
-            byte[] bytes = mapStringByteCache.get(str);
-            if (bytes == null) {
-                bytes = str.getBytes();
-                if (mapStringByteCache.size() >= 10000) {
-                    mapStringByteCache.clear();
-                }
-                mapStringByteCache.put(str, bytes);
+    public Connection getConn() {
+        return conn;
+    }
+
+    /**
+     * Sets the Connection this Packet is send with.
+     * <p/>
+     * This is done on the reading side of the Packet to make it possible to retrieve information about
+     * the sender of the Packet.
+     *
+     * @param conn the connection.
+     */
+    public void setConn(final Connection conn) {
+        this.conn = conn;
+    }
+
+    public void setHeader(int bit) {
+        header |= 1 << bit;
+    }
+
+    public boolean isHeaderSet(int bit) {
+        return (header & 1 << bit) != 0;
+    }
+
+    /**
+     * Returns the header of the Packet. The header is used to figure out what the content is of this Packet before
+     * the actual payload needs to be processed.
+     *
+     * @return the header.
+     */
+    public short getHeader() {
+        return header;
+    }
+
+    /**
+     * Returns the partition id of this packet. If this packet is not for a particular partition, -1 is returned.
+     *
+     * @return the partition id.
+     */
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    @Override
+    public boolean isUrgent() {
+        return isHeaderSet(HEADER_URGENT);
+    }
+
+    @Override
+    public boolean writeTo(ByteBuffer destination) {
+        if (!isStatusSet(ST_VERSION)) {
+            if (!destination.hasRemaining()) {
+                return false;
             }
-            bb.putInt(bytes.length);
-            bb.put(bytes);
+            destination.put(VERSION);
+            setStatus(ST_VERSION);
         }
+        if (!isStatusSet(ST_HEADER)) {
+            if (destination.remaining() < 2) {
+                return false;
+            }
+            destination.putShort(header);
+            setStatus(ST_HEADER);
+        }
+        if (!isStatusSet(ST_PARTITION)) {
+            if (destination.remaining() < 4) {
+                return false;
+            }
+            destination.putInt(partitionId);
+            setStatus(ST_PARTITION);
+        }
+        return super.writeTo(destination);
     }
 
-    private static String getString(ByteBuffer bb) {
-        int length = bb.getInt();
-        if (length == 0) return null;
-        byte[] bytes = new byte[length];
-        bb.get(bytes, 0, length);
-        return new String(bytes);
-    }
-
-    protected void writeBoolean(ByteBuffer bb, boolean value) {
-        bb.put((value) ? (byte) 1 : (byte) 0);
-    }
-
-    protected boolean readBoolean(ByteBuffer bb) {
-        return (bb.get() == (byte) 1);
-    }
-
-    public void onEnqueue() {
-        bbSizes.clear();
-        bbHeader.clear();
-        bbHeader.putShort(operation.getValue());
-        bbHeader.putInt(blockId);
-        bbHeader.putInt(threadId);
-        byte flags = 0;
-        if (lockCount != 0) {
-            flags = ByteUtil.setTrue(flags, 0);
-        }
-        if (timeout != -1) {
-            flags = ByteUtil.setTrue(flags, 1);
-        }
-        if (ttl != -1) {
-            flags = ByteUtil.setTrue(flags, 2);
-        }
-        if (txnId != -1) {
-            flags = ByteUtil.setTrue(flags, 3);
-        }
-        if (longValue != Long.MIN_VALUE) {
-            flags = ByteUtil.setTrue(flags, 4);
-        }
-        if (version != -1) {
-            flags = ByteUtil.setTrue(flags, 5);
-        }
-        if (client) {
-            flags = ByteUtil.setTrue(flags, 6);
-        }
-        if (lockAddress == null) {
-            flags = ByteUtil.setTrue(flags, 7);
-        }
-        bbHeader.put(flags);
-        if (lockCount != 0) {
-            bbHeader.putInt(lockCount);
-        }
-        if (timeout != -1) {
-            bbHeader.putLong(timeout);
-        }
-        if (ttl != -1) {
-            bbHeader.putLong(ttl);
-        }
-        if (txnId != -1) {
-            bbHeader.putLong(txnId);
-        }
-        if (longValue != Long.MIN_VALUE) {
-            bbHeader.putLong(longValue);
-        }
-        if (version != -1) {
-            bbHeader.putLong(version);
-        }
-        if (lockAddress != null) {
-            lockAddress.writeObject(bbHeader);
-        }
-        bbHeader.putLong(callId);
-        bbHeader.put(responseType);
-        putString(bbHeader, name);
-        byte indexCount = (indexes == null) ? 0 : (byte) indexes.length;
-        bbHeader.put(indexCount);
-        for (byte i = 0; i < indexCount; i++) {
-            bbHeader.putLong(indexes[i]);
-            bbHeader.put(indexTypes[i]);
-        }
-        bbHeader.putInt(key == null ? -1 : key.partitionHash);
-        bbHeader.putInt(value == null ? -1 : value.partitionHash);
-        bbHeader.put(redoData); // WARNING: redoData is added by v2.1.3, older versions will not write this field
-        bbHeader.flip();
-        bbSizes.putInt(bbHeader.limit());
-        bbSizes.putInt(key == null ? 0 : key.size);
-        bbSizes.putInt(value == null ? 0 : value.size);
-        bbSizes.put(PACKET_VERSION);
-        bbSizes.flip();
-        totalSize = 0;
-        totalSize += bbSizes.limit();
-        totalSize += bbHeader.limit();
-        totalSize += key == null ? 0 : key.size;
-        totalSize += value == null ? 0 : value.size;
-    }
-
-    public void read() {
-        operation = ClusterOperation.create(bbHeader.getShort());
-        blockId = bbHeader.getInt();
-        threadId = bbHeader.getInt();
-        byte flags = bbHeader.get();
-        if (ByteUtil.isTrue(flags, 0)) {
-            lockCount = bbHeader.getInt();
-        }
-        if (ByteUtil.isTrue(flags, 1)) {
-            timeout = bbHeader.getLong();
-        }
-        if (ByteUtil.isTrue(flags, 2)) {
-            ttl = bbHeader.getLong();
-        }
-        if (ByteUtil.isTrue(flags, 3)) {
-            txnId = bbHeader.getLong();
-        }
-        if (ByteUtil.isTrue(flags, 4)) {
-            longValue = bbHeader.getLong();
-        }
-        if (ByteUtil.isTrue(flags, 5)) {
-            version = bbHeader.getLong();
-        }
-        client = ByteUtil.isTrue(flags, 6);
-        boolean lockAddressNull = ByteUtil.isTrue(flags, 7);
-        if (!lockAddressNull) {
-            lockAddress = new Address();
-            lockAddress.readObject(bbHeader);
-        }
-        callId = bbHeader.getLong();
-        responseType = bbHeader.get();
-        name = getString(bbHeader);
-        byte indexCount = bbHeader.get();
-        if (indexCount > 0) {
-            indexes = new Long[indexCount];
-            indexTypes = new byte[indexCount];
-            for (byte i = 0; i < indexCount; i++) {
-                indexes[i] = bbHeader.getLong();
-                indexTypes[i] = bbHeader.get();
+    @Override
+    public boolean readFrom(ByteBuffer source) {
+        if (!isStatusSet(ST_VERSION)) {
+            if (!source.hasRemaining()) {
+                return false;
+            }
+            byte version = source.get();
+            setStatus(ST_VERSION);
+            if (VERSION != version) {
+                throw new IllegalArgumentException("Packet versions are not matching! This -> "
+                        + VERSION + ", Incoming -> " + version);
             }
         }
-        int keyPartitionHash = bbHeader.getInt();
-        int valuePartitionHash = bbHeader.getInt();
-        if (key != null) key.setPartitionHash(keyPartitionHash);
-        if (value != null) value.setPartitionHash(valuePartitionHash);
-
-        if (bbHeader.hasRemaining()) {
-            // WARNING: redoData is added by v2.1.3, older versions will ignore this field
-            redoData = bbHeader.get();
+        if (!isStatusSet(ST_HEADER)) {
+            if (source.remaining() < 2) {
+                return false;
+            }
+            header = source.getShort();
+            setStatus(ST_HEADER);
         }
+        if (!isStatusSet(ST_PARTITION)) {
+            if (source.remaining() < 4) {
+                return false;
+            }
+            partitionId = source.getInt();
+            setStatus(ST_PARTITION);
+        }
+        return super.readFrom(source);
     }
 
-    public void clearForResponse() {
-        this.name = null;
-        this.key = null;
-        this.value = null;
-        this.blockId = -1;
-        this.timeout = -1;
-        this.ttl = -1;
-        this.txnId = -1;
-        this.threadId = -1;
-        this.lockAddress = null;
-        this.lockCount = 0;
-        this.longValue = Long.MIN_VALUE;
-        this.version = -1;
-        this.indexes = null;
-        this.indexTypes = null;
-    }
-
-    public void reset() {
-        name = null;
-        operation = ClusterOperation.NONE;
-        threadId = -1;
-        lockCount = 0;
-        lockAddress = null;
-        timeout = -1;
-        ttl = -1;
-        txnId = -1;
-        responseType = Constants.ResponseTypes.RESPONSE_NONE;
-        blockId = -1;
-        longValue = Long.MIN_VALUE;
-        version = -1;
-        callId = -1;
-        client = false;
-        bbSizes.clear();
-        bbHeader.clear();
-        key = null;
-        value = null;
-        conn = null;
-        totalSize = 0;
-        totalWritten = 0;
-        sizeRead = false;
-        indexes = null;
-        indexTypes = null;
-        callState = null;
-    }
-
-    public void setFromRequest(Request request) {
-        operation = request.operation;
-        name = request.name;
-        setKey(request.key);
-        setValue(request.value);
-        blockId = request.blockId;
-        timeout = request.timeout;
-        ttl = request.ttl;
-        txnId = request.txnId;
-        callId = request.callId;
-        threadId = request.lockThreadId;
-        lockAddress = request.lockAddress;
-        lockCount = request.lockCount;
-        longValue = request.longValue;
-        version = request.version;
-        indexes = request.indexes;
-        indexTypes = request.indexTypes;
-        callState = request.callState;
-        redoData = request.redoCount > Byte.MAX_VALUE
-                    ? Byte.MAX_VALUE : (byte) request.redoCount; // just don't care values greater than 127.
+    /**
+     * Returns an estimation of the packet, including its payload, in bytes.
+     *
+     * @return the size of the packet.
+     */
+    public int size() {
+        // 7 = byte(version) + short(header) + int(partitionId)
+        return (data != null ? data.totalSize() : 0) + 7;
     }
 
     @Override
     public String toString() {
-        int keySize = (key == null) ? 0 : key.size();
-        int valueSize = (getValueData() == null) ? 0 : getValueData().size();
-        Object str = null;
-        if (operation == ClusterOperation.REMOTELY_PROCESS) {
-            try {
-                str = toObject(value.toData());
-            } catch (Throwable e) {
-                str = e;
-            }
-        }
-        return "Packet [" + operation + "] name=" + name
-                + ", connection=" + conn
-                + ",blockId="
-                + blockId + ", keySize=" + keySize + ", valueSize=" + valueSize
-                + " client=" + client
-                + " obj=" + str
-                + " callId=" + callId;
-    }
-
-    public void flipBuffers() {
-        bbSizes.flip();
-        bbHeader.flip();
-    }
-
-    public final boolean writeToSocketBuffer(ByteBuffer dest) {
-        totalWritten += IOUtil.copyToHeapBuffer(bbSizes, dest);
-        totalWritten += IOUtil.copyToHeapBuffer(bbHeader, dest);
-        if (key != null && key.size() > 0) {
-            totalWritten += IOUtil.copyToHeapBuffer(key.buffer, dest);
-        }
-        if (getValueData() != null && getValueData().size() > 0) {
-            totalWritten += IOUtil.copyToHeapBuffer(value.buffer, dest);
-        }
-        return totalWritten >= totalSize;
-    }
-
-    public final boolean read(ByteBuffer bb) {
-        while (!sizeRead && bb.hasRemaining() && bbSizes.hasRemaining()) {
-            IOUtil.copyToHeapBuffer(bb, bbSizes);
-        }
-        if (!sizeRead && !bbSizes.hasRemaining()) {
-            sizeRead = true;
-            bbSizes.flip();
-            bbHeader.limit(bbSizes.getInt());
-            int keySize = bbSizes.getInt();
-            int valueSize = bbSizes.getInt();
-            if (keySize > 0) key = new DataHolder(keySize);
-            if (valueSize > 0) value = new DataHolder(valueSize);
-            if (bbHeader.limit() == 0) {
-                throw new RuntimeException("read.bbHeader size cannot be 0");
-            }
-            byte packetVersion = bbSizes.get();
-            if (packetVersion != PACKET_VERSION) {
-                String msg = "Packet versions are not the same. Expected " + PACKET_VERSION
-                        + " Found: " + packetVersion;
-                throw new RuntimeException(msg);
-            }
-        }
-        if (sizeRead) {
-            while (bb.hasRemaining() && bbHeader.hasRemaining()) {
-                IOUtil.copyToHeapBuffer(bb, bbHeader);
-            }
-            while (key != null && bb.hasRemaining() && key.shouldRead()) {
-                key.read(bb);
-            }
-            while (getValueData() != null && bb.hasRemaining() && value.shouldRead()) {
-                value.read(bb);
-            }
-        }
-        if (sizeRead && !bbHeader.hasRemaining() && (key == null || !key.shouldRead()) && (value == null || !value.shouldRead())) {
-            sizeRead = false;
-            if (key != null) {
-                key.postRead();
-            }
-            if (value != null) {
-                value.postRead();
-            }
-            return true;
-        }
-        return false;
-    }
-
-    public void set(String name, ClusterOperation operation, Object objKey, Object objValue) {
-        this.threadId = ThreadContext.get().getThreadId();
-        this.name = name;
-        this.operation = operation;
-        if (objKey != null) {
-            if (objKey instanceof Data) {
-                setKey((Data) objKey);
-            } else {
-                key = new DataHolder(ThreadContext.get().toData(objKey));
-            }
-        }
-        if (objValue != null) {
-            if (objValue instanceof Data) {
-                setValue((Data) objValue);
-            } else {
-                value = new DataHolder(ThreadContext.get().toData(objValue));
-            }
-        }
-    }
-
-    public void setFromConnection(Connection conn) {
-        this.conn = conn;
-        if (lockAddress == null) {
-            lockAddress = conn.getEndPoint();
-        }
-    }
-
-    public DataHolder getKey() {
-        return key;
-    }
-
-    public DataHolder getValue() {
-        return value;
-    }
-
-    public Data getKeyData() {
-        return (key == null) ? null : key.toData();
-    }
-
-    public Data getValueData() {
-        return (value == null) ? null : value.toData();
-    }
-
-    public void setKey(Data key) {
-        this.key = (key == null || key.size() == 0) ? null : new DataHolder(key);
-    }
-
-    public void setValue(Data value) {
-        this.value = (value == null || value.size() == 0) ? null : new DataHolder(value);
+        final StringBuilder sb = new StringBuilder("Packet{");
+        sb.append("header=").append(header);
+        sb.append(", isResponse=").append(isHeaderSet(Packet.HEADER_RESPONSE));
+        sb.append(", isOperation=").append(isHeaderSet(Packet.HEADER_OP));
+        sb.append(", isEvent=").append(isHeaderSet(Packet.HEADER_EVENT));
+        sb.append(", partitionId=").append(partitionId);
+        sb.append(", conn=").append(conn);
+        sb.append('}');
+        return sb.toString();
     }
 }

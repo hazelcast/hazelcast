@@ -1,0 +1,285 @@
+
+@header_color_top: #222;
+@header_color_bottom: #111;
+@header_border_color: #111;
+@header_text_color: #fff;
+@sidebar_border_color: #ccc;
+@content_link_color: #d08708;
+
+body {
+    font-family: 'HelveticaNeue-Light', Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4em;
+    min-width: 1100px;
+}
+
+#header {
+    background: @header_color_top;
+    background: -moz-linear-gradient(top, @header_color_top 0%, @header_color_bottom 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,@header_color_top), color-stop(100%,@header_color_bottom));
+    border-bottom: 3px solid @header_border_color;
+    display: block;
+    position: relative;
+    padding: 10px 20px;
+
+    h1 {
+        font-size: 37px;
+        font-weight: normal;
+        line-height: 46px;
+       // text-shadow: #aaa 1px 1px 2px;
+        a {
+            color: @header_text_color;
+            text-decoration: none;
+        }
+    }
+
+    #menu {
+        position: absolute;
+        top: 25px;
+        right: 10px;
+
+        a {
+            background: #f78d1d;
+	        background: -webkit-gradient(linear, left top, left bottom, from(#faa51a), to(#f47a20));
+	        background: -moz-linear-gradient(top,  #faa51a,  #f47a20);
+            border: 1px solid #da7c0c;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+            -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+	        -moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+	        box-shadow: 0 1px 2px rgba(0,0,0,.2);
+            color: #444;
+            cursor: pointer;
+            display: inline-block;
+            font-size: 16px;
+            margin: 0;
+            padding: 5px 10px;
+            position: relative;
+            top: -1px;
+            text-shadow: 0 1px 1px rgba(0,0,0,.3);
+            text-decoration: none;
+        }
+    }
+}
+
+#sidebar {
+    border-right: 1px solid @sidebar_border_color;
+    float: left;
+    padding: 27px 30px 15px;
+    width: 230px;
+    display: inline-block;  
+	height:95%;
+
+
+    input#search {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        -moz-border-radius: 4px;
+        font-size: 16px;
+        margin-bottom: 20px;
+        padding: 4px 0;
+        width: 100%;
+    }
+	ol
+	{
+	    counter-reset: item
+	}
+	li
+	{
+	    display: block
+	}
+	li:before
+	{
+	    content: counters(item, ".") ". ";
+	    counter-increment: item
+	}
+
+    #toc {
+        li {
+            font-size: 15px;
+            margin: 5px 0px;
+
+            a {
+                color: #555;
+                text-decoration: none;
+            }
+        }
+        > ol > li {
+            font-weight: bold;
+            margin-bottom: 10px;
+
+            li {
+                font-weight: normal;
+                margin-left: 15px;
+                a {
+                    color: #666;
+                }
+            }
+        }
+    }
+
+    #links {
+        margin-top: 24px;
+        margin-bottom: 10px;
+        border-top: 1px dotted #ddd;
+        padding-top: 10px;
+
+        a {
+            font-size: 12px;
+            color: #888;
+            text-decoration: none;
+        }
+    }
+}
+
+#content {
+    border-left: 1px solid @sidebar_border_color;
+    color: #444;
+    float: left;
+    margin-left: -1px;
+    padding: 10px 40px 80px 30px;
+    width: 700px;
+    display: inline-block;  
+
+
+//    h1 {
+  //      font-size: 32px;
+    //    line-height: 35px;
+      //  margin: 15px 0 25px 0;
+    //}
+
+    h1 {
+        border-bottom: 2px solid #ccc;
+        font-size: 24px;
+        font-weight: normal;
+        margin: 30px 0 15px 0;
+        padding-bottom: 7px;
+    }
+    h2 {
+        border-bottom: 2px solid #ccc;
+        font-size: 20px;
+        font-weight: normal;
+        margin: 30px 0 15px 0;
+        padding-bottom: 7px;
+    }
+    h3 {
+        border-bottom: 2px solid #ccc;
+        font-size: 18px;
+        font-weight: normal;
+        margin: 30px 0 15px 0;
+        padding-bottom: 7px;
+    }
+    h4,h5,h6 {
+        border-bottom: 2px solid #ccc;
+        font-size: 16px;
+        font-weight: normal;
+        margin: 30px 0 15px 0;
+        padding-bottom: 7px;
+    }
+    p {
+        margin: 15px 0;
+    }
+    a {
+        color: @content_link_color;
+        text-decoration: none;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+
+    ul, ol {
+        list-style: disc;
+        margin-left: 30px;
+
+        li {
+            margin: 5px 0;
+        }
+    }
+
+    ol {
+        list-style: decimal;
+    }
+
+    pre {
+        margin: 15px 0;
+    }
+
+    code {
+        overflow: auto;
+    }
+
+    .note {
+        background: #f3f3f3;
+        border: 2px solid #ccc;
+        padding: 5px;
+        margin: 20px 0;
+    }
+
+    .warning {
+        background: #fdeeee;
+        border: 2px solid #d24d4d;
+        padding: 5px;
+        margin: 20px 0;
+    }
+
+    .tip {
+        background: #fffbe2;
+        border: 2px solid #e5cc24;
+        padding: 5px;
+        margin: 20px 0;
+    }
+
+    img {
+      max-width: 100%;
+    }
+
+    table {
+        width: 100%;
+        margin: 20px auto;
+
+        th {
+            color: #555;
+            background: #efefef;
+            padding: 4px;
+            border-bottom: 1px solid #bbb;
+            border-left: 1px solid #bbb;
+        }
+        th:first-child {
+            border-left: 0;
+        }
+        td {
+            padding: 4px;
+            border-bottom: 1px solid #ccc;
+            border-left: 1px solid #ccc;
+        }
+        td:first-child {
+            border-left: 0;
+        }
+    }
+
+    #disqus_thread {
+        margin-top: 50px;
+        border-top: 1px solid #ccc;
+        padding-top: 20px;
+    }
+}
+
+#copyright {
+    color: #999;
+    display: block;
+	font-size: 12px;
+    a {
+        color: #999;
+    }
+}
+
+#fork-me-on-github {
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 149px;
+    height: 149px;
+    text-indent: -9999px;
+    background: url(../img/github_forkme.png) no-repeat;
+}

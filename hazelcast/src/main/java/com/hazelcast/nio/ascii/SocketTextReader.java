@@ -16,61 +16,85 @@
 
 package com.hazelcast.nio.ascii;
 
-import com.hazelcast.impl.ascii.CommandParser;
-import com.hazelcast.impl.ascii.TextCommand;
-import com.hazelcast.impl.ascii.TextCommandConstants;
-import com.hazelcast.impl.ascii.TextCommandService;
-import com.hazelcast.impl.ascii.memcache.*;
-import com.hazelcast.impl.ascii.rest.HttpCommand;
-import com.hazelcast.impl.ascii.rest.HttpDeleteCommandParser;
-import com.hazelcast.impl.ascii.rest.HttpGetCommandParser;
-import com.hazelcast.impl.ascii.rest.HttpPostCommandParser;
+import com.hazelcast.ascii.CommandParser;
+import com.hazelcast.ascii.TextCommand;
+import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.ascii.memcache.GetCommandParser;
+import com.hazelcast.ascii.memcache.SetCommandParser;
+import com.hazelcast.ascii.memcache.DeleteCommandParser;
+import com.hazelcast.ascii.memcache.IncrementCommandParser;
+import com.hazelcast.ascii.memcache.SimpleCommandParser;
+import com.hazelcast.ascii.memcache.TouchCommandParser;
+import com.hazelcast.ascii.memcache.ErrorCommand;
+import com.hazelcast.ascii.rest.HttpCommand;
+import com.hazelcast.ascii.rest.HttpDeleteCommandParser;
+import com.hazelcast.ascii.rest.HttpGetCommandParser;
+import com.hazelcast.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.SocketReader;
+import com.hazelcast.nio.tcp.SocketReader;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.util.StringUtil;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
-import static com.hazelcast.impl.ascii.TextCommandConstants.TextCommandType.*;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ADD;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.APPEND;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.INCREMENT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.REPLACE;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.SET;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.DECREMENT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.PREPEND;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.TOUCH;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.QUIT;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.STATS;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.VERSION;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 
-public class SocketTextReader implements TextCommandConstants, SocketReader {
+public class SocketTextReader implements SocketReader {
 
-    private final static Map<String, CommandParser> mapCommandParsers = new HashMap<String, CommandParser>();
+    private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
+
+    private static final int CAPACITY = 500;
 
     static {
-        mapCommandParsers.put("get", new GetCommandParser());
-        mapCommandParsers.put("gets", new GetCommandParser());
-        mapCommandParsers.put("set", new SetCommandParser(SET));
-        mapCommandParsers.put("add", new SetCommandParser(ADD));
-        mapCommandParsers.put("replace", new SetCommandParser(REPLACE));
-        mapCommandParsers.put("append", new SetCommandParser(APPEND));
-        mapCommandParsers.put("prepend", new SetCommandParser(PREPEND));
-        mapCommandParsers.put("delete", new DeleteCommandParser());
-        mapCommandParsers.put("quit", new SimpleCommandParser(QUIT));
-        mapCommandParsers.put("stats", new SimpleCommandParser(STATS));
-        mapCommandParsers.put("GET", new HttpGetCommandParser());
-        mapCommandParsers.put("POST", new HttpPostCommandParser());
-        mapCommandParsers.put("PUT", new HttpPostCommandParser());
-        mapCommandParsers.put("DELETE", new HttpDeleteCommandParser());
+        MAP_COMMAND_PARSERS.put("get", new GetCommandParser());
+        MAP_COMMAND_PARSERS.put("gets", new GetCommandParser());
+        MAP_COMMAND_PARSERS.put("set", new SetCommandParser(SET));
+        MAP_COMMAND_PARSERS.put("add", new SetCommandParser(ADD));
+        MAP_COMMAND_PARSERS.put("replace", new SetCommandParser(REPLACE));
+        MAP_COMMAND_PARSERS.put("append", new SetCommandParser(APPEND));
+        MAP_COMMAND_PARSERS.put("prepend", new SetCommandParser(PREPEND));
+        MAP_COMMAND_PARSERS.put("touch", new TouchCommandParser(TOUCH));
+        MAP_COMMAND_PARSERS.put("incr", new IncrementCommandParser(INCREMENT));
+        MAP_COMMAND_PARSERS.put("decr", new IncrementCommandParser(DECREMENT));
+        MAP_COMMAND_PARSERS.put("delete", new DeleteCommandParser());
+        MAP_COMMAND_PARSERS.put("quit", new SimpleCommandParser(QUIT));
+        MAP_COMMAND_PARSERS.put("stats", new SimpleCommandParser(STATS));
+        MAP_COMMAND_PARSERS.put("version", new SimpleCommandParser(VERSION));
+        MAP_COMMAND_PARSERS.put("GET", new HttpGetCommandParser());
+        MAP_COMMAND_PARSERS.put("POST", new HttpPostCommandParser());
+        MAP_COMMAND_PARSERS.put("PUT", new HttpPostCommandParser());
+        MAP_COMMAND_PARSERS.put("DELETE", new HttpDeleteCommandParser());
     }
 
-    ByteBuffer commandLine = ByteBuffer.allocate(500);
-    boolean commandLineRead = false;
-    TextCommand command = null;
+    private ByteBuffer commandLine = ByteBuffer.allocate(CAPACITY);
+    private boolean commandLineRead;
+    private TextCommand command;
     private final TextCommandService textCommandService;
     private final SocketTextWriter socketTextWriter;
-    private final Connection connection;
+    private final TcpIpConnection connection;
     private final boolean restEnabled;
     private final boolean memcacheEnabled;
-    boolean connectionTypeSet = false;
-    long requestIdGen;
+    private boolean connectionTypeSet;
+    private long requestIdGen;
     private final ILogger logger;
 
-    public SocketTextReader(Connection connection) {
+    public SocketTextReader(TcpIpConnection connection) {
         IOService ioService = connection.getConnectionManager().getIOHandler();
         this.textCommandService = ioService.getTextCommandService();
         this.socketTextWriter = (SocketTextWriter) connection.getWriteHandler().getSocketWriter();
@@ -105,7 +129,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
                 processCmd(toStringAndClear(commandLine));
             }
             if (command != null) {
-                boolean complete = command.doRead(bb);
+                boolean complete = command.readFrom(bb);
                 if (complete) {
                     publishRequest(command);
                     reset();
@@ -123,30 +147,31 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
     }
 
     public static String toStringAndClear(ByteBuffer bb) {
-        if (bb == null) return "";
-        String result = null;
+        if (bb == null) {
+            return "";
+        }
+        String result;
         if (bb.position() == 0) {
             result = "";
         } else {
-            result = new String(bb.array(), 0, bb.position());
+            result = StringUtil.bytesToString(bb.array(), 0, bb.position());
         }
         bb.clear();
         return result;
     }
 
     public void publishRequest(TextCommand command) {
-//        System.out.println("publishing " + command);
         if (!connectionTypeSet) {
             if (command instanceof HttpCommand) {
                 if (!restEnabled) {
                     connection.close();
                 }
-                connection.setType(Connection.Type.REST_CLIENT);
+                connection.setType(ConnectionType.REST_CLIENT);
             } else {
                 if (!memcacheEnabled) {
                     connection.close();
                 }
-                connection.setType(Connection.Type.MEMCACHE_CLIENT);
+                connection.setType(ConnectionType.MEMCACHE_CLIENT);
             }
             connectionTypeSet = true;
         }
@@ -159,14 +184,14 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
         try {
             int space = cmd.indexOf(' ');
             String operation = (space == -1) ? cmd : cmd.substring(0, space);
-            CommandParser commandParser = mapCommandParsers.get(operation);
+            CommandParser commandParser = MAP_COMMAND_PARSERS.get(operation);
             if (commandParser != null) {
                 command = commandParser.parser(this, cmd, space);
             } else {
                 command = new ErrorCommand(UNKNOWN);
             }
         } catch (Throwable t) {
-            logger.log(Level.FINEST, t.getMessage(), t);
+            logger.finest(t);
             command = new ErrorCommand(ERROR_CLIENT, "Invalid command : " + cmd);
         }
     }

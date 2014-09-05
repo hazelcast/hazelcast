@@ -21,22 +21,46 @@ import com.hazelcast.logging.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.logging.Level;
+import java.util.Properties;
 
+import static com.hazelcast.util.StringUtil.stringToBytes;
+
+/**
+ * Creates a {@link Config} loaded from an in memory Hazelcast XML String.
+ */
 public class InMemoryXmlConfig extends Config {
 
-    private final ILogger logger = Logger.getLogger(InMemoryXmlConfig.class.getName());
+    private static final ILogger LOGGER = Logger.getLogger(InMemoryXmlConfig.class);
 
-    public InMemoryXmlConfig() {
+    /**
+     * Creates a Config from the provided XML and uses the System.properties to resolve variables
+     * in the XML.
+     *
+     * @param xml the XML content
+     * @throws IllegalArgumentException              if the XML is null or empty.
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
+    public InMemoryXmlConfig(String xml) {
+        this(xml, System.getProperties());
     }
 
-    public InMemoryXmlConfig(String xml) {
-        super();
-        logger.log(Level.INFO, "Configuring Hazelcast from 'in-memory xml'.");
+    /**
+     * Creates a Config from the provided XML and properties to resolve the variables in the XML.
+     *
+     * @param xml the XML content
+     * @throws IllegalArgumentException              if the XML is null or empty or if properties is null.
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
+    public InMemoryXmlConfig(String xml, Properties properties) {
+        LOGGER.info("Configuring Hazelcast from 'in-memory xml'.");
         if (xml == null || "".equals(xml.trim())) {
             throw new IllegalArgumentException("XML configuration is null or empty! Please use a well-structured xml.");
         }
-        InputStream in = new ByteArrayInputStream(xml.getBytes());
-        new XmlConfigBuilder(in).build(this);
+        if (properties == null) {
+            throw new IllegalArgumentException("properties can't be null");
+        }
+
+        InputStream in = new ByteArrayInputStream(stringToBytes(xml));
+        new XmlConfigBuilder(in).setProperties(properties).build(this);
     }
 }

@@ -16,37 +16,33 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
-
+import com.hazelcast.management.JsonSerializable;
+import com.hazelcast.management.SerializableClientEndPoint;
+import com.hazelcast.management.SerializableMXBeans;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public interface MemberState extends DataSerializable {
+public interface MemberState extends JsonSerializable {
 
-    Address getAddress();
+    String getAddress();
 
-    MemberHealthStats getMemberHealthStats();
-
-    Map<String,Long> getRuntimeProps();
+    Map<String, Long> getRuntimeProps();
 
     LocalMapStats getLocalMapStats(String mapName);
 
-    LocalMapStats getLocalMultiMapStats(String mapName);
-
-    LocalExecutorOperationStats getInternalExecutorStats(String name);
-
-    LocalExecutorOperationStats getExternalExecutorStats(String name);
+    LocalMultiMapStats getLocalMultiMapStats(String mapName);
 
     LocalQueueStats getLocalQueueStats(String queueName);
 
     LocalTopicStats getLocalTopicStats(String topicName);
 
+    LocalExecutorStats getLocalExecutorStats(String executorName);
+
     List<Integer> getPartitions();
 
-    LocalAtomicNumberStats getLocalAtomicNumberStats(String queueName);
+    Collection<SerializableClientEndPoint> getClients();
 
-    LocalCountDownLatchStats getLocalCountDownLatchStats(String queueName);
+    SerializableMXBeans getMXBeans();
 
-    LocalSemaphoreStats getLocalSemaphoreStats(String queueName);
 }

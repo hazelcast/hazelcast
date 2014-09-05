@@ -16,33 +16,59 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+/**
+ * Contains the configuration for Hazelcast groups.
+ * <p/>
+ * With groups it is possible to create multiple clusters where each cluster has its own group and doesn't
+ * interfere with other clusters.
+ */
+public final class GroupConfig {
 
-public final class GroupConfig implements DataSerializable {
-
+    /**
+     * Default group password
+     */
     public static final String DEFAULT_GROUP_PASSWORD = "dev-pass";
+    /**
+     * Default group name
+     */
     public static final String DEFAULT_GROUP_NAME = "dev";
 
     private String name = DEFAULT_GROUP_NAME;
     private String password = DEFAULT_GROUP_PASSWORD;
 
+    /**
+     * Creates a GroupConfig with default group-name and group-password.
+     */
     public GroupConfig() {
     }
 
+    /**
+     * Creates a GroupConfig with the given group-name and default group-password
+     *
+     * @param name the name of the group
+     * @throws IllegalArgumentException if name is null.
+     */
     public GroupConfig(final String name) {
         setName(name);
     }
 
+    /**
+     * Creates a GroupConfig with the given group-name and group-password
+     *
+     * @param name     the name of the group
+     * @param password the password of the group
+     * @throws IllegalArgumentException if name or password is null.
+     */
     public GroupConfig(final String name, final String password) {
         setName(name);
         setPassword(password);
     }
 
     /**
+     * Gets the name of the group.
+     *
      * @return the name
      */
     public String getName() {
@@ -50,17 +76,20 @@ public final class GroupConfig implements DataSerializable {
     }
 
     /**
+     * Sets the group name.
+     *
      * @param name the name to set
+     * @return the updated GroupConfig.
+     * @throws IllegalArgumentException if name is null.
      */
     public GroupConfig setName(final String name) {
-        if (name == null) {
-            throw new NullPointerException("group name cannot be null");
-        }
-        this.name = name;
+        this.name = isNotNull(name, "group name");
         return this;
     }
 
     /**
+     * Gets the password to connec to to the group.
+     *
      * @return the password
      */
     public String getPassword() {
@@ -68,31 +97,34 @@ public final class GroupConfig implements DataSerializable {
     }
 
     /**
+     * Sets the password.
+     *
      * @param password the password to set
+     * @return the updated GroupConfig.
+     * @throws IllegalArgumentException if password is null.
      */
     public GroupConfig setPassword(final String password) {
-        if (password == null) {
-            throw new NullPointerException("group password cannot be null");
-        }
-        this.password = password;
+        this.password = isNotNull(password, "group password");
         return this;
     }
 
     @Override
     public int hashCode() {
-        return (name != null ? name.hashCode() : 0) +
-                31 * (password != null ? password.hashCode() : 0);
+        return (name != null ? name.hashCode() : 0)
+                + 31 * (password != null ? password.hashCode() : 0);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!(obj instanceof GroupConfig))
+        }
+        if (!(obj instanceof GroupConfig)) {
             return false;
+        }
         GroupConfig other = (GroupConfig) obj;
-        return (this.name == null ? other.name == null : this.name.equals(other.name)) &&
-                (this.password == null ? other.password == null : this.password.equals(other.password));
+        return (this.name == null ? other.name == null : this.name.equals(other.name))
+                && (this.password == null ? other.password == null : this.password.equals(other.password));
     }
 
     @Override
@@ -104,15 +136,5 @@ public final class GroupConfig implements DataSerializable {
         }
         builder.append("]");
         return builder.toString();
-    }
-
-    public void writeData(DataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(password);
-    }
-
-    public void readData(DataInput in) throws IOException {
-        name = in.readUTF();
-        password = in.readUTF();
     }
 }

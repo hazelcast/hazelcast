@@ -16,103 +16,80 @@
 
 package com.hazelcast.jmx;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
- * Management bean for Hazelcst Topic
- *
- * @author Marco Ferrante, DISI - University of Genoa
+ * Management bean for {@link com.hazelcast.core.ITopic}
  */
-@JMXDescription("A distributed queue")
-public class TopicMBean extends AbstractMBean<ITopic<?>> {
+@ManagedDescription("ITopic")
+public class TopicMBean extends HazelcastMBean<ITopic> {
 
-    @SuppressWarnings("unchecked")
-    protected MessageListener listener;
+    private final AtomicLong totalMessageCount = new AtomicLong();
+    private final String registrationId;
 
-    private StatisticsCollector servedStats = null;
+    protected TopicMBean(ITopic managedObject, ManagementService service) {
+        super(managedObject, service);
+        objectName = service.createObjectName("ITopic", managedObject.getName());
 
-    public TopicMBean(ITopic<?> topic, ManagementService managementService) {
-        super(topic, managementService);
+        //can't we rely on the statics functionality of the topic instead of relying on the event system?
+        MessageListener messageListener = new MessageListener() {
+            public void onMessage(Message message) {
+                totalMessageCount.incrementAndGet();
+            }
+        };
+        registrationId = managedObject.addMessageListener(messageListener);
     }
 
-    @Override
-    public ObjectNameSpec getNameSpec() {
-        return getParentName().getNested("Topic", getName());
+    @ManagedAnnotation("localCreationTime")
+    @ManagedDescription("the creation time of this topic on this member")
+    public long getLocalCreationTime() {
+        return managedObject.getLocalTopicStats().getCreationTime();
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void postRegister(Boolean registrationDone) {
-        super.postRegister(registrationDone);
-        if (!registrationDone) {
-            return;
-        }
-        if (managementService.showDetails()) {
-            servedStats = ManagementService.newStatisticsCollector();
-            listener = new MessageListener() {
-
-                public void onMessage(Message msg) {
-                    servedStats.addEvent();
-                }
-            };
-            getManagedObject().addMessageListener(listener);
-        }
+    @ManagedAnnotation("localPublishOperationCount")
+    @ManagedDescription(" the total number of published messages of this topic on this member")
+    public long getLocalPublishOperationCount() {
+        return managedObject.getLocalTopicStats().getPublishOperationCount();
     }
 
-    @SuppressWarnings("unchecked")
+    @ManagedAnnotation("localReceiveOperationCount")
+    @ManagedDescription("the total number of received messages of this topic on this member")
+    public long getLocalReceiveOperationCount() {
+        return managedObject.getLocalTopicStats().getReceiveOperationCount();
+    }
+
+    @ManagedAnnotation("name")
+    @ManagedDescription("Name of the DistributedObject")
+    public String getName() {
+        return managedObject.getName();
+    }
+
+    @ManagedAnnotation("totalMessageCount")
+    public long getTotalMessageCount() {
+        return totalMessageCount.get();
+    }
+
+    @ManagedAnnotation("config")
+    public String getConfig() {
+        Config config = service.instance.getConfig();
+        TopicConfig topicConfig = config.findTopicConfig(managedObject.getName());
+        return topicConfig.toString();
+    }
+
     @Override
     public void preDeregister() throws Exception {
-        if (listener != null) {
-            getManagedObject().removeMessageListener(listener);
-            listener = null;
-        }
-        if (servedStats != null) {
-            servedStats.destroy();
-            servedStats = null;
-        }
         super.preDeregister();
-    }
-
-    /**
-     * Resets statistics
-     */
-    @JMXOperation("resetStats")
-    public void resetStats() {
-        if (servedStats != null)
-            servedStats.reset();
-    }
-
-    @JMXAttribute("Name")
-    @JMXDescription("Registration name of the queue")
-    public String getName() {
-        return getManagedObject().getName();
-    }
-
-    @JMXAttribute("Config")
-    @JMXDescription("Topic configuration")
-    public String getConfig() {
-        final TopicConfig config = managementService.getInstance().getConfig().getTopicConfig(getName());
-        return config.toString();
-    }
-
-    @JMXAttribute("MessagesDispatched")
-    @JMXDescription("Total messages dispatched since creation")
-    public long getItemsReceived() {
-        return servedStats.getTotal();
-    }
-
-    @JMXAttribute("MessagesDispatchedLast")
-    @JMXDescription("Messages dispatched in the last second")
-    public double getItemsReceivedAvg() {
-        return servedStats.getAverage();
-    }
-
-    @JMXAttribute("MessagesDispatchedPeak")
-    @JMXDescription("Max messages dispatched  per second")
-    public double getItemsReceivedMax() {
-        return servedStats.getMax();
+        try {
+            managedObject.removeMessageListener(registrationId);
+        } catch (Exception ignored) {
+            ignore(ignored);
+        }
     }
 }

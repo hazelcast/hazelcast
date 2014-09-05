@@ -15,16 +15,23 @@
   -->
 
 <assembly>
-    <id>THEID</id>
+    <id>Hazelcast Assembly</id>
     <formats>
         <format>zip</format>
     </formats>
     <fileSets>
         <fileSet>
-            <directory>hazelcast-ra/target</directory>
+            <directory>hazelcast-ra/hazelcast-jca/target</directory>
             <outputDirectory>/lib/</outputDirectory>
             <includes>
-                <include>hazelcast-ra-${project.version}.rar</include>
+                <include>hazelcast-jca-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast-ra/hazelcast-jca-rar/target</directory>
+            <outputDirectory>/lib/</outputDirectory>
+            <includes>
+                <include>hazelcast-jca-rar-${project.version}.rar</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -35,10 +42,17 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>hazelcast-hibernate/target</directory>
+            <directory>hazelcast-hibernate/hazelcast-hibernate3/target</directory>
             <outputDirectory>/lib/</outputDirectory>
             <includes>
-                <include>hazelcast-hibernate-${project.version}.jar</include>
+                <include>hazelcast-hibernate3-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast-hibernate/hazelcast-hibernate4/target</directory>
+            <outputDirectory>/lib/</outputDirectory>
+            <includes>
+                <include>hazelcast-hibernate4-${project.version}.jar</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -87,12 +101,13 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>hazelcast-documentation/target/docbook</directory>
+            <directory>hazelcast-documentation/target/</directory>
             <outputDirectory>docs/manual</outputDirectory>
             <includes>
-                <include>pdf/hazelcast-documentation.pdf</include>
-                <include>single_html/**</include>
-                <include>multi_html/**</include>
+                <include>pdf/hazelcast-documentation-${project.version}.pdf</include>
+                <include>html/**</include>
+                <include>html-single/**</include>
+                <include>no_header/**</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -106,15 +121,16 @@
         <fileSet>
             <directory>hazelcast/target/classes/</directory>
             <outputDirectory>/bin/</outputDirectory>
+            <fileMode>0755</fileMode>
             <includes>
-                <include>run.bat</include>
-                <include>test.bat</include>
-                <include>client.bat</include>
-                <include>server.bat</include>
-                <include>run.sh</include>
-                <include>test.sh</include>
-                <include>client.sh</include>
-                <include>server.sh</include>
+                <include>*.sh</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast/target/classes/</directory>
+            <outputDirectory>/bin/</outputDirectory>
+            <includes>
+                <include>*.bat</include>
                 <include>keystore</include>
             </includes>
         </fileSet>
@@ -137,6 +153,13 @@
             <outputDirectory>/bin/</outputDirectory>
             <includes>
                 <include>*.bat</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>hazelcast-client/target/classes/</directory>
+            <outputDirectory>/bin/</outputDirectory>
+            <fileMode>0755</fileMode>
+            <includes>
                 <include>*.sh</include>
             </includes>
         </fileSet>

@@ -16,24 +16,38 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.spring.hibernate.CacheProviderBeanDefinitionParser;
 import com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser;
 import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 
+/**
+ * Hazelcast Custom Namespace Definitions.
+ */
 public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
 
     public void init() {
         registerBeanDefinitionParser("config", new HazelcastConfigBeanDefinitionParser());
         registerBeanDefinitionParser("hazelcast", new HazelcastInstanceDefinitionParser());
         registerBeanDefinitionParser("client", new HazelcastClientBeanDefinitionParser());
-        registerBeanDefinitionParser("hibernate-cache-provider", new CacheProviderBeanDefinitionParser());
         registerBeanDefinitionParser("hibernate-region-factory", new RegionFactoryBeanDefinitionParser());
-        final String[] types = {"map", "multiMap",
-                                "queue", "topic", "set", "list",
-                                "executorService", "idGenerator", "atomicNumber",
-                                "countDownLatch", "semaphore", "lock"};
+        final String[] types = {
+                "map",
+                "multiMap",
+                "replicatedmap",
+                "queue",
+                "topic",
+                "set",
+                "list",
+                "executorService",
+                "idGenerator",
+                "atomicLong",
+                "atomicReference",
+                "countDownLatch",
+                "semaphore",
+                "lock",
+        };
         for (final String type : types) {
             registerBeanDefinitionParser(type, new HazelcastTypeBeanDefinitionParser(type));
         }
     }
 }
+

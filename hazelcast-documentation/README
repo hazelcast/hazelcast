@@ -1,0 +1,6 @@
+Required packages:
+
+- Node.js: http://nodejs.org
+- Bfdocs: http://beautifuldocs.com
+- Pandoc: http://johnmacfarlane.net/pandoc/installing.html
+- BasicTeX: http://www.tug.org/mactex/morepackages.html

@@ -17,57 +17,39 @@
 package com.hazelcast.jmx;
 
 import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.Member;
-import com.hazelcast.impl.CountDownLatchProxy;
 
 /**
- * MBean for ICountDownLatch
+ * Management bean for {@link com.hazelcast.core.ICountDownLatch}
  */
-@JMXDescription("A distributed CountDownLatch")
-public class CountDownLatchMBean extends AbstractMBean<ICountDownLatch> {
+@ManagedDescription("ICountDownLatch")
+public class CountDownLatchMBean extends HazelcastMBean<ICountDownLatch> {
 
-    public CountDownLatchMBean(ICountDownLatch managedObject, ManagementService managementService) {
-        super(managedObject, managementService);
+    protected CountDownLatchMBean(ICountDownLatch managedObject, ManagementService service) {
+        super(managedObject, service);
+        objectName = service.createObjectName("ICountDownLatch", managedObject.getName());
     }
 
-    @Override
-    public ObjectNameSpec getNameSpec() {
-        return getParentName().getNested("CountDownLatch", getName());
+    @ManagedAnnotation("name")
+    @ManagedDescription("")
+    public String name() {
+        return managedObject.getName();
     }
 
-    @JMXAttribute("Name")
-    @JMXDescription("Instance name of the count down latch")
-    public String getName() {
-        return getManagedObject().getName();
+    @ManagedAnnotation("count")
+    @ManagedDescription("Current Count")
+    public int getCount() {
+        return managedObject.getCount();
     }
 
-    @JMXAttribute("CurrentCount")
-    @JMXDescription("getCount() result")
-    public long getCurrentCount() {
-        return getCount();
-    }
-
-    @JMXAttribute("CurrentOwner")
-    @JMXDescription("getOwner() result")
-    public Member getCurrentOwner() {
-        return getOwner();
-    }
-
-    @JMXOperation("countDown")
-    @JMXDescription("perform a countdown operation")
+    @ManagedAnnotation(value = "countDown", operation = true)
+    @ManagedDescription("perform a countdown operation")
     public void countDown() {
-        getManagedObject().countDown();
+        managedObject.countDown();
     }
 
-    @JMXOperation("getCount")
-    @JMXDescription("return current count value")
-    public long getCount() {
-        return ((CountDownLatchProxy) getManagedObject()).getCount();
-    }
-
-    @JMXOperation("getOwner")
-    @JMXDescription("return current count owner")
-    public Member getOwner() {
-        return ((CountDownLatchProxy) getManagedObject()).getOwner();
+    @ManagedAnnotation("partitionKey")
+    @ManagedDescription("the partitionKey")
+    public String getPartitionKey() {
+        return managedObject.getPartitionKey();
     }
 }

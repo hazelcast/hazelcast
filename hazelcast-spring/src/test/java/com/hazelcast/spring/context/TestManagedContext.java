@@ -16,34 +16,41 @@
 
 package com.hazelcast.spring.context;
 
-import com.hazelcast.core.DistributedTask;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.core.IMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
- * @mdogan 4/6/12
+ * @author mdogan 4/6/12
  */
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"managedContext-applicationContext-hazelcast.xml"})
+@Category(QuickTest.class)
 public class TestManagedContext {
-
-    static {
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-    }
 
     @Resource(name = "instance1")
     private HazelcastInstance instance1;
@@ -72,43 +79,88 @@ public class TestManagedContext {
         SomeValue v = (SomeValue) instance1.getMap("test").get(1L);
         Assert.assertNotNull(v.context);
         Assert.assertNotNull(v.someBean);
-        Assert.assertEquals(context, v.context);
-        Assert.assertEquals(bean, v.someBean);
-        Assert.assertTrue(v.init);
+        assertEquals(context, v.context);
+        assertEquals(bean, v.someBean);
+        assertTrue(v.init);
     }
 
     @Test
     public void testDistributedTask() throws ExecutionException, InterruptedException {
         SomeTask task = (SomeTask) context.getBean("someTask");
-        Future<Long> f = instance1.getExecutorService().submit(task);
-        Assert.assertEquals(bean.value, f.get().longValue());
+        Future<Long> f = instance1.getExecutorService("test").submit(task);
+        assertEquals(bean.value, f.get().longValue());
 
-        Future<Long> f2 = (Future<Long>) instance1.getExecutorService()
-                .submit(new DistributedTask<Long>(new SomeTask()));
-        Assert.assertEquals(bean.value, f2.get().longValue());
+        Future<Long> f2 = instance1.getExecutorService("test").submitToMember(new SomeTask(),
+                instance2.getCluster().getLocalMember());
+        assertEquals(bean.value, f2.get().longValue());
     }
 
     @Test
     public void testTransactionalTask() throws ExecutionException, InterruptedException {
-        Future f = instance1.getExecutorService().submit(new DistributedTask(new SomeTransactionalTask(),
-                instance2.getCluster().getLocalMember()));
+        Future f = instance1.getExecutorService("test").submitToMember(new SomeTransactionalTask(),
+                instance2.getCluster().getLocalMember());
         f.get();
-        Assert.assertTrue("transaction manager could not proxy the submitted task.",
+        assertTrue("transaction manager could not proxy the submitted task.",
                 transactionManager.isCommitted());
     }
 
     @Test
     public void testRunnableTask() throws ExecutionException, InterruptedException {
-        Future<?> future = instance1.getExecutorService().submit(new SomeRunnableTask());
-        future.get();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
+
+        instance1.getExecutorService("test").submitToMember(new SomeRunnableTask(),
+                instance2.getCluster().getLocalMember(), new ExecutionCallback() {
+            public void onResponse(Object response) {
+                latch.countDown();
+            }
+
+            public void onFailure(Throwable t) {
+                error.set(t);
+                latch.countDown();
+            }
+        });
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        Throwable t = error.get();
+        if (t != null) {
+            ExceptionUtil.sneakyThrow(t);
+        }
     }
 
     @Test
     public void testTransactionalRunnableTask() throws ExecutionException, InterruptedException {
-        Future<?> future = instance1.getExecutorService().submit(new SomeTransactionalRunnableTask());
-        future.get();
-        Assert.assertTrue("transaction manager could not proxy the submitted task.",
+        final CountDownLatch latch = new CountDownLatch(1);
+        instance1.getExecutorService("test").submitToMember(new SomeTransactionalRunnableTask(),
+                instance2.getCluster().getLocalMember(), new ExecutionCallback() {
+            public void onResponse(Object response) {
+                latch.countDown();
+            }
+
+            public void onFailure(Throwable t) {
+            }
+        });
+        latch.await(1, TimeUnit.MINUTES);
+        assertTrue("transaction manager could not proxy the submitted task.",
                 transactionManager.isCommitted());
     }
 
+    @Test
+    public void testEntryProcessor() {
+        final IMap<Object,Object> map = instance1.getMap("testEntryProcessor");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        map.put("key4", "value4");
+        map.put("key5", "value5");
+
+        final Map<Object,Object> objectMap = map.executeOnEntries(new SomeEntryProcessor());
+        assertEquals(5, objectMap.size());
+        for (Object o : objectMap.values()) {
+            assertEquals("notNull", o);
+        }
+
+        final Object result = map.executeOnKey("key8", new SomeEntryProcessor());
+        assertEquals("notNull", result);
+    }
 }

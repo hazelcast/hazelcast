@@ -21,11 +21,11 @@ import java.util.Map;
 
 /**
  * Hazelcast distributed map implementation is an in-memory data store but
- * it can be backed by any type of data store such as RDBMS, OODBMS, or simply
+ * it can be backed by any type of data store such as RDBMS, OODBMS, NOSQL or simply
  * a file based data store.
  * <p/>
  * IMap.put(key, value) normally stores the entry into JVM's memory. If MapStore
- * implementation is provided then Hazelcast can also call the MapStore
+ * implementation is provided then Hazelcast will also call the MapStore
  * implementation to store the entry into a user defined storage such as
  * RDBMS or some other external storage system. It is completely up to the user
  * how the key-value will be stored or deleted.
@@ -34,10 +34,15 @@ import java.util.Map;
  * <p/>
  * Store implementation can be called synchronously (write-through)
  * or asynchronously (write-behind) depending on the configuration.
+ * <p/>
+ * Note that in write-behind mode, there is a possibility that a map-store
+ * implementation can be used by multiple threads at the same time, calling methods like
+ * {@link IMap#flush()} or {@link IMap#evict(Object)} may trigger this behavior.
  */
 public interface MapStore<K, V> extends MapLoader<K, V> {
     /**
      * Stores the key-value pair.
+     * If an exception is thrown then the put operation will fail.
      *
      * @param key   key of the entry to store
      * @param value value of the entry to store
@@ -47,6 +52,8 @@ public interface MapStore<K, V> extends MapLoader<K, V> {
     /**
      * Stores multiple entries. Implementation of this method can optimize the
      * store operation by storing all entries in one database connection for instance.
+     * storeAll used when writeDelaySeconds is positive (write-behind).
+     * If an exception is thrown the entries will be tried to be stored one by one using store() method.
      *
      * @param map map of entries to store
      */
@@ -54,6 +61,7 @@ public interface MapStore<K, V> extends MapLoader<K, V> {
 
     /**
      * Deletes the entry with a given key from the store.
+     * If an exception is thrown the remove operation will fail.
      *
      * @param key key to delete from the store.
      */
@@ -61,6 +69,7 @@ public interface MapStore<K, V> extends MapLoader<K, V> {
 
     /**
      * Deletes multiple entries from the store.
+     * If an exception is thrown the entries will be tried to be deleted one by one using delete() method.
      *
      * @param keys keys of the entries to delete.
      */

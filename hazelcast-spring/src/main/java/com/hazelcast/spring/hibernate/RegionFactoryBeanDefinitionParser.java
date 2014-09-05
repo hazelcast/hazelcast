@@ -17,12 +17,55 @@
 package com.hazelcast.spring.hibernate;
 
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
+import org.springframework.beans.factory.xml.ParserContext;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
-public class RegionFactoryBeanDefinitionParser extends CacheBeanDefinitionParserSupport {
+/**
+ * Parser for RegionFactory.
+ * <p/>
+ *
+ * Sample Spring XML for Hibernate RegionFactory
+ * <pre>
+ * <code>
+ *     &lt;hz:hibernate-region-factory id="regionFactory" instance-ref="instance"/&gt;
+ *     &lt;hz:hibernate-region-factory id="localRegionFactory" instance-ref="instance" mode="LOCAL" /&gt;
+ * </code>
+ * </pre>
+ *
+ */
+public class RegionFactoryBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
-    @Override
-    protected BeanDefinitionBuilder createBeanDefinitionBuilder() {
-        return BeanDefinitionBuilder.rootBeanDefinition(HazelcastCacheRegionFactory.class);
+    protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
+        final NamedNodeMap atts = element.getAttributes();
+        String instanceRefName = "instance";
+        String mode = "DISTRIBUTED";
+        if (atts != null) {
+            for (int a = 0; a < atts.getLength(); a++) {
+                final Node att = atts.item(a);
+                final String name = att.getNodeName();
+                if ("instance-ref".equals(name)) {
+                    instanceRefName = att.getTextContent();
+                } else if ("mode".equals(name)) {
+                    mode = att.getTextContent();
+                }
+            }
+        }
+
+        final BeanDefinitionBuilder builder;
+        if ("DISTRIBUTED".equals(mode)) {
+            builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastCacheRegionFactory.class);
+        } else if ("LOCAL".equals(mode)) {
+            builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastLocalCacheRegionFactory.class);
+        } else {
+            throw new IllegalArgumentException("Unknown Hibernate L2 cache mode: " + mode);
+        }
+        builder.addConstructorArgReference(instanceRefName);
+        return builder.getBeanDefinition();
     }
 }

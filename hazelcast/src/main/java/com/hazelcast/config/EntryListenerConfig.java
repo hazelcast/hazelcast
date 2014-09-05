@@ -18,11 +18,16 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.EntryListener;
 
+/**
+ * Configuration for EntryListener
+ */
 public class EntryListenerConfig extends ListenerConfig {
 
-    private boolean local = false;
+    private boolean local;
 
     private boolean includeValue = true;
+
+    private EntryListenerConfigReadOnly readOnly;
 
     public EntryListenerConfig() {
         super();
@@ -38,6 +43,20 @@ public class EntryListenerConfig extends ListenerConfig {
         super(implementation);
         this.local = local;
         this.includeValue = includeValue;
+    }
+
+    public EntryListenerConfig(EntryListenerConfig config) {
+        includeValue = config.isIncludeValue();
+        local = config.isLocal();
+        implementation = config.getImplementation();
+        className = config.getClassName();
+    }
+
+    public EntryListenerConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new EntryListenerConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public EntryListener getImplementation() {
@@ -75,5 +94,37 @@ public class EntryListenerConfig extends ListenerConfig {
         sb.append(", includeValue=").append(includeValue);
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        EntryListenerConfig that = (EntryListenerConfig) o;
+
+        if (includeValue != that.includeValue) {
+            return false;
+        }
+        if (local != that.local) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (local ? 1 : 0);
+        result = 31 * result + (includeValue ? 1 : 0);
+        return result;
     }
 }

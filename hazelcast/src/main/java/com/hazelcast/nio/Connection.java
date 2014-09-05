@@ -16,219 +16,108 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.base.SystemLogService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.SimpleBoundedQueue;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
-import java.io.IOException;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.util.logging.Level;
+/**
+ * Represents a 'connection' between two machines. The most important implementation is the
+ * {@link com.hazelcast.nio.tcp.TcpIpConnection}.
+ */
+public interface Connection {
 
-public final class Connection {
+    /**
+     * Writes a SocketWritable packet to the other side.
+     * <p/>
+     * The packet could be stored in an internal queue before it actually is written, so this call
+     * doesn't need to be a synchronous call.
+     *
+     * @param packet the packet to write.
+     * @return false if the packet was not accepted to be written, e.g. because the Connection was
+     * not alive.
+     * @throws NullPointerException if packet is null.
+     */
+    boolean write(SocketWritable packet);
 
-    private final SocketChannelWrapper socketChannel;
+    /**
+     * Checks if the Connection is still alive.
+     *
+     * todo: rename to isAlive?
+     *
+     * @return true if alive, false otherwise.
+     */
+    boolean live();
 
-    private final ReadHandler readHandler;
+    /**
+     * Returns the clock time of the most recent read using this connection.
+     *
+     * @return the clock time of the most recent read
+     */
+    long lastReadTime();
 
-    private final WriteHandler writeHandler;
+    /**
+     * Returns the clock time of the most recent write using this connection.
+     *
+     * @return the clock time of the most recent write.
+     */
+    long lastWriteTime();
 
-    private final ConnectionManager connectionManager;
+    /**
+     * Closes this connection.
+     * <p/>
+     * todo: what happens with all pending SocketWritables? Are they flushed, discarded or undefined behavior?
+     * <p/>
+     * If the Connection already is closed, the call is ignored. So it can safely be called multiple times.
+     */
+    void close();
 
-    private final InOutSelector inOutSelector;
+    /**
+     * Returns the {@link ConnectionType} of this Connection.
+     *
+     * @return the ConnectionType. It could be that <code>null</code> is returned.
+     */
+    ConnectionType getType();
 
-    private volatile boolean live = true;
+    /**
+     * Checks if it is a client connection.
+     *
+     * @return true if client connection, false otherwise.
+     */
+    boolean isClient();
 
-    private volatile Type type = Type.NONE;
+    /**
+     * Returns remote address of this Connection.
+     *
+     * @return the remote address. The returned value could be <code>null</code> if the connection is not alive.
+     */
+    InetAddress getInetAddress();
 
-    private Address endPoint = null;
+    /**
+     * Returns the address of the endpoint this Connection is connected to, or
+     * <code>null</code> if it is unconnected.
+     *
+     * @return address of the endpoint.
+     * <p/>
+     * todo: do we really need this method because we have getInetAddress, InetSocketAddress and getEndPoint.
+     */
+    InetSocketAddress getRemoteSocketAddress();
 
-    private final ILogger logger;
+    /**
+     * Gets the {@ink Address} of the other side of this Connection.
+     * <p/>
+     * todo: rename to get remoteAddress?
+     *
+     * @return the Address.
+     */
+    Address getEndPoint();
 
-    private final SystemLogService systemLogService;
-
-    private final int connectionId;
-
-    private final SimpleBoundedQueue<Packet> packetQueue = new SimpleBoundedQueue<Packet>(100);
-
-    private ConnectionMonitor monitor;
-
-    public Connection(ConnectionManager connectionManager, InOutSelector inOutSelector, int connectionId, SocketChannelWrapper socketChannel) {
-        this.inOutSelector = inOutSelector;
-        this.connectionId = connectionId;
-        this.logger = connectionManager.ioService.getLogger(Connection.class.getName());
-        this.systemLogService = connectionManager.ioService.getSystemLogService();
-        this.connectionManager = connectionManager;
-        this.socketChannel = socketChannel;
-        this.writeHandler = new WriteHandler(this);
-        this.readHandler = new ReadHandler(this);
-    }
-
-    public SystemLogService getSystemLogService() {
-        return systemLogService;
-    }
-
-    public Type getType() {
-        return type;
-    }
-
-    public void releasePacket(Packet packet) {
-        if (packet == null) return;
-        packet.reset();
-        packetQueue.offer(packet);
-    }
-
-    public Packet obtainPacket() {
-        Packet packet = packetQueue.poll();
-        if (packet == null) {
-            packet = new Packet();
-        } else {
-            packet.reset();
-        }
-        return packet;
-    }
-
-    public ConnectionManager getConnectionManager() {
-        return connectionManager;
-    }
-
-    public enum Type {
-        NONE(false, false),
-        MEMBER(true, true),
-        CLIENT(false, true),
-        REST_CLIENT(false, false),
-        MEMCACHE_CLIENT(false, false);
-
-        final boolean member;
-        final boolean binary;
-
-        Type(boolean member, boolean binary) {
-            this.member = member;
-            this.binary = binary;
-        }
-
-        public boolean isBinary() {
-            return binary;
-        }
-
-        public boolean isClient() {
-            return !member;
-        }
-    }
-
-    public boolean isClient() {
-        return (type != null) && type != Type.NONE && type.isClient();
-    }
-
-    public void setType(Type type) {
-        if (this.type == Type.NONE) {
-            this.type = type;
-        }
-    }
-
-    public SocketChannelWrapper getSocketChannelWrapper() {
-        return socketChannel;
-    }
-
-    public ReadHandler getReadHandler() {
-        return readHandler;
-    }
-
-    public WriteHandler getWriteHandler() {
-        return writeHandler;
-    }
-
-    public InOutSelector getInOutSelector() {
-        return inOutSelector;
-    }
-
-    public boolean live() {
-        return live;
-    }
-
-    public long lastWriteTime() {
-        return writeHandler.lastHandle;
-    }
-
-    public long lastReadTime() {
-        return readHandler.lastHandle;
-    }
-
-    public Address getEndPoint() {
-        return endPoint;
-    }
-
-    public void setEndPoint(Address endPoint) {
-        this.endPoint = endPoint;
-    }
-
-    public void setMonitor(ConnectionMonitor monitor) {
-        this.monitor = monitor;
-    }
-
-    public ConnectionMonitor getMonitor() {
-        return monitor;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Connection)) return false;
-        Connection that = (Connection) o;
-        return connectionId == that.getConnectionId();
-    }
-
-    @Override
-    public int hashCode() {
-        return connectionId;
-    }
-
-    public void close0() throws IOException {
-        if (!live) {
-            return;
-        }
-        readHandler.shutdown();
-        writeHandler.shutdown();
-        live = false;
-        if (socketChannel != null && socketChannel.isOpen()) {
-            socketChannel.close();
-        }
-    }
-
-    public void close() {
-        close(null);
-    }
-
-    public void close(Throwable t) {
-        try {
-            close0();
-        } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-        }
-        Object connAddress = (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
-        String message = "Connection [" + connAddress + "] lost. Reason: ";
-        if (t != null) {
-            message += t.getClass().getName() + "[" + t.getMessage() + "]";
-        } else {
-            message += "Explicit close";
-        }
-        logger.log(Level.INFO, message);
-        systemLogService.logConnection(message);
-        connectionManager.destroyConnection(this);
-        connectionManager.ioService.disconnectExistingCalls(endPoint);
-        if (t != null && monitor != null) {
-            monitor.onError(t);
-        }
-    }
-
-    public int getConnectionId() {
-        return connectionId;
-    }
-
-    @Override
-    public String toString() {
-        final Socket socket = this.socketChannel.socket();
-        final SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
-        return "Connection [" + remoteSocketAddress + " -> " + endPoint + "] live=" + live + ", client=" + isClient() + ", type=" + type;
-    }
+    /**
+     * The remote port.
+     * <p/>
+     * todo: rename to getRemotePort?  And do we need it because we already have getEndPoint which returns an address
+     * which includes port. It is only used in testing
+     *
+     * @return the remote port number to which this Connection is connected, or
+     * 0 if the socket is not connected yet.
+     */
+    int getPort();
 }

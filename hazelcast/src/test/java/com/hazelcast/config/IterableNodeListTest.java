@@ -16,8 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -35,7 +39,8 @@ import static org.junit.Assert.*;
 /**
  *
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class IterableNodeListTest {
 
     private Document document;
@@ -60,27 +65,18 @@ public class IterableNodeListTest {
         assertEquals(3, count);
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.XmlConfigBuilder.IterableNodeList#hasNext()}.
-     */
     @Test
     public void testHasNext() {
         NodeList nodeList = document.getChildNodes();
         assertTrue(new XmlConfigBuilder.IterableNodeList(nodeList).iterator().hasNext());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.XmlConfigBuilder.IterableNodeList#next()}.
-     */
     @Test
     public void testNext() {
         NodeList nodeList = document.getChildNodes();
         assertNotNull(new XmlConfigBuilder.IterableNodeList(nodeList).iterator().next());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.XmlConfigBuilder.IterableNodeList#remove()}.
-     */
     @Test(expected = UnsupportedOperationException.class)
     public void testRemove() {
         NodeList nodeList = document.getChildNodes();

@@ -18,13 +18,17 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * Hazelcast instance. Each Hazelcast instance is a member.
+ * Hazelcast instance. Each Hazelcast instance is a member (node) in a cluster.
  * Multiple Hazelcast instances can be created on a JVM.
  * Each Hazelcast instance has its own socket, threads.
  *
@@ -81,6 +85,24 @@ public interface HazelcastInstance {
     <K, V> IMap<K, V> getMap(String name);
 
     /**
+     * Returns the replicated map instance with the specified name.
+     *
+     * @param name name of the distributed map
+     * @return replicated map instance with specified name
+     * @since 3.2
+     */
+    <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
+
+    /**
+     * Returns the job tracker instance with the specified name.
+     *
+     * @param name name of the job tracker
+     * @return job tracker instance with specified name
+     * @since 3.2
+     */
+    JobTracker getJobTracker(String name);
+
+    /**
      * Returns the distributed multimap instance with the specified name.
      *
      * @param name name of the distributed multimap
@@ -101,7 +123,7 @@ public interface HazelcastInstance {
      * by this dead member will be removed so that these locks can be
      * available for live members immediately.
      * <pre>
-     * Lock lock = Hazelcast.getLock("PROCESS_LOCK");
+     * Lock lock = hazelcastInstance.getLock("PROCESS_LOCK");
      * lock.lock();
      * try {
      *   // process
@@ -113,6 +135,12 @@ public interface HazelcastInstance {
      * @param key key of the lock instance
      * @return distributed lock instance for the specified key.
      */
+    ILock getLock(String key);
+
+    /**
+     * @deprecated will be removed in Hazelcast 3.2. Use {@link #getLock(String)} instead.
+     */
+    @Deprecated
     ILock getLock(Object key);
 
     /**
@@ -125,63 +153,74 @@ public interface HazelcastInstance {
      */
     Cluster getCluster();
 
+
     /**
-     * Returns the default distributed executor service. Executor
-     * service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
-     * on the Hazelcast cluster.
+     * Returns the local Endpoint which this HazelcastInstance is belongs to.
+     * <p/>
      *
-     * Note that it don't support invokeAll/Any and don't have standard shutdown behavior
+     * Returned endpoint will be a {@link Member} instance for cluster nodes
+     * and a {@link Client} instance for clients.
      *
-     * @return distributed executor service of this Hazelcast instance
+     * @see Member
+     * @see Client
+     *
+     * @return local endpoint
      */
-    ExecutorService getExecutorService();
+    Endpoint getLocalEndpoint();
 
     /**
      * Returns the distributed executor service for the given
      * name.
+     * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * on the Hazelcast cluster.
+     * <p/>
+     * <p><b>Note:</b> Note that it don't support invokeAll/Any
+     * and don't have standard shutdown behavior</p>
      *
      * @param name name of the executor service
      * @return executor service for the given name
      */
-    ExecutorService getExecutorService(String name);
+    IExecutorService getExecutorService(String name);
 
     /**
-     * Returns the transaction instance associated with the current thread,
-     * creates a new one if it wasn't already.
-     * <p/>
-     * Transaction doesn't start until you call <tt>transaction.begin()</tt> and
-     * if a transaction is started then all transactional Hazelcast operations
-     * are automatically transactional.
-     * <pre>
-     *  Map map = Hazelcast.getMap("mymap");
-     *  Transaction txn = Hazelcast.getTransaction();
-     *  txn.begin();
-     *  try {
-     *    map.put ("key", "value");
-     *    txn.commit();
-     *  }catch (Exception e) {
-     *    txn.rollback();
-     *  }
-     * </pre>
-     * Isolation is always <tt>REPEATABLE_READ</tt> . If you are in
-     * a transaction, you can read the data in your transaction and the data that
-     * is already committed and if not in a transaction, you can only read the
-     * committed data. Implementation is different for queue and map/set. For
-     * queue operations (offer,poll), offered and/or polled objects are copied to
-     * the next member in order to safely commit/rollback. For map/set, Hazelcast
-     * first acquires the locks for the write operations (put, remove) and holds
-     * the differences (what is added/removed/updated) locally for each transaction.
-     * When transaction is set to commit, Hazelcast will release the locks and
-     * apply the differences. When rolling back, Hazelcast will simply releases
-     * the locks and discard the differences. Transaction instance is attached
-     * to the current thread and each Hazelcast operation checks if the current
-     * thread holds a transaction, if so, operation will be transaction aware.
-     * When transaction is committed, rolled back or timed out, it will be detached
-     * from the thread holding it.
+     * Executes given transactional task in current thread using default options
+     * and returns the result of the task.
      *
-     * @return transaction for the current thread
+     * @param task task to be executed
+     * @param <T> return type of task
+     * @return returns result of transactional task
+     *
+     * @throws TransactionException if an error occurs during transaction.
      */
-    Transaction getTransaction();
+    <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
+
+    /**
+     * Executes given transactional task in current thread using given options
+     * and returns the result of the task.
+     *
+     * @param options options for this transactional task
+     * @param task task to be executed
+     * @param <T> return type of task
+     * @return returns result of transactional task
+     *
+     * @throws TransactionException if an error occurs during transaction.
+     */
+    <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
+
+    /**
+     * Creates a new TransactionContext associated with the current thread using default options.
+     *
+     * @return new TransactionContext
+     */
+    TransactionContext newTransactionContext();
+
+    /**
+     * Creates a new TransactionContext associated with the current thread with given options.
+     *
+     * @param options options for this transaction
+     * @return new TransactionContext
+     */
+    TransactionContext newTransactionContext(TransactionOptions options);
 
     /**
      * Creates cluster-wide unique IDs. Generated IDs are long type primitive values
@@ -195,13 +234,22 @@ public interface HazelcastInstance {
     IdGenerator getIdGenerator(String name);
 
     /**
-     * Creates cluster-wide atomic long. Hazelcast AtomicNumber is distributed
+     * Creates cluster-wide atomic long. Hazelcast IAtomicLong is distributed
      * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
      *
-     * @param name name of the AtomicNumber proxy
-     * @return AtomicNumber proxy for the given name
+     * @param name name of the IAtomicLong proxy
+     * @return IAtomicLong proxy for the given name
      */
-    AtomicNumber getAtomicNumber(String name);
+    IAtomicLong getAtomicLong(String name);
+
+    /**
+     * Creates cluster-wide atomic reference. Hazelcast IAtomicReference is distributed
+     * implementation of <tt>java.util.concurrent.atomic.AtomicReference</tt>.
+     *
+     * @param name name of the IAtomicReference proxy
+     * @return IAtomicReference proxy for the given name
+     */
+    <E> IAtomicReference<E> getAtomicReference(String name);
 
     /**
      * Creates cluster-wide CountDownLatch. Hazelcast ICountDownLatch is distributed
@@ -222,48 +270,29 @@ public interface HazelcastInstance {
     ISemaphore getSemaphore(String name);
 
     /**
-     * Detaches this member from the cluster.
-     * It doesn't shutdown the entire cluster, it shuts down
-     * this local member only.
-     *
-     * @see #getLifecycleService()
-     * @deprecated as of version 1.9
-     */
-    void shutdown();
-
-    /**
-     * Detaches this member from the cluster first and then restarts it
-     * as a new member.
-     *
-     * @see #getLifecycleService()
-     * @deprecated as of version 1.9
-     */
-    void restart();
-
-    /**
-     * Returns all queue, map, set, list, topic, lock, multimap
-     * instances created by Hazelcast.
+     * Returns all {@link DistributedObject}'s such as; queue, map, set, list, topic, lock, multimap.
      *
      * @return the collection of instances created by Hazelcast.
      */
-    Collection<Instance> getInstances();
+    Collection<DistributedObject> getDistributedObjects();
 
     /**
-     * Add a instance listener which will be notified when a
-     * new instance such as map, queue, multimap, topic, lock is
-     * added or removed.
+     * Adds a Distributed Object listener which will be notified when a
+     * new {@link DistributedObject} will be created or destroyed.
      *
-     * @param instanceListener instance listener
+     * @param distributedObjectListener instance listener
+     * @return returns registration id.
      */
-    void addInstanceListener(InstanceListener instanceListener);
+    String addDistributedObjectListener(DistributedObjectListener distributedObjectListener);
 
     /**
-     * Removes the specified instance listener. Returns silently
+     * Removes the specified Distributed Object listener. Returns silently
      * if specified instance listener doesn't exist.
      *
-     * @param instanceListener instance listener to remove
+     * @param registrationId Id of listener registration.
+     * @return true if registration is removed, false otherwise
      */
-    void removeInstanceListener(InstanceListener instanceListener);
+    boolean removeDistributedObjectListener(String registrationId);
 
     /**
      * Returns the configuration of this Hazelcast instance.
@@ -274,7 +303,7 @@ public interface HazelcastInstance {
 
     /**
      * Returns the partition service of this Hazelcast instance.
-     * PartitionService allows you to introspect current partitions in the
+     * InternalPartitionService allows you to introspect current partitions in the
      * cluster, partition owner members and listen for partition migration events.
      *
      * @return partition service
@@ -285,7 +314,7 @@ public interface HazelcastInstance {
      * Returns the client service of this Hazelcast instance.
      * Client service allows you to get information about connected clients.
      *
-     * @return
+     * @return the ClientService.
      */
     ClientService getClientService();
 
@@ -301,10 +330,49 @@ public interface HazelcastInstance {
 
     /**
      * Returns the lifecycle service for this instance. LifecycleService allows you
-     * to shutdown, restart, pause and resume this HazelcastInstance and listen for
+     * to shutdown this HazelcastInstance and listen for
      * the lifecycle events.
      *
      * @return lifecycle service
      */
     LifecycleService getLifecycleService();
+
+    /**
+     *
+     * @param serviceName name of the service
+     * @param id identifier of the object
+     * @param <T> type of the DistributedObject
+     * @return DistributedObject created by the service
+     *
+     * @deprecated use {@link #getDistributedObject(String, String)} instead.
+     */
+    @Deprecated
+    <T extends DistributedObject> T getDistributedObject(String serviceName, Object id);
+
+    /**
+     *
+     * @param serviceName name of the service
+     * @param name name of the object
+     * @param <T> type of the DistributedObject
+     * @return DistributedObject created by the service
+     */
+    <T extends DistributedObject> T getDistributedObject(String serviceName, String name);
+
+    /**
+     * Returns a ConcurrentMap that can be used to add user-context to the HazelcastInstance. This can be used
+     * to store dependencies that otherwise are hard to obtain. HazelcastInstance can be
+     * obtained by implementing HazelcastInstanceAware interface when submitting a Runnable/Callable to
+     * Hazelcast ExecutorService. By storing the dependencies in the user-context, they can be retrieved as soon
+     * as you have a reference to the HazelcastInstance.
+     * <p/>
+     * This structure is purely local and Hazelcast remains agnostic abouts its content.
+     *
+     * @return the user context.
+     */
+    ConcurrentMap<String, Object> getUserContext();
+
+    /**
+     * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.
+     */
+    void shutdown();
 }

@@ -19,14 +19,16 @@ package com.hazelcast.core;
 /**
  * Cluster-wide unique id generator.
  */
-public interface IdGenerator extends Instance {
+public interface IdGenerator extends DistributedObject {
 
     /**
-     * Returns the name of this Id Generator instance.
+     * Try to initialize this IdGenerator instance with given id. The first
+     * generated id will be 1 bigger than id.
      *
-     * @return name of this id generator instance
+     * @return true if initialization success. If id is equal or smaller
+     * than 0, then false is returned.
      */
-    String getName();
+    boolean init(long id);
 
     /**
      * Generates and returns cluster-wide unique id.

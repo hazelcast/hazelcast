@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<arquillian xmlns="http://jboss.org/schema/arquillian"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="
+        http://jboss.org/schema/arquillian
+        http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+    <!--<container qualifier="jbossas-managed" default="true">-->
+        <!--<configuration>-->
+            <!--&lt;!&ndash; If you want to use an existing JBoss AS installation, change the value of this property to that path &ndash;&gt;-->
+            <!--&lt;!&ndash; If you've already set the JBOSS_HOME environment variable, you can remove this configuration block &ndash;&gt;-->
+            <!--<property name="jbossHome">C:\\Users\\asm\\apps\\jboss-as-7.1.1.Final</property>-->
+            <!--<property name="javaVmArguments">-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n -Xmx512m -XX:MaxPermSize=128m</property>-->
+            <!--<property name="outputToConsole">true</property>-->
+            <!--<property name="serverConfig">standalone-full.xml</property>-->
+        <!--</configuration>-->
+    <!--</container>-->
+
+    <container qualifier="jbossas-managed" default="true">
+        <!--<protocol type="jmx-as7">-->
+            <!--<property name="executionType">MANAGED</property>-->
+        <!--</protocol>-->
+        <configuration>
+            <!--<property name="jbossHome">C:\\Users\\asm\\apps\\jboss-eap-6.2</property>-->
+            <property name="jbossHome">C:\\Users\\asm\\apps\\jboss-as-7.1.1.Final</property>
+            <!--<property name="javaVmArguments">-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=n -Xmx512m -XX:MaxPermSize=128m</property>-->
+            <property name="outputToConsole">true</property>
+            <property name="serverConfig">standalone-full.xml</property>
+        </configuration>
+    </container>
+
+</arquillian>

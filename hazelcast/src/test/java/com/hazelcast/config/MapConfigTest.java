@@ -16,12 +16,19 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class MapConfigTest {
 
     /**
@@ -76,6 +83,14 @@ public class MapConfigTest {
     }
 
     /**
+     * Test method for {@link MapConfig#getMinEvictionCheckMillis()}.
+     */
+    @Test
+    public void testMinEvictionCheckMillis() throws Exception {
+        assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, new MapConfig().getMinEvictionCheckMillis());
+    }
+
+    /**
      * Test method for {@link com.hazelcast.config.MapConfig#setEvictionPercentage(int)}.
      */
     @Test
@@ -97,22 +112,6 @@ public class MapConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void testSetEvictionPercentageUpperLimit() {
         new MapConfig().setEvictionPercentage(MapConfig.MAX_EVICTION_PERCENTAGE + 1);
-    }
-
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#getEvictionDelaySeconds()}.
-     */
-    @Test
-    public void testGetEvictionDelaySeconds() {
-        assertEquals(MapConfig.DEFAULT_EVICTION_DELAY_SECONDS, new MapConfig().getEvictionDelaySeconds());
-    }
-
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setEvictionDelaySeconds(int)}.
-     */
-    @Test
-    public void testSetEvictionDelaySeconds() {
-        assertEquals(1234, new MapConfig().setEvictionDelaySeconds(1234).getEvictionDelaySeconds());
     }
 
     /**
@@ -147,28 +146,19 @@ public class MapConfigTest {
         assertEquals(1234, new MapConfig().setMaxIdleSeconds(1234).getMaxIdleSeconds());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#getMaxSize()}.
-     */
     @Test
     public void testGetMaxSize() {
-        assertEquals(MapConfig.DEFAULT_MAX_SIZE, new MapConfig().getMaxSize());
+        assertEquals(MapConfig.DEFAULT_MAX_SIZE, new MapConfig().getMaxSizeConfig().getSize());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setMaxSize(int)}.
-     */
     @Test
     public void testSetMaxSize() {
-        assertEquals(1234, new MapConfig().setMaxSize(1234).getMaxSize());
+        assertEquals(1234, new MapConfig().getMaxSizeConfig().setSize(1234).getSize());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setMaxSize(int)}.
-     */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetMaxSizeMustBePositive() {
-        new MapConfig().setMaxSize(-1);
+        assertTrue(new MapConfig().getMaxSizeConfig().setSize(-1).getSize() > 0);
     }
 
     /**
@@ -179,12 +169,9 @@ public class MapConfigTest {
         assertEquals(MapConfig.DEFAULT_EVICTION_POLICY, new MapConfig().getEvictionPolicy());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setEvictionPolicy(java.lang.String)}.
-     */
     @Test
     public void testSetEvictionPolicy() {
-        assertEquals("LRU", new MapConfig().setEvictionPolicy("LRU").getEvictionPolicy());
+        assertEquals(MapConfig.EvictionPolicy.LRU, new MapConfig().setEvictionPolicy(MapConfig.EvictionPolicy.LRU).getEvictionPolicy());
     }
 
     /**
@@ -222,7 +209,7 @@ public class MapConfigTest {
     }
 
     @Test
-    public void configSetsForDefaultAllwaysissue466() {
+    public void configSetsForDefaultAllwaysIssue466() {
         Config config = new XmlConfigBuilder().build();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
@@ -231,5 +218,21 @@ public class MapConfigTest {
         config.getMapConfig("test").setMapStoreConfig(mapStoreConfig);
         config.getMapConfig("default").setMapStoreConfig(null);
         assertNotNull(config.getMapConfig("test").getMapStoreConfig());
+    }
+
+    /**
+     * Test method for {@link com.hazelcast.config.MapStoreConfig#setWriteBatchSize(int)}.
+     */
+    @Test(expected = java.lang.UnsupportedOperationException.class)
+    public void testReadOnlyMapStoreConfigSetWriteBatchSize() {
+        new MapStoreConfigReadOnly(new MapStoreConfig()).setWriteBatchSize(1);
+    }
+
+    /**
+     * Test method for {@link com.hazelcast.config.MapStoreConfig#setInitialLoadMode(com.hazelcast.config.MapStoreConfig.InitialLoadMode)}
+     */
+    @Test(expected = java.lang.UnsupportedOperationException.class)
+    public void testReadOnlyMapStoreConfigSetInitialLoadMode() {
+        new MapStoreConfigReadOnly(new MapStoreConfig()).setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
     }
 }

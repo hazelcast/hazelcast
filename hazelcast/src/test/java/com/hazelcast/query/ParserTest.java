@@ -16,7 +16,10 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.security.SecureRandom;
@@ -26,9 +29,11 @@ import java.util.Random;
 
 import static junit.framework.Assert.*;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class ParserTest {
-    Parser parser = new Parser();
+
+    private final Parser parser = new Parser();
 
     @Test
     public void parseEmpty() {
@@ -84,6 +89,13 @@ public class ParserTest {
         String s = "b between 10 and 15";
         List<String> list = parser.toPrefix(s);
         assertEquals(Arrays.asList("b", "10", "15", "between"), list);
+    }
+
+    @Test
+    public void testBetweenSimple() {
+        String s = "b between 'ali' and 'veli''s'";
+        List<String> list = parser.toPrefix(s);
+        assertEquals(Arrays.asList("b", "'ali'", "'veli''s'", "between"), list);
     }
 
     @Test

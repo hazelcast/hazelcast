@@ -16,23 +16,22 @@
 
 package com.hazelcast.spring.cache;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.Instance;
-import com.hazelcast.core.Instance.InstanceType;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @mdogan 4/3/12
+ * @author mdogan 4/3/12
  */
-public class HazelcastCacheManager implements CacheManager, InitializingBean {
+public class HazelcastCacheManager implements CacheManager {
 
     private final ConcurrentMap<String, Cache> caches = new ConcurrentHashMap<String, Cache>();
     private HazelcastInstance hazelcastInstance;
@@ -42,16 +41,6 @@ public class HazelcastCacheManager implements CacheManager, InitializingBean {
 
     public HazelcastCacheManager(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
-    }
-
-    public void afterPropertiesSet() throws Exception {
-        final Collection<Instance> instances = hazelcastInstance.getInstances();
-        for (Instance instance : instances) {
-            if (instance.getInstanceType() == InstanceType.MAP) {
-                final IMap<Object, Object> map = (IMap) instance;
-                caches.put(map.getName(), new HazelcastCache(map));
-            }
-        }
     }
 
     public Cache getCache(String name) {
@@ -67,11 +56,19 @@ public class HazelcastCacheManager implements CacheManager, InitializingBean {
         return cache;
     }
 
-    public void setHazelcastInstance(final HazelcastInstance hazelcastInstance) {
-        this.hazelcastInstance = hazelcastInstance;
+    public Collection<String> getCacheNames() {
+        Set<String> cacheNames = new HashSet<String>();
+        final Collection<DistributedObject> distributedObjects = hazelcastInstance.getDistributedObjects();
+        for (DistributedObject distributedObject : distributedObjects) {
+            if (distributedObject instanceof IMap) {
+                final IMap<?, ?> map = (IMap) distributedObject;
+                cacheNames.add(map.getName());
+            }
+        }
+        return cacheNames;
     }
 
-    public Collection<String> getCacheNames() {
-        return Collections.unmodifiableCollection(caches.keySet());
+    public void setHazelcastInstance(final HazelcastInstance hazelcastInstance) {
+        this.hazelcastInstance = hazelcastInstance;
     }
 }

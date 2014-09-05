@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Class-Path: 
+Dependencies: com.hazelcast, javax.resource.api, javax.jms.api, org.hornetq.ra

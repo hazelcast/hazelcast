@@ -17,24 +17,39 @@
 package com.hazelcast.core;
 
 /**
- * LifecycleService allows you to shutdown, restart, pause and resume an HazelcastInstance.
- * LifecycleListeners also can be added to listen for lifecycle state changes.
+ * LifecycleService allows you to shutdown, terminate and listen to {@link LifecycleEvent}'s
+ * on HazelcastInstance.
  */
 public interface LifecycleService {
 
-    void kill();
+    /**
+     * whether the instance is running
+     * @return true if instance is active and running
+     */
+    boolean isRunning();
 
+    /**
+     * gracefully shutdowns HazelcastInstance. Different from {@link #terminate()}, waits partition operations to be completed.
+     */
     void shutdown();
 
-    boolean pause();
+    /**
+     * terminate HazelcastInstance ungracefully. Does not wait partition operations, forces immediate shutdown.
+     */
+    void terminate();
 
-    boolean resume();
+    /**
+     * Add listener object to listen lifecycle events.
+     * @param lifecycleListener Listener object
+     * @return listener id
+     */
+    String addLifecycleListener(LifecycleListener lifecycleListener);
 
-    void restart();
+    /**
+     * Remove lifecycle listener
+     * @param registrationId The listener id returned by {@link #addLifecycleListener(LifecycleListener)}
+     * @return true if removed successfully
+     */
+    boolean removeLifecycleListener(String registrationId);
 
-    void addLifecycleListener(LifecycleListener lifecycleListener);
-
-    void removeLifecycleListener(LifecycleListener lifecycleListener);
-
-    boolean isRunning();
 }

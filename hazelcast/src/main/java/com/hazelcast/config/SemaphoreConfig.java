@@ -15,111 +15,169 @@
  */
 package com.hazelcast.config;
 
-import com.hazelcast.core.SemaphoreFactory;
-import com.hazelcast.nio.DataSerializable;
+import static com.hazelcast.util.ValidationUtil.hasText;
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+/**
+ * Contains the configuration for an {@link com.hazelcast.core.ISemaphore}.
+ */
+public class SemaphoreConfig {
 
-public class SemaphoreConfig implements DataSerializable {
+    /**
+     * Default synchronous backup count
+     */
+    public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    /**
+     * Default asynchronous backup count
+     */
+    public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
     private String name;
     private int initialPermits;
-    private boolean factoryEnabled;
-    private String factoryClassName;
-    private SemaphoreFactory factoryImplementation;
+    private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
+    private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
+    private SemaphoreConfigReadOnly readOnly;
 
+    /**
+     * Creates a default configured {@link SemaphoreConfig}.
+     */
     public SemaphoreConfig() {
     }
 
-    public SemaphoreConfig(String name) {
-        this.name = name;
+    /**
+     * Creates a SemaphoreConfig by cloning another one.
+     *
+     * @param config the SemaphoreConfig to copy
+     * @throws IllegalArgumentException if config is null.
+     */
+    public SemaphoreConfig(SemaphoreConfig config) {
+        isNotNull(config, "config");
+        this.name = config.getName();
+        this.initialPermits = config.getInitialPermits();
+        this.backupCount = config.getBackupCount();
+        this.asyncBackupCount = config.getAsyncBackupCount();
     }
 
-    public SemaphoreConfig(String name, int initialPermits) {
-        this.name = name;
-        this.initialPermits = initialPermits;
-    }
-
-    public SemaphoreConfig(String name, SemaphoreConfig sc) {
-        this.name = name;
-        this.factoryClassName = sc.factoryClassName;
-        this.initialPermits = sc.initialPermits;
-    }
-
-    public void readData(DataInput in) throws IOException {
-        name = in.readUTF();
-        initialPermits = in.readInt();
-        boolean hasFactory = in.readBoolean();
-        if (hasFactory) {
-            factoryClassName = in.readUTF();
+    public SemaphoreConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new SemaphoreConfigReadOnly(this);
         }
+        return readOnly;
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeInt(initialPermits);
-        boolean hasFactory = (factoryClassName != null);
-        out.writeBoolean(hasFactory);
-        if (hasFactory) {
-            out.writeUTF(factoryClassName);
-        }
-    }
-
+    /**
+     * Gets the name of the semaphore. If no name has been configured, null is returned.
+     *
+     * @return the name of the semaphore.
+     */
     public String getName() {
         return name;
     }
 
     /**
-     * @param name the name to set
+     * Sets the name of the semaphore.
+     *
+     * @param name the name
+     * @return the updated SemaphoreConfig
+     * @throws IllegalArgumentException if name is null or empty.
      */
-    SemaphoreConfig setName(String name) {
-        this.name = name;
+    public SemaphoreConfig setName(String name) {
+        this.name = hasText(name, "name");
         return this;
     }
 
-    public String getFactoryClassName() {
-        return factoryClassName;
-    }
-
-    public SemaphoreConfig setFactoryClassName(String factoryClassName) {
-        this.factoryClassName = factoryClassName;
-        return this;
-    }
-
-    public boolean isFactoryEnabled() {
-        return factoryEnabled;
-    }
-
-    public SemaphoreConfig setFactoryEnabled(boolean factoryEnabled) {
-        this.factoryEnabled = factoryEnabled;
-        return this;
-    }
-
-    public SemaphoreFactory getFactoryImplementation() {
-        return factoryImplementation;
-    }
-
-    public SemaphoreConfig setFactoryImplementation(SemaphoreFactory factoryImplementation) {
-        this.factoryImplementation = factoryImplementation;
-        return this;
-    }
-
+    /**
+     * Gets the initial number of permits
+     *
+     * @return the initial number of permits.
+     */
     public int getInitialPermits() {
         return initialPermits;
     }
 
+    /**
+     * Sets the initial number of permits. The initial number of permits can be 0; meaning that there is no permit but
+     * it can also be negative meaning that there is a shortage of permits.
+     *
+     * @param initialPermits the initial number of permits.
+     * @return the updated SemaphoreConfig
+     */
     public SemaphoreConfig setInitialPermits(int initialPermits) {
         this.initialPermits = initialPermits;
         return this;
     }
 
+    /**
+     * Returns the number of synchronous backups.
+     *
+     * @return the number of synchronous backups.
+     * @see #setBackupCount(int)
+     */
+    public int getBackupCount() {
+        return backupCount;
+    }
+
+    /**
+     * Sets the number of synchronous backups.
+     *
+     * @param backupCount the number of synchronous backups
+     * @return the updated SemaphoreConfig
+     * @throws new IllegalArgumentException if backupCount smaller than 0.
+     * @see #setAsyncBackupCount(int)
+     * @see #getBackupCount()
+     */
+    public SemaphoreConfig setBackupCount(int backupCount) {
+        if (backupCount < 0) {
+            throw new IllegalArgumentException("backupCount can't be smaller than 0");
+        }
+        this.backupCount = backupCount;
+        return this;
+    }
+
+    /**
+     * Returns the number of asynchronous backups.
+     *
+     * @return the number of asynchronous backups.
+     * @see #setAsyncBackupCount(int)
+     */
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    /**
+     * Sets the number of asynchronous backups.
+     *
+     * @param asyncBackupCount the number of asynchronous backups
+     * @return the updated SemaphoreConfig
+     * @throws new IllegalArgumentException if asyncBackupCount smaller than 0.
+     * @see #setBackupCount(int) (int)
+     * @see #getAsyncBackupCount()
+     */
+    public SemaphoreConfig setAsyncBackupCount(int asyncBackupCount) {
+        if (backupCount < 0) {
+            throw new IllegalArgumentException("asyncBackupCount can't be smaller than 0");
+        }
+        this.asyncBackupCount = asyncBackupCount;
+        return this;
+    }
+
+    /**
+     * Returns the total number of backups; the returned value will always equal or bigger than 0.
+     *
+     * @return total number of backups.
+     */
+    public int getTotalBackupCount() {
+        return asyncBackupCount + backupCount;
+    }
+
     @Override
     public String toString() {
-        return "SemaphoreConfig [name=" + this.name
-                + ", factoryEnabled=" + Boolean.valueOf(factoryEnabled)
-                + ", factoryClassName=" + this.factoryClassName
-                + ", factoryImplementation=" + this.factoryImplementation + "]";
+        final StringBuilder sb = new StringBuilder("SemaphoreConfig{");
+        sb.append("name='").append(name).append('\'');
+        sb.append(", initialPermits=").append(initialPermits);
+        sb.append(", backupCount=").append(backupCount);
+        sb.append(", asyncBackupCount=").append(asyncBackupCount);
+        sb.append('}');
+        return sb.toString();
     }
 }

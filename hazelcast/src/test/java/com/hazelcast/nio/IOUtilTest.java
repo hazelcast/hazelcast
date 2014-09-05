@@ -16,7 +16,10 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.DataInputStream;
@@ -31,7 +34,8 @@ import static org.junit.Assert.fail;
  * @author Tomasz Nurkiewicz
  * @since 25.09.12, 12:03
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class IOUtilTest {
 
     private static final byte[] NON_EMPTY_BYTE_ARRAY = new byte[100];

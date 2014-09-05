@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1"">
+    <title>Hazelcast <%= @manifest.title or @title %> Version: <%= @manifest.options.version %></title>
+
+    <link type="text/css" rel="stylesheet" href="<%= @baseUrl %>assets/css/reset.css">
+    <link type="text/css" rel="stylesheet" href="http://yandex.st/highlightjs/7.3/styles/<%= @manifest.options.codeHighlightTheme || 'github' %>.min.css">
+    <link type="text/css" rel="stylesheet" href="<%= @baseUrl %>assets/css/docs.css">
+    <link type="text/css" rel="stylesheet" href="<%= @baseUrl %>assets/css/print.css" media="print">
+    <% if @manifest.options.css: %><link type="text/css" rel="stylesheet" href="<%- @manifest.options.css %>"><% end %>
+
+    <script type="text/javascript" src="<%= @baseUrl %>assets/js/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="<%= @baseUrl %>assets/js/jquery.sticky-kit.js"></script>
+    <script type="text/javascript" src="http://yandex.st/highlightjs/6.1/highlight.min.js"></script>
+    <script type="text/javascript" src="<%= @baseUrl %>assets/js/lunr.min.js"></script>
+
+    <% if @manifest.options.embedly: %>
+        <script type="text/javascript" src="http://scripts.embed.ly/jquery.embedly.min.js"></script>
+        <script type="text/javascript">
+            $(function(){
+                $('#content p:not(.disable-embedly) a:only-child').parent().embedly({
+                    key:'<%= @manifest.options.embedly %>',
+                    maxWidth: 700
+                });
+            });
+        </script>
+    <% end %>
+
+    <script type="text/javascript">var BASE_URL = "<%= @baseUrl %>";</script>
+    <script type="text/javascript" src="<%= @baseUrl %>assets/js/viewer.js"></script>
+
+    <script type="text/javascript"> 
+  	$(function(){
+		$("#sidebar").stick_in_parent()
+	});
+
+    </script>
+
+    <% if @manifest.options.googleAnalytics: %>
+        <script type="text/javascript">
+          var _gaq = _gaq || [];
+          _gaq.push(['_setAccount', '<%= @manifest.options.googleAnalytics %>']);
+          _gaq.push(['_trackPageview']);
+          (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+          })();
+        </script>
+    <% end %>
+</head>
+<body>
+    <div id="page">
+        <a name="top" />
+	        <%- @include "_sidebar.html" %>
+	        <div id="content">
+	            <%- @content %>
+	        </div>			
+    </div>
+</body>
+</html>

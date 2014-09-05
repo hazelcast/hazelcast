@@ -16,169 +16,176 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
-import com.hazelcast.impl.Util;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.query.impl.AndResultSet;
+import com.hazelcast.query.impl.AttributeType;
+import com.hazelcast.query.impl.ComparisonType;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.OrResultSet;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.sql.Timestamp;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * A utility class to create {@link com.hazelcast.query.Predicate} instances.
+ */
 public final class Predicates {
 
-    public static class GreaterLessPredicate extends EqualPredicate {
-        boolean equal = false;
-        boolean less = false;
-
-        public GreaterLessPredicate() {
-        }
-
-        public GreaterLessPredicate(Expression first, Expression second, boolean equal, boolean less) {
-            super(first, second);
-            this.equal = equal;
-            this.less = less;
-        }
-
-        public GreaterLessPredicate(Expression first, Object second, boolean equal, boolean less) {
-            super(first, second);
-            this.equal = equal;
-            this.less = less;
-        }
-
-        protected boolean doApply(Object first, Object second) {
-            final int result = ((Comparable) first).compareTo(second);
-            return equal && result == 0 || (less ? (result < 0) : (result > 0));
-        }
-
-        public Set<MapEntry> filter(QueryContext queryContext) {
-            Index index = queryContext.getMapIndexes().get(first);
-            final PredicateType predicateType;
-            if (less) {
-                predicateType = equal ? PredicateType.LESSER_EQUAL : PredicateType.LESSER;
-            } else {
-                predicateType = equal ? PredicateType.GREATER_EQUAL : PredicateType.GREATER;
-            }
-            return index.getSubRecords(predicateType, index.getLongValue(second));
-        }
-
-        @Override
-        public void readData(DataInput in) throws IOException {
-            super.readData(in);
-            equal = in.readBoolean();
-            less = in.readBoolean();
-        }
-
-        @Override
-        public void writeData(DataOutput out) throws IOException {
-            super.writeData(out);
-            out.writeBoolean(equal);
-            out.writeBoolean(less);
-        }
-
-        @Override
-        public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append(first);
-            sb.append(less ? "<" : ">");
-            if (equal) sb.append("=");
-            sb.append(second);
-            return sb.toString();
-        }
+    //we don't want instances. private constructor.
+    private Predicates() {
     }
 
-    public static class BetweenPredicate extends EqualPredicate {
-        Object to;
-        Comparable fromConvertedValue = null;
-        Comparable toConvertedValue = null;
+    public static Predicate instanceOf(final Class klass) {
+        return new InstanceOfPredicate(klass);
+    }
+
+    private static Comparable readAttribute(Map.Entry entry, String attribute) {
+        QueryableEntry queryableEntry = (QueryableEntry) entry;
+        Comparable value = queryableEntry.getAttribute(attribute);
+        if (value == null) {
+            return IndexImpl.NULL;
+        }
+        return value;
+    }
+
+    public static Predicate and(Predicate... predicates) {
+        return new AndPredicate(predicates);
+    }
+
+    public static Predicate not(Predicate predicate) {
+        return new NotPredicate(predicate);
+    }
+
+    /**
+     * Or predicate
+     *
+     * @param predicates
+     * @return
+     */
+    public static Predicate or(Predicate... predicates) {
+        return new OrPredicate(predicates);
+    }
+
+    public static Predicate notEqual(String attribute, Comparable y) {
+        return new NotEqualPredicate(attribute, y);
+    }
+
+    public static Predicate equal(String attribute, Comparable y) {
+        return new EqualPredicate(attribute, y);
+    }
+
+    public static Predicate like(String attribute, String pattern) {
+        return new LikePredicate(attribute, pattern);
+    }
+
+    public static Predicate ilike(String attribute, String pattern) {
+        return new ILikePredicate(attribute, pattern);
+    }
+
+    public static Predicate regex(String attribute, String pattern) {
+        return new RegexPredicate(attribute, pattern);
+    }
+
+    public static Predicate greaterThan(String x, Comparable y) {
+        return new GreaterLessPredicate(x, y, false, false);
+    }
+
+    public static Predicate greaterEqual(String x, Comparable y) {
+        return new GreaterLessPredicate(x, y, true, false);
+    }
+
+    public static Predicate lessThan(String x, Comparable y) {
+        return new GreaterLessPredicate(x, y, false, true);
+    }
+
+    public static Predicate lessEqual(String x, Comparable y) {
+        return new GreaterLessPredicate(x, y, true, true);
+    }
+
+    public static Predicate between(String attribute, Comparable from, Comparable to) {
+        return new BetweenPredicate(attribute, from, to);
+    }
+
+    public static Predicate in(String attribute, Comparable... values) {
+        return new InPredicate(attribute, values);
+    }
+
+    /**
+     * Between Predicate
+     */
+    public static class BetweenPredicate extends AbstractPredicate {
+        private Comparable to;
+        private Comparable from;
 
         public BetweenPredicate() {
         }
 
-        public BetweenPredicate(Expression first, Expression from, Object to) {
-            super(first, from);
+        public BetweenPredicate(String first, Comparable from, Comparable to) {
+            super(first);
+            if (from == null || to == null) {
+                throw new NullPointerException("Arguments can't be null");
+            }
+            this.from = from;
             this.to = to;
         }
 
-        public BetweenPredicate(Expression first, Object from, Object to) {
-            super(first, from);
-            this.to = to;
-        }
-
-        public boolean apply(MapEntry entry) {
-            Expression<Comparable> cFirst = (Expression<Comparable>) first;
-            Comparable firstValue = cFirst.getValue(entry);
-            if (firstValue == null) {
+        @Override
+        public boolean apply(Map.Entry entry) {
+            Comparable entryValue = readAttribute(entry);
+            if (entryValue == null) {
                 return false;
             }
-            if (fromConvertedValue == null) {
-                fromConvertedValue = (Comparable) getConvertedRealValue(firstValue, second);
-                toConvertedValue = (Comparable) getConvertedRealValue(firstValue, to);
+            Comparable fromConvertedValue = convert(entry, entryValue, from);
+            Comparable toConvertedValue = convert(entry, entryValue, to);
+            if (fromConvertedValue == null || toConvertedValue == null) {
+                return false;
             }
-            if (firstValue == null || fromConvertedValue == null || toConvertedValue == null) return false;
-            return firstValue.compareTo(fromConvertedValue) >= 0 && firstValue.compareTo(toConvertedValue) <= 0;
+            return entryValue.compareTo(fromConvertedValue) >= 0 && entryValue.compareTo(toConvertedValue) <= 0;
         }
 
-        public Set<MapEntry> filter(QueryContext queryContext) {
-            Index index = queryContext.getMapIndexes().get(first);
-            return index.getSubRecordsBetween(index.getLongValue(second), index.getLongValue(to));
+        @Override
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            Index index = getIndex(queryContext);
+            return index.getSubRecordsBetween(from, to);
         }
 
-        public void writeData(DataOutput out) throws IOException {
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
             super.writeData(out);
-            writeObject(out, to);
+            out.writeObject(to);
+            out.writeObject(from);
         }
 
-        public void readData(DataInput in) throws IOException {
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
             super.readData(in);
-            to = readObject(in);
+            to = in.readObject();
+            from = in.readObject();
         }
 
         @Override
         public String toString() {
-            return first + " BETWEEN " + second + " AND " + to;
+            return attribute + " BETWEEN " + from + " AND " + to;
         }
     }
 
-    public static class NotEqualPredicate extends EqualPredicate implements IndexAwarePredicate {
-        public NotEqualPredicate() {
-        }
-
-        public NotEqualPredicate(Expression first, Expression second) {
-            super(first, second);
-        }
-
-        public NotEqualPredicate(Expression first, Object second) {
-            super(first, second);
-        }
-
-        public boolean apply(MapEntry entry) {
-            return !super.apply(entry);
-        }
-
-        public Set<MapEntry> filter(QueryContext queryContext) {
-            Index index = queryContext.getMapIndexes().get(first);
-            if (index != null) {
-                return index.getSubRecords(PredicateType.NOT_EQUAL, index.getLongValue(second));
-            } else {
-                return null;
-            }
-        }
-
-        @Override
-        public String toString() {
-            return first + " != " + second;
-        }
-    }
-
-    public static class NotPredicate extends AbstractPredicate {
-        Predicate predicate;
+    /**
+     * Not Predicate
+     */
+    public static class NotPredicate implements Predicate, DataSerializable {
+        private Predicate predicate;
 
         public NotPredicate(Predicate predicate) {
             this.predicate = predicate;
@@ -187,16 +194,19 @@ public final class Predicates {
         public NotPredicate() {
         }
 
-        public boolean apply(MapEntry mapEntry) {
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
             return !predicate.apply(mapEntry);
         }
 
-        public void writeData(DataOutput out) throws IOException {
-            writeObject(out, predicate);
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(predicate);
         }
 
-        public void readData(DataInput in) throws IOException {
-            predicate = (Predicate) readObject(in);
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            predicate = in.readObject();
         }
 
         @Override
@@ -205,148 +215,107 @@ public final class Predicates {
         }
     }
 
-    public static class InPredicate extends AbstractPredicate implements IndexAwarePredicate {
-        Expression first;
-        Object[] inValueArray = null;
-        Set inValues = null;
-        Set convertedInValues = null;
-        Object firstValueObject = null;
+    /**
+     * In Predicate
+     */
+    public static class InPredicate extends AbstractPredicate {
+        private Comparable[] values;
+        private volatile Set<Comparable> convertedInValues;
 
         public InPredicate() {
         }
 
-        public InPredicate(Expression first, Object... second) {
-            this.first = first;
-            this.inValueArray = second;
+        public InPredicate(String attribute, Comparable... values) {
+            super(attribute);
+
+            if (values == null) {
+                throw new NullPointerException("Array can't be null");
+            }
+            this.values = values;
         }
 
-        private void checkInValues() {
-            if (inValues == null) {
-                this.inValues = new HashSet(inValueArray.length);
-                for (Object o : inValueArray) {
-                    inValues.add(o);
+        @Override
+        public boolean apply(Map.Entry entry) {
+            Comparable entryValue = readAttribute(entry);
+            if (entryValue == null) {
+                return false;
+            }
+            Set<Comparable> set = convertedInValues;
+            if (set == null) {
+                set = new HashSet<Comparable>(values.length);
+                for (Comparable value : values) {
+                    set.add(convert(entry, entryValue, value));
                 }
+                convertedInValues = set;
             }
+            return set.contains(entryValue);
         }
 
-        public boolean apply(MapEntry entry) {
-            checkInValues();
-            if (firstValueObject == null) {
-                firstValueObject = inValues.iterator().next();
-            }
-            Object entryValue = first.getValue(entry);
-            if (entryValue == null) return false;
-            if (convertedInValues != null) {
-                return in(entryValue, convertedInValues);
-            } else {
-                if (entryValue.getClass() == firstValueObject.getClass()) {
-                    return in(entryValue, inValues);
-                } else if (firstValueObject instanceof String) {
-                    convertedInValues = new HashSet(inValues.size());
-                    for (Object objValue : inValues) {
-                        convertedInValues.add(getRealObject(entryValue, objValue));
-                    }
-                    return in(entryValue, convertedInValues);
-                }
-            }
-            return in(entryValue, inValues);
-        }
-
-        private static boolean in(Object firstVal, Set values) {
-            return values.contains(firstVal);
-        }
-
-        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
-            if (first instanceof GetExpression) {
-                Index index = mapIndexes.get(first);
-                if (index != null) {
-                    lsIndexPredicates.add(this);
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {
-            Index index = mapIndexes.get(first);
+        @Override
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            Index index = getIndex(queryContext);
             if (index != null) {
-                setAppliedIndexes.add(index);
-            }
-        }
-
-        public boolean isIndexed(QueryContext queryContext) {
-            return queryContext.getMapIndexes().get(first) != null;
-        }
-
-        public Set<MapEntry> filter(QueryContext queryContext) {
-            checkInValues();
-            Index index = queryContext.getMapIndexes().get(first);
-            if (index != null) {
-                Set<Long> setLongValues = new HashSet<Long>(inValues.size());
-                for (Object valueObj : inValues) {
-                    final Long value = index.getLongValue(valueObj);
-                    setLongValues.add(value);
-                }
-                return index.getRecords(setLongValues);
+                return index.getRecords(values);
             } else {
                 return null;
             }
         }
 
-        public Object getValue() {
-            return inValues;
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            writeObject(out, first);
-            out.writeInt(inValueArray.length);
-            for (Object value : inValueArray) {
-                writeObject(out, value);
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            super.writeData(out);
+            out.writeInt(values.length);
+            for (Object value : values) {
+                out.writeObject(value);
             }
         }
 
-        public void readData(DataInput in) throws IOException {
-            try {
-                first = (Expression) readObject(in);
-                int len = in.readInt();
-                inValueArray = new Object[len];
-                for (int i = 0; i < len; i++) {
-                    inValueArray[i] = readObject(in);
-                }
-            } catch (Exception e) {
-                throw new IOException(e.getMessage());
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            super.readData(in);
+            int len = in.readInt();
+            values = new Comparable[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = in.readObject();
             }
         }
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
-            sb.append(first);
+            final StringBuilder sb = new StringBuilder();
+            sb.append(attribute);
             sb.append(" IN (");
-            for (int i = 0; i < inValueArray.length; i++) {
-                if (i > 0) sb.append(",");
-                sb.append(inValueArray[i]);
+            for (int i = 0; i < values.length; i++) {
+                if (i > 0) {
+                    sb.append(",");
+                }
+                sb.append(values[i]);
             }
             sb.append(")");
             return sb.toString();
         }
     }
 
-    public static class RegexPredicate extends AbstractPredicate {
-        Expression<String> first;
-        String regex;
-        Pattern pattern = null;
+    /**
+     * Regex Predicate
+     */
+    public static class RegexPredicate implements Predicate, DataSerializable {
+        private String attribute;
+        private String regex;
+        private volatile Pattern pattern;
 
         public RegexPredicate() {
         }
 
-        public RegexPredicate(Expression<String> first, String regex) {
-            this.first = first;
+        public RegexPredicate(String attribute, String regex) {
+            this.attribute = attribute;
             this.regex = regex;
         }
 
-        public boolean apply(MapEntry entry) {
-            String firstVal = first.getValue(entry);
+        @Override
+        public boolean apply(Map.Entry entry) {
+            Comparable attribute = readAttribute(entry, this.attribute);
+            String firstVal = attribute == IndexImpl.NULL ? null : (String) attribute;
             if (firstVal == null) {
                 return (regex == null);
             } else if (regex == null) {
@@ -360,415 +329,315 @@ public final class Predicates {
             }
         }
 
-        public void writeData(DataOutput out) throws IOException {
-            writeObject(out, first);
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(attribute);
             out.writeUTF(regex);
         }
 
-        public void readData(DataInput in) throws IOException {
-            try {
-                first = (Expression) readObject(in);
-                regex = in.readUTF();
-            } catch (Exception e) {
-                throw new IOException(e.getMessage());
-            }
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            attribute = in.readUTF();
+            regex = in.readUTF();
         }
 
         @Override
         public String toString() {
-            return first + " REGEX '" + regex + "'";
+            return attribute + " REGEX '" + regex + "'";
         }
     }
 
-    public static class LikePredicate extends AbstractPredicate {
-        Expression<String> first;
-        String second;
-        Pattern pattern = null;
+    /**
+     * Like Predicate
+     */
+    public static class LikePredicate implements Predicate, DataSerializable {
+        protected String attribute;
+        protected String second;
+        private volatile Pattern pattern;
 
         public LikePredicate() {
         }
 
-        public LikePredicate(Expression<String> first, String second) {
-            this.first = first;
+        public LikePredicate(String attribute, String second) {
+            this.attribute = attribute;
             this.second = second;
         }
 
-        public boolean apply(MapEntry entry) {
-            String firstVal = first.getValue(entry);
+        @Override
+        public boolean apply(Map.Entry entry) {
+            Comparable attribute = readAttribute(entry, this.attribute);
+            String firstVal = attribute == IndexImpl.NULL ? null : (String) attribute;
             if (firstVal == null) {
                 return (second == null);
             } else if (second == null) {
                 return false;
             } else {
                 if (pattern == null) {
-                    pattern = Pattern.compile(second.replaceAll("%", ".*").replaceAll("_", "."));
+                    // we quote the input string then escape then replace % and _
+                    // at the end we have a regex pattern look like : \QSOME_STRING\E.*\QSOME_OTHER_STRING\E
+                    final String quoted = Pattern.quote(second);
+                    String regex = quoted
+                            //escaped %
+                            .replaceAll("(?<!\\\\)[%]", "\\\\E.*\\\\Q")
+                                    //escaped _
+                            .replaceAll("(?<!\\\\)[_]", "\\\\E.\\\\Q")
+                                    //non escaped %
+                            .replaceAll("\\\\%", "%")
+                                    //non escaped _
+                            .replaceAll("\\\\_", "_");
+                    int flags = getFlags();
+                    pattern = Pattern.compile(regex, flags);
                 }
                 Matcher m = pattern.matcher(firstVal);
                 return m.matches();
             }
         }
 
-        public void writeData(DataOutput out) throws IOException {
-            writeObject(out, first);
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(attribute);
             out.writeUTF(second);
         }
 
-        public void readData(DataInput in) throws IOException {
-            try {
-                first = (Expression) readObject(in);
-                second = in.readUTF();
-            } catch (Exception e) {
-                throw new IOException(e.getMessage());
-            }
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            attribute = in.readUTF();
+            second = in.readUTF();
+        }
+
+
+        protected int getFlags() {
+            //no flags
+            return 0;
         }
 
         @Override
         public String toString() {
-            return first + " LIKE '" + second + "'";
+            StringBuilder builder = new StringBuilder(attribute)
+                    .append(" LIKE '")
+                    .append(second)
+                    .append("'");
+            return builder.toString();
         }
     }
 
-    public static class EqualPredicate extends AbstractPredicate implements IndexAwarePredicate {
-        Expression first;
-        Object second;
-        Object convertedSecondValue = null;
-        protected boolean secondIsExpression = false;
+    /**
+     * Ilike Predicate
+     */
+    public static class ILikePredicate extends LikePredicate {
 
-        public EqualPredicate() {
+        public ILikePredicate() {
         }
 
-        public EqualPredicate(Expression first, Expression second) {
-            this.first = first;
-            this.second = second;
-            this.secondIsExpression = true;
+        public ILikePredicate(String attribute, String second) {
+            super(attribute, second);
         }
 
-        public EqualPredicate(Expression first, Object second) {
-            this.first = first;
-            this.second = second;
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder(attribute)
+                    .append(" ILIKE '")
+                    .append(second)
+                    .append("'");
+            return builder.toString();
         }
 
-        public boolean apply(MapEntry entry) {
-            if (secondIsExpression) {
-                return doApply(first.getValue(entry), ((Expression) second).getValue(entry));
-            } else {
-                Object firstVal = first.getValue(entry);
-                if (firstVal == null) {
-                    return (second == null);
-                } else if (second == null) {
-                    return false;
-                } else {
-                    if (convertedSecondValue == null) {
-                        convertedSecondValue = getConvertedRealValue(firstVal, second);
+
+        @Override
+        protected int getFlags() {
+            return Pattern.CASE_INSENSITIVE;
+        }
+    }
+
+    /**
+     * And Predicate
+     */
+    public static class AndPredicate implements IndexAwarePredicate, DataSerializable {
+
+        protected Predicate[] predicates;
+
+        public AndPredicate() {
+        }
+
+        public AndPredicate(Predicate... predicates) {
+            this.predicates = predicates;
+        }
+
+        @Override
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            Set<QueryableEntry> smallestIndexedResult = null;
+            List<Set<QueryableEntry>> otherIndexedResults = new LinkedList<Set<QueryableEntry>>();
+            List<Predicate> lsNoIndexPredicates = null;
+            for (Predicate predicate : predicates) {
+                boolean indexed = false;
+                if (predicate instanceof IndexAwarePredicate) {
+                    IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
+                    if (iap.isIndexed(queryContext)) {
+                        indexed = true;
+                        Set<QueryableEntry> s = iap.filter(queryContext);
+                        if (smallestIndexedResult == null) {
+                            smallestIndexedResult = s;
+                        } else if (s.size() < smallestIndexedResult.size()) {
+                            otherIndexedResults.add(smallestIndexedResult);
+                            smallestIndexedResult = s;
+                        } else {
+                            otherIndexedResults.add(s);
+                        }
                     }
-                    return doApply(firstVal, convertedSecondValue);
+                }
+                if (!indexed) {
+                    if (lsNoIndexPredicates == null) {
+                        lsNoIndexPredicates = new LinkedList<Predicate>();
+                    }
+                    lsNoIndexPredicates.add(predicate);
                 }
             }
+            if (smallestIndexedResult == null) {
+                return null;
+            }
+            return new AndResultSet(smallestIndexedResult, otherIndexedResults, lsNoIndexPredicates);
         }
 
-        protected static Object getConvertedRealValue(Object firstValue, Object value) {
-            if (firstValue == null) return value;
-            if (firstValue.getClass() == value.getClass()) {
-                return value;
-            } else {
-                return getRealObject(firstValue, value);
+        @Override
+        public boolean isIndexed(QueryContext queryContext) {
+            for (Predicate predicate : predicates) {
+                if (predicate instanceof IndexAwarePredicate) {
+                    IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
+                    if (iap.isIndexed(queryContext)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            for (Predicate predicate : predicates) {
+                if (!predicate.apply(mapEntry)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("(");
+            int size = predicates.length;
+            for (int i = 0; i < size; i++) {
+                if (i > 0) {
+                    sb.append(" AND ");
+                }
+                sb.append(predicates[i]);
+            }
+            sb.append(")");
+            return sb.toString();
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(predicates.length);
+            for (Predicate predicate : predicates) {
+                out.writeObject(predicate);
             }
         }
 
-        protected boolean doApply(Object first, Object second) {
-            return first.equals(second);
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            int size = in.readInt();
+            predicates = new Predicate[size];
+            for (int i = 0; i < size; i++) {
+                predicates[i] = in.readObject();
+            }
+        }
+    }
+
+    /**
+     * Or Predicate
+     */
+    public static class OrPredicate implements IndexAwarePredicate, DataSerializable {
+
+        private Predicate[] predicates;
+
+        public OrPredicate() {
         }
 
-        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
-            if (!secondIsExpression && first instanceof GetExpression) {
-                Index index = mapIndexes.get(first);
-                if (index != null) {
-                    lsIndexPredicates.add(this);
+        public OrPredicate(Predicate... predicates) {
+            this.predicates = predicates;
+        }
+
+        @Override
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            List<Set<QueryableEntry>> indexedResults = new LinkedList<Set<QueryableEntry>>();
+            for (Predicate predicate : predicates) {
+                if (predicate instanceof IndexAwarePredicate) {
+                    IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
+                    if (iap.isIndexed(queryContext)) {
+                        Set<QueryableEntry> s = iap.filter(queryContext);
+                        if (s != null) {
+                            indexedResults.add(s);
+                        }
+                    } else {
+                        return null;
+                    }
+                }
+            }
+            return indexedResults.isEmpty() ? null : new OrResultSet(indexedResults);
+        }
+
+        @Override
+        public boolean isIndexed(QueryContext queryContext) {
+            for (Predicate predicate : predicates) {
+                if (predicate instanceof IndexAwarePredicate) {
+                    IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
+                    if (!iap.isIndexed(queryContext)) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            for (Predicate predicate : predicates) {
+                if (predicate.apply(mapEntry)) {
                     return true;
                 }
             }
             return false;
         }
 
-        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {
-            Index index = mapIndexes.get(first);
-            if (index != null) {
-                setAppliedIndexes.add(index);
-            }
-        }
-
-        public boolean isIndexed(QueryContext queryContext) {
-            return queryContext.getMapIndexes().get(first) != null;
-        }
-
-        public Set<MapEntry> filter(QueryContext queryContext) {
-            Index index = queryContext.getMapIndexes().get(first);
-            if (index != null) {
-                return index.getRecords(index.getLongValue(second));
-            } else {
-                return null;
-            }
-        }
-
-        public Object getValue() {
-            return second;
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            writeObject(out, first);
-            out.writeBoolean(secondIsExpression);
-            writeObject(out, second);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            try {
-                first = (Expression) readObject(in);
-                secondIsExpression = in.readBoolean();
-                second = readObject(in);
-            } catch (Exception e) {
-                throw new IOException(e.getMessage());
-            }
-        }
 
         @Override
-        public String toString() {
-            return first + "=" + second;
-        }
-    }
-
-    public static abstract class AbstractPredicate extends SerializationHelper implements Predicate, DataSerializable {
-        public static Object getRealObject(Object type, Object value) {
-            String valueString = String.valueOf(value);
-            Object result = null;
-            if (type instanceof Boolean) {
-                result = "true".equalsIgnoreCase(valueString) ? true : false;
-            } else if (type instanceof Integer) {
-                if (value instanceof Number) {
-                    result = ((Number) value).intValue();
-                } else {
-                    result = Integer.valueOf(valueString);
-                }
-            } else if (type instanceof Long) {
-                if (value instanceof Number) {
-                    result = ((Number) value).longValue();
-                } else {
-                    result = Long.valueOf(valueString);
-                }
-            } else if (type instanceof Double) {
-                if (value instanceof Number) {
-                    result = ((Number) value).doubleValue();
-                } else {
-                    result = Double.valueOf(valueString);
-                }
-            } else if (type instanceof Float) {
-                if (value instanceof Number) {
-                    result = ((Number) value).floatValue();
-                } else {
-                    result = Float.valueOf(valueString);
-                }
-            } else if (type instanceof Byte) {
-                if (value instanceof Number) {
-                    result = ((Number) value).byteValue();
-                } else {
-                    result = Byte.valueOf(valueString);
-                }
-            } else if (type instanceof Timestamp) {
-                if (value instanceof Date) { // one of java.util.Date or java.sql.Date
-                    result = value;
-                } else {
-                    result = DateHelper.parseTimeStamp(valueString);
-                }
-            } else if (type instanceof java.sql.Date) {
-                if (value instanceof Date) { // one of java.util.Date or java.sql.Timestamp
-                    result = value;
-                } else {
-                    result = DateHelper.parseSqlDate(valueString);
-                }
-            } else if (type instanceof Date) {
-                if (value instanceof Date) { // one of java.sql.Date or java.sql.Timestamp
-                    result = value;
-                } else {
-                    result = DateHelper.parseDate(valueString);
-                }
-            } else if (type.getClass().isEnum()) {
-                try {
-                    String lastEnum = valueString;
-                    if (valueString.contains(".")) {
-                        // there is a dot  in the value specifier, keep part after last dot
-                        lastEnum = valueString.substring(1 + valueString.lastIndexOf("."));
-                    }
-                    Enum enumType = (Enum) type;
-                    result = Enum.valueOf(enumType.getClass(), lastEnum);
-                } catch (IllegalArgumentException iae) {
-                    // illegal enum value specification
-                    throw new IllegalArgumentException("Illegal enum value specification: " + iae.getMessage());
-                }
-            } else {
-                throw new RuntimeException("Unknown type " + type + " value=" + valueString);
-            }
-            return result;
-        }
-    }
-
-    public static class AndOrPredicate extends AbstractPredicate implements IndexAwarePredicate {
-        Predicate[] predicates;
-        boolean and = false;
-
-        public AndOrPredicate() {
-        }
-
-        public AndOrPredicate(boolean and, Predicate first, Predicate second) {
-            this.and = and;
-            predicates = new Predicate[]{first, second};
-        }
-
-        public AndOrPredicate(boolean and, Predicate... predicates) {
-            this.and = and;
-            this.predicates = predicates;
-        }
-
-        public boolean apply(MapEntry mapEntry) {
-            for (Predicate predicate : predicates) {
-                boolean result = predicate.apply(mapEntry);
-                if (and && !result) return false;
-                else if (!and && result) return true;
-            }
-            return and;
-        }
-
-        public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
-            boolean strong = and;
-            if (!mapIndexes.isEmpty()) {
-                lsIndexPredicates.add(this);
-                if (strong) {
-                    final List<IndexAwarePredicate> indexPredicates =
-                            new ArrayList<IndexAwarePredicate>(predicates.length);
-                    for (Predicate predicate : predicates) {
-                        if (predicate instanceof IndexAwarePredicate) {
-                            IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-                            if (!p.collectIndexAwarePredicates(indexPredicates, mapIndexes)) {
-                                strong = false;
-                            }
-                        } else {
-                            strong = false;
-                        }
-                        if (!strong) {
-                            break;
-                        }
-                    }
-                }
-                return strong;
-            }
-            if (and) {
-                for (Predicate predicate : predicates) {
-                    if (predicate instanceof IndexAwarePredicate) {
-                        IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-                        if (!p.collectIndexAwarePredicates(lsIndexPredicates, mapIndexes)) {
-                            strong = false;
-                        }
-                    } else {
-                        strong = false;
-                    }
-                }
-            }
-            return strong;
-        }
-
-        public boolean isIndexed(QueryContext queryContext) {
-            return true;
-        }
-
-        public Set<MapEntry> filter(QueryContext queryContext) {
-            Set<MapEntry> results = null;
-            for (Predicate predicate : predicates) {
-                Set<MapEntry> filter = null;
-                if (predicate instanceof IndexAwarePredicate && ((IndexAwarePredicate) predicate).isIndexed(queryContext)) {
-                    IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-                    filter = p.filter(queryContext);
-                } else {
-                    filter = new HashSet<MapEntry>();
-                    if (and && results != null) {
-                        for (MapEntry result : results) {
-                            if (predicate.apply(result)) {
-                                filter.add(result);
-                            }
-                        }
-                        results = filter;
-                        continue;
-                    } else {
-                        for (MapEntry entry : queryContext.getMapIndexService().getOwnedRecords()) {
-                            if (predicate.apply(entry)) {
-                                filter.add(entry);
-                            }
-                        }
-                    }
-                }
-                if (and && (filter == null || filter.isEmpty())) return null;
-                if (results == null) {  // first predicate
-                    if (and) {
-                        results = filter;
-                    } else if (filter == null) {
-                        results = new HashSet<MapEntry>();
-                    } else {
-                        results = new HashSet<MapEntry>(filter);
-                    }
-                } else {
-                    if (and) {
-                        boolean direct = results.size() < filter.size();
-                        final Set<MapEntry> s1 = direct ? results : filter;
-                        final Set<MapEntry> s2 = direct ? filter : results;
-                        results = new HashSet<MapEntry>();
-                        for (MapEntry next : s1) {
-                            if (s2.contains(next)) {
-                                results.add(next);
-                            }
-                        }
-                        if (results.isEmpty()) return null;
-                    } else if (filter != null) { // 'OR' case so add all none-null results
-                        results.addAll(filter);
-                    }
-                }
-            }
-            return results;
-        }
-
-        public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {
-            if (and) {
-                for (Predicate predicate : predicates) {
-                    if (predicate instanceof IndexAwarePredicate) {
-                        IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-                        p.collectAppliedIndexes(setAppliedIndexes, mapIndexes);
-                    }
-                }
-            }
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeBoolean(and);
+        public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(predicates.length);
             for (Predicate predicate : predicates) {
-                writeObject(out, predicate);
+                out.writeObject(predicate);
             }
         }
 
-        public void readData(DataInput in) throws IOException {
-            and = in.readBoolean();
-            int len = in.readInt();
-            predicates = new Predicate[len];
-            for (int i = 0; i < len; i++) {
-                predicates[i] = (Predicate) readObject(in);
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            int size = in.readInt();
+            predicates = new Predicate[size];
+            for (int i = 0; i < size; i++) {
+                predicates[i] = in.readObject();
             }
         }
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
+            final StringBuilder sb = new StringBuilder();
             sb.append("(");
-            String andOr = (and) ? " AND " : " OR ";
             int size = predicates.length;
             for (int i = 0; i < size; i++) {
                 if (i > 0) {
-                    sb.append(andOr);
+                    sb.append(" OR ");
                 }
                 sb.append(predicates[i]);
             }
@@ -777,290 +646,269 @@ public final class Predicates {
         }
     }
 
-    public static Predicate instanceOf(final Class klass) {
-        return new Predicate() {
-            public boolean apply(MapEntry mapEntry) {
-                Object value = mapEntry.getValue();
-                if (value == null) return false;
-                return klass.isAssignableFrom(value.getClass());
-            }
+    /**
+     * Greater Less Predicate
+     */
+    public static class GreaterLessPredicate extends EqualPredicate {
+        boolean equal;
+        boolean less;
 
-            @Override
-            public String toString() {
-                return " instanceOf (" + klass.getName() + ")";
-            }
-        };
-    }
-
-    public static Predicate and(Predicate x, Predicate y) {
-        return new AndOrPredicate(true, x, y);
-    }
-
-    public static Predicate not(Predicate predicate) {
-        return new NotPredicate(predicate);
-    }
-
-    public static Predicate or(Predicate x, Predicate y) {
-        return new AndOrPredicate(false, x, y);
-    }
-
-    public static Predicate notEqual(final Expression x, final Object y) {
-        return new NotEqualPredicate(x, y);
-    }
-
-    public static Predicate equal(final Expression x, final Object y) {
-        return new EqualPredicate(x, y);
-    }
-
-    public static Predicate like(final Expression<String> x, String pattern) {
-        return new LikePredicate(x, pattern);
-    }
-
-    public static <T extends Comparable<T>> Predicate greaterThan(Expression<? extends T> x, T y) {
-        return new GreaterLessPredicate(x, y, false, false);
-    }
-
-    public static <T extends Comparable<T>> Predicate greaterEqual(Expression<? extends T> x, T y) {
-        return new GreaterLessPredicate(x, y, true, false);
-    }
-
-    public static <T extends Comparable<T>> Predicate lessThan(Expression<? extends T> x, T y) {
-        return new GreaterLessPredicate(x, y, false, true);
-    }
-
-    public static <T extends Comparable<T>> Predicate lessEqual(Expression<? extends T> x, T y) {
-        return new GreaterLessPredicate(x, y, true, true);
-    }
-
-    public static <T extends Comparable<T>> Predicate between(Expression<? extends T> expression, T from, T to) {
-        return new BetweenPredicate(expression, from, to);
-    }
-
-    public static <T extends Comparable<T>> Predicate in(Expression<? extends T> expression, T... values) {
-        return new InPredicate(expression, values);
-    }
-
-    public static Predicate isNot(final Expression<Boolean> x) {
-        return new Predicate() {
-            public boolean apply(MapEntry entry) {
-                Boolean value = x.getValue(entry);
-                return Boolean.FALSE.equals(value);
-            }
-        };
-    }
-
-    public static GetExpression get(final String methodName) {
-        return new GetExpressionImpl(methodName);
-    }
-
-    public static abstract class AbstractExpression extends SerializationHelper implements Expression {
-
-    }
-
-    interface GetExpression<T> extends Expression {
-        GetExpression get(String fieldName);
-    }
-
-    public static final class GetExpressionImpl<T> extends AbstractExpression implements GetExpression, DataSerializable {
-        transient Getter getter = null;
-        String input;
-        List<GetExpressionImpl<T>> ls = null;
-
-        public GetExpressionImpl() {
+        public GreaterLessPredicate() {
         }
 
-        public GetExpressionImpl(String input) {
-            this.input = input;
-        }
+        public GreaterLessPredicate(String attribute, Comparable value, boolean equal, boolean less) {
+            super(attribute);
 
-        public GetExpression get(String methodName) {
-            if (ls == null) {
-                ls = new ArrayList();
+            if (value == null) {
+                throw new NullPointerException("Arguments can't be null");
             }
-            ls.add(new GetExpressionImpl(methodName));
-            return this;
+
+            this.value = value;
+            this.equal = equal;
+            this.less = less;
         }
 
-        public Object getValue(Object obj) {
-            if (ls != null) {
-                Object result = doGetValue(obj);
-                for (GetExpressionImpl<T> e : ls) {
-                    result = e.doGetValue(result);
-                }
-                return result;
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            final Comparable entryValue = readAttribute(mapEntry);
+            if (entryValue == null) {
+                return false;
+            }
+            final Comparable attributeValue = convert(mapEntry, entryValue, value);
+            final int result = entryValue.compareTo(attributeValue);
+            return equal && result == 0 || (less ? (result < 0) : (result > 0));
+        }
+
+        @Override
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            Index index = getIndex(queryContext);
+            final ComparisonType comparisonType;
+            if (less) {
+                comparisonType = equal ? ComparisonType.LESSER_EQUAL : ComparisonType.LESSER;
             } else {
-                return doGetValue(obj);
+                comparisonType = equal ? ComparisonType.GREATER_EQUAL : ComparisonType.GREATER;
             }
-        }
-
-        private Object doGetValue(Object obj) {
-            if (obj instanceof MapEntry) {
-                obj = ((MapEntry) obj).getValue();
-            }
-            if (obj == null) return null;
-            try {
-                if (getter == null) {
-                    Getter parent = null;
-                    Class clazz = obj.getClass();
-                    List<String> possibleMethodNames = new ArrayList<String>(3);
-                    for (final String name : input.split("\\.")) {
-                        Getter localGetter = null;
-                        possibleMethodNames.clear();
-                        possibleMethodNames.add(name);
-                        final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
-                        possibleMethodNames.add("get" + camelName);
-                        possibleMethodNames.add("is" + camelName);
-                        if (name.equals("this")) {
-                            localGetter = new ThisGetter(parent, obj);
-                        } else {
-                            for (String methodName : possibleMethodNames) {
-                                try {
-                                    final Method method = clazz.getMethod(methodName, null);
-                                    method.setAccessible(true);
-                                    localGetter = new MethodGetter(parent, method);
-                                    clazz = method.getReturnType();
-                                    break;
-                                } catch (NoSuchMethodException ignored) {
-                                }
-                            }
-                            if (localGetter == null) {
-                                try {
-                                    final Field field = clazz.getField(name);
-                                    localGetter = new FieldGetter(parent, field);
-                                    clazz = field.getType();
-                                } catch (NoSuchFieldException ignored) {
-                                }
-                            }
-                            if (localGetter == null) {
-                                Class c = clazz;
-                                while (!Object.class.equals(c)) {
-                                    try {
-                                        final Field field = c.getDeclaredField(name);
-                                        field.setAccessible(true);
-                                        localGetter = new FieldGetter(parent, field);
-                                        clazz = field.getType();
-                                        break;
-                                    } catch (NoSuchFieldException ignored) {
-                                        c = c.getSuperclass();
-                                    }
-                                }
-                            }
-                        }
-                        if (localGetter == null) {
-                            throw new RuntimeException("There is no suitable accessor for '" + name + "'");
-                        }
-                        parent = localGetter;
-                    }
-                    getter = parent;
-                }
-                return getter.getValue(obj);
-            } catch (Throwable e) {
-                Util.throwUncheckedException(e);
-                return null;
-            }
-        }
-
-        abstract class Getter {
-            protected final Getter parent;
-
-            public Getter(final Getter parent) {
-                this.parent = parent;
-            }
-
-            abstract Object getValue(Object obj) throws Exception;
-
-            abstract Class getReturnType();
-        }
-
-        class MethodGetter extends Getter {
-            final Method method;
-
-            MethodGetter(Getter parent, Method method) {
-                super(parent);
-                this.method = method;
-            }
-
-            Object getValue(Object obj) throws Exception {
-                obj = parent != null ? parent.getValue(obj) : obj;
-                return obj != null ? method.invoke(obj) : null;
-            }
-
-            Class getReturnType() {
-                return this.method.getReturnType();
-            }
-
-            @Override
-            public String toString() {
-                return "MethodGetter [parent=" + parent + ", method=" + method.getName() + "]";
-            }
-        }
-
-        class FieldGetter extends Getter {
-            final Field field;
-
-            FieldGetter(Getter parent, Field field) {
-                super(parent);
-                this.field = field;
-            }
-
-            Object getValue(Object obj) throws Exception {
-                obj = parent != null ? parent.getValue(obj) : obj;
-                return obj != null ? field.get(obj) : null;
-            }
-
-            Class getReturnType() {
-                return this.field.getType();
-            }
-
-            @Override
-            public String toString() {
-                return "FieldGetter [parent=" + parent + ", field=" + field + "]";
-            }
-        }
-
-        class ThisGetter extends Getter {
-            final Object object;
-
-            public ThisGetter(final Getter parent, Object object) {
-                super(parent);
-                this.object = object;
-            }
-
-            @Override
-            Object getValue(Object obj) throws Exception {
-                return obj;
-            }
-
-            @Override
-            Class getReturnType() {
-                return this.object.getClass();
-            }
-        }
-
-        public void writeData(DataOutput out) throws IOException {
-            out.writeUTF(input);
-        }
-
-        public void readData(DataInput in) throws IOException {
-            input = in.readUTF();
+            return index.getSubRecords(comparisonType, value);
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof GetExpressionImpl)) return false;
-            GetExpressionImpl that = (GetExpressionImpl) o;
-            return input.equals(that.input);
+        public void readData(ObjectDataInput in) throws IOException {
+            super.readData(in);
+            equal = in.readBoolean();
+            less = in.readBoolean();
         }
 
         @Override
-        public int hashCode() {
-            return input.hashCode();
+        public void writeData(ObjectDataOutput out) throws IOException {
+            super.writeData(out);
+            out.writeBoolean(equal);
+            out.writeBoolean(less);
         }
 
         @Override
         public String toString() {
-            return input;
+            final StringBuilder sb = new StringBuilder();
+            sb.append(attribute);
+            sb.append(less ? "<" : ">");
+            if (equal) {
+                sb.append("=");
+            }
+            sb.append(value);
+            return sb.toString();
+        }
+    }
+
+    /**
+     * Not Equal Predicate
+     */
+    public static class NotEqualPredicate extends EqualPredicate {
+        public NotEqualPredicate() {
+        }
+
+        public NotEqualPredicate(String attribute, Comparable value) {
+            super(attribute, value);
+        }
+
+        @Override
+        public boolean apply(Map.Entry entry) {
+            return !super.apply(entry);
+        }
+
+        @Override
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            Index index = getIndex(queryContext);
+            if (index != null) {
+                return index.getSubRecords(ComparisonType.NOT_EQUAL, value);
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return attribute + " != " + value;
+        }
+    }
+
+    /**
+     * Equal Predicate
+     */
+    public static class EqualPredicate extends AbstractPredicate {
+        protected Comparable value;
+
+        public EqualPredicate() {
+        }
+
+        public EqualPredicate(String attribute) {
+            super(attribute);
+        }
+
+        public EqualPredicate(String attribute, Comparable value) {
+            super(attribute);
+            this.value = value;
+        }
+
+        @Override
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            Index index = getIndex(queryContext);
+            return index.getRecords(value);
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            Comparable entryValue = readAttribute(mapEntry);
+            if (entryValue == null) {
+                return value == null || value == IndexImpl.NULL;
+            }
+            value = convert(mapEntry, entryValue, value);
+            return entryValue.equals(value);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            super.writeData(out);
+            out.writeObject(value);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            super.readData(in);
+            value = in.readObject();
+        }
+
+        @Override
+        public String toString() {
+            return attribute + "=" + value;
+        }
+    }
+
+    /**
+     * Provides some functionality for some predicates
+     * such as Between, In.
+     */
+    public abstract static class AbstractPredicate implements IndexAwarePredicate, DataSerializable {
+
+        protected String attribute;
+        private transient volatile AttributeType attributeType;
+
+        protected AbstractPredicate() {
+        }
+
+        protected AbstractPredicate(String attribute) {
+            this.attribute = attribute;
+        }
+
+        protected Comparable convert(Map.Entry mapEntry, Comparable entryValue, Comparable attributeValue) {
+            if (attributeValue == null) {
+                return null;
+            }
+            if (attributeValue instanceof IndexImpl.NullObject) {
+                return IndexImpl.NULL;
+            }
+            AttributeType type = attributeType;
+            if (type == null) {
+                QueryableEntry queryableEntry = (QueryableEntry) mapEntry;
+                type = queryableEntry.getAttributeType(attribute);
+                attributeType = type;
+            }
+            if (type == AttributeType.ENUM) {
+                // if attribute type is enum, convert given attribute to enum string
+                return type.getConverter().convert(attributeValue);
+            } else {
+                // if given attribute value is already in expected type then there's no need for conversion.
+                if (entryValue != null && entryValue.getClass().isAssignableFrom(attributeValue.getClass())) {
+                    return attributeValue;
+                } else if (type != null) {
+                    return type.getConverter().convert(attributeValue);
+                } else {
+                    throw new QueryException("Unknown attribute type: " + attributeValue.getClass());
+                }
+            }
+        }
+
+        @Override
+        public boolean isIndexed(QueryContext queryContext) {
+            return getIndex(queryContext) != null;
+        }
+
+        protected Index getIndex(QueryContext queryContext) {
+            return queryContext.getIndex(attribute);
+        }
+
+        protected Comparable readAttribute(Map.Entry entry) {
+            QueryableEntry queryableEntry = (QueryableEntry) entry;
+            Comparable val = queryableEntry.getAttribute(attribute);
+            if (val != null && val.getClass().isEnum()) {
+                val = val.toString();
+            }
+            return val;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(attribute);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            attribute = in.readUTF();
+        }
+    }
+
+    private static class InstanceOfPredicate implements Predicate, DataSerializable {
+        private Class klass;
+
+        public InstanceOfPredicate(Class klass) {
+            this.klass = klass;
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            Object value = mapEntry.getValue();
+            if (value == null) {
+                return false;
+            }
+            return klass.isAssignableFrom(value.getClass());
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(klass.getName());
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            String klassName = in.readUTF();
+            try {
+                klass = in.getClassLoader().loadClass(klassName);
+            } catch (ClassNotFoundException e) {
+                throw new HazelcastSerializationException("Failed to load class: " + klass, e);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return " instanceOf (" + klass.getName() + ")";
         }
     }
 }

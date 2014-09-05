@@ -16,86 +16,82 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.impl.monitor.MemberStateImpl;
-import com.hazelcast.nio.DataSerializable;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
+import com.hazelcast.management.JsonSerializable;
+import com.hazelcast.monitor.impl.MemberStateImpl;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class TimedMemberState implements DataSerializable, Cloneable {
+import static com.hazelcast.util.JsonUtil.getArray;
+import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.util.JsonUtil.getString;
+
+public final class TimedMemberState implements Cloneable, JsonSerializable {
+
     long time;
-    MemberState memberState = null;
-    Set<String> instanceNames = null;
+    MemberStateImpl memberState;
+    Set<String> instanceNames;
     List<String> memberList;
-    List<String> executorList;
     Boolean master;
     String clusterName;
 
-    public TimedMemberState clone() {
-        TimedMemberState st = new TimedMemberState();
-        st.setTime(time);
-        st.setMemberState(memberState);
-        st.setInstanceNames(instanceNames);
-        st.setMemberList(memberList);
-        st.setMaster(master);
-        st.setClusterName(clusterName);
-        return st;
+    @Override
+    public TimedMemberState clone() throws CloneNotSupportedException {
+        TimedMemberState state = (TimedMemberState) super.clone();
+        state.setTime(time);
+        state.setMemberState(memberState);
+        state.setInstanceNames(instanceNames);
+        state.setMemberList(memberList);
+        state.setMaster(master);
+        state.setClusterName(clusterName);
+        return state;
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        out.writeLong(time);
-        out.writeBoolean(master);
-        memberState.writeData(out);
-        out.writeUTF(clusterName);
-        int nameCount = (instanceNames == null) ? 0 : instanceNames.size();
-        out.writeInt(nameCount);
-        if (instanceNames != null) {
-            for (String name : instanceNames) {
-                out.writeUTF(name);
-            }
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+        root.add("master", master);
+        root.add("time", time);
+        root.add("clusterName", clusterName);
+        JsonArray instanceNames = new JsonArray();
+        for (String instanceName : this.instanceNames) {
+            instanceNames.add(instanceName);
         }
-        int memberCount = (memberList == null) ? 0 : memberList.size();
-        out.writeInt(memberCount);
+        root.add("instanceNames", instanceNames);
         if (memberList != null) {
-            for (String address : memberList) {
-                out.writeUTF(address);
+            JsonArray members = new JsonArray();
+            for (String member : memberList) {
+                members.add(member);
             }
+            root.add("memberList", members);
         }
-        int execCount = (executorList == null) ? 0 : executorList.size();
-        out.writeInt(execCount);
-        if (executorList != null) {
-            for (String exec : executorList) {
-                out.writeUTF(exec);
-            }
-        }
+        root.add("memberState", memberState.toJson());
+        return root;
     }
 
-    public void readData(DataInput in) throws IOException {
-        time = in.readLong();
-        master = in.readBoolean();
-        memberState = new MemberStateImpl();
-        memberState.readData(in);
-        clusterName = in.readUTF();
-        int nameCount = in.readInt();
-        instanceNames = new HashSet<String>(nameCount);
-        for (int i = 0; i < nameCount; i++) {
-            instanceNames.add(in.readUTF());
+    @Override
+    public void fromJson(JsonObject json) {
+        time = getLong(json, "time");
+        master = getBoolean(json, "master");
+        clusterName = getString(json, "clusterName");
+        instanceNames = new HashSet<String>();
+        final JsonArray jsonInstanceNames = getArray(json, "instanceNames");
+        for (JsonValue instanceName : jsonInstanceNames.values()) {
+            instanceNames.add(instanceName.asString());
         }
-        int memberCount = in.readInt();
         memberList = new ArrayList<String>();
-        for (int i = 0; i < memberCount; i++) {
-            memberList.add(in.readUTF());
+        final JsonArray jsonMemberList = getArray(json, "memberList");
+        for (JsonValue member : jsonMemberList.values()) {
+            memberList.add(member.asString());
         }
-        int execCount = in.readInt();
-        executorList = new ArrayList<String>();
-        for (int i = 0; i < execCount; i++) {
-            executorList.add(in.readUTF());
-        }
+        final JsonObject jsonMemberState = getObject(json, "memberState");
+        memberState = new MemberStateImpl();
+        memberState.fromJson(jsonMemberState);
     }
 
     public List<String> getMemberList() {
@@ -139,6 +135,58 @@ public class TimedMemberState implements DataSerializable, Cloneable {
         this.instanceNames = longInstanceNames;
     }
 
+    public MemberStateImpl getMemberState() {
+        return memberState;
+    }
+
+    public void setMemberState(MemberStateImpl memberState) {
+        this.memberState = memberState;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        TimedMemberState that = (TimedMemberState) o;
+
+        if (time != that.time) {
+            return false;
+        }
+        if (clusterName != null ? !clusterName.equals(that.clusterName) : that.clusterName != null) {
+            return false;
+        }
+        if (instanceNames != null ? !instanceNames.equals(that.instanceNames) : that.instanceNames != null) {
+            return false;
+        }
+        if (master != null ? !master.equals(that.master) : that.master != null) {
+            return false;
+        }
+        if (memberList != null ? !memberList.equals(that.memberList) : that.memberList != null) {
+            return false;
+        }
+        if (memberState != null ? !memberState.equals(that.memberState) : that.memberState != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (time ^ (time >>> 32));
+        result = 31 * result + (memberState != null ? memberState.hashCode() : 0);
+        result = 31 * result + (instanceNames != null ? instanceNames.hashCode() : 0);
+        result = 31 * result + (memberList != null ? memberList.hashCode() : 0);
+        result = 31 * result + (master != null ? master.hashCode() : 0);
+        result = 31 * result + (clusterName != null ? clusterName.hashCode() : 0);
+        return result;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("TimedMemberState{\n");
@@ -149,21 +197,5 @@ public class TimedMemberState implements DataSerializable, Cloneable {
         sb.append("Instances : ");
         sb.append(instanceNames);
         return sb.toString();
-    }
-
-    public MemberState getMemberState() {
-        return memberState;
-    }
-
-    public void setMemberState(MemberState memberState) {
-        this.memberState = memberState;
-    }
-
-    public List<String> getExecutorList() {
-        return executorList;
-    }
-
-    public void setExecutorList(List<String> executorList) {
-        this.executorList = executorList;
     }
 }

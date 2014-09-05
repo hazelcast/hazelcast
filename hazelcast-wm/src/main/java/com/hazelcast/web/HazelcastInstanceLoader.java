@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package com.hazelcast.web;
 
-import com.hazelcast.client.ClientConfig;
-import com.hazelcast.client.ClientConfigBuilder;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.UrlXmlConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
@@ -37,13 +36,20 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.logging.Level;
 
-class HazelcastInstanceLoader {
+import static java.lang.String.format;
 
-    private final static ILogger logger = Logger.getLogger(HazelcastInstanceLoader.class.getName());
+final class HazelcastInstanceLoader {
+
     public static final String INSTANCE_NAME = "instance-name";
     public static final String CONFIG_LOCATION = "config-location";
     public static final String USE_CLIENT = "use-client";
     public static final String CLIENT_CONFIG_LOCATION = "client-config-location";
+
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastInstanceLoader.class);
+    private static final int DEFAULT_CONNECTION_ATTEMPT_LIMIT = 3;
+
+    private HazelcastInstanceLoader() {
+    }
 
     public static HazelcastInstance createInstance(final FilterConfig filterConfig, final Properties properties)
             throws ServletException {
@@ -56,31 +62,12 @@ class HazelcastInstanceLoader {
         URL configUrl = null;
         if (useClient && !isEmpty(clientConfigLocation)) {
             configUrl = getConfigURL(filterConfig, clientConfigLocation);
-        } else if(!isEmpty(configLocation)) {
+        } else if (!isEmpty(configLocation)) {
             configUrl = getConfigURL(filterConfig, configLocation);
         }
 
-        if(useClient) {
-            logger.log(Level.WARNING,
-                    "Creating HazelcastClient, make sure this node has access to an already running cluster...");
-            ClientConfig clientConfig ;
-            if (configUrl == null) {
-                clientConfig = new ClientConfig();
-                clientConfig.setUpdateAutomatic(true);
-                clientConfig.setInitialConnectionAttemptLimit(3);
-                clientConfig.setReconnectionAttemptLimit(5);
-            } else {
-                try {
-                    clientConfig = new ClientConfigBuilder(configUrl).build();
-                } catch (IOException e) {
-                    throw new ServletException(e);
-                }
-            }
-            return HazelcastClient.newHazelcastClient(clientConfig);
-        }
-
-        if (configUrl == null && isEmpty(instanceName)) {
-            return Hazelcast.getDefaultInstance();
+        if (useClient) {
+            return createClientInstance(configUrl);
         }
 
         Config config;
@@ -94,27 +81,45 @@ class HazelcastInstanceLoader {
             }
         }
 
+        return createHazelcastInstance(instanceName, config);
+    }
+
+    private static HazelcastInstance createHazelcastInstance(String instanceName, Config config) {
         if (!isEmpty(instanceName)) {
-            config.setInstanceName(instanceName);
-            HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(instanceName);
-            if (instance == null) {
-                try {
-                    instance = Hazelcast.newHazelcastInstance(config);
-                } catch (DuplicateInstanceNameException ignored) {
-                    instance = Hazelcast.getHazelcastInstanceByName(instanceName);
-                }
+            if (LOGGER.isLoggable(Level.INFO)) {
+                LOGGER.info(format("getOrCreateHazelcastInstance for session replication, using name '%s'", instanceName));
             }
-            return instance;
+            config.setInstanceName(instanceName);
+            return Hazelcast.getOrCreateHazelcastInstance(config);
         } else {
+            LOGGER.info("Creating a new HazelcastInstance for session replication");
             return Hazelcast.newHazelcastInstance(config);
         }
+    }
+
+    private static HazelcastInstance createClientInstance(URL configUrl) throws ServletException {
+        LOGGER.warning("Creating HazelcastClient for session replication...");
+        LOGGER.warning("make sure this client has access to an already running cluster...");
+        ClientConfig clientConfig;
+        if (configUrl == null) {
+            clientConfig = new ClientConfig();
+            clientConfig.getNetworkConfig().setConnectionAttemptLimit(DEFAULT_CONNECTION_ATTEMPT_LIMIT);
+        } else {
+            try {
+                clientConfig = new XmlClientConfigBuilder(configUrl).build();
+            } catch (IOException e) {
+                throw new ServletException(e);
+            }
+        }
+        return HazelcastClient.newHazelcastClient(clientConfig);
     }
 
     private static URL getConfigURL(final FilterConfig filterConfig, final String configLocation) throws ServletException {
         URL configUrl = null;
         try {
             configUrl = filterConfig.getServletContext().getResource(configLocation);
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException ignore) {
+            LOGGER.info("ignored MalformedURLException");
         }
         if (configUrl == null) {
             configUrl = ConfigLoader.locateConfig(configLocation);
@@ -129,4 +134,5 @@ class HazelcastInstanceLoader {
     private static boolean isEmpty(String s) {
         return s == null || s.trim().length() == 0;
     }
+
 }

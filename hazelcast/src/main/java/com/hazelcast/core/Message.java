@@ -18,16 +18,48 @@ package com.hazelcast.core;
 
 import java.util.EventObject;
 
+/**
+ * Message for {@link ITopic}.
+ *
+ * @param <E> message type
+ */
 public class Message<E> extends EventObject {
 
-    private final E messageObject;
+    protected E messageObject;
+    private final long publishTime;
+    private final Member publishingMember;
 
-    public Message(String topicName, E messageObject) {
+    public Message(String topicName, E messageObject, long publishTime, Member publishingMember) {
         super(topicName);
         this.messageObject = messageObject;
+        this.publishTime = publishTime;
+        this.publishingMember = publishingMember;
     }
 
+    /**
+     * Returns published message
+     *
+     * @return message object
+     */
     public E getMessageObject() {
         return messageObject;
+    }
+
+    /**
+     * Return the time when the message is published
+     *
+     * @return publish time
+     */
+    public long getPublishTime() {
+        return publishTime;
+    }
+
+    /**
+     * Returns the member that published the message
+     *
+     * @return publishing member
+     */
+    public Member getPublishingMember() {
+        return publishingMember;
     }
 }

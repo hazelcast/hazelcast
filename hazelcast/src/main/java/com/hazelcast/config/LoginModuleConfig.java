@@ -16,7 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.EmptyStatement;
+
 import java.util.Properties;
+/**
+ * Configuration for Login Module
+ */
 
 public class LoginModuleConfig {
 
@@ -34,13 +39,32 @@ public class LoginModuleConfig {
         this.usage = usage;
     }
 
+    /**
+     * Usage of Login Module
+     */
     public enum LoginModuleUsage {
-        REQUIRED, REQUISITE, SUFFICIENT, OPTIONAL;
+        /**
+         * Required
+         */
+        REQUIRED,
+        /**
+         * Requisite
+         */
+        REQUISITE,
+        /**
+         * Sufficient
+         */
+        SUFFICIENT,
+        /**
+         * Optimal
+         */
+        OPTIONAL;
 
         public static LoginModuleUsage get(String v) {
             try {
                 return LoginModuleUsage.valueOf(v.toUpperCase());
             } catch (Exception ignore) {
+                EmptyStatement.ignore(ignore);
             }
             return REQUIRED;
         }
@@ -58,16 +82,19 @@ public class LoginModuleConfig {
         return usage;
     }
 
-    public void setClassName(String className) {
+    public LoginModuleConfig setClassName(String className) {
         this.className = className;
+        return this;
     }
 
-    public void setUsage(LoginModuleUsage usage) {
+    public LoginModuleConfig setUsage(LoginModuleUsage usage) {
         this.usage = usage;
+        return this;
     }
 
-    public void setProperties(Properties properties) {
+    public LoginModuleConfig setProperties(Properties properties) {
         this.properties = properties;
+        return this;
     }
 
     @Override

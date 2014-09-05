@@ -16,49 +16,37 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+/**
+ * This class provides functionality to build predicate.
+ */
+public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
 
-public class PredicateBuilder implements Predicate, IndexAwarePredicate {
-    Expression exp = null;
     List<Predicate> lsPredicates = new ArrayList<Predicate>();
 
-    public boolean apply(MapEntry mapEntry) {
+    private String attribute;
+
+    public String getAttribute() {
+        return attribute;
+    }
+
+    public void setAttribute(String attribute) {
+        this.attribute = attribute;
+    }
+
+    @Override
+    public boolean apply(Map.Entry mapEntry) {
         return lsPredicates.get(0).apply(mapEntry);
-    }
-
-    public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
-        boolean strong = true;
-        Predicate predicate = lsPredicates.get(0);
-        if (predicate instanceof IndexAwarePredicate) {
-            IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-            if (!p.collectIndexAwarePredicates(lsIndexPredicates, mapIndexes)) {
-                strong = false;
-            }
-        } else {
-            strong = false;
-        }
-        return strong;
-    }
-
-    public boolean isIndexed(QueryContext queryContext) {
-        return false;
-    }
-
-    public Set<MapEntry> filter(QueryContext queryContext) {
-        return null;
-    }
-
-    public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {
-        Predicate predicate = lsPredicates.get(0);
-        if (predicate instanceof IndexAwarePredicate) {
-            IndexAwarePredicate p = (IndexAwarePredicate) predicate;
-            p.collectAppliedIndexes(setAppliedIndexes, mapIndexes);
-        }
     }
 
     public EntryObject getEntryObject() {
@@ -67,9 +55,9 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
 
     public PredicateBuilder and(Predicate predicate) {
         if (predicate != PredicateBuilder.this) {
-            throw new RuntimeException("Illegal and statement expected: "
-                    + PredicateBuilder.class.getSimpleName() + ", found: " +
-                    ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
+            throw new QueryException("Illegal and statement expected: "
+                    + PredicateBuilder.class.getSimpleName() + ", found: "
+                    + ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
         }
         int index = lsPredicates.size() - 2;
         Predicate first = lsPredicates.remove(index);
@@ -81,8 +69,8 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
     public PredicateBuilder or(Predicate predicate) {
         if (predicate != PredicateBuilder.this) {
             throw new RuntimeException("Illegal or statement expected: "
-                    + PredicateBuilder.class.getSimpleName() + ", found: " +
-                    ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
+                    + PredicateBuilder.class.getSimpleName() + ", found: "
+                    + ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
         }
         int index = lsPredicates.size() - 2;
         Predicate first = lsPredicates.remove(index);
@@ -92,8 +80,45 @@ public class PredicateBuilder implements Predicate, IndexAwarePredicate {
     }
 
     @Override
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
+        Predicate p = lsPredicates.get(0);
+        if (p instanceof IndexAwarePredicate) {
+            return ((IndexAwarePredicate) p).filter(queryContext);
+        }
+        return null;
+    }
+
+    @Override
+    public boolean isIndexed(QueryContext queryContext) {
+        Predicate p = lsPredicates.get(0);
+        if (p instanceof IndexAwarePredicate) {
+            return ((IndexAwarePredicate) p).isIndexed(queryContext);
+        }
+        return false;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(attribute);
+        out.writeInt(lsPredicates.size());
+        for (Predicate predicate : lsPredicates) {
+            out.writeObject(predicate);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        attribute = in.readUTF();
+        int size = in.readInt();
+        lsPredicates = new ArrayList<Predicate>(size);
+        for (int i = 0; i < size; i++) {
+            lsPredicates.add((Predicate) in.readObject());
+        }
+    }
+
+    @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         sb.append("PredicateBuilder");
         sb.append("{\n");
         sb.append(lsPredicates.size() == 0 ? "" : lsPredicates.get(0));

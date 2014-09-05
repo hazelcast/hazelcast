@@ -20,11 +20,13 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
-import com.hazelcast.hibernate.provider.HazelcastCacheProvider;
+import com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -37,16 +39,20 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"hibernate-applicationContext-hazelcast.xml"})
+@Category(QuickTest.class)
 public class TestHibernateApplicationContext {
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
-    @Resource(name = "cacheProvider")
-    private HazelcastCacheProvider cacheProvider;
-
     @Resource(name = "regionFactory")
     private HazelcastCacheRegionFactory regionFactory;
+
+    @Resource(name = "localRegionFactory")
+    private HazelcastLocalCacheRegionFactory localRegionFactory;
+
+    @Resource(name = "localRegionFactory2")
+    private HazelcastLocalCacheRegionFactory localRegionFactory2;
 
     @BeforeClass
     @AfterClass
@@ -65,14 +71,14 @@ public class TestHibernateApplicationContext {
     }
 
     @Test
-    public void testCacheProvider() {
-        assertNotNull(cacheProvider);
-        assertEquals(cacheProvider.getHazelcastInstance(), instance);
-    }
-
-    @Test
     public void testRegionFactory() {
         assertNotNull(regionFactory);
         assertEquals(regionFactory.getHazelcastInstance(), instance);
+
+        assertNotNull(localRegionFactory);
+        assertEquals(localRegionFactory.getHazelcastInstance(), instance);
+
+        assertNotNull(localRegionFactory2);
+        assertEquals(localRegionFactory2.getHazelcastInstance(), instance);
     }
 }

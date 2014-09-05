@@ -16,7 +16,9 @@
 
 package com.hazelcast.spring.context;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import org.junit.Assert;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,15 +27,15 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import static org.junit.Assert.assertEquals;
+
 /**
- * @mdogan 4/6/12
+ * @author mdogan 4/6/12
  */
-@SpringAware
+@SpringAware(beanName = "someTask")
 @Component("someTask")
 @Scope("prototype")
 public class SomeTask implements Callable<Long>, ApplicationContextAware, DataSerializable {
@@ -44,7 +46,7 @@ public class SomeTask implements Callable<Long>, ApplicationContextAware, DataSe
 
     public Long call() throws Exception {
         SomeBean bean = (SomeBean) context.getBean("someBean");
-        Assert.assertEquals(bean, someBean);
+        assertEquals(bean, someBean);
         return bean.value;
     }
 
@@ -57,11 +59,11 @@ public class SomeTask implements Callable<Long>, ApplicationContextAware, DataSe
         this.someBean = someBean;
     }
 
-    public void writeData(final DataOutput out) throws IOException {
+    public void writeData(final ObjectDataOutput out) throws IOException {
 
     }
 
-    public void readData(final DataInput in) throws IOException {
+    public void readData(final ObjectDataInput in) throws IOException {
 
     }
 
@@ -83,5 +85,15 @@ public class SomeTask implements Callable<Long>, ApplicationContextAware, DataSe
         int result = context != null ? context.hashCode() : 0;
         result = 31 * result + (someBean != null ? someBean.hashCode() : 0);
         return result;
+    }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("SomeTask{");
+        sb.append("context=").append(context);
+        sb.append(", someBean=").append(someBean);
+        sb.append('}');
+        return sb.toString();
     }
 }

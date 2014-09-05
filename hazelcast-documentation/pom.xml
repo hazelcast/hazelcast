@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>2.5.2-SNAPSHOT</version>
+        <version>3.4-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -32,131 +32,32 @@
     <properties>
         <maven.build.timestamp.format>dd MMMMM yyyy</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
-        <docbkx.maven.plugin.version>2.0.14</docbkx.maven.plugin.version>
-        <xslthl.version>2.0.1</xslthl.version>
-        <docbook.xsl>1.76.1</docbook.xsl>
-        <docbook.xsl.saxon>1.0.0</docbook.xsl.saxon>
     </properties>
 
     <build>
         <plugins>
-            <plugin>
-                <!-- http://docbkx-tools.sourceforge.net/docbkx-samples/manual.html -->
-                <groupId>com.agilejava.docbkx</groupId>
-                <artifactId>docbkx-maven-plugin</artifactId>
-                <version>${docbkx.maven.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>docbook-pdf</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>generate-pdf</goal>
-                        </goals>
-
-                        <configuration>
-                            <!-- per execution configuration -->
-                            <includes>index.xml</includes>
-                            <sourceDirectory>${basedir}/src/main/docbook/manual/content</sourceDirectory>
-                            <targetDirectory>${project.build.directory}/docbook/pdf</targetDirectory>
-                            <postProcess>
-                                <move file="${project.build.directory}/docbook/pdf/index.pdf" failonerror="false"
-                                      tofile="${project.build.directory}/docbook/pdf/hazelcast-documentation.pdf"/>
-                            </postProcess>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>docbook-single</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>generate-html</goal>
-                        </goals>
-
-                        <configuration>
-                            <!-- per execution configuration -->
-                            <includes>index.xml</includes>
-                            <sourceDirectory>${basedir}/src/main/docbook/manual/content</sourceDirectory>
-                            <targetDirectory>${project.build.directory}/docbook/single_html</targetDirectory>
-                            <postProcess>
-                                <copy todir="${project.build.directory}/docbook/single_html/">
-                                    <fileset dir="${basedir}/src/main/docbook/manual/stylesheet/">
-                                        <include name="**/*.css"/>
-                                    </fileset>
-                                </copy>
-                                <copy todir="${project.build.directory}/docbook/single_html/images/" flatten="true">
-                                    <fileset dir="${basedir}/src/main/docbook/manual/content/">
-                                        <include name="**/images/*.*"/>
-                                    </fileset>
-                                </copy>
-                            </postProcess>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>docbook-multi</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>generate-html</goal>
-                        </goals>
-
-                        <configuration>
-                            <!-- per execution configuration -->
-                            <includes>index.xml</includes>
-                            <sourceDirectory>${basedir}/src/main/docbook/manual/content</sourceDirectory>
-                            <targetDirectory>${project.build.directory}/docbook</targetDirectory>
-                            <chunkedOutput>true</chunkedOutput>
-                            <postProcess>
-                                <move file="${project.build.directory}/docbook/index"
-                                      tofile="${project.build.directory}/docbook/multi_html"/>
-
-                                <copy todir="${project.build.directory}/docbook/multi_html/">
-                                    <fileset dir="${basedir}/src/main/docbook/manual/stylesheet/">
-                                        <include name="**/*.css"/>
-                                    </fileset>
-                                </copy>
-                                <copy todir="${project.build.directory}/docbook/multi_html/images/" flatten="true">
-                                    <fileset dir="${basedir}/src/main/docbook/manual/content/">
-                                        <include name="**/images/*.*"/>
-                                    </fileset>
-                                </copy>
-                            </postProcess>
-                        </configuration>
-                    </execution>
-                </executions>
-
-                <configuration>
-                    <!-- shared configuration -->
-                    <generatedSourceDirectory>${project.build.directory}/docbook/generated</generatedSourceDirectory>
-                    <xincludeSupported>true</xincludeSupported>
-                    <paperType>A4</paperType>
-                    <fop1Extensions>1</fop1Extensions>
-                    <highlightSource>1</highlightSource>
-                    <!-- for pdf outputs -->
-                    <foCustomization>${basedir}/src/main/docbook/manual/stylesheet/docbook-fo.xsl</foCustomization>
-                    <!-- for html outputs -->
-                    <htmlStylesheet>./docbook.css</htmlStylesheet>
-                    <htmlCustomization>${basedir}/src/main/docbook/manual/stylesheet/docbook-html.xsl</htmlCustomization>
-                </configuration>
-            </plugin>
-        </plugins>
+    		<plugin>
+			  <artifactId>exec-maven-plugin</artifactId>
+			  <groupId>org.codehaus.mojo</groupId>
+			  <version>1.2.1</version>
+			  <executions>
+			  <execution>
+			    <id>GenerateDocumentation</id>
+			    <phase>compile</phase>
+			    <goals>
+			      <goal>exec</goal>
+			    </goals>
+			    <configuration>
+			      <executable>./build.sh</executable>
+			      <arguments>
+			         <argument>${project.version}</argument>
+			      </arguments>
+			      <workingDirectory>${env.PROJECT_HOME}</workingDirectory>            
+			    </configuration>
+			  </execution>
+			  </executions>
+			
+			</plugin>
+		</plugins>
     </build>
-    <dependencies>
-        <dependency>
-            <groupId>net.sf.xslthl</groupId>
-            <artifactId>xslthl</artifactId>
-            <version>${xslthl.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.docbook</groupId>
-            <artifactId>docbook-xsl</artifactId>
-            <version>${docbook.xsl}</version>
-            <type>zip</type>
-            <classifier>ns-resources</classifier>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.docbook</groupId>
-            <artifactId>docbook-xsl-saxon</artifactId>
-            <version>${docbook.xsl.saxon}</version>
-        </dependency>
-    </dependencies>
-    <modules>
-    </modules>
 </project>

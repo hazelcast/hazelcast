@@ -16,113 +16,90 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.impl.NodeType;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.SerializationHelper;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.Credentials;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
-public class JoinRequest extends AbstractRemotelyProcessable {
+public class JoinRequest extends JoinMessage implements DataSerializable {
 
-    protected NodeType nodeType = NodeType.MEMBER;
-    public Address address;
-    public Address to;
-    public byte packetVersion;
-    public int buildNumber;
-    public Config config;
-    public String uuid;
     private Credentials credentials;
+    private int tryCount;
+    private Map<String, Object> attributes;
 
     public JoinRequest() {
-        super();
     }
 
-    public JoinRequest(Address address, Config config, NodeType type, byte packetVersion, int buildNumber, String nodeUuid) {
-        this(null, address, config, type, packetVersion, buildNumber, nodeUuid);
-    }
-
-    public JoinRequest(Address to, Address address, Config config, NodeType type, byte packetVersion, int buildNumber, String nodeUuid) {
-        super();
-        this.to = to;
-        this.address = address;
-        this.config = config;
-        this.nodeType = type;
-        this.packetVersion = packetVersion;
-        this.buildNumber = buildNumber;
-        this.uuid = nodeUuid;
-    }
-
-    @Override
-    public void readData(DataInput in) throws IOException {
-        packetVersion = in.readByte();
-        buildNumber = in.readInt();
-        boolean hasTo = in.readBoolean();
-        if (hasTo) {
-            to = new Address();
-            to.readData(in);
-        }
-        address = new Address();
-        address.readData(in);
-        nodeType = NodeType.create(in.readInt());
-        config = new Config();
-        config.readData(in);
-        uuid = in.readUTF();
-        boolean hasCredentials = in.readBoolean();
-        if (hasCredentials) {
-            credentials = (Credentials) SerializationHelper.readObject(in);
-            if (credentials != null) {
-                credentials.setEndpoint(address.getHost());
-            }
-        }
-    }
-
-    @Override
-    public void writeData(DataOutput out) throws IOException {
-        out.writeByte(packetVersion);
-        out.writeInt(buildNumber);
-        boolean hasTo = (to != null);
-        out.writeBoolean(hasTo);
-        if (hasTo) {
-            to.writeData(out);
-        }
-        address.writeData(out);
-        out.writeInt(nodeType.getValue());
-        config.writeData(out);
-        out.writeUTF(uuid);
-        boolean hasCredentials = credentials != null;
-        out.writeBoolean(hasCredentials);
-        if (hasCredentials) {
-            SerializationHelper.writeObject(out, credentials);
-        }
-    }
-
-    public void setCredentials(Credentials credentials) {
+    public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck config,
+                       Credentials credentials, int memberCount, int tryCount, Map<String, Object> attributes) {
+        super(packetVersion, buildNumber, address, uuid, config, memberCount);
         this.credentials = credentials;
+        this.tryCount = tryCount;
+        this.attributes = attributes;
     }
 
     public Credentials getCredentials() {
         return credentials;
     }
 
-    public String getUuid() {
-        return uuid;
+    public int getTryCount() {
+        return tryCount;
+    }
+
+    public void setTryCount(int tryCount) {
+        this.tryCount = tryCount;
+    }
+
+    public Map<String, Object> getAttributes() {
+        return attributes;
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        credentials = in.readObject();
+        if (credentials != null) {
+            credentials.setEndpoint(getAddress().getHost());
+        }
+        tryCount = in.readInt();
+        int size = in.readInt();
+        attributes = new HashMap<String, Object>();
+        for (int i = 0; i < size; i++) {
+            String key = in.readUTF();
+            Object value = in.readObject();
+            attributes.put(key, value);
+        }
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeObject(credentials);
+        out.writeInt(tryCount);
+        out.writeInt(attributes.size());
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
     }
 
     @Override
     public String toString() {
-        return "JoinRequest{"
-                + "nodeType=" + nodeType
-                + ", address=" + address
-                + ", buildNumber='" + buildNumber + '\''
-                + ", packetVersion='" + packetVersion + '\''
-                + ", config='" + config + "'}";
-    }
-
-    public void process() {
-        getNode().clusterManager.handleJoinRequest(this);
+        final StringBuilder sb = new StringBuilder();
+        sb.append("JoinRequest");
+        sb.append("{packetVersion=").append(packetVersion);
+        sb.append(", buildNumber=").append(buildNumber);
+        sb.append(", address=").append(address);
+        sb.append(", uuid='").append(uuid).append('\'');
+        sb.append(", credentials=").append(credentials);
+        sb.append(", memberCount=").append(memberCount);
+        sb.append(", tryCount=").append(tryCount);
+        sb.append('}');
+        return sb.toString();
     }
 }

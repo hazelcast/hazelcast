@@ -19,12 +19,14 @@ package com.hazelcast.config;
 import com.hazelcast.security.IPermissionPolicy;
 
 import java.util.Properties;
-
+/**
+ * Contains the configuration for policy of permission
+ */
 public class PermissionPolicyConfig {
 
-    private String className = null;
+    private String className;
 
-    private IPermissionPolicy implementation = null;
+    private IPermissionPolicy implementation;
 
     private Properties properties = new Properties();
 
@@ -41,24 +43,27 @@ public class PermissionPolicyConfig {
         return className;
     }
 
-    public void setClassName(String className) {
+    public PermissionPolicyConfig setClassName(String className) {
         this.className = className;
+        return this;
     }
 
     public IPermissionPolicy getImplementation() {
         return implementation;
     }
 
-    public void setImplementation(IPermissionPolicy policyImpl) {
+    public PermissionPolicyConfig setImplementation(IPermissionPolicy policyImpl) {
         this.implementation = policyImpl;
+        return this;
     }
 
     public Properties getProperties() {
         return properties;
     }
 
-    public void setProperties(Properties properties) {
+    public PermissionPolicyConfig setProperties(Properties properties) {
         this.properties = properties;
+        return this;
     }
 
     @Override

@@ -16,38 +16,73 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.impl.MemberImpl;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.exception.RetryableException;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 
-public class MemberLeftException extends ExecutionException implements DataSerializable {
-    volatile Member member;
+/**
+ * Thrown when a member left during an invocation or execution.
+ */
+public class MemberLeftException extends ExecutionException implements RetryableException {
+
+    private transient Member member;
 
     public MemberLeftException() {
     }
 
     public MemberLeftException(Member member) {
+        super(member + " has left cluster!");
         this.member = member;
     }
 
+    /**
+     * Returns the member which left the cluster
+     * @return member
+     */
     public Member getMember() {
         return member;
     }
 
-    public String getMessage() {
-        return member + " has left cluster!";
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+
+        out.writeUTF(member.getUuid());
+
+        boolean isImpl = member instanceof MemberImpl;
+        out.writeBoolean(isImpl);
+
+        if (isImpl) {
+            MemberImpl memberImpl = (MemberImpl) member;
+            Address address = memberImpl.getAddress();
+            String host  = address.getHost();
+            int port = address.getPort();
+            out.writeUTF(host);
+            out.writeInt(port);
+        } else {
+            InetSocketAddress socketAddress = member.getSocketAddress();
+            out.writeObject(socketAddress);
+        }
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        member.writeData(out);
-    }
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
 
-    public void readData(DataInput in) throws IOException {
-        Member member = new MemberImpl();
-        member.readData(in);
+        String uuid = in.readUTF();
+
+        boolean isImpl = in.readBoolean();
+        if (isImpl) {
+            String host = in.readUTF();
+            int port = in.readInt();
+            member = new MemberImpl(new Address(host, port), false, uuid, null);
+        } else {
+            InetSocketAddress socketAddress = (InetSocketAddress) in.readObject();
+            member = new MemberImpl(new Address(socketAddress), false, uuid, null);
+        }
     }
 }

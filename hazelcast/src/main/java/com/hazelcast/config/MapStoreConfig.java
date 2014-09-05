@@ -16,21 +16,70 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.ValidationUtil;
+
 import java.util.Properties;
 
 /**
- * MapStore configuration
+ * Contains the configuration for a Map Store.
  */
-public final class MapStoreConfig {
+public class MapStoreConfig {
+    /**
+     * Default delay seconds for writing
+     */
     public static final int DEFAULT_WRITE_DELAY_SECONDS = 0;
+    /**
+     * Default batch size for writing
+     */
+    public static final int DEFAULT_WRITE_BATCH_SIZE = 1;
 
     private boolean enabled = true;
-    private String className = null;
-    private String factoryClassName = null;
+    private String className;
+    private String factoryClassName;
     private int writeDelaySeconds = DEFAULT_WRITE_DELAY_SECONDS;
+    private int writeBatchSize = DEFAULT_WRITE_BATCH_SIZE;
     private Object implementation;
     private Object factoryImplementation;
     private Properties properties = new Properties();
+    private MapStoreConfigReadOnly readOnly;
+    private InitialLoadMode initialLoadMode = InitialLoadMode.LAZY;
+
+    /**
+     * Initial load module
+     */
+    public enum InitialLoadMode {
+        /**
+         * Each partition is loaded when it is first touched.
+         */
+        LAZY,
+        /**
+         * getMap() method does not return till the map is completely loaded.
+         */
+        EAGER
+    }
+
+
+    public MapStoreConfig() {
+    }
+
+    public MapStoreConfig(MapStoreConfig config) {
+        enabled = config.isEnabled();
+        className = config.getClassName();
+        implementation = config.getImplementation();
+        factoryClassName = config.getFactoryClassName();
+        factoryImplementation = config.getFactoryImplementation();
+        writeDelaySeconds = config.getWriteDelaySeconds();
+        writeBatchSize = config.getWriteBatchSize();
+        initialLoadMode = config.getInitialLoadMode();
+        properties.putAll(config.getProperties());
+    }
+
+    public MapStoreConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MapStoreConfigReadOnly(this);
+        }
+        return readOnly;
+    }
 
     /**
      * Returns the name of the MapStore implementation class
@@ -73,7 +122,7 @@ public final class MapStoreConfig {
     /**
      * Returns the number of seconds to delay the store writes.
      *
-     * @return the number of delay seconds
+     * @return the number of delay seconds.
      */
     public int getWriteDelaySeconds() {
         return writeDelaySeconds;
@@ -81,11 +130,37 @@ public final class MapStoreConfig {
 
     /**
      * Sets the number of seconds to delay before writing (storing) the dirty records
+     * <p/>
+     * Default value is {@value #DEFAULT_WRITE_DELAY_SECONDS}.
      *
-     * @param writeDelaySeconds the number of seconds to delay
+     * @param writeDelaySeconds the number of seconds to delay.
      */
     public MapStoreConfig setWriteDelaySeconds(int writeDelaySeconds) {
         this.writeDelaySeconds = writeDelaySeconds;
+        return this;
+    }
+
+    /**
+     * Returns the number of operations to be included in each batch processing round.
+     *
+     * @return write batch size.
+     */
+    public int getWriteBatchSize() {
+        return writeBatchSize;
+    }
+
+    /**
+     * Sets the number of operations to be included in each batch processing round.
+     * <p/>
+     * Default value is {@value #DEFAULT_WRITE_BATCH_SIZE}.
+     *
+     * @param writeBatchSize the number of operations to be included.
+     */
+    public MapStoreConfig setWriteBatchSize(int writeBatchSize) {
+        if (writeBatchSize < 1) {
+            throw new IllegalArgumentException("Write batch size should be at least 1");
+        }
+        this.writeBatchSize = writeBatchSize;
         return this;
     }
 
@@ -161,18 +236,47 @@ public final class MapStoreConfig {
         return properties;
     }
 
-    public void setProperties(Properties properties) {
+    public MapStoreConfig setProperties(Properties properties) {
+        ValidationUtil.isNotNull(properties, "properties");
         this.properties = properties;
+        return this;
+    }
+
+    /**
+     * Returns initial load mode
+     *
+     * @return initial load mode object
+     */
+    public InitialLoadMode getInitialLoadMode() {
+        return initialLoadMode;
+    }
+
+    /**
+     * Sets initial load mode
+     * <p/>
+     * LAZY: Default load mode where load is async
+     * EAGER: load mode where load is blocked till all partitions are loaded
+     *
+     * @param initialLoadMode initial load mode object
+     */
+    public MapStoreConfig setInitialLoadMode(InitialLoadMode initialLoadMode) {
+        this.initialLoadMode = initialLoadMode;
+        return this;
     }
 
     @Override
     public String toString() {
-        return "MapStoreConfig{" +
-                "className='" + className + '\'' +
-                ", enabled=" + enabled +
-                ", writeDelaySeconds=" + writeDelaySeconds +
-                ", implementation=" + implementation +
-                ", properties=" + properties +
-                '}';
+        return "MapStoreConfig{"
+                + "enabled=" + enabled
+                + ", className='" + className + '\''
+                + ", factoryClassName='" + factoryClassName + '\''
+                + ", writeDelaySeconds=" + writeDelaySeconds
+                + ", writeBatchSize=" + writeBatchSize
+                + ", implementation=" + implementation
+                + ", factoryImplementation=" + factoryImplementation
+                + ", properties=" + properties
+                + ", readOnly=" + readOnly
+                + ", initialLoadMode=" + initialLoadMode
+                + '}';
     }
 }

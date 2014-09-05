@@ -16,33 +16,55 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class TopicConfig implements DataSerializable {
+import static com.hazelcast.util.ValidationUtil.hasText;
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-    public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = false;
+/**
+ * Contains the configuration for a {@link com.hazelcast.core.ITopic}.
+ */
+public class TopicConfig {
+    /**
+     * Default global ordering configuration
+     */
+    public static final boolean DEFAULT_GLOBAL_ORDERING_ENABLED = false;
 
     private String name;
-
     private boolean globalOrderingEnabled = DEFAULT_GLOBAL_ORDERING_ENABLED;
-
+    private boolean statisticsEnabled = true;
     private List<ListenerConfig> listenerConfigs;
+    private TopicConfigReadOnly readOnly;
 
+    /**
+     * Creates a TopicConfig.
+     */
     public TopicConfig() {
     }
 
+    /**
+     * Creates a  {@link TopicConfig} by cloning another TopicConfig.
+     *
+     * @param config
+     */
     public TopicConfig(TopicConfig config) {
+        isNotNull(config, "config");
         this.name = config.name;
         this.globalOrderingEnabled = config.globalOrderingEnabled;
+        this.listenerConfigs = new ArrayList<ListenerConfig>(config.getMessageListenerConfigs());
+    }
+
+    public TopicConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new TopicConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**
+     * Gets the name of the topic, null if nothing is set.
+     *
      * @return the name
      */
     public String getName() {
@@ -50,10 +72,14 @@ public final class TopicConfig implements DataSerializable {
     }
 
     /**
+     * Sets the name of the topic.
+     *
      * @param name the name to set
+     * @return the updated TopicConfig
+     * @throws IllegalArgumentException if name is null or an empty string.
      */
     public TopicConfig setName(String name) {
-        this.name = name;
+        this.name = hasText(name, "name");
         return this;
     }
 
@@ -84,40 +110,48 @@ public final class TopicConfig implements DataSerializable {
         return listenerConfigs;
     }
 
-    public void setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
+    public TopicConfig setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+        return this;
     }
 
-    @Override
+    /**
+     * Checks if statistics are enabled.
+     *
+     * @return true if enabled, false otherwise.
+     */
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    /**
+     * @param statisticsEnabled
+     * @return
+     */
+    public TopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
+        return this;
+    }
+
     public int hashCode() {
-        return (globalOrderingEnabled ? 1231 : 1237) +
-                31 * (name != null ? name.hashCode() : 0);
+        return (globalOrderingEnabled ? 1231 : 1237)
+                + 31 * (name != null ? name.hashCode() : 0);
     }
 
-    @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!(obj instanceof TopicConfig))
+        }
+        if (!(obj instanceof TopicConfig)) {
             return false;
+        }
         TopicConfig other = (TopicConfig) obj;
         return
-                (this.name != null ? this.name.equals(other.name) : other.name == null) &&
-                        this.globalOrderingEnabled == other.globalOrderingEnabled;
+                (this.name != null ? this.name.equals(other.name) : other.name == null)
+                        && this.globalOrderingEnabled == other.globalOrderingEnabled;
     }
 
-    @Override
     public String toString() {
         return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled + "]";
-    }
-
-    public void writeData(DataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeBoolean(globalOrderingEnabled);
-    }
-
-    public void readData(DataInput in) throws IOException {
-        name = in.readUTF();
-        globalOrderingEnabled = in.readBoolean();
     }
 }

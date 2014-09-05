@@ -16,16 +16,41 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.core.MapEntry;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static com.hazelcast.query.Predicates.*;
+import static com.hazelcast.query.Predicates.AbstractPredicate;
+import static com.hazelcast.query.Predicates.and;
+import static com.hazelcast.query.Predicates.between;
+import static com.hazelcast.query.Predicates.equal;
+import static com.hazelcast.query.Predicates.greaterEqual;
+import static com.hazelcast.query.Predicates.greaterThan;
+import static com.hazelcast.query.Predicates.ilike;
+import static com.hazelcast.query.Predicates.lessEqual;
+import static com.hazelcast.query.Predicates.lessThan;
+import static com.hazelcast.query.Predicates.like;
+import static com.hazelcast.query.Predicates.notEqual;
+import static com.hazelcast.query.Predicates.or;
+import static com.hazelcast.query.Predicates.regex;
+
+/**
+ * This class contains methods related to conversion of sql query to predicate.
+ */
 
 public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate {
+
+    private static final long serialVersionUID = 1;
+
     private transient Predicate predicate;
     private String sql;
 
@@ -37,73 +62,87 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     public SqlPredicate() {
     }
 
-    public boolean apply(MapEntry mapEntry) {
+    @Override
+    public boolean apply(Map.Entry mapEntry) {
         return predicate.apply(mapEntry);
     }
 
-    public boolean collectIndexAwarePredicates(List<IndexAwarePredicate> lsIndexPredicates, Map<Expression, Index> mapIndexes) {
+    @Override
+    public boolean isIndexed(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) predicate).collectIndexAwarePredicates(lsIndexPredicates, mapIndexes);
+            return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
         }
         return false;
     }
 
-    public boolean isIndexed(QueryContext queryContext) {
-        return false;
-    }
-
-    public Set<MapEntry> filter(QueryContext queryContext) {
+    @Override
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
         return ((IndexAwarePredicate) predicate).filter(queryContext);
     }
 
-    public void collectAppliedIndexes(Set<Index> setAppliedIndexes, Map<Expression, Index> mapIndexes) {
-        if (predicate instanceof IndexAwarePredicate) {
-            ((IndexAwarePredicate) predicate).collectAppliedIndexes(setAppliedIndexes, mapIndexes);
-        }
-    }
-
-    public void writeData(DataOutput out) throws IOException {
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(sql);
     }
 
-    public void readData(DataInput in) throws IOException {
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
         sql = in.readUTF();
         predicate = createPredicate(sql);
     }
 
     private int getApostropheIndex(String str, int start) {
-        return str.indexOf("'", start);
+        return str.indexOf('\'', start);
+    }
+
+    private int getApostropheIndexIgnoringDoubles(String str, int start) {
+        int i = str.indexOf('\'', start);
+        int j = str.indexOf('\'', i + 1);
+        //ignore doubles
+        while (i == j - 1) {
+            i = str.indexOf('\'', j + 1);
+            j = str.indexOf('\'', i + 1);
+        }
+        return i;
+    }
+
+    private String removeEscapes(String phrase) {
+        return (phrase.length() > 2) ? phrase.replace("''", "'") : phrase;
     }
 
     private Predicate createPredicate(String sql) {
+        String paramSql = sql;
         Map<String, String> mapPhrases = new HashMap<String, String>(1);
-        int apoIndex = getApostropheIndex(sql, 0);
+        int apoIndex = getApostropheIndex(paramSql, 0);
         if (apoIndex != -1) {
             int phraseId = 0;
             StringBuilder newSql = new StringBuilder();
             while (apoIndex != -1) {
                 phraseId++;
                 int start = apoIndex + 1;
-                int end = getApostropheIndex(sql, apoIndex + 1);
+                int end = getApostropheIndexIgnoringDoubles(paramSql, apoIndex + 1);
                 if (end == -1) {
                     throw new RuntimeException("Missing ' in sql");
                 }
-                String phrase = sql.substring(start, end);
+                String phrase = removeEscapes(paramSql.substring(start, end));
+
                 String key = "$" + phraseId;
                 mapPhrases.put(key, phrase);
-                String before = sql.substring(0, apoIndex);
-                sql = sql.substring(end + 1);
+                String before = paramSql.substring(0, apoIndex);
+                paramSql = paramSql.substring(end + 1);
                 newSql.append(before);
                 newSql.append(key);
-                apoIndex = getApostropheIndex(sql, 0);
+                apoIndex = getApostropheIndex(paramSql, 0);
             }
-            newSql.append(sql);
-            sql = newSql.toString();
+            newSql.append(paramSql);
+            paramSql = newSql.toString();
         }
         Parser parser = new Parser();
-        List<String> sqlTokens = parser.toPrefix(sql);
+        List<String> sqlTokens = parser.toPrefix(paramSql);
         List<Object> tokens = new ArrayList<Object>(sqlTokens);
-        if (tokens.size() == 0) throw new RuntimeException("Invalid SQL: [" + sql + "]");
+        if (tokens.size() == 0) {
+            throw new RuntimeException("Invalid SQL: [" + paramSql + "]");
+        }
         if (tokens.size() == 1) {
             return eval(tokens.get(0));
         }
@@ -113,56 +152,67 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
             for (int i = 0; i < tokens.size(); i++) {
                 Object tokenObj = tokens.get(i);
                 if (tokenObj instanceof String && parser.isOperand((String) tokenObj)) {
-                    foundOperand = true;
                     String token = (String) tokenObj;
                     if ("=".equals(token) || "==".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, equal(get((String) first), second));
+                        setOrAdd(tokens, position, equal((String) first, (Comparable) second));
                     } else if ("!=".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, notEqual(get((String) first), second));
+                        setOrAdd(tokens, position, notEqual((String) first, (Comparable) second));
                     } else if (">".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, greaterThan(get((String) first), (Comparable) second));
+                        setOrAdd(tokens, position, greaterThan((String) first, (Comparable) second));
                     } else if (">=".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, greaterEqual(get((String) first), (Comparable) second));
+                        setOrAdd(tokens, position, greaterEqual((String) first, (Comparable) second));
                     } else if ("<=".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, lessEqual(get((String) first), (Comparable) second));
+                        setOrAdd(tokens, position, lessEqual((String) first, (Comparable) second));
                     } else if ("<".equals(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, lessThan(get((String) first), (Comparable) second));
+                        setOrAdd(tokens, position, lessThan((String) first, (Comparable) second));
                     } else if ("LIKE".equalsIgnoreCase(token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, like(get((String) first), (String) second));
+                        setOrAdd(tokens, position, like((String) first, (String) second));
+                    } else if ("ILIKE".equalsIgnoreCase(token)) {
+                        int position = (i - 2);
+                        validateOperandPosition(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
+                        setOrAdd(tokens, position, ilike((String) first, (String) second));
+                    } else if ("REGEX".equalsIgnoreCase(token)) {
+                        int position = (i - 2);
+                        validateOperandPosition(position);
+                        Object first = toValue(tokens.remove(position), mapPhrases);
+                        Object second = toValue(tokens.remove(position), mapPhrases);
+                        setOrAdd(tokens, position, regex((String) first, (String) second));
                     } else if ("IN".equalsIgnoreCase(token)) {
                         int position = i - 2;
                         validateOperandPosition(position);
                         Object exp = toValue(tokens.remove(position), mapPhrases);
                         String[] values = toValue(((String) tokens.remove(position)).split(","), mapPhrases);
-                        setOrAdd(tokens, position, Predicates.in(get((String) exp), values));
+                        setOrAdd(tokens, position, Predicates.in((String) exp, values));
                     } else if ("NOT".equalsIgnoreCase(token)) {
                         int position = i - 1;
                         validateOperandPosition(position);
@@ -174,7 +224,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                         Object expression = tokens.remove(position);
                         Object from = toValue(tokens.remove(position), mapPhrases);
                         Object to = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, between(get((String) expression), (Comparable) from, (Comparable) to));
+                        setOrAdd(tokens, position, between((String) expression, (Comparable) from, (Comparable) to));
                     } else if ("AND".equalsIgnoreCase(token)) {
                         int position = i - 2;
                         validateOperandPosition(position);
@@ -187,12 +237,14 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, or(eval(first), eval(second)));
-                    } else throw new RuntimeException("Unknown token " + token);
+                    } else {
+                        throw new RuntimeException("Unknown token " + token);
+                    }
                     continue root;
                 }
             }
             if (!foundOperand) {
-                throw new RuntimeException("Invalid SQL: [" + sql + "]");
+                throw new RuntimeException("Invalid SQL: [" + paramSql + "]");
             }
         }
         return (Predicate) tokens.get(0);
@@ -209,7 +261,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         if (value != null) {
             return value;
         } else if (key instanceof String && ("null".equalsIgnoreCase((String) key))) {
-            return null;
+            return IndexImpl.NULL;
         } else {
             return key;
         }
@@ -218,7 +270,9 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     private String[] toValue(final String[] keys, final Map<String, String> phrases) {
         for (int i = 0; i < keys.length; i++) {
             final String value = phrases.get(keys[i]);
-            if (value != null) keys[i] = value;
+            if (value != null) {
+                keys[i] = value;
+            }
         }
         return keys;
     }
@@ -233,14 +287,38 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
 
     private Predicate eval(Object statement) {
         if (statement instanceof String) {
-            return equal(get((String) statement), "true");
+            return equal((String) statement, "true");
         } else {
             return (Predicate) statement;
         }
     }
 
+    private void readObject(java.io.ObjectInputStream in)
+            throws IOException, ClassNotFoundException {
+        predicate = createPredicate(sql);
+    }
+
     @Override
     public String toString() {
         return predicate.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof SqlPredicate)) {
+            return false;
+        }
+
+        SqlPredicate that = (SqlPredicate) o;
+
+        return sql.equals(that.sql);
+    }
+
+    @Override
+    public int hashCode() {
+        return sql.hashCode();
     }
 }

@@ -16,40 +16,65 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+/**
+ * Configuration for Multimap.
+ */
+public class MultiMapConfig {
 
-public class MultiMapConfig implements DataSerializable {
+    /**
+     * The number of default synchronous backup count
+     */
+    public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    /**
+     * The number of default asynchronous backup count
+     */
+    public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
     private String name;
     private String valueCollectionType = ValueCollectionType.SET.toString();
     private List<EntryListenerConfig> listenerConfigs;
+    private boolean binary = true;
+    private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
+    private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
+    private boolean statisticsEnabled = true;
+    //    private PartitioningStrategyConfig partitionStrategyConfig;
+    private MultiMapConfigReadOnly readOnly;
 
     public MultiMapConfig() {
     }
 
     public MultiMapConfig(MultiMapConfig defConfig) {
         this.name = defConfig.getName();
-        this.valueCollectionType = defConfig.getValueCollectionType().toString();
+        this.valueCollectionType = defConfig.valueCollectionType;
+        this.binary = defConfig.binary;
+        this.backupCount = defConfig.backupCount;
+        this.asyncBackupCount = defConfig.asyncBackupCount;
+        this.statisticsEnabled = defConfig.statisticsEnabled;
+        this.listenerConfigs = new ArrayList<EntryListenerConfig>(defConfig.getEntryListenerConfigs());
+//        this.partitionStrategyConfig = defConfig.getPartitioningStrategyConfig();
     }
 
+    public MultiMapConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MultiMapConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    /**
+     * Type of value collection
+     */
     public enum ValueCollectionType {
-        SET, LIST
-    }
-
-    public void writeData(DataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(valueCollectionType);
-    }
-
-    public void readData(DataInput in) throws IOException {
-        name = in.readUTF();
-        valueCollectionType = in.readUTF();
+        /**
+         * Store value collection as set
+         */
+        SET,
+        /**
+         * Store value collection as list
+         */
+        LIST
     }
 
     public String getName() {
@@ -87,17 +112,80 @@ public class MultiMapConfig implements DataSerializable {
         return listenerConfigs;
     }
 
-    public void setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
+    public MultiMapConfig setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+        return this;
     }
 
-    @Override
+    public boolean isBinary() {
+        return binary;
+    }
+
+    public MultiMapConfig setBinary(boolean binary) {
+        this.binary = binary;
+        return this;
+    }
+
+    @Deprecated
+    public int getSyncBackupCount() {
+        return backupCount;
+    }
+
+    @Deprecated
+    public MultiMapConfig setSyncBackupCount(int syncBackupCount) {
+        this.backupCount = syncBackupCount;
+        return this;
+    }
+
+    public int getBackupCount() {
+        return backupCount;
+    }
+
+    public MultiMapConfig setBackupCount(int backupCount) {
+        this.backupCount = backupCount;
+        return this;
+    }
+
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    public MultiMapConfig setAsyncBackupCount(int asyncBackupCount) {
+        this.asyncBackupCount = asyncBackupCount;
+        return this;
+    }
+
+    public int getTotalBackupCount() {
+        return backupCount + asyncBackupCount;
+    }
+
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    public MultiMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
+        return this;
+    }
+
+//    public PartitioningStrategyConfig getPartitioningStrategyConfig() {
+//        return partitionStrategyConfig;
+//    }
+//
+//    public MultiMapConfig setPartitioningStrategyConfig(PartitioningStrategyConfig partitionStrategyConfig) {
+//        this.partitionStrategyConfig = partitionStrategyConfig;
+//        return this;
+//    }
+
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("MultiMapConfig");
-        sb.append("{listenerConfigs=").append(listenerConfigs);
-        sb.append(", name='").append(name).append('\'');
+        sb.append("{name='").append(name).append('\'');
         sb.append(", valueCollectionType='").append(valueCollectionType).append('\'');
+        sb.append(", listenerConfigs=").append(listenerConfigs);
+        sb.append(", binary=").append(binary);
+        sb.append(", backupCount=").append(backupCount);
+        sb.append(", asyncBackupCount=").append(asyncBackupCount);
         sb.append('}');
         return sb.toString();
     }

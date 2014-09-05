@@ -17,15 +17,21 @@
 package com.hazelcast.aws.utility;
 
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class CloudyUtilityTest {
     String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
             "<DescribeInstancesResponse xmlns=\"http://ec2.amazonaws.com/doc/2011-05-15/\">\n" +
@@ -175,10 +181,10 @@ public class CloudyUtilityTest {
     public void testNoTags() throws IOException {
         InputStream is = new ByteArrayInputStream(xml.getBytes());
         AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setAccessKey("");
-        awsConfig.setSecretKey("");
+        awsConfig.setAccessKey("some-access-key");
+        awsConfig.setSecretKey("some-secret-key");
         awsConfig.setSecurityGroupName("hazelcast");
-        List<String> result = (List<String>) CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        final Map<String, String> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
         assertEquals(2, result.size());
     }
 
@@ -186,12 +192,12 @@ public class CloudyUtilityTest {
     public void testTagsBothNodeHave() throws IOException {
         InputStream is = new ByteArrayInputStream(xml.getBytes());
         AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setAccessKey("");
-        awsConfig.setSecretKey("");
+        awsConfig.setAccessKey("some-access-key");
+        awsConfig.setSecretKey("some-secret-key");
         awsConfig.setSecurityGroupName("hazelcast");
         awsConfig.setTagKey("Name1");
         awsConfig.setTagValue("value1");
-        List<String> result = (List<String>) CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        final Map<String, String> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
         assertEquals(2, result.size());
     }
 
@@ -199,12 +205,12 @@ public class CloudyUtilityTest {
     public void testTagOnlyOneNodeHave() throws IOException {
         InputStream is = new ByteArrayInputStream(xml.getBytes());
         AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setAccessKey("");
-        awsConfig.setSecretKey("");
+        awsConfig.setAccessKey("some-access-key");
+        awsConfig.setSecretKey("some-secret-key");
         awsConfig.setSecurityGroupName("hazelcast");
         awsConfig.setTagKey("name");
         awsConfig.setTagValue("");
-        List<String> result = (List<String>) CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        final Map<String, String> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
         assertEquals(1, result.size());
     }
 }

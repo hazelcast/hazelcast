@@ -21,11 +21,11 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-2.5.xsd">
+		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
         <hz:config>
-            <hz:group name="dev" password="dev-pass"/>
+            <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"/>
@@ -41,12 +41,24 @@
         </hz:config>
     </hz:hazelcast>
 
-    <hz:client id="client" depends-on="instance" scope="prototype"
-               connect-attempt-limit="3" connect-timeout="1000"
-               reconnect-attempt-limit="2" reconnect-timeout="3000"
-               auto-update-members="false" shuffle-members="true">
-        <hz:member>127.0.0.1:5701</hz:member>
+    <hz:client id="client" lazy-init="true" scope="prototype">
+        <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-timeout="1000"
+                    redo-operation="true"
+                    smart-routing="true">
+
+            <hz:member>127.0.0.1:5701</hz:member>
+
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"/>
+        </hz:network>
     </hz:client>
+
 
     <hz:map id="map1" instance-ref="instance" name="map1" lazy-init="true" depends-on="instance, client"/>
     <hz:map id="map2" instance-ref="instance" name="map2" lazy-init="true" depends-on="map1"/>

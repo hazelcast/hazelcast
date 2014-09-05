@@ -16,28 +16,100 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.ListenerManager;
+import com.hazelcast.client.impl.client.DistributedObjectInfo;
+import com.hazelcast.client.config.ClientAwsConfig;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.client.connection.AddressTranslator;
+import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.proxy.ClientClusterProxy;
+import com.hazelcast.client.proxy.PartitionServiceProxy;
+import com.hazelcast.client.impl.client.GetDistributedObjectsRequest;
+import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.client.spi.ClientListenerService;
+import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.client.spi.ProxyManager;
+import com.hazelcast.client.spi.impl.AwsAddressTranslator;
+import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
+import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
+import com.hazelcast.client.impl.client.txn.ClientTransactionManager;
+import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.idgen.IdGeneratorService;
+import com.hazelcast.concurrent.lock.LockProxy;
+import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.ClientService;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.LifecycleService;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.PartitionService;
+import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.partition.PartitionService;
-import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
+import com.hazelcast.nio.serialization.SerializationServiceImpl;
+import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
+import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
@@ -46,323 +118,405 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
  * When the connected cluster member dies, client will
  * automatically switch to another live member.
  */
-public class HazelcastClient implements HazelcastInstance {
+public final class HazelcastClient implements HazelcastInstance {
 
-    private final static AtomicInteger clientIdCounter = new AtomicInteger();
+    static {
+        OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
+    }
 
-    private final static List<HazelcastClient> lsClients = new CopyOnWriteArrayList<HazelcastClient>();
-
-    final Map<Long, Call> calls = new ConcurrentHashMap<Long, Call>(100);
-
-    final ListenerManager listenerManager;
-    final OutRunnable out;
-    final InRunnable in;
-    final ConnectionManager connectionManager;
-    final Map<Object, Object> mapProxies = new ConcurrentHashMap<Object, Object>(100);
-    final ConcurrentMap<String, ExecutorServiceClientProxy> mapExecutors = new ConcurrentHashMap<String, ExecutorServiceClientProxy>(2);
-    final ClusterClientProxy clusterClientProxy;
-    final PartitionClientProxy partitionClientProxy;
-    final LifecycleServiceClientImpl lifecycleService;
-    final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
-
-    final int id;
-
+    private static final AtomicInteger CLIENT_ID = new AtomicInteger();
+    private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS
+            = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
+    private final ClientProperties clientProperties;
+    private final int id = CLIENT_ID.getAndIncrement();
+    private final String instanceName;
     private final ClientConfig config;
+    private final ThreadGroup threadGroup;
+    private final LifecycleServiceImpl lifecycleService;
+    private final SerializationServiceImpl serializationService;
+    private final ClientConnectionManager connectionManager;
+    private final ClientClusterServiceImpl clusterService;
+    private final ClientPartitionServiceImpl partitionService;
+    private final ClientInvocationServiceImpl invocationService;
+    private final ClientExecutionServiceImpl executionService;
+    private final ClientListenerServiceImpl listenerService;
+    private final ClientTransactionManager transactionManager;
+    private final ProxyManager proxyManager;
+    private final ConcurrentMap<String, Object> userContext;
+    private final LoadBalancer loadBalancer;
 
-    private final AtomicBoolean active = new AtomicBoolean(true);
 
     private HazelcastClient(ClientConfig config) {
-        if (config.getAddressList().size() == 0) {
-            config.addAddress("localhost");
-        }
-        if (config.getCredentials() == null) {
-            config.setCredentials(new UsernamePasswordCredentials(config.getGroupConfig().getName(),
-                    config.getGroupConfig().getPassword()));
-        }
         this.config = config;
-        this.id = clientIdCounter.incrementAndGet();
-        lifecycleService = new LifecycleServiceClientImpl(this);
-        lifecycleService.fireLifecycleEvent(STARTING);
-        //empty check
-        connectionManager = new ConnectionManager(this, config, lifecycleService);
-        connectionManager.setBinder(new DefaultClientBinder(this));
-        out = new OutRunnable(this, calls, new PacketWriter());
-        in = new InRunnable(this, out, calls, new PacketReader());
-        listenerManager = new ListenerManager(this);
+        final GroupConfig groupConfig = config.getGroupConfig();
+        instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
+        threadGroup = new ThreadGroup(instanceName);
+        lifecycleService = new LifecycleServiceImpl(this);
+        clientProperties = new ClientProperties(config);
+        serializationService = initSerializationService(config);
+        proxyManager = new ProxyManager(this);
+        executionService = initExecutorService();
+        transactionManager = new ClientTransactionManager(this);
+        LoadBalancer lb = config.getLoadBalancer();
+        if (lb == null) {
+            lb = new RoundRobinLB();
+        }
+        loadBalancer = lb;
+        connectionManager = createClientConnectionManager();
+        clusterService = new ClientClusterServiceImpl(this);
+        invocationService = new ClientInvocationServiceImpl(this);
+        listenerService = initListenerService();
+        userContext = new ConcurrentHashMap<String, Object>();
+        proxyManager.init(config);
+        partitionService = new ClientPartitionServiceImpl(this);
+    }
+
+    private ClientListenerServiceImpl initListenerService() {
+        int eventQueueCapacity = clientProperties.getEventQueueCapacity().getInteger();
+        int eventThreadCount = clientProperties.getEventThreadCount().getInteger();
+        return new ClientListenerServiceImpl(this, eventThreadCount, eventQueueCapacity);
+    }
+
+    private ClientExecutionServiceImpl initExecutorService() {
+        return new ClientExecutionServiceImpl(instanceName, threadGroup,
+                config.getClassLoader(), config.getExecutorPoolSize());
+    }
+
+    private SerializationServiceImpl initSerializationService(ClientConfig config) {
+        SerializationService ss;
         try {
-            final Connection c = connectionManager.getInitConnection();
-            if (c == null) {
-                connectionManager.shutdown();
-                lifecycleService.destroy();
-                throw new IllegalStateException("Unable to connect to cluster");
+            String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);
+            final PartitioningStrategy partitioningStrategy;
+            if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
+                partitioningStrategy = ClassLoaderUtil.newInstance(config.getClassLoader(), partitioningStrategyClassName);
+            } else {
+                partitioningStrategy = new DefaultPartitioningStrategy();
             }
-        } catch (IOException e) {
-            connectionManager.shutdown();
-            lifecycleService.destroy();
-            throw new ClusterClientException(e.getMessage(), e);
+            ss = new SerializationServiceBuilder()
+                    .setManagedContext(new HazelcastClientManagedContext(this, config.getManagedContext()))
+                    .setClassLoader(config.getClassLoader())
+                    .setConfig(config.getSerializationConfig())
+                    .setPartitioningStrategy(partitioningStrategy)
+                    .build();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
-        final String prefix = "hz.client." + this.id + ".";
-        new Thread(out, prefix + "OutThread").start();
-        new Thread(in, prefix + "InThread").start();
-        new Thread(listenerManager, prefix + "Listener").start();
-        clusterClientProxy = new ClusterClientProxy(this);
-        partitionClientProxy = new PartitionClientProxy(this);
-        if (config.isUpdateAutomatic()) {
-            this.getCluster().addMembershipListener(connectionManager);
-            connectionManager.updateMembers();
+        return (SerializationServiceImpl) ss;
+    }
+
+    public static HazelcastInstance newHazelcastClient() {
+        return newHazelcastClient(new XmlClientConfigBuilder().build());
+    }
+
+    public static HazelcastInstance newHazelcastClient(ClientConfig config) {
+        if (config == null) {
+            config = new XmlClientConfigBuilder().build();
         }
-        lifecycleService.fireLifecycleEvent(STARTED);
-        connectionManager.scheduleHeartbeatTimerTask();
-        lsClients.add(HazelcastClient.this);
+
+        final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+        HazelcastClientProxy proxy;
+        try {
+            Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
+            final HazelcastClient client = new HazelcastClient(config);
+            client.start();
+            OutOfMemoryErrorDispatcher.register(client);
+            proxy = new HazelcastClientProxy(client);
+            CLIENTS.put(client.id, proxy);
+        } finally {
+            Thread.currentThread().setContextClassLoader(tccl);
+        }
+        return proxy;
     }
 
-    GroupConfig groupConfig() {
-        return config.getGroupConfig();
+    public static Collection<HazelcastInstance> getAllHazelcastClients() {
+        return Collections.<HazelcastInstance>unmodifiableCollection(CLIENTS.values());
     }
 
-    public InRunnable getInRunnable() {
-        return in;
+    public static void shutdownAll() {
+        for (HazelcastClientProxy proxy : CLIENTS.values()) {
+            try {
+                proxy.client.getLifecycleService().shutdown();
+            } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
+            }
+            proxy.client = null;
+        }
+        CLIENTS.clear();
     }
 
-    public OutRunnable getOutRunnable() {
-        return out;
+    private void start() {
+        lifecycleService.setStarted();
+        connectionManager.start();
+        try {
+            clusterService.start();
+        } catch (IllegalStateException e) {
+            //there was an authentication failure (todo: perhaps use an AuthenticationException
+            // ??)
+            lifecycleService.shutdown();
+            throw e;
+        }
+        loadBalancer.init(getCluster(), config);
+        partitionService.start();
     }
 
-    ListenerManager getListenerManager() {
-        return listenerManager;
-    }
-
-    /**
-     * @param config
-     * @return
-     */
-
-    public static HazelcastClient newHazelcastClient(ClientConfig config) {
-        if (config == null)
-            config = new ClientConfig();
-        return new HazelcastClient(config);
+    ClientConnectionManager createClientConnectionManager() {
+        final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
+        AddressTranslator addressTranslator;
+        if (awsConfig != null && awsConfig.isEnabled()) {
+            try {
+                addressTranslator = new AwsAddressTranslator(awsConfig);
+            } catch (NoClassDefFoundError e) {
+                LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
+                throw e;
+            }
+        } else {
+            addressTranslator = new DefaultAddressTranslator();
+        }
+        return new ClientConnectionManagerImpl(this, loadBalancer, addressTranslator);
     }
 
     public Config getConfig() {
+        throw new UnsupportedOperationException("Client cannot access cluster config!");
+    }
+
+    public ClientProperties getClientProperties() {
+        return clientProperties;
+    }
+
+    @Override
+    public String getName() {
+        return instanceName;
+    }
+
+    @Override
+    public <E> IQueue<E> getQueue(String name) {
+        return getDistributedObject(QueueService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <E> ITopic<E> getTopic(String name) {
+        return getDistributedObject(TopicService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <E> ISet<E> getSet(String name) {
+        return getDistributedObject(SetService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <E> IList<E> getList(String name) {
+        return getDistributedObject(ListService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <K, V> IMap<K, V> getMap(String name) {
+        return getDistributedObject(MapService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <K, V> MultiMap<K, V> getMultiMap(String name) {
+        return getDistributedObject(MultiMapService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+        return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public JobTracker getJobTracker(String name) {
+        return getDistributedObject(MapReduceService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public ILock getLock(String key) {
+        return getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
+    }
+
+    @Override
+    @Deprecated
+    public ILock getLock(Object key) {
+        //this method will be deleted in the near future.
+        String name = LockProxy.convertToStringKey(key, serializationService);
+        return getDistributedObject(LockServiceImpl.SERVICE_NAME, name);
+    }
+
+    @Override
+    public Cluster getCluster() {
+        return new ClientClusterProxy(clusterService);
+    }
+
+    @Override
+    public Client getLocalEndpoint() {
+        return clusterService.getLocalClient();
+    }
+
+    @Override
+    public IExecutorService getExecutorService(String name) {
+        return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
+    }
+
+    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+        return transactionManager.executeTransaction(task);
+    }
+
+    @Override
+    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
+        return transactionManager.executeTransaction(options, task);
+    }
+
+    @Override
+    public TransactionContext newTransactionContext() {
+        return transactionManager.newTransactionContext();
+    }
+
+    @Override
+    public TransactionContext newTransactionContext(TransactionOptions options) {
+        return transactionManager.newTransactionContext(options);
+    }
+
+    @Override
+    public IdGenerator getIdGenerator(String name) {
+        return getDistributedObject(IdGeneratorService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public IAtomicLong getAtomicLong(String name) {
+        return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <E> IAtomicReference<E> getAtomicReference(String name) {
+        return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public ICountDownLatch getCountDownLatch(String name) {
+        return getDistributedObject(CountDownLatchService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public ISemaphore getSemaphore(String name) {
+        return getDistributedObject(SemaphoreService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public Collection<DistributedObject> getDistributedObjects() {
+        try {
+            GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
+            final Future<SerializableCollection> future = invocationService.invokeOnRandomTarget(request);
+            final SerializableCollection serializableCollection = serializationService.toObject(future.get());
+            for (Data data : serializableCollection) {
+                final DistributedObjectInfo o = serializationService.toObject(data);
+                getDistributedObject(o.getServiceName(), o.getName());
+            }
+            return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    @Override
+    public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+        return proxyManager.addDistributedObjectListener(distributedObjectListener);
+    }
+
+    @Override
+    public boolean removeDistributedObjectListener(String registrationId) {
+        return proxyManager.removeDistributedObjectListener(registrationId);
+    }
+
+    @Override
+    public PartitionService getPartitionService() {
+        return new PartitionServiceProxy(partitionService);
+    }
+
+    @Override
+    public ClientService getClientService() {
         throw new UnsupportedOperationException();
     }
 
-    public PartitionService getPartitionService() {
-        return partitionClientProxy;
-    }
-
-    public ClientService getClientService() {
-        return null;
-    }
-
+    @Override
     public LoggingService getLoggingService() {
         throw new UnsupportedOperationException();
     }
 
-    public <K, V> IMap<K, V> getMap(String name) {
-        return (IMap<K, V>) getClientProxy(Prefix.MAP + name);
-    }
-
-    public <K, V, E> Object getClientProxy(Object o) {
-        Object proxy = mapProxies.get(o);
-        if (proxy == null) {
-            synchronized (mapProxies) {
-                proxy = mapProxies.get(o);
-                if (proxy == null) {
-                    if (o instanceof String) {
-                        String name = (String) o;
-                        if (name.startsWith(Prefix.MAP)) {
-                            proxy = new MapClientProxy<K, V>(this, name);
-                        } else if (name.startsWith(Prefix.AS_LIST)) {
-                            proxy = new ListClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.SET)) {
-                            proxy = new SetClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.QUEUE)) {
-                            proxy = new QueueClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.TOPIC)) {
-                            proxy = new TopicClientProxy<E>(this, name);
-                        } else if (name.startsWith(Prefix.ATOMIC_NUMBER)) {
-                            proxy = new AtomicNumberClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
-                            proxy = new CountDownLatchClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.IDGEN)) {
-                            proxy = new IdGeneratorClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.MULTIMAP)) {
-                            proxy = new MultiMapClientProxy(this, name);
-                        } else if (name.startsWith(Prefix.SEMAPHORE)) {
-                            proxy = new SemaphoreClientProxy(this, name);
-                        } else {
-                            proxy = new LockClientProxy(o, this);
-                        }
-                    } else {
-                        proxy = new LockClientProxy(o, this);
-                    }
-                    mapProxies.put(o, proxy);
-                }
-            }
-        }
-        return mapProxies.get(o);
-    }
-
-    public com.hazelcast.core.Transaction getTransaction() {
-        ClientThreadContext trc = ClientThreadContext.get();
-        TransactionClientProxy proxy = (TransactionClientProxy) trc.getTransaction(this);
-        return proxy;
-    }
-
-    public ConnectionManager getConnectionManager() {
-        return connectionManager;
-    }
-
-    public void addInstanceListener(InstanceListener instanceListener) {
-        clusterClientProxy.addInstanceListener(instanceListener);
-    }
-
-    public Cluster getCluster() {
-        return clusterClientProxy;
-    }
-
-    public ExecutorService getExecutorService() {
-        return getExecutorService("default");
-    }
-
-    public ExecutorService getExecutorService(String name) {
-        if (name == null) throw new IllegalArgumentException("ExecutorService name cannot be null");
-//        name = Prefix.EXECUTOR_SERVICE + name;
-        ExecutorServiceClientProxy executorServiceProxy = mapExecutors.get(name);
-        if (executorServiceProxy == null) {
-            executorServiceProxy = new ExecutorServiceClientProxy(this, name);
-            ExecutorServiceClientProxy old = mapExecutors.putIfAbsent(name, executorServiceProxy);
-            if (old != null) {
-                executorServiceProxy = old;
-            }
-        }
-        return executorServiceProxy;
-    }
-
-    public IdGenerator getIdGenerator(String name) {
-        return (IdGenerator) getClientProxy(Prefix.IDGEN + name);
-    }
-
-    public AtomicNumber getAtomicNumber(String name) {
-        return (AtomicNumber) getClientProxy(Prefix.ATOMIC_NUMBER + name);
-    }
-
-    public ICountDownLatch getCountDownLatch(String name) {
-        return (ICountDownLatch) getClientProxy(Prefix.COUNT_DOWN_LATCH + name);
-    }
-
-    public ISemaphore getSemaphore(String name) {
-        return (ISemaphore) getClientProxy(Prefix.SEMAPHORE + name);
-    }
-
-    public Collection<Instance> getInstances() {
-        return clusterClientProxy.getInstances();
-    }
-
-    public <E> IList<E> getList(String name) {
-        return (IList<E>) getClientProxy(Prefix.AS_LIST + name);
-    }
-
-    public ILock getLock(Object obj) {
-        return new LockClientProxy(obj, this);
-    }
-
-    public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return (MultiMap<K, V>) getClientProxy(Prefix.MULTIMAP + name);
-    }
-
-    public String getName() {
-        return config.getGroupConfig().getName();
-    }
-
-    public <E> IQueue<E> getQueue(String name) {
-        return (IQueue<E>) getClientProxy(Prefix.QUEUE + name);
-    }
-
-    public <E> ISet<E> getSet(String name) {
-        return (ISet<E>) getClientProxy(Prefix.SET + name);
-    }
-
-    public <E> ITopic<E> getTopic(String name) {
-        return (ITopic) getClientProxy(Prefix.TOPIC + name);
-    }
-
-    public void removeInstanceListener(InstanceListener instanceListener) {
-        clusterClientProxy.removeInstanceListener(instanceListener);
-    }
-
-    public static void shutdownAll() {
-        for (HazelcastClient hazelcastClient : lsClients) {
-            try {
-                hazelcastClient.shutdown();
-            } catch (Exception ignored) {
-            }
-        }
-        lsClients.clear();
-    }
-
-    public static Collection<HazelcastClient> getAllHazelcastClients() {
-        return Collections.unmodifiableCollection(lsClients);
-    }
-
-    public void shutdown() {
-        lifecycleService.shutdown();
-    }
-
-    void doShutdown() {
-        if (active.compareAndSet(true, false)) {
-            logger.log(Level.INFO, "HazelcastClient[" + this.id + "] is shutting down.");
-            out.shutdown();
-            in.shutdown();
-            connectionManager.shutdown();
-            listenerManager.shutdown();
-            ClientThreadContext.shutdown();
-            lsClients.remove(HazelcastClient.this);
-        }
-    }
-
-    public boolean isActive() {
-        return active.get();
-    }
-
-    protected void destroy(String proxyName) {
-        mapProxies.remove(proxyName);
-    }
-
-    public void restart() {
-        lifecycleService.restart();
-    }
-
+    @Override
     public LifecycleService getLifecycleService() {
         return lifecycleService;
     }
 
-    static void runAsyncAndWait(final Runnable runnable) {
-        callAsyncAndWait(new Callable<Boolean>() {
-            public Boolean call() throws Exception {
-                runnable.run();
-                return true;
-            }
-        });
+    @Override
+    @Deprecated
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
+        if (id instanceof String) {
+            return (T) proxyManager.getOrCreateProxy(serviceName, (String) id);
+        }
+        throw new IllegalArgumentException("'id' must be type of String!");
     }
 
-    static <V> V callAsyncAndWait(final Callable<V> callable) {
-        final ExecutorService es = Executors.newSingleThreadExecutor();
-        try {
-            Future<V> future = es.submit(callable);
-            try {
-                return future.get();
-            } catch (Throwable e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-                return null;
-            }
-        } finally {
-            es.shutdown();
-        }
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+        return (T) proxyManager.getOrCreateProxy(serviceName, name);
+    }
+
+    @Override
+    public ConcurrentMap<String, Object> getUserContext() {
+        return userContext;
     }
 
     public ClientConfig getClientConfig() {
         return config;
+    }
+
+    public SerializationService getSerializationService() {
+        return serializationService;
+    }
+
+    public ClientConnectionManager getConnectionManager() {
+        return connectionManager;
+    }
+
+    public ClientClusterService getClientClusterService() {
+        return clusterService;
+    }
+
+    public ClientExecutionService getClientExecutionService() {
+        return executionService;
+    }
+
+    public ClientPartitionService getClientPartitionService() {
+        return partitionService;
+    }
+
+    public ClientInvocationService getInvocationService() {
+        return invocationService;
+    }
+
+    public ClientListenerService getListenerService() {
+        return listenerService;
+    }
+
+    public ThreadGroup getThreadGroup() {
+        return threadGroup;
+    }
+
+    @Override
+    public void shutdown() {
+        getLifecycleService().shutdown();
+    }
+
+    void doShutdown() {
+        CLIENTS.remove(id);
+        executionService.shutdown();
+        partitionService.stop();
+        clusterService.stop();
+        transactionManager.shutdown();
+        connectionManager.shutdown();
+        invocationService.shutdown();
+        listenerService.shutdown();
+        proxyManager.destroy();
+        serializationService.destroy();
     }
 }

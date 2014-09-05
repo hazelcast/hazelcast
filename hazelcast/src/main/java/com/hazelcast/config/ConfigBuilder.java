@@ -25,7 +25,7 @@ public interface ConfigBuilder {
     /**
      * Builds Config object.
      *
-     * @returns Config object
+     * @return Built Config object
      */
     Config build();
 }

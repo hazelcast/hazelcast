@@ -23,9 +23,9 @@ import java.util.Properties;
  */
 public final class SSLConfig {
 
-    private boolean enabled = false;
-    private String factoryClassName = null;
-    private Object factoryImplementation = null;
+    private boolean enabled;
+    private String factoryClassName;
+    private Object factoryImplementation;
     private Properties properties = new Properties();
 
     /**
@@ -86,30 +86,61 @@ public final class SSLConfig {
         return factoryImplementation;
     }
 
+    /**
+     * Sets a property.
+     *
+     * @param name  the name of the property to set.
+     * @param value the value of the property to set
+     * @return the updated SSLConfig
+     * @throws NullPointerException if name or value is null.
+     */
     public SSLConfig setProperty(String name, String value) {
         properties.put(name, value);
         return this;
     }
 
+    /**
+     * Gets a property.
+     *
+     * @param name the name of the property to get.
+     * @return the value of the property, null if not found
+     * @throws NullPointerException if name is null.
+     */
     public String getProperty(String name) {
         return properties.getProperty(name);
     }
 
+    /**
+     * Gets all properties.
+     *
+     * @return the properties.
+     */
     public Properties getProperties() {
         return properties;
     }
 
-    public void setProperties(Properties properties) {
+    /**
+     * Sets the properties.
+     *
+     * @param properties the properties to set.
+     * @return the updated SSLConfig.
+     * @throws IllegalArgumentException if properties is null.
+     */
+    public SSLConfig setProperties(Properties properties) {
+        if (properties == null) {
+            throw new IllegalArgumentException("properties can't be null");
+        }
         this.properties = properties;
+        return this;
     }
 
     @Override
     public String toString() {
-        return "SSLConfig{" +
-                "className='" + factoryClassName + '\'' +
-                ", enabled=" + enabled +
-                ", implementation=" + factoryImplementation +
-                ", properties=" + properties +
-                '}';
+        return "SSLConfig{"
+                + "className='" + factoryClassName + '\''
+                + ", enabled=" + enabled
+                + ", implementation=" + factoryImplementation
+                + ", properties=" + properties
+                + '}';
     }
 }

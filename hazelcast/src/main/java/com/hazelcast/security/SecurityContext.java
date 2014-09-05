@@ -21,7 +21,6 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlException;
 import java.security.Permission;
-import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.Callable;
 
 /**
@@ -62,17 +61,32 @@ public interface SecurityContext {
      * @param permission
      * @throws AccessControlException
      */
-    void checkPermission(Permission permission) throws AccessControlException;
+    void checkPermission(Subject subject, Permission permission) throws AccessControlException;
+
 
     /**
-     * Performs privileged work as a particular <code>Subject</code>.
+     * intercepts a request before process if any {@link SecurityInterceptor} configured
      *
-     * @param subject
-     * @param action
-     * @return result returned by the PrivilegedExceptionAction run method.
-     * @throws SecurityException
+     * @param credentials
+     * @param serviceName
+     * @param objectName
+     * @param methodName
+     * @param parameters
+     * @throws AccessControlException
      */
-    <T> T doAsPrivileged(Subject subject, PrivilegedExceptionAction<T> action) throws Exception, SecurityException;
+    void interceptBefore(Credentials credentials, String serviceName, String objectName,
+                         String methodName, Object[] parameters) throws AccessControlException;
+
+    /**
+     * intercepts a request after process if any {@link SecurityInterceptor} configured
+     * Any exception thrown during interception will be ignored
+     *
+     * @param credentials
+     * @param serviceName
+     * @param objectName
+     * @param methodName
+     */
+    void interceptAfter(Credentials credentials, String serviceName, String objectName, String methodName);
 
     /**
      * Creates secure callable that runs in a sandbox.
@@ -88,4 +102,5 @@ public interface SecurityContext {
      * Destroys {@link SecurityContext} and all security elements.
      */
     void destroy();
+
 }

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>Hazelcast <%= @manifest.title or @title %> Version: <%= @manifest.options.version %></title>
+
+    <link type="text/css" rel="stylesheet" href="<%= @baseUrl %>assets/css/reset.css">
+    <link type="text/css" rel="stylesheet" href="http://yandex.st/highlightjs/7.3/styles/<%= @manifest.options.codeHighlightTheme || 'github' %>.min.css">
+    <link type="text/css" rel="stylesheet" href="<%= @baseUrl %>assets/css/docs.css">
+    <link type="text/css" rel="stylesheet" href="<%= @baseUrl %>assets/css/print.css" media="print">
+    <% if @manifest.options.css: %><link type="text/css" rel="stylesheet" href="<%- @manifest.options.css %>"><% end %>
+
+    <script type="text/javascript" src="<%= @baseUrl %>assets/js/jquery-1.10.1.min.js"></script>
+    <script type="text/javascript" src="<%= @baseUrl %>assets/js/jquery.sticky-kit.js"></script>
+    <script type="text/javascript" src="http://yandex.st/highlightjs/6.1/highlight.min.js"></script>
+    <script type="text/javascript" src="<%= @baseUrl %>assets/js/lunr.min.js"></script>
+
+    <% if @manifest.options.embedly: %>
+        <script type="text/javascript" src="http://scripts.embed.ly/jquery.embedly.min.js"></script>
+        <script type="text/javascript">
+            $(function(){
+                $('#content p:not(.disable-embedly) a:only-child').parent().embedly({
+                    key:'<%= @manifest.options.embedly %>',
+                    maxWidth: 700
+                });
+            });
+        </script>
+    <% end %>
+
+    <script type="text/javascript">var BASE_URL = "<%= @baseUrl %>";</script>
+    <script type="text/javascript" src="<%= @baseUrl %>assets/js/viewer.js"></script>
+
+    <script type="text/javascript"> 
+  	$(function(){
+		$("#sidebar").stick_in_parent()
+	});
+    </script>
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-3921306-1']);
+        _gaq.push(['_setDomainName', 'hazelcast.com']);
+        _gaq.push(['_trackPageview']);
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+    <script type="text/javascript">
+        setTimeout(function(){var a=document.createElement("script");
+            var b=document.getElementsByTagName("script")[0];
+            a.src=document.location.protocol+"//dnn506yrbagrg.cloudfront.net/pages/scripts/0020/7413.js?"+Math.floor(new Date().getTime()/3600000);
+            a.async=true;a.type="text/javascript";b.parentNode.insertBefore(a,b)}, 1);
+    </script>
+
+</head>
+<body>
+    <div id="page">
+        <a name="top" />
+        <div id="sitebar">
+    <div class="content">
+      <p><a href="http://hazelcast.org/documentation">Go to <span style="font-weight:bold">hazelcast.org/documentation</span></a></p>
+      </div>
+  </div>
+
+        <header id="header">
+			<div class="content">
+			<div style="overflow:hidden">
+				<div style="float:left">
+                    <a href="http://www.hazelcast.org"><img src="<%= @baseUrl %>assets/img/logo.png" style="width: 199px;padding-top: 18px"/></a>
+					
+				</div>	
+				<div style="float:left;padding-top: 15px;padding-left: 30px;">
+<h1><a href="<%= @baseUrl %>"><%= @manifest.title or @title %> <span style="font-size:12px"> Version: <%= @manifest.options.version %> - Publication Date : <%= @manifest.options.date %> </span></a></h1>
+				</div>
+			</div>
+			</div>
+        </header>
+        <div class="content">
+	        <%- @include "_sidebar.html" %>
+	        <div id="content">
+	            <%- @content %>
+	        </div>	
+	        </div>		
+    </div>
+</body>
+</html>

@@ -18,15 +18,18 @@ package com.hazelcast.core;
 
 import java.util.EventObject;
 
+/**
+ * Map Item event.
+ *
+ * @see com.hazelcast.core.EntryEvent
+ * @see com.hazelcast.core.ICollection#addItemListener(ItemListener, boolean)
+ */
+
 public class ItemEvent<E> extends EventObject {
 
-    private final E item;
+    protected E item;
     private final ItemEventType eventType;
     private final Member member;
-
-    public ItemEvent(String name, int eventType, E item, Member member) {
-        this(name, ItemEventType.getByType(eventType), item, member);
-    }
 
     public ItemEvent(String name, ItemEventType itemEventType, E item, Member member) {
         super(name);
@@ -35,10 +38,20 @@ public class ItemEvent<E> extends EventObject {
         this.member = member;
     }
 
+    /**
+     * Returns the event type.
+     *
+     * @return the event type.
+     */
     public ItemEventType getEventType() {
         return eventType;
     }
 
+    /**
+     * Returns the item related to event.
+     *
+     * @return the item.
+     */
     public E getItem() {
         return item;
     }
@@ -54,10 +67,10 @@ public class ItemEvent<E> extends EventObject {
 
     @Override
     public String toString() {
-        return "ItemEvent{" +
-                "event=" + eventType +
-                ", item=" + getItem() +
-                ", member=" + getMember() +
-                "} ";
+        return "ItemEvent{"
+                + "event=" + eventType
+                + ", item=" + getItem()
+                + ", member=" + getMember()
+                + "} ";
     }
 }

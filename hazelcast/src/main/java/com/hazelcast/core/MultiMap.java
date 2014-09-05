@@ -16,7 +16,11 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.mapreduce.aggregation.Aggregation;
+import com.hazelcast.mapreduce.aggregation.Supplier;
+import com.hazelcast.monitor.LocalMultiMapStats;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +51,8 @@ import java.util.concurrent.TimeUnit;
  * @author oztalip
  * @see IMap
  */
-public interface MultiMap<K, V> extends Instance {
+public interface MultiMap<K, V>
+        extends BaseMultiMap<K, V>, DistributedObject {
 
     /**
      * Returns the name of this multimap.
@@ -69,7 +74,7 @@ public interface MultiMap<K, V> extends Instance {
      * @param key   the key to be stored
      * @param value the value to be stored
      * @return true if size of the multimap is increased, false if the multimap
-     *         already contains the key-value pair.
+     * already contains the key-value pair.
      */
     boolean put(K key, V value);
 
@@ -122,7 +127,7 @@ public interface MultiMap<K, V> extends Instance {
      *
      * @param key the key of the entries to remove
      * @return the collection of removed values associated with the given key. Returned collection
-     *         might be modifiable but it has no effect on the multimap
+     * might be modifiable but it has no effect on the multimap
      */
     Collection<V> remove(Object key);
 
@@ -152,7 +157,7 @@ public interface MultiMap<K, V> extends Instance {
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      *
      * @return the set of keys in the multimap. Returned set might be modifiable
-     *         but it has no effect on the multimap
+     * but it has no effect on the multimap
      */
     Set<K> keySet();
 
@@ -164,7 +169,7 @@ public interface MultiMap<K, V> extends Instance {
      * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
      *
      * @return the collection of values in the multimap. Returned collection might be modifiable
-     *         but it has no effect on the multimap
+     * but it has no effect on the multimap
      */
     Collection<V> values();
 
@@ -176,7 +181,7 @@ public interface MultiMap<K, V> extends Instance {
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      *
      * @return the set of key-value pairs in the multimap. Returned set might be modifiable
-     *         but it has no effect on the multimap
+     * but it has no effect on the multimap
      */
     Set<Map.Entry<K, V>> entrySet();
 
@@ -259,9 +264,10 @@ public interface MultiMap<K, V> extends Instance {
      * other nodes for load balancing and/or membership change.
      *
      * @param listener entry listener
+     * @return returns registration id.
      * @see #localKeySet()
      */
-    void addLocalEntryListener(EntryListener<K, V> listener);
+    String addLocalEntryListener(EntryListener<K, V> listener);
 
     /**
      * Adds an entry listener for this multimap. Listener will get notified
@@ -270,16 +276,18 @@ public interface MultiMap<K, V> extends Instance {
      * @param listener     entry listener
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     * @return returns registration id.
      */
-    void addEntryListener(EntryListener<K, V> listener, boolean includeValue);
+    String addEntryListener(EntryListener<K, V> listener, boolean includeValue);
 
     /**
      * Removes the specified entry listener
      * Returns silently if there is no such listener added before.
      *
-     * @param listener entry listener
+     * @param registrationId Id of listener registration
+     * @return true if registration is removed, false otherwise
      */
-    void removeEntryListener(EntryListener<K, V> listener);
+    boolean removeEntryListener(String registrationId);
 
     /**
      * Adds the specified entry listener for the specified key.
@@ -297,25 +305,9 @@ public interface MultiMap<K, V> extends Instance {
      * @param key          the key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     * @return returns registration id.
      */
-    void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
-
-    /**
-     * Removes the specified entry listener for the specified key.
-     * Returns silently if there is no such listener added before for
-     * the key.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s class.
-     * </p>
-     *
-     * @param listener
-     * @param key
-     */
-    void removeEntryListener(EntryListener<K, V> listener, K key);
+    String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
 
     /**
      * Acquires the lock for the specified key.
@@ -339,6 +331,45 @@ public interface MultiMap<K, V> extends Instance {
      * @param key key to lock.
      */
     void lock(K key);
+
+    /**
+     * Acquires the lock for the specified key for the specified lease time.
+     * <p>After lease time, lock will be released..
+     * <p/>
+     * <p>If the lock is not available then
+     * the current thread becomes disabled for thread scheduling
+     * purposes and lies dormant until the lock has been acquired.
+     * <p/>
+     * Scope of the lock is this map only.
+     * Acquired lock is only for the key in this map.
+     * <p/>
+     * Locks are re-entrant so if the key is locked N times then
+     * it should be unlocked N times before another thread can acquire it.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     *
+     * @param key       key to lock.
+     * @param leaseTime time to wait before releasing the lock.
+     * @param timeUnit  unit of time to specify lease time.
+     */
+    void lock(K key, long leaseTime, TimeUnit timeUnit);
+
+    /**
+     * Checks the lock for the specified key.
+     * <p>If the lock is acquired then returns true, else false.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     *
+     * @param key key to lock to be checked.
+     * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
+     */
+    boolean isLocked(K key);
 
     /**
      * Tries to acquire the lock for the specified key.
@@ -377,9 +408,10 @@ public interface MultiMap<K, V> extends Instance {
      * @param time     the maximum time to wait for the lock
      * @param timeunit the time unit of the <tt>time</tt> argument.
      * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
-     *         if the waiting time elapsed before the lock was acquired.
+     * if the waiting time elapsed before the lock was acquired.
      */
-    boolean tryLock(K key, long time, TimeUnit timeunit);
+    boolean tryLock(K key, long time, TimeUnit timeunit)
+            throws InterruptedException;
 
     /**
      * Releases the lock for the specified key. It never blocks and
@@ -397,29 +429,18 @@ public interface MultiMap<K, V> extends Instance {
     void unlock(K key);
 
     /**
-     * Tries to acquire the lock for the entire map.
-     * The thread that locks the map can do all the operations
-     * but other threads in the cluster cannot operate on the map.
-     * <p>If the lock is not available then
-     * the current thread becomes disabled for thread scheduling
-     * purposes and lies dormant until one of two things happens:
-     * <ul>
-     * <li>The lock is acquired by the current thread; or
-     * <li>The specified waiting time elapses
-     * </ul>
+     * Releases the lock for the specified key regardless of the lock owner.
+     * It always successfully unlocks the key, never blocks
+     * and returns immediately.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
      *
-     * @param time     the maximum time to wait for the lock
-     * @param timeunit the time unit of the <tt>time</tt> argument.
-     * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
-     *         if the waiting time elapsed before the lock was acquired.
+     * @param key key to lock.
      */
-    boolean lockMap(long time, TimeUnit timeunit);
-
-    /**
-     * Unlocks the map. It never blocks and
-     * returns immediately.
-     */
-    void unlockMap();
+    void forceUnlock(K key);
 
     /**
      * Returns LocalMultiMapStats for this map.
@@ -433,6 +454,35 @@ public interface MultiMap<K, V> extends Instance {
      *
      * @return this multimap's local statistics.
      */
-    LocalMapStats getLocalMultiMapStats();
+    LocalMultiMapStats getLocalMultiMapStats();
 
+    /**
+     * Executes a predefined aggregation on the multimaps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
+     * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
+     * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
+     *
+     * @param supplier        the supplier to select and / or extract a (sub-)value from the multimap
+     * @param aggregation     the aggregation that is being executed against the multimap
+     * @param <SuppliedValue> the final type emitted from the supplier
+     * @param <Result>        the resulting aggregation value type
+     * @return Returns the aggregated value
+     */
+    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                             Aggregation<K, SuppliedValue, Result> aggregation);
+
+    /**
+     * Executes a predefined aggregation on the multimaps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
+     * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
+     * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
+     *
+     * @param supplier        the supplier to select and / or extract a (sub-)value from the multimap
+     * @param aggregation     the aggregation that is being executed against the multimap
+     * @param jobTracker      the {@link com.hazelcast.mapreduce.JobTracker} instance to execute the aggregation
+     * @param <SuppliedValue> the final type emitted from the supplier
+     * @param <Result>        the resulting aggregation value type
+     * @return Returns the aggregated value
+     */
+    <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
+                                             Aggregation<K, SuppliedValue, Result> aggregation,
+                                             JobTracker jobTracker);
 }

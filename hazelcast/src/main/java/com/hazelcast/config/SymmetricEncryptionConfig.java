@@ -16,20 +16,21 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.util.ByteUtil;
+import java.util.Arrays;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+/**
+ * Contains configuration for symmetric encryption
+ */
+public class SymmetricEncryptionConfig {
 
-public class SymmetricEncryptionConfig implements DataSerializable {
-    private boolean enabled = false;
+    private static final int ITERATION_COUNT = 19;
+
+    private boolean enabled;
     private String salt = "thesalt";
     private String password = "thepassword";
-    private int iterationCount = 19;
+    private int iterationCount = ITERATION_COUNT;
     private String algorithm = "PBEWithMD5AndDES";
-    private byte[] key = null;
+    private byte[] key;
 
     public boolean isEnabled() {
         return enabled;
@@ -77,55 +78,23 @@ public class SymmetricEncryptionConfig implements DataSerializable {
     }
 
     public byte[] getKey() {
-        return key;
+        return key != null ? Arrays.copyOf(key, key.length) : null;
     }
 
     public SymmetricEncryptionConfig setKey(byte[] key) {
-        this.key = key;
+        this.key = key != null ? Arrays.copyOf(key, key.length) : null;
         return this;
     }
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer();
-        sb.append("SymmetricEncryptionConfig");
-        sb.append("{enabled=").append(enabled);
-        sb.append(", salt='").append(salt).append('\'');
-        sb.append(", password='").append(password).append('\'');
+        final StringBuilder sb = new StringBuilder("SymmetricEncryptionConfig{");
+        sb.append("enabled=").append(enabled);
         sb.append(", iterationCount=").append(iterationCount);
         sb.append(", algorithm='").append(algorithm).append('\'');
+        sb.append(", key=").append(Arrays.toString(key));
         sb.append('}');
         return sb.toString();
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        boolean hasKey = key != null && key.length > 0;
-        out.writeByte(ByteUtil.toByte(enabled, hasKey));
-        if (enabled) {
-            out.writeUTF(salt);
-            out.writeUTF(password);
-            out.writeInt(iterationCount);
-            out.writeUTF(algorithm);
-            if (hasKey) {
-                out.writeInt(key.length);
-                out.write(key);
-            }
-        }
-    }
-
-    public void readData(DataInput in) throws IOException {
-        boolean[] b = ByteUtil.fromByte(in.readByte());
-        enabled = b[0];
-        if (enabled) {
-            salt = in.readUTF();
-            password = in.readUTF();
-            iterationCount = in.readInt();
-            algorithm = in.readUTF();
-            boolean hasKey = b[1];
-            if (hasKey) {
-                key = new byte[in.readInt()];
-                in.readFully(key);
-            }
-        }
-    }
 }

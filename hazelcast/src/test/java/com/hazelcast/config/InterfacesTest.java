@@ -16,7 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -24,7 +28,8 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class InterfacesTest {
 
     final String interfaceA = "127.0.0.1";
@@ -33,25 +38,25 @@ public class InterfacesTest {
 
     @Test
     public void testIsEnabledByDefault() {
-        Interfaces interfaces = new Interfaces();
+        InterfacesConfig interfaces = new InterfacesConfig();
         assertFalse(interfaces.isEnabled());
     }
 
     @Test
     public void testSetEnabled() {
-        Interfaces interfaces = new Interfaces().setEnabled(true);
+        InterfacesConfig interfaces = new InterfacesConfig().setEnabled(true);
         assertTrue(interfaces.isEnabled());
     }
 
     @Test
     public void testAddInterface() {
-        Interfaces interfaces = new Interfaces().addInterface(interfaceA);
+        InterfacesConfig interfaces = new InterfacesConfig().addInterface(interfaceA);
         assertTrue(interfaces.getInterfaces().contains(interfaceA));
     }
 
     @Test
     public void testClear() {
-        Interfaces interfaces = new Interfaces()
+        InterfacesConfig interfaces = new InterfacesConfig()
                 .addInterface(interfaceA)
                 .addInterface(interfaceB)
                 .addInterface(interfaceC);
@@ -62,7 +67,7 @@ public class InterfacesTest {
 
     @Test
     public void testGetInterfaceList() {
-        Interfaces interfaces = new Interfaces();
+        InterfacesConfig interfaces = new InterfacesConfig();
         assertNotNull(interfaces.getInterfaces());
     }
 
@@ -72,7 +77,7 @@ public class InterfacesTest {
         interfaceList.add(interfaceA);
         interfaceList.add(interfaceB);
         interfaceList.add(interfaceC);
-        Interfaces interfaces = new Interfaces().setInterfaces(interfaceList);
+        InterfacesConfig interfaces = new InterfacesConfig().setInterfaces(interfaceList);
         assertTrue(interfaces.getInterfaces().contains(interfaceA));
         assertTrue(interfaces.getInterfaces().contains(interfaceB));
         assertTrue(interfaces.getInterfaces().contains(interfaceC));
@@ -80,7 +85,7 @@ public class InterfacesTest {
 
     @Test
     public void shouldNotContainDuplicateInterfaces() {
-        Interfaces interfaces = new Interfaces().addInterface(interfaceA);
+        InterfacesConfig interfaces = new InterfacesConfig().addInterface(interfaceA);
         assertTrue(interfaces.getInterfaces().size() == 1);
         interfaces.addInterface(interfaceA);
         assertTrue(interfaces.getInterfaces().size() == 1);
@@ -88,7 +93,7 @@ public class InterfacesTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void shouldNotBeModifiable() {
-        new Interfaces()
+        new InterfacesConfig()
                 .addInterface(interfaceA)
                 .getInterfaces()
                 .clear();

@@ -20,11 +20,14 @@ import com.hazelcast.security.ICredentialsFactory;
 
 import java.util.Properties;
 
+/**
+ * Contains the configuration for Credentials Factory.
+ */
 public class CredentialsFactoryConfig {
 
-    private String className = null;
+    private String className;
 
-    private ICredentialsFactory implementation = null;
+    private ICredentialsFactory implementation;
 
     private Properties properties = new Properties();
 
@@ -41,24 +44,27 @@ public class CredentialsFactoryConfig {
         return className;
     }
 
-    public void setClassName(String className) {
+    public CredentialsFactoryConfig setClassName(String className) {
         this.className = className;
+        return this;
     }
 
     public ICredentialsFactory getImplementation() {
         return implementation;
     }
 
-    public void setImplementation(ICredentialsFactory factoryImpl) {
+    public CredentialsFactoryConfig setImplementation(ICredentialsFactory factoryImpl) {
         this.implementation = factoryImpl;
+        return this;
     }
 
     public Properties getProperties() {
         return properties;
     }
 
-    public void setProperties(Properties properties) {
+    public CredentialsFactoryConfig setProperties(Properties properties) {
         this.properties = properties;
+        return this;
     }
 
     @Override

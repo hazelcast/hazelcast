@@ -19,90 +19,113 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                       http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <name>hazelcast-ra</name>
+    <artifactId>hazelcast-ra</artifactId>
+    <packaging>pom</packaging>
 
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>2.5.2-SNAPSHOT</version>
+        <version>3.4-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>hazelcast-ra</name>
-    <artifactId>hazelcast-ra</artifactId>
-    <packaging>rar</packaging>
+    <modules>
+        <module>hazelcast-jca</module>
+        <module>hazelcast-jca-rar</module>
+    </modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>geronimo-spec</groupId>
-            <artifactId>geronimo-spec-j2ee-connector</artifactId>
-            <version>1.5-rc4</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
+    <!--<properties>-->
+        <!--<ironjacamar.version>1.0.10.Final</ironjacamar.version>-->
+        <!--<h2.version>1.3.168</h2.version>-->
+        <!--<atomikos-version>3.9.2</atomikos-version>-->
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.plugin.version}</version>
-                <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>animal-sniffer-maven-plugin</artifactId>
-                <version>1.7</version>
-                <configuration>
-                    <signature>
-                        <groupId>org.codehaus.mojo.signature</groupId>
-                        <artifactId>java15</artifactId>
-                        <version>1.0</version>
-                    </signature>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>source-java5-check</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>build_jar</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+        <!--&lt;!&ndash; needed for checkstyle/findbugs &ndash;&gt;-->
+        <!--<main.basedir>${project.parent.basedir}</main.basedir>-->
+    <!--</properties>-->
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-rar-plugin</artifactId>
-                <version>${maven.rar.plugin.version}</version>
-                <configuration>
-                    <raXmlFile>src/main/resources/ra.xml</raXmlFile>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <!--<dependencies>-->
+        <!--<dependency>-->
+            <!--<groupId>org.apache.geronimo.specs</groupId>-->
+            <!--<artifactId>geronimo-j2ee-connector_1.5_spec</artifactId>-->
+            <!--<version>2.0.0</version>-->
+            <!--<scope>provided</scope>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>com.hazelcast</groupId>-->
+            <!--<artifactId>hazelcast</artifactId>-->
+            <!--<version>${project.parent.version}</version>-->
+            <!--<scope>provided</scope>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>com.atomikos</groupId>-->
+            <!--<artifactId>transactions-jdbc</artifactId>-->
+            <!--<scope>test</scope>-->
+            <!--<version>${atomikos-version}</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>com.hazelcast</groupId>-->
+            <!--<artifactId>hazelcast</artifactId>-->
+            <!--<scope>test</scope>-->
+            <!--<version>${project.parent.version}</version>-->
+            <!--<classifier>tests</classifier>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>org.apache.geronimo.specs</groupId>-->
+            <!--<artifactId>geronimo-jta_1.1_spec</artifactId>-->
+            <!--<scope>test</scope>-->
+            <!--<version>1.1.1</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+            <!--<groupId>com.hazelcast</groupId>-->
+            <!--<artifactId>hazelcast-client</artifactId>-->
+            <!--<scope>test</scope>-->
+            <!--<version>${project.parent.version}</version>-->
+        <!--</dependency>-->
+    <!--</dependencies>-->
 
+    <!--<build>-->
+        <!--&lt;!&ndash;<testResources>&ndash;&gt;-->
+            <!--&lt;!&ndash;<testResource>&ndash;&gt;-->
+                <!--&lt;!&ndash;<directory>src/main/rar/META-INF</directory>&ndash;&gt;-->
+            <!--&lt;!&ndash;</testResource>&ndash;&gt;-->
+            <!--&lt;!&ndash;<testResource>&ndash;&gt;-->
+                <!--&lt;!&ndash;<directory>src/test/resources</directory>&ndash;&gt;-->
+            <!--&lt;!&ndash;</testResource>&ndash;&gt;-->
+        <!--&lt;!&ndash;</testResources>&ndash;&gt;-->
+
+        <!--<plugins>-->
+            <!--&lt;!&ndash; skip unit test run, tests to be executed during integration-test &ndash;&gt;-->
+            <!--&lt;!&ndash; plugin>-->
+                <!--<groupId>org.apache.maven.plugins</groupId>-->
+                <!--<artifactId>maven-surefire-plugin</artifactId>-->
+                <!--<configuration>-->
+                    <!--<skip>true</skip>-->
+                <!--</configuration>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>surefire-it</id>-->
+                        <!--<phase>integration-test</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>test</goal>-->
+                        <!--</goals>-->
+                        <!--<configuration>-->
+                            <!--<skip>false</skip>-->
+                        <!--</configuration>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            <!--</plugin &ndash;&gt;-->
+
+
+
+            <!--&lt;!&ndash;<plugin>&ndash;&gt;-->
+                <!--&lt;!&ndash;<groupId>org.apache.maven.plugins</groupId>&ndash;&gt;-->
+                <!--&lt;!&ndash;<artifactId>maven-rar-plugin</artifactId>&ndash;&gt;-->
+                <!--&lt;!&ndash;<version>${maven.rar.plugin.version}</version>&ndash;&gt;-->
+                <!--&lt;!&ndash;<configuration>&ndash;&gt;-->
+                    <!--&lt;!&ndash;<raXmlFile>src/main/rar/ra.xml</raXmlFile>&ndash;&gt;-->
+                <!--&lt;!&ndash;</configuration>&ndash;&gt;-->
+            <!--&lt;!&ndash;</plugin>&ndash;&gt;-->
+        <!--</plugins>-->
+    <!--</build>-->
 </project>

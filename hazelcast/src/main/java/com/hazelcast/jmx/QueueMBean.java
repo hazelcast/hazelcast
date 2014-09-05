@@ -16,147 +16,152 @@
 
 package com.hazelcast.jmx;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
- * Management bean for Hazelcst Queue
- *
- * @author Marco Ferrante, DISI - University of Genoa
+ * Management bean for {@link Iqu}
  */
-@JMXDescription("A distributed queue")
-public class QueueMBean extends AbstractMBean<IQueue<?>> {
+@ManagedDescription("IQueue")
+public class QueueMBean extends HazelcastMBean<IQueue> {
 
-    @SuppressWarnings("unchecked")
-    protected ItemListener listener;
+    private final AtomicLong totalAddedItemCount = new AtomicLong();
+    private final AtomicLong totalRemovedItemCount = new AtomicLong();
+    private final String registrationId;
 
-    private StatisticsCollector receivedStats = null;
-    private StatisticsCollector servedStats = null;
+    protected QueueMBean(IQueue managedObject, ManagementService service) {
+        super(managedObject, service);
+        objectName = service.createObjectName("IQueue", managedObject.getName());
+        //todo: using the event system to register number of adds/remove is an very expensive price to pay.
+        ItemListener itemListener = new ItemListener() {
+            @Override
+            public void itemAdded(ItemEvent item) {
+                totalAddedItemCount.incrementAndGet();
+            }
 
-    public QueueMBean(IQueue<?> queue, ManagementService managementService) {
-        super(queue, managementService);
+            @Override
+            public void itemRemoved(ItemEvent item) {
+                totalRemovedItemCount.incrementAndGet();
+            }
+        };
+        registrationId = managedObject.addItemListener(itemListener, false);
     }
 
-    @Override
-    public ObjectNameSpec getNameSpec() {
-        return getParentName().getNested("Queue", getName());
+    @ManagedAnnotation("localOwnedItemCount")
+    @ManagedDescription("the number of owned items in this member.")
+    public long getLocalOwnedItemCount() {
+        return managedObject.getLocalQueueStats().getOwnedItemCount();
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void postRegister(Boolean registrationDone) {
-        super.postRegister(registrationDone);
-        if (!registrationDone) {
-            return;
-        }
-        if (managementService.showDetails()) {
-            receivedStats = ManagementService.newStatisticsCollector();
-            servedStats = ManagementService.newStatisticsCollector();
-            listener = new ItemListener() {
-
-                public void itemAdded(ItemEvent item) {
-                    receivedStats.addEvent();
-                }
-
-                public void itemRemoved(ItemEvent item) {
-                    servedStats.addEvent();
-                }
-            };
-            getManagedObject().addItemListener(listener, false);
-        }
+    @ManagedAnnotation("localBackupItemCount")
+    @ManagedDescription("the number of backup items in this member.")
+    public long getLocalBackupItemCount() {
+        return managedObject.getLocalQueueStats().getBackupItemCount();
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void preDeregister() throws Exception {
-        if (listener != null) {
-            getManagedObject().removeItemListener(listener);
-            listener = null;
-        }
-        if (receivedStats != null) {
-            receivedStats.destroy();
-            receivedStats = null;
-        }
-        if (servedStats != null) {
-            servedStats.destroy();
-            servedStats = null;
-        }
-        super.preDeregister();
+    @ManagedAnnotation("localMinAge")
+    @ManagedDescription("the min age of the items in this member.")
+    public long getLocalMinAge() {
+        return managedObject.getLocalQueueStats().getMinAge();
     }
 
-    /**
-     * Resets statistics
-     */
-    @JMXOperation("resetStats")
-    public void resetStats() {
-        if (receivedStats != null)
-            receivedStats.reset();
-        if (servedStats != null)
-            servedStats.reset();
+    @ManagedAnnotation("localMaxAge")
+    @ManagedDescription("the max age of the items in this member.")
+    public long getLocalMaxAge() {
+        return managedObject.getLocalQueueStats().getMaxAge();
     }
 
-    /**
-     * Clear queue
-     */
-    @JMXOperation("clear")
-    public void clear() {
-        getManagedObject().clear();
+    @ManagedAnnotation("localAvgAge")
+    @ManagedDescription("the average age of the items in this member.")
+    public long getLocalAvgAge() {
+        return managedObject.getLocalQueueStats().getAvgAge();
     }
 
-    @JMXAttribute("Name")
-    @JMXDescription("Registration name of the queue")
+    @ManagedAnnotation("localOfferOperationCount")
+    @ManagedDescription("the number of offer/put/add operations in this member")
+    public long getLocalOfferOperationCount() {
+        return managedObject.getLocalQueueStats().getOfferOperationCount();
+    }
+
+    @ManagedAnnotation("localRejectedOfferOperationCount")
+    @ManagedDescription("the number of rejected offers in this member")
+    public long getLocalRejectedOfferOperationCount() {
+        return managedObject.getLocalQueueStats().getRejectedOfferOperationCount();
+    }
+
+    @ManagedAnnotation("localPollOperationCount")
+    @ManagedDescription("the number of poll/take/remove operations in this member")
+    public long getLocalPollOperationCount() {
+        return managedObject.getLocalQueueStats().getPollOperationCount();
+    }
+
+    @ManagedAnnotation("localEmptyPollOperationCount")
+    @ManagedDescription("number of null returning poll operations in this member")
+    public long getLocalEmptyPollOperationCount() {
+        return managedObject.getLocalQueueStats().getEmptyPollOperationCount();
+    }
+
+    @ManagedAnnotation("localOtherOperationsCount")
+    @ManagedDescription("number of other operations in this member")
+    public long getLocalOtherOperationsCount() {
+        return managedObject.getLocalQueueStats().getOtherOperationsCount();
+    }
+
+    @ManagedAnnotation("localEventOperationCount")
+    @ManagedDescription("number of event operations in this member")
+    public long getLocalEventOperationCount() {
+        return managedObject.getLocalQueueStats().getEventOperationCount();
+    }
+
+    @ManagedAnnotation("name")
+    @ManagedDescription("Name of the DistributedObject")
     public String getName() {
-        return getManagedObject().getName();
+        return managedObject.getName();
     }
 
-    @JMXAttribute("Config")
-    @JMXDescription("Queue configuration")
+    @ManagedAnnotation("partitionKey")
+    @ManagedDescription("the partitionKey")
+    public String getPartitionKey() {
+        return managedObject.getPartitionKey();
+    }
+
+    @ManagedAnnotation("config")
+    @ManagedDescription("QueueConfig")
     public String getConfig() {
-        final QueueConfig config = managementService.getInstance().getConfig().getQueueConfig(getName());
-        return config.toString();
+        String managedObjectName = managedObject.getName();
+        Config config = service.instance.getConfig();
+        QueueConfig queueConfig = config.findQueueConfig(managedObjectName);
+        return queueConfig.toString();
     }
 
-    @JMXAttribute("Size")
-    @JMXDescription("Current queue size")
-    public int size() {
-        return getManagedObject().size();
+    @ManagedAnnotation(value = "clear", operation = true)
+    @ManagedDescription("Clear Queue")
+    public void clear() {
+        managedObject.clear();
     }
 
-    @JMXAttribute("ItemsReceived")
-    @JMXDescription("Total items pushed in the queue since creation")
-    public long getItemsReceived() {
-        return receivedStats.getTotal();
+    @ManagedAnnotation("totalAddedItemCount")
+    public long getTotalAddedItemCount() {
+        return totalAddedItemCount.get();
     }
 
-    @JMXAttribute("ItemsReceivedLast")
-    @JMXDescription("Items pushed in the queue in the last second")
-    public double getItemsReceivedAvg() {
-        return receivedStats.getAverage();
+    @ManagedAnnotation("totalRemovedItemCount")
+    public long getTotalRemovedItemCount() {
+        return totalRemovedItemCount.get();
     }
 
-    @JMXAttribute("ItemsReceivedPeak")
-    @JMXDescription("Max items pushed in the queue per second")
-    public double getItemsReceivedMax() {
-        return receivedStats.getMax();
-    }
-
-    @JMXAttribute("ItemsServed")
-    @JMXDescription("Total items pulled from the queue since creation")
-    public long getItemsServed() {
-        return servedStats.getTotal();
-    }
-
-    @JMXAttribute("ItemsServedLast")
-    @JMXDescription("Items pulled from the queue in the last second")
-    public double getItemsServedAvg() {
-        return servedStats.getAverage();
-    }
-
-    @JMXAttribute("ItemsServedPeak")
-    @JMXDescription("Max pulled from the queue per second")
-    public double getItemsServedMax() {
-        return servedStats.getMax();
+    public void preDeregister() throws Exception {
+        super.preDeregister();
+        try {
+            managedObject.removeItemListener(registrationId);
+        } catch (Exception ignored) {
+            ignore(ignored);
+        }
     }
 }

@@ -18,6 +18,11 @@ package com.hazelcast.core;
 
 import java.util.List;
 
-public interface IList<E> extends ICollection<E>, List<E>, Instance {
-
+/**
+ * Concurrent, distributed implementation of {@link List}
+ *
+ * @param <E>
+ * @see List
+ */
+public interface IList<E> extends List<E>, ICollection<E> {
 }

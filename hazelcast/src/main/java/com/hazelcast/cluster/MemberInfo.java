@@ -16,18 +16,20 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.impl.NodeType;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MemberInfo implements DataSerializable {
-    Address address = null;
-    NodeType nodeType = NodeType.MEMBER;
+    Address address;
     String uuid;
+    Map<String, Object> attributes;
 
     public MemberInfo() {
     }
@@ -37,29 +39,49 @@ public class MemberInfo implements DataSerializable {
         this.address = address;
     }
 
-    public MemberInfo(Address address, NodeType nodeType, String uuid) {
+    public MemberInfo(Address address, String uuid, Map<String, Object> attributes) {
         super();
         this.address = address;
-        this.nodeType = nodeType;
         this.uuid = uuid;
+        this.attributes = new HashMap<String, Object>(attributes);
     }
 
-    public void readData(DataInput in) throws IOException {
+    public MemberInfo(MemberImpl member) {
+        this(member.getAddress(), member.getUuid(), member.getAttributes());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
-        nodeType = NodeType.create(in.readInt());
         if (in.readBoolean()) {
             uuid = in.readUTF();
         }
+        int size = in.readInt();
+        if (size > 0) {
+            attributes = new HashMap<String, Object>();
+        }
+        for (int i = 0; i < size; i++) {
+            String key = in.readUTF();
+            Object value = in.readObject();
+            attributes.put(key, value);
+        }
     }
 
-    public void writeData(DataOutput out) throws IOException {
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
-        out.writeInt(nodeType.getValue());
         boolean hasUuid = uuid != null;
         out.writeBoolean(hasUuid);
         if (hasUuid) {
             out.writeUTF(uuid);
+        }
+        out.writeInt(attributes == null ? 0 : attributes.size());
+        if (attributes != null) {
+            for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+                out.writeUTF(entry.getKey());
+                out.writeObject(entry.getValue());
+            }
         }
     }
 
@@ -77,26 +99,30 @@ public class MemberInfo implements DataSerializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         MemberInfo other = (MemberInfo) obj;
         if (address == null) {
-            if (other.address != null)
+            if (other.address != null) {
                 return false;
-        } else if (!address.equals(other.address))
+            }
+        } else if (!address.equals(other.address)) {
             return false;
+        }
         return true;
     }
 
     @Override
     public String toString() {
-        return "MemberInfo{" +
-                "address=" + address +
-                ", nodeType=" + nodeType +
-                '}';
+        return "MemberInfo{"
+                + "address=" + address
+                + '}';
     }
 }

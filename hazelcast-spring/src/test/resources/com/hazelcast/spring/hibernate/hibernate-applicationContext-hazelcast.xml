@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-2.5.xsd">
+		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -53,13 +53,17 @@
 
             </hz:network>
             <hz:executor-service name="testExec"
-                                 core-pool-size="2"
-                                 max-pool-size="32"
-                                 keep-alive-seconds="30"/>
+                                 pool-size="2"
+                                 queue-capacity="100"
+                                 />
         </hz:config>
     </hz:hazelcast>
 
-    <hz:hibernate-cache-provider id="cacheProvider" instance-ref="instance"/>
     <hz:hibernate-region-factory id="regionFactory" instance-ref="instance"/>
+    <hz:hibernate-region-factory id="localRegionFactory" instance-ref="instance" mode="LOCAL" />
+
+    <bean id="localRegionFactory2" class="com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory">
+        <constructor-arg ref="instance" />
+    </bean>
 
 </beans>

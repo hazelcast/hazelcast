@@ -16,20 +16,20 @@
 
 package com.hazelcast.nio.ascii;
 
-import com.hazelcast.impl.ascii.TextCommand;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.SocketWriter;
+import com.hazelcast.ascii.TextCommand;
+import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SocketTextWriter implements SocketWriter<TextCommand> {
-    private final Connection connection;
+    private final TcpIpConnection connection;
     private final Map<Long, TextCommand> responses = new ConcurrentHashMap<Long, TextCommand>(100);
-    private long currentRequestId = 0;
+    private long currentRequestId;
 
-    public SocketTextWriter(Connection connection) {
+    public SocketTextWriter(TcpIpConnection connection) {
         this.connection = connection;
     }
 

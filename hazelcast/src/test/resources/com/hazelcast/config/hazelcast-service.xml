@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-3.3.xsd
+           http://www.hazelcast.com/schema/sample hazelcast-sample-service.xsd"
+           xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:s="http://www.hazelcast.com/schema/sample"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <group>
+        <name>dev</name>
+        <password>dev-pass</password>
+    </group>
+    <network>
+        <port auto-increment="true">5701</port>
+        <join>
+            <multicast enabled="true">
+                <multicast-group>224.2.2.3</multicast-group>
+                <multicast-port>54327</multicast-port>
+            </multicast>
+        </join>
+    </network>
+
+    <services enable-defaults="false">
+        <service enabled="true">
+            <name>my-service</name>
+            <class-name>com.hazelcast.examples.MyService</class-name>
+            <properties>
+                <property name="prop1">prop1-value</property>
+                <property name="prop2">prop2-value</property>
+            </properties>
+            <configuration parser="com.hazelcast.config.MyServiceConfigParser">
+                <s:my-service id="my-service">
+                    <s:string-prop>prop1</s:string-prop>
+                    <s:int-prop>123</s:int-prop>
+                    <s:bool-prop>true</s:bool-prop>
+                </s:my-service>
+            </configuration>
+        </service>
+    </services>
+
+</hazelcast>

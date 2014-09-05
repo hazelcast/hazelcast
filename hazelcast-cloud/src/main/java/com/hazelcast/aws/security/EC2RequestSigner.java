@@ -20,7 +20,11 @@ import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.aws.utility.AwsURLEncoder;
 
 import java.security.SignatureException;
-import java.util.*;
+import java.util.List;
+import java.util.Collections;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class EC2RequestSigner {
     private static final String HTTP_VERB = "GET\n";
@@ -28,15 +32,15 @@ public class EC2RequestSigner {
     private final String secretKey;
 
     public EC2RequestSigner(String secretKey) {
+        if (secretKey == null) {
+            throw new IllegalArgumentException("AWS secret key is required!");
+        }
         this.secretKey = secretKey;
     }
 
     public void sign(DescribeInstances request, String endpoint) {
         String canonicalizedQueryString = getCanonicalizedQueryString(request);
-        String stringToSign = new StringBuilder().append(HTTP_VERB)
-                .append(endpoint).append("\n")
-                .append(HTTP_REQUEST_URI)
-                .append(canonicalizedQueryString).toString();
+        String stringToSign = HTTP_VERB + endpoint + "\n" + HTTP_REQUEST_URI + canonicalizedQueryString;
         String signature = signTheString(stringToSign);
         request.putSignature(signature);
     }
@@ -52,21 +56,19 @@ public class EC2RequestSigner {
     }
 
     private String getCanonicalizedQueryString(DescribeInstances request) {
-        List<String> componentz = getListOfEntries(request.getAttributes());
-        Collections.sort(componentz);
-        String canonicalizedQueryString = getCanonicalizedQueryString(componentz);
-        return canonicalizedQueryString;
+        List<String> components = getListOfEntries(request.getAttributes());
+        Collections.sort(components);
+        return getCanonicalizedQueryString(components);
     }
 
-    private void addComponentz(List<String> components, Map<String, String> attributes, String key) {
+    private void addComponents(List<String> components, Map<String, String> attributes, String key) {
         components.add(AwsURLEncoder.urlEncode(key) + "=" + AwsURLEncoder.urlEncode(attributes.get(key)));
     }
 
     private List<String> getListOfEntries(Map<String, String> entries) {
         List<String> components = new ArrayList<String>();
-        for (Iterator<String> iterator = entries.keySet().iterator(); iterator.hasNext(); ) {
-            String key = iterator.next();
-            addComponentz(components, entries, key);
+        for (String key : entries.keySet()) {
+            addComponents(components, entries, key);
         }
         return components;
     }

@@ -18,25 +18,28 @@ package com.hazelcast.config;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ * Configuration for wan replication.
+ */
 public class WanReplicationConfig {
     String name;
-    List<WanTargetClusterConfig> lsTargetClusterConfigs;
+    List<WanTargetClusterConfig> targetClusterConfigs;
 
     public List<WanTargetClusterConfig> getTargetClusterConfigs() {
-        return lsTargetClusterConfigs;
+        return targetClusterConfigs;
     }
 
     public WanReplicationConfig addTargetClusterConfig(WanTargetClusterConfig wanTargetClusterConfig) {
-        if (lsTargetClusterConfigs == null) {
-            lsTargetClusterConfigs = new ArrayList<WanTargetClusterConfig>(2);
+        if (targetClusterConfigs == null) {
+            targetClusterConfigs = new ArrayList<WanTargetClusterConfig>(2);
         }
-        lsTargetClusterConfigs.add(wanTargetClusterConfig);
+        targetClusterConfigs.add(wanTargetClusterConfig);
         return this;
     }
 
-    public void setTargetClusterConfigs(List<WanTargetClusterConfig> list) {
-        lsTargetClusterConfigs = list;
+    public WanReplicationConfig setTargetClusterConfigs(List<WanTargetClusterConfig> list) {
+        targetClusterConfigs = list;
+        return this;
     }
 
     public String getName() {
@@ -53,7 +56,7 @@ public class WanReplicationConfig {
         final StringBuilder sb = new StringBuilder();
         sb.append("WanReplicationConfig");
         sb.append("{name='").append(name).append('\'');
-        sb.append(", targetClusterConfigs=").append(lsTargetClusterConfigs);
+        sb.append(", targetClusterConfigs=").append(targetClusterConfigs);
         sb.append('}');
         return sb.toString();
     }

@@ -17,15 +17,19 @@
 package com.hazelcast.util;
 
 /**
- * @mdogan 4/10/12
+ *  Utility class to be able to simulate different time zones.
+ *  Time offset can be configured with following property
+ *  "com.hazelcast.clock.offset"
  */
 public final class Clock {
+    private static final ClockImpl CLOCK;
+
+    private Clock() {
+    }
 
     public static long currentTimeMillis() {
         return CLOCK.currentTimeMillis();
     }
-
-    private static final ClockImpl CLOCK;
 
     static {
         final String clockOffset = System.getProperty("com.hazelcast.clock.offset");
@@ -33,7 +37,8 @@ public final class Clock {
         if (clockOffset != null) {
             try {
                 offset = Long.parseLong(clockOffset);
-            } catch (NumberFormatException ignore) {
+            } catch (NumberFormatException ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
         if (offset == 0L) {
@@ -43,17 +48,19 @@ public final class Clock {
         }
     }
 
-    private static abstract class ClockImpl {
+    private abstract static class ClockImpl {
 
         protected abstract long currentTimeMillis();
     }
 
     private static final class SystemClock extends ClockImpl {
 
-        protected final long currentTimeMillis() {
+        @Override
+        protected long currentTimeMillis() {
             return System.currentTimeMillis();
         }
 
+        @Override
         public String toString() {
             return "SystemClock";
         }
@@ -67,7 +74,8 @@ public final class Clock {
             this.offset = offset;
         }
 
-        protected final long currentTimeMillis() {
+        @Override
+        protected long currentTimeMillis() {
             return System.currentTimeMillis() + offset;
         }
 
@@ -81,5 +89,5 @@ public final class Clock {
         }
     }
 
-    private Clock() {}
+
 }

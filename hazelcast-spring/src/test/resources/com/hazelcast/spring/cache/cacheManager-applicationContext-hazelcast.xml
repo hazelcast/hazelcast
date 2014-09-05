@@ -24,7 +24,7 @@
 		http://www.springframework.org/schema/cache
 		http://www.springframework.org/schema/cache/spring-cache.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-2.5.xsd">
+		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <cache:annotation-driven cache-manager="cacheManager" />
 
@@ -33,8 +33,8 @@
             <hz:group name="dev" password="dev-pass"/>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
-                    <hz:multicast enabled="false"/>
-                    <hz:tcp-ip enabled="true">
+                    <hz:multicast enabled="true"/>
+                    <hz:tcp-ip enabled="false">
                         <hz:interface>127.0.0.1:5701</hz:interface>
                     </hz:tcp-ip>
                 </hz:join>
@@ -47,6 +47,8 @@
                               class-name="com.hazelcast.spring.cache.CacheMapLoader"/>
             </hz:map>
             <hz:map name="null-map" />
+            <hz:map name="map-with-ttl" time-to-live-seconds="1">
+            </hz:map>
         </hz:config>
     </hz:hazelcast>
 

@@ -16,13 +16,37 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+/**
+ * BeanDefinitionParser for Hazelcast Instance Configuration
+ * <p/>
+ *
+ * <b>Sample Spring XML for Hazelcast Instance:</b>
+ * <pre>
+ * &lt;hz:hazelcast id="instance"&gt;
+ *      &lt;hz:config&gt;
+ *          &lt;hz:group name="dev" password="password"/&gt;
+ *          &lt;hz:network port="5701" port-auto-increment="false"&gt;
+ *              &lt;hz:join&gt;
+ *                  &lt;hz:multicast enabled="false" multicast-group="224.2.2.3" multicast-port="54327"/&gt;
+ *                   &lt;hz:tcp-ip enabled="true"&gt;
+ *                      &lt;hz:members&gt;10.10.1.2, 10.10.1.3&lt;/hz:members&gt;
+ *                   &lt;/hz:tcp-ip&gt;
+ *              &lt;/hz:join&gt;
+ *          &lt;/hz:network&gt;
+ *          &lt;hz:map name="map" backup-count="2" max-size="0" eviction-percentage="30"
+ *              read-backup-data="true" eviction-policy="NONE"
+ *          merge-policy="com.hazelcast.map.merge.PassThroughMergePolicy"/&gt;
+ *      &lt;/hz:config&gt;
+ * &lt;/hz:hazelcast&gt;
+ * </pre>
+ */
 public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -39,8 +63,8 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
 
         public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
-            this.builder = BeanDefinitionBuilder.rootBeanDefinition(FactoryImpl.class);
-            this.builder.setFactoryMethod("newHazelcastInstanceProxy");
+            this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastInstanceFactory.class);
+            this.builder.setFactoryMethod("newHazelcastInstance");
             this.builder.setDestroyMethodName("shutdown");
         }
 

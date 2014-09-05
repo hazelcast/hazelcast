@@ -15,30 +15,57 @@
  */
 
 package com.hazelcast.config;
+/**
+ * Configuration for map's capacity.
+ * You can set a limit for number of entries or total memory cost of entries.
+ */
+public class MaxSizeConfig {
 
-import com.hazelcast.nio.DataSerializable;
+    private MaxSizeConfigReadOnly readOnly;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+    private int size = MapConfig.DEFAULT_MAX_SIZE;
+    private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
 
-public class MaxSizeConfig implements DataSerializable {
-    public static final String POLICY_MAP_SIZE_PER_JVM = "map_size_per_jvm";
-    public static final String POLICY_CLUSTER_WIDE_MAP_SIZE = "cluster_wide_map_size";
-    public static final String POLICY_PARTITIONS_WIDE_MAP_SIZE = "partitions_wide_map_size";
-    public static final String POLICY_USED_HEAP_SIZE = "used_heap_size";
-    public static final String POLICY_USED_HEAP_PERCENTAGE = "used_heap_percentage";
-    int size = MapConfig.DEFAULT_MAX_SIZE;
-    String maxSizePolicy = POLICY_CLUSTER_WIDE_MAP_SIZE;
-
-    public void readData(DataInput in) throws IOException {
-        size = in.readInt();
-        maxSizePolicy = in.readUTF();
+    public MaxSizeConfig() {
     }
 
-    public void writeData(DataOutput out) throws IOException {
-        out.writeInt(size);
-        out.writeUTF(maxSizePolicy);
+    public MaxSizeConfig(int size, MaxSizePolicy maxSizePolicy) {
+        this.size = size;
+        this.maxSizePolicy = maxSizePolicy;
+    }
+
+    public MaxSizeConfig(MaxSizeConfig config) {
+        this.size = config.size;
+        this.maxSizePolicy = config.maxSizePolicy;
+    }
+
+    /**
+     * Maximum Size Policy
+     */
+    public enum MaxSizePolicy {
+        /**
+         * Decide maximum size of map according to node
+         */
+        PER_NODE,
+        /**
+         * Decide maximum size of map according to partition
+         */
+        PER_PARTITION,
+        /**
+         * Decide maximum size of map with use heap percentage
+         */
+        USED_HEAP_PERCENTAGE,
+        /**
+         * Decide maximum size of map with use heap size
+         */
+        USED_HEAP_SIZE
+    }
+
+    public MaxSizeConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MaxSizeConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     public int getSize() {
@@ -46,27 +73,29 @@ public class MaxSizeConfig implements DataSerializable {
     }
 
     public MaxSizeConfig setSize(int size) {
-        if (size == 0) {
-            size = Integer.MAX_VALUE;
+        int paramSize = size;
+        if (paramSize <= 0) {
+            paramSize = Integer.MAX_VALUE;
         }
-        this.size = size;
+        this.size = paramSize;
         return this;
     }
 
-    public String getMaxSizePolicy() {
+    public MaxSizePolicy getMaxSizePolicy() {
         return maxSizePolicy;
     }
 
-    public MaxSizeConfig setMaxSizePolicy(String maxSizePolicy) {
+    public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         this.maxSizePolicy = maxSizePolicy;
         return this;
     }
 
     @Override
     public String toString() {
-        return "MaxSizeConfig{" +
-                "maxSizePolicy='" + maxSizePolicy + '\'' +
-                ", size=" + size +
-                '}';
+        return "MaxSizeConfig{"
+                + "maxSizePolicy='" + maxSizePolicy
+                + '\''
+                + ", size=" + size
+                + '}';
     }
 }

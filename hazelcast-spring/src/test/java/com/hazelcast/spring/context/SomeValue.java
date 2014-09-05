@@ -16,19 +16,19 @@
 
 package com.hazelcast.spring.context;
 
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import javax.annotation.PostConstruct;
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * @mdogan 4/6/12
+ * @author mdogan 4/6/12
  */
 
 @SpringAware
@@ -76,9 +76,9 @@ public class SomeValue implements DataSerializable, ApplicationContextAware {
         return result;
     }
 
-    public void writeData(final DataOutput out) throws IOException {
+    public void writeData(final ObjectDataOutput out) throws IOException {
     }
 
-    public void readData(final DataInput in) throws IOException {
+    public void readData(final ObjectDataInput in) throws IOException {
     }
 }

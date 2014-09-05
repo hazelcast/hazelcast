@@ -16,39 +16,77 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.Prefix;
-import com.hazelcast.merge.AddNewEntryMergePolicy;
-import com.hazelcast.nio.DataSerializable;
-import com.hazelcast.util.ByteUtil;
+import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapConfig implements DataSerializable {
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-    public final static int MIN_BACKUP_COUNT = 0;
-    public final static int DEFAULT_BACKUP_COUNT = 1;
-    public final static int MAX_BACKUP_COUNT = 6;
+/**
+ * Contains the configuration for an {@link com.hazelcast.core.IMap}.
+ */
+public class MapConfig {
 
-    public final static int MIN_EVICTION_PERCENTAGE = 0;
-    public final static int DEFAULT_EVICTION_PERCENTAGE = 25;
-    public final static int MAX_EVICTION_PERCENTAGE = 100;
+    /**
+     * The number of minimum backup counter
+     */
+    public static final int MIN_BACKUP_COUNT = 0;
+    /**
+     * The number of default backup counter
+     */
+    public static final int DEFAULT_BACKUP_COUNT = 1;
+    /**
+     * The number of maximum backup counter
+     */
+    public static final int MAX_BACKUP_COUNT = 6;
 
-    public final static int DEFAULT_EVICTION_DELAY_SECONDS = 3;
-    public final static int DEFAULT_TTL_SECONDS = 0;
-    public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
-    public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
-    public final static String ATOMIC_LONG_MAP_NAME = Prefix.MAP_HAZELCAST + "AtomicLongMap";
-    public final static String COUNT_DOWN_LATCH_MAP_NAME = Prefix.MAP_HAZELCAST + "CountDownLatchMap";
-    public final static String SEMAPHORE_MAP_NAME = Prefix.MAP_HAZELCAST + "SemaphoreMap";
-    public final static String DEFAULT_EVICTION_POLICY = "NONE";
-    public final static String DEFAULT_MERGE_POLICY = AddNewEntryMergePolicy.NAME;
-    public final static boolean DEFAULT_CACHE_VALUE = true;
+    /**
+     * The number of minimum eviction percentage
+     */
+    public static final int MIN_EVICTION_PERCENTAGE = 0;
+    /**
+     * The number of default eviction percentage
+     */
+    public static final int DEFAULT_EVICTION_PERCENTAGE = 25;
+    /**
+     * The number of maximum eviction percentage
+     */
+    public static final int MAX_EVICTION_PERCENTAGE = 100;
 
-    private String name = null;
+    /**
+     * Minimum time in milliseconds which should pass before asking
+     * if a partition of this map is evictable or not.
+     */
+    public static final long DEFAULT_MIN_EVICTION_CHECK_MILLIS = 100L;
+
+    /**
+     * The number of default Time to Live seconds
+     */
+    public static final int DEFAULT_TTL_SECONDS = 0;
+
+    /**
+     * The number of default time to wait eviction
+     */
+    public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
+    /**
+     * Maximum size
+     */
+    public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+    /**
+     * Default policy for eviction
+     */
+    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
+    /**
+     * Default policy for merging
+     */
+    public static final String DEFAULT_MAP_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
+    /**
+     * Default In-Memory format is binary
+     */
+    public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
+
+    private String name;
 
     private int backupCount = DEFAULT_BACKUP_COUNT;
 
@@ -56,27 +94,27 @@ public class MapConfig implements DataSerializable {
 
     private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
 
+    private long minEvictionCheckMillis = DEFAULT_MIN_EVICTION_CHECK_MILLIS;
+
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
-    private int maxIdleSeconds = DEFAULT_TTL_SECONDS;
-
-    private int evictionDelaySeconds = DEFAULT_EVICTION_DELAY_SECONDS;
+    private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
 
     private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
 
-    private String evictionPolicy = DEFAULT_EVICTION_POLICY;
+    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
 
-    private boolean valueIndexed = false;
-
-    private MapStoreConfig mapStoreConfig = null;
+    private MapStoreConfig mapStoreConfig;
 
     private NearCacheConfig nearCacheConfig;
 
-    private boolean readBackupData = false;
+    private boolean readBackupData;
 
-    private boolean cacheValue = DEFAULT_CACHE_VALUE;
+    private boolean optimizeQueries;
 
-    private String mergePolicy = DEFAULT_MERGE_POLICY;
+    private String mergePolicy = DEFAULT_MAP_MERGE_POLICY;
+
+    private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
 
     private WanReplicationRef wanReplicationRef;
 
@@ -84,12 +122,28 @@ public class MapConfig implements DataSerializable {
 
     private List<MapIndexConfig> mapIndexConfigs;
 
-    private StorageType storageType = null;
+    private boolean statisticsEnabled = true;
 
-    private boolean clearQuick = false;
+    private PartitioningStrategyConfig partitioningStrategyConfig;
 
-    public enum StorageType {
-        HEAP, OFFHEAP
+    private MapConfigReadOnly readOnly;
+
+    /**
+     * Eviction Policy enum
+     */
+    public enum EvictionPolicy {
+        /**
+         * Least Recently Used
+         */
+        LRU,
+        /**
+         * Least Frequently Used
+         */
+        LFU,
+        /**
+         * None
+         */
+        NONE
     }
 
     public MapConfig(String name) {
@@ -102,19 +156,32 @@ public class MapConfig implements DataSerializable {
     public MapConfig(MapConfig config) {
         this.name = config.name;
         this.backupCount = config.backupCount;
+        this.asyncBackupCount = config.asyncBackupCount;
         this.evictionPercentage = config.evictionPercentage;
+        this.minEvictionCheckMillis = config.minEvictionCheckMillis;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
-        this.evictionDelaySeconds = config.evictionDelaySeconds;
-        this.maxSizeConfig = config.maxSizeConfig;
+        this.maxSizeConfig = config.maxSizeConfig != null ? new MaxSizeConfig(config.maxSizeConfig) : null;
         this.evictionPolicy = config.evictionPolicy;
-        this.valueIndexed = config.valueIndexed;
-        this.mapStoreConfig = config.mapStoreConfig;
-        this.nearCacheConfig = config.nearCacheConfig;
+        this.inMemoryFormat = config.inMemoryFormat;
+        this.mapStoreConfig = config.mapStoreConfig != null ? new MapStoreConfig(config.mapStoreConfig) : null;
+        this.nearCacheConfig = config.nearCacheConfig != null ? new NearCacheConfig(config.nearCacheConfig) : null;
         this.readBackupData = config.readBackupData;
-        this.cacheValue = config.cacheValue;
+        this.optimizeQueries = config.optimizeQueries;
+        this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicy = config.mergePolicy;
-        this.clearQuick = config.clearQuick;
+        this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
+        this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
+        this.mapIndexConfigs = new ArrayList<MapIndexConfig>(config.getMapIndexConfigs());
+        this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
+                ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
+    }
+
+    public MapConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MapConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**
@@ -133,67 +200,24 @@ public class MapConfig implements DataSerializable {
     }
 
     /**
-     * Returns if the value of the mapEntry should be indexed for
-     * faster containsValue(obj) operations.
-     * <p/>
-     * Default is false.
-     *
-     * @return true if value is indexed, false otherwise
+     * @return data type that will be used for storing records.
      */
-    public boolean isValueIndexed() {
-        return valueIndexed;
+    public InMemoryFormat getInMemoryFormat() {
+        return inMemoryFormat;
     }
 
     /**
-     * Sets if the value of the map entries should be indexed for
-     * faster containsValue(obj) operations.
-     * <p/>
-     * Default is false.
+     * Data type that will be used for storing records.
+     * Possible values:
+     * BINARY (default): keys and values will be stored as binary data
+     * OBJECT : values will be stored in their object forms
+     * OFFHEAP : values will be stored in non-heap region of JVM
      *
-     * @param valueIndexed
+     * @param inMemoryFormat the record type to set
+     * @throws IllegalArgumentException if inMemoryFormat is null.
      */
-    public MapConfig setValueIndexed(boolean valueIndexed) {
-        this.valueIndexed = valueIndexed;
-        return this;
-    }
-
-    /**
-     * Returns if the entry values are cached
-     *
-     * @return true if cached, false otherwise
-     */
-    public boolean isCacheValue() {
-        return cacheValue;
-    }
-
-    /**
-     * Sets if entry values should be cached
-     *
-     * @param cacheValue
-     * @return this MapConfig
-     */
-    public MapConfig setCacheValue(boolean cacheValue) {
-        this.cacheValue = cacheValue;
-        return this;
-    }
-
-    /**
-     * Returns if the map can be cleared quickly assuming there is no lock or transaction related
-     *
-     * @return true if clear quick is enabled, false otherwise
-     */
-    public boolean isClearQuick() {
-        return clearQuick;
-    }
-
-    /**
-     * Sets if the map can be cleared quickly assuming there is no lock or transaction related
-     *
-     * @param clearQuick
-     * @return this MapConfig
-     */
-    public MapConfig setClearQuick(boolean clearQuick) {
-        this.clearQuick = clearQuick;
+    public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
         return this;
     }
 
@@ -212,7 +236,6 @@ public class MapConfig implements DataSerializable {
      *
      * @param backupCount the backupCount to set
      * @see #setAsyncBackupCount(int)
-     * @see #setBackupCounts(int, int)
      */
     public MapConfig setBackupCount(final int backupCount) {
         if (backupCount < MIN_BACKUP_COUNT) {
@@ -241,7 +264,6 @@ public class MapConfig implements DataSerializable {
      *
      * @param asyncBackupCount the asyncBackupCount to set
      * @see #setBackupCount(int)
-     * @see #setBackupCounts(int, int)
      */
     public MapConfig setAsyncBackupCount(final int asyncBackupCount) {
         if (asyncBackupCount < MIN_BACKUP_COUNT) {
@@ -256,27 +278,8 @@ public class MapConfig implements DataSerializable {
         return this;
     }
 
-    /**
-     * Number of sync and async backups.
-     * 0 means no backup.
-     *
-     * @param backupCount      the sync backup count to set
-     * @param asyncBackupCount the async backup count to set
-     * @see #setBackupCount(int)
-     * @see #setAsyncBackupCount(int)
-     */
-    public MapConfig setBackupCounts(final int backupCount, final int asyncBackupCount) {
-        if (backupCount < MIN_BACKUP_COUNT || asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map backup count must be equal to or bigger than "
-                    + MIN_BACKUP_COUNT);
-        }
-        if ((backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                    + MAX_BACKUP_COUNT);
-        }
-        this.backupCount = backupCount;
-        this.asyncBackupCount = asyncBackupCount;
-        return this;
+    public int getTotalBackupCount() {
+        return backupCount + asyncBackupCount;
     }
 
     /**
@@ -306,19 +309,30 @@ public class MapConfig implements DataSerializable {
     }
 
     /**
-     * @return the evictionDelaySeconds
-     * @deprecated
+     * Returns minimum milliseconds which should pass before asking if a partition of this map is evictable or not.
+     * <p/>
+     * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
+     *
+     * @return number of milliseconds should pass before asking next eviction.
+     * @since 3.3
      */
-    public int getEvictionDelaySeconds() {
-        return evictionDelaySeconds;
+    public long getMinEvictionCheckMillis() {
+        return minEvictionCheckMillis;
     }
 
     /**
-     * @param evictionDelaySeconds the evictionPercentage to set
-     * @deprecated
+     * Sets the minimum time in millis which should pass before asking if a partition of this map is evictable or not.
+     * <p/>
+     * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
+     *
+     * @param minEvictionCheckMillis time in millis.
+     * @since 3.3
      */
-    public MapConfig setEvictionDelaySeconds(int evictionDelaySeconds) {
-        this.evictionDelaySeconds = evictionDelaySeconds;
+    public MapConfig setMinEvictionCheckMillis(long minEvictionCheckMillis) {
+        if (minEvictionCheckMillis < 0) {
+            throw new IllegalArgumentException("Parameter minEvictionCheckMillis can not get a negative value");
+        }
+        this.minEvictionCheckMillis = minEvictionCheckMillis;
         return this;
     }
 
@@ -353,7 +367,7 @@ public class MapConfig implements DataSerializable {
     /**
      * Maximum number of seconds for each entry to stay idle in the map. Entries that are
      * idle(not touched) for more than maxIdleSeconds will get
-     * automatically evicted from the map. Entry is touched if get, put or
+     * automatically evicted from the map. Entry is touched if get, getAll, put or
      * containsKey is called.
      * Any integer between 0 and Integer.MAX_VALUE.
      * 0 means infinite. Default is 0.
@@ -362,26 +376,6 @@ public class MapConfig implements DataSerializable {
      */
     public MapConfig setMaxIdleSeconds(int maxIdleSeconds) {
         this.maxIdleSeconds = maxIdleSeconds;
-        return this;
-    }
-
-    /**
-     * @return the maxSize
-     * @deprecated use MaxSizeConfig.getSize
-     */
-    public int getMaxSize() {
-        return maxSizeConfig.getSize();
-    }
-
-    /**
-     * @param maxSize the maxSize to set
-     * @deprecated use MaxSizeConfig.setSize
-     */
-    public MapConfig setMaxSize(final int maxSize) {
-        if (maxSize < 0) {
-            throw new IllegalArgumentException("map max size must be greater than 0");
-        }
-        this.maxSizeConfig.setSize(maxSize);
         return this;
     }
 
@@ -397,14 +391,14 @@ public class MapConfig implements DataSerializable {
     /**
      * @return the evictionPolicy
      */
-    public String getEvictionPolicy() {
+    public EvictionPolicy getEvictionPolicy() {
         return evictionPolicy;
     }
 
     /**
      * @param evictionPolicy the evictionPolicy to set
      */
-    public MapConfig setEvictionPolicy(String evictionPolicy) {
+    public MapConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
         this.evictionPolicy = evictionPolicy;
         return this;
     }
@@ -441,8 +435,17 @@ public class MapConfig implements DataSerializable {
         return mergePolicy;
     }
 
-    public MapConfig setMergePolicy(String mergePolicyName) {
-        this.mergePolicy = mergePolicyName;
+    public MapConfig setMergePolicy(String mergePolicy) {
+        this.mergePolicy = mergePolicy;
+        return this;
+    }
+
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    public MapConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
         return this;
     }
 
@@ -461,15 +464,6 @@ public class MapConfig implements DataSerializable {
 
     public MapConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
-        return this;
-    }
-
-    public StorageType getStorageType() {
-        return storageType;
-    }
-
-    public MapConfig setStorageType(StorageType storageType) {
-        this.storageType = storageType;
         return this;
     }
 
@@ -507,24 +501,44 @@ public class MapConfig implements DataSerializable {
         return this;
     }
 
+    public PartitioningStrategyConfig getPartitioningStrategyConfig() {
+        return partitioningStrategyConfig;
+    }
+
+    public MapConfig setPartitioningStrategyConfig(PartitioningStrategyConfig partitioningStrategyConfig) {
+        this.partitioningStrategyConfig = partitioningStrategyConfig;
+        return this;
+    }
+
+    public boolean isNearCacheEnabled() {
+        return nearCacheConfig != null;
+    }
+
+    public boolean isOptimizeQueries() {
+        return optimizeQueries;
+    }
+
+    public MapConfig setOptimizeQueries(boolean optimizeQueries) {
+        this.optimizeQueries = optimizeQueries;
+        return this;
+    }
+
     public boolean isCompatible(MapConfig other) {
         if (this == other) {
             return true;
         }
-        return other != null &&
-                (this.name != null ? this.name.equals(other.name) : other.name == null) &&
-                this.backupCount == other.backupCount &&
-                this.asyncBackupCount == other.asyncBackupCount &&
-                this.evictionDelaySeconds == other.evictionDelaySeconds &&
-                this.evictionPercentage == other.evictionPercentage &&
-                this.maxIdleSeconds == other.maxIdleSeconds &&
-                (this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() ||
-                        (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
-                                && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE)) &&
-                this.timeToLiveSeconds == other.timeToLiveSeconds &&
-                this.readBackupData == other.readBackupData &&
-                this.clearQuick == other.clearQuick &&
-                this.valueIndexed == other.valueIndexed;
+        return other != null
+                && (this.name != null ? this.name.equals(other.name) : other.name == null)
+                && this.backupCount == other.backupCount
+                && this.asyncBackupCount == other.asyncBackupCount
+                && this.evictionPercentage == other.evictionPercentage
+                && this.minEvictionCheckMillis == other.minEvictionCheckMillis
+                && this.maxIdleSeconds == other.maxIdleSeconds
+                && (this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize()
+                || (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
+                && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE))
+                && this.timeToLiveSeconds == other.timeToLiveSeconds
+                && this.readBackupData == other.readBackupData;
     }
 
     @Override
@@ -533,8 +547,8 @@ public class MapConfig implements DataSerializable {
         int result = 1;
         result = prime * result + this.backupCount;
         result = prime * result + this.asyncBackupCount;
-        result = prime * result + this.evictionDelaySeconds;
         result = prime * result + this.evictionPercentage;
+        result = prime * result + (int) (minEvictionCheckMillis ^ (minEvictionCheckMillis >>> 32));
         result = prime
                 * result
                 + ((this.evictionPolicy == null) ? 0 : this.evictionPolicy
@@ -556,8 +570,6 @@ public class MapConfig implements DataSerializable {
                 .hashCode());
         result = prime * result + this.timeToLiveSeconds;
         result = prime * result + (this.readBackupData ? 1231 : 1237);
-        result = prime * result + (this.clearQuick ? 1231 : 1237);
-        result = prime * result + (this.valueIndexed ? 1231 : 1237);
         return result;
     }
 
@@ -571,70 +583,24 @@ public class MapConfig implements DataSerializable {
         }
         MapConfig other = (MapConfig) obj;
         return
-                (this.name != null ? this.name.equals(other.name) : other.name == null) &&
-                        this.backupCount == other.backupCount &&
-                        this.asyncBackupCount == other.asyncBackupCount &&
-                        this.evictionDelaySeconds == other.evictionDelaySeconds &&
-                        this.evictionPercentage == other.evictionPercentage &&
-                        this.maxIdleSeconds == other.maxIdleSeconds &&
-                        this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() &&
-                        this.timeToLiveSeconds == other.timeToLiveSeconds &&
-                        this.readBackupData == other.readBackupData &&
-                        this.valueIndexed == other.valueIndexed &&
-//                        this.clearQuick == other.clearQuick &&
-                        (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null) &&
-                        (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
-                                : other.evictionPolicy == null) &&
-                        (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig)
-                                : other.mapStoreConfig == null) &&
-                        (this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig)
-                                : other.nearCacheConfig == null);
-    }
-
-    public void readData(DataInput in) throws IOException {
-        name = in.readUTF();
-        backupCount = in.readInt();
-        asyncBackupCount = in.readInt();
-        evictionPercentage = in.readInt();
-        timeToLiveSeconds = in.readInt();
-        maxIdleSeconds = in.readInt();
-        evictionDelaySeconds = in.readInt();
-        maxSizeConfig.readData(in);
-        boolean[] b = ByteUtil.fromByte(in.readByte());
-        valueIndexed = b[0];
-        readBackupData = b[1];
-        cacheValue = b[2];
-        evictionPolicy = in.readUTF();
-        mergePolicy = in.readUTF();
-        clearQuick = in.readBoolean();
-        boolean hasNearCacheConfig = in.readBoolean();
-        if (hasNearCacheConfig) {
-            nearCacheConfig = new NearCacheConfig();
-            nearCacheConfig.readData(in);
-        }
-//        TODO: MapStoreConfig mapStoreConfig
-    }
-
-    public void writeData(DataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeInt(backupCount);
-        out.writeInt(asyncBackupCount);
-        out.writeInt(evictionPercentage);
-        out.writeInt(timeToLiveSeconds);
-        out.writeInt(maxIdleSeconds);
-        out.writeInt(evictionDelaySeconds);
-        maxSizeConfig.writeData(out);
-        out.writeByte(ByteUtil.toByte(valueIndexed, readBackupData, cacheValue));
-        out.writeUTF(evictionPolicy);
-        out.writeUTF(mergePolicy);
-        out.writeBoolean(clearQuick);
-        if (nearCacheConfig == null) {
-            out.writeBoolean(false);
-        } else {
-            out.writeBoolean(true);
-            nearCacheConfig.writeData(out);
-        }
-//        TODO: MapStoreConfig mapStoreConfig
+                (this.name != null ? this.name.equals(other.name) : other.name == null)
+                        && this.backupCount == other.backupCount
+                        && this.asyncBackupCount == other.asyncBackupCount
+                        && this.evictionPercentage == other.evictionPercentage
+                        && this.minEvictionCheckMillis == other.minEvictionCheckMillis
+                        && this.maxIdleSeconds == other.maxIdleSeconds
+                        && this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize()
+                        && this.timeToLiveSeconds == other.timeToLiveSeconds
+                        && this.readBackupData == other.readBackupData
+                        && (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null)
+                        && (this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat)
+                        : other.inMemoryFormat == null)
+                        && (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
+                        : other.evictionPolicy == null)
+                        && (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig)
+                        : other.mapStoreConfig == null)
+                        && (this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig)
+                        : other.nearCacheConfig == null);
     }
 
     @Override
@@ -642,25 +608,22 @@ public class MapConfig implements DataSerializable {
         final StringBuilder sb = new StringBuilder();
         sb.append("MapConfig");
         sb.append("{name='").append(name).append('\'');
+        sb.append(", inMemoryFormat=").append(inMemoryFormat).append('\'');
         sb.append(", backupCount=").append(backupCount);
         sb.append(", asyncBackupCount=").append(asyncBackupCount);
         sb.append(", timeToLiveSeconds=").append(timeToLiveSeconds);
         sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
         sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
         sb.append(", evictionPercentage=").append(evictionPercentage);
-        sb.append(", evictionDelaySeconds=").append(evictionDelaySeconds);
+        sb.append(", minEvictionCheckMillis=").append(minEvictionCheckMillis);
         sb.append(", maxSizeConfig=").append(maxSizeConfig);
-        sb.append(", cacheValue=").append(cacheValue);
         sb.append(", readBackupData=").append(readBackupData);
         sb.append(", nearCacheConfig=").append(nearCacheConfig);
         sb.append(", mapStoreConfig=").append(mapStoreConfig);
-        sb.append(", mergePolicy='").append(mergePolicy).append('\'');
+        sb.append(", mergePolicyConfig='").append(mergePolicy).append('\'');
         sb.append(", wanReplicationRef=").append(wanReplicationRef);
         sb.append(", listenerConfigs=").append(listenerConfigs);
-        sb.append(", valueIndexed=").append(valueIndexed);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
-        sb.append(", storageType=").append(storageType);
-        sb.append(", clearQuick=").append(clearQuick);
         sb.append('}');
         return sb.toString();
     }

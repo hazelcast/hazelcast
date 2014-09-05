@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>Hazelcast <%= @manifest.title or @title %></title>
+
+    <link type="text/css" rel="stylesheet" href="<%= @baseUrl %>assets/css/reset.css">
+    <link type="text/css" rel="stylesheet" href="http://yandex.st/highlightjs/7.3/styles/<%= @manifest.options.codeHighlightTheme || 'github' %>.min.css">
+    <link type="text/css" rel="stylesheet" href="<%= @baseUrl %>assets/css/docs.css">
+    <link type="text/css" rel="stylesheet" href="<%= @baseUrl %>assets/css/print.css" media="print">
+    <% if @manifest.options.css: %><link type="text/css" rel="stylesheet" href="<%- @manifest.options.css %>"><% end %>
+
+    <script type="text/javascript" src="<%= @baseUrl %>assets/js/jquery-1.10.1.min.js"></script>
+    <script type="text/javascript" src="http://yandex.st/highlightjs/6.1/highlight.min.js"></script>
+    <script type="text/javascript" src="<%= @baseUrl %>assets/js/lunr.min.js"></script>
+
+    <% if @manifest.options.embedly: %>
+        <script type="text/javascript" src="http://scripts.embed.ly/jquery.embedly.min.js"></script>
+    <% end %>
+
+    <script type="text/javascript">var BASE_URL = "<%= @baseUrl %>";</script>
+    <script type="text/javascript" src="<%= @baseUrl %>assets/js/viewer.js"></script>
+
+    <script type="text/javascript">
+        $(function(){
+			  var stickyTop = $('#sidebar').offset().top; // returns number 
+
+			  $(window).scroll(function(){ // scroll event  
+
+			    var windowTop = $(window).scrollTop(); // returns number
+			    
+			if (stickyTop < windowTop) {
+			      $('#sidebar').css({ position: 'fixed', top: 0, left:0 });
+			      $('#content').css({ "padding-left":'300px'});
+			
+			    }
+			    else {
+			      $('#sidebar').css('position','static');
+			      $('#content').css({ "padding-left":'10px'})
+		  	
+			    }
+
+
+			  });
+
+        });
+    </script>
+
+    <% if @manifest.options.googleAnalytics: %>
+        <script type="text/javascript">
+          var _gaq = _gaq || [];
+          _gaq.push(['_setAccount', '<%= @manifest.options.googleAnalytics %>']);
+          _gaq.push(['_trackPageview']);
+          (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+          })();
+        </script>
+    <% end %>
+</head>
+<body>
+    <div id="page">
+        <a name="top" />
+        <header id="header">
+			<div style="overflow:hidden">
+				<div style="float:left">
+					<img src="<%= @baseUrl %>assets/img/logo.png" style="width: 240px;padding-top: 10px"/>
+					
+				</div>	
+				<div style="float:left;padding-top: 15px;padding-left: 30px;">
+		            <h1><a href="<%= @baseUrl %>"><%= @manifest.title or @title %></a></h1>
+
+				</div>
+			</div>
+        </header>
+	        <%- @include "_sidebar.html" %>
+	        <div id="content">
+	            <%- @content %>
+	        </div>			
+        <footer id="footer">
+            Powered by <a href="http://github.com/maximebf/beautiful-docs">beautiful-docs</a> -
+            <a href="#top">Back to top</a>
+            - <a href="?print=1">Print current page</a> - <a href="<%= @baseUrl %>all.html?print=1">Print all pages</a>
+        </footer>
+    </div>
+</body>
+</html>

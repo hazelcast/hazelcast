@@ -24,6 +24,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+/**
+ * BeanDefinitionParser for Type Configuration of Hazelcast Types like map,queue,topic etc.
+ *
+ */
 public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     private final String type;
@@ -62,12 +66,12 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
             handleCommonBeanAttributes(element, builder, parserContext);
             final NamedNodeMap attrs = element.getAttributes();
             if (attrs != null) {
-                Node instanceRefNode = attrs.getNamedItem("instance-ref") ;
+                Node instanceRefNode = attrs.getNamedItem("instance-ref");
                 if (instanceRefNode == null) {
-                    throw new IllegalStateException("'instance-ref' attribute is required for creating" +
-                                                    " Hazelcast " + type);
+                    throw new IllegalStateException("'instance-ref' attribute is required for creating"
+                            + " Hazelcast " + type);
                 }
-                final String instanceRef = getValue(instanceRefNode);
+                final String instanceRef = getTextContent(instanceRefNode);
                 builder.getRawBeanDefinition().setFactoryBeanName(instanceRef);
                 builder.addDependsOn(instanceRef);
 
@@ -75,7 +79,7 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
                 if (nameNode == null) {
                     nameNode = attrs.getNamedItem("id");
                 }
-                builder.addConstructorArgValue(getValue(nameNode));
+                builder.addConstructorArgValue(getTextContent(nameNode));
             }
         }
     }

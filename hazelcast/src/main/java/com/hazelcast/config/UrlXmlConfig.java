@@ -23,23 +23,76 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.logging.Level;
+import java.util.Properties;
 
+/**
+ * A {@link Config} which is loaded using some url pointing to a Hazelcast XML file.
+ */
 public class UrlXmlConfig extends Config {
 
-    private final ILogger logger = Logger.getLogger(UrlXmlConfig.class.getName());
+    private static final ILogger LOGGER = Logger.getLogger(UrlXmlConfig.class);
 
-    public UrlXmlConfig() {
-    }
-
-    public UrlXmlConfig(String url) throws MalformedURLException, IOException {
+    /**
+     * Creates new Config which is loaded from the given url and uses the System.properties to replace
+     * variables in the XML.
+     *
+     * @param url the url pointing to the Hazelcast XML file.
+     * @throws MalformedURLException                 if the url is not correct
+     * @throws IOException                           if something fails while loading the resource.
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
+    public UrlXmlConfig(String url) throws IOException {
         this(new URL(url));
     }
 
+    /**
+     * Creates new Config which is loaded from the given url.
+     *
+     * @param url        the url pointing to the Hazelcast XML file.
+     * @param properties the properties for replacing variables.
+     * @throws IllegalArgumentException              if properties is null
+     * @throws MalformedURLException                 if the url is not correct
+     * @throws IOException                           if something fails while loading the resource.
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
+    public UrlXmlConfig(String url, Properties properties) throws IOException {
+        this(new URL(url), properties);
+    }
+
+    /**
+     * Creates new Config which is loaded from the given url and uses the System.properties to replace
+     * variables in the XML.
+     *
+     * @param url the URL pointing to the Hazelcast XML file.
+     * @throws IOException                           if something fails while loading the resource
+     * @throws IllegalArgumentException              if the url is null.
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
     public UrlXmlConfig(URL url) throws IOException {
-        super();
-        logger.log(Level.INFO, "Configuring Hazelcast from '" + url.toString() + "'.");
+        this(url, System.getProperties());
+    }
+
+
+    /**
+     * Creates new Config which is loaded from the given url.
+     *
+     * @param url        the URL pointing to the Hazelcast XML file.
+     * @param properties the properties for replacing variables.
+     * @throws IOException                           if something fails while loading the resource
+     * @throws IllegalArgumentException              if the url or properties is null.
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
+    public UrlXmlConfig(URL url, Properties properties) throws IOException {
+        if (url == null) {
+            throw new IllegalArgumentException("url can't be null");
+        }
+
+        if (properties == null) {
+            throw new IllegalArgumentException("properties can't be null");
+        }
+
+        LOGGER.info("Configuring Hazelcast from '" + url.toString() + "'.");
         InputStream in = url.openStream();
-        new XmlConfigBuilder(in).build(this);
+        new XmlConfigBuilder(in).setProperties(properties).build(this);
     }
 }

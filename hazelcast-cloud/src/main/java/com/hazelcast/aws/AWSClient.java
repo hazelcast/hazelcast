@@ -16,11 +16,11 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.aws.impl.Constants;
 import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.config.AwsConfig;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 
 public class AWSClient {
 
@@ -28,13 +28,26 @@ public class AWSClient {
     private final AwsConfig awsConfig;
 
     public AWSClient(AwsConfig awsConfig) {
+        if (awsConfig == null) {
+            throw new IllegalArgumentException("AwsConfig is required!");
+        }
+        if (awsConfig.getAccessKey() == null) {
+            throw new IllegalArgumentException("AWS access key is required!");
+        }
+        if (awsConfig.getSecretKey() == null) {
+            throw new IllegalArgumentException("AWS secret key is required!");
+        }
         this.awsConfig = awsConfig;
         endpoint = awsConfig.getHostHeader();
     }
 
-    public List<String> getPrivateIpAddresses(AwsConfig groupName) throws Exception {
-        List<String> list = new DescribeInstances(awsConfig).execute(endpoint);
-        return list;
+    public Collection<String> getPrivateIpAddresses() throws Exception {
+        final Map<String, String> result = new DescribeInstances(awsConfig).execute(endpoint);
+        return result.keySet();
+    }
+
+    public Map<String, String> getAddresses() throws Exception {
+        return new DescribeInstances(awsConfig).execute(endpoint);
     }
 
     public void setEndpoint(String s) {

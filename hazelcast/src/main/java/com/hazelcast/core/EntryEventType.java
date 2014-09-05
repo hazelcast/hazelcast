@@ -16,11 +16,17 @@
 
 package com.hazelcast.core;
 
+/**
+ * Type of entry event.
+ */
 public enum EntryEventType {
+
     ADDED(1),
     REMOVED(2),
     UPDATED(3),
-    EVICTED(4);
+    EVICTED(4),
+    EVICT_ALL(5),
+    CLEAR_ALL(6);
 
     private int type;
 

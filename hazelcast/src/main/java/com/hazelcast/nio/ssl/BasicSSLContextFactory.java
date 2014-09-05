@@ -16,15 +16,26 @@
 
 package com.hazelcast.nio.ssl;
 
+import com.hazelcast.nio.IOUtil;
+
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.Properties;
 
 public class BasicSSLContextFactory implements SSLContextFactory {
-    SSLContext sslContext;
+
+    private static final String JAVA_NET_SSL_PREFIX = "javax.net.ssl.";
+
+    private SSLContext sslContext;
 
     public BasicSSLContextFactory() {
     }
@@ -32,38 +43,61 @@ public class BasicSSLContextFactory implements SSLContextFactory {
     public void init(Properties properties) throws Exception {
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
-        String keyStorePassword = properties.getProperty("keyStorePassword");
-        if (keyStorePassword == null) {
-            keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
+
+        String keyStorePassword = getProperty(properties, "keyStorePassword");
+        String keyStore = getProperty(properties, "keyStore");
+        String trustStore = getProperty(properties, "trustStore", keyStore);
+        String trustStorePassword = getProperty(properties, "trustStorePassword", keyStorePassword);
+        String keyManagerAlgorithm = properties.getProperty("keyManagerAlgorithm", KeyManagerFactory.getDefaultAlgorithm());
+        String trustManagerAlgorithm = properties.getProperty("trustManagerAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
+        String protocol = properties.getProperty("protocol", "TLS");
+
+        KeyManager[] keyManagers = null;
+        if (keyStore != null) {
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerAlgorithm);
+            char[] passPhrase = keyStorePassword != null ? keyStorePassword.toCharArray() : null;
+            loadKeyStore(ks, passPhrase, keyStore);
+            kmf.init(ks, passPhrase);
+            keyManagers = kmf.getKeyManagers();
         }
-        String keyStore = properties.getProperty("keyStore");
-        if (keyStore == null) {
-            keyStore = System.getProperty("javax.net.ssl.keyStore");
+
+        TrustManager[] trustManagers = null;
+        if (trustStore != null) {
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerAlgorithm);
+            char[] passPhrase = trustStorePassword != null ? trustStorePassword.toCharArray() : null;
+            loadKeyStore(ts, passPhrase, trustStore);
+            tmf.init(ts);
+            trustManagers = tmf.getTrustManagers();
         }
-        if (keyStore == null || keyStorePassword == null) {
-            throw new RuntimeException("SSL is enabled but keyStore[Password] properties aren't set!");
-        }
-        String keyManagerAlgorithm = getProperty(properties, "keyManagerAlgorithm", "SunX509");
-        String trustManagerAlgorithm = getProperty(properties, "trustManagerAlgorithm", "SunX509");
-        String protocol = getProperty(properties, "protocol", "TLS");
-        final char[] passPhrase = keyStorePassword.toCharArray();
-        final String keyStoreFile = keyStore;
-        ks.load(new FileInputStream(keyStoreFile), passPhrase);
-        ts.load(new FileInputStream(keyStoreFile), passPhrase);
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerAlgorithm);
-        kmf.init(ks, passPhrase);
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerAlgorithm);
-        tmf.init(ts);
+
         sslContext = SSLContext.getInstance(protocol);
-        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        sslContext.init(keyManagers, trustManagers, null);
     }
 
-    private static String getProperty(Properties properties, String propertyName, String defaultValue) {
-        String value = properties.getProperty(propertyName);
+    private void loadKeyStore(KeyStore ks, char[] passPhrase, String keyStoreFile)
+            throws IOException, NoSuchAlgorithmException, CertificateException {
+        final InputStream in = new FileInputStream(keyStoreFile);
+        try {
+            ks.load(in, passPhrase);
+        } finally {
+            IOUtil.closeResource(in);
+        }
+    }
+
+    private static String getProperty(Properties properties, String property) {
+        String value = properties.getProperty(property);
         if (value == null) {
-            value = defaultValue;
+            value = properties.getProperty(JAVA_NET_SSL_PREFIX + property);
+        }
+        if (value == null) {
+            value = System.getProperty(JAVA_NET_SSL_PREFIX + property);
         }
         return value;
+    }
+
+    private static String getProperty(Properties properties, String property, String defaultValue) {
+        String value = getProperty(properties, property);
+        return value != null ? value : defaultValue;
     }
 
     public SSLContext getSSLContext() {

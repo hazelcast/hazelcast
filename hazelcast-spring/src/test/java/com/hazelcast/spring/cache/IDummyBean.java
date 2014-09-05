@@ -19,7 +19,7 @@ package com.hazelcast.spring.cache;
 import org.springframework.cache.annotation.Cacheable;
 
 /**
- * @mdogan 4/3/12
+ * @author mdogan 4/3/12
  */
 public interface IDummyBean {
 
@@ -31,4 +31,7 @@ public interface IDummyBean {
 
     @Cacheable("temp")
     Object getNull();
+
+    @Cacheable("map-with-ttl")
+    String getNameWithTTL();
 }

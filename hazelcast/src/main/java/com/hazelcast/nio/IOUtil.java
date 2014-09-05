@@ -16,15 +16,113 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
+import java.io.OutputStream;
+import java.io.InputStream;
+import java.io.DataOutput;
+import java.io.DataInput;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+
 import java.nio.ByteBuffer;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 public final class IOUtil {
+
+    public static final byte PRIMITIVE_TYPE_BOOLEAN = 1;
+    public static final byte PRIMITIVE_TYPE_BYTE = 2;
+    public static final byte PRIMITIVE_TYPE_SHORT = 3;
+    public static final byte PRIMITIVE_TYPE_INTEGER = 4;
+    public static final byte PRIMITIVE_TYPE_LONG = 5;
+    public static final byte PRIMITIVE_TYPE_FLOAT = 6;
+    public static final byte PRIMITIVE_TYPE_DOUBLE = 7;
+    public static final byte PRIMITIVE_TYPE_UTF = 8;
+
+    private IOUtil() {
+    }
+
+    /**
+     * This method has a direct dependency on how objects are serialized in
+     * {@link com.hazelcast.nio.serialization.DataSerializer}! If the stream
+     * format is ever changed this extraction method needs to be changed too!
+     */
+    public static long extractOperationCallId(Data data, SerializationService serializationService) throws IOException {
+        ObjectDataInput input = serializationService.createObjectDataInput(data.getBuffer());
+        boolean identified = input.readBoolean();
+        if (identified) {
+            // read factoryId
+            input.readInt();
+            // read typeId
+            input.readInt();
+        } else {
+            // read classname
+            input.readUTF();
+        }
+
+        // read callId
+        return input.readLong();
+    }
+
+    public static void writeByteArray(ObjectDataOutput out, byte[] value) throws IOException {
+        int size = (value == null) ? 0 : value.length;
+        out.writeInt(size);
+        if (size > 0) {
+            out.write(value);
+        }
+    }
+
+    public static byte[] readByteArray(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+        if (size == 0) {
+            return null;
+        } else {
+            byte[] b = new byte[size];
+            in.readFully(b);
+            return b;
+        }
+    }
+
+    public static void writeNullableData(ObjectDataOutput out, Data data) throws IOException {
+        if (data != null) {
+            out.writeBoolean(true);
+            data.writeData(out);
+        } else {
+            // null
+            out.writeBoolean(false);
+        }
+    }
+
+    public static Data readNullableData(ObjectDataInput in) throws IOException {
+        final boolean isNotNull = in.readBoolean();
+        if (isNotNull) {
+            Data data = new Data();
+            data.readData(in);
+            return data;
+        }
+        return null;
+    }
+
+    public static Data readData(ObjectDataInput in) throws IOException {
+        Data data = new Data();
+        data.readData(in);
+        return data;
+    }
+
+    public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, final InputStream in) throws IOException {
+        return new ObjectInputStream(in) {
+            protected Class<?> resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
+                return ClassLoaderUtil.loadClass(classLoader, desc.getName());
+            }
+        };
+    }
 
     public static OutputStream newOutputStream(final ByteBuffer buf) {
         return new OutputStream() {
@@ -59,7 +157,9 @@ public final class IOUtil {
     }
 
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dest) {
-        if (src == null) return 0;
+        if (src == null) {
+            return 0;
+        }
         int n = Math.min(src.remaining(), dest.remaining());
         if (n > 0) {
             if (n < 16) {
@@ -86,19 +186,6 @@ public final class IOUtil {
         return n;
     }
 
-    public static int copyFromDirectToDirectBuffer(ByteBuffer src, ByteBuffer dest) {
-        int n = Math.min(src.remaining(), dest.remaining());
-        if (src.remaining() <= n) {
-            dest.put(src);
-        } else {
-            int realLimit = src.limit();
-            src.limit(src.position() + n);
-            dest.put(src);
-            src.limit(realLimit);
-        }
-        return n;
-    }
-
     public static void writeLongString(DataOutput dos, String str) throws IOException {
         int chunk = 1000;
         int count = str.length() / chunk;
@@ -119,74 +206,6 @@ public final class IOUtil {
             sb.append(in.readUTF());
         }
         return sb.toString();
-    }
-
-    public static void putBoolean(ByteBuffer bb, boolean value) {
-        bb.put((byte) (value ? 1 : 0));
-    }
-
-    public static boolean getBoolean(ByteBuffer bb) {
-        return bb.get() == 1;
-    }
-
-    public static Data toData(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-        if (obj instanceof Data) {
-            return (Data) obj;
-        }
-        return ThreadContext.get().toData(obj);
-    }
-
-    public static long getLong(Data longData) {
-        byte[] b = longData.buffer;
-        ByteBuffer current = ByteBuffer.wrap(b);
-        current.get(); // type
-        return current.getLong();
-    }
-
-    public static Data addDelta(Data longData, long delta) {
-        long longValue = (Long) toObject(longData);
-        return toData(longValue + delta);
-    }
-
-    public static Data addDelta(Data intData, int delta) {
-        int intValue = (Integer) toObject(intData);
-        return toData(intValue + delta);
-    }
-
-    public static Object toObject(Data data) {
-        if (data == null) {
-            return null;
-        }
-        return ThreadContext.get().toObject(data);
-    }
-
-    public static Object toObject(DataHolder dataHolder) {
-        return toObject(dataHolder.toData());
-    }
-
-    public static Object serializeToObject(byte[] bytes) throws Exception {
-        if (bytes == null) return null;
-        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes));
-        try {
-            Object obj = in.readObject();
-            return obj;
-        } finally {
-            closeResource(in);
-        }
-    }
-
-    public static byte[] serializeToBytes(Object object) throws Exception {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(bos);
-        try {
-            out.writeObject(object);
-            return bos.toByteArray();
-        } finally {
-            closeResource(out);
-        }
     }
 
     public static byte[] compress(byte[] input) throws IOException {
@@ -215,6 +234,7 @@ public final class IOUtil {
                 int count = inflater.inflate(buf);
                 bos.write(buf, 0, count);
             } catch (DataFormatException e) {
+                Logger.getLogger(IOUtil.class).finest("Decompression failed", e);
             }
         }
         bos.close();
@@ -222,11 +242,74 @@ public final class IOUtil {
         return bos.toByteArray();
     }
 
-    public static void closeResource(Closeable closeable) {
+
+    public static void writeAttributeValue(Object value, ObjectDataOutput out) throws IOException {
+        Class<?> type = value.getClass();
+        if (type.equals(Boolean.class)) {
+            out.writeByte(PRIMITIVE_TYPE_BOOLEAN);
+            out.writeBoolean((Boolean) value);
+        } else if (type.equals(Byte.class)) {
+            out.writeByte(PRIMITIVE_TYPE_BYTE);
+            out.writeByte((Byte) value);
+        } else if (type.equals(Short.class)) {
+            out.writeByte(PRIMITIVE_TYPE_SHORT);
+            out.writeShort((Short) value);
+        } else if (type.equals(Integer.class)) {
+            out.writeByte(PRIMITIVE_TYPE_INTEGER);
+            out.writeInt((Integer) value);
+        } else if (type.equals(Long.class)) {
+            out.writeByte(PRIMITIVE_TYPE_LONG);
+            out.writeLong((Long) value);
+        } else if (type.equals(Float.class)) {
+            out.writeByte(PRIMITIVE_TYPE_FLOAT);
+            out.writeFloat((Float) value);
+        } else if (type.equals(Double.class)) {
+            out.writeByte(PRIMITIVE_TYPE_DOUBLE);
+            out.writeDouble((Double) value);
+        } else if (type.equals(String.class)) {
+            out.writeByte(PRIMITIVE_TYPE_UTF);
+            out.writeUTF((String) value);
+        } else {
+            throw new IllegalStateException("Illegal attribute type id found");
+        }
+    }
+
+    public static Object readAttributeValue(ObjectDataInput in) throws IOException {
+        byte type = in.readByte();
+        switch (type) {
+            case PRIMITIVE_TYPE_BOOLEAN:
+                return in.readBoolean();
+            case PRIMITIVE_TYPE_BYTE:
+                return in.readByte();
+            case PRIMITIVE_TYPE_SHORT:
+                return in.readShort();
+            case PRIMITIVE_TYPE_INTEGER:
+                return in.readInt();
+            case PRIMITIVE_TYPE_LONG:
+                return in.readLong();
+            case PRIMITIVE_TYPE_FLOAT:
+                return in.readFloat();
+            case PRIMITIVE_TYPE_DOUBLE:
+                return in.readDouble();
+            case PRIMITIVE_TYPE_UTF:
+                return in.readUTF();
+            default:
+                throw new IllegalStateException("Illegal attribute type id found");
+        }
+
+    }
+
+    /**
+     * Closes the Closable quietly. So no exception will be thrown. Can also safely be called with a null value.
+     *
+     * @param closeable the Closeable to close.
+     */
+    public static void closeResource(final Closeable closeable) {
         if (closeable != null) {
             try {
                 closeable.close();
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
             }
         }
     }

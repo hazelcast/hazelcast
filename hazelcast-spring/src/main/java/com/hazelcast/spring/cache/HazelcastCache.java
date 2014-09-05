@@ -17,17 +17,16 @@
 package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.nio.DataSerializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 /**
- * @mdogan 4/3/12
+ * @author mdogan 4/3/12
  */
 public class HazelcastCache implements Cache {
 
@@ -55,9 +54,17 @@ public class HazelcastCache implements Cache {
         return value != null ? new SimpleValueWrapper(fromStoreValue(value)) : null;
     }
 
+    public <T> T get(Object key, Class<T> type) {
+        Object value = fromStoreValue(this.map.get(key));
+        if (type != null && value != null && !type.isInstance(value)) {
+            throw new IllegalStateException("Cached value is not of required type [" + type.getName() + "]: " + value);
+        }
+        return (T) value;
+    }
+
     public void put(final Object key, final Object value) {
         if (key != null) {
-            map.set(key, toStoreValue(value), 0, TimeUnit.SECONDS);
+            map.set(key, toStoreValue(value));
         }
     }
 
@@ -77,7 +84,7 @@ public class HazelcastCache implements Cache {
 
     public void evict(final Object key) {
         if (key != null) {
-            map.evict(key);
+            map.delete(key);
         }
     }
 
@@ -85,15 +92,18 @@ public class HazelcastCache implements Cache {
         map.clear();
     }
 
-    final static class NullDataSerializable implements DataSerializable {
-        public void writeData(final DataOutput out) throws IOException {
+    static final class NullDataSerializable implements DataSerializable {
+        public void writeData(final ObjectDataOutput out) throws IOException {
         }
-        public void readData(final DataInput in) throws IOException {
+
+        public void readData(final ObjectDataInput in) throws IOException {
         }
+
         @Override
         public boolean equals(Object obj) {
             return obj != null && obj.getClass() == getClass();
         }
+
         @Override
         public int hashCode() {
             return 0;

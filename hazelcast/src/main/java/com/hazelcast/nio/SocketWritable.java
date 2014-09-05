@@ -16,6 +16,33 @@
 
 package com.hazelcast.nio;
 
+import java.nio.ByteBuffer;
+
+/**
+ * Represents something that can be written to a {@link com.hazelcast.nio.Connection}.
+ *
+ * todo:
+ * Perhaps this class should be renamed to ConnectionWritable since it is written to a
+ * {@link com.hazelcast.nio.Connection#write(SocketWritable)}. This aligns the names.
+ */
 public interface SocketWritable {
-    void onEnqueue();
+
+    /**
+     * Asks the SocketWritable to write its content to the destination ByteBuffer.
+     *
+     * @param destination the ByteBuffer to write to.
+     * @return todo: unclear what return value means.
+     */
+    boolean writeTo(ByteBuffer destination);
+
+    /**
+     * Checks if this SocketWritable is urgent.
+     *
+     * SocketWritable that are urgent, have priority above regular SocketWritable. This is useful to implement
+     * System Operations so that they can be send faster than regular operations; especially when the system is
+     * under load you want these operations have precedence.
+     *
+     * @return true if urgent, false otherwise.
+     */
+    boolean isUrgent();
 }

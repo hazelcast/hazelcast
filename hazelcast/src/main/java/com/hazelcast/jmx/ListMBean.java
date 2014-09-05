@@ -19,138 +19,67 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+import java.util.concurrent.atomic.AtomicLong;
 
-import java.util.ArrayList;
-import java.util.List;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
- * MBean for Collections
- *
- * @author Marco Ferrante, DISI - University of Genoa
+ * Management bean for {@link com.hazelcast.core.IList}
  */
-@JMXDescription("A distributed List")
-public class ListMBean extends AbstractMBean<IList<?>> {
+@ManagedDescription("IList")
+public class ListMBean extends HazelcastMBean<IList<?>> {
 
-    @SuppressWarnings("unchecked")
-    protected ItemListener listener;
+    private AtomicLong totalAddedItemCount = new AtomicLong();
+    private AtomicLong totalRemovedItemCount = new AtomicLong();
+    private final String registrationId;
 
-    private StatisticsCollector receivedStats = null;
-    private StatisticsCollector servedStats = null;
+    protected ListMBean(IList<?> managedObject, ManagementService service) {
+        super(managedObject, service);
+        objectName = service.createObjectName("IList", managedObject.getName());
 
-    public ListMBean(IList<?> managedObject, ManagementService managementService) {
-        super(managedObject, managementService);
-    }
-
-    @Override
-    public ObjectNameSpec getNameSpec() {
-        return getParentName().getNested("List", getName());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void postRegister(Boolean registrationDone) {
-        super.postRegister(registrationDone);
-        if (!registrationDone) {
-            return;
-        }
-        if (managementService.showDetails()) {
-            receivedStats = ManagementService.newStatisticsCollector();
-            servedStats = ManagementService.newStatisticsCollector();
-            listener = new ItemListener() {
-
-                public void itemAdded(ItemEvent itemEvent) {
-                    receivedStats.addEvent();
-                    addItem(itemEvent.getItem());
-                }
-
-                public void itemRemoved(ItemEvent itemEvent) {
-                    servedStats.addEvent();
-                    removeItem(itemEvent.getItem());
-                }
-            };
-            getManagedObject().addItemListener(listener, false);
-            // Add existing entries
-            for (Object item : getManagedObject()) {
-                addItem(item);
+        //todo: using the event system to register number of adds/remove is an very expensive price to pay.
+        ItemListener itemListener = new ItemListener() {
+            @Override
+            public void itemAdded(ItemEvent item) {
+                totalAddedItemCount.incrementAndGet();
             }
-        }
+
+            @Override
+            public void itemRemoved(ItemEvent item) {
+                totalRemovedItemCount.incrementAndGet();
+            }
+        };
+        registrationId = managedObject.addItemListener(itemListener, false);
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void preDeregister() throws Exception {
-        if (listener != null) {
-            getManagedObject().removeItemListener(listener);
-            listener = null;
-        }
-        if (receivedStats != null) {
-            receivedStats.destroy();
-            receivedStats = null;
-        }
-        if (servedStats != null) {
-            servedStats.destroy();
-            servedStats = null;
-        }
-        super.preDeregister();
-    }
-
-    protected void addItem(Object item) {
-        // Manage items?
-    }
-
-    protected void removeItem(Object item) {
-        // Manage items?
-    }
-
-    /**
-     * Resets statistics
-     */
-    @JMXOperation("resetStats")
-    public void resetStats() {
-        if (receivedStats != null)
-            receivedStats.reset();
-        if (servedStats != null)
-            servedStats.reset();
-    }
-
-    @JMXOperation("clear")
-    @JMXDescription("Clear list")
+    @ManagedAnnotation(value = "clear", operation = true)
+    @ManagedDescription("Clear List")
     public void clear() {
-        getManagedObject().clear();
+        managedObject.clear();
     }
 
-    @JMXAttribute("Name")
-    @JMXDescription("Registration name of the list")
+    @ManagedAnnotation("name")
+    @ManagedDescription("Name of the DistributedObject")
     public String getName() {
-        return getManagedObject().getName();
+        return managedObject.getName();
     }
 
-    @JMXAttribute("Size")
-    @JMXDescription("Current size")
-    public int getSize() {
-        return getManagedObject().size();
+    @ManagedAnnotation("totalAddedItemCount")
+    public long getTotalAddedItemCount() {
+        return totalAddedItemCount.get();
     }
 
-    @SuppressWarnings("unchecked")
-    @JMXAttribute("Items")
-    @JMXDescription("Current items")
-    public List<?> getItems() {
-        ArrayList result = new ArrayList();
-        for (Object item : getManagedObject()) {
-            result.add(item);
+    @ManagedAnnotation("totalRemovedItemCount")
+    public long getTotalRemovedItemCount() {
+        return totalRemovedItemCount.get();
+    }
+
+    public void preDeregister() throws Exception {
+        super.preDeregister();
+        try {
+            managedObject.removeItemListener(registrationId);
+        } catch (Exception ignored) {
+            ignore(ignored);
         }
-        return result;
-    }
-
-    @JMXAttribute("ObjectAdded")
-    @JMXDescription("Object added to the util since the start time")
-    public long getItemsReceived() {
-        return receivedStats.getTotal();
-    }
-
-    @JMXAttribute("ObjectRemoved")
-    @JMXDescription("Object removed from the util since the start time")
-    public long getItemsServed() {
-        return servedStats.getTotal();
     }
 }

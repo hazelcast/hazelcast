@@ -16,9 +16,10 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.impl.Node;
-import com.hazelcast.impl.Record;
-import com.hazelcast.impl.wan.WanReplicationEndpoint;
+import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationEndpoint;
 
 public class DummyWanReplication implements WanReplicationEndpoint {
 
@@ -29,5 +30,9 @@ public class DummyWanReplication implements WanReplicationEndpoint {
     }
 
     public void shutdown() {
+    }
+
+    public void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
+
     }
 }

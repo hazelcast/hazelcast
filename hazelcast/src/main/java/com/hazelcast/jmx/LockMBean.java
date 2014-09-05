@@ -19,35 +19,36 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.ILock;
 
 /**
- * MBean for Locks
- *
- * @author Marco Ferrante, DISI - University of Genoa
+ * Management bean for {@link com.hazelcast.core.ILock}
  */
-@JMXDescription("A distributed Lock")
-public class LockMBean extends AbstractMBean<ILock> {
+@ManagedDescription("ILock")
+public class LockMBean extends HazelcastMBean<ILock> {
 
-    public LockMBean(ILock lock, ManagementService managementService) {
-        super(lock, managementService);
+    protected LockMBean(ILock managedObject, ManagementService service) {
+        super(managedObject, service);
+        objectName = service.createObjectName("ILock", managedObject.getName());
     }
 
-    @Override
-    public ObjectNameSpec getNameSpec() {
-        return getParentName().getNested("Lock", getName());
-    }
-
-    @JMXAttribute("String")
-    @JMXDescription("toString() result")
+    @ManagedAnnotation("name")
+    @ManagedDescription("Name of the DistributedObject")
     public String getName() {
-        return getManagedObject().toString();
+        return managedObject.getName();
     }
 
-    @JMXAttribute("LockObject")
-    @JMXDescription("The object locked")
+    @ManagedAnnotation("lockObject")
+    @ManagedDescription("Lock Object as String")
     public String getLockObject() {
-        Object obj = getManagedObject().getLockObject();
-        if (obj != null) {
-            return obj.toString();
+        Object lockObject = managedObject.getName();
+        if (lockObject == null) {
+            return null;
+        } else {
+            return lockObject.toString();
         }
-        return null;
+    }
+
+    @ManagedAnnotation("partitionKey")
+    @ManagedDescription("the partitionKey")
+    public String getPartitionKey() {
+        return managedObject.getPartitionKey();
     }
 }

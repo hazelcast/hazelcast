@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -24,18 +23,29 @@ import com.hazelcast.logging.Logger;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.*;
+
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.DESedeKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.DESKeySpec;
+import javax.crypto.spec.PBEKeySpec;
+
 import java.nio.ByteBuffer;
-import java.security.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.KeySpec;
-import java.util.logging.Level;
 
-final class CipherHelper {
-    private static AsymmetricCipherBuilder asymmetricCipherBuilder = null;
-    private static SymmetricCipherBuilder symmetricCipherBuilder = null;
+import static com.hazelcast.util.StringUtil.stringToBytes;
 
-    final static ILogger logger = Logger.getLogger(CipherHelper.class.getName());
+public final class CipherHelper {
+
+    static final ILogger LOGGER = Logger.getLogger(CipherHelper.class);
+
+    private static SymmetricCipherBuilder symmetricCipherBuilder;
 
     static {
         try {
@@ -44,45 +54,27 @@ final class CipherHelper {
                 Security.addProvider((Provider) Class.forName(provider).newInstance());
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            LOGGER.warning(e);
         }
     }
 
-    @SuppressWarnings("SynchronizedMethod")
-    public static synchronized Cipher createAsymmetricReaderCipher(IOService ioService, String remoteAlias) throws Exception {
-        if (asymmetricCipherBuilder == null) {
-            asymmetricCipherBuilder = new AsymmetricCipherBuilder(ioService);
-        }
-        return asymmetricCipherBuilder.getReaderCipher(remoteAlias);
+    private CipherHelper() {
     }
 
     @SuppressWarnings("SynchronizedMethod")
-    public static synchronized Cipher createAsymmetricWriterCipher(IOService ioService) throws Exception {
-        if (asymmetricCipherBuilder == null) {
-            asymmetricCipherBuilder = new AsymmetricCipherBuilder(ioService);
-        }
-        return asymmetricCipherBuilder.getWriterCipher();
-    }
-
-    @SuppressWarnings("SynchronizedMethod")
-    public static synchronized Cipher createSymmetricReaderCipher(IOService ioService) throws Exception {
+    public static synchronized Cipher createSymmetricReaderCipher(SymmetricEncryptionConfig config) throws Exception {
         if (symmetricCipherBuilder == null) {
-            symmetricCipherBuilder = new SymmetricCipherBuilder(ioService.getSymmetricEncryptionConfig());
+            symmetricCipherBuilder = new SymmetricCipherBuilder(config);
         }
-        return symmetricCipherBuilder.getReaderCipher(null);
+        return symmetricCipherBuilder.getReaderCipher();
     }
 
     @SuppressWarnings("SynchronizedMethod")
-    public static synchronized Cipher createSymmetricWriterCipher(IOService ioService) throws Exception {
+    public static synchronized Cipher createSymmetricWriterCipher(SymmetricEncryptionConfig config) throws Exception {
         if (symmetricCipherBuilder == null) {
-            symmetricCipherBuilder = new SymmetricCipherBuilder(ioService.getSymmetricEncryptionConfig());
+            symmetricCipherBuilder = new SymmetricCipherBuilder(config);
         }
         return symmetricCipherBuilder.getWriterCipher();
-    }
-
-    public static boolean isAsymmetricEncryptionEnabled(IOService ioService) {
-        AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
-        return (aec != null && aec.isEnabled());
     }
 
     public static boolean isSymmetricEncryptionEnabled(IOService ioService) {
@@ -90,65 +82,7 @@ final class CipherHelper {
         return (sec != null && sec.isEnabled());
     }
 
-    public static String getKeyAlias(IOService ioService) {
-        AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
-        return aec.getKeyAlias();
-    }
-
-    interface CipherBuilder {
-        Cipher getWriterCipher() throws Exception;
-
-        Cipher getReaderCipher(String param) throws Exception;
-
-        boolean isAsymmetric();
-    }
-
-    static class AsymmetricCipherBuilder implements CipherBuilder {
-        String algorithm = "RSA/NONE/PKCS1PADDING";
-        KeyStore keyStore;
-        private final IOService ioService;
-
-        AsymmetricCipherBuilder(IOService ioService) {
-            this.ioService = ioService;
-            try {
-                AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
-                algorithm = aec.getAlgorithm();
-                keyStore = KeyStore.getInstance(aec.getStoreType());
-                // get user password and file input stream
-                char[] password = aec.getStorePassword().toCharArray();
-                java.io.FileInputStream fis =
-                        new java.io.FileInputStream(aec.getStorePath());
-                keyStore.load(fis, password);
-                fis.close();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-            }
-        }
-
-        public Cipher getReaderCipher(String remoteAlias) throws Exception {
-            java.security.cert.Certificate certificate = keyStore.getCertificate(remoteAlias);
-            PublicKey publicKey = certificate.getPublicKey();
-            Cipher cipher = Cipher.getInstance(algorithm);
-            cipher.init(Cipher.DECRYPT_MODE, publicKey);
-            return cipher;
-        }
-
-        public Cipher getWriterCipher() throws Exception {
-            AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
-            Cipher cipher = Cipher.getInstance(algorithm);
-            KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
-                    keyStore.getEntry(aec.getKeyAlias(), new KeyStore.PasswordProtection(aec.getKeyPassword().toCharArray()));
-            PrivateKey privateKey = pkEntry.getPrivateKey();
-            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-            return cipher;
-        }
-
-        public boolean isAsymmetric() {
-            return true;
-        }
-    }
-
-    static class SymmetricCipherBuilder implements CipherBuilder {
+    static class SymmetricCipherBuilder {
         final String algorithm;
         // 8-byte Salt
         final byte[] salt;
@@ -166,7 +100,7 @@ final class CipherHelper {
 
         byte[] createSalt(String saltStr) {
             long hash = 0;
-            char chars[] = saltStr.toCharArray();
+            char[] chars = saltStr.toCharArray();
             for (char c : chars) {
                 hash = 31 * hash + c;
             }
@@ -186,25 +120,14 @@ final class CipherHelper {
             try {
                 int mode = (encryptMode) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
                 Cipher cipher = Cipher.getInstance(algorithm);
-                String keyAlgorithm = algorithm;
-                if (algorithm.indexOf('/') != -1) {
-                    keyAlgorithm = algorithm.substring(0, algorithm.indexOf('/'));
-                }
-                // 32-bit digest key=pass+salt
-                ByteBuffer bbPass = ByteBuffer.allocate(32);
-                MessageDigest md = MessageDigest.getInstance("MD5");
-                bbPass.put(md.digest(passPhrase.getBytes()));
-                md.reset();
-                byte[] saltDigest = md.digest(salt);
-                bbPass.put(saltDigest);
-                boolean isCBC = algorithm.indexOf("/CBC/") != -1;
+                String keyAlgorithm = findKeyAlgorithm(algorithm);
+                byte[] saltDigest = buildKeyBytes();
+
                 SecretKey key = null;
                 //CBC mode requires IvParameter with 8 byte input
                 int ivLength = 8;
                 AlgorithmParameterSpec paramSpec = null;
-                if (keyBytes == null) {
-                    keyBytes = bbPass.array();
-                }
+
                 if (algorithm.startsWith("AES")) {
                     ivLength = 16;
                     key = new SecretKeySpec(keyBytes, "AES");
@@ -222,10 +145,7 @@ final class CipherHelper {
                     KeySpec keySpec = new PBEKeySpec(passPhrase.toCharArray(), salt, iterationCount);
                     key = SecretKeyFactory.getInstance(keyAlgorithm).generateSecret(keySpec);
                 }
-                if (isCBC) {
-                    byte[] iv = (ivLength == 8) ? salt : saltDigest;
-                    paramSpec = new IvParameterSpec(iv);
-                }
+                paramSpec = buildFinalAlgorithmParameterSpec(saltDigest, ivLength, paramSpec);
                 cipher.init(mode, key, paramSpec);
                 return cipher;
             } catch (Throwable e) {
@@ -233,21 +153,50 @@ final class CipherHelper {
             }
         }
 
+        private AlgorithmParameterSpec buildFinalAlgorithmParameterSpec(byte[] saltDigest, int ivLength,
+                                                                        AlgorithmParameterSpec paramSpec) {
+            boolean isCBC = algorithm.contains("/CBC/");
+            if (isCBC) {
+                byte[] iv = (ivLength == 8) ? salt : saltDigest;
+                paramSpec = new IvParameterSpec(iv);
+            }
+            return paramSpec;
+        }
+
+        private String findKeyAlgorithm(String algorithm) {
+            String keyAlgorithm = algorithm;
+            if (algorithm.indexOf('/') != -1) {
+                keyAlgorithm = algorithm.substring(0, algorithm.indexOf('/'));
+            }
+            return keyAlgorithm;
+        }
+
+        private byte[] buildKeyBytes()
+                throws NoSuchAlgorithmException {
+            // 32-bit digest key=pass+salt
+            ByteBuffer bbPass = ByteBuffer.allocate(32);
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            bbPass.put(md.digest(stringToBytes(passPhrase)));
+            md.reset();
+            byte[] saltDigest = md.digest(salt);
+            bbPass.put(saltDigest);
+            if (keyBytes == null) {
+                keyBytes = bbPass.array();
+            }
+            return saltDigest;
+        }
+
         public Cipher getWriterCipher() {
             return create(true);
         }
 
-        public Cipher getReaderCipher(String ignored) {
+        public Cipher getReaderCipher() {
             return create(false);
-        }
-
-        public boolean isAsymmetric() {
-            return false;
         }
     }
 
     public static void handleCipherException(Exception e, Connection connection) {
-        logger.log(Level.WARNING, e.getMessage(), e);
+        LOGGER.warning(e);
         connection.close();
     }
 }

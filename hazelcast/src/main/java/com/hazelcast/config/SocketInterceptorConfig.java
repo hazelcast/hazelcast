@@ -18,10 +18,13 @@ package com.hazelcast.config;
 
 import java.util.Properties;
 
+/**
+ * Contains the configuration for interceptor socket
+ */
 public class SocketInterceptorConfig {
-    private boolean enabled = false;
-    private String className = null;
-    private Object implementation = null;
+    private boolean enabled;
+    private String className;
+    private Object implementation;
     private Properties properties = new Properties();
 
     /**
@@ -83,20 +86,51 @@ public class SocketInterceptorConfig {
         return this;
     }
 
+    /**
+     * Sets a property.
+     *
+     * @param name  the name of the property to set.
+     * @param value the value of the property to set
+     * @return the updated SocketInterceptorConfig
+     * @throws NullPointerException if name or value is null.
+     */
     public SocketInterceptorConfig setProperty(String name, String value) {
         properties.put(name, value);
         return this;
     }
 
+    /**
+     * Gets a property.
+     *
+     * @param name the name of the property to get.
+     * @return the value of the property, null if not found
+     * @throws NullPointerException if name is null.
+     */
     public String getProperty(String name) {
         return properties.getProperty(name);
     }
 
+    /**
+     * Gets all properties.
+     *
+     * @return the properties.
+     */
     public Properties getProperties() {
         return properties;
     }
 
+    /**
+     * Sets the properties.
+     *
+     * @param properties the properties to set.
+     * @return the updated SSLConfig.
+     * @throws IllegalArgumentException if properties is null.
+     */
     public SocketInterceptorConfig setProperties(Properties properties) {
+        if (properties == null) {
+            throw new IllegalArgumentException("properties can't be null");
+        }
+
         this.properties = properties;
         return this;
     }

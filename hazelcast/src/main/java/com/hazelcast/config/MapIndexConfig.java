@@ -16,53 +16,101 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.query.Expression;
+import static com.hazelcast.util.ValidationUtil.hasText;
 
+/**
+ * Contains the configuration for an index in a map. This class should be used in combination
+ * with the {@link MapConfig}. THe reason to create an map index, is to speed up searches for
+ * particular map entries.
+ */
 public class MapIndexConfig {
 
     private String attribute;
+    private boolean ordered;
+    private MapIndexConfigReadOnly readOnly;
 
-    private Expression expression;
-
-    private boolean ordered = false;
-
+    /**
+     * Creates a MapIndexConfig without an attribute and with ordered is false.
+     */
     public MapIndexConfig() {
-        super();
     }
 
+    /**
+     * Creates a MapIndexConfig with the given attribute and ordered setting.
+     *
+     * @param attribute the attribute that is going to be indexed.
+     * @param ordered   if the index is ordered.
+     * @see #setOrdered(boolean)
+     * @see #setAttribute(String)
+     */
     public MapIndexConfig(String attribute, boolean ordered) {
-        super();
-        this.attribute = attribute;
-        this.ordered = ordered;
+        setAttribute(attribute);
+        setOrdered(ordered);
     }
 
-    public MapIndexConfig(Expression expression, boolean ordered) {
-        super();
-        this.expression = expression;
-        this.ordered = ordered;
+    public MapIndexConfig(MapIndexConfig config) {
+        attribute = config.getAttribute();
+        ordered = config.isOrdered();
     }
 
+    public MapIndexConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MapIndexConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    /**
+     * Gets the attribute that is going to be indexed. If no attribute is set, null is returned.
+     *
+     * @return the attribute to be indexed.
+     * @see #setAttribute(String)
+     */
     public String getAttribute() {
         return attribute;
     }
 
-    public void setAttribute(String attribute) {
-        this.attribute = attribute;
+    /**
+     * Sets the attribute that is going to be indexed.
+     *
+     * @param attribute the attribute that is going to be indexed.
+     * @return the updated MapIndexConfig.
+     * @throws IllegalArgumentException if attribute is null or an empty string.
+     */
+    public MapIndexConfig setAttribute(String attribute) {
+        this.attribute = hasText(attribute, "Map index attribute");
+        return this;
     }
 
+    /**
+     * Checks if the index should be ordered.
+     *
+     * @return true if ordered, false otherwise.
+     * @see #setOrdered(boolean)
+     */
     public boolean isOrdered() {
         return ordered;
     }
 
-    public void setOrdered(boolean ordered) {
+    /**
+     * Configures the index to be ordered or not ordered. Some indices can be ordered, e.g. age. Sometimes you
+     * want to look for all people with an age equal or greater than X. In other cases an ordered index doesn't make
+     * sense, e.g. a phone number of a person.
+     *
+     * @param ordered if the index should be an ordered index.
+     * @return the updated MapIndexConfig.
+     */
+    public MapIndexConfig setOrdered(boolean ordered) {
         this.ordered = ordered;
+        return this;
     }
 
-    public Expression getExpression() {
-        return expression;
-    }
-
-    public void setExpression(Expression expression) {
-        this.expression = expression;
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("MapIndexConfig{");
+        sb.append("attribute='").append(attribute).append('\'');
+        sb.append(", ordered=").append(ordered);
+        sb.append('}');
+        return sb.toString();
     }
 }
