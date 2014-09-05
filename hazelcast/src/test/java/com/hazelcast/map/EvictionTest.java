@@ -926,6 +926,54 @@ public class EvictionTest extends HazelcastTestSupport {
         return map;
     }
 
+    @Test
+    public void testNumberOfEventsFired_withMaxIdleSeconds_whenReadBackupDataEnabled() throws Exception {
+        final int maxIdleSeconds = 1;
+        final int numberOfEntriesToBeAdded = 1000;
+
+        final AtomicInteger count = new AtomicInteger(0);
+
+        final CountDownLatch evictedEntryLatch = new CountDownLatch(numberOfEntriesToBeAdded);
+
+        IMap<Integer, Integer> map = createMapWithReadBackupDataEnabled(maxIdleSeconds);
+
+        map.addEntryListener(new EntryAdapter<Integer, Integer>() {
+            @Override
+            public void entryEvicted(EntryEvent<Integer, Integer> event) {
+                evictedEntryLatch.countDown();
+                count.incrementAndGet();
+            }
+        }, false);
+
+        for (int i = 0; i < numberOfEntriesToBeAdded; i++) {
+            map.put(i, i);
+        }
+        // wait some time for idle expiration.
+        sleepSeconds(2);
+
+        for (int i = 0; i < numberOfEntriesToBeAdded; i++) {
+            map.get(i);
+        }
+
+        assertOpenEventually(evictedEntryLatch);
+        // sleep some seconds to be sure that
+        // we did not receive more than expected number of events.
+        sleepSeconds(10);
+        assertEquals(numberOfEntriesToBeAdded, count.get());
+    }
+
+    private IMap<Integer, Integer> createMapWithReadBackupDataEnabled(int maxIdleSeconds) {
+        final String mapName = randomMapName();
+
+        Config config = new Config();
+        config.getMapConfig(mapName).setMaxIdleSeconds(maxIdleSeconds).setReadBackupData(true);
+
+        TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] hazelcastInstances = hazelcastInstanceFactory.newInstances(config);
+
+        return hazelcastInstances[0].getMap(mapName);
+    }
+
     private IMap<Integer, String> createSimpleMap() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();

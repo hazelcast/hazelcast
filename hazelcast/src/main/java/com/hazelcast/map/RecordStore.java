@@ -61,7 +61,14 @@ public interface RecordStore {
      */
     void removeBackup(Data dataKey);
 
-    Object get(Data dataKey);
+    /**
+     * Gets record from {@link com.hazelcast.map.RecordStore}
+     *
+     * @param dataKey key.
+     * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @return value of an entry in {@link com.hazelcast.map.RecordStore}
+     */
+    Object get(Data dataKey, boolean backup);
 
     MapEntrySet getAll(Set<Data> keySet);
 

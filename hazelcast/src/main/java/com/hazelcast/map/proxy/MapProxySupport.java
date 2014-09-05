@@ -43,7 +43,9 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.NearCache;
 import com.hazelcast.map.NearCacheProvider;
+import com.hazelcast.map.PartitionContainer;
 import com.hazelcast.map.QueryEventFilter;
+import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.operation.AddIndexOperation;
 import com.hazelcast.map.operation.AddInterceptorOperation;
 import com.hazelcast.map.operation.BasePutOperation;
@@ -80,6 +82,7 @@ import com.hazelcast.map.operation.TryPutOperation;
 import com.hazelcast.map.operation.TryRemoveOperation;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
@@ -293,23 +296,33 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final MapService mapService = getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final int backupCount = getMapConfig().getTotalBackupCount();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        for (int i = 0; i <= backupCount; i++) {
-            int partitionId = partitionService.getPartitionId(key);
-            InternalPartition partition = partitionService.getPartition(partitionId);
-            if (nodeEngine.getThisAddress().equals(partition.getReplicaAddress(i))) {
-                Object val = mapServiceContext.getPartitionContainer(partitionId).getRecordStore(name).get(key);
-                if (val != null) {
-                    mapServiceContext.interceptAfterGet(name, val);
-                    // this serialization step is needed not to expose the object, see issue 1292
-                    return mapServiceContext.toData(val);
-                }
-            }
+        final Address thisAddress = nodeEngine.getThisAddress();
+        final int partitionId = partitionService.getPartitionId(key);
+        final InternalPartition partition = partitionService.getPartition(partitionId, false);
+        if (!partition.isOwnerOrBackup(thisAddress)) {
+            return null;
+        }
+        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+        final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
+        if (recordStore == null) {
+            return null;
+        }
+        final boolean owner = isOwner(partitionId);
+        final Object val = recordStore.get(key, !owner);
+        if (val != null) {
+            mapServiceContext.interceptAfterGet(name, val);
+            // this serialization step is needed not to expose the object, see issue 1292
+            return mapServiceContext.toData(val);
         }
         return null;
     }
 
+    private boolean isOwner(int partitionId) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Address owner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
+        return nodeEngine.getThisAddress().equals(owner);
+    }
 
     protected ICompletableFuture<Data> getAsyncInternal(final Data key) {
         final NodeEngine nodeEngine = getNodeEngine();
