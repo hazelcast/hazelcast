@@ -564,7 +564,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
     }
 
-    private int writeBehindQueueSize(HazelcastInstance node, String mapName){
+    private int writeBehindQueueSize(HazelcastInstance node, String mapName) {
         int size = 0;
         final NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
@@ -572,12 +572,12 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             final RecordStore recordStore = mapServiceContext.getExistingRecordStore(i, mapName);
-            if(recordStore == null){
+            if (recordStore == null) {
                 continue;
             }
             final MapDataStore<Data, Object> mapDataStore
-                    =recordStore.getMapDataStore();
-             size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
+                    = recordStore.getMapDataStore();
+            size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
         }
         return size;
     }
@@ -1392,7 +1392,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapConfig writeBehindBackupConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
-        final MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(expectedStoreCount, 300, 100);
+        final MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(expectedStoreCount, 300, 50);
         mapStoreConfig.setImplementation(mapStore);
         writeBehindBackupConfig.setMapStoreConfig(mapStoreConfig);
         // create nodes.
@@ -1414,7 +1414,9 @@ public class MapStoreTest extends HazelcastTestSupport {
         // wait store ops. finish.
         mapStore.awaitStores();
         // we should reach at least expected store count.
-        assertTrue(expectedStoreCount <= mapStore.count.intValue());
+        int mapStoreSize = mapStore.count.intValue();
+        assertTrue("expected\t: " + expectedStoreCount
+                + ", actual\t: " + mapStoreSize, expectedStoreCount <= mapStoreSize);
     }
 
 
