@@ -12,7 +12,7 @@ As mentioned in the [Overview](#hazelcast-overview) section, Hazelcast offers di
 	- [List](#list): Very similar to Hazelcast List, except that it allows duplicate elements and preserver their order.
 	- [MultiMap](#multimap): It is a specialized Hazelcast map, meaning it is distributed, where multiple values under a single key can be stored.
 	- [ReplicatedMap](#replicated-map): It does not partition data, i.e. it does not spread data to different cluster members, but replicates the data to all nodes.
-- [**Topic**](#topic): Distributed mechanism for publishing messages that are delivered to multiple subscribers which is also known as publish/subscribe (pub/sub) messaging model. 
+- **Topic**: Distributed mechanism for publishing messages that are delivered to multiple subscribers which is also known as publish/subscribe (pub/sub) messaging model. Please see [Topic](#topic) for more information.
 - **Concurrency utilities**:
 	- [Lock](#lock): Distributed implementation of `java.util.concurrent.locks.Lock`. When you lock using Hazelcast Lock, the critical section that it guards is guaranteed to be executed by only one thread in entire cluster.
 	- [Semaphore](#isemaphore): Distributed implementation of `java.util.concurrent.Semaphore`. When performing concurrent activities semaphores offer permits to control the thread counts.
