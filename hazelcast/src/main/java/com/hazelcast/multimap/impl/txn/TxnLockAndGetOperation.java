@@ -30,6 +30,7 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.transaction.TransactionException;
+
 import java.io.IOException;
 
 public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements WaitSupport {
@@ -55,7 +56,8 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
         MultiMapWrapper wrapper = getOrCreateCollectionWrapper();
 
         final boolean isLocal = getResponseHandler().isLocal();
-        final MultiMapResponse multiMapResponse = new MultiMapResponse(wrapper.getCollection(isLocal));
+        final MultiMapResponse multiMapResponse
+                = new MultiMapResponse(wrapper.getCollection(isLocal), getValueCollectionType(container));
         multiMapResponse.setNextRecordId(container.nextId());
         multiMapResponse.setTxVersion(wrapper.incrementAndGetVersion());
         response = multiMapResponse;

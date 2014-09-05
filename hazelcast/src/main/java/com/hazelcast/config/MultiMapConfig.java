@@ -18,8 +18,9 @@ package com.hazelcast.config;
 
 import java.util.ArrayList;
 import java.util.List;
+
 /**
- * Configuration for Multimap.
+ * Configuration for Multi-map.
  */
 public class MultiMapConfig {
 
@@ -27,13 +28,19 @@ public class MultiMapConfig {
      * The number of default synchronous backup count
      */
     public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+
     /**
      * The number of default asynchronous backup count
      */
     public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
+    /**
+     * Default value collection type of multi-map.
+     */
+    public static final ValueCollectionType DEFAULT_VALUE_COLLECTION_TYPE = ValueCollectionType.SET;
+
     private String name;
-    private String valueCollectionType = ValueCollectionType.SET.toString();
+    private String valueCollectionType = DEFAULT_VALUE_COLLECTION_TYPE.toString();
     private List<EntryListenerConfig> listenerConfigs;
     private boolean binary = true;
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;

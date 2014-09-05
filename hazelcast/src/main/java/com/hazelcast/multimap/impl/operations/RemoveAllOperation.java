@@ -16,11 +16,14 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+
 import java.util.Collection;
 
 public class RemoveAllOperation extends MultiMapBackupAwareOperation {
@@ -35,8 +38,9 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
     }
 
     public void run() throws Exception {
+        MultiMapContainer container = getOrCreateContainer();
         coll = remove(getResponseHandler().isLocal());
-        response = new MultiMapResponse(coll);
+        response = new MultiMapResponse(coll, getValueCollectionType(container));
     }
 
     public void afterRun() throws Exception {
@@ -57,7 +61,9 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
     }
 
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(new MultiMapResponse(null));
+        MultiMapContainer container = getOrCreateContainer();
+        MultiMapConfig.ValueCollectionType valueCollectionType = getValueCollectionType(container);
+        getResponseHandler().sendResponse(new MultiMapResponse(null, valueCollectionType));
     }
 
     public int getId() {

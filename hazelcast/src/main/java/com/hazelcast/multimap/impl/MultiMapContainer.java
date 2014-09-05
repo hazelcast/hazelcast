@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-public class MultiMapContainer {
+public class MultiMapContainer extends AbstractMultiMapContainerSupport {
 
     private static final AtomicLongFieldUpdater<MultiMapContainer> ID_GEN_UPDATER = AtomicLongFieldUpdater
             .newUpdater(MultiMapContainer.class, "idGen");
@@ -115,15 +115,9 @@ public class MultiMapContainer {
     public MultiMapWrapper getOrCreateMultiMapWrapper(Data dataKey) {
         MultiMapWrapper wrapper = multiMapWrappers.get(dataKey);
         if (wrapper == null) {
-            Collection<MultiMapRecord> coll;
-            if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
-                coll = new HashSet<MultiMapRecord>();
-            } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
-                coll = new LinkedList<MultiMapRecord>();
-            } else {
-                throw new IllegalArgumentException("No Matching CollectionProxyType!");
-            }
-            wrapper = new MultiMapWrapper(coll);
+            final Collection<MultiMapRecord> collection
+                    = createCollection(config.getValueCollectionType());
+            wrapper = new MultiMapWrapper(collection);
             multiMapWrappers.put(dataKey, wrapper);
         }
         return wrapper;
