@@ -88,7 +88,7 @@ Here is a sample configuration:
 </hazelcast>
 ```
 
-#### MapStoreFactory and MapLoaderLifecycleSupport Interface
+#### MapStoreFactory and MapLoaderLifecycleSupport Interfaces
 
 As you know, a configuration can be applied to more than one map using wildcards (Please see [Using Wildcard](#using-wildcard)), meaning the configuration is shared among the maps. But, `MapStore` does not know which entries to be stored when there is one configuration applied to multiple maps. To overcome this, Hazelcast provides `MapStoreFactory` interface.
 
