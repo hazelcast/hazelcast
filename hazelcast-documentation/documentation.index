@@ -46,7 +46,6 @@ src/DistributedComputing.md
 		src/ExecutionCancellation.md
 		src/ExecutionCallback.md
 	src/EntryProcessor.md
-	src/UserDefinedServices.md
 src/DistributedQuery.md
 	src/Query.md
 	src/MapReduce.md
@@ -55,6 +54,16 @@ src/DistributedQuery.md
 		src/MR-Architecture.md
 	src/Aggregators.md
 	src/ContinuousQuery.md
+src/UserDefinedServices.md
+		src/SPICreateClass.md
+		src/SPIEnableClass.md
+		src/SPIAddProperties.md
+		src/SPIStartService.md
+		src/SPIProxy.md
+		src/SPICreateContainer.md
+		src/SPIPartitionMigration.md
+		src/SPICreateBackups.md
+	src/SPIWaitNotifyService.md
 src/Transactions.md
 	src/J2EEIntegration.md
 		src/ResourceAdapterConfiguration.md
