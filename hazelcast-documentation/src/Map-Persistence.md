@@ -80,7 +80,10 @@ Here is a sample configuration:
       -->
       <write-delay-seconds>60</write-delay-seconds>
       <!--
-        Size of the entries for a batch write operation. Default value is 1.
+        Used to create batch chunks when writing map store.
+        In default mode all entries will be tried to persist in one go.
+        To create batch chunks, minimum meaningful value for write-batch-size
+        is 2. For values smaller than 2, it works as in default mode.
       -->
       <write-batch-size>1000</write-batch-size>
     </map-store>
