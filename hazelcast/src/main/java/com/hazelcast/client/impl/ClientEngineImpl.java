@@ -91,6 +91,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public static final String SERVICE_NAME = "hz:core:clientEngine";
     private static final int ENDPOINT_REMOVE_DELAY_MS = 10;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
+    private static final int THREADS_PER_CORE = 20;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -123,7 +124,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         int threadCount = node.getGroupProperties().CLIENT_ENGINE_THREAD_COUNT.getInteger();
         if (threadCount <= 0) {
-            threadCount = coreSize * 2;
+            threadCount = coreSize * THREADS_PER_CORE;
         }
 
         return executionService.register(ExecutionService.CLIENT_EXECUTOR,
@@ -221,8 +222,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return node.securityContext;
     }
 
-    public void bind(final ClientEndpoint ce) {
-        ClientEndpointImpl endpoint = (ClientEndpointImpl) ce;
+    public void bind(final ClientEndpoint endpoint) {
         final Connection conn = endpoint.getConnection();
         if (conn instanceof TcpIpConnection) {
             Address address = new Address(conn.getRemoteSocketAddress());
@@ -232,7 +232,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         sendClientEvent(endpoint);
     }
 
-    void sendClientEvent(ClientEndpointImpl endpoint) {
+    void sendClientEvent(ClientEndpoint endpoint) {
         if (!endpoint.isFirstConnection()) {
             final EventService eventService = nodeEngine.getEventService();
             final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
@@ -345,8 +345,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 if (request == null) {
                     handlePacketWithNullRequest();
                 } else if (request instanceof AuthenticationRequest) {
-                    endpoint = endpointManager.createEndpoint(conn);
-                    if (endpoint != null) {
+                    if (conn.live()) {
+                        endpoint = new ClientEndpointImpl(ClientEngineImpl.this, conn);
                         processRequest(endpoint, request);
                     } else {
                         handleEndpointNotCreatedConnectionNotAlive();
@@ -403,6 +403,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         }
 
         private void processRequest(ClientEndpointImpl endpoint, ClientRequest request) throws Exception {
+            if (!node.joined()) {
+                throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
+            }
+
             request.setEndpoint(endpoint);
             initService(request);
             request.setClientEngine(ClientEngineImpl.this);

@@ -53,7 +53,6 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
         if (!connection.live()) {
             String message = "We are being asked to read, but connection is not live so we won't";
             logger.finest(message);
-            systemLogService.logConnection(message);
             return;
         }
         try {
@@ -133,6 +132,20 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     public void register() {
         ioSelector.addTask(this);
+        ioSelector.wakeup();
+    }
+
+    void shutdown() {
+        ioSelector.addTask(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    socketChannel.closeInbound();
+                } catch (IOException e) {
+                    logger.finest("Error while closing inbound", e);
+                }
+            }
+        });
         ioSelector.wakeup();
     }
 }

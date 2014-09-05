@@ -120,16 +120,16 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     @Override
     public void dispatchEvent(Object event, Object listener) {
         TopicEvent topicEvent = (TopicEvent) event;
-        Object msgObject = nodeEngine.toObject(topicEvent.data);
         ClusterService clusterService = nodeEngine.getClusterService();
         MemberImpl member = clusterService.getMember(topicEvent.publisherAddress);
         if (member == null) {
             if (logger.isLoggable(Level.INFO)) {
-                logger.info("Dropping message " + msgObject + " from unknown address:" + topicEvent.publisherAddress);
+                logger.info("Dropping message from unknown address:" + topicEvent.publisherAddress);
             }
             return;
         }
-        Message message = new Message(topicEvent.name, msgObject, topicEvent.publishTime, member);
+        Message message = new DataAwareMessage(topicEvent.name, topicEvent.data, topicEvent.publishTime, member
+                , nodeEngine.getSerializationService());
         incrementReceivedMessages(topicEvent.name);
         MessageListener messageListener = (MessageListener) listener;
         messageListener.onMessage(message);

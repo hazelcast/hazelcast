@@ -17,15 +17,14 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
-import com.hazelcast.client.impl.client.RemoveAllListeners;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.client.RemoveAllListeners;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -53,7 +52,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
@@ -61,7 +59,6 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 public class ClientConnection implements Connection, Closeable {
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
-    private static final int HEART_ATTACK_CLEANUP_TIMEOUT = 1500;
 
     private volatile boolean live = true;
 
@@ -89,7 +86,7 @@ public class ClientConnection implements Connection, Closeable {
     private final ClientInvocationServiceImpl invocationService;
     private boolean readFromSocket = true;
     private final AtomicInteger packetCount = new AtomicInteger(0);
-    private volatile int failedHeartBeat;
+    private volatile boolean heartBeating = true;
 
     public ClientConnection(ClientConnectionManager connectionManager, IOSelector in, IOSelector out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper,
@@ -150,12 +147,6 @@ public class ClientConnection implements Connection, Closeable {
         if (!live) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
-            }
-            return false;
-        }
-        if (!isHeartBeating()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Connection is not heart-beating, won't write packet -> " + packet);
             }
             return false;
         }
@@ -381,38 +372,29 @@ public class ClientConnection implements Connection, Closeable {
     //failedHeartBeat is incremented in single thread.
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     void heartBeatingFailed() {
-        failedHeartBeat++;
-        if (failedHeartBeat == connectionManager.getMaxFailedHeartbeatCount()) {
-            connectionManager.onDetectingUnresponsiveConnection(this);
-            final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
-            final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
+        if (!heartBeating) {
+            return;
+        }
+        final RemoveAllListeners request = new RemoveAllListeners();
+        invocationService.send(request, ClientConnection.this);
+        heartBeating = false;
+        connectionManager.onDetectingUnresponsiveConnection(this);
+        final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
+        final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
 
-            while (iterator.hasNext()) {
-                final ClientCallFuture future = iterator.next();
-                iterator.remove();
-                future.notify(response);
-            }
+        while (iterator.hasNext()) {
+            final ClientCallFuture future = iterator.next();
+            iterator.remove();
+            future.notify(response);
         }
     }
 
     void heartBeatingSucceed() {
-        final int lastFailedHeartBeat = failedHeartBeat;
-        failedHeartBeat = 0;
-        if (lastFailedHeartBeat != 0) {
-            if (lastFailedHeartBeat >= connectionManager.getMaxFailedHeartbeatCount()) {
-                try {
-                    final RemoveAllListeners request = new RemoveAllListeners();
-                    final ICompletableFuture future = invocationService.send(request, ClientConnection.this);
-                    future.get(HEART_ATTACK_CLEANUP_TIMEOUT, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    logger.warning("Clearing listeners upon recovering from heart-attack failed", e);
-                }
-            }
-        }
+        heartBeating = true;
     }
 
     public boolean isHeartBeating() {
-        return failedHeartBeat < connectionManager.getMaxFailedHeartbeatCount();
+        return heartBeating;
     }
 
     @Override

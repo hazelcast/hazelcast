@@ -5,6 +5,10 @@
 
 ***NOTE:*** *This feature is supported for Hazelcast Enterprise 3.3 or higher.*
 
+### Sample Code
+
+Please see our sample application for [Tomcat Based Web Session Replication](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/tomcat-session-replication).
+
 #### Overview
 
 Session Replication with Hazelcast Enterprise is a container specific module where no application change is required to enable session replication for JEE Web Applications. 

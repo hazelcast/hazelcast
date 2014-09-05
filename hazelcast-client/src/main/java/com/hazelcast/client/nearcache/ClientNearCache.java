@@ -23,8 +23,8 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.client.MapAddEntryListenerRequest;
-import com.hazelcast.map.client.MapRemoveEntryListenerRequest;
+import com.hazelcast.map.impl.client.MapAddEntryListenerRequest;
+import com.hazelcast.map.impl.client.MapRemoveEntryListenerRequest;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableEntryEvent;
@@ -126,6 +126,11 @@ public class ClientNearCache<K> {
                             default:
                                 throw new IllegalArgumentException("Not a known event type " + event.getEventType());
                         }
+                    }
+
+                    @Override
+                    public void beforeListenerRegister() {
+                        cache.clear();
                     }
 
                     @Override

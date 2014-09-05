@@ -58,7 +58,7 @@ public class DistributedMapperClientMapReduceTest
         Hazelcast.shutdownAll();
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void testMapperReducer() throws Exception {
         Config config = buildConfig();
 
@@ -95,7 +95,7 @@ public class DistributedMapperClientMapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void testMapperReducerCollator() throws Exception {
         Config config = buildConfig();
 
@@ -131,7 +131,7 @@ public class DistributedMapperClientMapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void testAsyncMapperReducer() throws Exception {
         Config config = buildConfig();
 
@@ -188,7 +188,7 @@ public class DistributedMapperClientMapReduceTest
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void testAsyncMapperReducerCollator() throws Exception {
         Config config = buildConfig();
 
@@ -286,7 +286,7 @@ public class DistributedMapperClientMapReduceTest
     public static class TestReducer
             extends Reducer<Integer, Integer> {
 
-        private transient int sum;
+        private volatile int sum;
 
         @Override
         public void reduce(Integer value) {

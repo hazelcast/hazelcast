@@ -28,8 +28,10 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +51,7 @@ public class ClusterJoinTest {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        Hazelcast.shutdownAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
     @Test

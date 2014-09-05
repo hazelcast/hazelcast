@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -145,14 +146,30 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         connection.registerCallId(future);
         future.setConnection(connection);
         final SerializationService ss = client.getSerializationService();
-        final Data data = ss.toData(future.getRequest());
+        final ClientRequest request = future.getRequest();
+        final Data data = ss.toData(request);
         Packet packet = new Packet(data, partitionId, ss.getPortableContext());
-        if (!connection.write(packet)) {
-            final int callId = future.getRequest().getCallId();
+        if (!isAllowedToSendRequest(connection, request) || !connection.write(packet)) {
+            final int callId = request.getCallId();
             connection.deRegisterCallId(callId);
             connection.deRegisterEventHandler(callId);
             future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
         }
+    }
+
+    private boolean isAllowedToSendRequest(ClientConnection connection, ClientRequest request) {
+        if (!connection.isHeartBeating()) {
+            if (request instanceof ClientPingRequest) {
+                //ping request should be send even though heart is not beating
+                return true;
+            }
+
+            if (logger.isFinestEnabled()) {
+                logger.warning("Connection is not heart-beating, won't write request -> " + request);
+            }
+            return false;
+        }
+        return true;
     }
 
     public void shutdown() {
@@ -184,7 +201,7 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         }
 
         private void doRun() {
-            for (;;) {
+            while (true) {
                 Packet task;
                 try {
                     task = workQueue.take();

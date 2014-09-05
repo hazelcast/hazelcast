@@ -20,7 +20,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.util.concurrent.Callable;
 
-public final class CallableTaskOperation extends BaseCallableTaskOperation implements IdentifiedDataSerializable {
+public final class CallableTaskOperation extends BaseCallableTaskOperation
+        implements IdentifiedDataSerializable {
 
     public CallableTaskOperation() {
     }

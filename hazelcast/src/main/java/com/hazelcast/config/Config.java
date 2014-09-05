@@ -467,7 +467,7 @@ public class Config {
     public TopicConfig findTopicConfig(String name) {
         String baseName = getBaseName(name);
         TopicConfig config = lookupByPattern(topicConfigs, baseName);
-        if (config  != null) {
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getTopicConfig("default").getAsReadOnly();

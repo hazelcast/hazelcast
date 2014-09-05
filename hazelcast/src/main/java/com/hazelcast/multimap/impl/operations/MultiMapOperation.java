@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
@@ -31,6 +32,8 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.Collection;
+
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
 
 public abstract class MultiMapOperation extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
@@ -89,6 +92,14 @@ public abstract class MultiMapOperation extends Operation
             container = service.getOrCreateCollectionContainer(getPartitionId(), name);
         }
         return container;
+    }
+
+    public final MultiMapConfig.ValueCollectionType getValueCollectionType(MultiMapContainer container) {
+        checkNotNull(container, "Argument container should not be null");
+
+        MultiMapConfig config = container.getConfig();
+        return config.getValueCollectionType();
+
     }
 
     public final boolean isBinary() {

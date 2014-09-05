@@ -6,7 +6,6 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoader;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,7 +34,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     public void test1770() throws InterruptedException {
         Config config = new Config();
         config.getManagementCenterConfig().setEnabled(true);
-        config.getManagementCenterConfig().setUrl("http://www.google.com");
+        config.getManagementCenterConfig().setUrl("http://127.0.0.1:8090/mancenter");
 
         MapConfig mapConfig = new MapConfig("foo");
 

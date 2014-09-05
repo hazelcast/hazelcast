@@ -50,11 +50,10 @@ public class MapUpdateStressTest extends StressTestSupport {
 
     @After
     public void tearDown() {
-        super.tearDown();
-
         if (client != null) {
             client.shutdown();
         }
+        super.tearDown();
     }
 
     //@Test

@@ -21,6 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -35,7 +36,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientCountDownLatchTest {
+public class ClientCountDownLatchTest extends HazelcastTestSupport {
 
     static final String name = "test";
     static HazelcastInstance hz;
@@ -49,7 +50,7 @@ public class ClientCountDownLatchTest {
     }
 
     @After
-    public void stop(){
+    public void stop() {
         hz.shutdown();
         Hazelcast.shutdownAll();
     }
@@ -60,9 +61,9 @@ public class ClientCountDownLatchTest {
         assertFalse(l.trySetCount(10));
         assertEquals(20, l.getCount());
 
-        new Thread(){
+        new Thread() {
             public void run() {
-                for (int i=0; i<20; i++){
+                for (int i = 0; i < 20; i++) {
                     l.countDown();
                     try {
                         Thread.sleep(60);
@@ -78,9 +79,18 @@ public class ClientCountDownLatchTest {
         assertTrue(l.await(5, TimeUnit.SECONDS));
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testTrySetCount_whenArgumentNegative() {
-        ICountDownLatch latch = hz.getCountDownLatch("test");
+        ICountDownLatch latch = hz.getCountDownLatch(randomString());
         latch.trySetCount(-20);
+    }
+
+    @Test
+    public void testTrySetCount_whenCountIsNotZero() {
+        ICountDownLatch latch = hz.getCountDownLatch(randomString());
+        latch.trySetCount(10);
+        assertFalse(latch.trySetCount(20));
+        assertFalse(latch.trySetCount(0));
+        assertEquals(10, latch.getCount());
     }
 }

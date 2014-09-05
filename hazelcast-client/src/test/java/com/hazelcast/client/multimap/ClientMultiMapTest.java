@@ -145,7 +145,7 @@ public class ClientMultiMapTest {
         final MultiMap mm = client.getMultiMap(randomString());
         Collection coll = mm.get("NOT_THERE");
 
-        assertEquals(Collections.EMPTY_LIST, coll);
+        assertEquals(Collections.EMPTY_SET, coll);
     }
 
     @Test
@@ -170,7 +170,7 @@ public class ClientMultiMapTest {
         final MultiMap mm = client.getMultiMap(randomString());
         Collection coll = mm.remove("NOT_THERE");
 
-        assertEquals(Collections.EMPTY_LIST, coll);
+        assertEquals(Collections.EMPTY_SET, coll);
     }
 
     @Test

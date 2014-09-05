@@ -16,7 +16,7 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.map.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

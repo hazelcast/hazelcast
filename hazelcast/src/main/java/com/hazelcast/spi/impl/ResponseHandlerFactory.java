@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
@@ -33,25 +32,28 @@ public final class ResponseHandlerFactory {
     private ResponseHandlerFactory() {
     }
 
-    public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
-        op.setResponseHandler(createRemoteResponseHandler(nodeEngine, op));
+    public static void setRemoteResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
+        remotePropagatable.setResponseHandler(createRemoteResponseHandler(nodeEngine, remotePropagatable));
     }
 
-    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
-        if (op.getCallId() == 0) {
-            if (op.returnsResponse()) {
-                throw new HazelcastException("Op: " + op.getClass().getName() + " can not return response without call-id!");
+    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
+        if (remotePropagatable.getCallId() == 0) {
+            if (remotePropagatable.returnsResponse()) {
+                throw new HazelcastException(
+                        "Op: " + remotePropagatable.getClass().getName() + " can not return response without call-id!");
             }
             return NO_RESPONSE_HANDLER;
         }
-        return new RemoteInvocationResponseHandler(nodeEngine, op);
+        return new RemoteInvocationResponseHandler(nodeEngine, remotePropagatable);
     }
 
     public static ResponseHandler createEmptyResponseHandler() {
         return NO_RESPONSE_HANDLER;
     }
 
-    private static class NoResponseHandler implements ResponseHandler {
+    private static class NoResponseHandler
+            implements ResponseHandler {
+
         @Override
         public void sendResponse(final Object obj) {
         }
@@ -90,18 +92,18 @@ public final class ResponseHandlerFactory {
     private static final class RemoteInvocationResponseHandler implements ResponseHandler {
 
         private final NodeEngine nodeEngine;
-        private final Operation op;
+        private final RemotePropagatable remotePropagatable;
         private final AtomicBoolean sent = new AtomicBoolean(false);
 
-        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Operation op) {
+        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
             this.nodeEngine = nodeEngine;
-            this.op = op;
+            this.remotePropagatable = remotePropagatable;
         }
 
         @Override
         public void sendResponse(Object obj) {
-            long callId = op.getCallId();
-            Connection conn = op.getConnection();
+            long callId = remotePropagatable.getCallId();
+            Connection conn = remotePropagatable.getConnection();
             if (!sent.compareAndSet(false, true) && !(obj instanceof Throwable)) {
                 throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
                         + " to " + conn.getEndPoint() + ", current-response: " + obj);
@@ -109,12 +111,12 @@ public final class ResponseHandlerFactory {
 
             NormalResponse response;
             if (!(obj instanceof NormalResponse)) {
-                response = new NormalResponse(obj, op.getCallId(), 0, op.isUrgent());
+                response = new NormalResponse(obj, remotePropagatable.getCallId(), 0, remotePropagatable.isUrgent());
             } else {
                 response = (NormalResponse) obj;
             }
 
-            nodeEngine.getOperationService().send(response, op.getCallerAddress());
+            nodeEngine.getOperationService().send(response, remotePropagatable.getCallerAddress());
         }
 
         @Override

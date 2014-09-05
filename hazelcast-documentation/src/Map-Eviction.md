@@ -48,6 +48,7 @@ Let's describe each property.
 
 #### Sample Eviction Configuration
 
+
 ```xml
 <map name="documents">
   <max-size policy="PER_NODE">10000</max-size>
@@ -70,4 +71,47 @@ But, you may particularly want to evict some specific map entries.  In this case
 `myMap.put( "1", "John", 50, TimeUnit.SECONDS )`
 
 So, the map entry with the key "1" will be evicted in 50 seconds after it is put into `myMap`.
+
+
+#### Evicting All Entries
+
+The method `evictAll()` is developed for evicting all keys from the map except the locked ones. If a MapStore is defined for the map, `deleteAll` is not called by `evictAll`. If you want to call the method `deleteAll`, use `clear()`. 
+
+A sample is given below.
+
+```java
+public class EvictAll {
+
+    public static void main(String[] args) {
+        final int numberOfKeysToLock = 4;
+        final int numberOfEntriesToAdd = 1000;
+
+        HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
+
+        IMap<Integer, Integer> map = node1.getMap(EvictAll.class.getCanonicalName());
+        for (int i = 0; i < numberOfEntriesToAdd; i++) {
+            map.put(i, i);
+        }
+
+        for (int i = 0; i < numberOfKeysToLock; i++) {
+            map.lock(i);
+        }
+
+        // should keep locked keys and evict all others.
+        map.evictAll();
+
+        System.out.printf("# After calling evictAll...\n");
+        System.out.printf("# Expected map size\t: %d\n", numberOfKeysToLock);
+        System.out.printf("# Actual map size\t: %d\n", map.size());
+
+    }
+}
+```
+
+
+***NOTE:*** *Only EVICT_ALL event is fired for any registered listeners.*
+     
+
+  
 

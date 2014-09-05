@@ -17,10 +17,6 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.impl.client.AuthenticationRequest;
-import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
@@ -32,8 +28,11 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
+import com.hazelcast.client.impl.client.AuthenticationRequest;
+import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
@@ -44,10 +43,6 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipAdapter;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -76,24 +71,20 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_TIMEOUT_DEFAULT;
-import static com.hazelcast.client.config.ClientProperties.PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT;
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 
-public class ClientConnectionManagerImpl extends MembershipAdapter implements ClientConnectionManager, MembershipListener {
+public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
 
     private static final int TIMEOUT_PLUS = 2000;
@@ -110,7 +101,6 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private final int connectionTimeout;
     private final int heartBeatInterval;
     private final int heartBeatTimeout;
-    private final int maxFailedHeartbeatCount;
 
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
@@ -153,10 +143,6 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
         int interval = clientProperties.getHeartbeatInterval().getInteger();
         heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
-
-        int failedHeartbeat = clientProperties.getMaxFailedHeartbeatCount().getInteger();
-        maxFailedHeartbeatCount = failedHeartbeat > 0 ? failedHeartbeat
-                : Integer.parseInt(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
 
         smartRouting = networkConfig.isSmartRouting();
         executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
@@ -265,13 +251,6 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         inSelector.shutdown();
         outSelector.shutdown();
         connectionLockMap.clear();
-        final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
-        clusterService.addMembershipListenerWithoutInit(this);
-    }
-
-    @Override
-    public int getMaxFailedHeartbeatCount() {
-        return maxFailedHeartbeatCount;
     }
 
     @Override
@@ -582,49 +561,26 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
     class HeartBeat implements Runnable {
 
-        long begin;
-
         public void run() {
             if (!live) {
                 return;
             }
-            begin = Clock.currentTimeMillis();
-            final Map<ClientConnection, Future> futureMap = new HashMap<ClientConnection, Future>();
+            final long now = Clock.currentTimeMillis();
             for (ClientConnection connection : connections.values()) {
-                if (begin - connection.lastReadTime() > heartBeatTimeout) {
+                if (now - connection.lastReadTime() > heartBeatTimeout) {
+                    connection.heartBeatingFailed();
+                }
+                if (now - connection.lastReadTime() > heartBeatInterval) {
                     final ClientPingRequest request = new ClientPingRequest();
-                    final ICompletableFuture future = invocationService.send(request, connection);
-                    futureMap.put(connection, future);
+                    invocationService.send(request, connection);
                 } else {
                     connection.heartBeatingSucceed();
                 }
             }
-            for (Map.Entry<ClientConnection, Future> entry : futureMap.entrySet()) {
-                final Future future = entry.getValue();
-                final ClientConnection connection = entry.getKey();
-                try {
-                    future.get(getRemainingTimeout(), TimeUnit.MILLISECONDS);
-                    connection.heartBeatingSucceed();
-                } catch (Exception ignored) {
-                    connection.heartBeatingFailed();
-                }
-            }
-        }
-
-        private long getRemainingTimeout() {
-            long timeout = heartBeatTimeout - Clock.currentTimeMillis() + begin;
-            return timeout < 0 ? 0 : timeout;
         }
     }
 
-    @Override
-    public void memberRemoved(final MembershipEvent event) {
-        final MemberImpl member = (MemberImpl) event.getMember();
-        final Address address = member.getAddress();
-        if (address == null) {
-            LOGGER.warning("Member's address is null " + member);
-            return;
-        }
+    public void removeEndpoint(Address address) {
         final ClientConnection clientConnection = connections.get(address);
         if (clientConnection != null) {
             clientConnection.close();

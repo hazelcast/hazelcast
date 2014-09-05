@@ -59,8 +59,8 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
     private final String name;
 
-    public ClientQueueProxy(String instanceName, String serviceName, String name) {
-        super(instanceName, serviceName, name);
+    public ClientQueueProxy(String serviceName, String name) {
+        super(serviceName, name);
         this.name = name;
     }
 
@@ -76,6 +76,10 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
                 } else {
                     listener.itemRemoved(itemEvent);
                 }
+            }
+
+            @Override
+            public void beforeListenerRegister() {
             }
 
             @Override

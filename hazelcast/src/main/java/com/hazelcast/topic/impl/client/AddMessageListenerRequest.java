@@ -24,9 +24,9 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.TopicPermission;
+import com.hazelcast.topic.impl.DataAwareMessage;
 import com.hazelcast.topic.impl.TopicPortableHook;
 import com.hazelcast.topic.impl.TopicService;
 
@@ -48,7 +48,7 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
     public String call() throws Exception {
         TopicService service = getService();
         ClientEndpoint endpoint = getEndpoint();
-        MessageListener listener = new MessageListenerImpl(endpoint, serializationService, getCallId());
+        MessageListener listener = new MessageListenerImpl(endpoint, getCallId());
         String registrationId = service.addMessageListener(name, listener);
         endpoint.setListenerRegistration(TopicService.SERVICE_NAME, name, registrationId);
         return registrationId;
@@ -86,12 +86,10 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
 
     private static class MessageListenerImpl implements MessageListener {
         private final ClientEndpoint endpoint;
-        private final SerializationService serializationService;
         private final int callId;
 
-        public MessageListenerImpl(ClientEndpoint endpoint, SerializationService serializationService, int callId) {
+        public MessageListenerImpl(ClientEndpoint endpoint, int callId) {
             this.endpoint = endpoint;
-            this.serializationService = serializationService;
             this.callId = callId;
         }
 
@@ -101,7 +99,13 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
                 return;
             }
 
-            Data messageData = serializationService.toData(message.getMessageObject());
+            if (!(message instanceof DataAwareMessage)) {
+                throw new IllegalArgumentException("Expecting: DataAwareMessage, Found: "
+                        + message.getClass().getSimpleName());
+            }
+
+            DataAwareMessage dataAwareMessage = (DataAwareMessage) message;
+            Data messageData = dataAwareMessage.getMessageData();
             String publisherUuid = message.getPublishingMember().getUuid();
             PortableMessage portableMessage = new PortableMessage(messageData, message.getPublishTime(), publisherUuid);
             endpoint.sendEvent(portableMessage, callId);

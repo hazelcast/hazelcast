@@ -24,7 +24,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.EventData;
+import com.hazelcast.map.impl.EventData;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
@@ -255,7 +255,9 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
     }
 
     public void rollbackMigration(PartitionMigrationEvent event) {
-        clearMigrationData(event.getPartitionId());
+        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
+            clearMigrationData(event.getPartitionId());
+        }
     }
 
     public void clearPartitionReplica(int partitionId) {

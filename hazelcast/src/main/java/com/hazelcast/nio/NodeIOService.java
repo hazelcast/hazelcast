@@ -25,7 +25,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -59,11 +58,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public SystemLogService getSystemLogService() {
-        return node.getSystemLogService();
-    }
-
-    @Override
     public void onOutOfMemory(OutOfMemoryError oom) {
         OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
     }
@@ -75,7 +69,6 @@ public class NodeIOService implements IOService {
 
     @Override
     public void onFatalError(Exception e) {
-        getSystemLogService().logConnection(e.getClass().getName() + ": " + e.getMessage());
         new Thread(node.threadGroup, node.getThreadNamePrefix("io.error.shutdown")) {
             public void run() {
                 node.shutdown(false);
@@ -153,7 +146,7 @@ public class NodeIOService implements IOService {
     @Override
     public void onFailedConnection(Address address) {
         if (!node.joined()) {
-            node.failedConnection(address);
+            node.getJoiner().blacklist(address);
         }
     }
 

@@ -21,7 +21,9 @@ import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
@@ -146,8 +148,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             writeBuffer();
         } catch (Throwable t) {
             logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
-            connection.getSystemLogService().logConnection("Fatal Error at WriteHandler for endPoint "
-                    + "[" + connection.getEndPoint() + "]: " + t.getMessage());
         } finally {
             ready = false;
             registerWrite();
@@ -195,9 +195,28 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         registerOp(ioSelector.getSelector(), SelectionKey.OP_WRITE);
     }
 
-    @Override
     public void shutdown() {
         while (poll() != null) {
+        }
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        ioSelector.addTask(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    socketChannel.closeOutbound();
+                } catch (IOException e) {
+                    logger.finest("Error while closing outbound", e);
+                } finally {
+                    latch.countDown();
+                }
+            }
+        });
+        ioSelector.wakeup();
+        try {
+            latch.await(TIMEOUT, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            EmptyStatement.ignore(e);
         }
     }
 

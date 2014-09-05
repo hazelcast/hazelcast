@@ -1,11 +1,11 @@
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
@@ -16,6 +16,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.util.executor.StripedRunnable;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -51,6 +52,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     public String listen(ClientRequest request, Object key, EventHandler handler) {
         final Future future;
         try {
+            handler.beforeListenerRegister();
             if (key == null) {
                 future = invocationService.invokeOnRandomTarget(request, handler);
             } else {
@@ -126,7 +128,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
         eventExecutor.shutdown();
     }
 
-    private final class ClientEventProcessor implements Runnable {
+    private final class ClientEventProcessor implements StripedRunnable {
         final Packet packet;
 
         private ClientEventProcessor(Packet packet) {
@@ -150,6 +152,11 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
                 return;
             }
             eventHandler.handle(eventObject);
+        }
+
+        @Override
+        public int getKey() {
+            return packet.getPartitionId();
         }
     }
 }

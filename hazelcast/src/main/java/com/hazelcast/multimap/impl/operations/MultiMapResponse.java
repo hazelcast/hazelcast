@@ -16,15 +16,18 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
+
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+
+import static com.hazelcast.multimap.impl.AbstractMultiMapContainerSupport.createCollection;
+import static com.hazelcast.multimap.impl.AbstractMultiMapContainerSupport.emptyCollection;
 
 public class MultiMapResponse implements DataSerializable {
 
@@ -34,11 +37,16 @@ public class MultiMapResponse implements DataSerializable {
 
     private long txVersion = -1;
 
+    private MultiMapConfig.ValueCollectionType collectionType
+            = MultiMapConfig.DEFAULT_VALUE_COLLECTION_TYPE;
+
     public MultiMapResponse() {
     }
 
-    public MultiMapResponse(Collection collection) {
+    public MultiMapResponse(Collection collection,
+                            MultiMapConfig.ValueCollectionType collectionType) {
         this.collection = collection;
+        this.collectionType = collectionType;
     }
 
     public long getNextRecordId() {
@@ -60,34 +68,37 @@ public class MultiMapResponse implements DataSerializable {
     }
 
     public Collection getCollection() {
-        return collection;
+        return collection == null ? emptyCollection(collectionType) : collection;
     }
 
     public Collection getObjectCollection(NodeEngine nodeEngine) {
         if (collection == null) {
-            return Collections.emptyList();
+            return emptyCollection(collectionType);
         }
-        Collection coll = new ArrayList(collection.size());
+        final Collection newCollection = createCollection(collectionType, collection.size());
         for (Object obj : collection) {
             MultiMapRecord record = nodeEngine.toObject(obj);
-            coll.add(nodeEngine.toObject(record.getObject()));
+            newCollection.add(nodeEngine.toObject(record.getObject()));
         }
-        return coll;
+        return newCollection;
     }
 
     public Collection<MultiMapRecord> getRecordCollection(NodeEngine nodeEngine) {
         if (collection == null) {
-            return Collections.emptyList();
+            return emptyCollection(collectionType);
         }
-        Collection<MultiMapRecord> coll = new ArrayList(collection.size());
+        final Collection<MultiMapRecord> newCollection
+                = createCollection(collectionType, collection.size());
         for (Object obj : collection) {
             MultiMapRecord record = nodeEngine.toObject(obj);
-            coll.add(record);
+            newCollection.add(record);
         }
-        return coll;
+        return newCollection;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(collectionType.name());
         out.writeLong(nextRecordId);
         out.writeLong(txVersion);
         if (collection == null) {
@@ -100,17 +111,20 @@ public class MultiMapResponse implements DataSerializable {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
+        String collectionTypeName = in.readUTF();
+        collectionType = MultiMapConfig.ValueCollectionType.valueOf(collectionTypeName);
         nextRecordId = in.readLong();
         txVersion = in.readLong();
         int size = in.readInt();
         if (size == -1) {
+            collection = emptyCollection(collectionType);
             return;
         }
-        collection = new ArrayList(size);
+        collection = createCollection(collectionType, size);
         for (int i = 0; i < size; i++) {
             collection.add(in.readObject());
         }
     }
-
 }

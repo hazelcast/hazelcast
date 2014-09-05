@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.IOUtil;
@@ -61,12 +62,16 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
             @Override
             public void onEntryEvent(EntryEvent event) {
                 if (endpoint.live()) {
-                    Data key = serializationService.toData(event.getKey());
-                    Data value = serializationService.toData(event.getValue());
-                    Data oldValue = serializationService.toData(event.getOldValue());
+                    if (!(event instanceof DataAwareEntryEvent)) {
+                        throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
+                                + event.getClass().getSimpleName());
+                    }
+                    DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+                    Data key = dataAwareEntryEvent.getKeyData();
+                    Data value = dataAwareEntryEvent.getNewValueData();
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, type, uuid);
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, null, type, uuid);
                     endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }

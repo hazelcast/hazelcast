@@ -41,4 +41,6 @@ public interface ClientEndpoint {
     void authenticated(ClientPrincipal principal);
 
     void setDistributedObjectListener(String registrationId);
+
+    ClientPrincipal getPrincipal();
 }

@@ -159,6 +159,9 @@ class ClusterListenerThread extends Thread {
         }
         for (MemberImpl member : prevMembers.values()) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
+            if (clusterService.getMember(member.getAddress()) == null) {
+                connectionManager.removeEndpoint(member.getAddress());
+            }
         }
         for (MembershipEvent event : events) {
             clusterService.fireMembershipEvent(event);
@@ -180,7 +183,7 @@ class ClusterListenerThread extends Thread {
             } else if (event.getEventType() == ClientMembershipEvent.MEMBER_REMOVED) {
                 members.remove(member);
                 membersUpdated = true;
-//                    getConnectionManager().removeConnectionPool(member.getAddress()); //TODO
+                connectionManager.removeEndpoint(member.getAddress());
             } else if (event.getEventType() == ClientMembershipEvent.MEMBER_ATTRIBUTE_CHANGED) {
                 MemberAttributeChange memberAttributeChange = event.getMemberAttributeChange();
                 Map<Address, MemberImpl> memberMap = clusterService.getMembersRef();
