@@ -31,6 +31,8 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.transaction.TransactionException;
+
 import java.io.IOException;
 
 /**
@@ -58,14 +60,22 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     @Override
     public boolean shouldWait() {
-        return !recordStore.canAcquireLock(dataKey, ownerUuid, getThreadId());
+        return false;
+    }
+
+
+    @Override
+    public void innerBeforeRun() {
+        if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
+            throw new TransactionException("Cannot acquire lock uuid: " + ownerUuid + ", threadId: " + threadId);
+        }
     }
 
     @Override
     public void run() {
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final EventService eventService = getNodeEngine().getEventService();
-        recordStore.unlock(dataKey, ownerUuid, getThreadId());
+        recordStore.unlock(dataKey, ownerUuid, threadId);
         Record record = recordStore.getRecord(dataKey);
         if (record == null || version == record.getVersion()) {
             if (eventService.hasEventRegistration(MapService.SERVICE_NAME, getName())) {
