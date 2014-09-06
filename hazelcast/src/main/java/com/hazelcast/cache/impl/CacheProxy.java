@@ -69,6 +69,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -93,7 +94,6 @@ public class CacheProxy<K, V>
     private final String name;
     private final NodeEngine nodeEngine;
     private final SerializationService serializationService;
-    private boolean isClosed;
     private CacheDistributedObject delegate;
     private HazelcastCacheManager cacheManager;
     private CacheLoader<K, V> cacheLoader;
@@ -102,6 +102,7 @@ public class CacheProxy<K, V>
     private ConcurrentHashMap<Integer, CountDownLatch> syncLocks;
     private AtomicInteger completionIdCounter = new AtomicInteger();
     private String completionRegistrationId;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     protected CacheProxy(CacheConfig cacheConfig, CacheDistributedObject delegate, HazelcastServerCacheManager cacheManager) {
         this.name = cacheConfig.getName();
@@ -846,6 +847,10 @@ public class CacheProxy<K, V>
 
     @Override
     public void close() {
+        if(!closed.compareAndSet(false,true)){
+            return;
+        }
+
         //TODO CHECK this is valid
 /*
         must close and release all resources being coordinated on behalf of the Cache by the
@@ -853,7 +858,6 @@ public class CacheProxy<K, V>
                 CacheWriter, registered CacheEntryListeners and ExpiryPolicy instances that
         implement the java.io.Closeable interface,
 */
-        isClosed = true;
         delegate.destroy();
 
         //close the configured CacheLoader
@@ -866,12 +870,11 @@ public class CacheProxy<K, V>
             }
         }
         deregisterCompletionListener();
-
     }
 
     @Override
     public boolean isClosed() {
-        return isClosed;
+        return closed.get();
     }
 
     @Override
