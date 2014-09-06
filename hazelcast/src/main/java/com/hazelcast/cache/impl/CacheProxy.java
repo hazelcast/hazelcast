@@ -847,7 +847,7 @@ public class CacheProxy<K, V>
 
     @Override
     public void close() {
-        if(!closed.compareAndSet(false,true)){
+        if (!closed.compareAndSet(false, true)) {
             return;
         }
 
