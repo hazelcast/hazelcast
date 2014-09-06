@@ -1,7 +1,7 @@
 package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.KeyBasedClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.SignalOperation;
@@ -46,7 +46,7 @@ public class SignalRequest extends KeyBasedClientRequest implements Portable, Se
 
     @Override
     protected Operation prepareOperation() {
-        final Data key = getClientEngine().toData(name);
+        final Data key = serializationService.toData(name);
         return new SignalOperation(namespace, key, threadId, conditionId, all);
     }
 

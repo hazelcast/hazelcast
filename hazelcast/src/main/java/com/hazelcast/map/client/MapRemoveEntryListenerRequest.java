@@ -16,12 +16,11 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-
 import java.security.Permission;
 
 public class MapRemoveEntryListenerRequest extends BaseClientRemoveListenerRequest {
@@ -36,7 +35,7 @@ public class MapRemoveEntryListenerRequest extends BaseClientRemoveListenerReque
 
     public Object call() throws Exception {
         final MapService service = getService();
-        return service.removeEventListener(name, registrationId);
+        return service.getMapServiceContext().removeEventListener(name, registrationId);
     }
 
     public String getServiceName() {
@@ -54,5 +53,10 @@ public class MapRemoveEntryListenerRequest extends BaseClientRemoveListenerReque
     @Override
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "removeEntryListener";
     }
 }

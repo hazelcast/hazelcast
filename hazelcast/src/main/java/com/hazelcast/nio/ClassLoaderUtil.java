@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @author mdogan 4/12/12
+ * Utility class to deal with classloaders.
  */
 public final class ClassLoaderUtil {
 
@@ -36,7 +36,7 @@ public final class ClassLoaderUtil {
     public static final String HAZELCAST_ARRAY = "[L" + HAZELCAST_BASE_PACKAGE;
 
     private static final Map<String, Class> PRIMITIVE_CLASSES;
-    private static final int MAX_PRIM_CLASSNAME_LENGTH = 7; // boolean.class.getName().length();
+    private static final int MAX_PRIM_CLASSNAME_LENGTH = 7;
 
     private static final ConstructorCache CONSTRUCTOR_CACHE = new ConstructorCache();
 
@@ -54,8 +54,10 @@ public final class ClassLoaderUtil {
         PRIMITIVE_CLASSES = Collections.unmodifiableMap(primitives);
     }
 
-    public static <T> T newInstance(ClassLoader classLoader, final String className)
-            throws Exception {
+    private ClassLoaderUtil() {
+    }
+
+    public static <T> T newInstance(ClassLoader classLoader, final String className) throws Exception {
         classLoader = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
         Constructor<T> constructor = CONSTRUCTOR_CACHE.get(classLoader, className);
         if (constructor != null) {
@@ -65,8 +67,7 @@ public final class ClassLoaderUtil {
         return (T) newInstance(klass, classLoader, className);
     }
 
-    public static <T> T newInstance(Class<T> klass, ClassLoader classLoader, String className)
-            throws Exception {
+    public static <T> T newInstance(Class<T> klass, ClassLoader classLoader, String className) throws Exception {
         final Constructor<T> constructor = klass.getDeclaredConstructor();
         if (!constructor.isAccessible()) {
             constructor.setAccessible(true);
@@ -125,11 +126,12 @@ public final class ClassLoaderUtil {
     }
 
     public static boolean isInternalType(Class type) {
-        return type.getClassLoader() == ClassLoaderUtil.class.getClassLoader() && type.getName()
-                .startsWith(HAZELCAST_BASE_PACKAGE);
+        String name = type.getName();
+        ClassLoader classLoader = ClassLoaderUtil.class.getClassLoader();
+        return type.getClassLoader() == classLoader && name.startsWith(HAZELCAST_BASE_PACKAGE);
     }
 
-    private static class ConstructorCache {
+    private static final class ConstructorCache {
         private final ConcurrentMap<ClassLoader, ConcurrentMap<String, WeakReference<Constructor>>> cache;
 
         private ConstructorCache() {
@@ -153,6 +155,7 @@ public final class ClassLoaderUtil {
         }
 
         public <T> Constructor<T> get(ClassLoader classLoader, String className) {
+            ValidationUtil.isNotNull(className, "className");
             ConcurrentMap<String, WeakReference<Constructor>> innerCache = cache.get(classLoader);
             if (innerCache == null) {
                 return null;
@@ -164,8 +167,5 @@ public final class ClassLoaderUtil {
             }
             return (Constructor<T>) constructor;
         }
-    }
-
-    private ClassLoaderUtil() {
     }
 }

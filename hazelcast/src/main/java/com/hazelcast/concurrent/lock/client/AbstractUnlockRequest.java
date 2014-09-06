@@ -16,8 +16,8 @@
 
 package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.KeyBasedClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -53,7 +53,7 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
     }
 
     protected String getName() {
-        return (String) getClientEngine().toObject(key);
+        return serializationService.toObject(key);
     }
 
     @Override
@@ -88,5 +88,23 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return serializationService.toObject(key);
+    }
+
+    @Override
+    public String getMethodName() {
+        if (force) {
+            return "forceUnlock";
+        }
+        return "unlock";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
     }
 }

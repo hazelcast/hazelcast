@@ -16,9 +16,13 @@
 
 package com.hazelcast.config;
 
+
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Contains configuration for attribute of member.
+ */
 public class MemberAttributeConfig {
 
     private final Map<String, Object> attributes = new HashMap<String, Object>();
@@ -32,6 +36,13 @@ public class MemberAttributeConfig {
 
     public Map<String, Object> getAttributes() {
         return attributes;
+    }
+
+    public void setAttributes(Map<String, Object> attributes) {
+        this.attributes.clear();
+        if (attributes != null) {
+            this.attributes.putAll(attributes);
+        }
     }
 
     public String getStringAttribute(String key) {

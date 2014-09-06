@@ -19,7 +19,7 @@ package com.hazelcast.spi.exception;
 import java.io.IOException;
 
 /**
- * @author mdogan 1/18/13
+ * A {@link java.io.IOException} indicating that there was a IO failure, but it can be retried.
  */
 public class RetryableIOException extends IOException implements RetryableException {
 

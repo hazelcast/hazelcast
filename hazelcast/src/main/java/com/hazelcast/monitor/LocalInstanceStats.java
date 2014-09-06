@@ -16,9 +16,10 @@
 
 package com.hazelcast.monitor;
 
+import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.nio.serialization.DataSerializable;
 
-public interface LocalInstanceStats extends DataSerializable {
+public interface LocalInstanceStats extends DataSerializable, JsonSerializable {
 
     long getCreationTime();
 

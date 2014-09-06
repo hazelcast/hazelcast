@@ -19,10 +19,10 @@ package com.hazelcast.security.permission;
 
 public class QueuePermission extends InstancePermission {
 
-    private static final int ADD = 0x4;
-    private static final int READ = 0x8;
-    private static final int REMOVE = 0x16;
-    private static final int LISTEN = 0x32;
+    private static final int ADD = 4;
+    private static final int READ = 8;
+    private static final int REMOVE = 16;
+    private static final int LISTEN = 32;
     private static final int ALL = ADD | REMOVE | READ | CREATE | DESTROY | LISTEN;
 
     public QueuePermission(String name, String... actions) {

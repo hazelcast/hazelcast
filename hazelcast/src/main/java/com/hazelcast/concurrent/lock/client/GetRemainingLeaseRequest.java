@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
+import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.GetRemainingLeaseTimeOperation;
@@ -47,7 +47,7 @@ public final class GetRemainingLeaseRequest extends KeyBasedClientRequest
 
     @Override
     protected Operation prepareOperation() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = serializationService.toObject(key);
         return new GetRemainingLeaseTimeOperation(new InternalLockNamespace(name), key);
     }
 
@@ -83,7 +83,17 @@ public final class GetRemainingLeaseRequest extends KeyBasedClientRequest
     }
 
     public Permission getRequiredPermission() {
-        String name = (String) getClientEngine().toObject(key);
+        String name = serializationService.toObject(key);
         return new LockPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return serializationService.toObject(key);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "getRemainingLeaseTime";
     }
 }

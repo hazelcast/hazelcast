@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.AuthenticationException;
 
 import java.io.IOException;
 

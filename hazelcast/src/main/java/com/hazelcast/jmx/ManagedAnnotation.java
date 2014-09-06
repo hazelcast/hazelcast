@@ -19,8 +19,12 @@ package com.hazelcast.jmx;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+/**
+ * Annotation for management bean attributes.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ManagedAnnotation {
     String value();
+
     boolean operation() default false;
 }

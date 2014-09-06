@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -49,6 +50,11 @@ public class UnlockBackupOperation extends BaseLockOperation implements BackupOp
             response = lockStore.unlock(key, originalCallerUuid, threadId);
         }
         lockStore.pollExpiredAwaitOp(key);
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.UNLOCK_BACKUP;
     }
 
     @Override

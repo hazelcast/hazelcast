@@ -21,26 +21,63 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 /**
- * @author mdogan 12/28/12
+ * Provides serialization methods for arrays of primitive types
  */
 public interface ObjectDataInput extends DataInput {
 
+    /**
+     * @return the char array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
     char[] readCharArray() throws IOException;
 
+    /**
+     * @return int array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
     int[] readIntArray() throws IOException;
 
+    /**
+     * @return long array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
     long[] readLongArray() throws IOException;
 
+    /**
+     * @return double array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
     double[] readDoubleArray() throws IOException;
 
+    /**
+     * @return float array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
     float[] readFloatArray() throws IOException;
 
+    /**
+     * @return short array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
     short[] readShortArray() throws IOException;
 
+    /**
+     * @param <T> type of the object in array to be read
+     * @return object array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
     <T> T readObject() throws IOException;
 
+    /**
+     * Returns class loader that internally used for objects
+     *
+     * @return classLoader
+     */
     ClassLoader getClassLoader();
 
+    /**
+     * @return ByteOrder BIG_ENDIAN or LITTLE_ENDIAN
+     */
     ByteOrder getByteOrder();
 
 }

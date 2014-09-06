@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @author mdogan 1/15/13
+ * Abstract implementation of the WaitNotifyKey.
  */
 public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
 
@@ -29,23 +29,33 @@ public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
         this.objectName = objectName;
     }
 
+    @Override
     public final String getServiceName() {
         return service;
     }
 
+    @Override
     public String getObjectName() {
         return objectName;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         AbstractWaitNotifyKey that = (AbstractWaitNotifyKey) o;
 
-        if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) return false;
-        if (service != null ? !service.equals(that.service) : that.service != null) return false;
+        if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) {
+            return false;
+        }
+        if (service != null ? !service.equals(that.service) : that.service != null) {
+            return false;
+        }
 
         return true;
     }

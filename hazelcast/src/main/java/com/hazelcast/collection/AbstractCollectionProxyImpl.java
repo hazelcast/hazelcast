@@ -22,17 +22,26 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Future;
 
-/**
- * @ali 9/4/13
- */
-public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> extends AbstractDistributedObject<S> implements InitializingObject {
+public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> extends AbstractDistributedObject<S>
+        implements InitializingObject {
 
     protected final String name;
     protected final int partitionId;
@@ -96,7 +105,9 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     public boolean isEmpty() {
-        return size() == 0;
+        final CollectionIsEmptyOperation operation = new CollectionIsEmptyOperation(name);
+        final Boolean result = invoke(operation);
+        return result;
     }
 
     public boolean contains(Object o) {
@@ -142,7 +153,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         return compareAndRemove(false, c);
     }
 
-    private boolean compareAndRemove(boolean retain, Collection<?> c){
+    private boolean compareAndRemove(boolean retain, Collection<?> c) {
         throwExceptionIfNull(c);
         Set<Data> valueSet = new HashSet<Data>(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
@@ -161,7 +172,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     public Iterator<E> iterator() {
-        return getAll().iterator();
+        return Collections.unmodifiableCollection(getAll()).iterator();
     }
 
     public Object[] toArray() {
@@ -172,7 +183,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         return getAll().toArray(a);
     }
 
-    private Collection<E> getAll(){
+    private Collection<E> getAll() {
         final CollectionGetAllOperation operation = new CollectionGetAllOperation(name);
         final SerializableCollection result = invoke(operation);
         final Collection<Data> collection = result.getCollection();
@@ -186,7 +197,8 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
 
     public String addItemListener(ItemListener<E> listener, boolean includeValue) {
         final EventService eventService = getNodeEngine().getEventService();
-        final EventRegistration registration = eventService.registerListener(getServiceName(), name, new CollectionEventFilter(includeValue), listener);
+        final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
+        final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
         return registration.getId();
     }
 
@@ -195,10 +207,10 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         return eventService.deregisterListener(getServiceName(), name, registrationId);
     }
 
-    protected  <T> T invoke(CollectionOperation operation) {
+    protected <T> T invoke(CollectionOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(),operation,partitionId);
+            Future f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
             return nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);

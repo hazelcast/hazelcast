@@ -16,9 +16,6 @@
 
 package com.hazelcast.transaction.impl;
 
-/**
- * @author ali 4/12/13
- */
 public interface KeyAwareTransactionLog extends TransactionLog {
 
     Object getKey();

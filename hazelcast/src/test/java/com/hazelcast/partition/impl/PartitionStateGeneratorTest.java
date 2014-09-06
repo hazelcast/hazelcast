@@ -232,7 +232,7 @@ public class PartitionStateGeneratorTest {
         }
 
         @Override
-        public Address getOwner() {
+        public Address getOwnerOrNull() {
             return replicas[0];
         }
 

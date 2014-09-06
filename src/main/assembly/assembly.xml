@@ -107,6 +107,7 @@
                 <include>pdf/hazelcast-documentation-${project.version}.pdf</include>
                 <include>html/**</include>
                 <include>html-single/**</include>
+                <include>no_header/**</include>
             </includes>
         </fileSet>
         <fileSet>

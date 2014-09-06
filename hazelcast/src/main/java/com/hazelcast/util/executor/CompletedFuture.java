@@ -16,16 +16,17 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-/**
- * @author mdogan 1/18/13
- */
 public final class CompletedFuture<V> implements ICompletableFuture<V> {
 
     private final SerializationService serializationService;
@@ -38,6 +39,7 @@ public final class CompletedFuture<V> implements ICompletableFuture<V> {
         this.value = value;
     }
 
+    @Override
     public V get() throws InterruptedException, ExecutionException {
         Object object = value;
         if (object instanceof Data) {
@@ -55,18 +57,22 @@ public final class CompletedFuture<V> implements ICompletableFuture<V> {
         return (V) object;
     }
 
+    @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         return get();
     }
 
+    @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         return false;
     }
 
+    @Override
     public boolean isCancelled() {
         return false;
     }
 
+    @Override
     public boolean isDone() {
         return true;
     }

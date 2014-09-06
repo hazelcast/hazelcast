@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author mdogan 12/26/12
- */
 public class DefaultPortableWriter implements PortableWriter {
 
     private final PortableSerializer serializer;
@@ -35,19 +32,22 @@ public class DefaultPortableWriter implements PortableWriter {
     private final int begin;
     private final int offset;
     private final Set<String> writtenFields;
-    private boolean raw = false;
+    private boolean raw;
 
-    public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd)throws IOException {
+    public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd)
+            throws IOException {
         this.serializer = serializer;
         this.out = out;
         this.cd = cd;
         this.writtenFields = new HashSet<String>(cd.getFieldCount());
         this.begin = out.position();
 
-        out.writeZeroBytes(4);  // room for final offset
+        // room for final offset
+        out.writeZeroBytes(4);
 
         this.offset = out.position();
-        final int fieldIndexesLength = (cd.getFieldCount() + 1) * 4; // one additional for raw data
+        // one additional for raw data
+        final int fieldIndexesLength = (cd.getFieldCount() + 1) * 4;
         out.writeZeroBytes(fieldIndexesLength);
     }
 
@@ -101,18 +101,29 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     public void writePortable(String fieldName, Portable portable) throws IOException {
-        setPosition(fieldName);
-        final boolean NULL = portable == null;
-        out.writeBoolean(NULL);
-        if (!NULL) {
+        FieldDefinition fd = setPosition(fieldName);
+        final boolean isNull = portable == null;
+        out.writeBoolean(isNull);
+        if (!isNull) {
+            checkPortableAttributes(fd, portable);
             serializer.write(out, portable);
+        }
+    }
+
+    private void checkPortableAttributes(FieldDefinition fd, Portable portable) {
+        if (fd.getFactoryId() != portable.getFactoryId()) {
+            throw new HazelcastSerializationException("Wrong Portable type! Generic portable types are not supported! "
+                    + " Expected factory-id: " + fd.getFactoryId() + ", Actual factory-id: " + portable.getFactoryId());
+        }
+        if (fd.getClassId() != portable.getClassId()) {
+            throw new HazelcastSerializationException("Wrong Portable type! Generic portable types are not supported! "
+                    + "Expected class-id: " + fd.getClassId() + ", Actual class-id: " + portable.getClassId());
         }
     }
 
     public void writeNullPortable(String fieldName, int factoryId, int classId) throws IOException {
         setPosition(fieldName);
-        final boolean NULL = true;
-        out.writeBoolean(NULL);
+        out.writeBoolean(true);
     }
 
     public void writeByteArray(String fieldName, byte[] values) throws IOException {
@@ -151,7 +162,7 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
-        setPosition(fieldName);
+        FieldDefinition fd = setPosition(fieldName);
         final int len = portables == null ? 0 : portables.length;
         out.writeInt(len);
         if (len > 0) {
@@ -159,17 +170,18 @@ public class DefaultPortableWriter implements PortableWriter {
             out.writeZeroBytes(len * 4);
             for (int i = 0; i < portables.length; i++) {
                 out.writeInt(offset + i * 4, out.position());
-                final Portable portable = portables[i];
+                Portable portable = portables[i];
+                checkPortableAttributes(fd, portable);
                 serializer.write(out, portable);
             }
         }
     }
 
-    private void setPosition(String fieldName) throws IOException {
+    private FieldDefinition setPosition(String fieldName) throws IOException {
         if (raw) {
             throw new HazelcastSerializationException("Cannot write Portable fields after getRawDataOutput() is called!");
         }
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName
                     + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
@@ -181,12 +193,14 @@ public class DefaultPortableWriter implements PortableWriter {
         } else {
             throw new HazelcastSerializationException("Field '" + fieldName + "' has already been written!");
         }
+        return fd;
     }
 
     public ObjectDataOutput getRawDataOutput() throws IOException {
         if (!raw) {
             int pos = out.position();
-            int index = cd.getFieldCount(); // last index
+            // last index
+            int index = cd.getFieldCount();
             out.writeInt(offset + index * 4, pos);
         }
         raw = true;
@@ -194,6 +208,7 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     void end() throws IOException {
-        out.writeInt(begin, out.position()); // write final offset
+        // write final offset
+        out.writeInt(begin, out.position());
     }
 }

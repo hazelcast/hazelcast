@@ -18,10 +18,10 @@ package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.PartitionIdAware;
-import com.hazelcast.multimap.MultiMapContainer;
-import com.hazelcast.multimap.MultiMapRecord;
-import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.multimap.MultiMapWrapper;
+import com.hazelcast.multimap.impl.MultiMapContainer;
+import com.hazelcast.multimap.impl.MultiMapRecord;
+import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.multimap.impl.MultiMapWrapper;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

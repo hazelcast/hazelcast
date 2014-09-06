@@ -21,9 +21,8 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.EventService;
 
@@ -31,13 +30,11 @@ import java.util.Collection;
 
 public interface IOService {
 
-    static final int KILO_BYTE = 1024;
+    int KILO_BYTE = 1024;
 
     boolean isActive();
 
     ILogger getLogger(String name);
-
-    SystemLogService getSystemLogService();
 
     void onOutOfMemory(OutOfMemoryError oom);
 
@@ -53,7 +50,7 @@ public interface IOService {
 
     void handleMemberPacket(Packet p);
 
-    void handleClientPacket(ClientPacket p);
+    void handleClientPacket(Packet p);
 
     TextCommandService getTextCommandService();
 
@@ -71,15 +68,9 @@ public interface IOService {
 
     void shouldConnectTo(Address address);
 
-    boolean isReuseSocketAddress();
-
-    int getSocketPort();
-
     boolean isSocketBind();
 
     boolean isSocketBindAny();
-
-    boolean isSocketPortAutoIncrement();
 
     int getSocketReceiveBufferSize();
 
@@ -113,5 +104,5 @@ public interface IOService {
 
     SerializationService getSerializationService();
 
-    SerializationContext getSerializationContext();
+    PortableContext getPortableContext();
 }

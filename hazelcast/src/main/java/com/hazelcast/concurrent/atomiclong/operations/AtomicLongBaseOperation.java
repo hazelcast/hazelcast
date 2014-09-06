@@ -16,17 +16,19 @@
 
 package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.LongWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
 public abstract class AtomicLongBaseOperation extends Operation
-        implements PartitionAwareOperation {
+        implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
 
@@ -40,6 +42,11 @@ public abstract class AtomicLongBaseOperation extends Operation
     public LongWrapper getNumber() {
         AtomicLongService service = getService();
         return service.getNumber(name);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AtomicLongDataSerializerHook.F_ID;
     }
 
     @Override

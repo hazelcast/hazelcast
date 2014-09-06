@@ -19,6 +19,9 @@ package com.hazelcast.core;
 /**
  * Base interface for all distributed objects.
  *
+ * All distributed objects are not garbage collectable unless {@link #destroy()} is called first.
+ * Note: Failure to destroy after use is complete will lead to memory leaks.
+ *
  * @see IMap
  * @see IQueue
  * @see MultiMap

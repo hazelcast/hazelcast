@@ -33,40 +33,58 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedRunnable;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.DESTROYED;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
-/**
- * @author mdogan 1/11/13
- */
 public class ProxyServiceImpl
         implements ProxyService, PostJoinAwareService, EventPublishingService<DistributedObjectEventPacket, Object> {
 
     static final String SERVICE_NAME = "hz:core:proxyService";
 
+    private static final FutureUtil.ExceptionHandler DESTROY_PROXY_EXCEPTION_HANDLER = FutureUtil.logAllExceptions(Level.FINEST);
+
+    private static final int TRY_COUNT = 10;
+    private static final long TIME = 3;
+
+    private final ConstructorFunction<String, ProxyRegistry> registryConstructor =
+            new ConstructorFunction<String, ProxyRegistry>() {
+                public ProxyRegistry createNew(String serviceName) {
+                    return new ProxyRegistry(serviceName);
+                }
+            };
+
     private final NodeEngineImpl nodeEngine;
-    private final ConcurrentMap<String, ProxyRegistry> registries = new ConcurrentHashMap<String, ProxyRegistry>();
-    private final ConcurrentMap<String, DistributedObjectListener> listeners = new ConcurrentHashMap<String, DistributedObjectListener>();
+    private final ConcurrentMap<String, ProxyRegistry> registries =
+            new ConcurrentHashMap<String, ProxyRegistry>();
+    private final ConcurrentMap<String, DistributedObjectListener> listeners =
+            new ConcurrentHashMap<String, DistributedObjectListener>();
     private final ILogger logger;
 
     ProxyServiceImpl(NodeEngineImpl nodeEngine) {
@@ -78,11 +96,6 @@ public class ProxyServiceImpl
         nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, new Object());
     }
 
-    private final ConstructorFunction<String, ProxyRegistry> registryConstructor = new ConstructorFunction<String, ProxyRegistry>() {
-        public ProxyRegistry createNew(String serviceName) {
-            return new ProxyRegistry(serviceName);
-        }
-    };
 
     @Override
     public int getProxyCount() {
@@ -94,6 +107,7 @@ public class ProxyServiceImpl
         return count;
     }
 
+    @Override
     public void initializeDistributedObject(String serviceName, String name) {
         if (serviceName == null) {
             throw new NullPointerException("Service name is required!");
@@ -101,10 +115,11 @@ public class ProxyServiceImpl
         if (name == null) {
             throw new NullPointerException("Object name is required!");
         }
-        ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
-        registry.getOrCreateProxy(name, true, true);
+        ProxyRegistry registry = getOrPutIfAbsent(registries, serviceName, registryConstructor);
+        registry.createProxy(name, true, true);
     }
 
+    @Override
     public DistributedObject getDistributedObject(String serviceName, String name) {
         if (serviceName == null) {
             throw new NullPointerException("Service name is required!");
@@ -112,10 +127,11 @@ public class ProxyServiceImpl
         if (name == null) {
             throw new NullPointerException("Object name is required!");
         }
-        ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
+        ProxyRegistry registry = getOrPutIfAbsent(registries, serviceName, registryConstructor);
         return registry.getOrCreateProxy(name, true, true);
     }
 
+    @Override
     public void destroyDistributedObject(String serviceName, String name) {
         if (serviceName == null) {
             throw new NullPointerException("Service name is required!");
@@ -123,6 +139,7 @@ public class ProxyServiceImpl
         if (name == null) {
             throw new NullPointerException("Object name is required!");
         }
+        OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
@@ -130,20 +147,18 @@ public class ProxyServiceImpl
                 continue;
             }
 
-            Future f = nodeEngine.getOperationService()
-                                 .createInvocationBuilder(SERVICE_NAME, new DistributedObjectDestroyOperation(serviceName, name),
-                                         member.getAddress()).setTryCount(10).invoke();
+            DistributedObjectDestroyOperation operation = new DistributedObjectDestroyOperation(serviceName, name);
+            Future f = operationService.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress())
+                                                          .setTryCount(TRY_COUNT).invoke();
             calls.add(f);
         }
 
         destroyLocalDistributedObject(serviceName, name, true);
 
-        for (Future f : calls) {
-            try {
-                f.get(3, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                logger.finest(e);
-            }
+        try {
+            FutureUtil.waitWithDeadline(calls, TIME, TimeUnit.SECONDS, DESTROY_PROXY_EXCEPTION_HANDLER);
+        } catch (TimeoutException e) {
+            logger.finest(e);
         }
     }
 
@@ -160,6 +175,7 @@ public class ProxyServiceImpl
         nodeEngine.waitNotifyService.cancelWaitingOps(serviceName, name, cause);
     }
 
+    @Override
     public Collection<DistributedObject> getDistributedObjects(String serviceName) {
         if (serviceName == null) {
             throw new NullPointerException("Service name is required!");
@@ -169,43 +185,73 @@ public class ProxyServiceImpl
         if (registry != null) {
             Collection<DistributedObjectFuture> futures = registry.proxies.values();
             for (DistributedObjectFuture future : futures) {
-                objects.add(future.get());
+                try {
+                    DistributedObject object = future.get();
+                    objects.add(object);
+                } catch (Throwable ignored) {
+                    // ignore if proxy creation failed
+                    EmptyStatement.ignore(ignored);
+                }
             }
         }
         return objects;
     }
 
+    @Override
+    public Collection<String> getDistributedObjectNames(String serviceName) {
+        if (serviceName == null) {
+            throw new NullPointerException("Service name is required!");
+        }
+        ProxyRegistry registry = registries.get(serviceName);
+        if (registry != null) {
+            return registry.proxies.keySet();
+        }
+        return Collections.EMPTY_SET;
+    }
+
+    @Override
     public Collection<DistributedObject> getAllDistributedObjects() {
         Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
         for (ProxyRegistry registry : registries.values()) {
             Collection<DistributedObjectFuture> futures = registry.proxies.values();
             for (DistributedObjectFuture future : futures) {
-                objects.add(future.get());
+                try {
+                    DistributedObject object = future.get();
+                    objects.add(object);
+                } catch (Throwable ignored) {
+                    // ignore if proxy creation failed
+                    EmptyStatement.ignore(ignored);
+                }
             }
         }
         return objects;
     }
 
+    @Override
     public String addProxyListener(DistributedObjectListener distributedObjectListener) {
         final String id = UuidUtil.buildRandomUuidString();
         listeners.put(id, distributedObjectListener);
         return id;
     }
 
+    @Override
     public boolean removeProxyListener(String registrationId) {
         return listeners.remove(registrationId) != null;
     }
 
+    @Override
     public void dispatchEvent(final DistributedObjectEventPacket eventPacket, Object ignore) {
         final String serviceName = eventPacket.getServiceName();
         if (eventPacket.getEventType() == CREATED) {
             try {
-                final ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
+                final ProxyRegistry registry = getOrPutIfAbsent(registries, serviceName, registryConstructor);
                 if (!registry.contains(eventPacket.getName())) {
                     registry.createProxy(eventPacket.getName(), false,
-                            true); // listeners will be called if proxy is created here.
+                            true);
+                    // listeners will be called if proxy is created here.
                 }
             } catch (HazelcastInstanceNotActiveException ignored) {
+                EmptyStatement.ignore(ignored);
             }
         } else {
             final ProxyRegistry registry = registries.get(serviceName);
@@ -215,6 +261,7 @@ public class ProxyServiceImpl
         }
     }
 
+    @Override
     public Operation getPostJoinOperation() {
         Collection<ProxyInfo> proxies = new LinkedList<ProxyInfo>();
         for (ProxyRegistry registry : registries.values()) {
@@ -232,7 +279,7 @@ public class ProxyServiceImpl
         return proxies.isEmpty() ? null : new PostJoinProxyOperation(proxies);
     }
 
-    private class ProxyRegistry {
+    private final class ProxyRegistry {
 
         final String serviceName;
         final RemoteService service;
@@ -288,19 +335,28 @@ public class ProxyServiceImpl
                 }
                 DistributedObjectFuture proxyFuture = new DistributedObjectFuture();
                 if (proxies.putIfAbsent(name, proxyFuture) == null) {
-                    DistributedObject proxy = service.createDistributedObject(name);
-                    if (initialize && proxy instanceof InitializingObject) {
-                        try {
-                            ((InitializingObject) proxy).initialize();
-                        } catch (Exception e) {
-                            logger.warning("Error while initializing proxy: " + proxy, e);
+                    DistributedObject proxy;
+                    try {
+                        proxy = service.createDistributedObject(name);
+                        if (initialize && proxy instanceof InitializingObject) {
+                            try {
+                                ((InitializingObject) proxy).initialize();
+                            } catch (Exception e) {
+                                logger.warning("Error while initializing proxy: " + proxy, e);
+                            }
                         }
+                        proxyFuture.set(proxy);
+                    } catch (Throwable e) {
+                        // proxy creation or initialization failed
+                        // deregister future to avoid infinite hang on future.get()
+                        proxyFuture.setError(e);
+                        proxies.remove(name);
+                        throw ExceptionUtil.rethrow(e);
                     }
                     nodeEngine.eventService.executeEventCallback(new ProxyEventProcessor(CREATED, serviceName, proxy));
                     if (publishEvent) {
                         publish(new DistributedObjectEventPacket(CREATED, serviceName, name));
                     }
-                    proxyFuture.set(proxy);
                     return proxyFuture;
                 }
             }
@@ -310,7 +366,15 @@ public class ProxyServiceImpl
         void destroyProxy(String name, boolean publishEvent) {
             final DistributedObjectFuture proxyFuture = proxies.remove(name);
             if (proxyFuture != null) {
-                DistributedObject proxy = proxyFuture.get();
+                DistributedObject proxy;
+                try {
+                    proxy = proxyFuture.get();
+                } catch (Throwable t) {
+                    logger.warning("Cannot destroy proxy [" + serviceName + ":" + name
+                            + "], since it's creation is failed with "
+                            + t.getClass().getName() + ": " + t.getMessage());
+                    return;
+                }
                 nodeEngine.eventService.executeEventCallback(new ProxyEventProcessor(DESTROYED, serviceName, proxy));
                 if (publishEvent) {
                     publish(new DistributedObjectEventPacket(DESTROYED, serviceName, name));
@@ -330,6 +394,9 @@ public class ProxyServiceImpl
 
         void destroy() {
             for (DistributedObjectFuture future : proxies.values()) {
+                if (!future.isSet()) {
+                    continue;
+                }
                 DistributedObject distributedObject = future.get();
                 if (distributedObject instanceof AbstractDistributedObject) {
                     ((AbstractDistributedObject) distributedObject).invalidate();
@@ -343,45 +410,70 @@ public class ProxyServiceImpl
         }
     }
 
-    private class DistributedObjectFuture {
+    private static class DistributedObjectFuture {
 
         volatile DistributedObject proxy;
+        volatile Throwable error;
 
         boolean isSet() {
             return proxy != null;
         }
 
         DistributedObject get() {
-            if (proxy == null) {
-                boolean interrupted = false;
-                synchronized (this) {
-                    while (proxy == null) {
-                        try {
-                            wait();
-                        } catch (InterruptedException e) {
-                            interrupted = true;
-                        }
+            if (proxy != null) {
+                return proxy;
+            }
+
+            if (error != null) {
+                throw ExceptionUtil.rethrow(error);
+            }
+
+            boolean interrupted = false;
+            synchronized (this) {
+                while (proxy == null && error == null) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        interrupted = true;
                     }
                 }
-                if (interrupted) {
-                    Thread.currentThread().interrupt();
-                }
             }
-            return proxy;
+
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+
+            if (proxy != null) {
+                return proxy;
+            }
+            throw ExceptionUtil.rethrow(error);
         }
 
         void set(DistributedObject o) {
             if (o == null) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Proxy should not be null!");
             }
             synchronized (this) {
                 proxy = o;
                 notifyAll();
             }
         }
+
+        void setError(Throwable t) {
+            if (t == null) {
+                throw new IllegalArgumentException("Error should not be null!");
+            }
+            if (proxy != null) {
+                throw new IllegalStateException("Proxy is already set! Proxy: " + proxy + ", error: " + t);
+            }
+            synchronized (this) {
+                error = t;
+                notifyAll();
+            }
+        }
     }
 
-    private class ProxyEventProcessor
+    private final class ProxyEventProcessor
             implements StripedRunnable {
 
         final EventType type;
@@ -394,6 +486,7 @@ public class ProxyServiceImpl
             this.object = object;
         }
 
+        @Override
         public void run() {
             DistributedObjectEvent event = new DistributedObjectEvent(type, serviceName, object);
             for (DistributedObjectListener listener : listeners.values()) {
@@ -405,6 +498,7 @@ public class ProxyServiceImpl
             }
         }
 
+        @Override
         public int getKey() {
             return object.getName().hashCode();
         }
@@ -424,16 +518,19 @@ public class ProxyServiceImpl
             this.name = name;
         }
 
+        @Override
         public void run()
                 throws Exception {
             ProxyServiceImpl proxyService = getService();
             proxyService.destroyLocalDistributedObject(serviceName, name, false);
         }
 
+        @Override
         public boolean returnsResponse() {
             return true;
         }
 
+        @Override
         public Object getResponse() {
             return Boolean.TRUE;
         }
@@ -443,7 +540,8 @@ public class ProxyServiceImpl
                 throws IOException {
             super.writeInternal(out);
             out.writeUTF(serviceName);
-            out.writeObject(name); // writing as object for backward-compatibility
+            out.writeObject(name);
+            // writing as object for backward-compatibility
         }
 
         @Override
@@ -468,28 +566,33 @@ public class ProxyServiceImpl
         }
 
         @Override
-        public void run()
-                throws Exception {
+        public void run() throws Exception {
             if (proxies != null && proxies.size() > 0) {
                 NodeEngine nodeEngine = getNodeEngine();
                 ProxyServiceImpl proxyService = getService();
                 for (ProxyInfo proxy : proxies) {
-                    final ProxyRegistry registry = ConcurrencyUtil
-                            .getOrPutIfAbsent(proxyService.registries, proxy.serviceName, proxyService.registryConstructor);
-                    DistributedObjectFuture future = registry.createProxy(proxy.objectName, false, false);
-                    if (future != null) {
-                        final DistributedObject object = future.get();
-                        if (object instanceof InitializingObject) {
-                            nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
-                                public void run() {
-                                    try {
-                                        ((InitializingObject) object).initialize();
-                                    } catch (Exception e) {
-                                        getLogger().warning("Error while initializing proxy: " + object, e);
+                    ProxyRegistry registry = getOrPutIfAbsent(proxyService.registries, proxy.serviceName,
+                            proxyService.registryConstructor);
+
+                    try {
+                        DistributedObjectFuture future = registry.createProxy(proxy.objectName, false, false);
+                        if (future != null) {
+                            final DistributedObject object = future.get();
+                            if (object instanceof InitializingObject) {
+                                nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                                    public void run() {
+                                        try {
+                                            ((InitializingObject) object).initialize();
+                                        } catch (Exception e) {
+                                            getLogger().warning("Error while initializing proxy: " + object, e);
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
                         }
+                    } catch (Throwable t) {
+                        getLogger().warning("Cannot create proxy [" + proxy.serviceName + ":"
+                                + proxy.objectName + "]!", t);
                     }
                 }
             }
@@ -514,7 +617,8 @@ public class ProxyServiceImpl
             if (len > 0) {
                 for (ProxyInfo proxy : proxies) {
                     out.writeUTF(proxy.serviceName);
-                    out.writeObject(proxy.objectName); // writing as object for backward-compatibility
+                    out.writeObject(proxy.objectName);
+                    // writing as object for backward-compatibility
                 }
             }
         }
@@ -534,7 +638,7 @@ public class ProxyServiceImpl
         }
     }
 
-    private static class ProxyInfo {
+    private static final class ProxyInfo {
         final String serviceName;
         final String objectName;
 

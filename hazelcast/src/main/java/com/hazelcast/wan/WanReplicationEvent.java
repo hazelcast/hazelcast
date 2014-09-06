@@ -22,7 +22,11 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class WanReplicationEvent implements DataSerializable {
+/**
+ * Event class used to transmit the actual event object
+ */
+public class WanReplicationEvent
+        implements DataSerializable {
 
     private String serviceName;
     private ReplicationEventObject eventObject;
@@ -52,13 +56,15 @@ public class WanReplicationEvent implements DataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(serviceName);
         out.writeObject(eventObject);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         serviceName = in.readUTF();
         eventObject = in.readObject();
     }

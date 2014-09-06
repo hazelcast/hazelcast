@@ -16,18 +16,17 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.client.SecureRequest;
-import com.hazelcast.map.operation.MapFlushOperationFactory;
+import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.operation.MapFlushOperationFactory;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
-
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Map;
@@ -77,4 +76,13 @@ public class MapFlushRequest extends AllPartitionsClientRequest implements Porta
         return new MapPermission(name, ActionConstants.ACTION_PUT);
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "flush";
+    }
 }

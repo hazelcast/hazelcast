@@ -61,6 +61,7 @@ public interface TransactionContext extends TransactionalTaskContext {
 
     /**
      * Indicates that related transaction is managed by XAResource
+     *
      * @return true if related transaction is managed by XAResource, false otherwise
      */
     boolean isXAManaged();

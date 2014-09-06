@@ -19,9 +19,6 @@ package com.hazelcast.nio;
 import java.io.Closeable;
 import java.io.IOException;
 
-/**
- * @author mdogan 12/28/12
- */
 public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
 
     int read(int position) throws IOException;

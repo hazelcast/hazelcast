@@ -26,6 +26,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Concurrent, blocking, distributed, observable queue.
  *
+ * Queues are stored in one node in the cluster with one backup.
+ *
  * @see BaseQueue
  * @see java.util.Queue
  * @see BlockingQueue
@@ -77,7 +79,7 @@ public interface IQueue<E> extends BlockingQueue<E>, BaseQueue<E>, ICollection<E
     /**
      * {@inheritDoc}
      */
-    public boolean contains(Object o);
+    boolean contains(Object o);
 
     /**
      * {@inheritDoc}

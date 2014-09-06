@@ -25,12 +25,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 
 public final class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
-    private boolean unlockKey = false;
+    private boolean unlockKey;
 
     public RemoveBackupOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -47,11 +46,10 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
     public void run() {
         MapService mapService = getService();
         int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getRecordStore(partitionId, name);
+        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
-            updateSizeEstimator(-calculateRecordSize(record));
-            recordStore.deleteRecord(dataKey);
+            recordStore.removeBackup(dataKey);
         }
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
@@ -81,11 +79,4 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
         return MapDataSerializerHook.REMOVE_BACKUP;
     }
 
-    private void updateSizeEstimator(long recordSize) {
-        recordStore.getSizeEstimator().add(recordSize);
-    }
-
-    private long calculateRecordSize(Record record) {
-        return recordStore.getSizeEstimator().getCost(record);
-    }
 }

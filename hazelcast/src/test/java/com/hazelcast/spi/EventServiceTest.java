@@ -28,8 +28,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.topic.TopicEvent;
-import com.hazelcast.topic.TopicService;
+import com.hazelcast.topic.impl.TopicEvent;
+import com.hazelcast.topic.impl.TopicService;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -114,7 +114,7 @@ public class EventServiceTest extends HazelcastTestSupport {
     }
 
     private TopicEvent builTopicEvent(String value, MemberImpl member, SerializationService ss) {
-        return new TopicEvent("foo", ss.toData(value), member);
+        return new TopicEvent("foo", ss.toData(value), member.getAddress());
     }
 
     private EventRegistration findEventRegistration(Address address, Collection<EventRegistration> registrations) {

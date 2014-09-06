@@ -30,7 +30,11 @@ import org.hibernate.cache.spi.access.EntityRegionAccessStrategy;
 import java.util.Properties;
 
 /**
+ * An entity region implementation based upon Hazelcast IMap with basic concurrency / transactional support
+ * by supplying EntityRegionAccessStrategy
+ *
  * @author mdogan 11/9/12
+ * @param <Cache> implementation type of RegionCache
  */
 public final class HazelcastEntityRegion<Cache extends RegionCache>
         extends AbstractTransactionalDataRegion<Cache> implements EntityRegion {

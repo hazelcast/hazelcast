@@ -36,9 +36,6 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.Arrays;
 
-/**
- * @author mdogan 4/5/13
- */
 final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
     private Data backupOpData;
@@ -95,7 +92,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
             OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
 
             final OperationService operationService = nodeEngine.getOperationService();
-            operationService.runOperation(backupOp);
+            operationService.runOperationOnCallingThread(backupOp);
         }
     }
 
@@ -116,7 +113,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     }
 
     @Override
-    public final boolean returnsResponse() {
+    public boolean returnsResponse() {
         return false;
     }
 

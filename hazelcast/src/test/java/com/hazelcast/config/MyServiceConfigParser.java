@@ -18,10 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.spi.ServiceConfigurationParser;
 import org.w3c.dom.Element;
-
-/**
- * @author mdogan 6/24/13
- */
 public class MyServiceConfigParser extends AbstractXmlConfigHelper implements ServiceConfigurationParser<MyServiceConfig> {
 
     public MyServiceConfig parse(Element element) {

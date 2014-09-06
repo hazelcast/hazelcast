@@ -16,63 +16,118 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-public class LocalQueueStatsImpl implements LocalQueueStats {
+import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getLong;
 
+public class LocalQueueStatsImpl
+        implements LocalQueueStats {
+
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OFFERS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfOffers");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_REJECTED_OFFERS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfRejectedOffers");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_POLLS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfPolls");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EMPTY_POLLS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfEmptyPolls");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OTHER_OPERATIONS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfOtherOperations");
+    private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
     private int ownedItemCount;
     private int backupItemCount;
     private long minAge;
     private long maxAge;
     private long aveAge;
     private long creationTime;
-    private AtomicLong numberOfOffers = new AtomicLong(0);
-    private AtomicLong numberOfRejectedOffers = new AtomicLong(0);
-    private AtomicLong numberOfPolls = new AtomicLong(0);
-    private AtomicLong numberOfEmptyPolls = new AtomicLong(0);
-    private AtomicLong numberOfOtherOperations = new AtomicLong(0);
-    private AtomicLong numberOfEvents = new AtomicLong(0);
+
+    // These fields are only accessed through the updater
+    private volatile long numberOfOffers;
+    private volatile long numberOfRejectedOffers;
+    private volatile long numberOfPolls;
+    private volatile long numberOfEmptyPolls;
+    private volatile long numberOfOtherOperations;
+    private volatile long numberOfEvents;
 
     public LocalQueueStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+        root.add("ownedItemCount", ownedItemCount);
+        root.add("backupItemCount", backupItemCount);
+        root.add("minAge", minAge);
+        root.add("maxAge", maxAge);
+        root.add("aveAge", aveAge);
+        root.add("creationTime", creationTime);
+        root.add("numberOfOffers", numberOfOffers);
+        root.add("numberOfPolls", numberOfPolls);
+        root.add("numberOfRejectedOffers", numberOfRejectedOffers);
+        root.add("numberOfEmptyPolls", numberOfEmptyPolls);
+        root.add("numberOfOtherOperations", numberOfOtherOperations);
+        root.add("numberOfEvents", numberOfEvents);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+        ownedItemCount = getInt(json, "ownedItemCount", -1);
+        backupItemCount = getInt(json, "backupItemCount", -1);
+        minAge = getLong(json, "minAge", -1L);
+        maxAge = getLong(json, "maxAge", -1L);
+        aveAge = getLong(json, "aveAge", -1L);
+        creationTime = getLong(json, "creationTime", -1L);
+        NUMBER_OF_OFFERS_UPDATER.set(this, getLong(json, "numberOfOffers", -1L));
+        NUMBER_OF_POLLS_UPDATER.set(this, getLong(json, "numberOfPolls", -1L));
+        NUMBER_OF_REJECTED_OFFERS_UPDATER.set(this, getLong(json, "numberOfRejectedOffers", -1L));
+        NUMBER_OF_EMPTY_POLLS_UPDATER.set(this, getLong(json, "numberOfEmptyPolls", -1L));
+        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, getLong(json, "numberOfOtherOperations", -1L));
+        NUMBER_OF_EVENTS_UPDATER.set(this, getLong(json, "numberOfEvents", -1L));
+    }
+
+
+    @Override
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeInt(ownedItemCount);
         out.writeInt(backupItemCount);
         out.writeLong(minAge);
         out.writeLong(maxAge);
         out.writeLong(aveAge);
         out.writeLong(creationTime);
-        out.writeLong(numberOfOffers.get());
-        out.writeLong(numberOfPolls.get());
-        out.writeLong(numberOfRejectedOffers.get());
-        out.writeLong(numberOfEmptyPolls.get());
-        out.writeLong(numberOfOtherOperations.get());
-        out.writeLong(numberOfEvents.get());
+        out.writeLong(numberOfOffers);
+        out.writeLong(numberOfPolls);
+        out.writeLong(numberOfRejectedOffers);
+        out.writeLong(numberOfEmptyPolls);
+        out.writeLong(numberOfOtherOperations);
+        out.writeLong(numberOfEvents);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         ownedItemCount = in.readInt();
         backupItemCount = in.readInt();
         minAge = in.readLong();
         maxAge = in.readLong();
         aveAge = in.readLong();
         creationTime = in.readLong();
-        numberOfOffers.set(in.readLong());
-        numberOfPolls.set(in.readLong());
-        numberOfRejectedOffers.set(in.readLong());
-        numberOfEmptyPolls.set(in.readLong());
-        numberOfOtherOperations.set(in.readLong());
-        numberOfEvents.set(in.readLong());
+        NUMBER_OF_OFFERS_UPDATER.set(this, in.readLong());
+        NUMBER_OF_POLLS_UPDATER.set(this, in.readLong());
+        NUMBER_OF_REJECTED_OFFERS_UPDATER.set(this, in.readLong());
+        NUMBER_OF_EMPTY_POLLS_UPDATER.set(this, in.readLong());
+        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, in.readLong());
+        NUMBER_OF_EVENTS_UPDATER.set(this, in.readLong());
     }
 
     @Override
@@ -126,60 +181,60 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
     }
 
     public long total() {
-        return numberOfOffers.get() + numberOfPolls.get() + numberOfOtherOperations.get();
+        return numberOfOffers + numberOfPolls + numberOfOtherOperations;
     }
 
     @Override
     public long getOfferOperationCount() {
-        return numberOfOffers.get();
+        return numberOfOffers;
     }
 
     @Override
     public long getRejectedOfferOperationCount() {
-        return numberOfRejectedOffers.get();
+        return numberOfRejectedOffers;
     }
 
     @Override
     public long getPollOperationCount() {
-        return numberOfPolls.get();
+        return numberOfPolls;
     }
 
     @Override
     public long getEmptyPollOperationCount() {
-        return numberOfEmptyPolls.get();
+        return numberOfEmptyPolls;
     }
 
     @Override
     public long getOtherOperationsCount() {
-        return numberOfOtherOperations.get();
+        return numberOfOtherOperations;
     }
 
     public void incrementOtherOperations() {
-        numberOfOtherOperations.incrementAndGet();
+        NUMBER_OF_OTHER_OPERATIONS_UPDATER.incrementAndGet(this);
     }
 
     public void incrementOffers() {
-        numberOfOffers.incrementAndGet();
+        NUMBER_OF_OFFERS_UPDATER.incrementAndGet(this);
     }
 
     public void incrementRejectedOffers() {
-        numberOfRejectedOffers.incrementAndGet();
+        NUMBER_OF_REJECTED_OFFERS_UPDATER.incrementAndGet(this);
     }
 
     public void incrementPolls() {
-        numberOfPolls.incrementAndGet();
+        NUMBER_OF_POLLS_UPDATER.incrementAndGet(this);
     }
 
     public void incrementEmptyPolls() {
-        numberOfEmptyPolls.incrementAndGet();
+        NUMBER_OF_EMPTY_POLLS_UPDATER.incrementAndGet(this);
     }
 
     public void incrementReceivedEvents() {
-        numberOfEvents.incrementAndGet();
+        NUMBER_OF_EVENTS_UPDATER.incrementAndGet(this);
     }
 
     @Override
     public long getEventOperationCount() {
-        return numberOfEvents.get();
+        return numberOfEvents;
     }
 }

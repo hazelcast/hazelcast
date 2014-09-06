@@ -30,7 +30,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     private Collection<MemberInfo> memberInfos;
     private long masterTime = Clock.currentTimeMillis();
-    private boolean sendResponse = false;
+    private boolean sendResponse;
 
     public MemberInfoUpdateOperation() {
         memberInfos = new ArrayList<MemberInfo>();
@@ -59,8 +59,9 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         final ClusterServiceImpl clusterService = getService();
         final Connection conn = getConnection();
         final Address masterAddress = conn != null ? conn.getEndPoint() : null;
-        return conn == null ||  // which means this is a local call.
-                               (masterAddress != null && masterAddress.equals(clusterService.getMasterAddress()));
+        boolean isLocal = conn == null;
+        return isLocal
+                || (masterAddress != null && masterAddress.equals(clusterService.getMasterAddress()));
     }
 
     @Override

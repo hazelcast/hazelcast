@@ -21,7 +21,7 @@ import com.hazelcast.core.EntryListener;
 import java.util.EventListener;
 
 /**
- * @ali 10/11/13
+ * Configuration for EntryListener(Read Only)
  */
 public class EntryListenerConfigReadOnly extends EntryListenerConfig {
 

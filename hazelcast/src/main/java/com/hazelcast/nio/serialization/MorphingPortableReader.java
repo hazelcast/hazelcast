@@ -20,9 +20,6 @@ import com.hazelcast.nio.BufferObjectDataInput;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 1/7/13
- */
 public class MorphingPortableReader extends DefaultPortableReader {
 
 
@@ -32,7 +29,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public int readInt(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0;
         }
@@ -52,7 +49,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public long readLong(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0L;
         }
@@ -74,7 +71,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public String readUTF(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return null;
         }
@@ -86,7 +83,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public boolean readBoolean(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return false;
         }
@@ -98,7 +95,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public byte readByte(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0;
         }
@@ -110,7 +107,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public char readChar(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0;
         }
@@ -122,7 +119,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public double readDouble(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0d;
         }
@@ -148,7 +145,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public float readFloat(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0f;
         }
@@ -170,7 +167,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public short readShort(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return 0;
         }
@@ -186,7 +183,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public byte[] readByteArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return new byte[0];
         }
@@ -198,7 +195,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public char[] readCharArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return new char[0];
         }
@@ -210,7 +207,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public int[] readIntArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return new int[0];
         }
@@ -222,7 +219,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public long[] readLongArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return new long[0];
         }
@@ -234,7 +231,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public double[] readDoubleArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return new double[0];
         }
@@ -246,7 +243,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public float[] readFloatArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return new float[0];
         }
@@ -258,7 +255,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public short[] readShortArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return new short[0];
         }
@@ -270,7 +267,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public Portable readPortable(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return null;
         }
@@ -282,7 +279,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     @Override
     public Portable[] readPortableArray(String fieldName) throws IOException {
-        FieldDefinition fd = cd.get(fieldName);
+        FieldDefinition fd = cd.getField(fieldName);
         if (fd == null) {
             return new Portable[0];
         }

@@ -19,9 +19,6 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.nio.Address;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import static com.hazelcast.mapreduce.JobPartitionState.State.WAITING;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.stateChange;
 
@@ -32,8 +29,6 @@ import static com.hazelcast.mapreduce.impl.MapReduceUtil.stateChange;
  */
 public class MemberAssigningJobProcessInformationImpl
         extends JobProcessInformationImpl {
-
-    private final ConcurrentMap<String, Integer> memberIds = new ConcurrentHashMap<String, Integer>();
 
     public MemberAssigningJobProcessInformationImpl(int partitionCount, JobSupervisor supervisor) {
         super(partitionCount, supervisor);
@@ -47,7 +42,6 @@ public class MemberAssigningJobProcessInformationImpl
 
                 // Seems unassigned so let try to use it
                 if (stateChange(address, i, WAITING, this, configuration) != null) {
-                    memberIds.put(memberUuid, i);
                     return i;
                 }
             }

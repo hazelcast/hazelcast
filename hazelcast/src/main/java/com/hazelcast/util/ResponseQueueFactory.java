@@ -25,19 +25,30 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class ResponseQueueFactory {
+/**
+ * Factory for creating response queues.
+ * <p/>
+ * See LockBasedResponseQueue.
+ */
+public final class ResponseQueueFactory {
 
-    private ResponseQueueFactory(){}
+    private ResponseQueueFactory() {
+    }
 
+    /**
+     * Creates new response queue
+     * @return LockBasedResponseQueue new created response queue
+     */
     public static BlockingQueue newResponseQueue() {
         return new LockBasedResponseQueue();
     }
 
-    private final static class LockBasedResponseQueue extends AbstractQueue implements BlockingQueue {
-        private Object response = null;
+    private static final class LockBasedResponseQueue extends AbstractQueue implements BlockingQueue {
+        private static final Object NULL = new Object();
+        private Object response;
         private final Lock lock = new ReentrantLock();
         private final Condition noValue = lock.newCondition();
-        private final static Object NULL = new Object();
+
 
         public Object take() throws InterruptedException {
             lock.lock();
@@ -57,13 +68,16 @@ public class ResponseQueueFactory {
         }
 
         public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
-            if (timeout < 0) throw new IllegalArgumentException();
+            if (timeout < 0) {
+                throw new IllegalArgumentException();
+            }
             long remaining = unit.toMillis(timeout);
             lock.lock();
             try {
-                while (response == null && remaining > 0) {
+                boolean timedOut = false;
+                while (response == null && remaining > 0 && !timedOut) {
                     long start = Clock.currentTimeMillis();
-                    noValue.await(remaining, TimeUnit.MILLISECONDS);
+                    timedOut = noValue.await(remaining, TimeUnit.MILLISECONDS);
                     remaining -= (Clock.currentTimeMillis() - start);
                 }
                 return getAndRemoveResponse();
@@ -77,15 +91,16 @@ public class ResponseQueueFactory {
         }
 
         public boolean offer(Object obj) {
-            if (obj == null) {
-                obj = NULL;
+            Object item = obj;
+            if (item == null) {
+                item = NULL;
             }
             lock.lock();
             try {
                 if (response != null) {
                     return false;
                 }
-                response = obj;
+                response = item;
                 //noinspection CallToSignalInsteadOfSignalAll
                 noValue.signal();
                 return true;

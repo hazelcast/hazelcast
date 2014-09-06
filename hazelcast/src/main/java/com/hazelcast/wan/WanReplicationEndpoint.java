@@ -18,9 +18,25 @@ package com.hazelcast.wan;
 
 import com.hazelcast.instance.Node;
 
-public interface WanReplicationEndpoint extends WanReplicationPublisher {
+/**
+ * Implementations of this interface represent a replication endpoint, normally another
+ * Hazelcast cluster only reachable over a wide area network
+ */
+public interface WanReplicationEndpoint
+        extends WanReplicationPublisher {
 
+    /**
+     * Initializes the endpoint using the given arguments
+     *
+     * @param node      the current node that tries to connect
+     * @param groupName the group name to connect with
+     * @param password  the group's password
+     * @param targets   possible target endpoints bundled in this endpoint
+     */
     void init(Node node, String groupName, String password, String... targets);
 
+    /**
+     * Closes the endpoint, it's internal connections and shuts down other internal states
+     */
     void shutdown();
 }

@@ -16,17 +16,26 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
+import java.io.OutputStream;
+import java.io.InputStream;
+import java.io.DataOutput;
+import java.io.DataInput;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+
 import java.nio.ByteBuffer;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 public final class IOUtil {
-
-    private IOUtil(){}
 
     public static final byte PRIMITIVE_TYPE_BOOLEAN = 1;
     public static final byte PRIMITIVE_TYPE_BYTE = 2;
@@ -37,6 +46,30 @@ public final class IOUtil {
     public static final byte PRIMITIVE_TYPE_DOUBLE = 7;
     public static final byte PRIMITIVE_TYPE_UTF = 8;
 
+    private IOUtil() {
+    }
+
+    /**
+     * This method has a direct dependency on how objects are serialized in
+     * {@link com.hazelcast.nio.serialization.DataSerializer}! If the stream
+     * format is ever changed this extraction method needs to be changed too!
+     */
+    public static long extractOperationCallId(Data data, SerializationService serializationService) throws IOException {
+        ObjectDataInput input = serializationService.createObjectDataInput(data.getBuffer());
+        boolean identified = input.readBoolean();
+        if (identified) {
+            // read factoryId
+            input.readInt();
+            // read typeId
+            input.readInt();
+        } else {
+            // read classname
+            input.readUTF();
+        }
+
+        // read callId
+        return input.readLong();
+    }
 
     public static void writeByteArray(ObjectDataOutput out, byte[] value) throws IOException {
         int size = (value == null) ? 0 : value.length;
@@ -124,7 +157,9 @@ public final class IOUtil {
     }
 
     public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dest) {
-        if (src == null) return 0;
+        if (src == null) {
+            return 0;
+        }
         int n = Math.min(src.remaining(), dest.remaining());
         if (n > 0) {
             if (n < 16) {
@@ -199,6 +234,7 @@ public final class IOUtil {
                 int count = inflater.inflate(buf);
                 bos.write(buf, 0, count);
             } catch (DataFormatException e) {
+                Logger.getLogger(IOUtil.class).finest("Decompression failed", e);
             }
         }
         bos.close();
@@ -230,7 +266,7 @@ public final class IOUtil {
         } else if (type.equals(Double.class)) {
             out.writeByte(PRIMITIVE_TYPE_DOUBLE);
             out.writeDouble((Double) value);
-        } else if(type.equals(String.class)) {
+        } else if (type.equals(String.class)) {
             out.writeByte(PRIMITIVE_TYPE_UTF);
             out.writeUTF((String) value);
         } else {
@@ -257,8 +293,10 @@ public final class IOUtil {
                 return in.readDouble();
             case PRIMITIVE_TYPE_UTF:
                 return in.readUTF();
+            default:
+                throw new IllegalStateException("Illegal attribute type id found");
         }
-        throw new IllegalStateException("Illegal attribute type id found");
+
     }
 
     /**
@@ -270,7 +308,8 @@ public final class IOUtil {
         if (closeable != null) {
             try {
                 closeable.close();
-            } catch (IOException ignored) {
+            } catch (IOException e) {
+                Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
             }
         }
     }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.util.ConstructorFunction;
@@ -30,17 +29,19 @@ import java.util.logging.LogRecord;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class LoggingServiceImpl implements LoggingService {
+
     private volatile MemberImpl thisMember = new MemberImpl();
-    private final SystemLogService systemLogService;
     private final String groupName;
     private final CopyOnWriteArrayList<LogListenerRegistration> listeners
             = new CopyOnWriteArrayList<LogListenerRegistration>();
-    private volatile String thisAddressString;
+    private volatile String thisAddressString = "[LOCAL]";
 
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
 
     private final ConstructorFunction<String, ILogger> loggerConstructor
             = new ConstructorFunction<String, ILogger>() {
+
+        @Override
         public ILogger createNew(String key) {
             return new DefaultLogger(key);
         }
@@ -50,9 +51,7 @@ public class LoggingServiceImpl implements LoggingService {
     private final BuildInfo buildInfo;
     private volatile Level minLevel = Level.OFF;
 
-    public LoggingServiceImpl(SystemLogService systemLogService, String groupName, String loggingType,
-                              BuildInfo buildInfo) {
-        this.systemLogService = systemLogService;
+    public LoggingServiceImpl(String groupName, String loggingType, BuildInfo buildInfo) {
         this.groupName = groupName;
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         this.buildInfo = buildInfo;
@@ -145,12 +144,10 @@ public class LoggingServiceImpl implements LoggingService {
     private class DefaultLogger implements ILogger {
         final String name;
         final ILogger logger;
-        final boolean addToLoggingService;
 
         DefaultLogger(String name) {
             this.name = name;
             this.logger = loggerFactory.getLogger(name);
-            addToLoggingService = (name.equals(ClusterServiceImpl.class.getName()));
         }
 
         @Override
@@ -215,9 +212,6 @@ public class LoggingServiceImpl implements LoggingService {
 
         @Override
         public void log(Level level, String message, Throwable thrown) {
-            if (addToLoggingService) {
-                systemLogService.logNode(message + ((thrown == null) ? "" : ": " + thrown.getMessage()));
-            }
             boolean loggable = logger.isLoggable(level);
             if (loggable || level.intValue() >= minLevel.intValue()) {
                 String logRecordMessage = thisAddressString + " [" + groupName + "] "

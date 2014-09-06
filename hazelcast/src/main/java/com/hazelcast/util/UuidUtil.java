@@ -23,14 +23,13 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author mdogan 2/1/13
+ * Util class to generate random unique identifiers
  */
-public class UuidUtil {
+public final class UuidUtil {
 
     private static final ThreadLocal<Random> RANDOMIZERS = new ThreadLocal<Random>() {
         @Override
-        protected Random initialValue()
-        {
+        protected Random initialValue() {
             // Using the same way as the OpenJDK version just to
             // make sure this happens on every JDK implementation
             // since there are some out there that just use System.currentTimeMillis()
@@ -39,15 +38,20 @@ public class UuidUtil {
     };
 
     private static final AtomicLong SEED_UNIQUIFIER = new AtomicLong(8682522807148012L);
+    private static final long MOTHER_OF_MAGIC_NUMBERS = 181783497276652981L;
+
+    private UuidUtil() {
+    }
 
     private static long seedUniquifier() {
         // L'Ecuyer, "Tables of Linear Congruential Generators of
         // Different Sizes and Good Lattice Structure", 1999
         for (;;) {
             long current = SEED_UNIQUIFIER.get();
-            long next = current * 181783497276652981L;
-            if (SEED_UNIQUIFIER.compareAndSet(current, next))
+            long next = current * MOTHER_OF_MAGIC_NUMBERS;
+            if (SEED_UNIQUIFIER.compareAndSet(current, next)) {
                 return next;
+            }
         }
     }
 
@@ -64,23 +68,28 @@ public class UuidUtil {
     }
 
     public static UUID buildRandomUUID() {
+        //CHECKSTYLE:OFF  suppressed because of magic numbers
         byte[] data = new byte[16];
         RANDOMIZERS.get().nextBytes(data);
-        data[6]  &= 0x0f;  /* clear version        */
-        data[6]  |= 0x40;  /* set to version 4     */
-        data[8]  &= 0x3f;  /* clear variant        */
-        data[8]  |= 0x80;  /* set to IETF variant  */
+        /* clear version        */
+        data[6] &= 0x0f;
+        /* set to version 4     */
+        data[6] |= 0x40;
+        /* clear variant        */
+        data[8] &= 0x3f;
+        /* set to IETF variant  */
+        data[8] |= 0x80;
 
         long mostSigBits = 0;
         long leastSigBits = 0;
         assert data.length == 16 : "data must be 16 bytes in length";
-        for (int i=0; i<8; i++)
+        for (int i = 0; i < 8; i++) {
             mostSigBits = (mostSigBits << 8) | (data[i] & 0xff);
-        for (int i=8; i<16; i++)
+        }
+        for (int i = 8; i < 16; i++) {
             leastSigBits = (leastSigBits << 8) | (data[i] & 0xff);
+        }
         return new UUID(mostSigBits, leastSigBits);
+        //CHECKSTYLE:ON
     }
-
-    private UuidUtil(){}
-
 }

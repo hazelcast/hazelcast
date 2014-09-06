@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+/**
+ * Contains the configuration for an {@link com.hazelcast.core.IList}.
+ */
 public class ListConfig extends CollectionConfig<ListConfig> {
 
     private ListConfigReadOnly readOnly;
@@ -28,7 +31,7 @@ public class ListConfig extends CollectionConfig<ListConfig> {
     }
 
     public ListConfig getAsReadOnly() {
-        if (readOnly == null){
+        if (readOnly == null) {
             readOnly = new ListConfigReadOnly(this);
         }
         return readOnly;

@@ -27,9 +27,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MemberInfo implements DataSerializable {
-    Address address = null;
+    Address address;
     String uuid;
-    Map<String, Object> attributes = null;
+    Map<String, Object> attributes;
 
     public MemberInfo() {
     }
@@ -58,7 +58,9 @@ public class MemberInfo implements DataSerializable {
             uuid = in.readUTF();
         }
         int size = in.readInt();
-        if (size > 0) attributes = new HashMap<String, Object>();
+        if (size > 0) {
+            attributes = new HashMap<String, Object>();
+        }
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
             Object value = in.readObject();
@@ -97,25 +99,30 @@ public class MemberInfo implements DataSerializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         MemberInfo other = (MemberInfo) obj;
         if (address == null) {
-            if (other.address != null)
+            if (other.address != null) {
                 return false;
-        } else if (!address.equals(other.address))
+            }
+        } else if (!address.equals(other.address)) {
             return false;
+        }
         return true;
     }
 
     @Override
     public String toString() {
-        return "MemberInfo{" +
-                "address=" + address +
-                '}';
+        return "MemberInfo{"
+                + "address=" + address
+                + '}';
     }
 }

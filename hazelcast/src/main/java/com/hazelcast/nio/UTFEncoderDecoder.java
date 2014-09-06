@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.logging.Logger;
 import com.hazelcast.util.QuickMath;
 
 import java.io.DataInput;
@@ -25,6 +26,9 @@ import java.io.UTFDataFormatException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
+/**
+ * Utility class to encode/decode UTF-Strings to and from byte-arrays.
+ */
 public final class UTFEncoderDecoder {
 
     private static final int STRING_CHUNK_SIZE = 16 * 1024;
@@ -74,6 +78,7 @@ public final class UTFEncoderDecoder {
         }
 
         int length = str.length();
+        out.writeInt(length);
         out.writeInt(length);
         if (length > 0) {
             int chunkSize = (length / STRING_CHUNK_SIZE) + 1;
@@ -128,6 +133,10 @@ public final class UTFEncoderDecoder {
             return null;
         }
         int length = in.readInt();
+        int lengthCheck = in.readInt();
+        if (length != lengthCheck) {
+            throw new UTFDataFormatException("Length check failed, maybe broken bytestream or wrong stream position");
+        }
         final char[] data = new char[length];
         if (length > 0) {
             int chunkSize = length / STRING_CHUNK_SIZE + 1;
@@ -253,7 +262,8 @@ public final class UTFEncoderDecoder {
             Class<String> clazz = String.class;
             clazz.getDeclaredConstructor(int.class, int.class, char[].class);
             return true;
-        } catch (Throwable ignore) {
+        } catch (Throwable t) {
+            Logger.getLogger(UTFEncoderDecoder.class).finest("Old String constructor doesn't seem available", t);
         }
         return false;
     }
@@ -264,6 +274,7 @@ public final class UTFEncoderDecoder {
             Method method = clazz.getDeclaredMethod("findBestStringCreator");
             return new UTFEncoderDecoder((StringCreator) method.invoke(clazz), true);
         } catch (Throwable t) {
+            Logger.getLogger(UTFEncoderDecoder.class).finest("EnterpriseStringCreator not available on classpath", t);
         }
         boolean faststringEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.nio.faststring", "true"));
         return new UTFEncoderDecoder(faststringEnabled ? buildFastStringCreator() : new DefaultStringCreator(), false);
@@ -282,7 +293,9 @@ public final class UTFEncoderDecoder {
                 constructor.setAccessible(true);
                 return new FastStringCreator(constructor);
             }
-        } catch (Throwable ignore) {
+        } catch (Throwable t) {
+            Logger.getLogger(UTFEncoderDecoder.class)
+                  .finest("No fast string creator seems to available, falling back to reflection", t);
         }
         return null;
     }
@@ -318,7 +331,7 @@ public final class UTFEncoderDecoder {
         }
     }
 
-    public static interface StringCreator {
+    public interface StringCreator {
         String buildString(char[] chars);
     }
 

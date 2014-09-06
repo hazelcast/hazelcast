@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.client;
 
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.concurrent.semaphore.operations.AvailableOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SemaphorePermission;
@@ -46,5 +46,15 @@ public class AvailableRequest extends SemaphoreRequest implements RetryableReque
     @Override
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "availablePermits";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
     }
 }

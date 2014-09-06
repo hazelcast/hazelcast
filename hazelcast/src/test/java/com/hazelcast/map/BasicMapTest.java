@@ -26,6 +26,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.query.Predicate;
@@ -41,8 +42,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -91,74 +90,74 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testBoxedPrimitives(){
+    public void testBoxedPrimitives() {
         IMap map = getInstance().getMap("testPrimitives");
 
-        assertPutGet(map,new Boolean(true));
-        assertPutGet(map,new Boolean(false));
+        assertPutGet(map, new Boolean(true));
+        assertPutGet(map, new Boolean(false));
 
         assertPutGet(map, new Integer(10));
 
-        assertPutGet(map, new Short((short)10));
+        assertPutGet(map, new Short((short) 10));
 
-        assertPutGet(map,new Byte((byte)10));
+        assertPutGet(map, new Byte((byte) 10));
 
-        assertPutGet(map,new Long(10));
+        assertPutGet(map, new Long(10));
 
         assertPutGet(map, new Float(10));
 
         assertPutGet(map, new Double(10));
 
-        assertPutGet(map,new Character('x'));
+        assertPutGet(map, new Character('x'));
     }
 
-    public void assertPutGet(Map map, Object value){
+    public void assertPutGet(Map map, Object value) {
         String key = UUID.randomUUID().toString();
         map.put(key, value);
         assertEquals(value, map.get(key));
     }
 
     @Test
-    public void testArrays(){
+    public void testArrays() {
         IMap map = getInstance().getMap("testArrays");
 
         boolean[] booleanArray = {true, false};
         map.put("boolean", booleanArray);
-        assertTrue(Arrays.equals(booleanArray, (boolean[])map.get("boolean")));
+        assertTrue(Arrays.equals(booleanArray, (boolean[]) map.get("boolean")));
 
         int[] intArray = {1, 2};
         map.put("int", intArray);
         assertArrayEquals(intArray, (int[]) map.get("int"));
 
-        short[] shortArray = {(short)1, (short)2};
+        short[] shortArray = {(short) 1, (short) 2};
         map.put("short", shortArray);
         assertArrayEquals(shortArray, (short[]) map.get("short"));
 
-        short[] byteArray = {(byte)1, (byte)2};
+        short[] byteArray = {(byte) 1, (byte) 2};
         map.put("byte", byteArray);
-        assertArrayEquals(byteArray,(short[])map.get("byte"));
+        assertArrayEquals(byteArray, (short[]) map.get("byte"));
 
         long[] longArray = {1l, 2l};
         map.put("long", longArray);
-        assertArrayEquals(longArray,(long[])map.get("long"));
+        assertArrayEquals(longArray, (long[]) map.get("long"));
 
-        float[] floatArray = {(float)1, (float)2};
+        float[] floatArray = {(float) 1, (float) 2};
         map.put("float", floatArray);
         assertTrue(Arrays.equals(floatArray, (float[]) map.get("float")));
 
-        double[] doubleArray = {(double)1, (double)2};
+        double[] doubleArray = {(double) 1, (double) 2};
         map.put("double", doubleArray);
         assertTrue(Arrays.equals(doubleArray, (double[]) map.get("double")));
 
         char[] charArray = {'1', '2'};
         map.put("char", charArray);
-        assertArrayEquals(charArray,  (char[])map.get("char"));
+        assertArrayEquals(charArray, (char[]) map.get("char"));
 
-        Object[] objectArray = {"foo",null,new Integer(3)};
+        Object[] objectArray = {"foo", null, new Integer(3)};
         map.put("object", objectArray);
-        assertArrayEquals(objectArray,  (Object[])map.get("object"));
+        assertArrayEquals(objectArray, (Object[]) map.get("object"));
     }
-       
+
     @Test
     public void testMapPutAndGet() {
         IMap<String, String> map = getInstance().getMap("testMapPutAndGet");
@@ -196,35 +195,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
-    public void valuesToArray() {
-        IMap<String, String> map = getInstance().getMap("valuesToArray");
-        assertEquals(0, map.size());
-        map.put("a", "1");
-        map.put("b", "2");
-        map.put("c", "3");
-        assertEquals(3, map.size());
-        {
-            final Object[] values = map.values().toArray();
-            Arrays.sort(values);
-            assertArrayEquals(new Object[]{"1", "2", "3"}, values);
-        }
-        {
-            final String[] values = map.values().toArray(new String[3]);
-            Arrays.sort(values);
-            assertArrayEquals(new String[]{"1", "2", "3"}, values);
-        }
-        {
-            final String[] values = map.values().toArray(new String[2]);
-            Arrays.sort(values);
-            assertArrayEquals(new String[]{"1", "2", "3"}, values);
-        }
-        {
-            final String[] values = map.values().toArray(new String[5]);
-            Arrays.sort(values, 0, 3);
-            assertArrayEquals(new String[]{"1", "2", "3", null, null}, values);
-        }
-    }
 
     @Test
     public void testMapEvictAndListener() throws InterruptedException {
@@ -263,16 +233,17 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latchAdded = new CountDownLatch(1);
         final CountDownLatch latchRemoved = new CountDownLatch(1);
         final CountDownLatch latchUpdated = new CountDownLatch(1);
+        final CountDownLatch latchCleared = new CountDownLatch(1);
+        final CountDownLatch latchEvicted = new CountDownLatch(1);
+
         map.addEntryListener(new EntryListener<String, String>() {
             public void entryAdded(EntryEvent event) {
-                assertEquals("world", event.getValue());
-                assertEquals("hello", event.getKey());
                 latchAdded.countDown();
             }
 
             public void entryRemoved(EntryEvent event) {
                 assertEquals("hello", event.getKey());
-                assertEquals(null, event.getValue());
+                assertEquals("new world", event.getOldValue());
                 latchRemoved.countDown();
             }
 
@@ -286,21 +257,39 @@ public class BasicMapTest extends HazelcastTestSupport {
             public void entryEvicted(EntryEvent event) {
                 entryRemoved(event);
             }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+                latchEvicted.countDown();
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+                latchCleared.countDown();
+            }
         }, true);
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
+        map.put("hi", "new world");
+        map.evictAll();
+        map.put("hello", "world");
+        map.clear();
         try {
             assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
             assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
             assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
+            assertTrue(latchEvicted.await(5, TimeUnit.SECONDS));
+            assertTrue(latchCleared.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
             assertFalse(e.getMessage(), true);
         }
     }
 
-    /** Test for issue #181 */
+    /**
+     * Test for issue #181
+     */
     @Test
     public void testMapKeyListenerWithRemoveAndUnlock() throws InterruptedException {
         IMap<String, String> map = getInstance().getMap("testMapKeyListenerWithRemoveAndUnlock");
@@ -332,20 +321,9 @@ public class BasicMapTest extends HazelcastTestSupport {
             map.unlock(key);
         }
         assertTrue("Listener events are missing! Remaining: " + latch.getCount(),
-                   latch.await(5, TimeUnit.SECONDS));
+                latch.await(5, TimeUnit.SECONDS));
     }
 
-
-    @Test
-    public void testMapEntrySetWhenRemoved() {
-        IMap<String, String> map = getInstance().getMap("testMapEntrySetWhenRemoved");
-        map.put("Hello", "World");
-        map.remove("Hello");
-        Set<IMap.Entry<String, String>> set = map.entrySet();
-        for (IMap.Entry<String, String> e : set) {
-            fail("Iterator should not contain removed entry, found " + e.getKey());
-        }
-    }
 
 
     @Test
@@ -418,6 +396,18 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.size(), 2);
         assertEquals(map.remove("key3"), "value3");
         assertEquals(map.size(), 1);
+    }
+
+    @Test
+    public void testMapEvictAll() {
+        IMap<String, String> map = getInstance().getMap("testMapEvict");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+
+        map.evictAll();
+
+        assertEquals(0, map.size());
     }
 
     @Test
@@ -500,49 +490,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.containsKey("key5"), false);
     }
 
-    @Test
-    public void testMapKeySet() {
-        IMap<String, String> map = getInstance().getMap("testMapKeySet");
-        map.put("key1", "value1");
-        map.put("key2", "value2");
-        map.put("key3", "value3");
-        HashSet<String> actual = new HashSet<String>();
-        actual.add("key1");
-        actual.add("key2");
-        actual.add("key3");
-        assertEquals(map.keySet(), actual);
-    }
 
-    @Test
-    public void testMapLocalKeySet() {
-        IMap<String, String> map = getInstance().getMap("testMapKeySet");
-        map.put("key1", "value1");
-        map.put("key2", "value2");
-        map.put("key3", "value3");
-        HashSet<String> actual = new HashSet<String>();
-        actual.add("key1");
-        actual.add("key2");
-        actual.add("key3");
-        assertEquals(map.keySet(), actual);
-    }
-
-    @Test
-    public void testMapValues() {
-        IMap<String, String> map = getInstance().getMap("testMapValues");
-        map.put("key1", "value1");
-        map.put("key2", "value2");
-        map.put("key3", "value3");
-        map.put("key4", "value3");
-        List<String> values = new ArrayList<String>(map.values());
-        List<String> actual = new ArrayList<String>();
-        actual.add("value1");
-        actual.add("value2");
-        actual.add("value3");
-        actual.add("value3");
-        Collections.sort(values);
-        Collections.sort(actual);
-        assertEquals(values, actual);
-    }
 
     @Test
     public void testMapContainsValue() {
@@ -682,22 +630,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         thread.join();
     }
 
-    @Test
-    public void testEntrySet() {
-        final IMap<Object, Object> map = getInstance().getMap("testEntrySet");
-        map.put(1, 1);
-        map.put(2, 2);
-        map.put(3, 3);
-        map.put(4, 4);
-        map.put(5, 5);
-        Set<Map.Entry> entrySet = new HashSet<Map.Entry>();
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(1, 1));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(2, 2));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(3, 3));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(4, 4));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(5, 5));
-        assertEquals(entrySet, map.entrySet());
-    }
 
     @Test
     public void testEntryView() {
@@ -935,6 +867,16 @@ public class BasicMapTest extends HazelcastTestSupport {
 
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
+            }
         };
         map.addEntryListener(listener, true);
         map.put("key", "value");
@@ -981,6 +923,16 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
 
             public void entryEvicted(EntryEvent<Object, Object> event) {
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
             }
         };
 
@@ -1047,6 +999,16 @@ public class BasicMapTest extends HazelcastTestSupport {
 
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
+            }
         };
         map.addEntryListener(listener, "key", true);
         map.put("keyx", "valuex");
@@ -1099,6 +1061,16 @@ public class BasicMapTest extends HazelcastTestSupport {
 
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
+            }
         };
         map.addEntryListener(listener, false);
         map.put("key", "value");
@@ -1116,6 +1088,11 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPutWithTtl2() throws InterruptedException {
+    }
+
+
+    @Test
     public void testPutWithTtl() throws InterruptedException {
         IMap<String, String> map = getInstance().getMap("testPutWithTtl");
         final CountDownLatch latch = new CountDownLatch(1);
@@ -1129,7 +1106,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key", "value", 6, TimeUnit.SECONDS);
         assertEquals("value", map.get("key"));
 
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertNull(map.get("key"));
     }
 
@@ -1144,46 +1121,45 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testMapLoaderLoadUpdatingIndex() throws Exception {
-    	MapConfig mapConfig = getInstance().getConfig().getMapConfig("testMapLoaderLoadUpdatingIndex");
-    	List<MapIndexConfig> indexConfigs = mapConfig.getMapIndexConfigs();
-    	indexConfigs.add(new MapIndexConfig("name", true));
-    	
-    	SampleIndexableObjectMapLoader loader = new SampleIndexableObjectMapLoader();
-    	MapStoreConfig storeConfig = new MapStoreConfig();
-    	storeConfig.setFactoryImplementation(loader);
-    	mapConfig.setMapStoreConfig(storeConfig);
+        MapConfig mapConfig = getInstance().getConfig().getMapConfig("testMapLoaderLoadUpdatingIndex");
+        List<MapIndexConfig> indexConfigs = mapConfig.getMapIndexConfigs();
+        indexConfigs.add(new MapIndexConfig("name", true));
 
-    	IMap<Integer, SampleIndexableObject> map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
-    	for (int i = 0; i < 10; i++) {
-    		map.put(i, new SampleIndexableObject("My-" + i, i));
-    	}
+        SampleIndexableObjectMapLoader loader = new SampleIndexableObjectMapLoader();
+        MapStoreConfig storeConfig = new MapStoreConfig();
+        storeConfig.setFactoryImplementation(loader);
+        mapConfig.setMapStoreConfig(storeConfig);
 
-    	SqlPredicate predicate = new SqlPredicate("name='My-5'");
-    	Set<Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
-    	assertEquals(1, result.size());
-    	assertEquals(5, (int) result.iterator().next().getValue().value);
+        IMap<Integer, SampleIndexableObject> map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
+        for (int i = 0; i < 10; i++) {
+            map.put(i, new SampleIndexableObject("My-" + i, i));
+        }
 
-    	map.destroy();
-    	loader.preloadValues = true;
-    	map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
+        SqlPredicate predicate = new SqlPredicate("name='My-5'");
+        Set<Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
+        assertEquals(1, result.size());
+        assertEquals(5, (int) result.iterator().next().getValue().value);
+
+        map.destroy();
+        loader.preloadValues = true;
+        map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
         assertFalse(map.isEmpty());
 
-    	predicate = new SqlPredicate("name='My-5'");
-    	result = map.entrySet(predicate);
-    	assertEquals(1, result.size());
-    	assertEquals(5, (int) result.iterator().next().getValue().value);
+        predicate = new SqlPredicate("name='My-5'");
+        result = map.entrySet(predicate);
+        assertEquals(1, result.size());
+        assertEquals(5, (int) result.iterator().next().getValue().value);
     }
 
     @Test
     public void testIfWeCarryRecordVersionInfoToReplicas() {
         final String mapName = randomMapName();
         final int mapSize = 1000;
-        final int nodeCount = 3;
+        final int nodeCount = 2;
         final int expectedRecordVersion = 3;
         final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(nodeCount);
         final Config config = new Config();
         final HazelcastInstance node1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
 
         final IMap<Integer, Integer> map1 = node1.getMap(mapName);
         for (int i = 0; i < mapSize; i++) {
@@ -1192,13 +1168,11 @@ public class BasicMapTest extends HazelcastTestSupport {
             map1.put(i, 2);//version 2.
             map1.put(i, 3);//version 3.
         }
-
-        final HazelcastInstance node3 = factory.newHazelcastInstance(config);
+        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
 
         node1.shutdown();
-        node2.shutdown();
 
-        final IMap<Integer, Integer> map3 = node3.getMap(mapName);
+        final IMap<Integer, Integer> map3 = node2.getMap(mapName);
 
         for (int i = 0; i < mapSize; i++) {
             final EntryView<Integer, Integer> entryView = map3.getEntryView(i);
@@ -1213,157 +1187,339 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         Runnable runnable;
 
-        runnable = new Runnable() { public void run() { map.containsKey(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.containsKey(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "containsKey(null)");
 
-        runnable = new Runnable() { public void run() { map.containsValue(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.containsValue(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "containsValue(null)");
 
-        runnable = new Runnable() { public void run() { map.get(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.get(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "get(null)");
 
-        runnable = new Runnable() { public void run() { map.put(null, "value"); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.put(null, "value");
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "put(null, \"value\")");
 
-        runnable = new Runnable() { public void run() { map.put("key", null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.put("key", null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "put(\"key\", null)");
 
-        runnable = new Runnable() { public void run() { map.remove(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.remove(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "remove(null)");
 
-        runnable = new Runnable() { public void run() { map.remove(null, "value"); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.remove(null, "value");
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "remove(null, \"value\")");
 
-        runnable = new Runnable() { public void run() { map.remove("key", null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.remove("key", null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "remove(\"key\", null)");
 
-        runnable = new Runnable() { public void run() { map.delete(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.delete(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "delete(null)");
 
         final Set<String> keys = new HashSet<String>();
         keys.add("key");
         keys.add(null);
-        runnable = new Runnable() { public void run() { map.getAll(keys); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.getAll(keys);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "remove(keys)");
 
-        runnable = new Runnable() { public void run() { map.getAsync(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.getAsync(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "getAsync(null)");
 
-        runnable = new Runnable() { public void run() { map.putAsync(null, "value"); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putAsync(null, "value");
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(null, \"value\")");
 
-        runnable = new Runnable() { public void run() { map.putAsync("key", null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putAsync("key", null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(\"key\", null)");
 
-        runnable = new Runnable() { public void run() { map.putAsync(null, "value", 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putAsync(null, "value", 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(null, \"value\", 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.putAsync("key", null, 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putAsync("key", null, 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(\"key\", null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.removeAsync(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.removeAsync(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "removeAsync(null)");
 
-        runnable = new Runnable() { public void run() { map.tryRemove(null, 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.tryRemove(null, 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "tryRemove(null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.tryPut(null, "value", 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.tryPut(null, "value", 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "tryPut(null, \"value\", 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.tryPut("key", null, 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.tryPut("key", null, 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "tryPut(\"key\", null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.putTransient(null, "value", 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putTransient(null, "value", 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "putTransient(null, \"value\", 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.putTransient("key", null, 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putTransient("key", null, 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "putTransient(\"key\", null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.putIfAbsent(null, "value"); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putIfAbsent(null, "value");
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "putIfAbsent(null, \"value\")");
 
-        runnable = new Runnable() { public void run() { map.putIfAbsent("key", null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putIfAbsent("key", null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "putIfAbsent(\"key\", null)");
 
-        runnable = new Runnable() { public void run() { map.putIfAbsent(null, "value", 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putIfAbsent(null, "value", 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "putIfAbsent(null, \"value\", 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.putIfAbsent("key", null, 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putIfAbsent("key", null, 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "putIfAbsent(\"key\", null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.replace(null, "oldValue", "newValue"); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.replace(null, "oldValue", "newValue");
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "replace(null, \"oldValue\", \"newValue\")");
 
-        runnable = new Runnable() { public void run() { map.replace("key", null, "newValue"); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.replace("key", null, "newValue");
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "replace(\"key\", null, \"newValue\")");
 
-        runnable = new Runnable() { public void run() { map.replace("key", "oldValue", null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.replace("key", "oldValue", null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "replace(\"key\", \"oldValue\", null)");
 
-        runnable = new Runnable() { public void run() { map.replace(null, "value"); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.replace(null, "value");
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "replace(null, \"value\")");
 
-        runnable = new Runnable() { public void run() { map.replace("key", null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.replace("key", null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "replace(\"key\", null)");
 
-        runnable = new Runnable() { public void run() { map.set(null, "value"); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.set(null, "value");
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "set(null, \"value\")");
 
-        runnable = new Runnable() { public void run() { map.set("key", null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.set("key", null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "set(\"key\", null)");
 
-        runnable = new Runnable() { public void run() { map.set(null, "value", 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.set(null, "value", 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "set(null, \"value\", 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.set("key", null, 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.set("key", null, 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "set(\"key\", null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.lock(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.lock(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "lock(null)");
 
-        runnable = new Runnable() { public void run() { map.lock(null, 1, TimeUnit.SECONDS); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.lock(null, 1, TimeUnit.SECONDS);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "lock(null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.isLocked(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.isLocked(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "isLocked(null)");
 
-        runnable = new Runnable() { public void run() { map.tryLock(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.tryLock(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "tryLock(null)");
 
-        runnable = new Runnable() { public void run() {
-            try {
-                map.tryLock(null, 1, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+        runnable = new Runnable() {
+            public void run() {
+                try {
+                    map.tryLock(null, 1, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        } };
+        };
         assertRunnableThrowsNullPointerException(runnable, "tryLock(null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() { public void run() { map.unlock(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.unlock(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "unlock(null)");
 
-        runnable = new Runnable() { public void run() { map.forceUnlock(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.forceUnlock(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "forceUnlock(null)");
 
-        runnable = new Runnable() { public void run() { map.getEntryView(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.getEntryView(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "getEntryView(null)");
 
-        runnable = new Runnable() { public void run() { map.evict(null); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.evict(null);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "evict(null)");
 
-        runnable = new Runnable() { public void run() { map.executeOnKey(null, new SampleEntryProcessor()); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.executeOnKey(null, new SampleEntryProcessor());
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "executeOnKey(null, entryProcessor)");
 
         final Map<String, String> mapWithNullKey = new HashMap<String, String>();
         mapWithNullKey.put("key", "value");
         mapWithNullKey.put(null, "nullKey");
-        runnable = new Runnable() { public void run() { map.putAll(mapWithNullKey); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putAll(mapWithNullKey);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "map.putAll(mapWithNullKey)");
 
         final Map<String, String> mapWithNullValue = new HashMap<String, String>();
         mapWithNullValue.put("key", "value");
         mapWithNullValue.put("nullValue", null);
-        runnable = new Runnable() { public void run() { map.putAll(mapWithNullValue); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putAll(mapWithNullValue);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "map.putAll(mapWithNullValue)");
 
         // We need to run the putAll() tests a second time passing in a map with more than (partitionCount * 3) entries,
@@ -1373,13 +1529,21 @@ public class BasicMapTest extends HazelcastTestSupport {
         for (int i = 0; i < entryLimit; i++) {
             mapWithNullKey.put("key" + i, "value" + i);
         }
-        runnable = new Runnable() { public void run() { map.putAll(mapWithNullKey); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putAll(mapWithNullKey);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "map.putAll(mapWithNullKey)");
 
         for (int i = 0; i < entryLimit; i++) {
             mapWithNullValue.put("key" + i, "value" + i);
         }
-        runnable = new Runnable() { public void run() { map.putAll(mapWithNullValue); } };
+        runnable = new Runnable() {
+            public void run() {
+                map.putAll(mapWithNullValue);
+            }
+        };
         assertRunnableThrowsNullPointerException(runnable, "map.putAll(mapWithNullValue)");
     }
 

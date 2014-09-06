@@ -19,8 +19,8 @@ package com.hazelcast.security.permission;
 
 public class CountDownLatchPermission extends InstancePermission {
 
-    private static final int READ = 0x4;
-    private static final int MODIFY = 0x8;
+    private static final int READ = 4;
+    private static final int MODIFY = 8;
     private static final int ALL = CREATE | DESTROY | READ | MODIFY;
 
     public CountDownLatchPermission(String name, String... actions) {

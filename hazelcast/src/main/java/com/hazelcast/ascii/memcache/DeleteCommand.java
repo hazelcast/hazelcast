@@ -17,17 +17,18 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.AbstractTextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 
 import java.nio.ByteBuffer;
 
 public class DeleteCommand extends AbstractTextCommand {
+    ByteBuffer response;
     private final String key;
     private final int expiration;
     private final boolean noreply;
-    ByteBuffer response = null;
 
     public DeleteCommand(String key, int expiration, boolean noreply) {
-        super(TextCommandType.DELETE);
+        super(TextCommandConstants.TextCommandType.DELETE);
         this.key = key;
         this.expiration = expiration;
         this.noreply = noreply;
@@ -43,7 +44,7 @@ public class DeleteCommand extends AbstractTextCommand {
 
     public boolean writeTo(ByteBuffer bb) {
         if (response == null) {
-            response = ByteBuffer.wrap(STORED);
+            response = ByteBuffer.wrap(TextCommandConstants.STORED);
         }
         while (bb.hasRemaining() && response.hasRemaining()) {
             bb.put(response.get());
@@ -65,10 +66,10 @@ public class DeleteCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "DeleteCommand [" + type + "]{" +
-                "key='" + key + '\'' +
-                ", expiration=" + expiration +
-                ", noreply=" + noreply +
-                '}' + super.toString();
+        return "DeleteCommand [" + type + "]{"
+                + "key='" + key + '\''
+                + ", expiration=" + expiration
+                + ", noreply=" + noreply + '}'
+                + super.toString();
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.concurrent.atomiclong.LongWrapper;
 import com.hazelcast.core.IFunction;
 
@@ -26,6 +27,11 @@ public class AlterOperation extends AbstractAlterOperation {
 
     public AlterOperation(String name, IFunction<Long, Long> function) {
         super(name, function);
+    }
+
+    @Override
+    public int getId() {
+        return AtomicLongDataSerializerHook.ALTER;
     }
 
     @Override

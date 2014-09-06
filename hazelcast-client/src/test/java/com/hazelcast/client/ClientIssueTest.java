@@ -42,7 +42,6 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -153,7 +152,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
 
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final ILock lock = client.getLock("lock");
@@ -505,23 +504,10 @@ public class ClientIssueTest extends HazelcastTestSupport {
         };
         thread.start();
 
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                try {
-                    assertTrue(latch.await(10, TimeUnit.SECONDS));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
+        assertOpenEventually(latch, 10);
         thread.interrupt();
-
         assertTrue(m.removeEntryListener(id));
-
         assertFalse(m.removeEntryListener("foo"));
-
-
     }
 
     static class SamplePortable implements Portable {
@@ -577,8 +563,35 @@ public class ClientIssueTest extends HazelcastTestSupport {
         Hazelcast.newHazelcastInstance();
 
         assertEquals(null, map.get("a"));
+    }
 
+    @Test
+    public void testLock_WhenDummyClientAndOwnerNodeDiesTogether() throws InterruptedException {
+        testLock_WhenClientAndOwnerNodeDiesTogether(false);
+    }
 
+    @Test
+    public void testLock_WhenSmartClientAndOwnerNodeDiesTogether() throws InterruptedException {
+        testLock_WhenClientAndOwnerNodeDiesTogether(true);
+    }
+
+    private void testLock_WhenClientAndOwnerNodeDiesTogether(boolean smart) throws InterruptedException {
+
+        Hazelcast.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(smart);
+
+        final int tryCount = 5;
+
+        for (int i = 0; i < tryCount; i++) {
+            final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+            final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+            final ILock lock = client.getLock("lock");
+            assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
+            client.getLifecycleService().terminate(); //with client is dead, lock should be released.
+            instance.getLifecycleService().terminate();
+        }
     }
 
     @Test
@@ -605,7 +618,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
             map1.put(i, i);
         }
 
-        assertOpenEventually(latch);
+        assertOpenEventually("dadas", latch);
     }
 
 }

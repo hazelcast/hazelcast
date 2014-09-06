@@ -22,6 +22,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.LockPermission;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public final class LockRequest extends AbstractLockRequest {
 
@@ -52,5 +53,18 @@ public final class LockRequest extends AbstractLockRequest {
     public Permission getRequiredPermission() {
         String name = getName();
         return new LockPermission(name, ActionConstants.ACTION_LOCK);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (timeout == -1 && ttl != Long.MAX_VALUE) {
+            // lock (lease, TimeUnit)
+            return new Object[]{ttl, TimeUnit.MILLISECONDS};
+        } else if (timeout >= 0) {
+            // tryLock(timeout, TimeUnit)
+            return new Object[]{timeout, TimeUnit.MILLISECONDS};
+        }
+        // lock(), tryLock()
+        return null;
     }
 }

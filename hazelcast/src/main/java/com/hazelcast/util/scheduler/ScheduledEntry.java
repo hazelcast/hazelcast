@@ -17,11 +17,17 @@
 package com.hazelcast.util.scheduler;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
- * @author mdogan 2/25/13
+ * Entry wrapper with schedule time information to be used in SecondsBasedEntryTaskScheduler.
+ * See SecondsBasedEntryTaskScheduler
+ *
+ * @param <K> key type of scheduled entry
+ * @param <V> value type of scheduled entry
  */
-public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
+public final class ScheduledEntry<K, V> implements Map.Entry<K, V> {
+
     private final K key;
 
     private final V value;
@@ -31,7 +37,6 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
     private final int actualDelaySeconds;
 
     private final long scheduleStartTimeInNanos;
-
 
     public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds) {
         this.key = key;
@@ -49,10 +54,12 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
         this.scheduleStartTimeInNanos = scheduleStartTimeInNanos;
     }
 
+    @Override
     public K getKey() {
         return key;
     }
 
+    @Override
     public V getValue() {
         return value;
     }
@@ -75,18 +82,26 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
     }
 
     public long getActualDelayMillis() {
-        return actualDelaySeconds * 1000L;
+        return TimeUnit.SECONDS.toMillis(actualDelaySeconds);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ScheduledEntry that = (ScheduledEntry) o;
 
-        if (key != null ? !key.equals(that.key) : that.key != null) return false;
-        if (value != null ? !value.equals(that.value) : that.value != null) return false;
+        if (key != null ? !key.equals(that.key) : that.key != null) {
+            return false;
+        }
+        if (value != null ? !value.equals(that.value) : that.value != null) {
+            return false;
+        }
 
         return true;
     }
@@ -100,12 +115,17 @@ public final class ScheduledEntry<K, V> implements Map.Entry<K,V> {
 
     @Override
     public String toString() {
-        return "ScheduledEntry{" +
-                "key=" + key +
-                ", value=" + value +
-                ", scheduledDelayMillis=" + scheduledDelayMillis +
-                ", actualDelaySeconds=" + actualDelaySeconds +
-                ", scheduleStartTimeInNanos=" + scheduleStartTimeInNanos +
-                '}';
+        return "ScheduledEntry{"
+                + "key="
+                + key
+                + ", value="
+                + value
+                + ", scheduledDelayMillis="
+                + scheduledDelayMillis
+                + ", actualDelaySeconds="
+                + actualDelaySeconds
+                + ", scheduleStartTimeInNanos="
+                + scheduleStartTimeInNanos
+                + '}';
     }
 }

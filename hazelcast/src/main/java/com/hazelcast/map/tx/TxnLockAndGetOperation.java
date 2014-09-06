@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.operation.LockAwareOperation;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,9 +23,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.transaction.TransactionException;
-
 import java.io.IOException;
 
+/**
+ * Transactional lock and get operation.
+ */
 public class TxnLockAndGetOperation extends LockAwareOperation {
 
     private VersionedValue response;
@@ -47,7 +48,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
             throw new TransactionException("Transaction couldn't obtain lock.");
         }
         Record record = recordStore.getRecord(dataKey);
-        Data value = record == null ? null : mapService.toData(record.getValue());
+        Data value = record == null ? null : mapService.getMapServiceContext().toData(record.getValue());
         response = new VersionedValue(value, record == null ? 0 : record.getVersion());
     }
 
@@ -81,10 +82,10 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
 
     @Override
     public String toString() {
-        return "TxnLockAndGetOperation{" +
-                "timeout=" + getWaitTimeout() +
-                ", thread=" + getThreadId() +
-                '}';
+        return "TxnLockAndGetOperation{"
+                + "timeout=" + getWaitTimeout()
+                + ", thread=" + getThreadId()
+                + '}';
     }
 
 }

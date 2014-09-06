@@ -23,9 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 
-/**
- * @ali 9/3/13
- */
 public class CollectionReserveAddOperation extends CollectionOperation {
 
     String transactionId;

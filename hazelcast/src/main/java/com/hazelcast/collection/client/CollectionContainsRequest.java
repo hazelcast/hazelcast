@@ -30,9 +30,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @ali 9/4/13
- */
 public class CollectionContainsRequest extends CollectionRequest {
 
     private Set<Data> valueSet;
@@ -75,7 +72,7 @@ public class CollectionContainsRequest extends CollectionRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         final int size = in.readInt();
         valueSet = new HashSet<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             final Data value = new Data();
             value.readData(in);
             valueSet.add(value);
@@ -85,5 +82,21 @@ public class CollectionContainsRequest extends CollectionRequest {
     @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
+    }
+
+    @Override
+    public String getMethodName() {
+        if (valueSet.size() == 1) {
+            return "contains";
+        }
+        return "containsAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (valueSet.size() == 1) {
+            return valueSet.toArray();
+        }
+        return new Object[]{valueSet};
     }
 }

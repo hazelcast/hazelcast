@@ -42,6 +42,11 @@ public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E>
     /**
      * {@inheritDoc}
      */
+    E take() throws InterruptedException;
+
+    /**
+     * {@inheritDoc}
+     */
     E poll();
 
     /**

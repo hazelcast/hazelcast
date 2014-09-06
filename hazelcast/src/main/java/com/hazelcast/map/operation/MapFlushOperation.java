@@ -17,11 +17,7 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.map.RecordStore;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.PartitionAwareOperation;
-
-import java.io.IOException;
 
 public class MapFlushOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
@@ -33,7 +29,7 @@ public class MapFlushOperation extends AbstractMapOperation implements Partition
     }
 
     public void run() {
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
         recordStore.flush();
     }
 

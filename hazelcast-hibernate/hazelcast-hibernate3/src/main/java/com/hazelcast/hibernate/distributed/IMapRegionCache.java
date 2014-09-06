@@ -34,9 +34,17 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author mdogan 11/9/12
+ * A {@link RegionCache} implementation based on the underlying IMap
  */
 public class IMapRegionCache implements RegionCache {
+
+    private static final long COMPARISON_VALUE = 500;
+
+    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
+    };
+
+    private static final SoftLock LOCK_FAILURE = new SoftLock() {
+    };
 
     private final String name;
     private final HazelcastInstance hazelcastInstance;
@@ -55,7 +63,7 @@ public class IMapRegionCache implements RegionCache {
         this.map = hazelcastInstance.getMap(this.name);
         lockTimeout = CacheEnvironment.getLockTimeoutInMillis(props);
         final long maxOperationTimeout = HazelcastTimestamper.getMaxOperationTimeout(hazelcastInstance);
-        tryLockAndGetTimeout = Math.min(maxOperationTimeout, 500);
+        tryLockAndGetTimeout = Math.min(maxOperationTimeout, COMPARISON_VALUE);
         explicitVersionCheckEnabled = CacheEnvironment.isExplicitVersionCheckEnabled(props);
         logger = createLogger(name, hazelcastInstance);
     }
@@ -76,27 +84,7 @@ public class IMapRegionCache implements RegionCache {
         }
         if (versionComparator != null && currentVersion != null) {
             if (explicitVersionCheckEnabled && value instanceof CacheEntry) {
-                final CacheEntry currentEntry = (CacheEntry) value;
-                try {
-                    if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
-                        try {
-                            final CacheEntry previousEntry = (CacheEntry) map.get(key);
-                            if (previousEntry == null ||
-                                    versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
-                                map.set(key, value);
-                                return true;
-                            } else {
-                                return false;
-                            }
-                        } finally {
-                            map.unlock(key);
-                        }
-                    } else {
-                        return false;
-                    }
-                } catch (InterruptedException e) {
-                    return false;
-                }
+                return compareVersion(key, value);
             } else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {
                 map.set(key, value);
                 return true;
@@ -131,7 +119,7 @@ public class IMapRegionCache implements RegionCache {
     }
 
     public void clear() {
-        map.clear();
+        map.evictAll();
     }
 
     public long size() {
@@ -161,9 +149,31 @@ public class IMapRegionCache implements RegionCache {
         }
     }
 
-    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
-    };
+    private boolean compareVersion(Object key, Object value) {
+        final CacheEntry currentEntry = (CacheEntry) value;
+        try {
+            return compareVersionUnderRowLock(key, value, currentEntry);
+        } catch (InterruptedException e) {
+            return false;
+        }
+    }
 
-    private static final SoftLock LOCK_FAILURE = new SoftLock() {
-    };
+    private boolean compareVersionUnderRowLock(Object key, Object value, CacheEntry currentEntry) throws InterruptedException {
+        if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
+            try {
+                final CacheEntry previousEntry = (CacheEntry) map.get(key);
+                if (previousEntry == null
+                        || versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                    map.set(key, value);
+                    return true;
+                } else {
+                    return false;
+                }
+            } finally {
+                map.unlock(key);
+            }
+        } else {
+            return false;
+        }
+    }
 }

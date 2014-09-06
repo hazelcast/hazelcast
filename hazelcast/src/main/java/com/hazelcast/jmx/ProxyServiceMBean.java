@@ -18,18 +18,22 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.ProxyService;
-
 import java.util.Hashtable;
 
 import static com.hazelcast.jmx.ManagementService.quote;
 
+/**
+ * Management bean for {@link com.hazelcast.spi.ProxyService}
+ */
 @ManagedDescription("HazelcastInstance.ProxyService")
 public class ProxyServiceMBean extends HazelcastMBean<ProxyService> {
+
+    private static final int INITIAL_CAPACITY = 3;
 
     public ProxyServiceMBean(HazelcastInstance hazelcastInstance, ProxyService proxyService, ManagementService service) {
         super(proxyService, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.ProxyService"));
         properties.put("name", quote("proxyService" + hazelcastInstance.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));
@@ -40,7 +44,7 @@ public class ProxyServiceMBean extends HazelcastMBean<ProxyService> {
 
     @ManagedAnnotation("proxyCount")
     @ManagedDescription("The number proxies")
-    public int getProxyCount(){
+    public int getProxyCount() {
         return managedObject.getProxyCount();
     }
 }

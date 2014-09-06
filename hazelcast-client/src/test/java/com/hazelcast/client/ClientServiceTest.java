@@ -63,6 +63,62 @@ public class ClientServiceTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testNumberOfClients_afterUnAuthenticatedClient() {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getGroupConfig().setPassword("wrongPassword");
+
+        try {
+            HazelcastClient.newHazelcastClient(clientConfig);
+        } catch (IllegalStateException ignored) {
+
+        }
+
+        assertEquals(0, instance.getClientService().getConnectedClients().size());
+    }
+
+    @Test
+    public void testNumberOfClients_afterUnAuthenticatedClient_withTwoNode() {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getGroupConfig().setPassword("wrongPassword");
+
+        try {
+            HazelcastClient.newHazelcastClient(clientConfig);
+        } catch (IllegalStateException ignored) {
+
+        }
+
+        assertEquals(0, instance1.getClientService().getConnectedClients().size());
+        assertEquals(0, instance2.getClientService().getConnectedClients().size());
+    }
+
+
+    @Test
+    public void testNumberOfClients_afterUnAuthenticatedClient_withTwoNode_twoClient() {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getGroupConfig().setPassword("wrongPassword");
+
+        try {
+            HazelcastClient.newHazelcastClient(clientConfig);
+        } catch (IllegalStateException ignored) {
+
+        }
+        try {
+            HazelcastClient.newHazelcastClient(clientConfig);
+        } catch (IllegalStateException ignored) {
+
+        }
+
+        assertEquals(0, instance1.getClientService().getConnectedClients().size());
+        assertEquals(0, instance2.getClientService().getConnectedClients().size());
+    }
+
+
+    @Test
     public void testConnectedClients() {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 
@@ -140,7 +196,6 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
         final CountDownLatch countDownLatch = new CountDownLatch(2);
 
-        ;
         clientConfig.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {

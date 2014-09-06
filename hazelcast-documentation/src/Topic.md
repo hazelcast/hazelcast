@@ -1,19 +1,55 @@
 ## Topic
 
-Hazelcast provides distribution mechanism for publishing messages that are delivered to multiple subscribers which is also known as *publish/subscribe (pub/sub)* messaging model. Publishing and subscribing operations are cluster wide. When a member subscribes for a topic, it is actually registering for messages published by any member in the cluster, including the new members joined after you added the listener.
+Hazelcast provides distribution mechanism for publishing messages that are delivered to multiple subscribers which is also known as *publish/subscribe (pub/sub)* messaging model. Publishing and subscribing operations are cluster wide. When a member subscribes for a topic, it is actually registering for messages published by any member in the cluster, including the new members joined after you add the listener.
+
+***ATTENTION:*** *Publish operation is async. It does not wait for operations to run in remote nodes, it works as fire and forget.*
+
+### Sample Topic Code
+
+```java
+import com.hazelcast.core.Topic;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.MessageListener;
+
+public class Sample implements MessageListener<MyEvent> {
+
+  public static void main( String[] args ) {
+    Sample sample = new Sample();
+    HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+    ITopic topic = hazelcastInstance.getTopic( "default" );
+    topic.addMessageListener( sample );
+    topic.publish( new MyEvent() );
+  }
+
+  public void onMessage( Message<MyEvent> message ) {
+    MyEvent myEvent = message.getMessageObject();
+    System.out.println( "Message received = " + myEvent.toString() );
+    if ( myEvent.isHeavyweight() ) {
+      messageExecutor.execute( new Runnable() {
+          public void run() {
+            doHeavyweightStuff( myEvent );
+          }
+      } );
+    }
+  }
+
+  // ...
+
+  private final Executor messageExecutor = Executors.newSingleThreadExecutor();
+}
+```
+
 
 ### Statistics
 
 Topic has two statistic variables that can be queried. These values are incremental and local to the member.
 
 ```java
+HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+ITopic<Object> myTopic = hazelcastInstance.getTopic( "myTopicName" );
 
-    final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-    final ITopic<Object> myTopic = instance.getTopic("myTopicName");
-
-    myTopic.getLocalTopicStats().getPublishOperationCount();
-    myTopic.getLocalTopicStats().getReceiveOperationCount();
-
+myTopic.getLocalTopicStats().getPublishOperationCount();
+myTopic.getLocalTopicStats().getReceiveOperationCount();
 ```
 
 
@@ -21,12 +57,7 @@ Topic has two statistic variables that can be queried. These values are incremen
 
 This feature can be disabled with topic configuration. Please see [Topic Configuration](#topic-configuration).
 
-<br> </br>
-<font color="red">
-***Related Information***
-</font>
-
-These statistics values can be also viewed in Management Center. Please see [Topics](#topics).
+***NOTE:*** *These statistics values can be also viewed in Management Center. Please see [Topics](#topics)*.
 
 
 
@@ -76,41 +107,38 @@ There are `hazelcast.event.thread.count` (default is 5) threads in `StripedExecu
 
 ### Topic Configuration
 
-- Declarative Configuration
+**Declarative Configuration:**
 
-    ```xml
-    <hazelcast>
-         ...
+```xml
+<hazelcast>
+  ...
+  <topic name="yourTopicName">
+    <global-ordering-enabled>true</global-ordering-enabled>
+    <statistics-enabled>true</statistics-enabled>
+    <message-listeners>
+      <message-listener>MessageListenerImpl</message-listener>
+    </message-listeners>
+  </topic>
+  ...
+</hazelcast>
+```
 
-        <topic name="yourTopicName">
-            <global-ordering-enabled>true</global-ordering-enabled>
-            <statistics-enabled>true</statistics-enabled>
-            <message-listeners>
-                <message-listener>MessageListenerImpl</message-listener>
-            </message-listeners>
-        </topic>
+**Programmatic Configuration:**
 
-         ...
-    </hazelcast>
-    ```
-
-- Programmatic Configuration
-
-    ```java
-
-    final Config config = new Config();
-    final TopicConfig topicConfig = new TopicConfig();
-    topicConfig.setGlobalOrderingEnabled(true);
-    topicConfig.setStatisticsEnabled(true);
-    topicConfig.setName("yourTopicName");
-    final MessageListener<String> implementation = new MessageListener<String>() {
-        @Override
-        public void onMessage(Message<String> message) {
-            // process the message
-        }
-    };
-    topicConfig.addMessageListenerConfig(new ListenerConfig(implementation));
-    final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config)```
+```java
+TopicConfig topicConfig = new TopicConfig();
+topicConfig.setGlobalOrderingEnabled( true );
+topicConfig.setStatisticsEnabled( true );
+topicConfig.setName( "yourTopicName" );
+MessageListener<String> implementation = new MessageListener<String>() {
+  @Override
+  public void onMessage( Message<String> message ) {
+    // process the message
+  }
+};
+topicConfig.addMessageListenerConfig( new ListenerConfig( implementation ) );
+HazelcastInstance instance = Hazelcast.newHazelcastInstance()
+```
 
 Default values are
 
@@ -120,46 +148,13 @@ Default values are
 
 Topic related but not topic specific configuration parameters
 
-    - "hazelcast.event.queue.capacity" : default value is 1,000,000
-    - "hazelcast.event.queue.timeout.millis" : default value is 250
-    - "hazelcast.event.thread.count" : default value is 5
+   - `hazelcast.event.queue.capacity`: default value is 1,000,000
+   - `hazelcast.event.queue.timeout.millis`: default value is 250
+   - `hazelcast.event.thread.count`: default value is 5
+   
+<br></br>
+***RELATED INFORMATION*** 
 
-For these parameters see [Distributed Event Config](#global-event-configuration)
+*For description of these parameters, please see [Global Event Configuration](#global-event-configuration)*
 
 
-### Sample Topic Code
-
-```java
-import com.hazelcast.core.Topic;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.MessageListener;
-import com.hazelcast.config.Config;
-
-public class Sample implements MessageListener<MyEvent> {
-
-    public static void main(String[] args) {
-        Sample sample = new Sample();
-        Config cfg = new Config();
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-        ITopic topic = hz.getTopic ("default");
-        topic.addMessageListener(sample);
-        topic.publish (new MyEvent());
-    }
-
-   public void onMessage(Message<MyEvent> message) {
-        MyEvent myEvent = message.getMessageObject();
-        System.out.println("Message received = " + myEvent.toString());
-        if (myEvent.isHeavyweight()) {
-            messageExecutor.execute(new Runnable() {
-                public void run() {
-                    doHeavyweightStuff(myEvent);
-                }
-            });
-        }
-    }
-
-    // ...
-
-    private static final Executor messageExecutor = Executors.newSingleThreadExecutor();
-}
-```

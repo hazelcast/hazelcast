@@ -36,7 +36,7 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
     @Override
     public final void beforeRun() throws Exception {
         mapService = getService();
-        mapContainer = mapService.getMapContainer(name);
+        mapContainer = mapService.getMapServiceContext().getMapContainer(name);
         innerBeforeRun();
     }
 

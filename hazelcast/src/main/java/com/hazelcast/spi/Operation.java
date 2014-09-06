@@ -27,22 +27,25 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.impl.RemotePropagatable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
 /**
  * An operation could be compared the a {@link Runnable}. So it contains logic that is going to be executed; this logic
  * will be placed in the {@link #run()} method.
  */
-public abstract class Operation implements DataSerializable {
+public abstract class Operation implements DataSerializable, RemotePropagatable<Operation> {
 
     // serialized
     private String serviceName;
     private int partitionId = -1;
     private int replicaIndex;
-    private long callId = 0;
+    private long callId;
     private boolean validateTarget = true;
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
@@ -58,7 +61,7 @@ public abstract class Operation implements DataSerializable {
     private transient ResponseHandler responseHandler;
     private transient long startTime;
 
-    public boolean isUrgent(){
+    public boolean isUrgent() {
         return this instanceof UrgentSystemOperation;
     }
 
@@ -152,7 +155,7 @@ public abstract class Operation implements DataSerializable {
                     throw new HazelcastException("Service with name '" + name + "' not found!");
                 } else {
                     throw new RetryableHazelcastException("HazelcastInstance[" + nodeEngine.getThisAddress()
-                        + "] is not active!");
+                            + "] is not active!");
                 }
             }
         }
@@ -261,6 +264,7 @@ public abstract class Operation implements DataSerializable {
             try {
                 logger.log(Level.SEVERE, e.getMessage(), e);
             } catch (Throwable ignored) {
+                ignore(ignored);
             }
         } else {
             final Level level = nodeEngine != null && nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
@@ -270,11 +274,15 @@ public abstract class Operation implements DataSerializable {
         }
     }
 
+    @Override
     public final void writeData(ObjectDataOutput out) throws IOException {
+        // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
+        // It is used to return deserialization exceptions to the caller
+        out.writeLong(callId);
+
         out.writeUTF(serviceName);
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
-        out.writeLong(callId);
         out.writeBoolean(validateTarget);
         out.writeLong(invocationTime);
         out.writeLong(callTimeout);
@@ -284,11 +292,15 @@ public abstract class Operation implements DataSerializable {
         writeInternal(out);
     }
 
+    @Override
     public final void readData(ObjectDataInput in) throws IOException {
+        // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
+        // It is used to return deserialization exceptions to the caller
+        callId = in.readLong();
+
         serviceName = in.readUTF();
         partitionId = in.readInt();
         replicaIndex = in.readInt();
-        callId = in.readLong();
         validateTarget = in.readBoolean();
         invocationTime = in.readLong();
         callTimeout = in.readLong();

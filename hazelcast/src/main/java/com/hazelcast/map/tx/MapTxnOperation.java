@@ -19,7 +19,7 @@ package com.hazelcast.map.tx;
 import com.hazelcast.spi.Notifier;
 
 /**
- * @author mdogan 3/25/13
+ * Transactional operation interface for {@link com.hazelcast.core.IMap}
  */
 public interface MapTxnOperation extends Notifier {
 

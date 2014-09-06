@@ -26,9 +26,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * @ali 9/4/13
- */
 public class ListSetRequest extends CollectionRequest {
 
     private int index;
@@ -70,5 +67,15 @@ public class ListSetRequest extends CollectionRequest {
     @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "set";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{index, value};
     }
 }

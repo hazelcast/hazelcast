@@ -16,9 +16,6 @@
 
 package com.hazelcast.collection;
 
-/**
- * @ali 8/31/13
- */
 public class CollectionSizeOperation extends CollectionOperation {
 
     public CollectionSizeOperation() {

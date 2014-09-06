@@ -22,9 +22,11 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
+/**
+ * Operation to update map configuration from Management Center.
+ */
 public class UpdateMapConfigOperation extends Operation {
 
     private String mapName;
@@ -45,17 +47,18 @@ public class UpdateMapConfigOperation extends Operation {
     @Override
     public void run() throws Exception {
         MapService service = getService();
-        MapConfig oldConfig = service.getMapContainer(mapName).getMapConfig();
+        MapConfig oldConfig = service.getMapServiceContext().getMapContainer(mapName).getMapConfig();
         MapConfig newConfig = new MapConfig(oldConfig);
         newConfig.setTimeToLiveSeconds(mapConfig.getTimeToLiveSeconds());
         newConfig.setMaxIdleSeconds(mapConfig.getMaxIdleSeconds());
         newConfig.setEvictionPolicy(mapConfig.getEvictionPolicy());
         newConfig.setEvictionPercentage(mapConfig.getEvictionPercentage());
+        newConfig.setMinEvictionCheckMillis(mapConfig.getMinEvictionCheckMillis());
         newConfig.setReadBackupData(mapConfig.isReadBackupData());
         newConfig.setBackupCount(mapConfig.getBackupCount());
         newConfig.setAsyncBackupCount(mapConfig.getAsyncBackupCount());
         newConfig.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
-        service.getMapContainer(mapName).setMapConfig(newConfig.getAsReadOnly());
+        service.getMapServiceContext().getMapContainer(mapName).setMapConfig(newConfig.getAsReadOnly());
     }
 
     @Override

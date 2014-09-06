@@ -39,6 +39,8 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.ExceptionUtil;
+
+import javax.transaction.xa.Xid;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,19 +55,22 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import javax.transaction.xa.Xid;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
+import static com.hazelcast.util.FutureUtil.ExceptionHandler;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
-/**
- * @author mdogan 2/26/13
- */
 public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService,
         MembershipAwareService, ClientAwareService {
 
     public static final String SERVICE_NAME = "hz:core:txManagerService";
 
-    public final static int RECOVER_TIMEOUT = 5000;
+    public static final int RECOVER_TIMEOUT = 5000;
+
+    private final ExceptionHandler finalizeExceptionHandler;
 
     private final NodeEngineImpl nodeEngine;
 
@@ -79,7 +84,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     public TransactionManagerServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        logger = nodeEngine.getLogger(TransactionManagerService.class);
+        this.logger = nodeEngine.getLogger(TransactionManagerService.class);
+        this.finalizeExceptionHandler = logAllExceptions(logger, "Error while rolling-back tx!", Level.WARNING);
     }
 
     public String getGroupName() {
@@ -112,25 +118,31 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
+    @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
         return new TransactionContextImpl(this, nodeEngine, options, null);
     }
 
+    @Override
     public TransactionContext newClientTransactionContext(TransactionOptions options, String clientUuid) {
         return new TransactionContextImpl(this, nodeEngine, options, clientUuid);
     }
 
+    @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
     }
 
+    @Override
     public void reset() {
         txBackupLogs.clear();
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         reset();
     }
 
+    @Override
     public void memberAdded(MembershipServiceEvent event) {
     }
 
@@ -160,14 +172,15 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
+    @Override
     public void memberRemoved(MembershipServiceEvent event) {
         final MemberImpl member = event.getMember();
         String uuid = member.getUuid();
         finalizeTransactionsOf(uuid);
     }
 
+    @Override
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
-
     }
 
     public void addManagedTransaction(Xid xid, Transaction transaction) {
@@ -190,52 +203,59 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     private void finalizeTransactionsOf(String uuid) {
-        if (!txBackupLogs.isEmpty()) {
-            for (Map.Entry<String, TxBackupLog> entry : txBackupLogs.entrySet()) {
-                TxBackupLog log = entry.getValue();
-                if (uuid.equals(log.callerUuid)) {
-                    String txnId = entry.getKey();  //TODO shouldn't we remove TxBackupLog from map ?
-                    if (log.state == State.ACTIVE) {
-                        Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberList();
-                        Collection<Future> futures = new ArrayList<Future>(memberList.size());
-                        for (MemberImpl member : memberList) {
-                            Operation op = new BroadcastTxRollbackOperation(txnId);
-                            Future f = nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, op, member.getAddress());
-                            futures.add(f);
-                        }
-                        for (Future future : futures) {
-                            try {
-                                future.get(TransactionOptions.getDefault().getTimeoutMillis(), TimeUnit.MILLISECONDS);
-                            } catch (Exception e) {
-                                logger.warning("Error while rolling-back tx!");
-                            }
-                        }
-                    } else {
-                        if (log.state == State.COMMITTING && log.xid != null) {
-                            logger.warning("This log is XA Managed " + log);
-                            log.state = State.NO_TXN; //Marking for recovery
-                            continue;
-                        }
-                        TransactionImpl tx = new TransactionImpl(this, nodeEngine, txnId, log.txLogs, log.timeoutMillis, log.startTime, log.callerUuid);
-                        if (log.state == State.COMMITTING) {
-                            try {
-                                tx.commit();
-                            } catch (Throwable e) {
-                                logger.warning("Error during committing from tx backup!", e);
-                            }
-                        } else {
-                            try {
-                                tx.rollback();
-                            } catch (Throwable e) {
-                                logger.warning("Error during rolling-back from tx backup!", e);
-                            }
-                        }
-                    }
+        for (Map.Entry<String, TxBackupLog> entry : txBackupLogs.entrySet()) {
+            finalize(uuid, entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void finalize(String uuid, String txnId, TxBackupLog log) {
+        OperationService operationService = nodeEngine.getOperationService();
+        if (!uuid.equals(log.callerUuid)) {
+            return;
+        }
+
+        //TODO shouldn't we remove TxBackupLog from map ?
+        if (log.state == State.ACTIVE) {
+            Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberList();
+            Collection<Future> futures = new ArrayList<Future>(memberList.size());
+            for (MemberImpl member : memberList) {
+                Operation op = new BroadcastTxRollbackOperation(txnId);
+                Future f = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
+                futures.add(f);
+            }
+
+            try {
+                long timeoutMillis = TransactionOptions.getDefault().getTimeoutMillis();
+                waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, finalizeExceptionHandler);
+            } catch (TimeoutException e) {
+                logger.warning("Timeout while rolling-back tx!", e);
+            }
+        } else {
+            if (log.state == State.COMMITTING && log.xid != null) {
+                logger.warning("This log is XA Managed " + log);
+                //Marking for recovery
+                log.state = State.NO_TXN;
+                return;
+            }
+            TransactionImpl tx = new TransactionImpl(this, nodeEngine, txnId, log.txLogs,
+                    log.timeoutMillis, log.startTime, log.callerUuid);
+            if (log.state == State.COMMITTING) {
+                try {
+                    tx.commit();
+                } catch (Throwable e) {
+                    logger.warning("Error during committing from tx backup!", e);
+                }
+            } else {
+                try {
+                    tx.rollback();
+                } catch (Throwable e) {
+                    logger.warning("Error during rolling-back from tx backup!", e);
                 }
             }
         }
     }
 
+    @Override
     public void clientDisconnected(String clientUuid) {
         finalizeTransactionsOf(clientUuid);
     }
@@ -265,13 +285,15 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     void beginTxBackupLog(String callerUuid, String txnId, SerializableXID xid) {
-        TxBackupLog log = new TxBackupLog(Collections.<TransactionLog>emptyList(), callerUuid, State.ACTIVE, -1, -1, xid);
+        TxBackupLog log
+                = new TxBackupLog(Collections.<TransactionLog>emptyList(), callerUuid, State.ACTIVE, -1, -1, xid);
         if (txBackupLogs.putIfAbsent(txnId, log) != null) {
             throw new TransactionException("TxLog already exists!");
         }
     }
 
-    void prepareTxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId, long timeoutMillis, long startTime) {
+    void prepareTxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId,
+                            long timeoutMillis, long startTime) {
         TxBackupLog beginLog = txBackupLogs.get(txnId);
         if (beginLog == null) {
             throw new TransactionException("Could not find begin tx log!");
@@ -279,7 +301,9 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         if (beginLog.state != State.ACTIVE) {
             throw new TransactionException("TxLog already exists!");
         }
-        if (!txBackupLogs.replace(txnId, beginLog, new TxBackupLog(txLogs, callerUuid, State.COMMITTING, timeoutMillis, startTime, beginLog.xid))) {
+        TxBackupLog newTxBackupLog
+                = new TxBackupLog(txLogs, callerUuid, State.COMMITTING, timeoutMillis, startTime, beginLog.xid);
+        if (!txBackupLogs.replace(txnId, beginLog, newTxBackupLog)) {
             throw new TransactionException("TxLog already exists!");
         }
     }
@@ -298,18 +322,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public Xid[] recover() {
-        final OperationService operationService = nodeEngine.getOperationService();
-        final ClusterService clusterService = nodeEngine.getClusterService();
-        final Collection<MemberImpl> memberList = clusterService.getMemberList();
-        List<Future<SerializableCollection>> futures = new ArrayList<Future<SerializableCollection>>(memberList.size() - 1);
-        for (MemberImpl member : memberList) {
-            if (member.localMember()) {
-                continue;
-            }
-            final Future f = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
-                    new RecoverTxnOperation(), member.getAddress()).invoke();
-            futures.add(f);
-        }
+        List<Future<SerializableCollection>> futures = invokeRecoverOperations();
+
         Set<SerializableXID> xidSet = new HashSet<SerializableXID>();
         for (Future<SerializableCollection> future : futures) {
             try {
@@ -346,6 +360,24 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return xidSet.toArray(new Xid[xidSet.size()]);
     }
 
+    private List<Future<SerializableCollection>> invokeRecoverOperations() {
+        final OperationService operationService = nodeEngine.getOperationService();
+        final ClusterService clusterService = nodeEngine.getClusterService();
+        final Collection<MemberImpl> memberList = clusterService.getMemberList();
+
+        List<Future<SerializableCollection>> futures
+                = new ArrayList<Future<SerializableCollection>>(memberList.size() - 1);
+        for (MemberImpl member : memberList) {
+            if (member.localMember()) {
+                continue;
+            }
+            final Future f = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
+                    new RecoverTxnOperation(), member.getAddress()).invoke();
+            futures.add(f);
+        }
+        return futures;
+    }
+
     public Set<RecoveredTransaction> recoverLocal() {
         Set<RecoveredTransaction> recovered = new HashSet<RecoveredTransaction>();
         if (!txBackupLogs.isEmpty()) {
@@ -371,17 +403,16 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return recovered;
     }
 
-    private static class TxBackupLog {
+    private static final class TxBackupLog {
         private final List<TransactionLog> txLogs;
         private final String callerUuid;
         private final long timeoutMillis;
         private final long startTime;
         private final SerializableXID xid;
-
-
         private volatile State state;
 
-        private TxBackupLog(List<TransactionLog> txLogs, String callerUuid, State state, long timeoutMillis, long startTime, SerializableXID xid) {
+        private TxBackupLog(List<TransactionLog> txLogs, String callerUuid, State state, long timeoutMillis,
+                            long startTime, SerializableXID xid) {
             this.txLogs = txLogs;
             this.callerUuid = callerUuid;
             this.state = state;

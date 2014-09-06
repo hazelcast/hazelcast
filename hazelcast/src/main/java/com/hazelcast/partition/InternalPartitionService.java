@@ -37,13 +37,26 @@ public interface InternalPartitionService extends CoreService {
     long REPLICA_SYNC_RETRY_DELAY = 1000L;
 
     /**
-     * @param partitionId
-     * @return
+     * Gets the owner of the partition if it's set.
+     * Otherwise it will trigger partition assignment.
+     *
+     * @param partitionId the partitionId
+     * @return owner of partition or null if it's not set yet.
      */
     Address getPartitionOwner(int partitionId);
 
     /**
+     * Gets the owner of the partition. If none is set, it will wait till the owner is set.
+     *
+     * @param partitionId  the partitionId
+     * @return owner of partition
+     * @throws InterruptedException
+     */
+    Address getPartitionOwnerOrWait(int partitionId) throws InterruptedException;
+
+    /**
      * Returns the InternalPartition for a given partitionId.
+     * If owner of the partition is not set yet, it will trigger partition assignment.
      * <p/>
      * The InternalPartition for a given partitionId wil never change; so it can be cached safely.
      *
@@ -51,6 +64,19 @@ public interface InternalPartitionService extends CoreService {
      * @return the InternalPartition.
      */
     InternalPartition getPartition(int partitionId);
+
+    /**
+     * Returns the InternalPartition for a given partitionId.
+     * If owner of the partition is not set yet and {@code triggerOwnerAssignment} is true,
+     * it will trigger partition assignment.
+     * <p/>
+     * The InternalPartition for a given partitionId wil never change; so it can be cached safely.
+     *
+     * @param partitionId the partitionId
+     * @param triggerOwnerAssignment flag to trigger partition assignment
+     * @return the InternalPartition.
+     */
+    InternalPartition getPartition(int partitionId, boolean triggerOwnerAssignment);
 
     /**
      * Returns the partition id for a Data key.
@@ -107,6 +133,14 @@ public interface InternalPartitionService extends CoreService {
 
     boolean prepareToSafeShutdown(long timeout, TimeUnit seconds);
 
+    /**
+     * Query and return if this member in a safe state or not.
+     * This method just checks for a safe state, it doesn't force this member to be in a safe state.
+     *
+     * @return <code>true</code> if this member in a safe state, otherwise <code>false</code>
+     */
+    boolean isMemberStateSafe();
+
     InternalPartition[] getPartitions();
 
     Collection<MigrationInfo> getActiveMigrations();
@@ -123,7 +157,6 @@ public interface InternalPartitionService extends CoreService {
 
     void clearPartitionReplicaVersions(int partitionId);
 
-    //todo: this is very strange.
     com.hazelcast.core.PartitionService getPartitionServiceProxy();
 
 }

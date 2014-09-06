@@ -25,9 +25,6 @@ import org.junit.Ignore;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 2/22/13
- */
 @Ignore("not a JUnit test")
 public class QueuePerformanceTest {
 

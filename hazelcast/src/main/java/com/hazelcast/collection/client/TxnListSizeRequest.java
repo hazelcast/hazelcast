@@ -23,9 +23,6 @@ import com.hazelcast.security.permission.ListPermission;
 
 import java.security.Permission;
 
-/**
- * @ali 9/4/13
- */
 public class TxnListSizeRequest extends TxnCollectionRequest {
 
     public TxnListSizeRequest() {

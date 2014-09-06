@@ -17,11 +17,12 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.NoOpCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 
 public class EndCommand extends NoOpCommand {
 
     public EndCommand() {
-        super(END);
+        super(TextCommandConstants.END);
     }
 
     @Override

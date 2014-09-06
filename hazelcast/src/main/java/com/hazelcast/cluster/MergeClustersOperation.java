@@ -24,17 +24,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 public class MergeClustersOperation extends AbstractClusterOperation {
 
-    private Address newTargetAddress = null;
+    private Address newTargetAddress;
 
     public MergeClustersOperation() {
     }
 
     public MergeClustersOperation(Address newTargetAddress) {
-        super();
         this.newTargetAddress = newTargetAddress;
     }
 
@@ -45,7 +43,8 @@ public class MergeClustersOperation extends AbstractClusterOperation {
         final Node node = nodeEngine.getNode();
         final Address masterAddress = node.getMasterAddress();
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
-        if (caller != null && !caller.equals(masterAddress)) { // caller null means local invocation.
+        boolean local = caller == null;
+        if (!local && !caller.equals(masterAddress)) {
             logger.warning("Merge instruction sent from non-master endpoint: " + caller);
             return;
         }

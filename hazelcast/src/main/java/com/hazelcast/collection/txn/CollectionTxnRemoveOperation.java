@@ -24,12 +24,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
-/**
- * @ali 9/3/13
- */
 public class CollectionTxnRemoveOperation extends CollectionBackupAwareOperation {
 
     private long itemId;
@@ -70,8 +66,8 @@ public class CollectionTxnRemoveOperation extends CollectionBackupAwareOperation
 
     @Override
     public void afterRun() throws Exception {
-        if (item != null){
-            publishEvent(ItemEventType.REMOVED, (Data)item.getValue());
+        if (item != null) {
+            publishEvent(ItemEventType.REMOVED, (Data) item.getValue());
         }
     }
 

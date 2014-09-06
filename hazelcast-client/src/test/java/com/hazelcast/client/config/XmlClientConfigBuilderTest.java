@@ -25,8 +25,10 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.XMLConfigBuilderTest;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,26 +41,26 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 
 /**
  * This class tests the usage of {@link XmlClientConfigBuilder}
  */
-@RunWith(HazelcastParallelClassRunner.class)
+//tests need to be executed sequentially because of system properties being set/unset
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class XmlClientConfigBuilderTest {
-
 
     ClientConfig clientConfig;
 
@@ -69,12 +71,78 @@ public class XmlClientConfigBuilderTest {
 
     }
 
+    @After
+    @Before
+    public void after() {
+        System.clearProperty("hazelcast.client.config");
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
+        File file = File.createTempFile("foo", "bar");
+        file.delete();
+        System.setProperty("hazelcast.client.config", file.getAbsolutePath());
+
+        new XmlClientConfigBuilder();
+    }
+
+    @Test
+    public void loadingThroughSystemProperty_existingFile() throws IOException {
+        String xml =
+                "<hazelcast-client>\n" +
+                        "    <group>\n" +
+                        "        <name>foobar</name>\n" +
+                        "        <password>dev-pass</password>\n" +
+                        "    </group>" +
+                        "</hazelcast-client>";
+
+        File file = File.createTempFile("foo", "bar");
+        file.deleteOnExit();
+        PrintWriter writer = new PrintWriter(file, "UTF-8");
+        writer.println(xml);
+        writer.close();
+
+        System.setProperty("hazelcast.client.config", file.getAbsolutePath());
+
+        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
+        ClientConfig config = configBuilder.build();
+        assertEquals("foobar", config.getGroupConfig().getName());
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void loadingThroughSystemProperty_nonExistingClasspathResource() throws IOException {
+        System.setProperty("hazelcast.client.config", "classpath:idontexist");
+        new XmlClientConfigBuilder();
+    }
+
+    @Test
+    public void loadingThroughSystemProperty_existingClasspathResource() throws IOException {
+        System.setProperty("hazelcast.client.config", "classpath:test-hazelcast-client.xml");
+
+        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
+        ClientConfig config = configBuilder.build();
+        assertEquals("foobar", config.getGroupConfig().getName());
+        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", config.getNetworkConfig().getSSLConfig().getFactoryClassName());
+        assertEquals(32, config.getNetworkConfig().getSocketOptions().getBufferSize());
+        assertFalse(config.getNetworkConfig().getSocketOptions().isKeepAlive());
+        assertFalse(config.getNetworkConfig().getSocketOptions().isTcpNoDelay());
+        assertEquals(3, config.getNetworkConfig().getSocketOptions().getLingerSeconds());
+    }
+
     @Test
     public void testGroupConfig() {
         final GroupConfig groupConfig = clientConfig.getGroupConfig();
         assertEquals("dev", groupConfig.getName());
         assertEquals("dev-pass", groupConfig.getPassword());
     }
+
+    @Test
+    public void testProperties() {
+        assertEquals(2, clientConfig.getProperties().size());
+        assertEquals("10000", clientConfig.getProperty("hazelcast.client.connection.timeout"));
+        assertEquals("6", clientConfig.getProperty("hazelcast.client.retry.count"));
+    }
+
 
     @Test
     public void testNetworkConfig() {
@@ -92,6 +160,17 @@ public class XmlClientConfigBuilderTest {
         assertEquals("com.hazelcast.examples.MySocketInterceptor", socketInterceptorConfig.getClassName());
         assertEquals("bar", socketInterceptorConfig.getProperty("foo"));
 
+        final ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
+        assertTrue(awsConfig.isEnabled());
+        assertTrue(awsConfig.isInsideAws());
+        assertEquals("TEST_ACCESS_KEY", awsConfig.getAccessKey());
+        assertEquals("TEST_ACCESS_KEY", awsConfig.getAccessKey());
+        assertEquals("TEST_SECRET_KEY", awsConfig.getSecretKey());
+        assertEquals("us-east-1", awsConfig.getRegion());
+        assertEquals("ec2.amazonaws.com", awsConfig.getHostHeader());
+        assertEquals("type", awsConfig.getTagKey());
+        assertEquals("hz-nodes", awsConfig.getTagValue());
+        assertEquals(11, awsConfig.getConnectionTimeoutSeconds());
     }
 
     @Test
@@ -165,6 +244,7 @@ public class XmlClientConfigBuilderTest {
         assertTrue(listenerConfigs.contains(new ListenerConfig("com.hazelcast.examples.MigrationListener")));
     }
 
+    @Test
     public void testXSDDefaultXML() throws SAXException, IOException {
         testXSDConfigXML("hazelcast-client-default.xml");
     }
@@ -176,7 +256,7 @@ public class XmlClientConfigBuilderTest {
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-config-3.2.xsd");
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-config-3.3.xsd");
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);
@@ -187,5 +267,4 @@ public class XmlClientConfigBuilderTest {
             fail(xmlFileName + " is not valid because: " + ex.toString());
         }
     }
-
 }

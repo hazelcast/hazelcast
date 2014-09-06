@@ -6,15 +6,16 @@ You can also specify which network interfaces that Hazelcast should use. Servers
 
 ```xml
 <hazelcast>
+  ...
+  <network>
     ...
-    <network>
-        ....
-        <interfaces enabled="true">
-            <interface>10.3.16.*</interface> 
-            <interface>10.3.10.4-18</interface> 
-            <interface>192.168.1.3</interface>         
-        </interfaces>    
-    </network>
-    ...
+    <interfaces enabled="true">
+      <interface>10.3.16.*</interface> 
+      <interface>10.3.10.4-18</interface> 
+      <interface>192.168.1.3</interface>         
+    </interfaces>    
+  </network>
+  ...
 </hazelcast> 
 ```
+<br></br>

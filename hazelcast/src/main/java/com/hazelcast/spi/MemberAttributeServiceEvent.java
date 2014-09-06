@@ -21,13 +21,16 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.instance.MemberImpl;
 
+/**
+ * This service event is fired to inform services about a change in a member's attributes collection
+ */
 public class MemberAttributeServiceEvent extends MemberAttributeEvent {
 
     public MemberAttributeServiceEvent() {
-        super();
     }
 
-    public MemberAttributeServiceEvent(Cluster cluster, MemberImpl member, MemberAttributeOperationType operationType, String key, Object value) {
+    public MemberAttributeServiceEvent(Cluster cluster, MemberImpl member, MemberAttributeOperationType operationType,
+                                       String key, Object value) {
         super(cluster, member, operationType, key, value);
     }
 

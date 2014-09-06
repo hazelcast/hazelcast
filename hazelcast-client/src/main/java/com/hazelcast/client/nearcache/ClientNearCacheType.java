@@ -16,6 +16,17 @@
 
 package com.hazelcast.client.nearcache;
 
+/**
+ * Legal near cache types
+ */
 public enum ClientNearCacheType {
+    /**
+     * java.util.concurrent.ConcurrentMap implementation
+     */
     Map,
+
+    /**
+     * com.hazelcast.core.ReplicatedMap implementation
+     */
+    ReplicatedMap
 }

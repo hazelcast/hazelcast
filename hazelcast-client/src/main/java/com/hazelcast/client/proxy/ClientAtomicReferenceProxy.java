@@ -16,9 +16,19 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.atomicreference.client.*;
+import com.hazelcast.concurrent.atomicreference.client.GetRequest;
+import com.hazelcast.concurrent.atomicreference.client.ApplyRequest;
+import com.hazelcast.concurrent.atomicreference.client.AlterRequest;
+import com.hazelcast.concurrent.atomicreference.client.AlterAndGetRequest;
+import com.hazelcast.concurrent.atomicreference.client.GetAndAlterRequest;
+import com.hazelcast.concurrent.atomicreference.client.CompareAndSetRequest;
+import com.hazelcast.concurrent.atomicreference.client.ContainsRequest;
+import com.hazelcast.concurrent.atomicreference.client.SetRequest;
+import com.hazelcast.concurrent.atomicreference.client.GetAndSetRequest;
+import com.hazelcast.concurrent.atomicreference.client.IsNullRequest;
+
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
@@ -30,8 +40,8 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
     private final String name;
     private volatile Data key;
 
-    public ClientAtomicReferenceProxy(String instanceName, String serviceName, String objectId) {
-        super(instanceName, serviceName, objectId);
+    public ClientAtomicReferenceProxy(String serviceName, String objectId) {
+        super(serviceName, objectId);
         this.name = objectId;
     }
 
@@ -61,12 +71,12 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        return (Boolean)invoke(new CompareAndSetRequest(name, toData(expect), toData(update)));
+        return (Boolean) invoke(new CompareAndSetRequest(name, toData(expect), toData(update)));
     }
 
     @Override
     public boolean contains(E expected) {
-        return (Boolean)invoke(new ContainsRequest(name, toData(expected)));
+        return (Boolean) invoke(new ContainsRequest(name, toData(expected)));
     }
 
     @Override
@@ -97,14 +107,10 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
 
     @Override
     public boolean isNull() {
-        return (Boolean)invoke(new IsNullRequest(name));
+        return (Boolean) invoke(new IsNullRequest(name));
     }
 
-    @Override
-    protected void onDestroy() {
-    }
-
-    protected  <T> T invoke(ClientRequest req) {
+    protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }
 

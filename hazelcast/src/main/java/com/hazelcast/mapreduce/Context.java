@@ -19,7 +19,7 @@ package com.hazelcast.mapreduce;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * The Context interface is used for emitting keys and values to the sample space of
+ * The Context interface is used for emitting keys and values to the intermediate working space of
  * the MapReduce algorithm.
  *
  * @param <K> key type of the resulting keys
@@ -30,7 +30,7 @@ import com.hazelcast.spi.annotation.Beta;
 public interface Context<K, V> {
 
     /**
-     * Emits a key-value pair to the sample space. The same key can be used multiple
+     * Emits a key-value pair to the intermediate working space. The same key can be used multiple
      * times to collect values under the same key.
      *
      * @param key   emitted key.

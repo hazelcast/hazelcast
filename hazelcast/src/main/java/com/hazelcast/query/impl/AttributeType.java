@@ -16,50 +16,79 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.FieldType;
-
+/**
+ * Type of Attribute
+ */
 public enum AttributeType {
-    DOUBLE(FieldType.DOUBLE.getId(), TypeConverters.DOUBLE_CONVERTER),
-    LONG(FieldType.LONG.getId(), TypeConverters.LONG_CONVERTER),
-    SHORT(FieldType.SHORT.getId(), TypeConverters.SHORT_CONVERTER),
-    BOOLEAN(FieldType.BOOLEAN.getId(), TypeConverters.BOOLEAN_CONVERTER),
-    BYTE(FieldType.BYTE.getId(), TypeConverters.BYTE_CONVERTER),
-    STRING(FieldType.UTF.getId(), TypeConverters.STRING_CONVERTER),
-    FLOAT(FieldType.FLOAT.getId(), TypeConverters.FLOAT_CONVERTER),
-    CHAR(FieldType.CHAR.getId(), TypeConverters.CHAR_CONVERTER),
-    INTEGER(FieldType.INT.getId(), TypeConverters.INTEGER_CONVERTER),
-    ENUM(44, TypeConverters.ENUM_CONVERTER),
-    BIG_INTEGER(45, TypeConverters.BIG_INTEGER_CONVERTER),
-    BIG_DECIMAL(46, TypeConverters.BIG_DECIMAL_CONVERTER),
-    SQL_TIMESTAMP(47, TypeConverters.SQL_TIMESTAMP_CONVERTER),
-    SQL_DATE(48, TypeConverters.SQL_DATE_CONVERTER),
-    DATE(49, TypeConverters.DATE_CONVERTER);
+    /**
+     * Double
+     */
+    DOUBLE(TypeConverters.DOUBLE_CONVERTER),
+    /**
+     * Long
+     */
+    LONG(TypeConverters.LONG_CONVERTER),
+    /**
+     * Short
+     */
+    SHORT(TypeConverters.SHORT_CONVERTER),
+    /**
+     * Boolean
+     */
+    BOOLEAN(TypeConverters.BOOLEAN_CONVERTER),
+    /**
+     * Byte
+     */
+    BYTE(TypeConverters.BYTE_CONVERTER),
+    /**
+     * String
+     */
+    STRING(TypeConverters.STRING_CONVERTER),
+    /**
+     * Float
+     */
+    FLOAT(TypeConverters.FLOAT_CONVERTER),
+    /**
+     * Char
+     */
+    CHAR(TypeConverters.CHAR_CONVERTER),
+    /**
+     * Integer
+     */
+    INTEGER(TypeConverters.INTEGER_CONVERTER),
+    /**
+     * Enum
+     */
+    ENUM(TypeConverters.ENUM_CONVERTER),
+    /**
+     * Big Integer
+     */
+    BIG_INTEGER(TypeConverters.BIG_INTEGER_CONVERTER),
+    /**
+     * Big Decimal
+     */
+    BIG_DECIMAL(TypeConverters.BIG_DECIMAL_CONVERTER),
+    /**
+     * Sql Time Stamp
+     */
+    SQL_TIMESTAMP(TypeConverters.SQL_TIMESTAMP_CONVERTER),
+    /**
+     * Sql Date
+     */
+    SQL_DATE(TypeConverters.SQL_DATE_CONVERTER),
+    /**
+     * Date
+     */
+    DATE(TypeConverters.DATE_CONVERTER);
 
-    private static final AttributeType[] types = new AttributeType[50];
-
-    static {
-        for (AttributeType cop : AttributeType.values()) {
-            types[cop.getId()] = cop;
-        }
-    }
-
-    private final int id;
     private final TypeConverters.TypeConverter converter;
 
-    private AttributeType(int id, TypeConverters.TypeConverter converter) {
-        this.id = id;
+    private AttributeType(TypeConverters.TypeConverter converter) {
         this.converter = converter;
-    }
-
-    public int getId() {
-        return id;
     }
 
     public TypeConverters.TypeConverter getConverter() {
         return converter;
     }
 
-    public static AttributeType getAttributeType(int id) {
-        return types[id];
-    }
 }

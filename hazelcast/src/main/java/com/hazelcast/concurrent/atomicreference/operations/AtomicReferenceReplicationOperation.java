@@ -16,18 +16,21 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AtomicReferenceReplicationOperation extends AbstractOperation {
+public class AtomicReferenceReplicationOperation extends AbstractOperation
+        implements IdentifiedDataSerializable {
 
     private Map<String, Data> migrationData;
 
@@ -52,6 +55,16 @@ public class AtomicReferenceReplicationOperation extends AbstractOperation {
     @Override
     public String getServiceName() {
         return AtomicReferenceService.SERVICE_NAME;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AtomicReferenceDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return AtomicReferenceDataSerializerHook.REPLICATION;
     }
 
     @Override

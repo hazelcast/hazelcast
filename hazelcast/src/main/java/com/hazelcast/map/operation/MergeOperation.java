@@ -17,10 +17,10 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.record.Record;
-import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
+import com.hazelcast.map.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -32,7 +32,7 @@ public class MergeOperation extends BasePutOperation {
 
     private MapMergePolicy mergePolicy;
     private EntryView<Data, Data> mergingEntry;
-    private boolean merged = false;
+    private boolean merged;
 
     public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView, MapMergePolicy policy) {
         super(name, dataKey, null);
@@ -44,14 +44,12 @@ public class MergeOperation extends BasePutOperation {
     }
 
     public void run() {
-        SimpleEntryView entryView = (SimpleEntryView) mergingEntry;
-        entryView.setKey(mapService.toObject(mergingEntry.getKey()));
-        entryView.setValue(mapService.toObject(mergingEntry.getValue()));
         merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
         if (merged) {
             Record record = recordStore.getRecord(dataKey);
-            if (record != null)
-                dataValue = mapService.toData(record.getValue());
+            if (record != null) {
+                dataValue = mapService.getMapServiceContext().toData(record.getValue());
+            }
         }
     }
 
@@ -62,7 +60,8 @@ public class MergeOperation extends BasePutOperation {
 
 
     public boolean shouldBackup() {
-        return merged;
+        final Record record = recordStore.getRecord(dataKey);
+        return merged && record != null;
     }
 
     public void afterRun() {
@@ -72,12 +71,11 @@ public class MergeOperation extends BasePutOperation {
     }
 
     public Operation getBackupOperation() {
-        if(dataValue == null) {
+        if (dataValue == null) {
             return new RemoveBackupOperation(name, dataKey);
-        }
-        else {
-            RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer,
-                    recordStore.getRecord(dataKey));
+        } else {
+            final Record record = recordStore.getRecord(dataKey);
+            final RecordInfo replicationInfo = Records.buildRecordInfo(record);
             return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
         }
     }

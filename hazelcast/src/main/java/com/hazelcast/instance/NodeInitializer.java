@@ -16,9 +16,16 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.tcp.PacketReader;
+import com.hazelcast.nio.tcp.PacketWriter;
+import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
+import com.hazelcast.wan.WanReplicationService;
 
 public interface NodeInitializer {
 
@@ -32,5 +39,16 @@ public interface NodeInitializer {
 
     Storage<DataRef> getOffHeapStorage();
 
+    WanReplicationService geWanReplicationService();
+
+    MemberSocketInterceptor getMemberSocketInterceptor();
+
+    SocketChannelWrapperFactory getSocketChannelWrapperFactory();
+
+    PacketReader createPacketReader(TcpIpConnection connection, IOService ioService);
+
+    PacketWriter createPacketWriter(TcpIpConnection connection, IOService ioService);
+
     void destroy();
+
 }

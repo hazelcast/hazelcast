@@ -27,9 +27,9 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public class ListenerConfig {
 
-    protected String className = null;
+    protected String className;
 
-    protected EventListener implementation = null;
+    protected EventListener implementation;
 
     private ListenerConfigReadOnly readOnly;
 
@@ -141,7 +141,9 @@ public class ListenerConfig {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o) {
+            return true;
+        }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
@@ -151,7 +153,6 @@ public class ListenerConfig {
         if (className != null ? !className.equals(that.className) : that.className != null) {
             return false;
         }
-
         return true;
     }
 

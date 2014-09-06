@@ -27,9 +27,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.io.IOException;
 import java.util.Collection;
 
-/**
- * @author mdogan 09/05/13
- */
 public final class BroadcastTxRollbackOperation extends Operation {
 
     private String txnId;

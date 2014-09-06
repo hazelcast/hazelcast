@@ -17,6 +17,7 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.AbstractTextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 
 import java.nio.ByteBuffer;
 
@@ -24,14 +25,14 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class VersionCommand extends AbstractTextCommand {
 
-    private static final byte[] version = stringToBytes("VERSION Hazelcast\r\n");
+    private static final byte[] VERSION = stringToBytes("VERSION Hazelcast\r\n");
 
-    protected VersionCommand(TextCommandType type) {
+    protected VersionCommand(TextCommandConstants.TextCommandType type) {
         super(type);
     }
 
     public boolean writeTo(ByteBuffer destination) {
-        destination.put(version);
+        destination.put(VERSION);
         return true;
     }
 

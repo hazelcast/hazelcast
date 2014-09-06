@@ -17,6 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,6 +38,7 @@ public class PartitionRuntimeState implements DataSerializable {
     protected final ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
 
     private final Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
+    private ILogger logger;
     private long masterTime = Clock.currentTimeMillis();
     private int version;
     private Collection<MigrationInfo> completedMigrations;
@@ -45,10 +47,12 @@ public class PartitionRuntimeState implements DataSerializable {
     public PartitionRuntimeState() {
     }
 
-    public PartitionRuntimeState(Collection<MemberInfo> memberInfos,
+    public PartitionRuntimeState(ILogger logger,
+                                 Collection<MemberInfo> memberInfos,
                                  InternalPartition[] partitions,
                                  Collection<MigrationInfo> migrationInfos,
                                  long masterTime, int version) {
+        this.logger = logger;
         this.masterTime = masterTime;
         this.version = version;
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(memberInfos.size());
@@ -67,6 +71,7 @@ public class PartitionRuntimeState implements DataSerializable {
     }
 
     protected void setPartitions(InternalPartition[] partitions, Map<Address, Integer> addressIndexes) {
+        List<String> unmatchAddresses = new LinkedList<String>();
         for (InternalPartition partition : partitions) {
             ShortPartitionInfo partitionInfo = new ShortPartitionInfo(partition.getPartitionId());
             for (int index = 0; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
@@ -75,14 +80,26 @@ public class PartitionRuntimeState implements DataSerializable {
                     partitionInfo.addressIndexes[index] = -1;
                 } else {
                     Integer knownIndex = addressIndexes.get(address);
+
                     if (knownIndex == null && index == 0) {
-                        throw new IllegalStateException("Unknown owner address in partition state! "
-                                + "Address: " + address + ", " + partition);
+                        unmatchAddresses.add(address + " -> " + partition);
                     }
-                    partitionInfo.addressIndexes[index] = knownIndex != null ? addressIndexes.get(address) : -1;
+                    if (knownIndex == null) {
+                        partitionInfo.addressIndexes[index] = -1;
+                    } else {
+                        partitionInfo.addressIndexes[index] = knownIndex;
+                    }
                 }
             }
             partitionInfos.add(partitionInfo);
+        }
+
+        if (!unmatchAddresses.isEmpty()) {
+            // it can happen that the primary address at any given moment is not known,
+            // most probably because master node has updated/published the partition table yet
+            // or partition table update is not received yet.
+            logger.warning("Unknown owner addresses in partition state! "
+                    + "(Probably they have recently joined to or left the cluster.) " + unmatchAddresses);
         }
     }
 

@@ -2,10 +2,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.AndResultSet;
-import com.hazelcast.query.impl.AttributeType;
-import com.hazelcast.query.impl.QueryException;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

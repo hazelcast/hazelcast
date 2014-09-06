@@ -234,11 +234,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                             final TransactionalMap<Object, Object> txMap = context.getMap("default");
                             for (int i = 0; i < size; i++) {
                                 txMap.put(i, i);
-                                try {
-                                    Thread.sleep(100);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
+                                sleepSeconds(1);
                             }
                             return true;
                         }
@@ -252,8 +248,10 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         Thread thread = new Thread(runnable);
         thread.start();
-        Thread.sleep(200);
+        sleepSeconds(1);
+
         h1.shutdown();
+        // wait till thread finishes.
         thread.join(30 * 1000);
 
         assertFalse(result.get());
@@ -391,9 +389,10 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testTxnGetForUpdateTxnFails() throws TransactionException {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "1000");
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
@@ -1264,5 +1263,30 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         assertOpenEventually("Not reached expected update event count", expectedUpdateEventCount);
 
+    }
+
+    @Test
+    public void testUpdatesInTxnFiresUpdateEventWithNonNullOldValue() throws Exception {
+        final String mapName = randomMapName();
+        final HazelcastInstance node = createHazelcastInstance();
+        final IMap<String, String> map = node.getMap(mapName);
+        final CountDownLatch expectedUpdateEventCount = new CountDownLatch(1);
+        map.put("foo", "one");
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            @Override
+            public void entryUpdated(EntryEvent<String, String> event) {
+                assertEquals("two", event.getValue());
+                assertEquals("one", event.getOldValue());
+                expectedUpdateEventCount.countDown();
+            }
+
+        }, true);
+
+        TransactionContext context = node.newTransactionContext();
+        context.beginTransaction();
+        TransactionalMap<String, String> transactionalMap = context.getMap(mapName);
+        transactionalMap.put("foo", "two");
+        context.commitTransaction();
+        assertOpenEventually("Not reached expected update event count", expectedUpdateEventCount);
     }
 }

@@ -16,69 +16,100 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BackupCompletionCallback;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.TraceableOperation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallTimeoutException;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
+import static com.hazelcast.spi.OperationAccessor.isMigrationOperation;
+import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
+import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
+import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
 
 /**
  * The BasicInvocation evaluates a OperationInvocation for the {@link com.hazelcast.spi.impl.BasicOperationService}.
+ * <p/>
+ * A handle to wait for the completion of this BasicInvocation is the
+ * {@link com.hazelcast.spi.impl.BasicInvocationFuture}.
  */
-abstract class BasicInvocation implements Callback<Object>, BackupCompletionCallback {
+abstract class BasicInvocation implements ResponseHandler, Runnable {
 
-    private static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
+    public static final long TIMEOUT = 5;
 
-    private static final Object RETRY_RESPONSE = new InternalResponse("Invocation::RETRY_RESPONSE");
+    /**
+     * A response indicating the 'null' value.
+     */
+    static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
 
-    private static final Object WAIT_RESPONSE = new InternalResponse("Invocation::WAIT_RESPONSE");
+    /**
+     * A response indicating that the operation should be executed again. E.g. because an operation
+     * was send to the wrong machine.
+     */
+    static final Object RETRY_RESPONSE = new InternalResponse("Invocation::RETRY_RESPONSE");
 
-    private static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
+    /**
+     * Indicating that there currently is no 'result' available. An example is some kind of blocking
+     * operation like ILock.lock. If this lock isn't available at the moment, the wait response
+     * is returned.
+     */
+    static final Object WAIT_RESPONSE = new InternalResponse("Invocation::WAIT_RESPONSE");
 
-    private static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
+    /**
+     * A response indicating that a timeout has happened.
+     */
+    static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
 
-    private static long decrementTimeout(long timeout, long diff) {
-        if (timeout != Long.MAX_VALUE) {
-            timeout -= diff;
+    /**
+     * A response indicating that the operation execution was interrupted
+     */
+    static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
+
+    private static final int TEN_FACTOR = 10;
+    private static final int NINETY_NINE_COUNT = 99;
+    private static final int INVOKE_COUNT_FIVE = 5;
+
+    private static final AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
+
+    static final class InternalResponse {
+
+        private String toString;
+
+        private InternalResponse(String toString) {
+            this.toString = toString;
         }
-        return timeout;
+
+        @Override
+        public String toString() {
+            return toString;
+        }
     }
 
     private static final long MIN_TIMEOUT = 10000;
+    private static final int MAX_FAST_INVOCATION_COUNT = 5;
+    //some constants for logging purposes
+    private static final int LOG_MAX_INVOCATION_COUNT = 99;
+    private static final int LOG_INVOCATION_COUNT_MOD = 10;
 
     protected final long callTimeout;
     protected final NodeEngineImpl nodeEngine;
@@ -89,19 +120,31 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     protected final int tryCount;
     protected final long tryPauseMillis;
     protected final ILogger logger;
-    //todo: in the future we could get rid of this object, just let the BasicInvocation implement the Future interface.
-    private final InvocationFuture invocationFuture;
+    final boolean resultDeserialized;
+    boolean remote;
+    volatile int backupsCompleted;
+    volatile NormalResponse potentialResponse;
+    volatile int backupsExpected;
 
-    private volatile int invokeCount = 0;
-    private volatile Address target;
-    private boolean remote = false;
+    private final BasicInvocationFuture invocationFuture;
+    private final BasicOperationService operationService;
+
+    //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
+    private volatile Boolean responseReceived = Boolean.FALSE;
+
+    //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
+    private volatile int invokeCount;
+
     private final String executorName;
-    private final boolean resultDeserialized;
+
+    private Address invTarget;
+    private MemberImpl invTargetMember;
 
     BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
                     String executorName, boolean resultDeserialized) {
         this.logger = nodeEngine.getLogger(BasicInvocation.class);
+        this.operationService = (BasicOperationService) nodeEngine.operationService;
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
@@ -110,7 +153,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
-        this.invocationFuture = new InvocationFuture(callback);
+        this.invocationFuture = new BasicInvocationFuture(operationService, this, callback);
         this.executorName = executorName;
         this.resultDeserialized = resultDeserialized;
     }
@@ -133,7 +176,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         return partitionId;
     }
 
-    private ExecutorService getAsyncExecutor() {
+    ExecutorService getAsyncExecutor() {
         return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
@@ -142,7 +185,6 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             return callTimeout;
         }
 
-        BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
         final long defaultCallTimeout = operationService.getDefaultCallTimeout();
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = op.getWaitTimeout();
@@ -163,8 +205,9 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         return defaultCallTimeout;
     }
 
-    public final InvocationFuture invoke() {
-        if (invokeCount > 0) {   // no need to be pessimistic.
+    public final BasicInvocationFuture invoke() {
+        if (invokeCount > 0) {
+            // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
         }
 
@@ -173,8 +216,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }
 
         try {
-            OperationAccessor.setCallTimeout(op, callTimeout);
-            OperationAccessor.setCallerAddress(op, nodeEngine.getThisAddress());
+            setCallTimeout(op, callTimeout);
+            setCallerAddress(op, nodeEngine.getThisAddress());
             op.setNodeEngine(nodeEngine)
                     .setServiceName(serviceName)
                     .setPartitionId(partitionId)
@@ -183,28 +226,128 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
-            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-            if (!operationService.isInvocationAllowedFromCurrentThread(op) && !OperationAccessor.isMigrationOperation(op)) {
+            if (!operationService.scheduler.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
         } catch (Exception e) {
-            if (e instanceof RetryableException) {
-                notify(e);
-            } else {
-                throw ExceptionUtil.rethrow(e);
-            }
+            handleInvocationException(e);
         }
         return invocationFuture;
     }
 
+    private void handleInvocationException(Exception e) {
+        if (e instanceof RetryableException) {
+            notify(e);
+        } else {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
 
     private void resetAndReInvoke() {
-        reinvocations++;
         invokeCount = 0;
         potentialResponse = null;
-        expectedBackupCount = -1;
+        backupsExpected = -1;
         doInvoke();
+    }
+
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
+    private void doInvoke() {
+        if (!engineActive()) {
+            return;
+        }
+
+        invokeCount++;
+
+        if (!initInvocationTarget()) {
+            return;
+        }
+
+        setInvocationTime(op, nodeEngine.getClusterTime());
+
+        if (remote) {
+            doInvokeRemote();
+        } else {
+            doInvokeLocal();
+        }
+    }
+
+    private void doInvokeLocal() {
+        if (op instanceof BackupAwareOperation) {
+            operationService.registerInvocation(this);
+        }
+
+        responseReceived = Boolean.FALSE;
+        op.setResponseHandler(this);
+
+        //todo: should move to the operationService.
+        if (operationService.scheduler.isAllowedToRunInCurrentThread(op)) {
+            operationService.runOperationOnCallingThread(op);
+        } else {
+            operationService.executeOperation(op);
+        }
+    }
+
+    private void doInvokeRemote() {
+        operationService.registerInvocation(this);
+        boolean sent = operationService.send(op, invTarget);
+        if (!sent) {
+            operationService.deregisterInvocation(this);
+            notify(new RetryableIOException("Packet not send to -> " + invTarget));
+        }
+    }
+
+    private boolean engineActive() {
+        if (!nodeEngine.isActive()) {
+            remote = false;
+            notify(new HazelcastInstanceNotActiveException());
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Initializes the invocation target.
+     *
+     * @return true of the initialization was a success
+     */
+    private boolean initInvocationTarget() {
+        Address thisAddress = nodeEngine.getThisAddress();
+
+        invTarget = getTarget();
+
+        if (invTarget == null) {
+            remote = false;
+            if (nodeEngine.isActive()) {
+                notify(new WrongTargetException(thisAddress, null, partitionId
+                        , replicaIndex, op.getClass().getName(), serviceName));
+            } else {
+                notify(new HazelcastInstanceNotActiveException());
+            }
+            return false;
+        }
+
+        invTargetMember = nodeEngine.getClusterService().getMember(invTarget);
+        if (!isJoinOperation(op) && invTargetMember == null) {
+            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            return false;
+        }
+
+        if (op.getPartitionId() != partitionId) {
+            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId()
+                    + " is not equal to the partition id of invocation: " + partitionId));
+            return false;
+        }
+
+        if (op.getReplicaIndex() != replicaIndex) {
+            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex()
+                    + " is not equal to the replica index of invocation: " + replicaIndex));
+            return false;
+        }
+
+        remote = !thisAddress.equals(invTarget);
+        return true;
     }
 
     private static Throwable getError(Object obj) {
@@ -229,63 +372,40 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
     }
 
     @Override
-    public void notify(Object obj) {
-        Object response;
-        if (obj == null) {
-            response = NULL_RESPONSE;
-        } else {
-            Throwable error = getError(obj);
-            if (error != null) {
-                if (error instanceof CallTimeoutException) {
-                    response = RETRY_RESPONSE;
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
-                    }
-                    if (op instanceof WaitSupport) {
-                        // decrement wait-timeout by call-timeout
-                        long waitTimeout = op.getWaitTimeout();
-                        waitTimeout -= callTimeout;
-                        op.setWaitTimeout(waitTimeout);
-                    }
-                    invokeCount--;
-                } else {
-                    final ExceptionAction action = onException(error);
-                    final int localInvokeCount = invokeCount;
-                    if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
-                        response = RETRY_RESPONSE;
-                        if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
-                            logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
-                        }
-                    } else if (action == ExceptionAction.CONTINUE_WAIT) {
-                        response = WAIT_RESPONSE;
-                    } else {
-                        response = error;
-                    }
-                }
-            } else {
-                response = obj;
-            }
+    public void sendResponse(Object obj) {
+        if (!RESPONSE_RECEIVED_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
+            throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
+                    + ", current-response: : " + obj);
         }
+        notify(obj);
+    }
+
+    @Override
+    public boolean isLocal() {
+        return true;
+    }
+
+    public boolean isCallTarget(MemberImpl leftMember) {
+        if (invTargetMember == null) {
+            return leftMember.getAddress().equals(invTarget);
+        } else {
+            return leftMember.getUuid().equals(invTargetMember.getUuid());
+        }
+    }
+
+    //this method is called by the operation service to signal the invocation that something has happened, e.g.
+    //a response is returned.
+    //@Override
+    public void notify(Object obj) {
+        Object response = resolveResponse(obj);
 
         if (response == RETRY_RESPONSE) {
-            if (invocationFuture.interrupted) {
-                invocationFuture.set(INTERRUPTED_RESPONSE);
-            } else {
-                invocationFuture.set(WAIT_RESPONSE);
-                final ExecutionService ex = nodeEngine.getExecutionService();
-                // fast retry for the first few reinvocations
-                if (invokeCount < 5) {
-                    getAsyncExecutor().execute(new ReInvocationTask());
-                } else {
-                    ex.schedule(ExecutionService.ASYNC_EXECUTOR, new ReInvocationTask(),
-                            tryPauseMillis, TimeUnit.MILLISECONDS);
-                }
-            }
+            handleRetryResponse();
             return;
         }
 
         if (response == WAIT_RESPONSE) {
-            invocationFuture.set(WAIT_RESPONSE);
+            handleWaitResponse();
             return;
         }
 
@@ -294,7 +414,7 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         if (response instanceof NormalResponse && op instanceof BackupAwareOperation) {
             final NormalResponse resp = (NormalResponse) response;
             if (resp.getBackupCount() > 0) {
-                waitForBackups(resp.getBackupCount(), 5, TimeUnit.SECONDS, resp);
+                waitForBackups(resp.getBackupCount(), TIMEOUT, TimeUnit.SECONDS, resp);
                 return;
             }
         }
@@ -303,90 +423,72 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         invocationFuture.set(response);
     }
 
-    private void doInvoke() {
-        if (!nodeEngine.isActive()) {
-            remote = false;
-            notify(new HazelcastInstanceNotActiveException());
-            return;
-        }
+    private void handleWaitResponse() {
+        invocationFuture.set(WAIT_RESPONSE);
+    }
 
-        final Address invTarget = getTarget();
-        target = invTarget;
-        invokeCount++;
-        final Address thisAddress = nodeEngine.getThisAddress();
-        if (invTarget == null) {
-            remote = false;
-            if (nodeEngine.isActive()) {
-                notify(new WrongTargetException(thisAddress, null, partitionId, replicaIndex, op.getClass().getName(), serviceName));
-            } else {
-                notify(new HazelcastInstanceNotActiveException());
-            }
-            return;
-        }
-
-        final MemberImpl member = nodeEngine.getClusterService().getMember(invTarget);
-        if (!OperationAccessor.isJoinOperation(op) && member == null) {
-            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
-            return;
-        }
-
-        if (op.getPartitionId() != partitionId) {
-            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
-                    " is not equal to the partition id of invocation: " + partitionId));
-            return;
-        }
-
-        if (op.getReplicaIndex() != replicaIndex) {
-            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
-                    " is not equal to the replica index of invocation: " + replicaIndex));
-            return;
-        }
-
-        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-        OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
-
-        remote = !thisAddress.equals(invTarget);
-        if (remote) {
-            final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
-            final long callId = operationService.registerRemoteCall(call);
-            if (op instanceof BackupAwareOperation) {
-                registerBackups((BackupAwareOperation) op, callId);
-            }
-            OperationAccessor.setCallId(op, callId);
-            boolean sent = operationService.send(op, invTarget);
-            if (!sent) {
-                operationService.deregisterRemoteCall(callId);
-                operationService.deregisterBackupCall(callId);
-                notify(new RetryableIOException("Packet not sent to -> " + invTarget));
-            }
+    private void handleRetryResponse() {
+        if (invocationFuture.interrupted) {
+            invocationFuture.set(INTERRUPTED_RESPONSE);
         } else {
-            if (op instanceof BackupAwareOperation) {
-                final long callId = operationService.newCallId();
-                registerBackups((BackupAwareOperation) op, callId);
-                OperationAccessor.setCallId(op, callId);
-            }
-            ResponseHandlerFactory.setLocalResponseHandler(op, this);
-            //todo: should move to the operationService.
-            if (operationService.isAllowedToRunInCurrentThread(op)) {
-                operationService.runOperation(op);
+            invocationFuture.set(WAIT_RESPONSE);
+            final ExecutionService ex = nodeEngine.getExecutionService();
+            // fast retry for the first few invocations
+            if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
+                getAsyncExecutor().execute(this);
             } else {
-                operationService.executeOperation(op);
+                ex.schedule(ExecutionService.ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
             }
         }
+    }
+
+    private Object resolveResponse(Object obj) {
+        if (obj == null) {
+            return NULL_RESPONSE;
+        }
+
+        Throwable error = getError(obj);
+        if (error == null) {
+            return obj;
+        }
+
+        if (error instanceof CallTimeoutException) {
+            return resolveCallTimeout();
+        }
+
+        ExceptionAction action = onException(error);
+        int localInvokeCount = invokeCount;
+        if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
+            if (localInvokeCount > LOG_MAX_INVOCATION_COUNT && localInvokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
+                logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
+            }
+            return RETRY_RESPONSE;
+        }
+
+        if (action == ExceptionAction.CONTINUE_WAIT) {
+            return WAIT_RESPONSE;
+        }
+
+        return error;
+    }
+
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
+    private Object resolveCallTimeout() {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
+        }
+        if (op instanceof WaitSupport) {
+            // decrement wait-timeout by call-timeout
+            long waitTimeout = op.getWaitTimeout();
+            waitTimeout -= callTimeout;
+            op.setWaitTimeout(waitTimeout);
+        }
+        invokeCount--;
+        return RETRY_RESPONSE;
     }
 
     protected abstract Address getTarget();
-
-
-    private void registerBackups(BackupAwareOperation op, long callId) {
-        final long oldCallId = ((Operation) op).getCallId();
-        final BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-        if (oldCallId != 0) {
-            operationService.deregisterBackupCall(oldCallId);
-        }
-        operationService.registerBackupCall(callId, this);
-    }
-
 
     @Override
     public String toString() {
@@ -400,26 +502,23 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         sb.append(", tryPauseMillis=").append(tryPauseMillis);
         sb.append(", invokeCount=").append(invokeCount);
         sb.append(", callTimeout=").append(callTimeout);
-        sb.append(", target=").append(target);
+        sb.append(", target=").append(invTarget);
         sb.append('}');
         return sb.toString();
     }
 
-    private volatile int reinvocations = 0;
-    private volatile int availableBackups;
-    private volatile NormalResponse potentialResponse;
-    private volatile int expectedBackupCount;
 
-    @Override
+    //backupsCompleted is incremented while a lock is hold.
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     public void signalOneBackupComplete() {
         synchronized (this) {
-            availableBackups++;
+            backupsCompleted++;
 
-            if (expectedBackupCount == -1) {
+            if (backupsExpected == -1) {
                 return;
             }
 
-            if (expectedBackupCount != availableBackups) {
+            if (backupsExpected != backupsCompleted) {
                 return;
             }
 
@@ -431,9 +530,9 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
 
     private void waitForBackups(int backupCount, long timeout, TimeUnit unit, NormalResponse response) {
         synchronized (this) {
-            this.expectedBackupCount = backupCount;
+            this.backupsExpected = backupCount;
 
-            if (availableBackups == expectedBackupCount) {
+            if (backupsCompleted == backupsExpected) {
                 invocationFuture.set(response);
                 return;
             }
@@ -445,12 +544,12 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
             @Override
             public void run() {
                 synchronized (BasicInvocation.this) {
-                    if (expectedBackupCount == availableBackups) {
+                    if (backupsExpected == backupsCompleted) {
                         return;
                     }
                 }
 
-                if (nodeEngine.getClusterService().getMember(target) != null) {
+                if (nodeEngine.getClusterService().getMember(invTarget) != null) {
                     synchronized (BasicInvocation.this) {
                         if (BasicInvocation.this.potentialResponse != null) {
                             invocationFuture.set(BasicInvocation.this.potentialResponse);
@@ -465,476 +564,8 @@ abstract class BasicInvocation implements Callback<Object>, BackupCompletionCall
         }, timeout, unit);
     }
 
-    public static class IsStillExecuting extends AbstractOperation {
-
-        private long operationCallId;
-
-        IsStillExecuting() {
-        }
-
-        private IsStillExecuting(long operationCallId) {
-            this.operationCallId = operationCallId;
-        }
-
-        @Override
-        public void run() throws Exception {
-            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-            boolean executing = operationService.isOperationExecuting(getCallerAddress(), getCallerUuid(), operationCallId);
-            getResponseHandler().sendResponse(executing);
-        }
-
-        @Override
-        public boolean returnsResponse() {
-            return false;
-        }
-
-        @Override
-        protected void readInternal(ObjectDataInput in) throws IOException {
-            super.readInternal(in);
-            operationCallId = in.readLong();
-        }
-
-        @Override
-        protected void writeInternal(ObjectDataOutput out) throws IOException {
-            super.writeInternal(out);
-            out.writeLong(operationCallId);
-        }
-    }
-
-    public static class TraceableIsStillExecuting extends AbstractOperation {
-
-        private String serviceName;
-        private Object identifier;
-
-        TraceableIsStillExecuting() {
-        }
-
-        public TraceableIsStillExecuting(String serviceName, Object identifier) {
-            this.serviceName = serviceName;
-            this.identifier = identifier;
-        }
-
-        @Override
-        public void run() throws Exception {
-            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-            boolean executing = operationService.isOperationExecuting(getCallerAddress(), getCallerUuid(),
-                    serviceName, identifier);
-            getResponseHandler().sendResponse(executing);
-        }
-
-        @Override
-        public boolean returnsResponse() {
-            return false;
-        }
-
-        @Override
-        protected void readInternal(ObjectDataInput in) throws IOException {
-            super.readInternal(in);
-            serviceName = in.readUTF();
-            identifier = in.readObject();
-        }
-
-        @Override
-        protected void writeInternal(ObjectDataOutput out) throws IOException {
-            super.writeInternal(out);
-            out.writeUTF(serviceName);
-            out.writeObject(identifier);
-        }
-    }
-
-    private class ReInvocationTask implements Runnable {
-        public void run() {
-            doInvoke();
-        }
-    }
-
-    private static class ExecutionCallbackNode<E> {
-        private final ExecutionCallback<E> callback;
-        private final Executor executor;
-        private final ExecutionCallbackNode<E> next;
-
-        private ExecutionCallbackNode(ExecutionCallback<E> callback, Executor executor, ExecutionCallbackNode<E> next) {
-            this.callback = callback;
-            this.executor = executor;
-            this.next = next;
-        }
-    }
-
-    private static class ExecutorCallbackAdapter<E> implements ExecutionCallback<E> {
-        private final Callback callback;
-
-        private ExecutorCallbackAdapter(Callback callback) {
-            this.callback = callback;
-        }
-
-        @Override
-        public void onResponse(E response) {
-            callback.notify(response);
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            callback.notify(t);
-        }
-    }
-
-    private final class InvocationFuture<E> implements InternalCompletableFuture<E> {
-
-        volatile ExecutionCallbackNode<E> callbackHead;
-        volatile Object response;
-        volatile boolean interrupted = false;
-
-        private InvocationFuture(final Callback<E> callback) {
-            if (callback != null) {
-                ExecutorCallbackAdapter<E> adapter = new ExecutorCallbackAdapter<E>(callback);
-                callbackHead = new ExecutionCallbackNode<E>(adapter, getAsyncExecutor(), null);
-            }
-        }
-
-        @Override
-        public void andThen(ExecutionCallback<E> callback, Executor executor) {
-            isNotNull(callback, "callback");
-            isNotNull(executor, "executor");
-
-            synchronized (this) {
-                if (response != null) {
-                    runAsynchronous(callback, executor);
-                    return;
-                }
-
-                this.callbackHead = new ExecutionCallbackNode<E>(callback, executor, callbackHead);
-            }
-        }
-
-        @Override
-        public void andThen(ExecutionCallback<E> callback) {
-            andThen(callback, getAsyncExecutor());
-        }
-
-        private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Object resp = resolveResponse(response);
-
-                        if (resp == null || !(resp instanceof Throwable)) {
-                            callback.onResponse((E) resp);
-                        } else {
-                            callback.onFailure((Throwable) resp);
-                        }
-                    } catch (Throwable t) {
-                        //todo: improved error message
-                        logger.severe("Failed to async for " + BasicInvocation.this, t);
-                    }
-                }
-            });
-        }
-
-        public void set(Object response) {
-            if (response == null) {
-                throw new IllegalArgumentException("response can't be null");
-            }
-
-            if (response instanceof NormalResponse) {
-                response = ((NormalResponse) response).getValue();
-            }
-
-            if (response == null) {
-                response = NULL_RESPONSE;
-            }
-
-            ExecutionCallbackNode<E> callbackChain;
-            synchronized (this) {
-                if (this.response != null && !(this.response instanceof InternalResponse)) {
-                    throw new IllegalArgumentException("The InvocationFuture.set method can only be called once");
-                }
-                this.response = response;
-                if (response == WAIT_RESPONSE) {
-                    return;
-                }
-                callbackChain = callbackHead;
-                callbackHead = null;
-                this.notifyAll();
-            }
-
-            //we need to deregister the backup call to make sure that there is no memory leak.
-            BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-            operationService.deregisterBackupCall(op.getCallId());
-
-            while (callbackChain != null) {
-                runAsynchronous(callbackChain.callback, callbackChain.executor);
-                callbackChain = callbackChain.next;
-            }
-        }
-
-        @Override
-        public E get() throws InterruptedException, ExecutionException {
-            try {
-                return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-            } catch (TimeoutException e) {
-                logger.severe("Unexpected timeout while processing " + this, e);
-                return null;
-            }
-        }
-
-        @Override
-        public E getSafely() {
-            try {
-                //todo:
-                //this method is quite inefficient when there is unchecked exception, because it will be wrapped
-                //in a ExecutionException, and then it is unwrapped again.
-                return get();
-            } catch (Throwable throwable) {
-                throw ExceptionUtil.rethrow(throwable);
-            }
-        }
-
-        @Override
-        public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            Object unresolvedResponse = waitForResponse(timeout, unit);
-            return (E) resolveResponseOrThrowException(unresolvedResponse);
-        }
-
-        private Object waitForResponse(long time, TimeUnit unit) {
-            if (response != null && response != WAIT_RESPONSE) {
-                return response;
-            }
-            long timeoutMs = unit.toMillis(time);
-            if (timeoutMs < 0) timeoutMs = 0;
-
-            final long maxCallTimeout = callTimeout * 2 > 0 ? callTimeout * 2 : Long.MAX_VALUE;
-            final boolean longPolling = timeoutMs > maxCallTimeout;
-            int pollCount = 0;
-
-            while (timeoutMs >= 0) {
-                final long pollTimeoutMs = Math.min(maxCallTimeout, timeoutMs);
-                final long startMs = Clock.currentTimeMillis();
-
-                long lastPollTime = 0;
-                pollCount++;
-                try {
-                    pollResponse(pollTimeoutMs);
-                    lastPollTime = Clock.currentTimeMillis() - startMs;
-                    timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
-
-                    if (response != null) {
-                        if (response == WAIT_RESPONSE) {
-                            continue;
-                        }
-                        //if the thread is interrupted, but the response was not an interrupted-response,
-                        //we need to restore the interrupt flag.
-                        if (response != INTERRUPTED_RESPONSE && interrupted) {
-                            Thread.currentThread().interrupt();
-                        }
-                        return response;
-                    }
-                } catch (InterruptedException e) {
-                    interrupted = true;
-                }
-
-                if (!interrupted && /* response == null && */ longPolling) {
-                    // no response!
-                    final Address target = getTarget();
-                    if (nodeEngine.getThisAddress().equals(target)) {
-                        // target may change during invocation because of migration!
-                        continue;
-                    }
-                    // TODO: @mm - improve logging (see SystemLogService)
-                    logger.warning("No response for " + lastPollTime + " ms. " + toString());
-
-                    boolean executing = isOperationExecuting(target);
-                    if (!executing) {
-                        if (response != null) {
-                            continue;
-                        }
-                        return newOperationTimeoutException(pollCount,pollTimeoutMs);
-                    }
-                }
-            }
-            return TIMEOUT_RESPONSE;
-        }
-
-        private void pollResponse(final long pollTimeoutMs) throws InterruptedException {
-            //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
-            if (pollTimeoutMs > 0) {
-                long currentTimeoutMs = pollTimeoutMs;
-                final long waitStart = Clock.currentTimeMillis();
-                synchronized (this) {
-                    while (currentTimeoutMs > 0 && (response == null || response == WAIT_RESPONSE)) {
-                        wait(currentTimeoutMs);
-                        currentTimeoutMs = pollTimeoutMs - (Clock.currentTimeMillis() - waitStart);
-                    }
-                }
-            }
-        }
-
-        private Object newOperationTimeoutException(int pollCount, long pollTimeoutMs) {
-            boolean hasResponse = potentialResponse != null;
-            int backupsExpected = expectedBackupCount;
-            int backupsCompleted = availableBackups;
-
-            if (hasResponse) {
-                return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount) + " ms."
-                        + " Aborting invocation! " + toString()
-                        + " Not all backups have completed "
-                        + " backups-expected: " + backupsExpected
-                        + " backups-completed: " + backupsCompleted
-                        + " reinvocations: " + reinvocations
-
-                );
-            } else {
-                return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount) + " ms."
-                        + " Aborting invocation! " + toString()
-                        + " No response has been send "
-                        + " backups-expected: " + backupsExpected
-                        + " backups-completed: " + backupsCompleted
-                        + " reinvocations: " + reinvocations
-                );
-            }
-        }
-
-        private Object resolveResponseOrThrowException(Object unresolvedResponse)
-                throws ExecutionException, InterruptedException, TimeoutException {
-
-            Object response = resolveResponse(unresolvedResponse);
-
-            if (response == null || !(response instanceof Throwable)) {
-                return response;
-            }
-
-            if (response instanceof ExecutionException) {
-                throw (ExecutionException) response;
-            }
-
-            if (response instanceof TimeoutException) {
-                throw (TimeoutException) response;
-            }
-
-            if (response instanceof InterruptedException) {
-                throw (InterruptedException) response;
-            }
-
-            if (response instanceof Error) {
-                throw (Error) response;
-            }
-
-            // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
-            throw new ExecutionException((Throwable) response);
-        }
-
-        private Object resolveResponse(Object unresolvedResponse) {
-            if (unresolvedResponse == NULL_RESPONSE) {
-                return null;
-            }
-
-            if (unresolvedResponse == TIMEOUT_RESPONSE) {
-                return new TimeoutException("Call " + BasicInvocation.this + " encountered a timeout");
-            }
-
-            if (unresolvedResponse == INTERRUPTED_RESPONSE) {
-                return new InterruptedException("Call " + BasicInvocation.this + " was interrupted");
-            }
-
-            Object response = unresolvedResponse;
-            if (resultDeserialized && response instanceof Data) {
-                response = nodeEngine.toObject(response);
-                if (response == null) {
-                    return null;
-                }
-            }
-
-            if (response instanceof NormalResponse) {
-                NormalResponse responseObj = (NormalResponse) response;
-                response = responseObj.getValue();
-
-                if (response == null) {
-                    return null;
-                }
-
-                //it could be that the value of the response is Data.
-                if (resultDeserialized && response instanceof Data) {
-                    response = nodeEngine.toObject(response);
-                    if (response == null) {
-                        return null;
-                    }
-                }
-            }
-
-            if (response instanceof Throwable) {
-                Throwable throwable = ((Throwable) response);
-                if (remote) {
-                    fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
-                }
-                return throwable;
-            }
-
-            return response;
-        }
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public boolean isDone() {
-            return response != null;
-        }
-
-        private boolean isOperationExecuting(Address target) {
-            // ask if op is still being executed?
-            Boolean executing = Boolean.FALSE;
-            try {
-                Operation isStillExecuting;
-                if (op instanceof TraceableOperation) {
-                    TraceableOperation traceable = (TraceableOperation) op;
-                    isStillExecuting = new TraceableIsStillExecuting(serviceName, traceable.getTraceIdentifier());
-                } else {
-                    isStillExecuting = new IsStillExecuting(op.getCallId());
-                }
-                final BasicInvocation inv = new BasicTargetInvocation(nodeEngine, serviceName, isStillExecuting,
-                        target, 0, 0, 5000, null, null, true);
-                Future f = inv.invoke();
-                // TODO: @mm - improve logging (see SystemLogService)
-                logger.warning("Asking if operation execution has been started: " + toString());
-                executing = (Boolean) nodeEngine.toObject(f.get(5000, TimeUnit.MILLISECONDS));
-            } catch (Exception e) {
-                logger.warning("While asking 'is-executing': " + toString(), e);
-            }
-            // TODO: @mm - improve logging (see SystemLogService)
-            logger.warning("'is-executing': " + executing + " -> " + toString());
-            return executing;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder("InvocationFuture{");
-            sb.append("invocation=").append(BasicInvocation.this.toString());
-            sb.append(", done=").append(isDone());
-            sb.append('}');
-            return sb.toString();
-        }
-    }
-
-    private static class InternalResponse {
-
-        String toString;
-
-        private InternalResponse(String toString) {
-            this.toString = toString;
-        }
-
-        public String toString() {
-            return toString;
-        }
-
+    @Override
+    public void run() {
+        doInvoke();
     }
 }

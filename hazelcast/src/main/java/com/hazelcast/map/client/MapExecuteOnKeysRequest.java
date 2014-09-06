@@ -1,7 +1,7 @@
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.MultiPartitionClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.MultiPartitionClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapPortableHook;
@@ -17,17 +17,15 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
-
 import java.io.IOException;
 import java.security.Permission;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
-/**
- * date: 20/12/13
- * author: eminn
- */
-public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest implements Portable,SecureRequest {
-
+public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest implements Portable, SecureRequest {
 
     private String name;
     private EntryProcessor processor;
@@ -44,7 +42,7 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MultipleEntryOperationFactory(name,keys,processor);
+        return new MultipleEntryOperationFactory(name, keys, processor);
     }
 
     @Override
@@ -53,8 +51,8 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
         MapService mapService = getService();
         for (Object o : map.values()) {
             if (o != null) {
-                MapEntrySet entrySet = (MapEntrySet)mapService.toObject(o);
-                Set<Map.Entry<Data,Data>> entries = entrySet.getEntrySet();
+                MapEntrySet entrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(o);
+                Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
                 for (Map.Entry<Data, Data> entry : entries) {
                     result.add(entry);
                 }
@@ -67,11 +65,10 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
     public Collection<Integer> getPartitions() {
         InternalPartitionService partitionService = getClientEngine().getPartitionService();
         int partitions = partitionService.getPartitionCount();
-        int capacity = Math.min(partitions, keys.size()); //todo: is there better way to estimate size?
+        int capacity = Math.min(partitions, keys.size());
         Set<Integer> partitionIds = new HashSet<Integer>(capacity);
-
         Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext() && partitionIds.size() < partitions){
+        while (iterator.hasNext() && partitionIds.size() < partitions) {
             Data key = iterator.next();
             partitionIds.add(partitionService.getPartitionId(key));
         }
@@ -95,7 +92,7 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
 
     @Override
     public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
+        writer.writeUTF("n", name);
         writer.writeInt("size", keys.size());
         ObjectDataOutput output = writer.getRawDataOutput();
         for (Data key : keys) {
@@ -121,5 +118,20 @@ public class MapExecuteOnKeysRequest extends MultiPartitionClientRequest impleme
     @Override
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_PUT, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "executeOnKeys";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{keys, processor};
     }
 }

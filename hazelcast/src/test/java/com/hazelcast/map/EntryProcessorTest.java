@@ -27,9 +27,8 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MapLoader;
-import static com.hazelcast.map.TempData.DeleteEntryProcessor;
-import static com.hazelcast.map.TempData.LoggingEntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -38,15 +37,21 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -55,15 +60,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static com.hazelcast.map.TempData.DeleteEntryProcessor;
+import static com.hazelcast.map.TempData.LoggingEntryProcessor;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -157,7 +161,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.put("b", new TempData("abc", "123"));
         TestPredicate predicate = new TestPredicate("foo");
         Map<String, Object> entries = map.executeOnEntries(new LoggingEntryProcessor(), predicate);
-        assertEquals("The predicate should be applied to only one entry if indexing works!", entries.size(),1);
+        assertEquals("The predicate should be applied to only one entry if indexing works!", entries.size(), 1);
     }
 
     /**
@@ -257,6 +261,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             instance2.shutdown();
         }
     }
+
     @Test
     public void testEntryProcessorWithKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -312,25 +317,30 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue2754(){
+    public void testIssue2754() {
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = factory.newHazelcastInstance();
         final HazelcastInstance instance2 = factory.newHazelcastInstance();
-        
+
         final IMap<Object, Object> map = instance2.getMap("map");
         Set<Object> keys = new HashSet<Object>();
 
-        for(int i =0 ; i < 4; i++){
+        for (int i = 0; i < 4; i++) {
             String key = generateKeyOwnedBy(instance1);
             keys.add(key);
         }
 
-        int expected = 6;
-        map.executeOnKeys(keys, new EntryCreate(expected));
+        map.executeOnKeys(keys, new EntryCreate());
 
-        for(Object key : keys){
-            assertEquals(expected, map.get(key));
+        for (Object key : keys) {
+            assertEquals(6, map.get(key));
+        }
+
+        instance1.shutdown();
+
+        for (Object key : keys) {
+            assertEquals(6, map.get(key));
         }
 
     }
@@ -631,7 +641,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final AtomicInteger updateKey1Sum = new AtomicInteger(0);
         final AtomicInteger removeKey1Sum = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(6);
-        map.addEntryListener(new EntryListener<Integer, Integer>() {
+        map.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
                 addCount.incrementAndGet();
@@ -657,10 +667,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                     updateKey1Sum.addAndGet(event.getValue());
                 }
                 latch.countDown();
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
             }
         }, true);
 
@@ -728,6 +734,16 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
             @Override
             public void entryEvicted(EntryEvent<Integer, Integer> event) {
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
             }
         }, true);
 
@@ -803,6 +819,16 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
             @Override
             public void entryEvicted(EntryEvent<Integer, Integer> event) {
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
             }
         }, true);
         int size = 100;
@@ -986,13 +1012,14 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     /**
-     * Expected serialization count is 1 in Object format
-     * since event publishing needs a Data type.
+     * Expected serialization count is 0 in Object format
+     * when there is no registered event listener.
+     * If there is an event listener serialization count should be 1.
      */
     @Test
     public void testEntryProcessorSerializationCountWithObjectFormat() {
         final String mapName = randomMapName();
-        final int expectedSerializationCount = 1;
+        final int expectedSerializationCount = 0;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         Config cfg = new Config();
         cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -1018,6 +1045,80 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(expectedDeserializationCount, serialized.intValue());
         instance.shutdown();
     }
+
+    @Test
+    public void executionOrderTest() {
+        String mapName = randomString();
+        Config cfg = new Config();
+        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+
+        final int maxTasks = 20;
+        final Object key = "key";
+        final IMap<Object, List<Integer>> processorMap = instance1.getMap(mapName);
+
+        processorMap.put(key, new ArrayList<Integer>());
+
+        for (int i = 0; i < maxTasks; i++) {
+            processorMap.submitToKey(key, new SimpleEntryProcessor(i));
+        }
+
+        List<Integer> expectedOrder = new ArrayList<Integer>();
+        for (int i = 0; i < maxTasks; i++) {
+            expectedOrder.add(i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                List<Integer> actualOrder = processorMap.get(key);
+                assertEquals("failed to execute all entry processor tasks", maxTasks, actualOrder.size());
+            }
+        });
+        final List<Integer> actualOrder = processorMap.get(key);
+        assertEquals("entry processor tasks executed in unexpected order", expectedOrder, actualOrder);
+    }
+
+    private static class SimpleEntryProcessor implements DataSerializable, EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
+        private Integer id;
+
+        public SimpleEntryProcessor() {
+        }
+
+        public SimpleEntryProcessor(Integer id) {
+            this.id = id;
+        }
+
+        @Override
+        public Object process(Map.Entry<Object, List<Integer>> entry) {
+            List l = entry.getValue();
+            l.add(id);
+
+            return id;
+        }
+
+        @Override
+        public void processBackup(Map.Entry entry) {
+            process(entry);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(id);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            id = in.readObject();
+        }
+
+        @Override
+        public EntryBackupProcessor<Object, List<Integer>> getBackupProcessor() {
+            return this;
+        }
+    }
+
 
     public static class Issue1764Data implements DataSerializable {
 
@@ -1088,6 +1189,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
     }
+
     public static class EntryInc extends AbstractEntryProcessor<String, SimpleValue> {
 
         @Override
@@ -1133,20 +1235,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return "value: " + i;
         }
     }
+
     public static class EntryCreate extends AbstractEntryProcessor<String, Integer> {
-
-        int expected;
-
-        public EntryCreate(){
-        }
-
-        public EntryCreate(int expected){
-            this.expected = expected;
-        }
 
         @Override
         public Object process(final Map.Entry<String, Integer> entry) {
-            entry.setValue(expected);
+            entry.setValue(6);
             return null;
         }
     }
@@ -1171,6 +1265,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             deserializedCount = in.readInt() + 1;
         }
     }
+
     private static class StoreOperation implements EntryProcessor {
 
         @Override
@@ -1185,6 +1280,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return null;
         }
     }
+
     private static class FetchSerializedCount implements EntryProcessor<String, MyObject> {
 
         @Override
@@ -1197,6 +1293,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return null;
         }
     }
+
     private static class FetchDeSerializedCount implements EntryProcessor<String, MyObject> {
 
         @Override

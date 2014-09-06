@@ -16,6 +16,9 @@
 
 package com.hazelcast.management.request;
 
+/**
+ * Constants to identify serialized requests.
+ */
 public final class ConsoleRequestConstants {
 
     public static final int REQUEST_TYPE_CLUSTER_STATE = 1;

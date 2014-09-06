@@ -28,20 +28,53 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * A Service responsible for providing access to 'system' executors and customer executors.
- *
+ * <p/>
  * It also has functionality for scheduling tasks.
  *
- * @author mdogan 12/14/12
  */
 public interface ExecutionService {
 
+    /**
+     * Name of the system executor.
+     */
     String SYSTEM_EXECUTOR = "hz:system";
-    String OPERATION_EXECUTOR = "hz:global-operation";
+
+    /**
+     * Name of the async executor.
+     */
     String ASYNC_EXECUTOR = "hz:async";
+
+    /**
+     * Name of the scheduled executor.
+     */
     String SCHEDULED_EXECUTOR = "hz:scheduled";
+
+    /**
+     * Name of the client executor.
+     */
     String CLIENT_EXECUTOR = "hz:client";
+
+    /**
+     * Name of the query executor.
+     */
     String QUERY_EXECUTOR = "hz:query";
+
+    /**
+     * Name of the io executor.
+     */
     String IO_EXECUTOR = "hz:io";
+
+    /**
+     * Name of the map-loader executor that loads the {@link com.hazelcast.core.MapLoader#loadAll(java.util.Collection)}.
+     *
+     * This is the executor you want to configure when you want to load more data from the database in parallel.
+     */
+    String MAP_LOADER_EXECUTOR = "hz:map-load";
+
+    /**
+     * The name of the executor that loads the {@link com.hazelcast.core.MapLoader#loadAllKeys()}
+     */
+    String MAP_LOAD_ALL_KEYS_EXECUTOR = "hz:map-loadAllKeys";
 
     ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type);
 

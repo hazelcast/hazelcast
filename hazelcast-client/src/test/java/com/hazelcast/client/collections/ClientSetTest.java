@@ -189,4 +189,17 @@ public class ClientSetTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
 
     }
+
+    @Test
+    public void testIsEmpty_whenEmpty() {
+        assertTrue(set.isEmpty());
+        assertEquals(0,set.size());
+    }
+
+    @Test
+    public void testIsEmpty_whenNotEmpty() {
+        set.add("item");
+        assertFalse(set.isEmpty());
+        assertEquals(1,set.size());
+    }
 }

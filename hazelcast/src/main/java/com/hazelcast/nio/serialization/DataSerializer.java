@@ -31,7 +31,10 @@ import java.util.Map;
 import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DATA;
 
 /**
- * @author mdogan 6/19/12
+ * This class is the default serializer for all types that are serialized using Hazelcast
+ * internal methods. Due to the operation responding on deserialization errors this class
+ * has a dependency to {@link com.hazelcast.spi.impl.BasicOperationService#extractOperationCallId(Data)}.
+ * If the way the DataSerializer serializes values is changed the extract method needs to be changed too!
  */
 final class DataSerializer implements StreamSerializer<DataSerializable> {
 
@@ -79,13 +82,15 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
         return CONSTANT_TYPE_DATA;
     }
 
-    public final DataSerializable read(ObjectDataInput in) throws IOException {
+    public DataSerializable read(ObjectDataInput in) throws IOException {
         final DataSerializable ds;
         final boolean identified = in.readBoolean();
         int id = 0;
         int factoryId = 0;
         String className = null;
         try {
+            // If you ever change the way this is serialized think about to change
+            // BasicOperationService::extractOperationCallId
             if (identified) {
                 factoryId = in.readInt();
                 final DataSerializableFactory dsf = factories.get(factoryId);
@@ -95,7 +100,8 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
                 id = in.readInt();
                 ds = dsf.create(id);
                 if (ds == null) {
-                    throw new HazelcastSerializationException(dsf + " is not be able to create an instance for id: " + id + " on factoryId: " + factoryId);
+                    throw new HazelcastSerializationException(dsf
+                            + " is not be able to create an instance for id: " + id + " on factoryId: " + factoryId);
                 }
                 // TODO: @mm - we can check if DS class is final.
             } else {
@@ -111,12 +117,17 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
             if (e instanceof HazelcastSerializationException) {
                 throw (HazelcastSerializationException) e;
             }
-            throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: " + factoryId +
-                    ", id: " + id + ", class: " + className + ", exception: " + e.getMessage(), e);
+            throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: "
+                    + factoryId
+                    + ", id: " + id
+                    + ", class: '" + className + "'"
+                    + ", exception: " + e.getMessage(), e);
         }
     }
 
-    public final void write(ObjectDataOutput out, DataSerializable obj) throws IOException {
+    public void write(ObjectDataOutput out, DataSerializable obj) throws IOException {
+        // If you ever change the way this is serialized think about to change
+        // BasicOperationService::extractOperationCallId
         final boolean identified = obj instanceof IdentifiedDataSerializable;
         out.writeBoolean(identified);
         if (identified) {

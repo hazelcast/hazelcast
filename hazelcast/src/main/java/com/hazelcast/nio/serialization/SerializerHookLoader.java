@@ -20,11 +20,13 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
-import java.util.*;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Loads auto registered serializers using {@link com.hazelcast.nio.serialization.SerializerHook}
@@ -52,7 +54,9 @@ final class SerializerHookLoader {
             while (hooks.hasNext()) {
                 final SerializerHook hook = hooks.next();
                 final Class serializationType = hook.getSerializationType();
-                serializers.put(serializationType, hook);
+                if (serializationType != null) {
+                    serializers.put(serializationType, hook);
+                }
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -89,13 +93,13 @@ final class SerializerHookLoader {
         final Object current = serializers.get(serializationType);
         if (current != null) {
             if (current.equals(serializer)) {
-                Logger.getLogger(getClass()).warning("Serializer[" + serializationType.toString() +
-                        "] is already registered! Skipping " + serializer);
+                Logger.getLogger(getClass()).warning("Serializer[" + serializationType.toString()
+                        + "] is already registered! Skipping " + serializer);
             } else if (current instanceof SerializerHook && ((SerializerHook) current).isOverwritable()) {
                 serializers.put(serializationType, serializer);
             } else {
-                throw new IllegalArgumentException("Serializer[" + serializationType.toString() +
-                        "] is already registered! " + current + " -> " + serializer);
+                throw new IllegalArgumentException("Serializer[" + serializationType.toString()
+                        + "] is already registered! " + current + " -> " + serializer);
             }
         } else {
             serializers.put(serializationType, serializer);

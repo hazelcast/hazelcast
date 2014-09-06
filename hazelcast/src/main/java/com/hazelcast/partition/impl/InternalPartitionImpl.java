@@ -44,7 +44,7 @@ class InternalPartitionImpl implements InternalPartition {
     }
 
     @Override
-    public Address getOwner() {
+    public Address getOwnerOrNull() {
         return addresses[0];
     }
 
@@ -60,7 +60,7 @@ class InternalPartitionImpl implements InternalPartition {
     void setReplicaAddress(int replicaIndex, Address newAddress) {
         boolean changed = false;
         Address oldAddress;
-        for (; ; ) {
+        for (;;) {
             Address[] oldAddresses = addresses;
             oldAddress = oldAddresses[replicaIndex];
             if (partitionListener != null) {

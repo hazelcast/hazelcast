@@ -21,13 +21,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-/**
- * @ali 9/1/13
- */
 public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
 
     protected List<Data> valueList;
@@ -63,7 +61,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        if (!hasEnoughCapacity(valueList.size())){
+        if (!hasEnoughCapacity(valueList.size())) {
             response = false;
             return;
         }
@@ -74,7 +72,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
 
     @Override
     public void afterRun() throws Exception {
-        if (valueMap == null){
+        if (valueMap == null) {
             return;
         }
         for (Data value : valueMap.values()) {
@@ -96,7 +94,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
         super.readInternal(in);
         final int size = in.readInt();
         valueList = new ArrayList<Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             final Data value = new Data();
             value.readData(in);
             valueList.add(value);

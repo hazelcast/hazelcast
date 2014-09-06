@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.concurrent.atomiclong.LongWrapper;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
@@ -45,6 +46,12 @@ public class ApplyOperation<R> extends AtomicLongBaseOperation {
     @Override
     public R getResponse() {
         return returnValue;
+    }
+
+
+    @Override
+    public int getId() {
+        return AtomicLongDataSerializerHook.APPLY;
     }
 
     @Override

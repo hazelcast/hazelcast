@@ -16,9 +16,9 @@
 
 package com.hazelcast.partition.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.ClientPortableHook;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.ClientPortableHook;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -51,7 +51,7 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
         InternalPartition[] partitions = service.getPartitions();
         int[] indexes = new int[partitions.length];
         for (int i = 0; i < indexes.length; i++) {
-            Address owner = partitions[i].getOwner();
+            Address owner = partitions[i].getOwnerOrNull();
             int index = -1;
             if (owner != null) {
                 final Integer idx = addressMap.get(owner);

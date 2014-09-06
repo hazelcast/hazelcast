@@ -16,24 +16,35 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.core.Member;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.ScriptExecutorOperation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
+import com.hazelcast.util.AddressUtil;
 import java.io.IOException;
-import java.util.*;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import static com.hazelcast.util.JsonUtil.getArray;
+import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.util.JsonUtil.getString;
+
+/**
+ * Request for executing scripts on the nodes from Management Center.
+ */
 public class ExecuteScriptRequest implements ConsoleRequest {
 
-    private static final byte COLLECTION = 2;
     private String script;
     private String engine;
-    private Set<Address> targets;
-    private boolean targetAllMembers = false;
+    private Set<String> targets;
+    private boolean targetAllMembers;
     private Map<String, Object> bindings;
 
     public ExecuteScriptRequest() {
@@ -43,13 +54,13 @@ public class ExecuteScriptRequest implements ConsoleRequest {
                                 boolean targetAllMembers, Map<String, Object> bindings) {
         this.script = script;
         this.engine = engine;
-        this.targets = new HashSet<Address>(0);
+        this.targets = new HashSet<String>(0);
         this.targetAllMembers = targetAllMembers;
         this.bindings = bindings;
     }
 
     public ExecuteScriptRequest(String script, String engine,
-                                Set<Address> targets, Map<String, Object> bindings) {
+                                Set<String> targets, Map<String, Object> bindings) {
         this.script = script;
         this.targets = targets;
         this.engine = engine;
@@ -62,109 +73,80 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_EXECUTE_SCRIPT;
     }
 
+
     @Override
-    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        ArrayList result;
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
+        final JsonObject jsonResult = new JsonObject();
+        ArrayList results;
         if (targetAllMembers) {
             final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
             final ArrayList list = new ArrayList(members.size());
             for (Member member : members) {
                 list.add(mcs.callOnMember(member, new ScriptExecutorOperation(engine, script, bindings)));
             }
-            result = list;
+            results = list;
         } else {
             final ArrayList list = new ArrayList(targets.size());
-            for (Address address : targets) {
-                list.add(mcs.callOnAddress(address, new ScriptExecutorOperation(engine, script, bindings)));
+            for (String address : targets) {
+                final AddressUtil.AddressHolder addressHolder = AddressUtil.getAddressHolder(address);
+                final Address targetAddress = new Address(addressHolder.getAddress(), addressHolder.getPort());
+                list.add(mcs.callOnAddress(targetAddress, new ScriptExecutorOperation(engine, script, bindings)));
             }
-            result = list;
+            results = list;
         }
 
-        dos.writeByte(COLLECTION);//This line left here for compatibility among 3.x
-        //TODO: Currently returning complex data structures like map,array are not possible.
-        writeCollection(dos, result);
+        StringBuffer sb = new StringBuffer();
+        for (Object result : results) {
+            if (result instanceof String) {
+                sb.append(result);
+            } else if (result instanceof List) {
+                final List list = (List) result;
+                for (Object o : list) {
+                    sb.append(o).append("\n");
+                }
+            } else if (result instanceof Map) {
+                final Map map = (Map) result;
+                for (Object o : map.entrySet()) {
+                    final Map.Entry entry = (Map.Entry) o;
+                    sb.append(entry.getKey()).append("->").append(entry.getValue()).append("\n");
+                }
+            } else if (result == null) {
+                sb.append("error");
+            }
+            sb.append("\n");
+        }
+        jsonResult.add("scriptResult", sb.toString());
+        root.add("result", jsonResult);
     }
 
     @Override
-    public Object readResponse(ObjectDataInput in) throws IOException {
-        byte flag = in.readByte();//This line left here for compatibility among 3.x
-        if (flag == COLLECTION) {
-            return readCollection(in);
-        }
-        return null;
-    }
-
-    private void writeMap(ObjectDataOutput dos, Map result) throws IOException {
-        int size = result != null ? result.size() : 0;
-        dos.writeInt(size);
-        if (size > 0) {
-            Set<Entry<Object, Object>> entries = result.entrySet();
-            for (Entry<Object, Object> entry : entries) {
-                dos.writeObject(entry.getKey());
-                dos.writeObject(entry.getValue());
-            }
-        }
-    }
-
-    private Map readMap(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        Map props = new HashMap(size);
-        if (size > 0) {
-            for (int i = 0; i < size; i++) {
-                Object key = in.readObject();
-                Object value = in.readObject();
-                props.put(key, value);
-            }
-        }
-        return props;
-    }
-
-    private void writeCollection(ObjectDataOutput dos, Collection result) throws IOException {
-        int size = result != null ? result.size() : 0;
-        dos.writeInt(size);
-        if (size > 0) {
-            for (Object aResult : result) {
-                dos.writeObject(aResult);
-            }
-        }
-    }
-
-    private Collection readCollection(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        Collection coll = new ArrayList(size);
-        if (size > 0) {
-            for (int i = 0; i < size; i++) {
-                Object value = in.readObject();
-                coll.add(value);
-            }
-        }
-        return coll;
+    public Object readResponse(JsonObject json) throws IOException {
+        return getString(json, "scriptResult", "Error while reading response " + ExecuteScriptRequest.class.getName());
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(script);
-        out.writeUTF(engine);
-        out.writeBoolean(targetAllMembers);
-        out.writeInt(targets.size());
-        for (Address target : targets) {
-            target.writeData(out);
+    public JsonObject toJson() {
+        final JsonObject root = new JsonObject();
+        root.add("script", script);
+        root.add("engine", engine);
+        JsonArray jsonTargets = new JsonArray();
+        for (String target : targets) {
+            jsonTargets.add(target);
         }
-        writeMap(out, bindings);
+        root.add("targets", jsonTargets);
+        root.add("targetAllMembers", targetAllMembers);
+        return root;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        script = in.readUTF();
-        engine = in.readUTF();
-        targetAllMembers = in.readBoolean();
-        int size = in.readInt();
-        targets = new HashSet<Address>(size);
-        for (int i = 0; i < size; i++) {
-            Address target = new Address();
-            target.readData(in);
-            targets.add(target);
+    public void fromJson(JsonObject json) {
+        script = getString(json, "script", "");
+        engine = getString(json, "engine", "");
+        targets = new HashSet<String>();
+        for (JsonValue target : getArray(json, "targets", new JsonArray())) {
+            targets.add(target.asString());
         }
-        bindings = readMap(in);
+        targetAllMembers = getBoolean(json, "targetAllMembers", false);
+        bindings = new HashMap<String, Object>();
     }
 }

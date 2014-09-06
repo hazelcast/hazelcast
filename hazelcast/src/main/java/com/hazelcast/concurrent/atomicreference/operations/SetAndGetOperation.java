@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -47,6 +48,11 @@ public class SetAndGetOperation extends AtomicReferenceBackupAwareOperation {
     @Override
     public Object getResponse() {
         return returnValue;
+    }
+
+    @Override
+    public int getId() {
+        return AtomicReferenceDataSerializerHook.SET_AND_GET;
     }
 
     @Override

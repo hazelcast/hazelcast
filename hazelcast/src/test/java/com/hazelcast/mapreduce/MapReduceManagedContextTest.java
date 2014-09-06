@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -48,9 +47,7 @@ public class MapReduceManagedContextTest
     private static final String MAP_NAME = "default";
 
     @Test
-    public void testManagedContextMapper()
-            throws Exception {
-
+    public void testManagedContextMapper() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -190,7 +187,7 @@ public class MapReduceManagedContextTest
         private transient HazelcastInstance hazelcastInstance;
 
         @Override
-        public Combiner<String, Integer, Integer> newCombiner(String key) {
+        public Combiner<Integer, Integer> newCombiner(String key) {
             hazelcastInstance.getName();
             return new InjectedCombiner();
         }
@@ -201,12 +198,12 @@ public class MapReduceManagedContextTest
         }
 
         private class InjectedCombiner
-                extends Combiner<String, Integer, Integer> {
+                extends Combiner<Integer, Integer> {
 
             private int count;
 
             @Override
-            public void combine(String key, Integer value) {
+            public void combine(Integer value) {
                 count += value;
             }
 
@@ -225,7 +222,7 @@ public class MapReduceManagedContextTest
         private transient HazelcastInstance hazelcastInstance;
 
         @Override
-        public Reducer<String, Integer, Integer> newReducer(String key) {
+        public Reducer<Integer, Integer> newReducer(String key) {
             hazelcastInstance.getName();
             return new InjectedReducer();
         }
@@ -236,7 +233,7 @@ public class MapReduceManagedContextTest
         }
 
         private class InjectedReducer
-                extends Reducer<String, Integer, Integer> {
+                extends Reducer<Integer, Integer> {
 
             private volatile int count;
 

@@ -26,14 +26,16 @@ import org.hibernate.cache.spi.access.SoftLock;
 
 import java.util.Comparator;
 import java.util.Properties;
-import java.util.logging.Level;
 
 /**
+ * Base implementation for consistency guarantees
+ *
  * @author Leo Kim (lkim@limewire.com)
+ * @param <T> implementation type of HazelcastRegion
  */
 public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implements AccessDelegate<T> {
 
-    protected final ILogger LOG;
+    protected final ILogger log;
     protected final T hazelcastRegion;
     protected final RegionCache cache;
     protected final Comparator<Object> versionComparator;
@@ -41,7 +43,7 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
     protected AbstractAccessDelegate(final T hazelcastRegion, final Properties props) {
         super();
         this.hazelcastRegion = hazelcastRegion;
-        LOG = hazelcastRegion.getLogger();
+        log = hazelcastRegion.getLogger();
         if (hazelcastRegion instanceof AbstractTransactionalDataRegion) {
             this.versionComparator = ((AbstractTransactionalDataRegion) hazelcastRegion)
                     .getCacheDataDescription().getVersionComparator();
@@ -59,20 +61,20 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         try {
             return cache.put(key, value, currentVersion);
         } catch (HazelcastException e) {
-            if(LOG.isFinestEnabled()){
-                LOG.finest( "Could not put into Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
+            if (log.isFinestEnabled()) {
+                log.finest("Could not put into Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
             }
             return false;
         }
     }
 
     protected boolean update(final Object key, final Object value,
-                          final Object currentVersion, final Object previousVersion, final SoftLock lock) {
+                             final Object currentVersion, final Object previousVersion, final SoftLock lock) {
         try {
             return cache.update(key, value, currentVersion, previousVersion, lock);
         } catch (HazelcastException e) {
-            if(LOG.isFinestEnabled()){
-                LOG.finest( "Could not update Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
+            if (log.isFinestEnabled()) {
+                log.finest("Could not update Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
             }
             return false;
         }
@@ -82,8 +84,8 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         try {
             return cache.get(key);
         } catch (HazelcastException e) {
-            if(LOG.isFinestEnabled()){
-                LOG.finest( "Could not read from Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
+            if (log.isFinestEnabled()) {
+                log.finest("Could not read from Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
             }
             return null;
         }

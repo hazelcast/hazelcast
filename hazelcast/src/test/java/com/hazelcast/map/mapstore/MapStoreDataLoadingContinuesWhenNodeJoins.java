@@ -120,7 +120,6 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                 // try-finally to stop hazelcast instance
                 node1Started.countDown();
                 try {
-
                     // get map
                     // this will trigger loading the data
                     IMap<String, String> map = hcInstance.getMap(mapName);
@@ -133,6 +132,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
             }
         }, "Thread 1");
         thread1.start();
+
         node1Started.await();
         // thread 2:
         // simulate a second member which joins the cluster
@@ -156,7 +156,6 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         // join threads
         thread1.join();
         thread2.join();
-
 
         // assert correct shutdown order
         if (thread1Shutdown.get() > thread2Shutdown.get()) {
@@ -203,11 +202,11 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
             @Override
             public void run() {
-
                 HazelcastInstance hcInstance = factory.newHazelcastInstance(config);
                 // try-finally to stop hazelcast instance
                 node1Started.countDown();
                 try {
+
                     // get map
                     // this will trigger loading the data
                     final IMap<String, String> map = hcInstance.getMap(mapName);
@@ -220,13 +219,13 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                         }
                     }, 5);
                     // -------------------------------------------------- {20s}
+
                 } finally {
                     hcInstance.getLifecycleService().shutdown();
                 }
             }
         }, "Thread 1");
         thread1.start();
-
         // wait 10s after starting first thread
         node1Started.await();
         // thread 2:
@@ -235,7 +234,6 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
             @Override
             public void run() {
-
                 HazelcastInstance hcInstance = factory.newHazelcastInstance(config);
                 // try-finally to stop hazelcast instance
                 try {
@@ -325,15 +323,18 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                 }
                 count += 1;
             }
+
             return result;
         }
 
         @Override
         public Set<String> loadAllKeys() {
+
             // sleep 5s to highlight asynchronous behavior
             if (sleepBeforeLoadAllKeys) {
                 sleep(5000, true);
             }
+
             countLoadAllKeys.incrementAndGet();
             Set<String> result = new HashSet<String>(store.keySet());
             List<String> resultList = new ArrayList<String>(result);

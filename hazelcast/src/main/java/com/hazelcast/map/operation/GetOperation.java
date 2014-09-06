@@ -34,11 +34,11 @@ public final class GetOperation extends KeyBasedMapOperation
     }
 
     public void run() {
-        result = mapService.toData(recordStore.get(dataKey));
+        result = mapService.getMapServiceContext().toData(recordStore.get(dataKey));
     }
 
     public void afterRun() {
-        mapService.interceptAfterGet(name, result);
+        mapService.getMapServiceContext().interceptAfterGet(name, result);
     }
 
     @Override

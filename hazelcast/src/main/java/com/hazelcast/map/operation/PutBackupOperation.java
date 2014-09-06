@@ -19,6 +19,7 @@ package com.hazelcast.map.operation;
 import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
+import com.hazelcast.map.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,8 +30,9 @@ import java.io.IOException;
 
 public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
-    // todo unlockKey is a logic just used in transactional put operations. It complicates here there should be another Operation for that logic. e.g. TxnSetBackup
-    private boolean unlockKey = false;
+    // todo unlockKey is a logic just used in transactional put operations.
+    // todo It complicates here there should be another Operation for that logic. e.g. TxnSetBackup
+    private boolean unlockKey;
     private RecordInfo recordInfo;
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
@@ -48,9 +50,9 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     public void run() {
-        final Record record = recordStore.putBackup(dataKey, dataValue, ttl, false);
-        if(recordInfo != null) {
-            mapService.applyRecordInfo(record, name, recordInfo);
+        final Record record = recordStore.putBackup(dataKey, dataValue, ttl);
+        if (recordInfo != null) {
+            Records.applyRecordInfo(record, recordInfo);
         }
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
@@ -65,14 +67,22 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
-        recordInfo.writeData(out);
+        if (recordInfo != null) {
+            out.writeBoolean(true);
+            recordInfo.writeData(out);
+        } else {
+            out.writeBoolean(false);
+        }
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
-        recordInfo = new RecordInfo();
-        recordInfo.readData(in);
+        boolean hasRecordInfo = in.readBoolean();
+        if (hasRecordInfo) {
+            recordInfo = new RecordInfo();
+            recordInfo.readData(in);
+        }
     }
 
     @Override
@@ -88,12 +98,5 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         return MapDataSerializerHook.PUT_BACKUP;
     }
 
-    private void updateSizeEstimator( long recordSize ) {
-        recordStore.getSizeEstimator().add( recordSize );
-    }
-
-    private long calculateRecordSize( Record record ) {
-        return recordStore.getSizeEstimator().getCost(record);
-    }
 
 }

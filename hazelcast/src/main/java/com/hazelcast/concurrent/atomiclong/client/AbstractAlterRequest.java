@@ -16,9 +16,8 @@
 
 package com.hazelcast.concurrent.atomiclong.client;
 
-import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.PartitionClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.PartitionClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,7 +26,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.AtomicLongPermission;
 
@@ -52,8 +50,7 @@ public abstract class AbstractAlterRequest extends PartitionClientRequest implem
 
     @Override
     protected int getPartition() {
-        ClientEngine clientEngine = getClientEngine();
-        Data key = clientEngine.getSerializationService().toData(name);
+        Data key = serializationService.toData(name);
         return getClientEngine().getPartitionService().getPartitionId(key);
     }
 
@@ -82,13 +79,21 @@ public abstract class AbstractAlterRequest extends PartitionClientRequest implem
     }
 
     protected IFunction<Long, Long> getFunction() {
-        SerializationService serializationService = getClientEngine().getSerializationService();
-        //noinspection unchecked
-        return (IFunction<Long, Long>) serializationService.toObject(function);
+        return serializationService.toObject(function);
     }
 
     @Override
     public Permission getRequiredPermission() {
         return new AtomicLongPermission(name, ActionConstants.ACTION_MODIFY);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{function};
     }
 }

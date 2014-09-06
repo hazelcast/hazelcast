@@ -19,12 +19,11 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * @author mdogan 2/13/13
+ * An ObjectNamespace that makes identification of in object within a service possible.
  */
 public interface ObjectNamespace extends DataSerializable {
 
     String getServiceName();
 
     String getObjectName();
-
 }

@@ -21,9 +21,11 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
+/**
+ *  Operation to fetch Map configuration.
+ */
 public class GetMapConfigOperation extends Operation {
 
     private String mapName;
@@ -43,7 +45,7 @@ public class GetMapConfigOperation extends Operation {
     @Override
     public void run() throws Exception {
         MapService service = getService();
-        mapConfig = service.getMapContainer(mapName).getMapConfig();
+        mapConfig = service.getMapServiceContext().getMapContainer(mapName).getMapConfig();
     }
 
     @Override

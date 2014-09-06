@@ -17,20 +17,22 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.AbstractTextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 
 public class SetCommand extends AbstractTextCommand {
+    ByteBuffer response;
     private final String key;
     private final int flag;
     private final int expiration;
     private final int valueLen;
     private final boolean noreply;
     private final ByteBuffer bbValue;
-    ByteBuffer response = null;
 
-    public SetCommand(TextCommandType type, String key, int flag, int expiration, int valueLen, boolean noreply) {
+    public SetCommand(TextCommandConstants.TextCommandType type, String key, int flag,
+                      int expiration, int valueLen, boolean noreply) {
         super(type);
         this.key = key;
         this.flag = flag;
@@ -72,7 +74,7 @@ public class SetCommand extends AbstractTextCommand {
 
     public boolean writeTo(ByteBuffer bb) {
         if (response == null) {
-            response = ByteBuffer.wrap(STORED);
+            response = ByteBuffer.wrap(TextCommandConstants.STORED);
         }
         while (bb.hasRemaining() && response.hasRemaining()) {
             bb.put(response.get());
@@ -102,13 +104,20 @@ public class SetCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "SetCommand [" + type + "]{" +
-                "key='" + key + '\'' +
-                ", flag=" + flag +
-                ", expiration=" + expiration +
-                ", valueLen=" + valueLen +
-                ", value=" + bbValue +
-                '}' + super.toString();
+        return "SetCommand [" + type + "]{"
+                + "key='"
+                + key
+                + '\''
+                + ", flag="
+                + flag
+                + ", expiration="
+                + expiration
+                + ", valueLen="
+                + valueLen
+                + ", value="
+                + bbValue
+                + '}'
+                + super.toString();
     }
 }
 

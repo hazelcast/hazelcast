@@ -34,6 +34,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
@@ -47,6 +48,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SecurityConfig;
+import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
@@ -72,6 +74,29 @@ import java.util.Set;
 
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
+/**
+ * BeanDefinitionParser for Hazelcast Config Configuration
+ * <p/>
+ * <p/>
+ * <b>Sample Spring XML for Hazelcast Config:</b>
+ * <pre>
+ * &lt;hz:config&gt;
+ *  &lt;hz:map name="map1"&gt;
+ *      &lt;hz:near-cache time-to-live-seconds="0" max-idle-seconds="60"
+ *          eviction-policy="LRU" max-size="5000"  invalidate-on-change="true"/&gt;
+ *
+ *  &lt;hz:map-store enabled="true" class-name="com.foo.DummyStore"
+ *          write-delay-seconds="0"/&gt;
+ *  &lt;/hz:map&gt;
+ *  &lt;hz:map name="map2"&gt;
+ *      &lt;hz:map-store enabled="true" implementation="dummyMapStore"
+ *          write-delay-seconds="0"/&gt;
+ *  &lt;/hz:map&gt;
+ *
+ *  &lt;bean id="dummyMapStore" class="com.foo.DummyStore" /&gt;
+ * &lt;/hz:config&gt;
+ * </pre>
+ */
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -97,27 +122,24 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(Config.class);
-            this.mapConfigManagedMap = new ManagedMap();
-            this.queueManagedMap = new ManagedMap();
-            this.listManagedMap = new ManagedMap();
-            this.setManagedMap = new ManagedMap();
-            this.topicManagedMap = new ManagedMap();
-            this.multiMapManagedMap = new ManagedMap();
-            this.executorManagedMap = new ManagedMap();
-            this.wanReplicationManagedMap = new ManagedMap();
-            this.jobTrackerManagedMap = new ManagedMap();
-            this.configBuilder.addPropertyValue("mapConfigs", mapConfigManagedMap);
-            this.configBuilder.addPropertyValue("queueConfigs", queueManagedMap);
-            this.configBuilder.addPropertyValue("listConfigs", listManagedMap);
-            this.configBuilder.addPropertyValue("setConfigs", setManagedMap);
-            this.configBuilder.addPropertyValue("topicConfigs", topicManagedMap);
-            this.configBuilder.addPropertyValue("multiMapConfigs", multiMapManagedMap);
-            this.configBuilder.addPropertyValue("executorConfigs", executorManagedMap);
-            this.configBuilder.addPropertyValue("wanReplicationConfigs", wanReplicationManagedMap);
-            this.configBuilder.addPropertyValue("jobTrackerConfigs", jobTrackerManagedMap);
+            this.mapConfigManagedMap = createManagedMap("mapConfigs");
+            this.queueManagedMap = createManagedMap("queueConfigs");
+            this.listManagedMap = createManagedMap("listConfigs");
+            this.setManagedMap = createManagedMap("setConfigs");
+            this.topicManagedMap = createManagedMap("topicConfigs");
+            this.multiMapManagedMap = createManagedMap("multiMapConfigs");
+            this.executorManagedMap = createManagedMap("executorConfigs");
+            this.wanReplicationManagedMap = createManagedMap("wanReplicationConfigs");
+            this.jobTrackerManagedMap = createManagedMap("jobTrackerConfigs");
 
             BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
             this.configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
+        }
+
+        private ManagedMap createManagedMap(String configName) {
+            ManagedMap managedMap = new ManagedMap();
+            this.configBuilder.addPropertyValue(configName, managedMap);
+            return managedMap;
         }
 
         public AbstractBeanDefinition getBeanDefinition() {
@@ -159,6 +181,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSerialization(node);
                 } else if ("security".equals(nodeName)) {
                     handleSecurity(node);
+                } else if ("member-attributes".equals(nodeName)) {
+                    handleMemberAttributes(node);
                 } else if ("instance-name".equals(nodeName)) {
                     configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
                 } else if ("listeners".equals(nodeName)) {
@@ -192,7 +216,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSocketInterceptorConfig(child, networkConfigBuilder);
                 } else if ("outbound-ports".equals(nodeName)) {
                     handleOutboundPorts(child, networkConfigBuilder);
-                }else if("reuse-address".equals(nodeName)){
+                } else if ("reuse-address".equals(nodeName)) {
                     handleReuseAddress(child, networkConfigBuilder);
                 }
             }
@@ -420,7 +444,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final Node maxSizePolicyNode = node.getAttributes().getNamedItem("max-size-policy");
             if (maxSizePolicyNode != null) {
                 maxSizeConfigBuilder
-                        .addPropertyValue(xmlToJavaName(cleanNodeName(maxSizePolicyNode)), MaxSizeConfig.MaxSizePolicy.valueOf(getTextContent(maxSizePolicyNode)));
+                        .addPropertyValue(xmlToJavaName(cleanNodeName(maxSizePolicyNode))
+                                , MaxSizeConfig.MaxSizePolicy.valueOf(getTextContent(maxSizePolicyNode)));
             }
             for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(childNode.getNodeName());
@@ -547,7 +572,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 mapStoreConfigBuilder.addPropertyReference(xmlToJavaName(implAttrName), getTextContent(implRef));
             }
             if (initialMode != null) {
-                final MapStoreConfig.InitialLoadMode mode = MapStoreConfig.InitialLoadMode.valueOf(upperCaseInternal(getTextContent(initialMode)));
+                final MapStoreConfig.InitialLoadMode mode
+                        = MapStoreConfig.InitialLoadMode.valueOf(upperCaseInternal(getTextContent(initialMode)));
                 mapStoreConfigBuilder.addPropertyValue("initialLoadMode", mode);
             }
             mapConfigBuilder.addPropertyValue("mapStoreConfig", beanDefinition);
@@ -577,12 +603,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("message-listeners".equals(cleanNodeName(childNode))) {
                     ManagedList listeners = parseListeners(childNode, ListenerConfig.class);
                     topicConfigBuilder.addPropertyValue("messageListenerConfigs", listeners);
-                }
-                else  if ("statistics-enabled".equals(cleanNodeName(childNode))) {
+                } else if ("statistics-enabled".equals(cleanNodeName(childNode))) {
                     final String statisticsEnabled = getTextContent(childNode);
                     topicConfigBuilder.addPropertyValue("statisticsEnabled", statisticsEnabled);
-                }
-                else  if ("global-ordering-enabled".equals(cleanNodeName(childNode))) {
+                } else if ("global-ordering-enabled".equals(cleanNodeName(childNode))) {
                     final String globalOrderingEnabled = getTextContent(childNode);
                     topicConfigBuilder.addPropertyValue("globalOrderingEnabled", globalOrderingEnabled);
                 }
@@ -614,9 +638,63 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handlePermissionPolicy(child, securityConfigBuilder);
                 } else if ("client-permissions".equals(nodeName)) {
                     handleSecurityPermissions(child, securityConfigBuilder);
+                } else if ("security-interceptors".equals(nodeName)) {
+                    handleSecurityInterceptors(child, securityConfigBuilder);
                 }
             }
             configBuilder.addPropertyValue("securityConfig", beanDefinition);
+        }
+
+        private void handleMemberAttributes(final Node node) {
+            final BeanDefinitionBuilder memberAttributeConfigBuilder = createBeanBuilder(MemberAttributeConfig.class);
+            final AbstractBeanDefinition beanDefinition = memberAttributeConfigBuilder.getBeanDefinition();
+            ManagedMap<String, Object> attributes = new ManagedMap<String, Object>();
+            for (Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                final String name = cleanNodeName(n.getNodeName());
+                if (!"attribute".equals(name)) {
+                    continue;
+                }
+                final String attributeName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
+                final String attributeType = getTextContent(n.getAttributes().getNamedItem("type")).trim();
+                final String value = getTextContent(n);
+                final Object oValue;
+                if ("string".equals(attributeType)) {
+                    oValue = value;
+                } else if ("boolean".equals(attributeType)) {
+                    oValue = Boolean.parseBoolean(value);
+                } else if ("byte".equals(attributeType)) {
+                    oValue = Byte.parseByte(value);
+                } else if ("double".equals(attributeType)) {
+                    oValue = Double.parseDouble(value);
+                } else if ("float".equals(attributeType)) {
+                    oValue = Float.parseFloat(value);
+                } else if ("int".equals(attributeType)) {
+                    oValue = Integer.parseInt(value);
+                } else if ("long".equals(attributeType)) {
+                    oValue = Long.parseLong(value);
+                } else if ("short".equals(attributeType)) {
+                    oValue = Short.parseShort(value);
+                } else {
+                    oValue = value;
+                }
+                attributes.put(attributeName, oValue);
+            }
+            memberAttributeConfigBuilder.addPropertyValue("attributes", attributes);
+            configBuilder.addPropertyValue("memberAttributeConfig", beanDefinition);
+        }
+
+        private void handleSecurityInterceptors(final Node node, final BeanDefinitionBuilder securityConfigBuilder) {
+            final List lms = new ManagedList();
+            for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(child.getNodeName());
+                if ("interceptor".equals(nodeName)) {
+                    final BeanDefinitionBuilder lmConfigBuilder = createBeanBuilder(SecurityInterceptorConfig.class);
+                    final AbstractBeanDefinition beanDefinition = lmConfigBuilder.getBeanDefinition();
+                    fillAttributeValues(child, lmConfigBuilder);
+                    lms.add(beanDefinition);
+                }
+            }
+            securityConfigBuilder.addPropertyValue("securityInterceptorConfigs", lms);
         }
 
         private void handleCredentialsFactory(final Node node, final BeanDefinitionBuilder securityConfigBuilder) {
@@ -631,8 +709,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             if (implementation != null) {
                 credentialsConfigBuilder.addPropertyReference("implementation", implementation);
             }
-            Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' " +
-                    "attributes is required to create CredentialsFactory!");
+            Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' "
+                    + "attributes is required to create CredentialsFactory!");
             for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
                 final String nodeName = cleanNodeName(child.getNodeName());
                 if ("properties".equals(nodeName)) {
@@ -684,8 +762,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             if (implementation != null) {
                 permPolicyConfigBuilder.addPropertyReference("implementation", implementation);
             }
-            Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' " +
-                    "attributes is required to create PermissionPolicy!");
+            Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' "
+                    + "attributes is required to create PermissionPolicy!");
             for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
                 final String nodeName = cleanNodeName(child.getNodeName());
                 if ("properties".equals(nodeName)) {
@@ -700,38 +778,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final Set permissions = new ManagedSet();
             for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
                 final String nodeName = cleanNodeName(child.getNodeName());
-                PermissionType type;
-                if ("map-permission".equals(nodeName)) {
-                    type = PermissionType.MAP;
-                } else if ("queue-permission".equals(nodeName)) {
-                    type = PermissionType.QUEUE;
-                } else if ("multimap-permission".equals(nodeName)) {
-                    type = PermissionType.MULTIMAP;
-                } else if ("topic-permission".equals(nodeName)) {
-                    type = PermissionType.TOPIC;
-                } else if ("list-permission".equals(nodeName)) {
-                    type = PermissionType.LIST;
-                } else if ("set-permission".equals(nodeName)) {
-                    type = PermissionType.SET;
-                } else if ("lock-permission".equals(nodeName)) {
-                    type = PermissionType.LOCK;
-                } else if ("atomic-long-permission".equals(nodeName)) {
-                    type = PermissionType.ATOMIC_LONG;
-                } else if ("countdown-latch-permission".equals(nodeName)) {
-                    type = PermissionType.COUNTDOWN_LATCH;
-                } else if ("semaphore-permission".equals(nodeName)) {
-                    type = PermissionType.SEMAPHORE;
-                } else if ("id-generator-permission".equals(nodeName)) {
-                    type = PermissionType.ID_GENERATOR;
-                } else if ("executor-service-permission".equals(nodeName)) {
-                    type = PermissionType.EXECUTOR_SERVICE;
-                } else if ("transaction-permission".equals(nodeName)) {
-                    type = PermissionType.TRANSACTION;
-                } else if ("all-permissions".equals(nodeName)) {
-                    type = PermissionType.ALL;
-                } else {
+                PermissionType type = PermissionType.getType(nodeName);
+
+                if (type == null) {
                     continue;
                 }
+
                 handleSecurityPermission(child, permissions, type);
             }
             securityConfigBuilder.addPropertyValue("clientPermissionConfigs", permissions);

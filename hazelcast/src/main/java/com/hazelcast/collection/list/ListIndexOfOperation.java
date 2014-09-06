@@ -21,12 +21,8 @@ import com.hazelcast.collection.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
 import java.io.IOException;
 
-/**
- * @ali 9/1/13
- */
 public class ListIndexOfOperation extends CollectionOperation {
 
     private boolean last;

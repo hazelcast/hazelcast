@@ -39,7 +39,8 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         super(null, null, MEMBER_ATTRIBUTE_CHANGED, null);
     }
 
-    public MemberAttributeEvent(Cluster cluster, MemberImpl member, MemberAttributeOperationType operationType, String key, Object value) {
+    public MemberAttributeEvent(Cluster cluster, MemberImpl member, MemberAttributeOperationType operationType,
+                                String key, Object value) {
         super(cluster, member, MEMBER_ATTRIBUTE_CHANGED, null);
         this.member = member;
         this.operationType = operationType;
@@ -67,9 +68,9 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(key);
         member.writeData(out);
-        out.writeByte(operationType.id);
+        out.writeByte(operationType.getId());
         if (operationType == PUT) {
-            IOUtil.writeAttributeValue(value,out);
+            IOUtil.writeAttributeValue(value, out);
         }
     }
 

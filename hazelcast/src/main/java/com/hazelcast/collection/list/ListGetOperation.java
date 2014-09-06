@@ -21,12 +21,8 @@ import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-
 import java.io.IOException;
 
-/**
- * @ali 8/31/13
- */
 public class ListGetOperation extends CollectionOperation {
 
     private int index;

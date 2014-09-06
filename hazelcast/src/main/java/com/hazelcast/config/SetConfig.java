@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+/**
+ * Contains the configuration for an {@link com.hazelcast.core.ISet}.
+ */
 public class SetConfig extends CollectionConfig<SetConfig> {
 
     private SetConfigReadOnly readOnly;
@@ -28,7 +31,7 @@ public class SetConfig extends CollectionConfig<SetConfig> {
     }
 
     public SetConfigReadOnly getAsReadOnly() {
-        if (readOnly == null){
+        if (readOnly == null) {
             readOnly = new SetConfigReadOnly(this);
         }
         return readOnly;

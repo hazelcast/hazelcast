@@ -30,7 +30,7 @@ import java.io.IOException;
  * @param <K>
  * @param <P>
  */
-public final class PartitionAwareKey<K,P> implements PartitionAware<Object>, DataSerializable {
+public final class PartitionAwareKey<K, P> implements PartitionAware<Object>, DataSerializable {
 
     private K key;
     private P partitionKey;
@@ -43,12 +43,12 @@ public final class PartitionAwareKey<K,P> implements PartitionAware<Object>, Dat
      * @throws IllegalArgumentException if key or partitionKey is null.
      */
     public PartitionAwareKey(K key, P partitionKey) {
-        this.key = ValidationUtil.isNotNull(key,"key");
-        this.partitionKey = ValidationUtil.isNotNull(partitionKey,"partitionKey");
+        this.key = ValidationUtil.isNotNull(key, "key");
+        this.partitionKey = ValidationUtil.isNotNull(partitionKey, "partitionKey");
     }
 
     //constructor needed for deserialization.
-    private PartitionAwareKey(){
+    private PartitionAwareKey() {
     }
 
     public K getKey() {
@@ -74,15 +74,14 @@ public final class PartitionAwareKey<K,P> implements PartitionAware<Object>, Dat
 
     @Override
     public boolean equals(Object thatObject) {
-        if (this == thatObject) return true;
-        if (thatObject == null || getClass() != thatObject.getClass()) return false;
-
+        if (this == thatObject) {
+            return true;
+        }
+        if (thatObject == null || getClass() != thatObject.getClass()) {
+            return false;
+        }
         PartitionAwareKey that = (PartitionAwareKey) thatObject;
-
-        if (!key.equals(that.key)) return false;
-        if (!partitionKey.equals(that.partitionKey)) return false;
-
-        return true;
+        return (key.equals(that.key) && partitionKey.equals(that.partitionKey));
     }
 
     @Override
@@ -94,9 +93,9 @@ public final class PartitionAwareKey<K,P> implements PartitionAware<Object>, Dat
 
     @Override
     public String toString() {
-        return "PartitionAwareKey{" +
-                "key=" + key +
-                ", partitionKey=" + partitionKey +
-                '}';
+        return "PartitionAwareKey{"
+                + "key=" + key
+                + ", partitionKey=" + partitionKey
+                + '}';
     }
 }

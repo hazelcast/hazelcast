@@ -16,8 +16,9 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.nio.ClientPacket;
-import com.hazelcast.nio.IOSelector;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
@@ -25,13 +26,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
-public class ClientReadHandler extends ClientAbstractSelectionHandler {
+public class ClientReadHandler extends AbstractClientSelectionHandler {
 
     private final ByteBuffer buffer;
 
     private volatile long lastHandle;
 
-    private ClientPacket packet = null;
+    private Packet packet;
 
     public ClientReadHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
         super(connection, ioSelector);
@@ -49,7 +50,7 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
         if (!connection.live()) {
             if (logger.isFinestEnabled()) {
                 String message = "We are being asked to read, but connection is not live so we won't";
-                logger.finest( message);
+                logger.finest(message);
             }
             return;
         }
@@ -63,22 +64,12 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
             return;
         }
         try {
-            if (buffer.position() == 0) return;
+            if (buffer.position() == 0) {
+                return;
+            }
             buffer.flip();
 
-            while (buffer.hasRemaining()) {
-                if (packet == null) {
-                    packet = new ClientPacket(connection.getConnectionManager().getSerializationContext());
-                }
-                boolean complete = packet.readFrom(buffer);
-                if (complete) {
-                    packet.setConn(connection);
-                    connectionManager.handlePacket(packet);
-                    packet = null;
-                } else {
-                    break;
-                }
-            }
+            readPacket();
 
             if (buffer.hasRemaining()) {
                 buffer.compact();
@@ -89,6 +80,23 @@ public class ClientReadHandler extends ClientAbstractSelectionHandler {
             handleSocketException(t);
         }
 
+    }
+
+    private void readPacket() {
+        while (buffer.hasRemaining()) {
+            if (packet == null) {
+                final SerializationService ss = connection.getSerializationService();
+                packet = new Packet(ss.getPortableContext());
+            }
+            boolean complete = packet.readFrom(buffer);
+            if (complete) {
+                packet.setConn(connection);
+                connectionManager.handlePacket(packet);
+                packet = null;
+            } else {
+                break;
+            }
+        }
     }
 
     long getLastHandle() {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
@@ -27,6 +28,11 @@ public class GetRemainingLeaseTimeOperation extends BaseLockOperation {
 
     public GetRemainingLeaseTimeOperation(ObjectNamespace namespace, Data key) {
         super(namespace, key, -1);
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.GET_REMAINING_LEASETIME;
     }
 
     @Override

@@ -15,7 +15,14 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ProblematicTest;
+import com.hazelcast.wan.impl.WanNoDelayReplication;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,19 +31,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
-/**
- * Created by danny on 12/10/13.
- */
 
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -45,7 +42,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE = 3 * 60;
 
-    private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
 
     private HazelcastInstance[] clusterA = new HazelcastInstance[2];
     private HazelcastInstance[] clusterB = new HazelcastInstance[2];
@@ -80,7 +76,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     private void initCluster(HazelcastInstance[] cluster, Config config) {
         for (int i = 0; i < cluster.length; i++) {
-            cluster[i] = factory.newHazelcastInstance(config);
+            cluster[i] = HazelcastInstanceFactory.newHazelcastInstance(config);
         }
     }
 
@@ -209,10 +205,15 @@ public class WanReplicationTest extends HazelcastTestSupport {
         return true;
     }
 
-    private void assertDataSize(final HazelcastInstance[] cluster, String mapName, int size) {
-        HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        assertEquals(size, m.size());
+    private void assertDataSizeEventually(final HazelcastInstance[] cluster, final String mapName, final int size) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                HazelcastInstance node = getNode(cluster);
+                IMap m = node.getMap(mapName);
+                assertEquals(size, m.size());
+            }
+        });
     }
 
 
@@ -241,32 +242,8 @@ public class WanReplicationTest extends HazelcastTestSupport {
     }
 
 
-    @Test
-    public void wan_events_should_be_processed_in_order() {
-        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
-        initClusterA();
-        initClusterB();
-
-        createDataIn(clusterA, "map", 0, 1000);
-        removeAndCreateDataIn(clusterA, "map", 0, 1000);
-
-        assertKeysIn(clusterB, "map", 0, 1000);
-        assertDataSize(clusterB, "map", 1000);
-    }
-
-    private void removeAndCreateDataIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
-        HazelcastInstance node = getNode(cluster);
-        IMap<Integer, String> m = node.getMap(mapName);
-        for (; start < end; start++) {
-            m.remove(start);
-            m.put(start, node.getConfig().getGroupConfig().getName() + start);
-        }
-    }
-
-
     // V topo config 1 passive replicar, 2 producers
     @Test
-    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_PassThroughMergePolicy() {
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
@@ -294,12 +271,11 @@ public class WanReplicationTest extends HazelcastTestSupport {
         removeDataIn(clusterB, "map", 1000, 1500);
 
         assertKeysNotIn(clusterC, "map", 0, 2000);
-        assertDataSize(clusterC, "map", 0);
+        assertDataSizeEventually(clusterC, "map", 0);
     }
 
 
     @Test
-    @Category(ProblematicTest.class)
     public void Vtopo_TTL_Replication_Issue254() {
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
@@ -352,7 +328,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
 
     @Test
-    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_PutIfAbsentMapMergePolicy() {
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PutIfAbsentMapMergePolicy.class.getName());
@@ -368,18 +343,17 @@ public class WanReplicationTest extends HazelcastTestSupport {
         createDataIn(clusterB, "map", 0, 1000);
         assertDataInFrom(clusterC, "map", 0, 1000, clusterA);
 
-        assertDataSize(clusterC, "map", 2000);
+        assertDataSizeEventually(clusterC, "map", 2000);
 
         removeDataIn(clusterA, "map", 0, 1000);
         removeDataIn(clusterB, "map", 1000, 2000);
 
         assertKeysNotIn(clusterC, "map", 0, 2000);
-        assertDataSize(clusterC, "map", 0);
+        assertDataSizeEventually(clusterC, "map", 0);
     }
 
 
     @Test
-    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_LatestUpdateMapMergePolicy() {
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", LatestUpdateMapMergePolicy.class.getName());
@@ -392,7 +366,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         createDataIn(clusterB, "map", 0, 1000);
         assertDataInFrom(clusterC, "map", 0, 1000, clusterB);
 
-        assertDataSize(clusterC, "map", 1000);
+        assertDataSizeEventually(clusterC, "map", 1000);
 
         removeDataIn(clusterA, "map", 0, 500);
         assertKeysNotIn(clusterC, "map", 0, 500);
@@ -400,13 +374,12 @@ public class WanReplicationTest extends HazelcastTestSupport {
         removeDataIn(clusterB, "map", 500, 1000);
         assertKeysNotIn(clusterC, "map", 500, 1000);
 
-        assertDataSize(clusterC, "map", 0);
+        assertDataSizeEventually(clusterC, "map", 0);
     }
 
 
     //"Issue #1373  this test passes when run in isolation")//TODO
     @Test
-    @Category(ProblematicTest.class)
     public void VTopo_1passiveReplicar_2producers_Test_HigherHitsMapMergePolicy() {
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", HigherHitsMapMergePolicy.class.getName());
@@ -430,7 +403,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     //("Issue #1368 multi replicar topology cluster A replicates to B and C")
     @Test
-    @Category(ProblematicTest.class)
     public void VTopo_2passiveReplicar_1producer_Test() {
 
         String replicaName = "multiReplica";
@@ -449,13 +421,12 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertKeysNotIn(clusterB, "map", 0, 1000);
         assertKeysNotIn(clusterC, "map", 0, 1000);
 
-        assertDataSize(clusterB, "map", 0);
-        assertDataSize(clusterC, "map", 0);
+        assertDataSizeEventually(clusterB, "map", 0);
+        assertDataSizeEventually(clusterC, "map", 0);
     }
 
 
     @Test
-    @Category(ProblematicTest.class)
     public void linkTopo_ActiveActiveReplication_Test() {
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -479,12 +450,11 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertKeysIn(clusterA, "map", 500, 1500);
         assertKeysIn(clusterB, "map", 500, 1500);
 
-        assertDataSize(clusterA, "map", 1000);
-        assertDataSize(clusterB, "map", 1000);
+        assertDataSizeEventually(clusterA, "map", 1000);
+        assertDataSizeEventually(clusterB, "map", 1000);
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void linkTopo_ActiveActiveReplication_Threading_Test() throws InterruptedException, BrokenBarrierException {
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
@@ -528,13 +498,12 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertKeysNotIn(clusterA, "map", 0, 1500);
         assertKeysNotIn(clusterB, "map", 0, 1500);
 
-        assertDataSize(clusterA, "map", 0);
-        assertDataSize(clusterB, "map", 0);
+        assertDataSizeEventually(clusterA, "map", 0);
+        assertDataSizeEventually(clusterB, "map", 0);
     }
 
 
     @Test
-    @Category(ProblematicTest.class)
     public void linkTopo_ActiveActiveReplication_2clusters_Test_HigherHitsMapMergePolicy() {
 
         setupReplicateFrom(configA, configB, clusterB.length, "atob", HigherHitsMapMergePolicy.class.getName());
@@ -562,10 +531,32 @@ public class WanReplicationTest extends HazelcastTestSupport {
         createDataIn(clusterA, "map", 0, 1000);
 
         assertKeysIn(clusterB, "map", 0, 1000);
-        assertDataSize(clusterB, "map", 1000);
+        assertDataSizeEventually(clusterB, "map", 1000);
 
         assertKeysIn(clusterC, "map", 0, 1000);
-        assertDataSize(clusterC, "map", 1000);
+        assertDataSizeEventually(clusterC, "map", 1000);
+    }
+
+    @Test
+    public void wan_events_should_be_processed_in_order() {
+        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
+        initClusterA();
+        initClusterB();
+
+        createDataIn(clusterA, "map", 0, 1000);
+        removeAndCreateDataIn(clusterA, "map", 0, 1000);
+
+        assertKeysIn(clusterB, "map", 0, 1000);
+        assertDataSizeEventually(clusterB, "map", 1000);
+    }
+
+    private void removeAndCreateDataIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
+        HazelcastInstance node = getNode(cluster);
+        IMap<Integer, String> m = node.getMap(mapName);
+        for (; start < end; start++) {
+            m.remove(start);
+            m.put(start, node.getConfig().getGroupConfig().getName() + start);
+        }
     }
 
 
@@ -581,10 +572,10 @@ public class WanReplicationTest extends HazelcastTestSupport {
         createDataIn(clusterA, "map", 0, 1000);
 
         assertKeysIn(clusterB, "map", 0, 1000);
-        assertDataSize(clusterB, "map", 1000);
+        assertDataSizeEventually(clusterB, "map", 1000);
 
         assertKeysIn(clusterC, "map", 0, 1000);
-        assertDataSize(clusterC, "map", 1000);
+        assertDataSizeEventually(clusterC, "map", 1000);
     }
 
 

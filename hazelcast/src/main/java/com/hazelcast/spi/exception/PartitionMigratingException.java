@@ -18,11 +18,15 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.nio.Address;
 
+/**
+ * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} that is thrown when an operation is executed
+ * on a partition, but that partition is currently being moved around.
+ */
 public class PartitionMigratingException extends RetryableHazelcastException {
 
     public PartitionMigratingException(Address thisAddress, int partitionId,
                                        String operationName, String serviceName) {
         super("Partition is migrating! this:" + thisAddress
-              + ", partitionId: " + partitionId + ", operation: " + operationName + ", service: " + serviceName);
+                + ", partitionId: " + partitionId + ", operation: " + operationName + ", service: " + serviceName);
     }
 }

@@ -25,8 +25,14 @@ public final class ByteUtil {
      * Array of bit positions.
      */
     private static final byte[] POWERS = new byte[]{
-            (byte) (1 << 0), (byte) (1 << 1), (byte) (1 << 2), (byte) (1 << 3),
-            (byte) (1 << 4), (byte) (1 << 5), (byte) (1 << 6), (byte) (1 << 7)
+            (byte) (1 << 0),
+            (byte) (1 << 1),
+            (byte) (1 << 2),
+            (byte) (1 << 3),
+            (byte) (1 << 4),
+            (byte) (1 << 5),
+            (byte) (1 << 6),
+            (byte) (1 << 7),
     };
 
     /**
@@ -116,5 +122,20 @@ public final class ByteUtil {
         return c;
     }
 
+    public static int combineToInt(short x, short y) {
+        return ((int) x << 16) | ((int) y & 0xFFFF);
+    }
+
+    public static short extractShort(int value, boolean lowerBits) {
+        return (short) ((lowerBits) ? value : (value >> 16));
+    }
+
+    public static long combineToLong(int x, int y) {
+        return ((long) x << 32) | ((long) y & 0xFFFFFFFFL);
+    }
+
+    public static int extractInt(long value, boolean lowerBits) {
+        return (lowerBits) ? (int) value : (int) (value >> 32);
+    }
 
 }

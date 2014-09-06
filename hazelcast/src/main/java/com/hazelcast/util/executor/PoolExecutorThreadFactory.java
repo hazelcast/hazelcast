@@ -16,26 +16,25 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * @author mdogan 1/10/13
- */
 public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFactory {
 
     private final String threadNamePrefix;
     private final AtomicInteger idGen = new AtomicInteger(0);
-    private final Queue<Integer> idQ = new LinkedBlockingQueue<Integer>(1000); // to reuse previous thread IDs
+    // to reuse previous thread IDs
+    private final Queue<Integer> idQ = new LinkedBlockingQueue<Integer>(1000);
 
     public PoolExecutorThreadFactory(ThreadGroup threadGroup, String threadNamePrefix, ClassLoader classLoader) {
         super(threadGroup, classLoader);
         this.threadNamePrefix = threadNamePrefix;
     }
 
+    @Override
     protected Thread createThread(Runnable r) {
         Integer id = idQ.poll();
         if (id == null) {
@@ -45,7 +44,7 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
         return new ManagedThread(r, name, id);
     }
 
-    private class ManagedThread extends Thread {
+    private class ManagedThread extends HazelcastManagedThread {
 
         protected final int id;
 
@@ -54,16 +53,12 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
             this.id = id;
         }
 
-        public void run() {
+        @Override
+        protected void afterRun() {
             try {
-                super.run();
-            } catch (OutOfMemoryError e) {
-                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-            } finally {
-                try {
-                    idQ.offer(id);
-                } catch (Throwable ignored) {
-                }
+                idQ.offer(id);
+            } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
     }

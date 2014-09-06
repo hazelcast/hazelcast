@@ -16,5 +16,8 @@
 
 package com.hazelcast.wan;
 
+/**
+ * Marker interface for WAN replication messages
+ */
 public interface ReplicationEventObject {
 }

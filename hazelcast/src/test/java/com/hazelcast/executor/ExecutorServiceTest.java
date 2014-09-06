@@ -37,6 +37,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -346,6 +347,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testSubmitToKeyOwnerCallable() throws Exception {
         final int k = simpleTestNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
@@ -373,16 +375,17 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             while (!localMember.equals(instance.getPartitionService().getPartition(++key).getOwner())) ;
             if (i % 2 == 0) {
                 final Future f = service.submitToKeyOwner(new ScriptCallable(script, map), key);
-                assertTrue((Boolean) f.get(5, TimeUnit.SECONDS));
+                assertTrue((Boolean) f.get(60, TimeUnit.SECONDS));
             } else {
                 service.submitToKeyOwner(new ScriptCallable(script, map), key, callback);
             }
         }
-        assertTrue(latch.await(30, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertEquals(k / 2, count.get());
     }
 
     @Test
+    @Category(ProblematicTest.class)
     public void testSubmitToMemberCallable() throws ExecutionException, InterruptedException, TimeoutException {
         final int k = simpleTestNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
@@ -1245,7 +1248,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         });
 
-        latch1.await(30, TimeUnit.SECONDS);
+        assertOpenEventually(latch1);
 
         final AtomicReference reference1 = new AtomicReference();
         final AtomicReference reference2 = new AtomicReference();
@@ -1277,7 +1280,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         });
 
-        latch2.await(30, TimeUnit.SECONDS);
+        assertOpenEventually(latch2);
         assertEquals("success", reference1.get());
         assertEquals("success", reference2.get());
     }

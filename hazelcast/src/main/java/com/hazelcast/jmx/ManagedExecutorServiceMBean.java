@@ -18,19 +18,22 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.util.executor.ManagedExecutorService;
-
 import java.util.Hashtable;
 
 import static com.hazelcast.jmx.ManagementService.quote;
 
+/**
+ * Management bean for {@link com.hazelcast.util.executor.ManagedExecutorService}
+ */
 @ManagedDescription("HazelcastInstance.ManagedExecutorService")
 public class ManagedExecutorServiceMBean extends HazelcastMBean<ManagedExecutorService> {
+    private static final int INITIAL_CAPACITY = 3;
 
     public ManagedExecutorServiceMBean(HazelcastInstance hazelcastInstance, ManagedExecutorService executorService,
                                        ManagementService service) {
         super(executorService, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.ManagedExecutorService"));
         properties.put("name", quote(executorService.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));

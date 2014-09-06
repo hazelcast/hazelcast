@@ -24,9 +24,7 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,6 +32,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -155,7 +155,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testPollNull() throws Exception {
-       TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -362,7 +362,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
      */
     @Test
     public void testQueueAfterShutdown() throws Exception {
-         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -426,7 +426,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void queueEntriesShouldBeConsistentAfterShutdown2() throws Exception {
-       TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -447,6 +447,125 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         h1.getLifecycleService().shutdown();
 
         assertSizeEventually(2, q2);
+    }
+
+    @Test
+    public void testAddAllBackup() {
+        HazelcastInstance[] instances = createHazelcastInstances();
+        HazelcastInstance instance1 = instances[0];
+        HazelcastInstance instance2 = instances[1];
+        String name = generateKeyOwnedBy(instance1);
+        IQueue<Object> queue1 = instance1.getQueue(name);
+        IQueue<Object> queue2 = instance2.getQueue(name);
+        List<String> list = new ArrayList<String>();
+        for (int i = 0; i < 4; i++) {
+            list.add("item" + i);
+        }
+        assertTrue(queue1.addAll(list));
+
+        instance1.shutdown();
+
+        assertSizeEventually(4, queue2);
+        assertIterableEquals(queue2, "item0", "item1", "item2", "item3");
+    }
+
+    @Test
+    public void testClearBackup() {
+        HazelcastInstance[] instances = createHazelcastInstances();
+        HazelcastInstance instance1 = instances[0];
+        HazelcastInstance instance2 = instances[1];
+        String name = generateKeyOwnedBy(instance1);
+        IQueue<Object> queue1 = instance1.getQueue(name);
+        IQueue<Object> queue2 = instance2.getQueue(name);
+        for (int i = 0; i < 4; i++) {
+            queue1.offer("item" + i);
+        }
+        assertSizeEventually(4, queue2);
+        assertIterableEquals(queue2, "item0", "item1","item2","item3");
+        queue1.clear();
+
+        instance1.shutdown();
+
+        assertSizeEventually(0, queue2);
+    }
+
+    @Test
+    public void testRemoveBackup() {
+        HazelcastInstance[] instances = createHazelcastInstances();
+        HazelcastInstance instance1 = instances[0];
+        HazelcastInstance instance2 = instances[1];
+        String name = generateKeyOwnedBy(instance1);
+        IQueue<Object> queue1 = instance1.getQueue(name);
+        IQueue<Object> queue2 = instance2.getQueue(name);
+        for (int i = 0; i < 4; i++) {
+            queue1.offer("item" + i);
+        }
+
+        assertSizeEventually(4, queue2);
+        assertIterableEquals(queue2, "item0", "item1", "item2", "item3");
+        queue1.remove("item0");
+        queue1.remove("item1");
+
+        instance1.shutdown();
+
+        assertSizeEventually(2, queue2);
+        assertIterableEquals(queue2, "item2", "item3");
+    }
+
+    @Test
+    public void testCompareAndRemoveBackup() {
+        HazelcastInstance[] instances = createHazelcastInstances();
+        HazelcastInstance instance1 = instances[0];
+        HazelcastInstance instance2 = instances[1];
+        String name = generateKeyOwnedBy(instance1);
+        IQueue<Object> queue1 = instance1.getQueue(name);
+        IQueue<Object> queue2 = instance2.getQueue(name);
+        for (int i = 0; i < 4; i++) {
+            queue1.offer("item" + i);
+        }
+        assertSizeEventually(4, queue2);
+        assertIterableEquals(queue2, "item0", "item1", "item2", "item3");
+
+        List<String> list = new ArrayList<String>();
+        list.add("item0");
+        list.add("item1");
+        list.add("item2");
+
+        assertTrue(queue1.removeAll(list));
+        instance1.shutdown();
+        assertSizeEventually(1, queue2);
+        assertIterableEquals(queue2, "item3");
+    }
+
+    @Test
+    public void testDrainBackup() {
+        HazelcastInstance[] instances = createHazelcastInstances();
+        HazelcastInstance instance1 = instances[0];
+        HazelcastInstance instance2 = instances[1];
+        String name = generateKeyOwnedBy(instance1);
+        IQueue<Object> queue1 = instance1.getQueue(name);
+        IQueue<Object> queue2 = instance2.getQueue(name);
+        for (int i = 0; i < 4; i++) {
+            queue1.offer("item" + i);
+        }
+        List list = new ArrayList<String>();
+
+        assertSizeEventually(4, queue2);
+        assertIterableEquals(queue2, "item0", "item1", "item2", "item3");
+        queue1.drainTo(list, 2);
+
+        instance1.shutdown();
+
+        assertSizeEventually(2, queue2);
+        assertIterableEquals(queue2, "item2", "item3");
+    }
+
+    private HazelcastInstance[] createHazelcastInstances() {
+        Config config = new Config();
+        final String configName = randomString();
+        config.getQueueConfig(configName).setMaxSize(100);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        return factory.newInstances(config);
     }
 
 }

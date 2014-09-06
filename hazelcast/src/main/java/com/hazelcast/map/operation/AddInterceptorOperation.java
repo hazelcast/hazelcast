@@ -21,7 +21,6 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-
 import java.io.IOException;
 
 public class AddInterceptorOperation extends AbstractOperation {
@@ -43,7 +42,7 @@ public class AddInterceptorOperation extends AbstractOperation {
 
     public void run() {
         mapService = getService();
-        mapService.getMapContainer(mapName).addInterceptor(id, mapInterceptor);
+        mapService.getMapServiceContext().getMapContainer(mapName).addInterceptor(id, mapInterceptor);
     }
 
     @Override

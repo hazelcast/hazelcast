@@ -16,6 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+/**
+ * Provides the context of Query.
+ */
 public class QueryContext {
     private final IndexService indexService;
 
@@ -24,6 +27,10 @@ public class QueryContext {
     }
 
     public Index getIndex(String attributeName) {
-        return (indexService == null) ? null : indexService.getIndex(attributeName);
+        if (indexService == null) {
+            return null;
+        } else {
+            return indexService.getIndex(attributeName);
+        }
     }
 }

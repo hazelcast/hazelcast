@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.concurrent.atomiclong.LongWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,6 +46,12 @@ public class GetAndAddOperation extends AtomicLongBackupAwareOperation {
     @Override
     public Object getResponse() {
         return returnValue;
+    }
+
+
+    @Override
+    public int getId() {
+        return AtomicLongDataSerializerHook.GET_AND_ADD;
     }
 
     @Override

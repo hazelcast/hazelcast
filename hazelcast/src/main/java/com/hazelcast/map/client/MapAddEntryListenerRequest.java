@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,10 +23,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
-
 import java.io.IOException;
 
-public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerRequest implements RetryableRequest {
+public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerRequest {
 
     private Predicate predicate;
 
@@ -77,7 +75,7 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
                 key.writeData(out);
             }
         }
-
+        super.write(writer);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -97,7 +95,23 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
             key = new Data();
             key.readData(in);
         }
-
+        super.read(reader);
     }
 
+    @Override
+    public String getMethodName() {
+        return "addEntryListener";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (key == null && predicate == null) {
+            return new Object[]{null, includeValue};
+        } else if (predicate == null) {
+            return new Object[]{null, key, includeValue};
+        } else if (key == null) {
+            return new Object[]{null, predicate, includeValue};
+        }
+        return new Object[]{null, predicate, key, includeValue};
+    }
 }

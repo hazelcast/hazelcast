@@ -28,10 +28,10 @@ import java.util.Map;
 
 final class PortableSerializer implements StreamSerializer<Portable> {
 
-    private final SerializationContext context;
+    private final PortableContext context;
     private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
 
-    PortableSerializer(SerializationContext context, Map<Integer, ? extends PortableFactory> portableFactories) {
+    PortableSerializer(PortableContext context, Map<Integer, ? extends PortableFactory> portableFactories) {
         this.context = context;
         factories.putAll(portableFactories);
     }
@@ -47,9 +47,6 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         if (!(out instanceof BufferObjectDataOutput)) {
             throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
         }
-        if (p.getClassId() == 0) {
-            throw new IllegalArgumentException("Portable class id cannot be zero!");
-        }
         ClassDefinition cd = context.lookupOrRegisterClassDefinition(p);
 
         BufferObjectDataOutput bufferedOut = (BufferObjectDataOutput) out;
@@ -59,52 +56,85 @@ final class PortableSerializer implements StreamSerializer<Portable> {
     }
 
     public Portable read(ObjectDataInput in) throws IOException {
-        if (!(in instanceof BufferObjectDataInput)) {
-            throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
-        }
         if (!(in instanceof PortableContextAwareInputStream)) {
             throw new IllegalArgumentException("ObjectDataInput must be instance of PortableContextAwareInputStream!");
         }
-        final PortableContextAwareInputStream ctxIn = (PortableContextAwareInputStream) in;
-        final int factoryId = ctxIn.getFactoryId();
-        final int dataClassId = ctxIn.getClassId();
-        final int dataVersion = ctxIn.getVersion();
+        PortableContextAwareInputStream ctxIn = (PortableContextAwareInputStream) in;
+        int factoryId = ctxIn.getFactoryId();
+        int classId = ctxIn.getClassId();
+        int version = ctxIn.getVersion();
+        return read(in, factoryId, classId, version);
+    }
 
-        final PortableFactory portableFactory = factories.get(factoryId);
-        if (portableFactory == null) {
-            throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId);
+    Portable read(ObjectDataInput in, int factoryId, int classId, int version) throws IOException {
+        if (!(in instanceof BufferObjectDataInput)) {
+            throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
         }
-        final Portable portable = portableFactory.create(dataClassId);
-        if (portable == null) {
-            throw new HazelcastSerializationException("Could not create Portable for class-id: " + dataClassId);
-        }
-        final DefaultPortableReader reader;
-        final ClassDefinition cd;
-        final BufferObjectDataInput bufferedIn = (BufferObjectDataInput) in;
-        if (context.getVersion() == dataVersion) {
-            cd = context.lookup(factoryId, dataClassId); // using context.version
-            if (cd == null) {
-                throw new HazelcastSerializationException("Could not find class-definition for " +
-                        "factory-id: " + factoryId + ", class-id: " + dataClassId + ", version: " + dataVersion);
-            }
-            reader = new DefaultPortableReader(this, bufferedIn, cd);
-        } else {
-            cd = context.lookup(factoryId, dataClassId, dataVersion); // registered during read
-            if (cd == null) {
-                throw new HazelcastSerializationException("Could not find class-definition for " +
-                        "factory-id: " + factoryId + ", class-id: " + dataClassId + ", version: " + dataVersion);
-            }
-            reader = new MorphingPortableReader(this, bufferedIn, cd);
-        }
+
+        Portable portable = createNewPortableInstance(factoryId, classId);
+        int portableVersion = findPortableVersion(factoryId, classId, portable);
+
+        DefaultPortableReader reader = createReader((BufferObjectDataInput) in, factoryId, classId,
+                version, portableVersion);
         portable.readPortable(reader);
         reader.end();
         return portable;
     }
 
-    Portable readAndInitialize(BufferObjectDataInput in) throws IOException {
-        Portable p = read(in);
+    private int findPortableVersion(int factoryId, int classId, Portable portable) {
+        int currentVersion = context.getClassVersion(factoryId, classId);
+        if (currentVersion < 0) {
+            currentVersion = PortableVersionHelper.getVersion(portable, context.getVersion());
+            if (currentVersion > 0) {
+                context.setClassVersion(factoryId, classId, currentVersion);
+            }
+        }
+        return currentVersion;
+    }
+
+    private Portable createNewPortableInstance(int factoryId, int classId) {
+        final PortableFactory portableFactory = factories.get(factoryId);
+        if (portableFactory == null) {
+            throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId);
+        }
+        final Portable portable = portableFactory.create(classId);
+        if (portable == null) {
+            throw new HazelcastSerializationException("Could not create Portable for class-id: " + classId);
+        }
+        return portable;
+    }
+
+    Portable readAndInitialize(BufferObjectDataInput in, int factoryId, int classId, int version) throws IOException {
+        Portable p = read(in, factoryId, classId, version);
         final ManagedContext managedContext = context.getManagedContext();
         return managedContext != null ? (Portable) managedContext.initialize(p) : p;
+    }
+
+    DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version) {
+        return createReader(in, factoryId, classId, version, version);
+    }
+
+    DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version,
+            int portableVersion) {
+
+        int effectiveVersion = version;
+        if (version < 0) {
+            effectiveVersion = context.getVersion();
+        }
+
+        ClassDefinition cd = context.lookup(factoryId, classId, effectiveVersion);
+        if (cd == null) {
+            throw new HazelcastSerializationException("Could not find class-definition for "
+                    + "factory-id: " + factoryId + ", class-id: " + classId + ", version: " + effectiveVersion);
+        }
+
+        DefaultPortableReader reader;
+        if (portableVersion == effectiveVersion) {
+            reader = new DefaultPortableReader(this, in, cd);
+        } else {
+            reader = new MorphingPortableReader(this, in, cd);
+        }
+        return reader;
     }
 
     public void destroy() {

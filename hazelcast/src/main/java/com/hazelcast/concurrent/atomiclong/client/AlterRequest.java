@@ -38,4 +38,10 @@ public class AlterRequest extends AbstractAlterRequest {
     public int getClassId() {
         return AtomicLongPortableHook.ALTER;
     }
+
+    @Override
+    public String getMethodName() {
+        return "alter";
+    }
+
 }

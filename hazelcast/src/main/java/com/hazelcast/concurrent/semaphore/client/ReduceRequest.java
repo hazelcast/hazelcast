@@ -46,4 +46,9 @@ public class ReduceRequest extends SemaphoreRequest {
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_ACQUIRE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "reducePermits";
+    }
 }

@@ -18,9 +18,6 @@ package com.hazelcast.nio.serialization;
 
 import java.io.InputStream;
 
-/**
- * @author mdogan 06/15/13
- */
 abstract class PortableContextAwareInputStream extends InputStream {
 
     private int factoryId;

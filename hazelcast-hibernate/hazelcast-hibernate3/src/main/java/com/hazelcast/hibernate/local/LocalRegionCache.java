@@ -23,19 +23,44 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.RegionCache;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.access.SoftLock;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @author mdogan 11/9/12
+ * Local only {@link com.hazelcast.hibernate.RegionCache} implementation
+ * based on a topic to distribute cache updates.
  */
 public class LocalRegionCache implements RegionCache {
+
+    private static final long SEC_TO_MS = 1000L;
+    private static final int MAX_SIZE = 100000;
+    private static final float BASE_EVICTION_RATE = 0.2F;
+
+    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
+        @Override
+        public String toString() {
+            return "Lock::Success";
+        }
+    };
+
+    private static final SoftLock LOCK_FAILURE = new SoftLock() {
+        @Override
+        public String toString() {
+            return "Lock::Failure";
+        }
+    };
 
     protected final ITopic<Object> topic;
     protected final MessageListener<Object> messageListener;
@@ -71,7 +96,8 @@ public class LocalRegionCache implements RegionCache {
                             final CacheDataDescription metadata, final boolean withTopic) {
         try {
             config = hazelcastInstance != null ? hazelcastInstance.getConfig().findMapConfig(name) : null;
-        } catch (UnsupportedOperationException ignored) {
+        } catch (UnsupportedOperationException e) {
+            Logger.getLogger(LocalRegionCache.class).finest(e);
         }
         versionComparator = metadata != null && metadata.isVersioned() ? metadata.getVersionComparator() : null;
         cache = new ConcurrentHashMap<Object, Value>();
@@ -97,7 +123,7 @@ public class LocalRegionCache implements RegionCache {
     }
 
     public boolean update(final Object key, final Object value, final Object currentVersion,
-                       final Object previousVersion, final SoftLock lock) {
+                          final Object previousVersion, final SoftLock lock) {
         if (lock == LOCK_FAILURE) {
             return false;
         }
@@ -105,7 +131,7 @@ public class LocalRegionCache implements RegionCache {
         final Value currentValue = cache.get(key);
         if (lock == LOCK_SUCCESS) {
             if (currentValue != null && currentVersion != null
-                && versionComparator.compare(currentVersion, currentValue.getVersion()) < 0) {
+                    && versionComparator.compare(currentVersion, currentValue.getVersion()) < 0) {
                 return false;
             }
         }
@@ -207,54 +233,71 @@ public class LocalRegionCache implements RegionCache {
         final long timeToLive;
         if (config != null) {
             maxSize = config.getMaxSizeConfig().getSize();
-            timeToLive = config.getTimeToLiveSeconds() * 1000L;
+            timeToLive = config.getTimeToLiveSeconds() * SEC_TO_MS;
         } else {
-            maxSize = 100000;
+            maxSize = MAX_SIZE;
             timeToLive = CacheEnvironment.getDefaultCacheTimeoutInMillis();
         }
 
         boolean limitSize = maxSize > 0 && maxSize != Integer.MAX_VALUE;
         if (limitSize || timeToLive > 0) {
-            final Iterator<Entry<Object, Value>> iter = cache.entrySet().iterator();
-            List<EvictionEntry> entries = null;
-            final long now = Clock.currentTimeMillis();
-            while (iter.hasNext()) {
-                final Entry<Object, Value> e = iter.next();
-                final Object k = e.getKey();
-                final Value v = e.getValue();
-                if (v.getLock() == LOCK_SUCCESS) {
-                    continue;
-                }
-                if (v.getCreationTime() + timeToLive < now) {
-                    iter.remove();
-                } else if (limitSize) {
-                    if (entries == null) {
-                        // Use a List rather than a Set for correctness. Using a Set, especially a TreeSet
-                        // based on EvictionEntry.compareTo, causes evictions to be processed incorrectly
-                        // when two or more entries in the map have the same timestamp. In such a case, the
-                        // _first_ entry at a given timestamp is the only one that can be evicted because
-                        // TreeSet does not add "equivalent" entries. A second benefit of using a List is
-                        // that the cost of sorting the entries is not incurred if eviction isn't performed
-                        entries = new ArrayList<EvictionEntry>(cache.size());
-                    }
-                    entries.add(new EvictionEntry(k, v));
-                }
-            }
+            List<EvictionEntry> entries = searchEvictableEntries(timeToLive, limitSize);
             final int diff = cache.size() - maxSize;
-            final int toRemove = diff >= 0 ? (diff + maxSize * 20 / 100) : 0;
-            if (toRemove > 0 && entries != null) {
-                Collections.sort(entries); // Only sort the entries if we're going to evict some
-                int removed = 0;
-                for (EvictionEntry entry : entries) {
-                    if (cache.remove(entry.key, entry.value) && ++removed == toRemove) {
-                        break;
-                    }
-                }
+            final int evictionRate = calculateEvictionRate(diff, maxSize);
+            if (evictionRate > 0 && entries != null) {
+                evictEntries(entries, evictionRate);
             }
         }
     }
 
-    static private class EvictionEntry implements Comparable<EvictionEntry> {
+    private List<EvictionEntry> searchEvictableEntries(long timeToLive, boolean limitSize) {
+        List<EvictionEntry> entries = null;
+        Iterator<Entry<Object, Value>> iter = cache.entrySet().iterator();
+        long now = Clock.currentTimeMillis();
+        while (iter.hasNext()) {
+            final Entry<Object, Value> e = iter.next();
+            final Object k = e.getKey();
+            final Value v = e.getValue();
+            if (v.getLock() == LOCK_SUCCESS) {
+                continue;
+            }
+            if (v.getCreationTime() + timeToLive < now) {
+                iter.remove();
+            } else if (limitSize) {
+                if (entries == null) {
+                    // Use a List rather than a Set for correctness. Using a Set, especially a TreeSet
+                    // based on EvictionEntry.compareTo, causes evictions to be processed incorrectly
+                    // when two or more entries in the map have the same timestamp. In such a case, the
+                    // _first_ entry at a given timestamp is the only one that can be evicted because
+                    // TreeSet does not add "equivalent" entries. A second benefit of using a List is
+                    // that the cost of sorting the entries is not incurred if eviction isn't performed
+                    entries = new ArrayList<EvictionEntry>(cache.size());
+                }
+                entries.add(new EvictionEntry(k, v));
+            }
+        }
+        return entries;
+    }
+
+    private int calculateEvictionRate(int diff, int maxSize) {
+        return diff >= 0 ? (diff + (int) (maxSize * BASE_EVICTION_RATE)) : 0;
+    }
+
+    private void evictEntries(List<EvictionEntry> entries, int evictionRate) {
+        // Only sort the entries if we're going to evict some
+        Collections.sort(entries);
+        int removed = 0;
+        for (EvictionEntry entry : entries) {
+            if (cache.remove(entry.key, entry.value) && ++removed == evictionRate) {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Inner class that instances represent an entry marked for eviction
+     */
+    private static final class EvictionEntry implements Comparable<EvictionEntry> {
         final Object key;
         final Value value;
 
@@ -271,13 +314,17 @@ public class LocalRegionCache implements RegionCache {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             EvictionEntry that = (EvictionEntry) o;
 
-            return (key == null ? that.key == null : key.equals(that.key)) &&
-                    (value == null ? that.value == null : value.equals(that.value));
+            return (key == null ? that.key == null : key.equals(that.key))
+                    && (value == null ? that.value == null : value.equals(that.value));
         }
 
         @Override
@@ -285,19 +332,4 @@ public class LocalRegionCache implements RegionCache {
             return key == null ? 0 : key.hashCode();
         }
     }
-
-    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
-        @Override
-        public String toString() {
-            return "Lock::Success";
-        }
-    };
-
-    private static final SoftLock LOCK_FAILURE = new SoftLock() {
-        @Override
-        public String toString() {
-            return "Lock::Failure";
-        }
-    };
-
 }

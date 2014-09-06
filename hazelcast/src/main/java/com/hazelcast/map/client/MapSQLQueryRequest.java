@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.util.IterationType;
-
 import java.io.IOException;
 
 public final class MapSQLQueryRequest extends AbstractMapQueryRequest {

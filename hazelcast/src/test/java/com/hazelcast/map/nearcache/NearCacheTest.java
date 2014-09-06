@@ -34,7 +34,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,7 +49,7 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category(ProblematicTest.class)
 public class NearCacheTest extends HazelcastTestSupport {
 
     @Test
@@ -106,7 +105,7 @@ public class NearCacheTest extends HazelcastTestSupport {
     private NearCache getNearCache(String mapName, HazelcastInstance instance) {
         NodeEngineImpl nodeEngine = TestUtil.getNode(instance).nodeEngine;
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
-        return service.getNearCache(mapName);
+        return service.getMapServiceContext().getNearCacheProvider().getNearCache(mapName);
     }
 
     @Test
@@ -142,7 +141,7 @@ public class NearCacheTest extends HazelcastTestSupport {
     public void testNearCacheEvictionByUsingMapTTLEviction() throws InterruptedException {
         final int instanceCount = 3;
         final int ttl = 1;
-        final int size = 1000;
+        final int size = 100;
         final Config cfg = new Config();
         final String mapName = "_testNearCacheEvictionByUsingMapTTLEviction_";
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -183,9 +182,24 @@ public class NearCacheTest extends HazelcastTestSupport {
         assertEquals(0, map2.size());
         assertEquals(0, map3.size());
         //near cache sizes should be zero after eviction.
-        assertEquals(0, countNotNullValuesInNearCache(mapName, instance1));
-        assertEquals(0, countNotNullValuesInNearCache(mapName, instance2));
-        assertEquals(0, countNotNullValuesInNearCache(mapName, instance3));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, countNotNullValuesInNearCache(mapName, instance1));
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, countNotNullValuesInNearCache(mapName, instance2));
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, countNotNullValuesInNearCache(mapName, instance3));
+            }
+        });
     }
 
     private int countNotNullValuesInNearCache(String mapName, HazelcastInstance instance) {
@@ -203,12 +217,12 @@ public class NearCacheTest extends HazelcastTestSupport {
 
     @Test
     public void testNearCacheStats() throws Exception {
-        String mapName = "NearCacheStatsTest";
+        String mapName = randomMapName();
         Config config = new Config();
-        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(true));
+        config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig().setInvalidateOnChange(false));
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance[] instances = factory.newInstances(config);
-        IMap<Integer, Integer> map = instances[0].getMap("NearCacheStatsTest");
+        IMap<Integer, Integer> map = instances[0].getMap(mapName);
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
@@ -292,12 +306,12 @@ public class NearCacheTest extends HazelcastTestSupport {
         map.get("key1");
         map.get("key2");
         map.get("key3");
-        assertEquals(map.containsKey("key1"), true);
-        assertEquals(map.containsKey("key5"), false);
+        assertTrue(map.containsKey("key1"));
+        assertFalse(map.containsKey("key5"));
         map.remove("key1");
-        assertEquals(map.containsKey("key1"), false);
-        assertEquals(map.containsKey("key2"), true);
-        assertEquals(map.containsKey("key5"), false);
+        assertFalse(map.containsKey("key5"));
+        assertTrue(map.containsKey("key2"));
+        assertFalse(map.containsKey("key1"));
     }
 
     @Test

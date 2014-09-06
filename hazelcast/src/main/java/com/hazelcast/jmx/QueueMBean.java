@@ -21,9 +21,13 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Management bean for {@link Iqu}
+ */
 @ManagedDescription("IQueue")
 public class QueueMBean extends HazelcastMBean<IQueue> {
 
@@ -51,67 +55,67 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
 
     @ManagedAnnotation("localOwnedItemCount")
     @ManagedDescription("the number of owned items in this member.")
-    public long getLocalOwnedItemCount(){
-       return managedObject.getLocalQueueStats().getOwnedItemCount();
+    public long getLocalOwnedItemCount() {
+        return managedObject.getLocalQueueStats().getOwnedItemCount();
     }
 
     @ManagedAnnotation("localBackupItemCount")
     @ManagedDescription("the number of backup items in this member.")
-    public long getLocalBackupItemCount(){
+    public long getLocalBackupItemCount() {
         return managedObject.getLocalQueueStats().getBackupItemCount();
     }
 
     @ManagedAnnotation("localMinAge")
     @ManagedDescription("the min age of the items in this member.")
-    public long getLocalMinAge(){
+    public long getLocalMinAge() {
         return managedObject.getLocalQueueStats().getMinAge();
     }
 
     @ManagedAnnotation("localMaxAge")
     @ManagedDescription("the max age of the items in this member.")
-    public long getLocalMaxAge(){
+    public long getLocalMaxAge() {
         return managedObject.getLocalQueueStats().getMaxAge();
     }
 
     @ManagedAnnotation("localAvgAge")
     @ManagedDescription("the average age of the items in this member.")
-    public long getLocalAvgAge(){
+    public long getLocalAvgAge() {
         return managedObject.getLocalQueueStats().getAvgAge();
     }
 
     @ManagedAnnotation("localOfferOperationCount")
     @ManagedDescription("the number of offer/put/add operations in this member")
-    public long getLocalOfferOperationCount(){
+    public long getLocalOfferOperationCount() {
         return managedObject.getLocalQueueStats().getOfferOperationCount();
     }
 
     @ManagedAnnotation("localRejectedOfferOperationCount")
     @ManagedDescription("the number of rejected offers in this member")
-    public long getLocalRejectedOfferOperationCount(){
+    public long getLocalRejectedOfferOperationCount() {
         return managedObject.getLocalQueueStats().getRejectedOfferOperationCount();
     }
 
     @ManagedAnnotation("localPollOperationCount")
     @ManagedDescription("the number of poll/take/remove operations in this member")
-    public long getLocalPollOperationCount(){
+    public long getLocalPollOperationCount() {
         return managedObject.getLocalQueueStats().getPollOperationCount();
     }
 
     @ManagedAnnotation("localEmptyPollOperationCount")
     @ManagedDescription("number of null returning poll operations in this member")
-    public long getLocalEmptyPollOperationCount(){
+    public long getLocalEmptyPollOperationCount() {
         return managedObject.getLocalQueueStats().getEmptyPollOperationCount();
     }
 
     @ManagedAnnotation("localOtherOperationsCount")
     @ManagedDescription("number of other operations in this member")
-    public long getLocalOtherOperationsCount(){
+    public long getLocalOtherOperationsCount() {
         return managedObject.getLocalQueueStats().getOtherOperationsCount();
     }
 
     @ManagedAnnotation("localEventOperationCount")
     @ManagedDescription("number of event operations in this member")
-    public long getLocalEventOperationCount(){
+    public long getLocalEventOperationCount() {
         return managedObject.getLocalQueueStats().getEventOperationCount();
     }
 
@@ -129,7 +133,7 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
 
     @ManagedAnnotation("config")
     @ManagedDescription("QueueConfig")
-    public String getConfig(){
+    public String getConfig() {
         String managedObjectName = managedObject.getName();
         Config config = service.instance.getConfig();
         QueueConfig queueConfig = config.findQueueConfig(managedObjectName);
@@ -157,6 +161,7 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
         try {
             managedObject.removeItemListener(registrationId);
         } catch (Exception ignored) {
+            ignore(ignored);
         }
     }
 }

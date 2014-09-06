@@ -19,13 +19,65 @@ package com.hazelcast.map;
 import java.io.Serializable;
 import java.util.Map;
 
+/**
+ * An EntryProcessor passes you a {@link java.util.Map.Entry}. At the time you receive it
+ * the entry is locked and not released until the EntryProcessor completes.
+ * This obviates the need to explicitly lock as would be required with a {@link java.util.concurrent.ExecutorService}.
+ * <p/>
+ * Performance can be very high as the data is not moved off the Member partition. This avoids network cost and, if
+ * the storage format is {@link com.hazelcast.config.InMemoryFormat#OBJECT} then there is no de-serialization or serialization
+ * cost.
+ * <p/>
+ * EntryProcessors execute on the partition thread in a member. Multiple operations on the same partition are queued.
+ * <p/>
+ * While executing partition migrations are not allowed. Any migrations are queued on the partition thread.
+ * <p/>
+ * An EntryProcessor may not be re-entrant i.e. it may not access the same {@link Map}. Limitation: you can only access
+ * data on the same partition.
+ * <p/>
+ * Note that to modify an entry by using EntryProcessors you should explicitly call
+ * {@link java.util.Map.Entry#setValue} method of {@link java.util.Map.Entry} such as:
+ * <p/>
+ * <pre>
+ * <code>
+ * {@literal@}Override
+ *     public Object process(Map.Entry entry) {
+ *        Value value = entry.getValue();
+ *        // process and modify value
+ *        // ...
+ *        entry.setValue(value);
+ *        return result;
+ *    }
+ * </code>
+ * </pre>
+ * otherwise EntryProcessor does not guarantee to modify the entry.
+ *
+ * @param <K>
+ * @param <V>
+ */
 public interface EntryProcessor<K, V> extends Serializable {
 
     /**
      * Process the entry without worrying about concurrency.
      * <p/>
+     * Note that to modify an entry by using EntryProcessor you should explicitly call
+     * {@link java.util.Map.Entry#setValue} method of {@link java.util.Map.Entry} such as:
+     * <p/>
+     * <pre>
+     * <code>
+     * {@literal@}Override
+     *        public Object process(Map.Entry entry) {
+     *          Value value = entry.getValue();
+     *          // process and modify value
+     *          // ...
+     *          entry.setValue(value);
+     *          return result;
+     *        }
+     * </code>
+     * </pre>
+     * otherwise EntryProcessor does not guarantee to modify the entry.
      *
-     * @param entry entry to be processes
+     * @param entry entry to be processed
      * @return result of the process
      */
     Object process(Map.Entry<K, V> entry);

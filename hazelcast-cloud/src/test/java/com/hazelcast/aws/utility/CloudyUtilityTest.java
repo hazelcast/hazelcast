@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -184,7 +184,7 @@ public class CloudyUtilityTest {
         awsConfig.setAccessKey("some-access-key");
         awsConfig.setSecretKey("some-secret-key");
         awsConfig.setSecurityGroupName("hazelcast");
-        List<String> result = (List<String>) CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        final Map<String, String> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
         assertEquals(2, result.size());
     }
 
@@ -197,7 +197,7 @@ public class CloudyUtilityTest {
         awsConfig.setSecurityGroupName("hazelcast");
         awsConfig.setTagKey("Name1");
         awsConfig.setTagValue("value1");
-        List<String> result = (List<String>) CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        final Map<String, String> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
         assertEquals(2, result.size());
     }
 
@@ -210,7 +210,7 @@ public class CloudyUtilityTest {
         awsConfig.setSecurityGroupName("hazelcast");
         awsConfig.setTagKey("name");
         awsConfig.setTagValue("");
-        List<String> result = (List<String>) CloudyUtility.unmarshalTheResponse(is, awsConfig);
+        final Map<String, String> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
         assertEquals(1, result.size());
     }
 }

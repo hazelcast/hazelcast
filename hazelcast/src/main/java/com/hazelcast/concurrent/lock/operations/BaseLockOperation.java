@@ -16,18 +16,21 @@
 
 package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-abstract class BaseLockOperation extends AbstractOperation implements PartitionAwareOperation {
+abstract class BaseLockOperation extends AbstractOperation
+        implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     public static final long DEFAULT_LOCK_TTL = Long.MAX_VALUE;
     public static final int ANY_THREAD = 0;
@@ -101,6 +104,11 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
 
     public final Data getKey() {
         return key;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return LockDataSerializerHook.F_ID;
     }
 
     @Override

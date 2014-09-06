@@ -32,12 +32,12 @@ public interface ClientListener extends EventListener {
      *
      * @param client Client instance
      */
-    public void clientConnected(Client client);
+    void clientConnected(Client client);
 
     /**
      * Invoked when a new client is disconnected.
      *
      * @param client Client instance
      */
-    public void clientDisconnected(Client client);
+    void clientDisconnected(Client client);
 }

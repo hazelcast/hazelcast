@@ -22,11 +22,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.transaction.TransactionException;
-
 import java.io.IOException;
 
+/**
+ *  An operation to prepare transaction by locking the key on key backup owner.
+ */
 public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
+    private static final long LOCK_TTL_MILLIS = 10000L;
     private String lockOwner;
     private long lockThreadId;
 
@@ -41,8 +44,9 @@ public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements B
 
     @Override
     public void run() throws Exception {
-        if (!recordStore.txnLock(getKey(), lockOwner, lockThreadId, 10000L)) {
-            throw new TransactionException("Lock is not owned by the transaction! Caller: " + lockOwner + ", Owner: " + recordStore.getLockOwnerInfo(getKey()));
+        if (!recordStore.txnLock(getKey(), lockOwner, lockThreadId, LOCK_TTL_MILLIS)) {
+            throw new TransactionException("Lock is not owned by the transaction! Caller: " + lockOwner
+                    + ", Owner: " + recordStore.getLockOwnerInfo(getKey()));
         }
     }
 

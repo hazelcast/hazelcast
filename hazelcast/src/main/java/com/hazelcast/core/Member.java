@@ -34,7 +34,7 @@ public interface Member extends DataSerializable, Endpoint {
     /**
      * Returns if this member is the local member.
      *
-     * @return <tt>true<tt> if this member is the
+     * @return <tt>true</tt> if this member is the
      *         local member, <tt>false</tt> otherwise.
      */
     boolean localMember();

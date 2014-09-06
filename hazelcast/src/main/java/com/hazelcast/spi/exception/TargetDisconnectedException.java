@@ -19,7 +19,8 @@ package com.hazelcast.spi.exception;
 import com.hazelcast.nio.Address;
 
 /**
- * @author mdogan 1/18/13
+ * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} that indicates that an operation is about to
+ * be send to a non existing machine.
  */
 public class TargetDisconnectedException extends RetryableHazelcastException {
 
@@ -29,5 +30,4 @@ public class TargetDisconnectedException extends RetryableHazelcastException {
     public TargetDisconnectedException(Address address) {
         super("Target[" + address + "] disconnected.");
     }
-
 }

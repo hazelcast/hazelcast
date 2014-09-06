@@ -37,4 +37,9 @@ public class GetAndSetRequest extends AtomicLongRequest {
     public int getClassId() {
         return AtomicLongPortableHook.GET_AND_SET;
     }
+
+    @Override
+    public String getMethodName() {
+        return "getAndSet";
+    }
 }

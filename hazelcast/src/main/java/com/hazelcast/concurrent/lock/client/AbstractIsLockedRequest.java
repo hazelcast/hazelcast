@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
+import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -32,7 +32,7 @@ import java.io.IOException;
 public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
 
     protected Data key;
-    private long threadId;
+    protected long threadId;
 
     public AbstractIsLockedRequest() {
     }
@@ -47,7 +47,7 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
     }
 
     protected String getName() {
-        return (String) getClientEngine().toObject(key);
+        return serializationService.toObject(key);
     }
 
     @Override
@@ -80,5 +80,20 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return serializationService.toObject(key);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "isLocked";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
     }
 }

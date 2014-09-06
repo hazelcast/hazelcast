@@ -37,4 +37,9 @@ public class SetRequest extends AtomicLongRequest {
     public int getClassId() {
         return AtomicLongPortableHook.SET;
     }
+
+    @Override
+    public String getMethodName() {
+        return "set";
+    }
 }

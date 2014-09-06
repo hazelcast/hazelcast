@@ -19,8 +19,21 @@ package com.hazelcast.nio.ssl;
 import javax.net.ssl.SSLContext;
 import java.util.Properties;
 
+/**
+ * Factory class for creating {@link javax.net.ssl.SSLContext}
+ */
 public interface SSLContextFactory {
+
+    /**
+     * Initializes this class with config from {@link com.hazelcast.config.SSLConfig}
+     *
+     * @param properties properties form config
+     * @throws Exception
+     */
     void init(Properties properties) throws Exception;
 
+    /**
+     * @return SSLContext
+     */
     SSLContext getSSLContext();
 }

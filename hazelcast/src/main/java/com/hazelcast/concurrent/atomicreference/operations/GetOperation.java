@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 
 public class GetOperation extends AtomicReferenceBaseOperation {
@@ -32,6 +33,11 @@ public class GetOperation extends AtomicReferenceBaseOperation {
     @Override
     public void run() throws Exception {
         returnValue = getReference().get();
+    }
+
+    @Override
+    public int getId() {
+        return AtomicReferenceDataSerializerHook.GET;
     }
 
     @Override

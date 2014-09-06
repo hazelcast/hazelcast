@@ -16,25 +16,31 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.atomiclong.client.*;
+import com.hazelcast.concurrent.atomiclong.client.ApplyRequest;
+import com.hazelcast.concurrent.atomiclong.client.AlterRequest;
+import com.hazelcast.concurrent.atomiclong.client.AlterAndGetRequest;
+import com.hazelcast.concurrent.atomiclong.client.AddAndGetRequest;
+import com.hazelcast.concurrent.atomiclong.client.CompareAndSetRequest;
+import com.hazelcast.concurrent.atomiclong.client.GetAndAlterRequest;
+import com.hazelcast.concurrent.atomiclong.client.GetAndAddRequest;
+import com.hazelcast.concurrent.atomiclong.client.GetAndSetRequest;
+import com.hazelcast.concurrent.atomiclong.client.SetRequest;
+
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.nio.serialization.Data;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-/**
- * @author ali 5/24/13
- */
 public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     private final String name;
     private volatile Data key;
 
-    public ClientAtomicLongProxy(String instanceName, String serviceName, String objectId) {
-        super(instanceName, serviceName, objectId);
+    public ClientAtomicLongProxy(String serviceName, String objectId) {
+        super(serviceName, objectId);
         this.name = objectId;
     }
 
@@ -53,13 +59,13 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     @Override
     public long alterAndGet(IFunction<Long, Long> function) {
         isNotNull(function, "function");
-        return (Long)invoke(new AlterAndGetRequest(name, toData(function)));
+        return (Long) invoke(new AlterAndGetRequest(name, toData(function)));
     }
 
     @Override
     public long getAndAlter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
-        return (Long)invoke(new GetAndAlterRequest(name, toData(function)));
+        return (Long) invoke(new GetAndAlterRequest(name, toData(function)));
     }
 
     @Override
@@ -72,7 +78,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     @Override
     public boolean compareAndSet(long expect, long update) {
         CompareAndSetRequest request = new CompareAndSetRequest(name, expect, update);
-        Boolean result =invoke(request);
+        Boolean result = invoke(request);
         return result;
     }
 
@@ -116,16 +122,12 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
         invoke(request);
     }
 
-    @Override
-    protected void onDestroy() {
-    }
-
-    protected  <T> T invoke(ClientRequest req){
+    protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }
 
-    private Data getKey(){
-        if (key == null){
+    private Data getKey() {
+        if (key == null) {
             key = toData(name);
         }
         return key;

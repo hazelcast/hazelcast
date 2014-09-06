@@ -25,9 +25,6 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 09/05/13
- */
 public final class BeginTxBackupOperation extends Operation {
 
     private String callerUuid;

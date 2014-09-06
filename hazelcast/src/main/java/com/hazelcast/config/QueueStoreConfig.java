@@ -28,8 +28,8 @@ import java.util.Properties;
 public class QueueStoreConfig {
 
     private boolean enabled = true;
-    private String className = null;
-    private String factoryClassName = null;
+    private String className;
+    private String factoryClassName;
     private Properties properties = new Properties();
     private QueueStore storeImplementation;
     private QueueStoreFactory factoryImplementation;
@@ -57,7 +57,7 @@ public class QueueStoreConfig {
     }
 
     public QueueStoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null){
+        if (readOnly == null) {
             readOnly = new QueueStoreConfigReadOnly(this);
         }
         return readOnly;
@@ -91,11 +91,11 @@ public class QueueStoreConfig {
         return this;
     }
 
-    public String getProperty(String name){
+    public String getProperty(String name) {
         return properties.getProperty(name);
     }
 
-    public QueueStoreConfig setProperty(String name, String value){
+    public QueueStoreConfig setProperty(String name, String value) {
         properties.put(name, value);
         return this;
     }

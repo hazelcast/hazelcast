@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.InvocationClientRequest;
+import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientProxy;
@@ -37,6 +37,7 @@ import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.ValidationUtil;
 
@@ -56,8 +57,8 @@ public class ClientMapReduceProxy
 
     private final ConcurrentMap<String, ClientTrackableJob> trackableJobs = new ConcurrentHashMap<String, ClientTrackableJob>();
 
-    public ClientMapReduceProxy(String instanceName, String serviceName, String objectName) {
-        super(instanceName, serviceName, objectName);
+    public ClientMapReduceProxy(String serviceName, String objectName) {
+        super(serviceName, objectName);
     }
 
     @Override
@@ -123,7 +124,8 @@ public class ClientMapReduceProxy
                 ClientCallFuture future = (ClientCallFuture) cis.invokeOnRandomTarget(request, null);
                 future.andThen(new ExecutionCallback() {
                     @Override
-                    public void onResponse(Object response) {
+                    public void onResponse(Object res) {
+                        Object response = res;
                         try {
                             if (collator != null) {
                                 response = collator.collate(((Map) response).entrySet());
@@ -135,7 +137,8 @@ public class ClientMapReduceProxy
                     }
 
                     @Override
-                    public void onFailure(Throwable t) {
+                    public void onFailure(Throwable throwable) {
+                        Throwable t = throwable;
                         try {
                             if (t instanceof ExecutionException
                                     && t.getCause() instanceof CancellationException) {
@@ -183,6 +186,7 @@ public class ClientMapReduceProxy
             try {
                 cancelled = (Boolean) invoke(new ClientCancellationRequest(getName(), jobId), jobId);
             } catch (Exception ignore) {
+                EmptyStatement.ignore(ignore);
             }
             return cancelled;
         }
@@ -213,7 +217,7 @@ public class ClientMapReduceProxy
         }
     }
 
-    private class ClientTrackableJob<V>
+    private final class ClientTrackableJob<V>
             implements TrackableJob<V> {
 
         private final String jobId;
@@ -252,6 +256,7 @@ public class ClientMapReduceProxy
             try {
                 return invoke(new ClientJobProcessInformationRequest(getName(), jobId), jobId);
             } catch (Exception ignore) {
+                EmptyStatement.ignore(ignore);
             }
             return null;
         }

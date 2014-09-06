@@ -17,6 +17,8 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.AbstractLogger;
+import com.hazelcast.logging.LogEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -24,6 +26,8 @@ import com.hazelcast.transaction.TransactionOptions;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -46,6 +50,7 @@ public class TransactionImplTest {
 
         NodeEngine nodeEngine = mock(NodeEngine.class);
         when(nodeEngine.getLocalMember()).thenReturn(new MemberImpl());
+        when(nodeEngine.getLogger(TransactionImpl.class)).thenReturn(new DummyLogger());
 
         transaction = new TransactionImpl(transactionManagerService, nodeEngine, TransactionOptions.getDefault(), null);
         try {
@@ -65,5 +70,29 @@ public class TransactionImplTest {
             assertEquals(expectedException, e);
         }
 
+    }
+
+    private class DummyLogger extends AbstractLogger {
+        @Override
+        public void log(Level level, String message) {
+        }
+
+        @Override
+        public void log(Level level, String message, Throwable thrown) {
+        }
+
+        @Override
+        public void log(LogEvent logEvent) {
+        }
+
+        @Override
+        public Level getLevel() {
+            return Level.INFO;
+        }
+
+        @Override
+        public boolean isLoggable(Level level) {
+            return false;
+        }
     }
 }

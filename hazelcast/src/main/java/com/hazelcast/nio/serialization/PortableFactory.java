@@ -17,12 +17,17 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * @author mdogan 12/26/12
+ * PortableFactory is used to create Portable instances during de-serialization.
+ *
+ * @see com.hazelcast.nio.serialization.Portable
+ * @see com.hazelcast.nio.serialization.VersionedPortable
  */
-
-// TODO: return null if type id isn't known by factory
-
 public interface PortableFactory {
 
+    /**
+     * Creates a Portable instance using given class id
+     * @param classId portable class id
+     * @return portable instance or null if class id is not known by this factory
+     */
     Portable create(int classId);
 }

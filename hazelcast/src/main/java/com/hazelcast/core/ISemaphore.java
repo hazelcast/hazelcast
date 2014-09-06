@@ -53,14 +53,14 @@ public interface ISemaphore extends DistributedObject {
      *
      * @return name of this instance
      */
-    public String getName();
+    String getName();
 
     /**
      * Try to initialize this ISemaphore instance with given permit count
      *
      * @return true if initialization success
      */
-    public boolean init(int permits);
+    boolean init(int permits);
 
     /**
      * <p>Acquires a permit, if one is available and returns immediately,
@@ -88,7 +88,7 @@ public interface ISemaphore extends DistributedObject {
      * @throws InterruptedException       if the current thread is interrupted
      * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
-    public void acquire() throws InterruptedException;
+    void acquire() throws InterruptedException;
 
     /**
      * <p>Acquires the given number of permits, if they are available,
@@ -121,7 +121,7 @@ public interface ISemaphore extends DistributedObject {
      * @throws IllegalArgumentException   if {@code permits} is negative
      * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
-    public void acquire(int permits) throws InterruptedException;
+    void acquire(int permits) throws InterruptedException;
 
 
     /**
@@ -132,7 +132,7 @@ public interface ISemaphore extends DistributedObject {
      *
      * @return the number of permits available in this semaphore
      */
-    public int availablePermits();
+    int availablePermits();
 
 
     /**
@@ -140,7 +140,7 @@ public interface ISemaphore extends DistributedObject {
      *
      * @return the number of permits drained
      */
-    public int drainPermits();
+    int drainPermits();
 
     /**
      * Shrinks the number of available permits by the indicated
@@ -150,7 +150,7 @@ public interface ISemaphore extends DistributedObject {
      * @param reduction the number of permits to remove
      * @throws IllegalArgumentException if {@code reduction} is negative
      */
-    public void reducePermits(int reduction);
+    void reducePermits(int reduction);
 
     /**
      * Releases a permit, increasing the number of available permits by
@@ -162,7 +162,7 @@ public interface ISemaphore extends DistributedObject {
      * Correct usage of a semaphore is established by programming convention
      * in the application.
      */
-    public void release();
+    void release();
 
     /**
      * Releases the given number of permits, increasing the number of
@@ -176,7 +176,7 @@ public interface ISemaphore extends DistributedObject {
      * @param permits the number of permits to release
      * @throws IllegalArgumentException if {@code permits} is negative
      */
-    public void release(int permits);
+    void release(int permits);
 
     /**
      * Acquires a permit, if one is available and returns immediately,
@@ -189,7 +189,7 @@ public interface ISemaphore extends DistributedObject {
      * @return {@code true} if a permit was acquired and {@code false}
      *         otherwise
      */
-    public boolean tryAcquire();
+    boolean tryAcquire();
 
     /**
      * Acquires the given number of permits, if they are available, and
@@ -205,7 +205,7 @@ public interface ISemaphore extends DistributedObject {
      *         {@code false} otherwise
      * @throws IllegalArgumentException if {@code permits} is negative
      */
-    public boolean tryAcquire(int permits);
+    boolean tryAcquire(int permits);
 
     /**
      * Acquires a permit from this semaphore, if one becomes available
@@ -249,7 +249,7 @@ public interface ISemaphore extends DistributedObject {
      * @throws InterruptedException       if the current thread is interrupted
      * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
-    public boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException;
+    boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException;
 
     /**
      * Acquires the given number of permits, if they are available and
@@ -292,6 +292,6 @@ public interface ISemaphore extends DistributedObject {
      * @throws IllegalArgumentException   if {@code permits} is negative
      * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
      */
-    public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException;
+    boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException;
 
 }

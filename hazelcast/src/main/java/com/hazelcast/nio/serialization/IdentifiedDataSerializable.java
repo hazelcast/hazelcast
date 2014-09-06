@@ -16,10 +16,29 @@
 
 package com.hazelcast.nio.serialization;
 
+/**
+ * IdentifiedDataSerializable is an extension to {@link com.hazelcast.nio.serialization.DataSerializable}
+ * to avoid reflection during de-serialization.
+ *
+ * Each IdentifiedDataSerializable is
+ * created by a registered {@link com.hazelcast.nio.serialization.DataSerializableFactory}.
+ *
+ * @see com.hazelcast.nio.serialization.DataSerializable
+ * @see com.hazelcast.nio.serialization.Portable
+ * @see com.hazelcast.nio.serialization.DataSerializableFactory
+ */
 public interface IdentifiedDataSerializable extends DataSerializable {
 
+    /**
+     * Returns DataSerializableFactory factory id for this class.
+     * @return factory id
+     */
     int getFactoryId();
 
+    /**
+     * Returns type identifier for this class. Id should be unique per DataSerializableFactory.
+     * @return type id
+     */
     int getId();
 
 }

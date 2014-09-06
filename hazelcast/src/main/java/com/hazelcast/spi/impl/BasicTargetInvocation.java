@@ -34,17 +34,17 @@ public final class BasicTargetInvocation extends BasicInvocation {
                                  Address target, int tryCount, long tryPauseMillis, long callTimeout,
                                  Callback<Object> callback, String executorName, boolean resultDeserialized) {
         super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
-                tryCount, tryPauseMillis, callTimeout, callback, executorName,resultDeserialized);
+                tryCount, tryPauseMillis, callTimeout, callback, executorName, resultDeserialized);
         this.target = target;
     }
 
     @Override
-    public final Address getTarget() {
+    public Address getTarget() {
         return target;
     }
 
     @Override
-    final ExceptionAction onException(Throwable t) {
+    ExceptionAction onException(Throwable t) {
         return t instanceof MemberLeftException ? ExceptionAction.THROW_EXCEPTION : op.onException(t);
     }
 }

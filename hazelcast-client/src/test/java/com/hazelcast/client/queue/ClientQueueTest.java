@@ -21,7 +21,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -32,17 +31,16 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.interruptCurrentThread;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientQueueTest extends HazelcastTestSupport{
+public class ClientQueueTest {
 
     final static int maxSizeForQueue = 8;
-    final static String queueForTestQueueWithSizeLimit = "testQueueWithSizeLimit";
-    final static String queueForTestOfferPoll = "queueForTestOfferPoll";
+    final static String queueWithMaxSize = "queueWithMaxSize*";
 
     static HazelcastInstance client;
     static HazelcastInstance server;
@@ -51,10 +49,7 @@ public class ClientQueueTest extends HazelcastTestSupport{
     public static void init(){
         Config config = new Config();
 
-        QueueConfig queueConfig = config.getQueueConfig(queueForTestQueueWithSizeLimit);
-        queueConfig.setMaxSize(maxSizeForQueue);
-
-        queueConfig = config.getQueueConfig(queueForTestOfferPoll);
+        QueueConfig queueConfig = config.getQueueConfig(queueWithMaxSize);
         queueConfig.setMaxSize(maxSizeForQueue);
 
         server = Hazelcast.newHazelcastInstance(config);
@@ -79,6 +74,24 @@ public class ClientQueueTest extends HazelcastTestSupport{
         final IQueue q = client.getQueue(randomString());
         assertTrue(q.add(1));
         assertEquals(1, q.size());
+    }
+
+    @Test
+    public void testAdd_whenReachingMaximumCapacity() {
+        final IQueue q = client.getQueue(queueWithMaxSize+randomString());
+        for(int i=0; i<maxSizeForQueue; i++){
+            q.add(1);
+        }
+        assertEquals(maxSizeForQueue, q.size());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAdd_whenExceedingMaximumCapacity() {
+        final IQueue q = client.getQueue(queueWithMaxSize+randomString());
+        for(int i=0; i<maxSizeForQueue; i++){
+            q.add(1);
+        }
+        q.add(1);
     }
 
     @Test
@@ -209,7 +222,6 @@ public class ClientQueueTest extends HazelcastTestSupport{
         assertTrue(q.containsAll(trueList));
         assertFalse(q.containsAll(falseList));
     }
-
 
     @Test
     public void testDrain() {
@@ -491,8 +503,8 @@ public class ClientQueueTest extends HazelcastTestSupport{
     }
 
     @Test
-    public void testQueueWithSizeLimit(){
-        final IQueue q = client.getQueue(queueForTestQueueWithSizeLimit);
+    public void testOffer_whenExceedingMaxCapacity(){
+        final IQueue q = client.getQueue(queueWithMaxSize+randomString());
 
         for(int i=0; i< maxSizeForQueue; i++){
             q.offer(i);
@@ -503,7 +515,7 @@ public class ClientQueueTest extends HazelcastTestSupport{
     @Test
     public void testOfferPoll() throws IOException, InterruptedException {
 
-        final IQueue q = client.getQueue(queueForTestOfferPoll);
+        final IQueue q = client.getQueue(queueWithMaxSize+randomString());
 
         for (int i=0; i<10; i++){
             boolean result = q.offer("item");

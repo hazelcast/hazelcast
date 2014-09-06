@@ -358,7 +358,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
 
     private List<ScheduledEntry<K, V>> sortForEntryProcessing(Set<ScheduledEntry<K, V>> coll) {
         if (coll == null || coll.isEmpty()) {
-            return Collections.emptyList();
+            return Collections.EMPTY_LIST;
         }
 
         final List<ScheduledEntry<K, V>> sortedEntries = new ArrayList<ScheduledEntry<K, V>>(coll);

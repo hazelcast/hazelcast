@@ -1,93 +1,73 @@
 
 ### Eviction
 
-Hazelcast also supports policy based eviction for distributed map. Currently supported eviction policies are LRU (Least Recently Used) and LFU (Least Frequently Used). This feature enables Hazelcast to be used as a distributed cache. If `time-to-live-seconds` is not 0, entries older than `time-to-live-seconds` value will get evicted,
-regardless of the eviction policy set. Here is a sample configuration for eviction:
+Unless you delete the map entries manually or use an eviction policy, they will remain in the map. Hazelcast supports policy based eviction for distributed maps. Currently supported policies are LRU (Least Recently Used) and LFU (Least Frequently Used). There are also other properties as shown in the below sample declarative configuration. 
 
 ```xml
 <hazelcast>
+  <map name="default">
     ...
-    <map name="default">
-        <!--
-            Number of backups. If 1 is set as the backup-count for example,
-            then all entries of the map will be copied to another JVM for
-            fail-safety. Valid numbers are 0 (no backup), 1, 2, 3.
-        -->
-        <backup-count>1</backup-count>
-
-        <!--
-            Maximum number of seconds for each entry to stay in the map. Entries that are
-            older than <time-to-live-seconds> will get automatically evicted from the map.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-        -->
-        <time-to-live-seconds>0</time-to-live-seconds>
-
-        <!--
-            Maximum number of seconds for each entry to stay idle in the map. Entries that are
-            idle(not touched) for more than <max-idle-seconds> will get
-            automatically evicted from the map.
-            Entry is touched if get, put or containsKey is called.
-            Any integer between 0 and Integer.MAX_VALUE.
-            0 means infinite. Default is 0.
-        -->
-        <max-idle-seconds>0</max-idle-seconds>
-
-        <!--
-            Valid values are:
-            NONE (no extra eviction, <time-to-live-seconds> may still apply),
-            LRU  (Least Recently Used),
-            LFU  (Least Frequently Used).
-            NONE is the default.
-            Regardless of the eviction policy used, <time-to-live-seconds> will still apply. 
-        -->
-        <eviction-policy>LRU</eviction-policy>
-
-        <!--
-            Maximum size of the map. When max size is reached,
-            map is evicted based on the policy defined.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means
-            Integer.MAX_VALUE. Default is 0.
-        -->
-        <max-size policy="PER_NODE">5000</max-size>
-
-        <!--
-            When max. size is reached, specified percentage of
-            the map will be evicted. Any integer between 0 and 100.
-            If 25 is set for example, 25% of the entries will
-            get evicted.
-        -->
-        <eviction-percentage>25</eviction-percentage>
-    </map>
+    <time-to-live-seconds>0</time-to-live-seconds>
+    <max-idle-seconds>0</max-idle-seconds>
+    <eviction-policy>LRU</eviction-policy>
+    <max-size policy="PER_NODE">5000</max-size>
+    <eviction-percentage>25</eviction-percentage>
+    ...
+  </map>
 </hazelcast>
 ```
 
-**`max-size` Policies**
+Let's describe each property. 
 
-Below policies can be used in *max-size* configuration.
+-	`time-to-live`: Maximum time in seconds for each entry to stay in the map. If it is not 0, entries that are older than and not updated for this time are evicted automatically. Valid values are integers between 0 and `Integer.MAX VALUE`. Default value is 0 and it means infinite. Moreover, if it is not 0, entries are evicted regardless of the set `eviction-policy`.  
+-	`max-idle-seconds`: Maximum time in seconds for each entry to stay idle in the map. Entries that are idle for more than this time are evicted automatically. An entry is idle if no `get`, `put` or `containsKey` is called. Valid values are integers between 0 and `Integer.MAX VALUE`. Default value is 0 and it means infinite.
+-	`eviction-policy`: Valid values are described below.
+	- NONE: Default policy. If set, no items will be evicted and the property `max-size` will be ignored.  Of course, you still can combine it with `time-to-live-seconds` and `max-idle-seconds`.
+	- LRU: Least Recently Used.
+	- LFU: Least Frequently Used.	
 
-1.  **PER\_NODE:** Max map size per instance.
+-	`max-size`: Maximum size of the map. When maximum size is reached, map is evicted based on the policy defined. Valid values are integers between 0 and `Integer.MAX VALUE`. Default value is 0. If you want `max-size` to work, `eviction-policy` property must be set to a value other than NONE. Its attributes are described below.
+	- **`PER_NODE`**: Maximum number of map entries in each JVM. This is the default policy.	
+	
+		`<max-size policy="PER_NODE">5000</max-size>`
+		
+	- **`PER_PARTITION`**: Maximum number of map entries within each partition. Storage size depends on the partition count in a JVM. So, this attribute may not be used often. If the cluster is small it will be hosting more partitions and therefore map entries, than that of a larger cluster.
+	
+		`<max-size policy="PER_PARTITION">27100</max-size>`
 
-    ```
-    <max-size policy="PER_NODE">5000</max-size>
-    ```
-    
-2.  **PER\_PARTITION:** Max map size per each partition.
+	- **`USED_HEAP_SIZE`**: Maximum used heap size in megabytes for each JVM.
+	
+		`<max-size policy="USED_HEAP_SIZE">4096</max-size>`
 
-    ```
-    <max-size policy="PER_PARTITION">27100</max-size>
-    ```
-    
-3.  **USED\_HEAP\_SIZE:** Max used heap size in MB (mega-bytes) per JVM.
+	- **`USED_HEAP_PERCENTAGE`**: Maximum used heap size percentage for each JVM. If, for example, JVM is configured to have 1000 MB and this value is 10, then the map entries will be evicted when used heap size exceeds 100 MB.
+	
+		`<max-size policy="USED_HEAP_PERCENTAGE">10</max-size>`
 
-    ```
-    <max-size policy="USED_HEAP_SIZE">4096</max-size>
-    ```
-    
-4.  **USED\_HEAP\_PERCENTAGE:** Max used heap size percentage per JVM.
-
-    ```
-    <max-size policy="USED_HEAP_PERCENTAGE">75</max-size>
-    ```
+-	`eviction-percentage`: When `max-size` is reached, specified percentage of the map will be evicted. If 25 is set for example, 25% of the entries will be evicted. Setting this property to a smaller value will cause eviction of small number of map entries. So, if map entries are inserted frequently, smaller percentage values may lead to overheads. Valid values are integers between 0 and 100. Default value is 25.
 
 
+#### Sample Eviction Configuration
+
+```xml
+<map name="documents">
+  <max-size policy="PER_NODE">10000</max-size>
+  <eviction -policy>LRU</eviction -policy> 
+  <max-idle-seconds>60</max-idle-seconds>
+</map>
+```
+
+In the above sample, `documents` map starts to evict its entries from a member when the map size exceeds 10000 in that member. Then, the entries least recently used will be evicted. And, the entries not used for more than 60 seconds will be evicted as well.
+
+
+#### Evicting Specific Entries
+
+
+Above explained eviction policies and configurations apply to all the entries of a map. The entries that meet the specified eviction conditions are evicted.
+
+
+But, you may particularly want to evict some specific map entries.  In this case, you can use the `ttl` and `timeunit` parameters of the method `map.put()`. A sample code line is given below.
+
+`myMap.put( "1", "John", 50, TimeUnit.SECONDS )`
+
+So, the map entry with the key "1" will be evicted in 50 seconds after it is put into `myMap`.
 

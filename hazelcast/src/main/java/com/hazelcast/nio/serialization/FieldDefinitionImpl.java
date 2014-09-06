@@ -21,9 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 12/26/12
- */
 class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
 
     int index;
@@ -31,20 +28,22 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
     FieldType type;
     int classId;
     int factoryId;
+    int version = -1;
 
     FieldDefinitionImpl() {
     }
 
     FieldDefinitionImpl(int index, String fieldName, FieldType type) {
-        this(index, fieldName, type, 0, Data.NO_CLASS_ID);
+        this(index, fieldName, type, 0, Data.NO_CLASS_ID, -1);
     }
 
-    FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId) {
+    FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId, int version) {
         this.classId = classId;
         this.type = type;
         this.fieldName = fieldName;
         this.index = index;
         this.factoryId = factoryId;
+        this.version = version;
     }
 
     public FieldType getType() {
@@ -67,12 +66,25 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         return classId;
     }
 
+    public int getVersion() {
+        return version;
+    }
+
+    void setVersionIfNotSet(int version) {
+        if (getVersion() < 0) {
+            if (type == FieldType.PORTABLE || type == FieldType.PORTABLE_ARRAY) {
+                this.version = version;
+            }
+        }
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(index);
         out.writeUTF(fieldName);
         out.writeByte(type.getId());
         out.writeInt(factoryId);
         out.writeInt(classId);
+        out.writeInt(version);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -81,22 +93,43 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         type = FieldType.get(in.readByte());
         factoryId = in.readInt();
         classId = in.readInt();
+        version = in.readInt();
     }
 
+    //CHECKSTYLE:OFF
+    //Generated equals method has too high NPath Complexity
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         FieldDefinitionImpl that = (FieldDefinitionImpl) o;
 
-        if (classId != that.classId) return false;
-        if (factoryId != that.factoryId) return false;
-        if (fieldName != null ? !fieldName.equals(that.fieldName) : that.fieldName != null) return false;
-        if (type != that.type) return false;
+        if (classId != that.classId) {
+            return false;
+        }
+        if (factoryId != that.factoryId) {
+            return false;
+        }
+
+        if (version != that.version) {
+            return false;
+        }
+
+        if (fieldName != null ? !fieldName.equals(that.fieldName) : that.fieldName != null) {
+            return false;
+        }
+        if (type != that.type) {
+            return false;
+        }
 
         return true;
     }
+    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {
@@ -104,6 +137,7 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + classId;
         result = 31 * result + factoryId;
+        result = 31 * result + version;
         return result;
     }
 
@@ -115,6 +149,7 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         sb.append(", type=").append(type);
         sb.append(", classId=").append(classId);
         sb.append(", factoryId=").append(factoryId);
+        sb.append(", version=").append(version);
         sb.append('}');
         return sb.toString();
     }

@@ -23,9 +23,17 @@ import com.hazelcast.logging.Logger;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.*;
+
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.DESedeKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.DESKeySpec;
+import javax.crypto.spec.PBEKeySpec;
+
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
@@ -34,9 +42,10 @@ import java.security.spec.KeySpec;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public final class CipherHelper {
-    private static SymmetricCipherBuilder symmetricCipherBuilder = null;
 
-    final static ILogger logger = Logger.getLogger(CipherHelper.class);
+    static final ILogger LOGGER = Logger.getLogger(CipherHelper.class);
+
+    private static SymmetricCipherBuilder symmetricCipherBuilder;
 
     static {
         try {
@@ -45,11 +54,12 @@ public final class CipherHelper {
                 Security.addProvider((Provider) Class.forName(provider).newInstance());
             }
         } catch (Exception e) {
-            logger.warning(e);
+            LOGGER.warning(e);
         }
     }
 
-    private CipherHelper(){}
+    private CipherHelper() {
+    }
 
     @SuppressWarnings("SynchronizedMethod")
     public static synchronized Cipher createSymmetricReaderCipher(SymmetricEncryptionConfig config) throws Exception {
@@ -90,7 +100,7 @@ public final class CipherHelper {
 
         byte[] createSalt(String saltStr) {
             long hash = 0;
-            char chars[] = saltStr.toCharArray();
+            char[] chars = saltStr.toCharArray();
             for (char c : chars) {
                 hash = 31 * hash + c;
             }
@@ -110,25 +120,14 @@ public final class CipherHelper {
             try {
                 int mode = (encryptMode) ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
                 Cipher cipher = Cipher.getInstance(algorithm);
-                String keyAlgorithm = algorithm;
-                if (algorithm.indexOf('/') != -1) {
-                    keyAlgorithm = algorithm.substring(0, algorithm.indexOf('/'));
-                }
-                // 32-bit digest key=pass+salt
-                ByteBuffer bbPass = ByteBuffer.allocate(32);
-                MessageDigest md = MessageDigest.getInstance("MD5");
-                bbPass.put(md.digest(stringToBytes(passPhrase)));
-                md.reset();
-                byte[] saltDigest = md.digest(salt);
-                bbPass.put(saltDigest);
-                boolean isCBC = algorithm.contains("/CBC/");
+                String keyAlgorithm = findKeyAlgorithm(algorithm);
+                byte[] saltDigest = buildKeyBytes();
+
                 SecretKey key = null;
                 //CBC mode requires IvParameter with 8 byte input
                 int ivLength = 8;
                 AlgorithmParameterSpec paramSpec = null;
-                if (keyBytes == null) {
-                    keyBytes = bbPass.array();
-                }
+
                 if (algorithm.startsWith("AES")) {
                     ivLength = 16;
                     key = new SecretKeySpec(keyBytes, "AES");
@@ -146,15 +145,45 @@ public final class CipherHelper {
                     KeySpec keySpec = new PBEKeySpec(passPhrase.toCharArray(), salt, iterationCount);
                     key = SecretKeyFactory.getInstance(keyAlgorithm).generateSecret(keySpec);
                 }
-                if (isCBC) {
-                    byte[] iv = (ivLength == 8) ? salt : saltDigest;
-                    paramSpec = new IvParameterSpec(iv);
-                }
+                paramSpec = buildFinalAlgorithmParameterSpec(saltDigest, ivLength, paramSpec);
                 cipher.init(mode, key, paramSpec);
                 return cipher;
             } catch (Throwable e) {
                 throw new RuntimeException("unable to create Cipher:" + e.getMessage(), e);
             }
+        }
+
+        private AlgorithmParameterSpec buildFinalAlgorithmParameterSpec(byte[] saltDigest, int ivLength,
+                                                                        AlgorithmParameterSpec paramSpec) {
+            boolean isCBC = algorithm.contains("/CBC/");
+            if (isCBC) {
+                byte[] iv = (ivLength == 8) ? salt : saltDigest;
+                paramSpec = new IvParameterSpec(iv);
+            }
+            return paramSpec;
+        }
+
+        private String findKeyAlgorithm(String algorithm) {
+            String keyAlgorithm = algorithm;
+            if (algorithm.indexOf('/') != -1) {
+                keyAlgorithm = algorithm.substring(0, algorithm.indexOf('/'));
+            }
+            return keyAlgorithm;
+        }
+
+        private byte[] buildKeyBytes()
+                throws NoSuchAlgorithmException {
+            // 32-bit digest key=pass+salt
+            ByteBuffer bbPass = ByteBuffer.allocate(32);
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            bbPass.put(md.digest(stringToBytes(passPhrase)));
+            md.reset();
+            byte[] saltDigest = md.digest(salt);
+            bbPass.put(saltDigest);
+            if (keyBytes == null) {
+                keyBytes = bbPass.array();
+            }
+            return saltDigest;
         }
 
         public Cipher getWriterCipher() {
@@ -167,7 +196,7 @@ public final class CipherHelper {
     }
 
     public static void handleCipherException(Exception e, Connection connection) {
-        logger.warning(e);
+        LOGGER.warning(e);
         connection.close();
     }
 }

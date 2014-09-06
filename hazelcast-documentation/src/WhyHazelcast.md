@@ -5,7 +5,7 @@
 
 **A Glance at Traditional Data Persistence**
 
-Data is the essence in software sytems and in conventional architectures, relational database persists and provides access to data. Basically, applications are talking directly with a database which has its backup as another machine. To increase the performance capabilities in a conventional architecture, a faster machine is required or utilization of the current resources should be tuned. This leads to a large amount of money or manpower.
+Data is the essence in software systems and in conventional architectures, relational database persists and provides access to data. Basically, applications are talking directly with a database which has its backup as another machine. To increase the performance capabilities in a conventional architecture, a faster machine is required or utilization of the current resources should be tuned. This leads to a large amount of money or manpower.
 
 Then, there is the idea of keeping copies of data next to the database. This is performed using technologies like external key-value storages or second level caching. Purpose is to protect the database from excessive loads. However, when the database is saturated or if the applications perform mostly "put" operations, this approach is of no use, since it insulates the database only from the "get" loads. Even if the applications heavily perform "get"s, then there appears a consistency issue: when data is changed within the database, what is the reaction of local data cache, how these changes are handled? This is the point where concepts like time-to-live (TTL) or write-through come as solutions. 
 
@@ -17,13 +17,9 @@ We can conclude that an ideal cache would combine TTL and write through features
 
 Hazelcast, a brand new approach to data, is designed around the concept of distribution. Data is shared around the cluster for flexibility and performance. It is an in-memory data grid for clustering and highly scalable data distribution.
 
-One of the main features of Hazelcast is not having a master node. Each node in the cluster is configured to be the same in terms of functionality. The oldest node manages the cluster members, i.e. automatically performs the data assignment to nodes. When a new node joins to the cluster or a node goes down, this data assigment is repeated across the nodes and the data distribution comes to a balance again. Therefore, getting Hazelcast up and running is  simple as the nodes are discovered and clustered automatically at no time.
+One of the main features of Hazelcast is not having a master node. Each node in the cluster is configured to be the same in terms of functionality. The oldest node manages the cluster members, i.e. automatically performs the data assignment to nodes.
 
-Another main feature is the data being persisted entirely in-memory. This is  fast. In the case of a failure, such as a node crash, no data will be lost since Hazelcast keeps copies of data across all the nodes of cluster. Data is kept in partition slices and each partition slice is owned by a node and backed up on another node. Please see the illustration below.
-
-![](images/WhyHazelcast.jpg)
-
-
+Another main feature is the data being persisted entirely in-memory. This is fast. In the case of a failure, such as a node crash, no data will be lost since Hazelcast keeps copies of data across all the nodes of cluster.
 
 As it can be seen in the feature list given in [Hazelcast Overview](#hazelcast-overview) section, Hazelcast supports a number of distributed collections and features. Data can be loaded from various sources into diversity of structures, messages can be sent across a cluster, locks can be put to take measures against concurrent operations and events happening in a cluster can be listened. 
 
@@ -40,7 +36,7 @@ As it can be seen in the feature list given in [Hazelcast Overview](#hazelcast-o
 * Nodes are always aware of each other (and they communicate) unlike the traditional key-value caching solutions.
 * And, it can be used as a platform to build your own distributed data structures using the Service Programming Interface (SPI), if you are not happy with the ones provided.
 
-And still evolving. Hazelcast has a dynamic open source community enabling it to be continuously developed. Since it has a very clean API that implements Java interfaces, its usage is simple especially for Java developers. These along with the above features make Hazelcast easy to use and simple to manage.
+And still evolving. Hazelcast has a dynamic open source community enabling it to be continuously developed.
 
 As an in-memory data grid provider, Hazelcast is a perfect fit:
 

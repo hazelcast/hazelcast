@@ -26,9 +26,6 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * @ali 9/4/13
- */
 public class ListAddAllRequest extends CollectionAddAllRequest {
 
     private int index;
@@ -59,5 +56,10 @@ public class ListAddAllRequest extends CollectionAddAllRequest {
     public void read(PortableReader reader) throws IOException {
         index = reader.readInt("i");
         super.read(reader);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{index, valueList};
     }
 }

@@ -17,13 +17,25 @@
 package com.hazelcast.nio;
 
 /**
- * @author mdogan 3/11/13
+ * First bytes to send a node that defines selected protocol
  */
 public final class Protocols {
 
+    /**
+     * Protocol that is used among nodes
+     */
     public static final String CLUSTER = "HZC";
+
+    /**
+     * Protocol that is used for clients(java, c++ , c# client)
+     */
     public static final String CLIENT_BINARY = "CB1";
+
+    /**
+     * Protocol that is used by Memcache And Http
+     */
     public static final String TEXT = "TXT";
 
-    private Protocols() {}
+    private Protocols() {
+    }
 }

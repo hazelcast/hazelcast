@@ -33,19 +33,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * @ali 8/30/13
- */
 public abstract class CollectionContainer implements DataSerializable {
 
     protected String name;
     protected NodeEngine nodeEngine;
     protected ILogger logger;
 
-    protected Map<Long, CollectionItem> itemMap = null;
+    protected Map<Long, CollectionItem> itemMap;
     protected final Map<Long, TxCollectionItem> txMap = new HashMap<Long, TxCollectionItem>();
 
-    private long idGenerator = 0;
+    private long idGenerator;
 
     protected CollectionContainer() {
     }

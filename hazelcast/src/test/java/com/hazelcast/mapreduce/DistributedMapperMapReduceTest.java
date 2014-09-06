@@ -14,10 +14,9 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -59,11 +58,8 @@ public class DistributedMapperMapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        ICompletableFuture<Map<String, Integer>> future =
-                job.mapper(new GroupingTestMapper())
-                        .combiner(new TestCombinerFactory())
-                        .reducer(new TestReducerFactory())
-                        .submit();
+        ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
+                                                             .reducer(new TestReducerFactory()).submit();
 
         // Precalculate results
         int[] expectedResults = new int[4];
@@ -97,13 +93,11 @@ public class DistributedMapperMapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        ICompletableFuture<Map<String, Long>> future =
-                job.mapper(new GroupingTestMapper())
-                   .combiner(new TestIntermediateCombinerFactory())
-                   .reducer(new TestIntermediateReducerFactory())
-                   .submit();
+        ICompletableFuture<Map<String, Long>> future = job.mapper(new GroupingTestMapper())
+                                                          .combiner(new TestIntermediateCombinerFactory())
+                                                          .reducer(new TestIntermediateReducerFactory()).submit();
 
-        // Precalculate results
+        // Pre-calculate results
         int[] expectedResults = new int[4];
         for (int i = 0; i < 100; i++) {
             int index = i % 4;
@@ -135,11 +129,8 @@ public class DistributedMapperMapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        ICompletableFuture<Integer> future =
-                job.mapper(new GroupingTestMapper())
-                        .combiner(new TestCombinerFactory())
-                        .reducer(new TestReducerFactory())
-                        .submit(new TestCollator());
+        ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
+                                                .reducer(new TestReducerFactory()).submit(new TestCollator());
 
         // Precalculate result
         int expectedResult = 0;
@@ -176,11 +167,8 @@ public class DistributedMapperMapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        ICompletableFuture<Map<String, Integer>> future =
-                job.mapper(new GroupingTestMapper())
-                        .combiner(new TestCombinerFactory())
-                        .reducer(new TestReducerFactory())
-                        .submit();
+        ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
+                                                             .reducer(new TestReducerFactory()).submit();
 
         future.andThen(new ExecutionCallback<Map<String, Integer>>() {
             @Override
@@ -231,11 +219,8 @@ public class DistributedMapperMapReduceTest
 
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
-        ICompletableFuture<Integer> future =
-                job.mapper(new GroupingTestMapper())
-                        .combiner(new TestCombinerFactory())
-                        .reducer(new TestReducerFactory())
-                        .submit(new TestCollator());
+        ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
+                                                .reducer(new TestReducerFactory()).submit(new TestCollator());
 
         future.andThen(new ExecutionCallback<Integer>() {
             @Override
@@ -284,12 +269,12 @@ public class DistributedMapperMapReduceTest
     }
 
     public static class TestCombiner
-            extends Combiner<String, Integer, Integer> {
+            extends Combiner<Integer, Integer> {
 
         private transient int sum;
 
         @Override
-        public void combine(String key, Integer value) {
+        public void combine(Integer value) {
             sum += value;
         }
 
@@ -308,15 +293,15 @@ public class DistributedMapperMapReduceTest
         }
 
         @Override
-        public Combiner<String, Integer, Integer> newCombiner(String key) {
+        public Combiner<Integer, Integer> newCombiner(String key) {
             return new TestCombiner();
         }
     }
 
     public static class TestReducer
-            extends Reducer<String, Integer, Integer> {
+            extends Reducer<Integer, Integer> {
 
-        private transient int sum;
+        private volatile int sum;
 
         @Override
         public void reduce(Integer value) {
@@ -335,9 +320,8 @@ public class DistributedMapperMapReduceTest
         public TestReducerFactory() {
         }
 
-
         @Override
-        public Reducer<String, Integer, Integer> newReducer(String key) {
+        public Reducer<Integer, Integer> newReducer(String key) {
             return new TestReducer();
         }
     }
@@ -355,14 +339,13 @@ public class DistributedMapperMapReduceTest
         }
     }
 
-
     public static class TestIntermediateCombiner
-            extends Combiner<String, Integer, Long> {
+            extends Combiner<Integer, Long> {
 
         private transient int sum;
 
         @Override
-        public void combine(String key, Integer value) {
+        public void combine(Integer value) {
             sum += value;
         }
 
@@ -381,15 +364,15 @@ public class DistributedMapperMapReduceTest
         }
 
         @Override
-        public Combiner<String, Integer, Long> newCombiner(String key) {
+        public Combiner<Integer, Long> newCombiner(String key) {
             return new TestIntermediateCombiner();
         }
     }
 
     public static class TestIntermediateReducer
-            extends Reducer<String, Long, Long> {
+            extends Reducer<Long, Long> {
 
-        private transient long sum;
+        private volatile long sum;
 
         @Override
         public void reduce(Long value) {
@@ -408,9 +391,8 @@ public class DistributedMapperMapReduceTest
         public TestIntermediateReducerFactory() {
         }
 
-
         @Override
-        public Reducer<String, Long, Long> newReducer(String key) {
+        public Reducer<Long, Long> newReducer(String key) {
             return new TestIntermediateReducer();
         }
     }

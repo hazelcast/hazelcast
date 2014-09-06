@@ -27,55 +27,62 @@ import com.hazelcast.logging.Logger;
  * and the Hazelcast Logging Framework
  */
 public class JcaBase {
-    /** Class logger from hazelcast's logging framework */
-	private final static ILogger logger = Logger.getLogger("com.hazelcast.jca");
-	/** Container's logger */
-    private PrintWriter logWriter = null;
-    
+    /**
+     * Class LOGGER from hazelcast's logging framework
+     */
+    private static final ILogger LOGGER = Logger.getLogger("com.hazelcast.jca");
+    /**
+     * Container's LOGGER
+     */
+    private PrintWriter logWriter;
+
     /**
      * Convenient method for {@link log(Level, String, null)}
-     * @param logLevel The level to log on 
-     * @param message The message to be logged
+     *
+     * @param logLevel The level to log on
+     * @param message  The message to be logged
      * @see #log(Level, String, Throwable)
      */
     void log(Level logLevel, String message) {
-    	log(logLevel, message, null);
+        log(logLevel, message, null);
     }
-    
+
     /**
-     * Logs the given message and throwable (if any) if the 
+     * Logs the given message and throwable (if any) if the
      * configured logging level is set for the given one.
      * The message (and throwable) is logged to Hazelcast's logging
      * framework <b>and</b> the container specific print writer
+     *
      * @param logLevel The level to log on
-     * @param message The message to be logged
-     * @param t The throwable to also log (message with stacktrace)
+     * @param message  The message to be logged
+     * @param t        The throwable to also log (message with stacktrace)
      */
     void log(Level logLevel, String message, Throwable t) {
-    	if (logger.isLoggable(logLevel)) {
-    		//Log to hazelcast loggin framework itself
-	    	logger.log(logLevel, message, t);
-	    	final PrintWriter logWriter = getLogWriter();
-	    	//Log via the container if possible
-			if (logWriter != null) {
-	    		logWriter.write(message);
-	    		if (t != null) {
-	    			t.printStackTrace(logWriter);
-	    		}
-	    	}
-    	}
+        if (LOGGER.isLoggable(logLevel)) {
+            //Log to hazelcast loggin framework itself
+            LOGGER.log(logLevel, message, t);
+            final PrintWriter logWriter = getLogWriter();
+            //Log via the container if possible
+            if (logWriter != null) {
+                logWriter.write(message);
+                if (t != null) {
+                    t.printStackTrace(logWriter);
+                }
+            }
+        }
     }
-    
+
     /**
-     * @return The container-specific logger
+     * @return The container-specific LOGGER
      */
     public PrintWriter getLogWriter() {
         return logWriter;
     }
 
     /**
-     * Sets the container specific container logger
-     * @param printWriter the new logger to be used
+     * Sets the container specific container LOGGER
+     *
+     * @param printWriter the new LOGGER to be used
      */
     public void setLogWriter(PrintWriter printWriter) {
         this.logWriter = printWriter;

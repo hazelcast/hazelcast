@@ -45,12 +45,25 @@ public class EntryAdapter<K, V> implements EntryListener<K, V> {
         onEntryEvent(event);
     }
 
+    @Override
+    public void mapEvicted(MapEvent event) {
+        onMapEvent(event);
+    }
+
+    @Override
+    public void mapCleared(MapEvent event) {
+        onMapEvent(event);
+    }
+
     /**
      * This method is called when an one of the methods of the {@link com.hazelcast.core.EntryListener} is not
      * overridden. It can be practical if you want to bundle some/all of the methods to a single method.
      *
      * @param event the EntryEvent.
      */
-    public void onEntryEvent(EntryEvent<K,V> event){
+    public void onEntryEvent(EntryEvent<K, V> event) {
+    }
+
+    public void onMapEvent(MapEvent event) {
     }
 }

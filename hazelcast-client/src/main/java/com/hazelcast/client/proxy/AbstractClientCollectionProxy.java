@@ -16,16 +16,37 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.collection.client.*;
-import com.hazelcast.core.*;
+import com.hazelcast.collection.client.CollectionAddAllRequest;
+import com.hazelcast.collection.client.CollectionAddListenerRequest;
+import com.hazelcast.collection.client.CollectionAddRequest;
+import com.hazelcast.collection.client.CollectionClearRequest;
+import com.hazelcast.collection.client.CollectionCompareAndRemoveRequest;
+import com.hazelcast.collection.client.CollectionContainsRequest;
+import com.hazelcast.collection.client.CollectionGetAllRequest;
+import com.hazelcast.collection.client.CollectionIsEmptyRequest;
+import com.hazelcast.collection.client.CollectionRemoveListenerRequest;
+import com.hazelcast.collection.client.CollectionRemoveRequest;
+import com.hazelcast.collection.client.CollectionRequest;
+import com.hazelcast.collection.client.CollectionSizeRequest;
+import com.hazelcast.core.ICollection;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.spi.impl.SerializableCollection;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @ali 9/4/13
@@ -34,8 +55,8 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
 
     protected final String partitionKey;
 
-    public AbstractClientCollectionProxy(String instanceName, String serviceName, String name) {
-        super(instanceName, serviceName, name);
+    public AbstractClientCollectionProxy(String serviceName, String name) {
+        super(serviceName, name);
         partitionKey = getPartitionKey();
     }
 
@@ -46,7 +67,9 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     public boolean isEmpty() {
-        return size() == 0;
+        CollectionIsEmptyRequest request = new CollectionIsEmptyRequest(getName());
+        final Boolean result = invoke(request);
+        return result;
     }
 
     public boolean contains(Object o) {
@@ -57,7 +80,7 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     public Iterator<E> iterator() {
-        return getAll().iterator();
+        return Collections.unmodifiableCollection(getAll()).iterator();
     }
 
     public Object[] toArray() {
@@ -114,7 +137,7 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
         return compareAndRemove(true, c);
     }
 
-    private boolean compareAndRemove(boolean retain, Collection<?> c){
+    private boolean compareAndRemove(boolean retain, Collection<?> c) {
         throwExceptionIfNull(c);
         final Set<Data> valueSet = new HashSet<Data>();
         for (Object o : c) {
@@ -136,14 +159,18 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
         request.setServiceName(getServiceName());
         EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
             public void handle(PortableItemEvent portableItemEvent) {
-                E item = includeValue ? (E)getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
+                E item = includeValue ? (E) getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
                 Member member = getContext().getClusterService().getMember(portableItemEvent.getUuid());
                 ItemEvent<E> itemEvent = new ItemEvent<E>(getName(), portableItemEvent.getEventType(), item, member);
-                if (portableItemEvent.getEventType() == ItemEventType.ADDED){
+                if (portableItemEvent.getEventType() == ItemEventType.ADDED) {
                     listener.itemAdded(itemEvent);
                 } else {
                     listener.itemRemoved(itemEvent);
                 }
+            }
+
+            @Override
+            public void beforeListenerRegister() {
             }
 
             @Override
@@ -155,23 +182,21 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     public boolean removeItemListener(String registrationId) {
-        final CollectionRemoveListenerRequest request = new CollectionRemoveListenerRequest(getName(), registrationId, getServiceName());
+        final CollectionRemoveListenerRequest request = new CollectionRemoveListenerRequest(getName(),
+                registrationId, getServiceName());
         return stopListening(request, registrationId);
     }
 
-    protected void onDestroy() {
-    }
-
-    protected  <T> T invoke(ClientRequest req) {
-        if (req instanceof CollectionRequest){
-            CollectionRequest request = (CollectionRequest)req;
+    protected <T> T invoke(ClientRequest req) {
+        if (req instanceof CollectionRequest) {
+            CollectionRequest request = (CollectionRequest) req;
             request.setServiceName(getServiceName());
         }
 
         return super.invoke(req, getPartitionKey());
     }
 
-    private Collection<E> getAll(){
+    private Collection<E> getAll() {
         final CollectionGetAllRequest request = new CollectionGetAllRequest(getName());
         final SerializableCollection result = invoke(request);
         final Collection<Data> collection = result.getCollection();

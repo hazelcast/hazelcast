@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @ali 08/11/13
+ * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
  */
 public class QueueConfigReadOnly extends QueueConfig {
 
@@ -31,7 +31,8 @@ public class QueueConfigReadOnly extends QueueConfig {
 
     public List<ItemListenerConfig> getItemListenerConfigs() {
         final List<ItemListenerConfig> itemListenerConfigs = super.getItemListenerConfigs();
-        final List<ItemListenerConfig> readOnlyItemListenerConfigs = new ArrayList<ItemListenerConfig>(itemListenerConfigs.size());
+        final List<ItemListenerConfig> readOnlyItemListenerConfigs
+                = new ArrayList<ItemListenerConfig>(itemListenerConfigs.size());
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             readOnlyItemListenerConfigs.add(itemListenerConfig.getAsReadOnly());
         }
@@ -40,10 +41,14 @@ public class QueueConfigReadOnly extends QueueConfig {
 
     public QueueStoreConfig getQueueStoreConfig() {
         final QueueStoreConfig queueStoreConfig = super.getQueueStoreConfig();
-        if (queueStoreConfig == null ){
+        if (queueStoreConfig == null) {
             return null;
         }
         return queueStoreConfig.getAsReadOnly();
+    }
+
+    public QueueConfig setName(String name) {
+        throw new UnsupportedOperationException("This config is read-only queue: " + getName());
     }
 
     public QueueConfig setEmptyQueueTtl(int emptyQueueTtl) {

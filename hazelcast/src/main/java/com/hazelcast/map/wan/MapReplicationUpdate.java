@@ -22,10 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.wan.ReplicationEventObject;
-
 import java.io.IOException;
 
-public class MapReplicationUpdate implements ReplicationEventObject,DataSerializable {
+public class MapReplicationUpdate implements ReplicationEventObject, DataSerializable {
 
     String mapName;
     MapMergePolicy mergePolicy;

@@ -24,14 +24,10 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.transaction.impl.TransactionSupport;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/**
- * @ali 8/29/13
- */
 public class ListService extends CollectionService {
 
     public static final String SERVICE_NAME = "hz:impl:listService";
@@ -45,10 +41,10 @@ public class ListService extends CollectionService {
     @Override
     public ListContainer getOrCreateContainer(String name, boolean backup) {
         ListContainer container = containerMap.get(name);
-        if (container == null){
+        if (container == null) {
             container = new ListContainer(name, nodeEngine);
             final ListContainer current = containerMap.putIfAbsent(name, container);
-            if (current != null){
+            if (current != null) {
                 container = current;
             }
         }
@@ -78,6 +74,8 @@ public class ListService extends CollectionService {
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         final Map<String, CollectionContainer> migrationData = getMigrationData(event);
-        return migrationData.isEmpty() ? null : new ListReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
+        return migrationData.isEmpty()
+                ? null
+                : new ListReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
     }
 }

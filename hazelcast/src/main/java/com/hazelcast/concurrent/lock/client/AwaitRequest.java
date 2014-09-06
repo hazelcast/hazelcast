@@ -1,7 +1,7 @@
 package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.KeyBasedClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.AwaitOperation;
@@ -45,7 +45,7 @@ public class AwaitRequest extends KeyBasedClientRequest implements Portable, Sec
 
     @Override
     protected Operation prepareOperation() {
-        final Data key = getClientEngine().toData(name);
+        final Data key = serializationService.toData(name);
         return new AwaitOperation(namespace, key, threadId, timeout, conditionId);
     }
 

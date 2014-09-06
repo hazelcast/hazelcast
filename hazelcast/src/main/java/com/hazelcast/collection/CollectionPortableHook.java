@@ -16,19 +16,43 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.collection.client.*;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.collection.client.CollectionAddAllRequest;
+import com.hazelcast.collection.client.CollectionAddListenerRequest;
+import com.hazelcast.collection.client.CollectionAddRequest;
+import com.hazelcast.collection.client.CollectionClearRequest;
+import com.hazelcast.collection.client.CollectionCompareAndRemoveRequest;
+import com.hazelcast.collection.client.CollectionContainsRequest;
+import com.hazelcast.collection.client.CollectionGetAllRequest;
+import com.hazelcast.collection.client.CollectionIsEmptyRequest;
+import com.hazelcast.collection.client.CollectionRemoveListenerRequest;
+import com.hazelcast.collection.client.CollectionRemoveRequest;
+import com.hazelcast.collection.client.CollectionSizeRequest;
+import com.hazelcast.collection.client.ListAddAllRequest;
+import com.hazelcast.collection.client.ListAddRequest;
+import com.hazelcast.collection.client.ListGetRequest;
+import com.hazelcast.collection.client.ListIndexOfRequest;
+import com.hazelcast.collection.client.ListRemoveRequest;
+import com.hazelcast.collection.client.ListSetRequest;
+import com.hazelcast.collection.client.ListSubRequest;
+import com.hazelcast.collection.client.TxnListAddRequest;
+import com.hazelcast.collection.client.TxnListRemoveRequest;
+import com.hazelcast.collection.client.TxnListSizeRequest;
+import com.hazelcast.collection.client.TxnSetAddRequest;
+import com.hazelcast.collection.client.TxnSetRemoveRequest;
+import com.hazelcast.collection.client.TxnSetSizeRequest;
+import com.hazelcast.nio.serialization.ArrayPortableFactory;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-/**
- * @ali 9/4/13
- */
 public class CollectionPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_PORTABLE_FACTORY, -20);
-
 
     public static final int COLLECTION_SIZE = 1;
     public static final int COLLECTION_CONTAINS = 2;
@@ -55,6 +79,7 @@ public class CollectionPortableHook implements PortableHook {
     public static final int TXN_SET_REMOVE = 21;
     public static final int TXN_SET_SIZE = 22;
     public static final int COLLECTION_REMOVE_LISTENER = 23;
+    public static final int COLLECTION_IS_EMPTY = 24;
 
     public int getFactoryId() {
         return F_ID;
@@ -62,7 +87,7 @@ public class CollectionPortableHook implements PortableHook {
 
     @Override
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[COLLECTION_REMOVE_LISTENER+1];
+        ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[COLLECTION_IS_EMPTY + 1];
 
         constructors[COLLECTION_SIZE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
@@ -180,6 +205,11 @@ public class CollectionPortableHook implements PortableHook {
         constructors[COLLECTION_REMOVE_LISTENER] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new CollectionRemoveListenerRequest();
+            }
+        };
+        constructors[COLLECTION_IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new CollectionIsEmptyRequest();
             }
         };
 

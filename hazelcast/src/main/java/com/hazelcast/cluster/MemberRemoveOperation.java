@@ -22,17 +22,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 public class MemberRemoveOperation extends AbstractClusterOperation {
 
-    private Address deadAddress = null;
+    private Address deadAddress;
 
     public MemberRemoveOperation() {
     }
 
     public MemberRemoveOperation(Address deadAddress) {
-        super();
         this.deadAddress = deadAddress;
     }
 
@@ -40,11 +38,11 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
     public void run() {
         final ClusterServiceImpl clusterService = getService();
         final Address caller = getCallerAddress();
-        if (caller != null &&
-                (caller.equals(deadAddress) || caller.equals(clusterService.getMasterAddress()))) {
+        if (caller != null
+                && (caller.equals(deadAddress) || caller.equals(clusterService.getMasterAddress()))) {
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
-                logger.finest( "Removing " + deadAddress + ", called from " + caller);
+                logger.finest("Removing " + deadAddress + ", called from " + caller);
             }
             clusterService.removeAddress(deadAddress);
         }

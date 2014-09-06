@@ -44,10 +44,21 @@ import static org.junit.Assert.assertTrue;
 public class MapLockTest extends HazelcastTestSupport {
 
     @Test
-    public void testIsLocked_afterDestroy (){
+    public void testIsLocked_afterDestroy(){
         final HazelcastInstance instance = createHazelcastInstance();
         final IMap<Object, Object> map = instance.getMap(randomString());
         final String key = randomString();
+        map.lock(key);
+        map.destroy();
+        Assert.assertFalse(map.isLocked(key));
+    }
+
+    @Test
+    public void testIsLocked_afterDestroy_whenMapContainsKey(){
+        final HazelcastInstance instance = createHazelcastInstance();
+        final IMap<Object, Object> map = instance.getMap(randomString());
+        final String key = randomString();
+        map.put(key, "value");
         map.lock(key);
         map.destroy();
         Assert.assertFalse(map.isLocked(key));
@@ -215,7 +226,7 @@ public class MapLockTest extends HazelcastTestSupport {
             }
         });
         t.start();
-        assertTrue(latch.await(60, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
     }
 
     @Test(timeout = 1000*15, expected = IllegalMonitorStateException.class)
@@ -277,5 +288,55 @@ public class MapLockTest extends HazelcastTestSupport {
         assertEquals("TTL of KEY has expired, KEY is locked, we expect VAL", VAL, map.get(KEY));
         map.unlock(KEY);
         assertEquals("TTL of KEY has expired, KEY is unlocked, we expect null", null, map.get(KEY));
+    }
+
+
+    @Test
+    public void testClear_withLockedKey() {
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
+
+        final IMap map = node1.getMap("map");
+        final String KEY = "key";
+        final String VAL = "val";
+
+        map.put(KEY, VAL);
+        map.lock(KEY);
+        map.clear();
+
+        assertEquals("a locked key should not be removed by map clear", false, map.isEmpty());
+        assertEquals("a key present in a map, should be locked after map clear", true, map.isLocked(KEY));
+    }
+
+    @Test
+    public void testClear_withLockedKey_whenNodeTerminated() {
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance node2 = nodeFactory.newHazelcastInstance();
+
+        final IMap map = node1.getMap(randomString());
+
+        for(int i=0; i<1000; i++){
+            map.put(i, i);
+        }
+
+        Object key = generateKeyOwnedBy(node2);
+        map.put(key, "value");
+        map.lock(key);
+
+        final CountDownLatch cleared = new CountDownLatch(1);
+        new Thread(){
+            public void run() {
+                map.clear();
+                cleared.countDown();
+            }
+        }.start();
+
+        assertOpenEventually(cleared);
+
+        node2.getLifecycleService().terminate();
+
+        assertEquals("unlocked keys not removed", 1, map.size());
+        assertEquals("a key present in a map, should be locked after map clear", true, map.isLocked(key));
     }
 }

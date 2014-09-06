@@ -38,5 +38,10 @@ public class GetAndAlterRequest extends AbstractAlterRequest {
     public int getClassId() {
         return AtomicLongPortableHook.GET_AND_ALTER;
     }
+
+    @Override
+    public String getMethodName() {
+        return "getAndAlter";
+    }
 }
 

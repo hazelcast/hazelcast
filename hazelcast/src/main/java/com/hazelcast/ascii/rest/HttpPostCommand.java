@@ -17,6 +17,7 @@
 package com.hazelcast.ascii.rest;
 
 import com.hazelcast.ascii.NoOpCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.util.StringUtil;
@@ -26,17 +27,20 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class HttpPostCommand extends HttpCommand {
+    private static final int RADIX = 16;
+    private static final int CAPACITY = 500;
 
-    private ByteBuffer data = null;
-    boolean nextLine = false;
-    boolean readyToReadData = false;
-    private ByteBuffer line = ByteBuffer.allocate(500);
-    private String contentType = null;
+    boolean nextLine;
+    boolean readyToReadData;
+
+    private ByteBuffer data;
+    private ByteBuffer line = ByteBuffer.allocate(CAPACITY);
+    private String contentType;
     private final SocketTextReader socketTextRequestReader;
-    private boolean chunked = false;
+    private boolean chunked;
 
     public HttpPostCommand(SocketTextReader socketTextRequestReader, String uri) {
-        super(TextCommandType.HTTP_POST, uri);
+        super(TextCommandConstants.TextCommandType.HTTP_POST, uri);
         this.socketTextRequestReader = socketTextRequestReader;
     }
 
@@ -59,7 +63,9 @@ public class HttpPostCommand extends HttpCommand {
             complete = doActualRead(cb);
         }
         if (complete) {
-            if (data != null) data.flip();
+            if (data != null) {
+                data.flip();
+            }
         }
         return complete;
     }
@@ -75,35 +81,22 @@ public class HttpPostCommand extends HttpCommand {
     public byte[] getContentType() {
         if (contentType == null) {
             return null;
-        }else {
+        } else {
             return stringToBytes(contentType);
         }
     }
 
-    public boolean doActualRead(ByteBuffer cb) {
-        if (readyToReadData) {
-            if (chunked && (data == null || !data.hasRemaining())) {
-                boolean hasLine = readLine(cb);
-                String lineStr = null;
-                if (hasLine) {
-                    lineStr = toStringAndClear(line).trim();
-                }
-                if (hasLine) {
-                    int dataSize = lineStr.length() == 0 ? 0 : Integer.parseInt(lineStr, 16); // hex string
-                    if (dataSize == 0) {
-                        return true;
-                    }
-                    if (data != null) {
-                        ByteBuffer newData = ByteBuffer.allocate(data.capacity() + dataSize);
-                        newData.put(data.array());
-                        data = newData;
-                    } else {
-                        data = ByteBuffer.allocate(dataSize);
-                    }
-                }
-            }
-            IOUtil.copyToHeapBuffer(cb, data);
+    private void dataNullCheck(int dataSize) {
+        if (data != null) {
+            ByteBuffer newData = ByteBuffer.allocate(data.capacity() + dataSize);
+            newData.put(data.array());
+            data = newData;
+        } else {
+            data = ByteBuffer.allocate(dataSize);
         }
+    }
+
+    private void setReadyToReadData(ByteBuffer cb) {
         while (!readyToReadData && cb.hasRemaining()) {
             byte b = cb.get();
             char c = (char) b;
@@ -118,11 +111,28 @@ public class HttpPostCommand extends HttpCommand {
                 line.put(b);
             }
         }
+    }
+
+    public boolean doActualRead(ByteBuffer cb) {
+        if (readyToReadData) {
+            if (chunked && (data == null || !data.hasRemaining())) {
+                boolean done = readLine(cb);
+                if (done) {
+                    return true;
+                }
+            }
+            IOUtil.copyToHeapBuffer(cb, data);
+        }
+
+        setReadyToReadData(cb);
+
         return !chunked && ((data != null) && !data.hasRemaining());
     }
 
     String toStringAndClear(ByteBuffer bb) {
-        if (bb == null) return "";
+        if (bb == null) {
+            return "";
+        }
         String result;
         if (bb.position() == 0) {
             result = "";
@@ -134,14 +144,25 @@ public class HttpPostCommand extends HttpCommand {
     }
 
     boolean readLine(ByteBuffer cb) {
+        boolean hasLine = false;
         while (cb.hasRemaining()) {
             byte b = cb.get();
             char c = (char) b;
             if (c == '\n') {
-                return true;
+                hasLine = true;
             } else if (c != '\r') {
                 line.put(b);
             }
+        }
+        if (hasLine) {
+            String lineStr = toStringAndClear(line).trim();
+
+            // hex string
+            int dataSize = lineStr.length() == 0 ? 0 : Integer.parseInt(lineStr, RADIX);
+            if (dataSize == 0) {
+                return true;
+            }
+            dataNullCheck(dataSize);
         }
         return false;
     }

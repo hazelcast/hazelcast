@@ -23,42 +23,41 @@ import java.io.IOException;
 
 public class JoinRequestOperation extends AbstractClusterOperation implements JoinOperation {
 
-    private JoinRequest message;
+    private JoinRequest request;
 
     public JoinRequestOperation() {
-        super();
     }
 
-    public JoinRequestOperation(JoinRequest message) {
-        this.message = message;
+    public JoinRequestOperation(JoinRequest request) {
+        this.request = request;
     }
 
     @Override
     public void run() {
         ClusterServiceImpl cm = getService();
-        cm.handleJoinRequest(this);
+        cm.handleJoinRequest(request);
     }
 
-    public JoinRequest getMessage() {
-        return message;
+    public JoinRequest getRequest() {
+        return request;
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        message = new JoinRequest();
-        message.readData(in);
+        request = new JoinRequest();
+        request.readData(in);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        message.writeData(out);
+        request.writeData(out);
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("JoinRequestOperation");
-        sb.append("{message=").append(message);
+        sb.append("{message=").append(request);
         sb.append('}');
         return sb.toString();
     }

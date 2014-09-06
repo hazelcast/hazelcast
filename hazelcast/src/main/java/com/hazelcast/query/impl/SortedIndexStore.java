@@ -24,10 +24,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+/**
+ * Store indexes rankly.
+ */
 public class SortedIndexStore implements IndexStore {
-    private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
+    private static final float LOAD_FACTOR = 0.75f;
+    private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords
+            = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
     private final NavigableSet<Comparable> sortedSet = new ConcurrentSkipListSet<Comparable>();
 
+
+    @Override
     public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
         Set<Comparable> values = sortedSet.subSet(from, to);
         for (Comparable value : values) {
@@ -43,8 +50,9 @@ public class SortedIndexStore implements IndexStore {
         }
     }
 
+    @Override
     public void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue) {
-        Set<Comparable> values = null;
+        Set<Comparable> values;
         boolean notEqual = false;
         switch (comparisonType) {
             case LESSER:
@@ -63,25 +71,27 @@ public class SortedIndexStore implements IndexStore {
                 values = sortedSet;
                 notEqual = true;
                 break;
+            default:
+                throw new IllegalArgumentException("Unrecognized comparisonType:" + comparisonType);
         }
-        if (values != null) {
-            for (Comparable value : values) {
-                if (notEqual && searchedValue.equals(value)) {
-                    // skip this value if predicateType is NOT_EQUAL
-                    continue;
-                }
-                ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
-                if (records != null) {
-                    results.addResultSet(records);
-                }
+
+        for (Comparable value : values) {
+            if (notEqual && searchedValue.equals(value)) {
+                // skip this value if predicateType is NOT_EQUAL
+                continue;
+            }
+            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
+            if (records != null) {
+                results.addResultSet(records);
             }
         }
     }
 
+    @Override
     public void newIndex(Comparable newValue, QueryableEntry record) {
         ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
         if (records == null) {
-            records = new ConcurrentHashMap<Data, QueryableEntry>(1, 0.75f, 1);
+            records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
             mapRecords.put(newValue, records);
             if (!(newValue instanceof IndexImpl.NullObject)) {
                 sortedSet.add(newValue);
@@ -90,15 +100,18 @@ public class SortedIndexStore implements IndexStore {
         records.put(record.getIndexKey(), record);
     }
 
+    @Override
     public ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
         return mapRecords.get(indexValue);
     }
 
+    @Override
     public void clear() {
         mapRecords.clear();
         sortedSet.clear();
     }
 
+    @Override
     public void removeIndex(Comparable oldValue, Data indexKey) {
         ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
         if (records != null) {
@@ -110,10 +123,12 @@ public class SortedIndexStore implements IndexStore {
         }
     }
 
+    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         return new SingleResultSet(mapRecords.get(value));
     }
 
+    @Override
     public void getRecords(MultiResultSet results, Set<Comparable> values) {
         for (Comparable value : values) {
             ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
@@ -125,8 +140,8 @@ public class SortedIndexStore implements IndexStore {
 
     @Override
     public String toString() {
-        return "SortedIndexStore{" +
-                "mapRecords=" + mapRecords.size() +
-                '}';
+        return "SortedIndexStore{"
+                + "mapRecords=" + mapRecords.size()
+                + '}';
     }
 }

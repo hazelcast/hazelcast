@@ -25,6 +25,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -182,6 +183,21 @@ public class SetTest extends HazelcastTestSupport {
         assertFalse(set.add("item"));
         assertNotNull(set.remove("item0"));
         assertTrue(set.add("item"));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    @ClientCompatibleTest
+    public void testIteratorRemoveThrowsUnsupportedOperationException() {
+        Config config = new Config();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+
+        ISet set = instance1.getSet("defSet");
+        set.add("item");
+
+        Iterator iterator = set.iterator();
+        iterator.next();
+        iterator.remove();
     }
 
     private ISet getSet(HazelcastInstance[] instances, String name){

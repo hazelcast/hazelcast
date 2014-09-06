@@ -18,6 +18,9 @@ package com.hazelcast.util.executor;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Interface for runnable with timeout value
+ */
 public interface TimeoutRunnable extends Runnable {
 
     long getTimeout();

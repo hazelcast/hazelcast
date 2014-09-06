@@ -84,7 +84,7 @@ public interface ICountDownLatch extends DistributedObject {
      * @throws InterruptedException  if the current thread is interrupted
      * @throws IllegalStateException if hazelcast instance is shutdown while waiting
      */
-    public boolean await(long timeout, TimeUnit unit) throws InterruptedException;
+    boolean await(long timeout, TimeUnit unit) throws InterruptedException;
 
     /**
      * Decrements the count of the latch, releasing all waiting threads if
@@ -99,14 +99,14 @@ public interface ICountDownLatch extends DistributedObject {
      * <p/>
      * If the current count equals zero then nothing happens.
      */
-    public void countDown();
+    void countDown();
 
     /**
      * Returns the current count.
      *
      * @return current count
      */
-    public int getCount();
+    int getCount();
 
     /**
      * Sets the count to the given value if the current count is zero.
@@ -118,6 +118,6 @@ public interface ICountDownLatch extends DistributedObject {
      *         count is not zero
      * @throws IllegalArgumentException if {@code count} is negative
      */
-    public boolean trySetCount(int count);
+    boolean trySetCount(int count);
 
 }

@@ -16,6 +16,10 @@
 
 package com.hazelcast.wan;
 
+/**
+ * This interface offers the implementation of different kinds of replication techniques like
+ * TCP, UDP or maybe even an JMS based service
+ */
 public interface WanReplicationPublisher {
 
     void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject);

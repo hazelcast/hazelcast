@@ -17,22 +17,18 @@
 package com.hazelcast.ascii.rest;
 
 import com.hazelcast.ascii.AbstractTextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
-
-@edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP","MS_MUTABLE_ARRAY","MS_PKGPROTECT"})
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({ "EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT" })
 public abstract class HttpCommand extends AbstractTextCommand {
     public static final String HEADER_CONTENT_TYPE = "content-type: ";
     public static final String HEADER_CONTENT_LENGTH = "content-length: ";
     public static final String HEADER_CHUNKED = "transfer-encoding: chunked";
     public static final String HEADER_EXPECT_100 = "expect: 100";
-
-    protected final String uri;
-    protected ByteBuffer response;
-
     public static final byte[] RES_200 = stringToBytes("HTTP/1.1 200 OK\r\n");
     public static final byte[] RES_400 = stringToBytes("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n");
     public static final byte[] RES_403 = stringToBytes("HTTP/1.1 403 Forbidden\r\n\r\n");
@@ -46,7 +42,11 @@ public abstract class HttpCommand extends AbstractTextCommand {
     public static final byte[] CONTENT_TYPE_PLAIN_TEXT = stringToBytes("text/plain");
     public static final byte[] CONTENT_TYPE_BINARY = stringToBytes("application/binary");
 
-    public HttpCommand(TextCommandType type, String uri) {
+    protected final String uri;
+    protected ByteBuffer response;
+
+
+    public HttpCommand(TextCommandConstants.TextCommandType type, String uri) {
         super(type);
         this.uri = uri;
     }
@@ -71,7 +71,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
         this.response = ByteBuffer.wrap(value);
     }
 
-    public void send200(){
+    public void send200() {
         setResponse(null, null);
     }
 
@@ -91,29 +91,29 @@ public abstract class HttpCommand extends AbstractTextCommand {
         if (contentType != null) {
             size += CONTENT_TYPE.length;
             size += contentType.length;
-            size += RETURN.length;
+            size += TextCommandConstants.RETURN.length;
         }
         size += CONTENT_LENGTH.length;
         size += len.length;
-        size += RETURN.length;
-        size += RETURN.length;
+        size += TextCommandConstants.RETURN.length;
+        size += TextCommandConstants.RETURN.length;
         size += valueSize;
-        size += RETURN.length;
+        size += TextCommandConstants.RETURN.length;
         this.response = ByteBuffer.allocate(size);
         response.put(RES_200);
         if (contentType != null) {
             response.put(CONTENT_TYPE);
             response.put(contentType);
-            response.put(RETURN);
+            response.put(TextCommandConstants.RETURN);
         }
         response.put(CONTENT_LENGTH);
         response.put(len);
-        response.put(RETURN);
-        response.put(RETURN);
+        response.put(TextCommandConstants.RETURN);
+        response.put(TextCommandConstants.RETURN);
         if (value != null) {
             response.put(value);
         }
-        response.put(RETURN);
+        response.put(TextCommandConstants.RETURN);
         response.flip();
     }
 
@@ -124,8 +124,12 @@ public abstract class HttpCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "HttpCommand [" + type + "]{" +
-                "uri='" + uri + '\'' +
-                '}' + super.toString();
+        return "HttpCommand ["
+                + type + "]{"
+                + "uri='"
+                + uri
+                + '\''
+                + '}'
+                + super.toString();
     }
 }

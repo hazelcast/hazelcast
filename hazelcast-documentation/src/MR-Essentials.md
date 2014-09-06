@@ -18,11 +18,11 @@ In pseudo code, the corresponding map and reduce function would look like the fo
 
 ```plain
 map( key:String, document:String ):Void ->
-    for each w:word in document:
-        emit( w, 1 )
+  for each w:word in document:
+    emit( w, 1 )
 
 reduce( word:String, counts:List[Int] ):Int ->
-    return sum( counts )
+  return sum( counts )
 ```
 
 #### MapReduce Phases
@@ -52,7 +52,7 @@ The pseudo code for a combiner is pretty the same as for the reducer.
 
 ```text
 combine( word:String, counts:List[Int] ):Void ->
-    emit( word, sum( counts ) )
+  emit( word, sum( counts ) )
 ```
 
 **Grouping / Shuffling Phase**

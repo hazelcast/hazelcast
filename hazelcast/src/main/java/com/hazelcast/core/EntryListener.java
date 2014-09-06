@@ -20,7 +20,9 @@ import java.util.EventListener;
 
 /**
  * Map Entry listener to get notified when a map entry
- * is added, removed, updated or evicted.
+ * is added, removed, updated or evicted.  Events will fire as a result
+ * of operations carried out via the {@link com.hazelcast.core.IMap} interface.  Events will not fire, for example,
+ * for an entry that comes into the Map via the {@link MapLoader} lifecycle.
  *
  * @param <K> key of the map entry
  * @param <V> value of the map entry.
@@ -55,4 +57,16 @@ public interface EntryListener<K, V> extends EventListener {
      * @param event entry event
      */
     void entryEvicted(EntryEvent<K, V> event);
+
+    /**
+     * Invoked when all entries evicted by {@link IMap#evictAll()}.
+     *
+     * @param event map event
+     */
+    void mapEvicted(MapEvent event);
+
+    /**
+     * Invoked when all entries are removed by {@link IMap#clear()}.}
+     */
+    void mapCleared(MapEvent event);
 }

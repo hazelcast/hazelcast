@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring-3.2.xsd">
+		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -103,6 +103,9 @@
                     </hz:actions>
                 </hz:queue-permission>
             </hz:client-permissions>
+            <hz:security-interceptors>
+                <hz:interceptor class-name="com.hazelcast.spring.security.DummySecurityInterceptor"/>
+            </hz:security-interceptors>
         </hz:security>
     </hz:config>
 

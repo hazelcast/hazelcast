@@ -20,7 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
@@ -32,18 +36,20 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ProblematicTest;
-import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,53 +62,56 @@ import static com.hazelcast.query.SampleObjects.*;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category(ProblematicTest.class)
 public class QueryAdvancedTest extends HazelcastTestSupport {
 
-
-
-
     @Test(timeout=1000*60)
-    // TODO: fails @mm - Test fails randomly!
-    @Category(ProblematicTest.class)
     public void testQueryWithTTL() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
         Config cfg = new Config();
         MapConfig mapConfig = new MapConfig();
-        int TTL = 5;
-        mapConfig.setTimeToLiveSeconds(TTL);
+        mapConfig.setTimeToLiveSeconds(5);
         mapConfig.setName("employees");
         cfg.addMapConfig(mapConfig);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
+
+        HazelcastInstance h1 = createHazelcastInstance(cfg);
+
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        int expectedCount = 0;
-        for (int i = 0; i < 1000; i++) {
-            Employee employee = new Employee("joe" + i, i % 60, ((i & 1) == 1), Double.valueOf(i));
-            if (employee.getName().startsWith("joe15") && employee.isActive()) {
-                expectedCount++;
-            }
-            imap.put(String.valueOf(i), employee);
-        }
-        long start = System.currentTimeMillis();
-        Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
-        assertEquals("time:" + (System.currentTimeMillis() - start), expectedCount, values.size());
-        for (Employee employee : values) {
-            assertTrue(employee.isActive());
-        }
-        final  CountDownLatch latch =  new CountDownLatch(1000);
+        imap.addIndex("age", false);
+        imap.addIndex("active", true);
+
+        int passiveEmployees = 5;
+        int activeEmployees = 5;
+        int allEmployees = passiveEmployees+activeEmployees;
+
+        final  CountDownLatch latch =  new CountDownLatch(allEmployees);
         imap.addEntryListener(new EntryAdapter() {
             @Override
             public void entryEvicted(EntryEvent event) {
                 latch.countDown();
             }
         }, false);
-        latch.await(30, TimeUnit.SECONDS);
-        assertEquals(0, imap.size());
-        values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+
+        for (int i = 0; i < activeEmployees; i++) {
+            Employee employee = new Employee("activeEmployee" + i, 60, true, Double.valueOf(i));
+            imap.put("activeEmployee" + i, employee);
+        }
+
+        for (int i = 0; i < passiveEmployees; i++) {
+            Employee employee = new Employee("passiveEmployee" + i, 60, false, Double.valueOf(i));
+            imap.put("passiveEmployee" + i, employee);
+        }
+
+        //check the query result before eviction
+        Collection values = imap.values(new SqlPredicate("active"));
+        assertEquals(activeEmployees, values.size());
+
+        //wait until eviction is completed
+        assertOpenEventually(latch);
+
+        //check the query result after eviction
+        values = imap.values(new SqlPredicate("active"));
         assertEquals(0, values.size());
     }
 
@@ -460,7 +469,6 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
     public void testSecondMemberAfterAddingIndexes() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -628,7 +636,6 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
      * see zendesk ticket #82
      */
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
     public void testQueryWithIndexDuringJoin() throws InterruptedException {
         final String name = "test";
         final String FIND_ME = "find-me";

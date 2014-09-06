@@ -19,10 +19,10 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 /**
- * @ali 09/11/13
+ * Configuration for topic(Read only)
  */
+
 public class TopicConfigReadOnly extends TopicConfig {
 
     public TopicConfigReadOnly(TopicConfig config) {

@@ -41,10 +41,13 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static org.junit.Assert.assertEquals;
@@ -174,28 +177,78 @@ public class HazelcastXaTest {
         }
     }
 
+    /**
+     * Start two nodes.
+     * One node in a new thread prepares tx and shutdowns. Check if remaining node can recover tx or not.
+     * <p/>
+     * Start tx in a new thread since {@link com.hazelcast.transaction.impl.TransactionImpl#THREAD_FLAG} is thread local
+     * and during node shutdown thread flag does not cleared.
+     * This is the reason of failures in repetitive test calls from same thread.
+     *
+     * @throws XAException
+     */
     @Test
     public void testRecovery_singleInstanceRemaining() throws XAException {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final TransactionContext context = instance.newTransactionContext();
-        final XAResource xaResource = context.getXaResource();
-        final MyXid xid = new MyXid();
-        xaResource.start(xid, XAResource.TMNOFLAGS);
-        final TransactionalMap<Object, Object> map = context.getMap("map");
-        map.put("key", "value");
-        xaResource.prepare(xid);
+        final CountDownLatch nodeShutdownLatch = new CountDownLatch(1);
+        final List<HazelcastInstance> nodes = createNodes(2);
 
-        instance.shutdown();
+        // 1. Start TX from a new thread.
+        startTX(nodes.get(0), nodeShutdownLatch);
 
-        final TransactionContext context1 = instance1.newTransactionContext();
-        final XAResource xaResource1 = context1.getXaResource();
-        final Xid[] recovered = xaResource1.recover(XAResource.TMNOFLAGS);
-        for (Xid xid1 : recovered) {
-            xaResource1.commit(xid1, false);
+        waitNodeToShutDown(nodeShutdownLatch);
+
+        // 2. Try to recover TX from other node.
+        recoverTX(nodes.get(1));
+
+        final String actualValue = (String) nodes.get(1).getMap("map").get("key");
+        assertEquals("value", actualValue);
+    }
+
+    private List<HazelcastInstance> createNodes(int nodeCount) {
+        final List<HazelcastInstance> nodes = new ArrayList<HazelcastInstance>();
+        for (int i = 0; i < nodeCount; i++) {
+            final HazelcastInstance node = Hazelcast.newHazelcastInstance();
+            nodes.add(node);
         }
+        return nodes;
+    }
 
-        assertEquals("value", instance1.getMap("map").get("key"));
+
+    private void waitNodeToShutDown(CountDownLatch nodeShutdownLatch) {
+        assertOpenEventually(nodeShutdownLatch);
+    }
+
+    private void startTX(final HazelcastInstance node, final CountDownLatch nodeShutdownLatch) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final TransactionContext context = node.newTransactionContext();
+                    final XAResource xaResource = context.getXaResource();
+                    final MyXid xid = new MyXid();
+                    xaResource.start(xid, XAResource.TMNOFLAGS);
+                    final TransactionalMap<Object, Object> map = context.getMap("map");
+                    map.put("key", "value");
+                    xaResource.prepare(xid);
+
+                    node.shutdown();
+
+                    nodeShutdownLatch.countDown();
+
+                } catch (XAException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    private void recoverTX(HazelcastInstance node) throws XAException {
+        final TransactionContext context = node.newTransactionContext();
+        final XAResource xaResource = context.getXaResource();
+        final Xid[] recovered = xaResource.recover(XAResource.TMNOFLAGS);
+        for (Xid xid1 : recovered) {
+            xaResource.commit(xid1, false);
+        }
     }
 
     @Test
@@ -216,10 +269,25 @@ public class HazelcastXaTest {
         assertTrue(result);
         assertEquals(timeout, resource.getTransactionTimeout());
         final MyXid myXid = new MyXid();
-        resource.start(myXid,0);
+        resource.start(myXid, 0);
         assertFalse(resource.setTransactionTimeout(120));
         assertEquals(timeout, resource.getTransactionTimeout());
-        resource.commit(myXid,true);
+        resource.commit(myXid, true);
+    }
+
+    @Test
+    public void testDefaultTimeoutSetting() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final XAResource resource = instance.newTransactionContext().getXaResource();
+        final boolean result = resource.setTransactionTimeout(100);
+        assertTrue(result);
+        assertEquals(100,resource.getTransactionTimeout());
+
+        // set back to default timeout value
+        resource.setTransactionTimeout(0);
+
+        long defaultTimeoutInSeconds = TimeUnit.MILLISECONDS.toSeconds(TransactionOptions.DEFAULT_TIMEOUT_MILLIS);
+        assertEquals(defaultTimeoutInSeconds,resource.getTransactionTimeout());
     }
 
 

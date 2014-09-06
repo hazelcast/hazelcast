@@ -17,7 +17,6 @@
 package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.hibernate.RegionCache;
 import com.hazelcast.logging.ILogger;
@@ -27,12 +26,17 @@ import org.hibernate.cache.CacheException;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * Abstract superclass of Hazelcast region of Hibernate caches
+ *
+ * @param <Cache> implementation type of RegionCache
+ */
 abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements HazelcastRegion<Cache> {
 
+    protected final Properties props;
     private final HazelcastInstance instance;
     private final String regionName;
     private final int timeout;
-    protected final Properties props;
 
     protected AbstractHazelcastRegion(final HazelcastInstance instance, final String regionName, final Properties props) {
         super();
@@ -43,13 +47,13 @@ abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements Haz
     }
 
     public void destroy() throws CacheException {
-//    	Destroy of the region should not propagate 
-//    	to other nodes of cluster.
-//    	Do nothing on destroy.
+//      Destroy of the region should not propagate
+//      to other nodes of cluster.
+//      Do nothing on destroy.
     }
 
     /**
-     * @return The size of the internal <code>{@link IMap}</code>.
+     * @return The size of the internal <code>{@linkIMap}</code>.
      */
     public long getElementCountInMemory() {
         return getCache().size();

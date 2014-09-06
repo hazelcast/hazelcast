@@ -16,14 +16,11 @@
 
 package com.hazelcast.nio.serialization;
 
-/**
- * @author mdogan 1/3/13
- */
 abstract class BinaryClassDefinition implements ClassDefinition {
 
-    protected int factoryId;
-    protected int classId;
-    protected int version = -1;
+    int factoryId;
+    int classId;
+    int version = -1;
 
     private transient byte[] binary;
 

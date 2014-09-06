@@ -31,8 +31,12 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 
 public class LifecycleServiceImpl implements LifecycleService {
+
+    public static final int DEFAULT_GRACEFUL_SHUTDOWN_WAIT = 30;
+
     private final HazelcastInstanceImpl instance;
-    private final ConcurrentMap<String, LifecycleListener> lifecycleListeners = new ConcurrentHashMap<String, LifecycleListener>();
+    private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
+            = new ConcurrentHashMap<String, LifecycleListener>();
     private final Object lifecycleLock = new Object();
 
     public LifecycleServiceImpl(HazelcastInstanceImpl instance) {
@@ -43,12 +47,14 @@ public class LifecycleServiceImpl implements LifecycleService {
         return instance.node.getLogger(LifecycleService.class.getName());
     }
 
+    @Override
     public String addLifecycleListener(LifecycleListener lifecycleListener) {
         final String id = UuidUtil.buildRandomUuidString();
         lifecycleListeners.put(id, lifecycleListener);
         return id;
     }
 
+    @Override
     public boolean removeLifecycleListener(String registrationId) {
         return lifecycleListeners.remove(registrationId) != null;
     }
@@ -64,11 +70,13 @@ public class LifecycleServiceImpl implements LifecycleService {
         }
     }
 
+    @Override
     public boolean isRunning() {
         //no synchronization needed since isActive is threadsafe.
         return instance.node.isActive();
     }
 
+    @Override
     public void shutdown() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
@@ -78,12 +86,18 @@ public class LifecycleServiceImpl implements LifecycleService {
                 final NodeShutdownLatch shutdownLatch = new NodeShutdownLatch(node);
                 node.shutdown(false);
                 HazelcastInstanceFactory.remove(instance);
-                shutdownLatch.await(Math.min(30, node.groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger()), TimeUnit.SECONDS);
+                shutdownLatch.await(getShutdownTimeoutSeconds(node), TimeUnit.SECONDS);
             }
             fireLifecycleEvent(SHUTDOWN);
         }
     }
 
+    private int getShutdownTimeoutSeconds(Node node) {
+        int gracefulShutdownMaxWaitSeconds = node.groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
+        return Math.min(DEFAULT_GRACEFUL_SHUTDOWN_WAIT, gracefulShutdownMaxWaitSeconds);
+    }
+
+    @Override
     public void terminate() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);

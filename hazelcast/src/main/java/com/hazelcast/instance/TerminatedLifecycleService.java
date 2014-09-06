@@ -20,25 +20,27 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 
-/**
-* @author mdogan 5/22/13
-*/
 public final class TerminatedLifecycleService implements LifecycleService {
 
+    @Override
     public boolean isRunning() {
         return false;
     }
 
+    @Override
     public void shutdown() {
     }
 
+    @Override
     public void terminate() {
     }
 
+    @Override
     public String addLifecycleListener(LifecycleListener lifecycleListener) {
         throw new HazelcastInstanceNotActiveException();
     }
 
+    @Override
     public boolean removeLifecycleListener(String registrationId) {
         throw new HazelcastInstanceNotActiveException();
     }

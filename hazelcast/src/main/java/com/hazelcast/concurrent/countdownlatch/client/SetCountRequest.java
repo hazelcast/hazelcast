@@ -16,8 +16,8 @@
 
 package com.hazelcast.concurrent.countdownlatch.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.KeyBasedClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.countdownlatch.operations.SetCountOperation;
 import com.hazelcast.nio.serialization.Portable;
@@ -84,5 +84,20 @@ public final class SetCountRequest extends KeyBasedClientRequest
     @Override
     public Permission getRequiredPermission() {
         return new CountDownLatchPermission(name, ActionConstants.ACTION_MODIFY);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "trySetCount";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{count};
     }
 }

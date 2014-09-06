@@ -18,15 +18,18 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
 
-/**
- * @author mdogan 12/24/12
- */
 public class PostJoinOperation extends AbstractOperation implements UrgentSystemOperation, JoinOperation {
 
     private Operation[] operations;
@@ -43,7 +46,8 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
                 throw new IllegalArgumentException("Post join operation can not be a PartitionAwareOperation!");
             }
         }
-        operations = ops; // we may need to do array copy!
+        // we may need to do array copy!
+        operations = ops;
     }
 
     @Override
@@ -53,7 +57,8 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
             final int len = operations.length;
             for (int i = 0; i < len; i++) {
                 final Operation op = operations[i];
-                op.setNodeEngine(nodeEngine).setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                op.setNodeEngine(nodeEngine)
+                        .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                 OperationAccessor.setCallerAddress(op, getCallerAddress());
                 OperationAccessor.setConnection(op, getConnection());
                 operations[i] = op;
@@ -66,7 +71,7 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
         if (operations != null && operations.length > 0) {
             final OperationService operationService = getNodeEngine().getOperationService();
             for (final Operation op : operations) {
-                operationService.runOperation(op);
+                operationService.runOperationOnCallingThread(op);
             }
         }
     }

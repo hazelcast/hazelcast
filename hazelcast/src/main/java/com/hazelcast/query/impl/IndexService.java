@@ -19,16 +19,20 @@ package com.hazelcast.query.impl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryException;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * This class contains methods which manipulate and access index.
+ */
 public class IndexService {
     private final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
     private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>();
-    private volatile boolean hasIndex = false;
+    private volatile boolean hasIndex;
 
     public synchronized Index destroyIndex(String attribute) {
         return mapIndexes.remove(attribute);
@@ -36,7 +40,9 @@ public class IndexService {
 
     public synchronized Index addOrGetIndex(String attribute, boolean ordered) {
         Index index = mapIndexes.get(attribute);
-        if (index != null) return index;
+        if (index != null) {
+            return index;
+        }
         index = new IndexImpl(attribute, ordered);
         mapIndexes.put(attribute, index);
         Object[] indexObjects = mapIndexes.values().toArray();

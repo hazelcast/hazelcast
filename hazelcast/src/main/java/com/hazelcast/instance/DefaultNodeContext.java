@@ -17,23 +17,27 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.TcpIpConnectionManager;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.NodeIOService;
+import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 
 import java.nio.channels.ServerSocketChannel;
 
 public class DefaultNodeContext implements NodeContext {
 
+    @Override
     public AddressPicker createAddressPicker(Node node) {
         return new DefaultAddressPicker(node);
     }
 
+    @Override
     public Joiner createJoiner(Node node) {
         return node.createJoiner();
     }
 
+    @Override
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-        return new TcpIpConnectionManager(new NodeIOService(node),serverSocketChannel);
+        NodeIOService ioService = new NodeIOService(node);
+        return new TcpIpConnectionManager(ioService, serverSocketChannel, node.initializer);
     }
 }

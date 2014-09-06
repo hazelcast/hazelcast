@@ -46,4 +46,9 @@ public class ReleaseRequest extends SemaphoreRequest {
     public Permission getRequiredPermission() {
         return new SemaphorePermission(name, ActionConstants.ACTION_RELEASE);
     }
+
+    @Override
+    public String getMethodName() {
+        return "release";
+    }
 }
