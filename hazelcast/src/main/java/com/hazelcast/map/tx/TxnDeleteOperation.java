@@ -25,6 +25,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.transaction.TransactionException;
+
 import java.io.IOException;
 
 /**
@@ -45,6 +47,13 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     }
 
     @Override
+    public void innerBeforeRun() {
+        if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
+            throw new TransactionException("Cannot acquire lock uuid: " + ownerUuid + ", threadId: " + threadId);
+        }
+    }
+
+    @Override
     public void run() {
         recordStore.unlock(dataKey, ownerUuid, getThreadId());
         Record record = recordStore.getRecord(dataKey);
@@ -56,7 +65,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
 
     @Override
     public boolean shouldWait() {
-        return !recordStore.canAcquireLock(dataKey, ownerUuid, getThreadId());
+        return false;
     }
 
     public void afterRun() {
