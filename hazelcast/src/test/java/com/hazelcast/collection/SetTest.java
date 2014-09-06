@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISet;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -61,7 +63,23 @@ public class SetTest extends HazelcastTestSupport {
         ISet set = newSet();
         set.add("item1");
         set.add("item2");
+        Set setTest = new HashSet();
+        setTest.add("item1");
+        setTest.add("item2");
         assertFalse(set.isEmpty());
+        set.addItemListener(new ItemListener() {
+            @Override
+            public void itemAdded(ItemEvent item) {
+                System.out.println(item.getItem());
+            }
+
+            @Override
+            public void itemRemoved(ItemEvent item) {
+                System.out.println(item.getItem());
+            }
+        },false);
+        set.add("asdasdasd");
+        set.removeAll(setTest);
     }
 
     //    ======================== add - addAll test =======================
