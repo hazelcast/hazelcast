@@ -231,7 +231,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
             service.submitToKeyOwner(new ScriptRunnable(script, map), key, callback);
         }
-        latch.await(10, TimeUnit.SECONDS);
+        assertOpenEventually(latch);
         assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
         assertEquals(k, count.get());
     }
@@ -263,7 +263,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             map.put("member", instance.getCluster().getLocalMember());
             service.submitToMember(new ScriptRunnable(script, map), instance.getCluster().getLocalMember(), callback);
         }
-        latch.await(10, TimeUnit.SECONDS);
+        assertOpenEventually(latch);
         assertEquals(0, instances[0].getAtomicLong("testSubmitToMemberRunnable").get());
         assertEquals(k, count.get());
     }
