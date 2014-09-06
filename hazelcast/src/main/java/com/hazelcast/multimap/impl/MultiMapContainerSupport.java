@@ -28,7 +28,7 @@ import java.util.Set;
 /**
  * Contains various {@link com.hazelcast.multimap.impl.MultiMapContainer} support methods.
  */
-public abstract class AbstractMultiMapContainerSupport {
+public abstract class MultiMapContainerSupport {
 
     /**
      * Picks right collection type, like {@link java.util.Set} or {@link java.util.List}

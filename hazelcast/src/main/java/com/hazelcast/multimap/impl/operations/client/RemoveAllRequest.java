@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.Collection;
 
-import static com.hazelcast.multimap.impl.AbstractMultiMapContainerSupport.createCollection;
+import static com.hazelcast.multimap.impl.MultiMapContainerSupport.createCollection;
 
 public class RemoveAllRequest extends MultiMapKeyBasedRequest {
 

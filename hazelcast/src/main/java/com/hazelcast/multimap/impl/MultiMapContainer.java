@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-public class MultiMapContainer extends AbstractMultiMapContainerSupport {
+public class MultiMapContainer extends MultiMapContainerSupport {
 
     private static final AtomicLongFieldUpdater<MultiMapContainer> ID_GEN_UPDATER = AtomicLongFieldUpdater
             .newUpdater(MultiMapContainer.class, "idGen");

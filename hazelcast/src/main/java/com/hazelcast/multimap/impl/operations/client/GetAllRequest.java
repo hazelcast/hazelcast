@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.PortableCollection;
 
 import java.util.Collection;
 
-import static com.hazelcast.multimap.impl.AbstractMultiMapContainerSupport.createCollection;
+import static com.hazelcast.multimap.impl.MultiMapContainerSupport.createCollection;
 
 public class GetAllRequest extends MultiMapKeyBasedRequest implements RetryableRequest {
 
