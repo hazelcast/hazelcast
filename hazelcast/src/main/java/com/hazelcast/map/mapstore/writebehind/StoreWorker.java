@@ -101,7 +101,6 @@ public class StoreWorker implements Runnable {
             }
             if (!owner.equals(thisAddress)) {
                 if (now > lastRunTime + backupRunIntervalTime) {
-                    System.out.println("delayedEntries = " + delayedEntries.size());
                     doInBackup(queue, delayedEntries, partitionId);
                 }
                 continue;
