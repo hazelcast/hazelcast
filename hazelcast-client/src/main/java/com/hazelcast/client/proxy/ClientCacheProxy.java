@@ -85,6 +85,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -102,9 +103,9 @@ public class ClientCacheProxy<K, V>
     private static final int IGNORE_COMPLETION = -1;
     private final CacheConfig<K, V> cacheConfig;
     private final boolean cacheOnUpdate;
-    private final ConcurrentHashMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
-    private final ConcurrentHashMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
-    private final ConcurrentHashMap<Integer, CountDownLatch> syncLocks;
+    private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
+    private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
+    private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
     private final AtomicInteger completionIdCounter = new AtomicInteger();
     private final IClientNearCache<Data, Object> nearCache;
     private final ClientCacheDistributedObject delegate;
@@ -497,7 +498,7 @@ public class ClientCacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
         }
-        final ConcurrentHashMap<CacheEntryListenerConfiguration, String> regs;
+        final ConcurrentMap<CacheEntryListenerConfiguration, String> regs;
         if (cacheEntryListenerConfiguration.isSynchronous()) {
             regs = syncListenerRegistrations;
         } else {
