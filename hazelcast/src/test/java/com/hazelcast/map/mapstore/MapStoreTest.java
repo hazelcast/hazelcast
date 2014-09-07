@@ -1412,13 +1412,13 @@ public class MapStoreTest extends HazelcastTestSupport {
         node2.getLifecycleService().shutdown();
         // wait store ops. finish.
         mapStore.awaitStores();
-        // we should eventually reach expected store count.
+        // we should see at least expected store count.
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                int mapStoreSize = mapStore.count.intValue();
-                assertEquals("expected : " + expectedStoreCount
-                        + ", actual : " + mapStoreSize, expectedStoreCount, mapStoreSize);
+                int storeOperatinCount = mapStore.count.intValue();
+                assertTrue("expected : " + expectedStoreCount
+                        + ", actual : " + storeOperatinCount, expectedStoreCount <= storeOperatinCount);
             }
         });
     }
