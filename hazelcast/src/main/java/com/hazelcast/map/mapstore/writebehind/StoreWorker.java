@@ -75,6 +75,7 @@ public class StoreWorker implements Runnable {
     @Override
     public void run() {
         final long now = Clock.currentTimeMillis();
+        final String mapName = this.mapName;
         final MapServiceContext mapServiceContext = this.mapServiceContext;
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final ClusterService clusterService = nodeEngine.getClusterService();
@@ -99,7 +100,8 @@ public class StoreWorker implements Runnable {
                 continue;
             }
             if (!owner.equals(thisAddress)) {
-                if (now < lastRunTime + backupRunIntervalTime) {
+                if (now > lastRunTime + backupRunIntervalTime) {
+                    System.out.println("delayedEntries = " + delayedEntries.size());
                     doInBackup(queue, delayedEntries, partitionId);
                 }
                 continue;

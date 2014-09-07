@@ -563,7 +563,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
     }
 
-    private int writeBehindQueueSize(HazelcastInstance node, String mapName){
+    private int writeBehindQueueSize(HazelcastInstance node, String mapName) {
         int size = 0;
         final NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
@@ -571,12 +571,12 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             final RecordStore recordStore = mapServiceContext.getExistingRecordStore(i, mapName);
-            if(recordStore == null){
+            if (recordStore == null) {
                 continue;
             }
             final MapDataStore<Data, Object> mapDataStore
-                    =recordStore.getMapDataStore();
-             size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
+                    = recordStore.getMapDataStore();
+            size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
         }
         return size;
     }
@@ -1387,11 +1387,11 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int expectedStoreCount = 3;
         final int nodeCount = 3;
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "30");
+        config.setProperty(GroupProperties.PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "0");
         MapConfig writeBehindBackupConfig = config.getMapConfig(name);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setWriteDelaySeconds(5);
-        final MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(expectedStoreCount, 300, 50);
+        final MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(expectedStoreCount, 300, 10);
         mapStoreConfig.setImplementation(mapStore);
         writeBehindBackupConfig.setMapStoreConfig(mapStoreConfig);
         // create nodes.
@@ -1412,8 +1412,15 @@ public class MapStoreTest extends HazelcastTestSupport {
         node2.getLifecycleService().shutdown();
         // wait store ops. finish.
         mapStore.awaitStores();
-        // we should reach at least expected store count.
-        assertTrue(expectedStoreCount <= mapStore.count.intValue());
+        // we should eventually reach expected store count.
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                int mapStoreSize = mapStore.count.intValue();
+                assertEquals("expected : " + expectedStoreCount
+                        + ", actual : " + mapStoreSize, expectedStoreCount, mapStoreSize);
+            }
+        });
     }
 
 
