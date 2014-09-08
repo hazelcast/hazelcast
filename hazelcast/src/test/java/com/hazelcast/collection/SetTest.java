@@ -20,8 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISet;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -29,7 +27,6 @@ import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,10 +35,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-<<<<<<<HEAD
-        =======
-        >>>>>>>unit tests for ISet
 
 /**
  * @author ali 3/6/13
@@ -62,24 +55,7 @@ public class SetTest extends HazelcastTestSupport {
     public void testIsEmpty_whenNotEmpty() {
         ISet set = newSet();
         set.add("item1");
-        set.add("item2");
-        Set setTest = new HashSet();
-        setTest.add("item1");
-        setTest.add("item2");
         assertFalse(set.isEmpty());
-        set.addItemListener(new ItemListener() {
-            @Override
-            public void itemAdded(ItemEvent item) {
-                System.out.println(item.getItem());
-            }
-
-            @Override
-            public void itemRemoved(ItemEvent item) {
-                System.out.println(item.getItem());
-            }
-        },false);
-        set.add("asdasdasd");
-        set.removeAll(setTest);
     }
 
     //    ======================== add - addAll test =======================
