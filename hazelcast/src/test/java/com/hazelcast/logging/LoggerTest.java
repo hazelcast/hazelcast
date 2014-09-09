@@ -27,10 +27,6 @@ public class LoggerTest {
     private static Field LOGGER_FACTORY_FIELD;
     private static String actualLoggingTypePropertyValue;
 
-    static {
-
-    }
-
     @BeforeClass
     public static void beforeClass() {
         try {
