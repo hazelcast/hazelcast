@@ -40,6 +40,8 @@ public interface LockStore {
 
     boolean canAcquireLock(Data key, String caller, long threadId);
 
+    boolean isTransactionallyLocked(Data key);
+
     Set<Data> getLockedKeys();
 
     boolean forceUnlock(Data dataKey);
