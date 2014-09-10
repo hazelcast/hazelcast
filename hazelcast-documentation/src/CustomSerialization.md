@@ -1,7 +1,10 @@
 
+## Custom Serialization
+
+Hazelcast lets you plug a custom serializer to be used for serialization of objects. Let's see the details in below subsections.
 
 
-## StreamSerializer
+### StreamSerializer
 
 You can use a stream in order to serialize and deserialize data by means of `StreamSerializer`. It is a good option for your own implementations and it can also be adapted to external serialization libraries like Kryo, JSON and protocol buffers.
 

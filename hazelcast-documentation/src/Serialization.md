@@ -16,6 +16,33 @@ Serialization is used when;
 - an object is locked,and
 - a message is sent to a topic
 
+
+Hazelcast optimizes the serialization for the below types, and the user cannot override this behavior:
+
+![image](images/OptimizedTypes.jpg)
+
+
+Hazelcast also optimizes the following types. However, you can override them by creating a custom serializer and registering it. See [Custom Serialization](#custom-serialization) for more information.
+
+![image](images/OptimizedTypesII.jpg)
+
+
+As we have said, Hazelcast optimizes all of the above object types and you do not need to worry about their (de)serializations. 
+
+When it comes to complex objects, below interfaces are used for serialization and deserialization.
+
+- `java.io.Serializable`
+- `java.io.Externalizable`
+
+- `com.hazelcast.nio.serialization.DataSerializable`
+
+- `com.hazelcast.nio.serialization.IdentifiedDataSerializable`
+
+- `com.hazelcast.nio.serialization.Portable`
+
+
+
+
 When Hazelcast serializes an object into `Data`:
 
 **(1)** It first checks whether the object is an instance of `com.hazelcast.nio.serialization.DataSerializable`, 
@@ -27,36 +54,6 @@ When Hazelcast serializes an object into `Data`:
 **(4)** If above checks fail, Hazelcast will use Java serialization.
 
 If all of the above checks do not work, then serialization will fail. When a class implements multiple interfaces, above steps are important to determine the serialization mechanism that Hazelcast will use. And when a class definition is required for any of these serializations, all the classes needed by the application should be on the classpath, Hazelcast does not download them automatically.
-
-Hazelcast optimizes the serialization for the below types, and the user cannot override this behavior:
-
-- `Byte`
-- `Boolean`
-- `Character`
-- `Short`
-- `Integer`
-- `Long`
-- `Float`
-- `Double`
-- `byte[]`
-- `char[]`
-- `short[]`
-- `int[]`
-- `long[]`
-- `float[]`
-- `double[]`
-- `String`
-
-Hazelcast also optimizes the following types. However, you can override them by creating a custom serializer and registering it. See [Custom Serialization](#custom-serialization) for more information.
-
-- `Date`
-- `BigInteger`
-- `BigDecimal`
-- `Class`
-- `Externalizable`
-- `Serializable`
-
-Note that, if the object is not an instance of any explicit type, Hazelcast uses Java Serialization for Serializable and Externalizable objects. The default behavior can be changed using a [Custom Serialization](#custom-serialization).
 
 Let's dig into the details of the above serialization mechanisms in the following sections.
 
