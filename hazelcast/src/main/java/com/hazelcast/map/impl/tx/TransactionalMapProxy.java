@@ -51,7 +51,11 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     public boolean containsKey(Object key) {
         checkTransactionState();
-        return txMap.containsKey(key) || containsKeyInternal(getService().getMapServiceContext().toData(key, partitionStrategy));
+        final TxnValueWrapper valueWrapper = txMap.get(key);
+        if (valueWrapper != null) {
+            return valueWrapper.type == TxnValueWrapper.Type.REMOVED ? false : true;
+        }
+        return containsKeyInternal(getService().getMapServiceContext().toData(key, partitionStrategy));
     }
 
     public int size() {
