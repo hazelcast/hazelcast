@@ -20,14 +20,20 @@ public class BuildInfo {
 
     private final String version;
     private final String build;
+    private final String revision;
     private final int buildNumber;
     private final boolean enterprise;
 
-    public BuildInfo(String version, String build, int buildNumber, boolean enterprise) {
+    public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise) {
         this.version = version;
         this.build = build;
+        this.revision = revision;
         this.buildNumber = buildNumber;
         this.enterprise = enterprise;
+    }
+
+    public String getRevision() {
+        return revision;
     }
 
     public String getVersion() {
@@ -52,6 +58,7 @@ public class BuildInfo {
         sb.append("version='").append(version).append('\'');
         sb.append(", build='").append(build).append('\'');
         sb.append(", buildNumber=").append(buildNumber);
+        sb.append(", revision=").append(revision);
         sb.append(", enterprise=").append(enterprise);
         sb.append('}');
         return sb.toString();
