@@ -32,18 +32,20 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapContextQuerySupport;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapEventPublisher;
-import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.NearCache;
 import com.hazelcast.map.impl.NearCacheProvider;
+import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.QueryEventFilter;
+import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.BasePutOperation;
@@ -80,6 +82,7 @@ import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
@@ -293,23 +296,33 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final MapService mapService = getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final int backupCount = getMapConfig().getTotalBackupCount();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        for (int i = 0; i <= backupCount; i++) {
-            int partitionId = partitionService.getPartitionId(key);
-            InternalPartition partition = partitionService.getPartition(partitionId);
-            if (nodeEngine.getThisAddress().equals(partition.getReplicaAddress(i))) {
-                Object val = mapServiceContext.getPartitionContainer(partitionId).getRecordStore(name).get(key);
-                if (val != null) {
-                    mapServiceContext.interceptAfterGet(name, val);
-                    // this serialization step is needed not to expose the object, see issue 1292
-                    return mapServiceContext.toData(val);
-                }
-            }
+        final Address thisAddress = nodeEngine.getThisAddress();
+        final int partitionId = partitionService.getPartitionId(key);
+        final InternalPartition partition = partitionService.getPartition(partitionId, false);
+        if (!partition.isOwnerOrBackup(thisAddress)) {
+            return null;
+        }
+        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+        final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
+        if (recordStore == null) {
+            return null;
+        }
+        final boolean owner = isOwner(partitionId);
+        final Object val = recordStore.get(key, !owner);
+        if (val != null) {
+            mapServiceContext.interceptAfterGet(name, val);
+            // this serialization step is needed not to expose the object, see issue 1292
+            return mapServiceContext.toData(val);
         }
         return null;
     }
 
+    private boolean isOwner(int partitionId) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        final Address owner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
+        return nodeEngine.getThisAddress().equals(owner);
+    }
 
     protected ICompletableFuture<Data> getAsyncInternal(final Data key) {
         final NodeEngine nodeEngine = getNodeEngine();
