@@ -133,7 +133,9 @@ public final class HazelcastInstanceImpl
             initHealthMonitor();
         } catch (Throwable e) {
             try {
-                node.connectionManager.shutdown();
+                // Terminate the node by terminating node engine,
+                // connection manager, multicast service, operation threads, etc ... if they are exist
+                node.shutdown(true);
             } catch (Throwable ignored) {
                 EmptyStatement.ignore(ignored);
             }
