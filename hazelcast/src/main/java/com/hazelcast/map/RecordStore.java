@@ -155,6 +155,8 @@ public interface RecordStore {
 
     boolean isLocked(Data key);
 
+    boolean isTransactionallyLocked(Data key);
+
     boolean canAcquireLock(Data key, String caller, long threadId);
 
     String getLockOwnerInfo(Data key);

@@ -136,6 +136,12 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
+    public boolean isTransactionallyLocked(Data key) {
+        LockResourceImpl lock = locks.get(key);
+        return lock != null && lock.isTransactional() && lock.isLocked();
+    }
+
+    @Override
     public boolean unlock(Data key, String caller, long threadId) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {
