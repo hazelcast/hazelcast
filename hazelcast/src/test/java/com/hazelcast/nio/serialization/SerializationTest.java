@@ -197,6 +197,48 @@ public class SerializationTest
     }
 
     @Test
+    public void testCombinedSharedJavaSerialization() {
+        SerializationService ss = new SerializationServiceBuilder().setEnableSharedObject(true).build();
+
+        Random random = new Random();
+
+        CombinedTestObject1 outer = new CombinedTestObject1();
+        CombinedTestObject2 wrapper = new CombinedTestObject2();
+        CombinedTestObject3 inner = new CombinedTestObject3();
+        outer.wrapper = wrapper;
+        outer.randomValue = random.nextInt();
+        wrapper.inner = inner;
+        wrapper.randomValue = random.nextInt();
+        inner.randomValue = random.nextInt();
+
+        Data data = ss.toData(outer);
+        CombinedTestObject1 obj = (CombinedTestObject1) ss.toObject(data);
+
+        assertEquals(outer, obj);
+    }
+
+    @Test
+    public void testCombinedUnsharedJavaSerialization() {
+        SerializationService ss = new SerializationServiceBuilder().setEnableSharedObject(false).build();
+
+        Random random = new Random();
+
+        CombinedTestObject1 outer = new CombinedTestObject1();
+        CombinedTestObject2 wrapper = new CombinedTestObject2();
+        CombinedTestObject3 inner = new CombinedTestObject3();
+        outer.wrapper = wrapper;
+        outer.randomValue = random.nextInt();
+        wrapper.inner = inner;
+        wrapper.randomValue = random.nextInt();
+        inner.randomValue = random.nextInt();
+
+        Data data = ss.toData(outer);
+        CombinedTestObject1 obj = (CombinedTestObject1) ss.toObject(data);
+
+        assertEquals(outer, obj);
+    }
+
+    @Test
     public void testLinkedListSerialization() {
         SerializationService ss = new SerializationServiceBuilder().build();
         LinkedList linkedList = new LinkedList();
@@ -368,5 +410,134 @@ public class SerializationTest
         assertEquals(uuid, member2.getUuid());
         assertEquals(host, member2.getAddress().getHost());
         assertEquals(port, member2.getAddress().getPort());
+    }
+
+    public static class CombinedTestObject1
+            implements DataSerializable {
+
+        private CombinedTestObject2 wrapper;
+        private int randomValue;
+
+        @Override
+        public void writeData(ObjectDataOutput out)
+                throws IOException {
+
+            out.writeObject(wrapper);
+            out.writeInt(randomValue);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in)
+                throws IOException {
+
+            wrapper = in.readObject();
+            randomValue = in.readInt();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            CombinedTestObject1 that = (CombinedTestObject1) o;
+
+            if (randomValue != that.randomValue) {
+                return false;
+            }
+            if (wrapper != null ? !wrapper.equals(that.wrapper) : that.wrapper != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = wrapper != null ? wrapper.hashCode() : 0;
+            result = 31 * result + randomValue;
+            return result;
+        }
+    }
+
+    public static class CombinedTestObject2
+            implements Serializable {
+
+        private CombinedTestObject3 inner;
+        private int randomValue;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            CombinedTestObject2 that = (CombinedTestObject2) o;
+
+            if (randomValue != that.randomValue) {
+                return false;
+            }
+            if (inner != null ? !inner.equals(that.inner) : that.inner != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = inner != null ? inner.hashCode() : 0;
+            result = 31 * result + randomValue;
+            return result;
+        }
+    }
+
+    public static class CombinedTestObject3
+            implements DataSerializable {
+
+        private int randomValue;
+
+        @Override
+        public void writeData(ObjectDataOutput out)
+                throws IOException {
+
+            out.writeInt(randomValue);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in)
+                throws IOException {
+
+            randomValue = in.readInt();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            CombinedTestObject3 that = (CombinedTestObject3) o;
+
+            if (randomValue != that.randomValue) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return randomValue;
+        }
     }
 }

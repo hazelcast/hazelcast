@@ -23,20 +23,21 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-class ByteArrayObjectDataInput extends PortableContextAwareInputStream
-        implements BufferObjectDataInput, PortableContextAware {
+class ByteArrayObjectDataInput
+        extends PortableContextAwareInputStream
+        implements BufferObjectDataInput, PortableContextAware, SerializationServiceAccessor.SerializationServiceAccess {
 
     private static final int UTF_BUFFER_SIZE = 1024;
 
-    byte[] buffer;
+    protected final int size;
 
-    final int size;
+    protected byte[] buffer;
 
-    int pos;
+    protected int pos;
 
-    int mark;
+    protected int mark;
 
-    final SerializationService service;
+    private final SerializationService serializationService;
 
     private byte[] utfBuffer;
 
@@ -46,11 +47,11 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
         setClassDefinition(cd);
     }
 
-    ByteArrayObjectDataInput(byte[] buffer, SerializationService service) {
+    ByteArrayObjectDataInput(byte[] buffer, SerializationService serializationService) {
         super();
         this.buffer = buffer;
         this.size = buffer != null ? buffer.length : 0;
-        this.service = service;
+        this.serializationService = serializationService;
     }
 
     public int read() throws IOException {
@@ -451,7 +452,7 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
     }
 
     public Object readObject() throws IOException {
-        return service.readObject(this);
+        return serializationService.readObject(this);
     }
 
     @Override
@@ -522,16 +523,21 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
     }
 
     public PortableContext getPortableContext() {
-        return service.getPortableContext();
+        return serializationService.getPortableContext();
     }
 
     @Override
     public ClassLoader getClassLoader() {
-        return service.getClassLoader();
+        return serializationService.getClassLoader();
     }
 
     public ByteOrder getByteOrder() {
         return ByteOrder.BIG_ENDIAN;
+    }
+
+    @Override
+    public SerializationService getSerializationService() {
+        return serializationService;
     }
 
     @Override

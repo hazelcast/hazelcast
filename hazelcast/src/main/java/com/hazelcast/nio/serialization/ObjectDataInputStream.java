@@ -25,7 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
 
-public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable, PortableContextAware {
+public class ObjectDataInputStream
+        extends InputStream
+        implements ObjectDataInput, Closeable, PortableContextAware, SerializationServiceAccessor.SerializationServiceAccess {
 
     private static final int UTF_BUFFER_SIZE = 1024;
     private final SerializationService serializationService;
@@ -241,6 +243,11 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
 
     public ByteOrder getByteOrder() {
         return byteOrder;
+    }
+
+    @Override
+    public SerializationService getSerializationService() {
+        return serializationService;
     }
 
     private boolean bigEndian() {

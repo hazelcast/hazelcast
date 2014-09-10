@@ -23,24 +23,26 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 
-class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, PortableContextAware {
+class ByteArrayObjectDataOutput
+        extends OutputStream
+        implements BufferObjectDataOutput, PortableContextAware, SerializationServiceAccessor.SerializationServiceAccess {
 
     private static final int UTF_BUFFER_SIZE = 1024;
 
-    final int initialSize;
+    protected final int initialSize;
 
-    byte[] buffer;
+    protected byte[] buffer;
 
-    int pos;
+    protected int pos;
 
-    final SerializationService service;
+    private final SerializationService serializationService;
 
     private byte[] utfBuffer;
 
-    ByteArrayObjectDataOutput(int size, SerializationService service) {
+    ByteArrayObjectDataOutput(int size, SerializationService serializationService) {
         this.initialSize = size;
         this.buffer = new byte[size];
-        this.service = service;
+        this.serializationService = serializationService;
     }
 
     public void write(int b) {
@@ -261,7 +263,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void writeObject(Object object) throws IOException {
-        service.writeObject(this, object);
+        serializationService.writeObject(this, object);
     }
 
     /**
@@ -309,11 +311,16 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public PortableContext getPortableContext() {
-        return service.getPortableContext();
+        return serializationService.getPortableContext();
     }
 
     public ByteOrder getByteOrder() {
         return ByteOrder.BIG_ENDIAN;
+    }
+
+    @Override
+    public SerializationService getSerializationService() {
+        return serializationService;
     }
 
     @Override

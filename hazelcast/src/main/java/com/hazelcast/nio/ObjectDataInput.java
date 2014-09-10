@@ -79,5 +79,4 @@ public interface ObjectDataInput extends DataInput {
      * @return ByteOrder BIG_ENDIAN or LITTLE_ENDIAN
      */
     ByteOrder getByteOrder();
-
 }

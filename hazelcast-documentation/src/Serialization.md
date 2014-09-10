@@ -55,8 +55,16 @@ Hazelcast also optimizes the following types. However, you can override them by 
 - `Class`
 - `Externalizable`
 - `Serializable`
+- `ArrayList`
+- `LinkedList`
+- `HashMap`
 
 Note that, if the object is not an instance of any explicit type, Hazelcast uses Java Serialization for Serializable and Externalizable objects. The default behavior can be changed using a [Custom Serialization](#custom-serialization).
 
-Let's dig into the details of the above serialization mechanisms in the following sections.
+Hazelcast also recognizes DataSerializable implementing classes inside of classes that are serialized using the standard Java Serialization. Those fields are serialized using the Hazelcast internal semantics. Anyways the final bytestream is wrapped into a Java Serializable
+serialization proxy, pretty much like [writeReplace](http://docs.oracle.com/javase/8/docs/platform/serialization/spec/output.html#a5324) works. So if you're heading for maximum speed and efficiency you should try to prevent using Java Serialization wrappers around objects
+using Hazelcast serialization techniques.
 
+Important to note is, that [Custom Serialization](#custom-serialization) is **NOT** supported inside of Java Serialization wrappers since there is no way to know or intercept those.
+
+Let's dig into the details of the above serialization mechanisms in the following sections.
