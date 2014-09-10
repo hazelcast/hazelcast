@@ -16,12 +16,12 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 
 import javax.cache.Cache;
 import java.util.Iterator;
@@ -36,35 +36,33 @@ public class ClusterWideIterator<K, V>
         extends AbstractClusterWideIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
-    final SerializationService serializationService;
+    final CacheDistributedObject cacheDistributedObject;
 
-    public ClusterWideIterator(CacheProxy<K, V> cacheProxy) {
-        super(cacheProxy, cacheProxy.getNodeEngine().getPartitionService().getPartitionCount());
-        final NodeEngine engine = cacheProxy.getNodeEngine();
-        this.serializationService = engine.getSerializationService();
+    public ClusterWideIterator(ICache<K, V> cache, CacheDistributedObject cacheDistributedObject) {
+        super(cache, cacheDistributedObject.getNodeEngine().getPartitionService().getPartitionCount());
+        this.cacheDistributedObject = cacheDistributedObject;
         advance();
     }
 
     protected CacheKeyIteratorResult fetch() {
-        final NodeEngine nodeEngine = getCacheProxy().getNodeEngine();
-        final Operation op = new CacheKeyIteratorOperation(getCacheProxy().getDistributedObjectName(), lastTableIndex, fetchSize);
-        final InternalCompletableFuture<CacheKeyIteratorResult> f = nodeEngine.getOperationService()
-                                                                              .invokeOnPartition(CacheService.SERVICE_NAME, op,
-                                                                                      partitionIndex);
+        final Operation op = new CacheKeyIteratorOperation(getDistributedObject().getName(), lastTableIndex, fetchSize);
+        final OperationService operationService = getDistributedObject().getNodeEngine().getOperationService();
+        final InternalCompletableFuture<CacheKeyIteratorResult> f = operationService
+                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionIndex);
         return f.getSafely();
     }
 
     @Override
     protected Data toData(Object obj) {
-        return serializationService.toData(obj);
+        return getDistributedObject().getNodeEngine().getSerializationService().toData(obj);
     }
 
     @Override
     protected <T> T toObject(Object data) {
-        return serializationService.toObject(data);
+        return getDistributedObject().getNodeEngine().getSerializationService().toObject(data);
     }
 
-    private CacheProxy<K, V> getCacheProxy() {
-        return (CacheProxy) cache;
+    private CacheDistributedObject getDistributedObject() {
+        return cacheDistributedObject;
     }
 }

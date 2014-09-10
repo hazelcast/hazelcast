@@ -45,7 +45,7 @@ public class CacheGetOperation
     @Override
     public void run()
             throws Exception {
-        response = cache != null ? cache.get(key, expiryPolicy) : null;
+        response = cache.get(key, expiryPolicy);
     }
 
     @Override
