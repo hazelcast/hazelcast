@@ -451,8 +451,6 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 
 If the client is configured as a smart one, only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer. If it is not a smart client, `LoadBalancer` will be ignored.
 
-### Security
-TODO
 
 
 ### Near Cache
