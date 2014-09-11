@@ -322,8 +322,8 @@ public class CacheRecordStore
                 expiryTime = expiryDuration.getAdjustedTime(now);
                 record.setExpirationTime(expiryTime);
             }
-        } catch (Throwable t) {
-            EmptyStatement.ignore(t);
+        } catch (Exception e) {
+            EmptyStatement.ignore(e);
             //leave the expiry time untouched when we can't determine a duration
         }
         return expiryTime;
@@ -655,7 +655,7 @@ public class CacheRecordStore
         Duration expiryDuration;
         try {
             expiryDuration = localExpiryPolicy.getExpiryForCreation();
-        } catch (Throwable t) {
+        } catch (Exception e) {
             expiryDuration = Duration.ETERNAL;
         }
         long expiryTime = expiryDuration.getAdjustedTime(now);
@@ -696,8 +696,8 @@ public class CacheRecordStore
                 expiryTime = expiryDuration.getAdjustedTime(now);
                 record.setExpirationTime(expiryTime);
             }
-        } catch (Throwable t) {
-            EmptyStatement.ignore(t);
+        } catch (Exception e) {
+            EmptyStatement.ignore(e);
             //leave the expiry time untouched when we can't determine a duration
         }
         if (!disableWriteThrough) {
@@ -777,7 +777,7 @@ public class CacheRecordStore
         Duration expiryDuration;
         try {
             expiryDuration = localExpiryPolicy.getExpiryForCreation();
-        } catch (Throwable t) {
+        } catch (Exception e) {
             expiryDuration = Duration.ETERNAL;
         }
         long expiryTime = expiryDuration.getAdjustedTime(now);

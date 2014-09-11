@@ -52,8 +52,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.hazelcast.cache.impl.CacheProxyHelper.getPartitionId;
-import static com.hazelcast.cache.impl.CacheProxyHelper.validateNotNull;
+import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
  * ICache implementation

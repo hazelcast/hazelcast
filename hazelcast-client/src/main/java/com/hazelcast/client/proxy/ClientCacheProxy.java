@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheEventType;
-import com.hazelcast.cache.impl.CacheProxyHelper;
+import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheStatisticsMXBeanImpl;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
 import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
@@ -90,8 +90,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.cache.impl.CacheProxyHelper.loadAllHelper;
-import static com.hazelcast.cache.impl.CacheProxyHelper.validateNotNull;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 public class ClientCacheProxy<K, V>
         implements ICache<K, V> {
@@ -176,7 +176,7 @@ public class ClientCacheProxy<K, V>
         CacheLoadAllRequest request = new CacheLoadAllRequest(getDistributedObjectName(), keysData, replaceExistingValues);
         try {
             final Map<Integer, Object> results = invoke(request);
-            loadAllHelper(results);
+            validateResults(results);
             if (completionListener != null) {
                 completionListener.onCompletion();
             }
@@ -1165,7 +1165,7 @@ public class ClientCacheProxy<K, V>
 
     private void validateConfiguredTypes(boolean validateValues, K key, V... values)
             throws ClassCastException {
-        CacheProxyHelper.validateConfiguredTypes(cacheConfig, validateValues, key, values);
+        CacheProxyUtil.validateConfiguredTypes(cacheConfig, validateValues, key, values);
     }
 
     private ClientContext getContext() {

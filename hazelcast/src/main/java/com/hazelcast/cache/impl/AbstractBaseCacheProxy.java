@@ -25,6 +25,7 @@ import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.ExecutionService;
@@ -33,7 +34,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletableFutureTask;
 
@@ -44,10 +44,10 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CompletionListener;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -55,9 +55,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.cache.impl.CacheProxyHelper.getPartitionId;
-import static com.hazelcast.cache.impl.CacheProxyHelper.loadAllHelper;
-import static com.hazelcast.cache.impl.CacheProxyHelper.validateNotNull;
+import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
  * Base Cache Proxy
@@ -75,13 +75,14 @@ class AbstractBaseCacheProxy<K, V> {
 
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
-    private ConcurrentHashMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
-    private ConcurrentHashMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
-    private ConcurrentHashMap<Integer, CountDownLatch> syncLocks;
+    private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
+    private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
+    private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
 
-    private AtomicInteger completionIdCounter = new AtomicInteger();
-    private String completionRegistrationId;
-    private CacheLoader<K, V> cacheLoader;
+    private final AtomicInteger completionIdCounter = new AtomicInteger();
+    private final CacheLoader<K, V> cacheLoader;
+    private final Object completionRegistrationMutex = new Object();
+    private volatile String completionRegistrationId;
 
     protected AbstractBaseCacheProxy(CacheConfig cacheConfig, CacheDistributedObject delegate) {
         this.name = cacheConfig.getName();
@@ -92,6 +93,8 @@ class AbstractBaseCacheProxy<K, V> {
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
+        } else {
+            cacheLoader = null;
         }
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
@@ -198,13 +201,13 @@ class AbstractBaseCacheProxy<K, V> {
 
     protected void validateConfiguredTypes(boolean validateValues, K key, V... values)
             throws ClassCastException {
-        CacheProxyHelper.validateConfiguredTypes(cacheConfig, validateValues, key, values);
+        CacheProxyUtil.validateConfiguredTypes(cacheConfig, validateValues, key, values);
     }
 
     protected void validateConfiguredTypes(Set<? extends K> keys)
             throws ClassCastException {
         for (K key : keys) {
-            CacheProxyHelper.validateConfiguredTypes(cacheConfig, false, key);
+            CacheProxyUtil.validateConfiguredTypes(cacheConfig, false, key);
         }
     }
 
@@ -237,7 +240,7 @@ class AbstractBaseCacheProxy<K, V> {
     }
 
     protected String removeListenerLocally(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        final ConcurrentHashMap<CacheEntryListenerConfiguration, String> regs;
+        final ConcurrentMap<CacheEntryListenerConfiguration, String> regs;
         if (cacheEntryListenerConfiguration.isSynchronous()) {
             regs = syncListenerRegistrations;
         } else {
@@ -247,11 +250,8 @@ class AbstractBaseCacheProxy<K, V> {
     }
 
     protected void validateCacheLoader(CompletionListener completionListener) {
-        if (cacheLoader == null) {
-            if (completionListener != null) {
-                completionListener.onCompletion();
-            }
-            return;
+        if (cacheLoader == null && completionListener != null) {
+            completionListener.onCompletion();
         }
     }
 
@@ -301,12 +301,7 @@ class AbstractBaseCacheProxy<K, V> {
     protected void closeCacheLoader() {
         //close the configured CacheLoader
         if (cacheLoader instanceof Closeable) {
-            try {
-                ((Closeable) cacheLoader).close();
-            } catch (IOException e) {
-                EmptyStatement.ignore(e);
-                //log
-            }
+            IOUtil.closeResource((Closeable) cacheLoader);
         }
     }
     //endregion
@@ -339,7 +334,7 @@ class AbstractBaseCacheProxy<K, V> {
             try {
                 countDownLatch.await();
             } catch (InterruptedException e) {
-                return;
+                ExceptionUtil.sneakyThrow(e);
             }
         }
     }
@@ -354,36 +349,49 @@ class AbstractBaseCacheProxy<K, V> {
             try {
                 countDownLatch.await();
             } catch (InterruptedException e) {
-                return;
+                ExceptionUtil.sneakyThrow(e);
             }
         }
     }
 
     protected void registerCompletionListener() {
         if (!syncListenerRegistrations.isEmpty() && completionRegistrationId == null) {
-            final CacheService service = getService();
-            CacheEventListener entryListener = new CacheEventListener() {
-                @Override
-                public void handleEvent(Object eventObject) {
-                    if (eventObject instanceof CacheEventData) {
-                        CacheEventData cacheEventData = (CacheEventData) eventObject;
-                        if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
-                            Integer completionId = serializationService.toObject(cacheEventData.getDataValue());
-                            countDownCompletionLatch(completionId);
-                        }
-                    }
+            synchronized (completionRegistrationMutex) {
+                if (completionRegistrationId == null) {
+                    final CacheService service = getService();
+                    CacheEventListener entryListener = new CacheCompletionEventListener();
+                    completionRegistrationId = service.registerListener(getDistributedObjectName(), entryListener);
                 }
-            };
-            completionRegistrationId = service.registerListener(getDistributedObjectName(), entryListener);
+            }
         }
     }
 
     protected void deregisterCompletionListener() {
         if (syncListenerRegistrations.isEmpty() && completionRegistrationId != null) {
-            final CacheService service = getService();
-            final boolean isDeregistered = service.deregisterListener(getDistributedObjectName(), completionRegistrationId);
-            if (isDeregistered) {
-                completionRegistrationId = null;
+            synchronized (completionRegistrationMutex) {
+                if (completionRegistrationId != null) {
+                    final CacheService service = getService();
+                    final boolean isDeregistered = service
+                            .deregisterListener(getDistributedObjectName(), completionRegistrationId);
+                    if (isDeregistered) {
+                        completionRegistrationId = null;
+                    }
+                }
+            }
+        }
+    }
+
+    private final class CacheCompletionEventListener
+            implements CacheEventListener {
+
+        @Override
+        public void handleEvent(Object eventObject) {
+            if (eventObject instanceof CacheEventData) {
+                CacheEventData cacheEventData = (CacheEventData) eventObject;
+                if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
+                    Integer completionId = serializationService.toObject(cacheEventData.getDataValue());
+                    countDownCompletionLatch(completionId);
+                }
             }
         }
     }
@@ -391,8 +399,8 @@ class AbstractBaseCacheProxy<K, V> {
     private final class LoadAllTask
             implements Runnable {
 
-        private OperationFactory operationFactory;
-        private CompletionListener completionListener;
+        private final OperationFactory operationFactory;
+        private final CompletionListener completionListener;
 
         private LoadAllTask(OperationFactory operationFactory, CompletionListener completionListener) {
             this.operationFactory = operationFactory;
@@ -404,7 +412,7 @@ class AbstractBaseCacheProxy<K, V> {
             try {
                 final OperationService operationService = nodeEngine.getOperationService();
                 final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
-                loadAllHelper(results);
+                validateResults(results);
                 if (completionListener != null) {
                     completionListener.onCompletion();
                 }

@@ -19,7 +19,9 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
@@ -36,11 +38,14 @@ public class ClusterWideIterator<K, V>
         extends AbstractClusterWideIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
-    final CacheDistributedObject cacheDistributedObject;
+    private final CacheDistributedObject cacheDistributedObject;
+    private final SerializationService serializationService;
 
     public ClusterWideIterator(ICache<K, V> cache, CacheDistributedObject cacheDistributedObject) {
         super(cache, cacheDistributedObject.getNodeEngine().getPartitionService().getPartitionCount());
         this.cacheDistributedObject = cacheDistributedObject;
+        final NodeEngine nodeEngine = cacheDistributedObject.getNodeEngine();
+        this.serializationService = nodeEngine.getSerializationService();
         advance();
     }
 
@@ -54,12 +59,12 @@ public class ClusterWideIterator<K, V>
 
     @Override
     protected Data toData(Object obj) {
-        return getDistributedObject().getNodeEngine().getSerializationService().toData(obj);
+        return serializationService.toData(obj);
     }
 
     @Override
     protected <T> T toObject(Object data) {
-        return getDistributedObject().getNodeEngine().getSerializationService().toObject(data);
+        return serializationService.toObject(data);
     }
 
     private CacheDistributedObject getDistributedObject() {
