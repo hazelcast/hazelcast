@@ -156,7 +156,7 @@
                         <index>true</index>
                         <compress>true</compress>
                         <manifest>
-                            <mainClass>com.hazelcast.map.standalone.SimpleMapTest</mainClass>
+                            <mainClass>com.hazelcast.core.server.StartServer</mainClass>
                             <!--<addClasspath>true</addClasspath>-->
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
