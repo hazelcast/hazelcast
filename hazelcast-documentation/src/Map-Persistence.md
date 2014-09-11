@@ -2,12 +2,12 @@
 
 ### Map Persistence
 
-Hazelcast allows you to load and store the distributed map entries from/to a persistent data store such as a relational database.  
+Hazelcast allows you to load and store the distributed map entries from/to a persistent data store such as a relational database. For these, Hazelcast's `MapStore` and `MapLoader` interfaces are used.
 
 Hazelcast supports read-through, write-through and write-behind modes which are explained in below subsections.
 
 
-***ATTENTION:*** *DataStore needs to be a centralized system that is
+***ATTENTION:*** *Data store needs to be a centralized system that is
 accessible from all Hazelcast Nodes. Persisting to local file system is not supported.*
 
 #### Read-Through
