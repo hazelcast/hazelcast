@@ -48,6 +48,7 @@ src/Distributed_Data_Structures.md
         src/replicatedmap/InMemoryFormat.md
         src/replicatedmap/EntryListener.md
 src/DistributedEvents.md
+	src/GlobalEventConfiguration.md
 src/DistributedComputing.md
 		src/Execution.md
 		src/ExecutionCancellation.md
