@@ -26,10 +26,10 @@ import java.io.IOException;
 /**
  * Base modifying cache operation, this operation publishes COMPLETE events
  */
-abstract class AbstractMutatingCacheOperation
+public abstract class AbstractMutatingCacheOperation
         extends AbstractCacheOperation
         implements BackupAwareOperation {
-
+    public static final int IGNORE_COMPLETION = -1;
     protected int completionId;
 
     protected AbstractMutatingCacheOperation() {
@@ -44,6 +44,14 @@ abstract class AbstractMutatingCacheOperation
     public void afterRun()
             throws Exception {
         cache.publishCompletedEvent(name, completionId, key, key.hashCode());
+    }
+
+    public int getCompletionId() {
+        return completionId;
+    }
+
+    public void setCompletionId(int completionId) {
+        this.completionId = completionId;
     }
 
     @Override

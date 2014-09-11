@@ -22,7 +22,8 @@ import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheEventType;
-import com.hazelcast.cache.impl.CacheProxy;
+import com.hazelcast.cache.impl.CacheProxyHelper;
+import com.hazelcast.cache.impl.CacheStatisticsMXBeanImpl;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
 import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
@@ -89,8 +90,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.cache.impl.CacheProxy.loadAllHelper;
-import static com.hazelcast.cache.impl.CacheProxy.validateNotNull;
+import static com.hazelcast.cache.impl.CacheProxyHelper.loadAllHelper;
+import static com.hazelcast.cache.impl.CacheProxyHelper.validateNotNull;
 
 public class ClientCacheProxy<K, V>
         implements ICache<K, V> {
@@ -571,13 +572,6 @@ public class ClientCacheProxy<K, V>
         return new EventHandler<Object>() {
             @Override
             public void handle(Object event) {
-                // below is a commented code block
-                // it does not do anything, but my gut feeling says that some logic has forgotten here
-                /*
-                if (event instanceof CacheEventSet) {
-                    CacheEventSet ces = (CacheEventSet) event;
-                }
-                */
                 adaptor.handleEvent(event);
             }
 
@@ -783,6 +777,18 @@ public class ClientCacheProxy<K, V>
             throw ExceptionUtil.rethrow(e);
         }
         return new DelegatingFuture<V>(future, getContext().getSerializationService());
+    }
+
+    @Override
+    public Future<Boolean> replaceAsync(K key, V value) {
+        //TODO implement replaceAsync
+        throw new UnsupportedOperationException("not implemented");
+    }
+
+    @Override
+    public Future<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+        //TODO implement replaceAsync
+        throw new UnsupportedOperationException("not implemented");
     }
 
     @Override
@@ -1060,6 +1066,12 @@ public class ClientCacheProxy<K, V>
         }
         return result;
     }
+
+    @Override
+    public CacheStatisticsMXBeanImpl getLocalCacheStatistics() {
+        //TODO implement statistic support for client
+        throw new UnsupportedOperationException("not impl yet");
+    }
     //endregion
 
     //region sync listeners
@@ -1153,7 +1165,7 @@ public class ClientCacheProxy<K, V>
 
     private void validateConfiguredTypes(boolean validateValues, K key, V... values)
             throws ClassCastException {
-        CacheProxy.validateConfiguredTypes(cacheConfig, validateValues, key, values);
+        CacheProxyHelper.validateConfiguredTypes(cacheConfig, validateValues, key, values);
     }
 
     private ClientContext getContext() {

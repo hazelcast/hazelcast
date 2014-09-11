@@ -128,17 +128,7 @@ public class CacheRecordStore
             return value;
         } else {
             value = record.getValue();
-            final long expiryTime;
-            try {
-                Duration expiryDuration = localExpiryPolicy.getExpiryForAccess();
-                if (expiryDuration != null) {
-                    expiryTime = expiryDuration.getAdjustedTime(now);
-                    record.setExpirationTime(expiryTime);
-                }
-            } catch (Throwable t) {
-                EmptyStatement.ignore(t);
-                //leave the expiry time untouched when we can't determine a duration
-            }
+            updateAccessDuration(record, localExpiryPolicy, now);
             if (isStatisticsEnabled()) {
                 statistics.increaseCacheHits(1);
             }
@@ -304,17 +294,7 @@ public class CacheRecordStore
                 deleteCacheEntry(key);
                 deleteRecord(key);
             } else {
-                long expiryTime = -1L;
-                try {
-                    Duration expiryDuration = localExpiryPolicy.getExpiryForAccess();
-                    if (expiryDuration != null) {
-                        expiryTime = expiryDuration.getAdjustedTime(now);
-                        record.setExpirationTime(expiryTime);
-                    }
-                } catch (Throwable t) {
-                    EmptyStatement.ignore(t);
-                    //leave the expiry time untouched when we can't determine a duration
-                }
+                long expiryTime = updateAccessDuration(record, localExpiryPolicy, now);
                 if (isExpiredAt(expiryTime, now)) {
                     processExpiredEntry(key, record);
                 }
@@ -332,6 +312,22 @@ public class CacheRecordStore
 
         }
         return result;
+    }
+
+    private long updateAccessDuration(CacheRecord record, ExpiryPolicy localExpiryPolicy, long now) {
+        long expiryTime = -1L;
+        try {
+            Duration expiryDuration = localExpiryPolicy.getExpiryForAccess();
+            if (expiryDuration != null) {
+                expiryTime = expiryDuration.getAdjustedTime(now);
+                record.setExpirationTime(expiryTime);
+            }
+        } catch (Throwable t) {
+            EmptyStatement.ignore(t);
+            //leave the expiry time untouched when we can't determine a duration
+        }
+        return expiryTime;
+
     }
 
     @Override
@@ -380,16 +376,7 @@ public class CacheRecordStore
             if (compare(value, oldValue)) {
                 result = updateRecordWithExpiry(key, newValue, record, localExpiryPolicy, now, false);
             } else {
-                try {
-                    Duration expiryDuration = localExpiryPolicy.getExpiryForAccess();
-                    if (expiryDuration != null) {
-                        long expiryTime = expiryDuration.getAdjustedTime(now);
-                        record.setExpirationTime(expiryTime);
-                    }
-                } catch (Throwable t) {
-                    EmptyStatement.ignore(t);
-                    //leave the expiry time untouched when we can't determine a duration
-                }
+                updateAccessDuration(record, localExpiryPolicy, now);
                 result = false;
             }
         }
@@ -777,17 +764,7 @@ public class CacheRecordStore
 
     CacheRecord accessRecord(CacheRecord record, ExpiryPolicy expiryPolicy, long now) {
         final ExpiryPolicy localExpiryPolicy = expiryPolicy != null ? expiryPolicy : defaultExpiryPolicy;
-        final long expiryTime;
-        try {
-            Duration expiryDuration = localExpiryPolicy.getExpiryForAccess();
-            if (expiryDuration != null) {
-                expiryTime = expiryDuration.getAdjustedTime(now);
-                record.setExpirationTime(expiryTime);
-            }
-        } catch (Throwable t) {
-            EmptyStatement.ignore(t);
-            //leave the expiry time untouched when we can't determine a duration
-        }
+        updateAccessDuration(record, localExpiryPolicy, now);
         return record;
     }
 
@@ -922,10 +899,12 @@ public class CacheRecordStore
                 }
             }
             Map<Data, Object> result = new HashMap<Data, Object>();
+
             for (Map.Entry<Object, Data> entry : keysToLoad.entrySet()) {
-                final Object valueObject = loaded.get(entry.getKey());
-                final Data key = entry.getValue();
-                result.put(key, valueObject);
+                final Object keyObj = entry.getKey();
+                final Object valueObject = loaded.get(keyObj);
+                final Data keyData = entry.getValue();
+                result.put(keyData, valueObject);
             }
             return result;
         }
