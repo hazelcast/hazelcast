@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.cache.impl.CacheProxyHelper.validateNotNull;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
  * Abstract ICache implementation

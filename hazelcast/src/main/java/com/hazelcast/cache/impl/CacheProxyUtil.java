@@ -28,16 +28,15 @@ import java.util.Set;
 /**
  * Helper methods for Cache Proxy impl
  */
-public final class CacheProxyHelper {
+public final class CacheProxyUtil {
 
     static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
-    private CacheProxyHelper() {
+    private CacheProxyUtil() {
     }
 
-    //region static helper
-    public static void loadAllHelper(Map<Integer, Object> results) {
+    public static void validateResults(Map<Integer, Object> results) {
         for (Object result : results.values()) {
             if (result != null && result instanceof CacheClearResponse) {
                 final Object response = ((CacheClearResponse) result).getResponse();
@@ -52,14 +51,30 @@ public final class CacheProxyHelper {
         return nodeEngine.getPartitionService().getPartitionId(key);
     }
 
-    public static <K, V> void validateNotNull(K key, V... values) {
+    public static <K> void validateNotNull(K key) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        for (Object value : values) {
-            if (value == null) {
-                throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-            }
+    }
+
+    public static <K, V> void validateNotNull(K key, V value) {
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (value == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+    }
+
+    public static <K, V> void validateNotNull(K key, V value1, V value2) {
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (value1 == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
+        if (value2 == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
     }
 
@@ -76,6 +91,7 @@ public final class CacheProxyHelper {
         boolean containsNullKey = false;
         boolean containsNullValue = false;
         //in case this map keySet or values do not support null values
+        //TODO is it possible to validate a map without try-catch blocks, more efficiently?
         try {
             containsNullKey = map.keySet().contains(null);
         } catch (NullPointerException e) {
@@ -107,17 +123,17 @@ public final class CacheProxyHelper {
                 throw new ClassCastException("Key " + key + "is not assignable to " + keyType);
             }
         }
-        if (validateValues) {
-            for (V value : values) {
-                if (Object.class != valueType) {
-                    //means type checks required
-                    if (!valueType.isAssignableFrom(value.getClass())) {
-                        throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
-                    }
+        if (!validateValues) {
+            return;
+        }
+        for (V value : values) {
+            if (Object.class != valueType) {
+                //means type checks required
+                if (!valueType.isAssignableFrom(value.getClass())) {
+                    throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
                 }
             }
         }
     }
-    //endregion
 
 }
