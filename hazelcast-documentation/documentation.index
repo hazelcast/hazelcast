@@ -35,6 +35,7 @@ src/Distributed_Data_Structures.md
 		src/TopicInternals.md
 		src/TopicConfiguration.md
 	src/Lock.md
+		src/LockICondition.md
 	src/IAtomicLong.md
 	src/ISemaphore.md
 	src/IAtomicReference.md
