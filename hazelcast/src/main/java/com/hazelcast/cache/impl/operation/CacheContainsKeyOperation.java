@@ -37,7 +37,7 @@ public class CacheContainsKeyOperation
     @Override
     public void run()
             throws Exception {
-        response = cache != null && cache.contains(key);
+        response = cache.contains(key);
     }
 
     @Override

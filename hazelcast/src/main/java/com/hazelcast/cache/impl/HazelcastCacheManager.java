@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class HazelcastCacheManager
         implements CacheManager {
@@ -35,8 +36,10 @@ public abstract class HazelcastCacheManager
     protected final boolean isDefaultURI;
     protected final boolean isDefaultClassLoader;
 
-    protected volatile boolean closeTriggered;
     protected final String cacheNamePrefix;
+
+    //    protected volatile boolean closeTriggered;
+    private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
     public HazelcastCacheManager(CachingProvider cachingProvider, URI uri, ClassLoader classLoader, Properties properties) {
         if (cachingProvider == null) {
@@ -259,19 +262,19 @@ public abstract class HazelcastCacheManager
 
     @Override
     public void close() {
-        if (!closeTriggered) {
-            releaseCacheManager(uri, classLoaderReference.get());
-            for (ICache cache : caches.values()) {
-                cache.close();
-            }
-            caches.clear();
+        if (!isClosed.compareAndSet(false, true)) {
+            return;
         }
-        closeTriggered = true;
+        releaseCacheManager(uri, classLoaderReference.get());
+        for (ICache cache : caches.values()) {
+            cache.close();
+        }
+        caches.clear();
     }
 
     @Override
     public boolean isClosed() {
-        return closeTriggered || !hazelcastInstance.getLifecycleService().isRunning();
+        return isClosed.get() || !hazelcastInstance.getLifecycleService().isRunning();
     }
 
     @Override

@@ -29,6 +29,10 @@ public class CacheGetAndRemoveOperation
     public CacheGetAndRemoveOperation() {
     }
 
+    public CacheGetAndRemoveOperation(String name, Data key) {
+        this(name, key, IGNORE_COMPLETION);
+    }
+
     public CacheGetAndRemoveOperation(String name, Data key, int completionId) {
         super(name, key, completionId);
     }
@@ -36,7 +40,7 @@ public class CacheGetAndRemoveOperation
     @Override
     public void run()
             throws Exception {
-        response = cache != null ? cache.getAndRemove(key, getCallerUuid()) : null;
+        response = cache.getAndRemove(key, getCallerUuid());
     }
 
     @Override
