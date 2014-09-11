@@ -74,7 +74,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         final RecordStoreLoader recordStoreLoader = this.recordStoreLoader;
         final Throwable exception = recordStoreLoader.getExceptionOrNull();
         if (exception == null && !recordStoreLoader.isLoaded()) {
-            throwable = new RetryableHazelcastException("Map is not ready!!!");
+            throwable = new RetryableHazelcastException("Map "
+                    + getName() + " is still loading data from external store");
         } else if (exception != null) {
             throwable = exception;
         }
