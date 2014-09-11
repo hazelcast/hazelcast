@@ -2,11 +2,14 @@
 src/Introduction.md
 	src/WhyHazelcast.md
 	src/GettingStarted.md
+		src/InstallingHZEnterprise.md
 		src/StartingClusterClient.md
 		src/ConfiguringHazelcast.md
 	src/UseCases.md
 	src/Resources.md
-src/Whats_new_3.3.md
+src/WhatsNew.md
+#	src/WhatsNewImprovements.md
+	src/WhatsNewFixes.md
 	src/UpgradingFrom2x.md
 	src/DocumentRevisionHistory.md
 src/Distributed_Data_Structures.md
@@ -15,11 +18,11 @@ src/Distributed_Data_Structures.md
 		src/Map-Eviction.md
 		src/Map-InMemoryFormat.md
 		src/Map-Persistence.md
-		src/Map-Interceptors.md
 		src/Map-NearCache.md
 		src/Map-Locks.md
 		src/Map-EntryStatistics.md
 		src/Map-EntryListener.md
+		src/Map-Interceptors.md
 	src/Queue.md
 		src/SampleQueueCode.md
 		src/BoundedQueue.md
@@ -28,6 +31,9 @@ src/Distributed_Data_Structures.md
 	src/Set.md
 	src/List.md
 	src/Topic.md
+		src/TopicStatistics.md
+		src/TopicInternals.md
+		src/TopicConfiguration.md
 	src/Lock.md
 	src/IAtomicLong.md
 	src/ISemaphore.md
