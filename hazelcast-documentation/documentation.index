@@ -65,12 +65,12 @@ src/UserDefinedServices.md
 		src/SPICreateBackups.md
 	src/SPIWaitNotifyService.md
 src/Transactions.md
+	src/XATransactions.md
 	src/J2EEIntegration.md
 		src/ResourceAdapterConfiguration.md
 		src/SampleGlassfishConfiguration.md
 		src/SampleJBossConfiguration.md
 		src/SampleJBoss7Configuration.md
-	src/XATransactions.md
 src/JCache.md
 src/IntegratedClustering.md
 	src/WebSessionReplication.md
