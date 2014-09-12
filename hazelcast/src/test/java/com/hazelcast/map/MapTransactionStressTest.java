@@ -9,6 +9,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -40,28 +41,20 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
 public class MapTransactionStressTest extends HazelcastTestSupport {
 
+    private static String DUMMY_TX_SERVICE = "dummy-tx-service";
+
     @Test
-    public void testTransactionAtomicity_whenMapGetIsUsed() throws InterruptedException {
-        Config config = new Config();
-        ServicesConfig servicesConfig = config.getServicesConfig();
-
-        final String dummyTxService = "dummy-tx-service";
-        servicesConfig.addServiceConfig(new ServiceConfig().setName(dummyTxService)
-                .setEnabled(true).setServiceImpl(new DummyTransactionalService(dummyTxService)));
-
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-
+    public void testTransactionAtomicity_whenMapGetIsUsed_withTransaction() throws InterruptedException {
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
-
-        Thread producerThread = new ProducerThread(hz, name, dummyTxService);
-        producerThread.start();
-
+        Thread producerThread = startProducerThread(hz, name);
         try {
             IQueue<String> q = hz.getQueue(name);
             for (int i = 0; i < 1000; i++) {
@@ -73,7 +66,6 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                         TransactionalMap<String, Object> map = tx.getMap(name);
                         Object value = map.get(id);
                         Assert.assertNotNull(value);
-
                         map.delete(id);
                         tx.commitTransaction();
                     } catch (TransactionException e) {
@@ -85,28 +77,38 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                 }
             }
         } finally {
-            producerThread.interrupt();
-            producerThread.join(10000);
+            stopProducerThread(producerThread);
         }
-
     }
 
     @Test
-    public void testTransactionAtomicity_whenMapContainsKeyIsUsed() throws InterruptedException {
-        Config config = new Config();
-        ServicesConfig servicesConfig = config.getServicesConfig();
-
-        final String dummyTxService = "dummy-tx-service";
-        servicesConfig.addServiceConfig(new ServiceConfig().setName(dummyTxService)
-                .setEnabled(true).setServiceImpl(new DummyTransactionalService(dummyTxService)));
-
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-
+    public void testTransactionAtomicity_whenMapGetIsUsed_withoutTransaction() throws InterruptedException {
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
+        Thread producerThread = startProducerThread(hz, name);
+        try {
+            IQueue<String> q = hz.getQueue(name);
+            for (int i = 0; i < 1000; i++) {
+                String id = q.poll();
+                if (id != null) {
+                    IMap<Object, Object> map = hz.getMap(name);
+                    Object value = map.get(id);
+                    Assert.assertNotNull(value);
+                    map.delete(id);
+                } else {
+                    LockSupport.parkNanos(100);
+                }
+            }
+        } finally {
+            stopProducerThread(producerThread);
+        }
+    }
 
-        Thread producerThread = new ProducerThread(hz, name, dummyTxService);
-        producerThread.start();
-
+    @Test
+    public void testTransactionAtomicity_whenMapContainsKeyIsUsed_withTransaction() throws InterruptedException {
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final String name = HazelcastTestSupport.generateRandomString(5);
+        Thread producerThread = startProducerThread(hz, name);
         try {
             IQueue<String> q = hz.getQueue(name);
             for (int i = 0; i < 1000; i++) {
@@ -128,13 +130,79 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                 }
             }
         } finally {
-            producerThread.interrupt();
-            producerThread.join(10000);
+            stopProducerThread(producerThread);
         }
-
     }
 
-    private static class ProducerThread extends Thread {
+    @Test
+    public void testTransactionAtomicity_whenMapContainsKeyIsUsed_withoutTransaction() throws InterruptedException {
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final String name = HazelcastTestSupport.generateRandomString(5);
+        Thread producerThread = startProducerThread(hz, name);
+        try {
+            IQueue<String> q = hz.getQueue(name);
+            for (int i = 0; i < 1000; i++) {
+                String id = q.poll();
+                if (id != null) {
+                    IMap<Object, Object> map = hz.getMap(name);
+                    assertTrue(map.containsKey(id));
+                    map.delete(id);
+                } else {
+                    LockSupport.parkNanos(100);
+                }
+            }
+        } finally {
+            stopProducerThread(producerThread);
+        }
+    }
+
+    @Test
+    public void testTransactionAtomicity_whenMapGetEntryViewIsUsed_withoutTransaction() throws InterruptedException {
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final String name = HazelcastTestSupport.generateRandomString(5);
+        Thread producerThread = startProducerThread(hz, name);
+        try {
+            IQueue<String> q = hz.getQueue(name);
+            for (int i = 0; i < 1000; i++) {
+                String id = q.poll();
+                if (id != null) {
+                    IMap<Object, Object> map = hz.getMap(name);
+                    assertNotNull(map.getEntryView(id));
+                    map.delete(id);
+                } else {
+                    LockSupport.parkNanos(100);
+                }
+            }
+        } finally {
+            stopProducerThread(producerThread);
+        }
+    }
+
+
+
+
+    private Config createConfigWithDummyTxService() {
+        Config config = new Config();
+        ServicesConfig servicesConfig = config.getServicesConfig();
+        servicesConfig.addServiceConfig(new ServiceConfig().setName(DUMMY_TX_SERVICE)
+                .setEnabled(true).setServiceImpl(new DummyTransactionalService(DUMMY_TX_SERVICE)));
+        return config;
+    }
+
+    private Thread startProducerThread(HazelcastInstance hz, String name) {
+        Thread producerThread = new MapTransactionStressTest.ProducerThread(hz, name, DUMMY_TX_SERVICE);
+        producerThread.start();
+        return producerThread;
+    }
+
+    private void stopProducerThread(Thread producerThread) throws InterruptedException {
+        producerThread.interrupt();
+        producerThread.join(10000);
+    }
+
+
+    public static class ProducerThread extends Thread {
+        public static final String value = "some-value";
         private final HazelcastInstance hz;
         private final String name;
         private final String dummyServiceName;
@@ -151,16 +219,15 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                 try {
                     tx.beginTransaction();
                     String id = UUID.randomUUID().toString();
-
                     TransactionalQueue<String> q = tx.getQueue(name);
                     q.offer(id);
-
                     DummyTransactionalObject slowTxObject = tx.getTransactionalObject(dummyServiceName, name);
                     slowTxObject.doSomethingTxnal();
-
                     TransactionalMap<String, Object> map = tx.getMap(name);
-                    map.put(id, "some-value");
-
+                    map.put(id, value);
+                    slowTxObject.doSomethingTxnal();
+                    TransactionalMultiMap<Object, Object> multiMap = tx.getMultiMap(name);
+                    multiMap.put(id, value);
                     tx.commitTransaction();
                 } catch (TransactionException e) {
                     tx.rollbackTransaction();
@@ -170,11 +237,11 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
     }
 
-    private static class DummyTransactionalService implements TransactionalService, RemoteService {
+    public static class DummyTransactionalService implements TransactionalService, RemoteService {
 
         final String serviceName;
 
-        DummyTransactionalService(String name) {
+        public DummyTransactionalService(String name) {
             this.serviceName = name;
         }
 
@@ -198,7 +265,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
     }
 
-    private static class DummyTransactionalObject implements TransactionalObject {
+    public static class DummyTransactionalObject implements TransactionalObject {
 
         final String serviceName;
         final String name;
@@ -240,7 +307,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
     }
 
-    private static class SleepyTransactionLog implements TransactionLog {
+    public static class SleepyTransactionLog implements TransactionLog {
         @Override
         public Future prepare(NodeEngine nodeEngine) {
             return new EmptyFuture();
@@ -266,7 +333,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
     }
 
-    private static class EmptyFuture implements Future {
+    public static class EmptyFuture implements Future {
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             return false;

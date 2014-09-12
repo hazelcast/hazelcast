@@ -38,13 +38,15 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
 
     private String name;
     private Data key;
+    private long threadId;
 
     public MapGetEntryViewRequest() {
     }
 
-    public MapGetEntryViewRequest(String name, Data key) {
+    public MapGetEntryViewRequest(String name, Data key, long threadId) {
         this.name = name;
         this.key = key;
+        this.threadId = threadId;
     }
 
     public Object getKey() {
@@ -53,6 +55,7 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
 
     protected Operation prepareOperation() {
         GetEntryViewOperation op = new GetEntryViewOperation(name, key);
+        op.setThreadId(threadId);
         return op;
     }
 
@@ -73,6 +76,7 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
     @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeLong("threadId", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
@@ -80,6 +84,7 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
     @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        threadId = reader.readLong("threadId");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

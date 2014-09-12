@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -86,6 +85,10 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
+    }
+
+    public boolean isTransactionallyLocked(Data key) {
+        return lockStore != null && lockStore.isTransactionallyLocked(key);
     }
 
     public boolean txnLock(Data key, String caller, long threadId, long ttl) {
@@ -204,10 +207,6 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         multiMapWrappers.clear();
         multiMapWrappers.putAll(lockedKeys);
         return numberOfAffectedEntries;
-    }
-
-    public NodeEngine getNodeEngine() {
-        return nodeEngine;
     }
 
     public MultiMapConfig getConfig() {

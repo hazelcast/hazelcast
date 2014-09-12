@@ -149,7 +149,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 return true;
             }
         }
-        MapContainsKeyRequest request = new MapContainsKeyRequest(name, keyData);
+        MapContainsKeyRequest request = new MapContainsKeyRequest(name, keyData, ThreadUtil.getThreadId());
         Boolean result = invoke(request, keyData);
         return result;
     }
@@ -176,7 +176,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 return (V) cached;
             }
         }
-        MapGetRequest request = new MapGetRequest(name, keyData);
+        MapGetRequest request = new MapGetRequest(name, keyData, ThreadUtil.getThreadId());
         final V result = invoke(request, keyData);
         if (nearCache != null) {
             nearCache.put(keyData, result);
@@ -233,7 +233,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             }
         }
 
-        final MapGetRequest request = new MapGetRequest(name, keyData);
+        final MapGetRequest request = new MapGetRequest(name, keyData, ThreadUtil.getThreadId());
         request.setAsAsync();
         try {
             final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
@@ -502,7 +502,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public EntryView<K, V> getEntryView(K key) {
         final Data keyData = toData(key);
-        MapGetEntryViewRequest request = new MapGetEntryViewRequest(name, keyData);
+        MapGetEntryViewRequest request = new MapGetEntryViewRequest(name, keyData, ThreadUtil.getThreadId());
         SimpleEntryView entryView = invoke(request, keyData);
         if (entryView == null) {
             return null;

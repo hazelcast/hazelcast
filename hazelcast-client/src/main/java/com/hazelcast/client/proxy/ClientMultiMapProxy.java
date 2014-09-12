@@ -105,7 +105,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        GetAllRequest request = new GetAllRequest(name, keyData);
+        GetAllRequest request = new GetAllRequest(name, keyData, ThreadUtil.getThreadId());
         PortableCollection result = invoke(request, keyData);
         return toObjectCollection(result);
     }
@@ -163,7 +163,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        ClientRequest request = new KeyBasedContainsRequest(name, keyData, null);
+        ClientRequest request = new KeyBasedContainsRequest(name, keyData, null, ThreadUtil.getThreadId());
         Boolean result = invoke(request, keyData);
         return result;
     }
@@ -183,7 +183,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         Data keyData = toData(key);
         Data valueData = toData(value);
-        ClientRequest request = new KeyBasedContainsRequest(name, keyData, valueData);
+        ClientRequest request = new KeyBasedContainsRequest(name, keyData, valueData, ThreadUtil.getThreadId());
         Boolean result = invoke(request, keyData);
         return result;
     }
@@ -203,7 +203,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        CountRequest request = new CountRequest(name, keyData);
+        CountRequest request = new CountRequest(name, keyData, ThreadUtil.getThreadId());
         Integer result = invoke(request, keyData);
         return result;
     }
