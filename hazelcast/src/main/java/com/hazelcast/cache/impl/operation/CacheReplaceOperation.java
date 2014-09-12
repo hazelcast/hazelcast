@@ -32,36 +32,36 @@ import java.io.IOException;
 public class CacheReplaceOperation
         extends AbstractMutatingCacheOperation {
 
-    private Data value;
+    private Data newValue;
     // replace if same
-    private Data currentValue;
+    private Data oldValue;
     private ExpiryPolicy expiryPolicy;
 
     public CacheReplaceOperation() {
     }
 
+    public CacheReplaceOperation(String name, Data key, Data oldValue, Data newValue, ExpiryPolicy expiryPolicy) {
+        this(name, key, oldValue, newValue, expiryPolicy, IGNORE_COMPLETION);
+    }
+
     public CacheReplaceOperation(String name, Data key, Data oldValue, Data newValue, ExpiryPolicy expiryPolicy,
                                  int completionId) {
         super(name, key, completionId);
-        this.value = newValue;
-        this.currentValue = oldValue;
+        this.newValue = newValue;
+        this.oldValue = oldValue;
         this.expiryPolicy = expiryPolicy;
     }
 
     @Override
     public void run()
             throws Exception {
-        if (cache != null) {
-            if (currentValue == null) {
-                response = cache.replace(key, value, expiryPolicy, getCallerUuid());
-            } else {
-                response = cache.replace(key, currentValue, value, expiryPolicy, getCallerUuid());
-            }
-            if (Boolean.TRUE.equals(response)) {
-                backupRecord = cache.getRecord(key);
-            }
+        if (oldValue == null) {
+            response = cache.replace(key, newValue, expiryPolicy, getCallerUuid());
         } else {
-            response = Boolean.FALSE;
+            response = cache.replace(key, oldValue, newValue, expiryPolicy, getCallerUuid());
+        }
+        if (Boolean.TRUE.equals(response)) {
+            backupRecord = cache.getRecord(key);
         }
     }
 
@@ -79,8 +79,8 @@ public class CacheReplaceOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        value.writeData(out);
-        IOUtil.writeNullableData(out, currentValue);
+        newValue.writeData(out);
+        IOUtil.writeNullableData(out, oldValue);
         out.writeObject(expiryPolicy);
     }
 
@@ -88,9 +88,9 @@ public class CacheReplaceOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        value = new Data();
-        value.readData(in);
-        currentValue = IOUtil.readNullableData(in);
+        newValue = new Data();
+        newValue.readData(in);
+        oldValue = IOUtil.readNullableData(in);
         expiryPolicy = in.readObject();
     }
 

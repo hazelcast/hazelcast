@@ -304,6 +304,10 @@ public class CacheService
         nodeEngine.getEventService().deregisterAllListeners(CacheService.SERVICE_NAME, name);
     }
 
+    public CacheStatistics getStatistics(String name) {
+        return statistics.get(name);
+    }
+
     //endregion
 
 }

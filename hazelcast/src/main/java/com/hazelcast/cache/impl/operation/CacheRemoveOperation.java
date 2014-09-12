@@ -32,31 +32,27 @@ public class CacheRemoveOperation
         extends AbstractMutatingCacheOperation {
 
     // if same
-    private Data currentValue;
+    private Data oldValue;
 
     public CacheRemoveOperation() {
     }
 
-    public CacheRemoveOperation(String name, Data key, int completionId) {
-        super(name, key, completionId);
+    public CacheRemoveOperation(String name, Data key, Data oldValue) {
+        this(name, key, oldValue, IGNORE_COMPLETION);
     }
 
-    public CacheRemoveOperation(String name, Data key, Data currentValue, int completionId) {
+    public CacheRemoveOperation(String name, Data key, Data oldValue, int completionId) {
         super(name, key, completionId);
-        this.currentValue = currentValue;
+        this.oldValue = oldValue;
     }
 
     @Override
     public void run()
             throws Exception {
-        if (cache != null) {
-            if (currentValue == null) {
-                response = cache.remove(key, getCallerUuid());
-            } else {
-                response = cache.remove(key, currentValue, getCallerUuid());
-            }
+        if (oldValue == null) {
+            response = cache.remove(key, getCallerUuid());
         } else {
-            response = Boolean.FALSE;
+            response = cache.remove(key, oldValue, getCallerUuid());
         }
     }
 
@@ -79,13 +75,13 @@ public class CacheRemoveOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        IOUtil.writeNullableData(out, currentValue);
+        IOUtil.writeNullableData(out, oldValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        currentValue = IOUtil.readNullableData(in);
+        oldValue = IOUtil.readNullableData(in);
     }
 }
