@@ -32,15 +32,17 @@ public final class HazelcastServerCachingProvider
         super();
     }
 
-    @Override
     protected HazelcastInstance initHazelcast() {
         Config config = new XmlConfigBuilder().build();
         return Hazelcast.newHazelcastInstance(config);
     }
 
     @Override
-    protected CacheManager getHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
-        return new HazelcastServerCacheManager(this, getHazelcastInstance(), uri, classLoader, managerProperties);
+    protected CacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
+        if (hazelcastInstance == null) {
+            hazelcastInstance = initHazelcast();
+        }
+        return new HazelcastServerCacheManager(this, hazelcastInstance, uri, classLoader, managerProperties);
     }
 
     @Override
