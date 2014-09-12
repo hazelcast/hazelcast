@@ -40,7 +40,7 @@
                         <index>true</index>
                         <compress>true</compress>
                         <manifest>
-                            <mainClass>com.hazelcast.console.ConsoleApp</mainClass>
+                            <mainClass>com.hazelcast.core.server.StartServer</mainClass>
                             <addClasspath>false</addClasspath>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
