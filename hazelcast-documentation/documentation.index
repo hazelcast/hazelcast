@@ -67,6 +67,9 @@ src/DistributedQuery.md
 		src/MR-Introduction.md
 		src/MR-Architecture.md
 	src/Aggregators.md
+		src/AggregatorsIntroduction.md
+		src/AggregatorsExample.md
+		src/AggregatorsImplementation.md
 	src/ContinuousQuery.md
 src/UserDefinedServices.md
 		src/SPICreateClass.md
