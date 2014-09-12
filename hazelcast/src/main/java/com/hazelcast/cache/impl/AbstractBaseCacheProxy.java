@@ -56,8 +56,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
 /**
  * Base Cache Proxy
