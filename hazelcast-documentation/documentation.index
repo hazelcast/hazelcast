@@ -54,8 +54,14 @@ src/DistributedComputing.md
 		src/ExecutionCancellation.md
 		src/ExecutionCallback.md
 	src/EntryProcessor.md
+		src/EntryProcessorSampleCode.md
+		src/EntryProcessorAbstract.md
 src/DistributedQuery.md
-	src/Query.md
+	src/QueryCriteriaAPI.md
+		src/QuerySQL.md
+		src/QueryPagingPredicate.md
+		src/QueryIndexing.md
+		src/QueryThreadConfiguration.md
 	src/MapReduce.md
 		src/MR-Essentials.md
 		src/MR-Introduction.md
