@@ -102,6 +102,8 @@ src/Clients.md
 	src/RestClient.md
 	src/MemcacheClient.md
 src/Serialization.md
+	src/SerializationInterfaces.md
+	src/SerializationComparisonTable.md
 	src/Serializable.md
 	src/DataSerialization.md
 	src/PortableSerialization.md
@@ -131,7 +133,10 @@ src/Security.md
 	src/ClusterMemberSecurity.md
 	src/NativeClientSecurity.md
 src/Performance.md
-    src/ThreadingModel.md
+	src/ThreadingModel.md
+		src/ThreadingEvent.md
+		src/ThreadingExecutor.md
+		src/ThreadingOperation.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
 src/Config.md
