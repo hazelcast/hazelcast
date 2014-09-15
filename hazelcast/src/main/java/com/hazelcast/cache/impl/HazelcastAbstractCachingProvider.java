@@ -50,16 +50,18 @@ public abstract class HazelcastAbstractCachingProvider
         ClassLoader managerClassLoader = classLoader == null ? getDefaultClassLoader() : classLoader;
         Properties managerProperties = properties == null ? new Properties() : properties;
 
-        ConcurrentMap<URI, CacheManager> cacheManagersByURI = cacheManagers.get(managerClassLoader);
-        if (cacheManagersByURI == null) {
-            cacheManagersByURI = new ConcurrentHashMap<URI, CacheManager>();
-            cacheManagers.putIfAbsent(managerClassLoader, cacheManagersByURI);
+        if (cacheManagers.get(managerClassLoader) == null) {
+            cacheManagers.putIfAbsent(managerClassLoader, new ConcurrentHashMap<URI, CacheManager>());
         }
+        final ConcurrentMap<URI, CacheManager> cacheManagersByURI = cacheManagers.get(managerClassLoader);
         CacheManager cacheManager = cacheManagersByURI.get(managerURI);
         if (cacheManager == null) {
             try {
                 cacheManager = createHazelcastCacheManager(uri, classLoader, managerProperties);
-                cacheManagersByURI.put(managerURI, cacheManager);
+                final CacheManager oldCacheManager = cacheManagersByURI.putIfAbsent(managerURI, cacheManager);
+                if(oldCacheManager != null){
+                    cacheManager = oldCacheManager;
+                }
             } catch (Exception e) {
                 throw new CacheException("Error opening URI" + managerURI.toString(), e);
             }

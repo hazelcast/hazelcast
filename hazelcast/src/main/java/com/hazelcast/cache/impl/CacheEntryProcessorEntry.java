@@ -131,7 +131,7 @@ public class CacheEntryProcessorEntry<K, V>
 
     public void applyChanges() {
         final boolean isStatisticsEnabled = cacheRecordStore.cacheConfig.isStatisticsEnabled();
-        final CacheStatistics statistics = cacheRecordStore.statistics;
+        final CacheStatisticsImpl statistics = cacheRecordStore.statistics;
 
         switch (state) {
             case ACCESS:

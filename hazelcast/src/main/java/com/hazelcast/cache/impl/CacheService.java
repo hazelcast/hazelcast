@@ -48,7 +48,7 @@ public class CacheService
      */
     public static final String SERVICE_NAME = "hz:impl:cacheService";
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
-    private final ConcurrentMap<String, CacheStatistics> statistics = new ConcurrentHashMap<String, CacheStatistics>();
+    private final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
     private NodeEngine nodeEngine;
     private CachePartitionSegment[] segments;
 
@@ -161,9 +161,9 @@ public class CacheService
         configs.remove(name);
     }
 
-    public CacheStatistics createCacheStatIfAbsent(String name) {
+    public CacheStatisticsImpl createCacheStatIfAbsent(String name) {
         if (!statistics.containsKey(name)) {
-            statistics.putIfAbsent(name, new CacheStatistics());
+            statistics.putIfAbsent(name, new CacheStatisticsImpl());
         }
         return statistics.get(name);
     }
@@ -177,7 +177,7 @@ public class CacheService
         if (cacheConfig != null) {
             cacheConfig.setStatisticsEnabled(enabled);
             if (enabled) {
-                final CacheStatistics cacheStatistics = createCacheStatIfAbsent(cacheNameWithPrefix);
+                final CacheStatisticsImpl cacheStatistics = createCacheStatIfAbsent(cacheNameWithPrefix);
                 final CacheStatisticsMXBeanImpl mxBean = new CacheStatisticsMXBeanImpl(cacheStatistics);
 
                 MXBeanUtil.registerCacheObject(mxBean, cacheConfig.getUriString(), cacheConfig.getName(), true);
@@ -304,7 +304,7 @@ public class CacheService
         nodeEngine.getEventService().deregisterAllListeners(CacheService.SERVICE_NAME, name);
     }
 
-    public CacheStatistics getStatistics(String name) {
+    public CacheStatisticsImpl getStatistics(String name) {
         return statistics.get(name);
     }
 

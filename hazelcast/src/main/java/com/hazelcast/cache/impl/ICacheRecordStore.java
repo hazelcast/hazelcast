@@ -79,7 +79,7 @@ public interface ICacheRecordStore {
 
     Set<Data> loadAll(Set<Data> keys, boolean replaceExistingValues);
 
-    CacheStatistics getCacheStats();
+    CacheStatisticsImpl getCacheStats();
 
     void publishCompletedEvent(String cacheName, int completionId, Data dataKey, int orderKey);
 
