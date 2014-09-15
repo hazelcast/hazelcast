@@ -3,7 +3,7 @@
 
 ## Entry Processor
 
-### Overview
+### Entry Processor Overview
 
 Hazelcast supports entry processing. Entry processor is a function that executes your code on a map entry in an atomic way. 
 
