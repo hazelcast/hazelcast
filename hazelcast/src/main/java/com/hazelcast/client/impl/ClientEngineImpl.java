@@ -38,6 +38,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -359,7 +360,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                     handleAuthenticationFailure(endpoint, request);
                 }
             } catch (Throwable e) {
-                handleProcessingFailure(endpoint, request, e);
+                handleProcessingFailure(endpoint, request, packet.getData(), e);
             }
         }
 
@@ -387,7 +388,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             }
         }
 
-        private void handleProcessingFailure(ClientEndpointImpl endpoint, ClientRequest request, Throwable e) {
+        private void handleProcessingFailure(ClientEndpointImpl endpoint, ClientRequest request, Data data, Throwable e) {
             Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
             if (logger.isLoggable(level)) {
                 if (request == null) {
@@ -399,7 +400,27 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
             if (request != null && endpoint != null) {
                 endpoint.sendResponse(e, request.getCallId());
+            } else if (data != null && endpoint != null) {
+                int callId = extractCallId(data);
+                if (callId != -1) {
+                    endpoint.sendResponse(e, callId);
+                }
+                // Worst case, seems like we cannot even read the callId, wrong/broken packet?
             }
+        }
+
+        private int extractCallId(Data data) {
+            try {
+                PortableReader portableReader = serializationService.createPortableReader(data);
+                return portableReader.readInt("cId");
+
+            } catch (Throwable e) {
+                Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
+                if (logger.isLoggable(level)) {
+                    logger.log(level, e.getMessage(), e);
+                }
+            }
+            return -1;
         }
 
         private void processRequest(ClientEndpointImpl endpoint, ClientRequest request) throws Exception {
