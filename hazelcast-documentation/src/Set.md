@@ -34,7 +34,7 @@ while ( iterator.hasNext() ) {
 }
 ```
 
-### Event Registration and Configuration
+### Event Registration and Configuration for Set
 
 Hazelcast Set uses ItemListener to listen to events which occur when items are added and removed.
 
