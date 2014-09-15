@@ -20,7 +20,7 @@ Entry point for Clustered REST API is `/rest/`.
 
 This resource does not have any attributes
 
-### Clusters
+### Clusters Resource
 
 This resource returns list of clusters that are connected to the Management Center.
 
@@ -41,7 +41,7 @@ This resource returns list of clusters that are connected to the Management Cent
 	```
 	
 
-### Cluster Information
+### Cluster Resource
 
 This resource returns information related to provided cluster name.
 
@@ -60,7 +60,7 @@ This resource returns information related to provided cluster name.
 	{"masterAddress":"192.168.2.78:5701"}
 	```
 
-### Members
+### Members Resource
 
 This resource returns list of members belonging to provided clusters.
 
@@ -79,7 +79,7 @@ This resource returns list of members belonging to provided clusters.
 	["192.168.2.78:5701","192.168.2.78:5702","192.168.2.78:5703","192.168.2.78:5704"]
 	```
 
-### Member Information
+### Member Resource
 
 This resource returns information related to provided member.
 
@@ -242,7 +242,7 @@ This resource returns information related to provided member.
 	}
 	```
 
-### Clients
+### Clients Resource
 
 This resource returns list of clients belonging to provided cluster.
 
@@ -280,7 +280,7 @@ This resource returns list of clients belonging to provided cluster.
 	}
 	```
 
-### Maps
+### Maps Resource
 
 This resource returns list of maps belonging to provided cluster.
 
@@ -339,7 +339,7 @@ This resource returns list of maps belonging to provided cluster.
 
 
 
-### MultiMaps
+### MultiMaps Resource
 
 This resource returns list of multimaps belonging to provided cluster.
 
@@ -397,7 +397,7 @@ This resource returns list of multimaps belonging to provided cluster.
 	```
 
 
-### Queues
+### Queues Resource
 
 This resource returns list of queues belonging to provided cluster.
 
@@ -448,7 +448,7 @@ This resource returns list of queues belonging to provided cluster.
 	```
 
 
-### Topics
+### Topics Resource
 
 This resource returns list of topics belonging to provided cluster.
 
@@ -490,7 +490,7 @@ This resource returns list of topics belonging to provided cluster.
 	```
 
 
-### Executors
+### Executors Resource
 
 This resource returns list of executors belonging to provided cluster.
 
