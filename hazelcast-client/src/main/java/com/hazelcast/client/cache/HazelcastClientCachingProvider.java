@@ -38,6 +38,12 @@ public final class HazelcastClientCachingProvider
         return HazelcastClient.newHazelcastClient(config);
     }
 
+    public static HazelcastClientCachingProvider createCachingProvider(HazelcastInstance hazelcastInstance) {
+        final HazelcastClientCachingProvider cachingProvider = new HazelcastClientCachingProvider();
+        cachingProvider.hazelcastInstance = hazelcastInstance;
+        return  cachingProvider;
+    }
+
     @Override
     protected CacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
         if (hazelcastInstance == null) {

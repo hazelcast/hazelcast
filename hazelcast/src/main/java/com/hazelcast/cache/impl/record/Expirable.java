@@ -16,21 +16,14 @@
 
 package com.hazelcast.cache.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
-
 /**
- * Record of the {@link com.hazelcast.cache.impl.ICacheRecordStore}
- *
- * @param <V>
+ * Expiring Data model interface
  */
-public interface CacheRecord<V>
-        extends Expirable, DataSerializable {
+public interface Expirable {
 
-    Data getKey();
+    long getExpirationTime();
 
-    V getValue();
+    void setExpirationTime(long expirationTime);
 
-    void setValue(V value);
-
+    boolean isExpiredAt(long now);
 }

@@ -18,8 +18,8 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 
 import javax.cache.CacheManager;
 import java.net.URI;
@@ -32,9 +32,18 @@ public final class HazelcastServerCachingProvider
         super();
     }
 
+    public static HazelcastServerCachingProvider createCachingProvider(HazelcastInstance hazelcastInstance) {
+        final HazelcastServerCachingProvider cachingProvider = new HazelcastServerCachingProvider();
+        cachingProvider.hazelcastInstance = hazelcastInstance;
+        return  cachingProvider;
+    }
+
     protected HazelcastInstance initHazelcast() {
         Config config = new XmlConfigBuilder().build();
-        return Hazelcast.newHazelcastInstance(config);
+        if (config.getInstanceName() == null) {
+            config.setInstanceName("hz:cacheProvider");
+        }
+        return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
     }
 
     @Override

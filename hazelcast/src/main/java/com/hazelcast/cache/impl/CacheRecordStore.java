@@ -68,7 +68,7 @@ public class CacheRecordStore
     final CacheConcurrentHashMap<Data, CacheRecord> records = new CacheConcurrentHashMap<Data, CacheRecord>(1000);
     final CacheRecordFactory cacheRecordFactory;
     final ScheduledFuture<?> evictionTaskFuture;
-    CacheStatistics statistics;
+    CacheStatisticsImpl statistics;
     private CacheLoader cacheLoader;
     private CacheWriter cacheWriter;
 
@@ -87,6 +87,9 @@ public class CacheRecordStore
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
         this.cacheConfig = cacheService.getCacheConfig(name);
+        if (this.cacheConfig == null) {
+            throw new IllegalStateException("Cache already destroyed");
+        }
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
@@ -603,7 +606,7 @@ public class CacheRecordStore
     }
 
     @Override
-    public CacheStatistics getCacheStats() {
+    public CacheStatisticsImpl getCacheStats() {
         return statistics;
     }
 
@@ -907,6 +910,9 @@ public class CacheRecordStore
         final boolean isExpired = isExpiredAt(expiryTime, now);
         if (!isExpired) {
             return false;
+        }
+        if (isStatisticsEnabled()) {
+            statistics.increaseCacheExpiries(1);
         }
         records.remove(key);
         if (isEventsEnabled) {
