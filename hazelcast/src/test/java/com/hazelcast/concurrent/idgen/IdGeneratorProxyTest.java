@@ -34,37 +34,6 @@ public class IdGeneratorProxyTest {
         assertFalse( idGenerator.init(-1) );
     }
 
-    @Test
-    public void testInitFailsWhenAlreadyInitialized() {
-        long first = idGenerator.newId();
-
-        assertFalse( idGenerator.init(10) );
-
-        assertEquals(first + 1, idGenerator.newId());
-    }
-
-    @Test
-    public void testNewId_withExplicitInit() {
-
-        assertTrue( idGenerator.init(10) );
-
-        long result = idGenerator.newId();
-        assertEquals(11, result);
-    }
-
-    @Test
-    public void testNewId0_withoutExplictInit() {
-        long result = idGenerator.newId();
-        assertEquals(0, result);
-    }
-
-    @Test
-    public void testGeneratingMultipleBlocks() {
-        for (int k = 0; k < 3 * IdGeneratorProxy.BLOCK_SIZE; k++) {
-            assertEquals(k, idGenerator.newId());
-        }
-    }
-
 	private static void assertNewIdAfterInit(int initialValue) {
 	    IdGenerator idGenerator = createIdGenerator();
 
