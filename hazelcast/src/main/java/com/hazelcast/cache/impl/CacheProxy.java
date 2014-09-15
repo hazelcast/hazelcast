@@ -385,4 +385,8 @@ public class CacheProxy<K, V>
         }
     }
 
+    @Override
+    protected boolean isDefaultClassLoader() {
+        return cacheManager.isDefaultClassLoader;
+    }
 }
