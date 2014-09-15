@@ -552,14 +552,13 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testMapRecordEviction() throws InterruptedException {
         final String mapName = randomMapName();
         final int size = 1000;
-        final CountDownLatch latch = new CountDownLatch(size);
-
+        final AtomicInteger entryEvictedEventCount = new AtomicInteger(0);
         final Config cfg = new Config();
         MapConfig mc = cfg.getMapConfig(mapName);
         mc.setTimeToLiveSeconds(1);
         mc.addEntryListenerConfig(new EntryListenerConfig().setImplementation(new EntryAdapter() {
             public void entryEvicted(EntryEvent event) {
-                latch.countDown();
+                entryEvictedEventCount.incrementAndGet();
             }
         }).setLocal(true));
 
@@ -571,8 +570,8 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i, i);
         }
         //wait until eviction is complete
-        assertOpenEventually("Can not complete eviction map size is " + map.size(), latch, 300);
-        assertSizeEventually(0, map);
+        assertSizeEventually(0, map, 600);
+        assertEquals(size, entryEvictedEventCount.get());
     }
 
     @Test(timeout = 120000)
