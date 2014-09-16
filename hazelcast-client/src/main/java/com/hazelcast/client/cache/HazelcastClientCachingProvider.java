@@ -18,8 +18,6 @@ package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.impl.HazelcastAbstractCachingProvider;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 
 import javax.cache.CacheManager;
@@ -33,21 +31,28 @@ public final class HazelcastClientCachingProvider
         super();
     }
 
-    protected HazelcastInstance initHazelcast() {
-        ClientConfig config = new XmlClientConfigBuilder().build();
-        return HazelcastClient.newHazelcastClient(config);
-    }
-
+    /**
+     * Helper method for creating caching provider for testing etc
+     * @param hazelcastInstance
+     * @return HazelcastClientCachingProvider
+     */
     public static HazelcastClientCachingProvider createCachingProvider(HazelcastInstance hazelcastInstance) {
         final HazelcastClientCachingProvider cachingProvider = new HazelcastClientCachingProvider();
         cachingProvider.hazelcastInstance = hazelcastInstance;
-        return  cachingProvider;
+        return cachingProvider;
+    }
+
+    protected synchronized void initHazelcast() {
+        //There is no HazelcastInstanceFactory for client so using synchronized
+        if (hazelcastInstance == null) {
+            hazelcastInstance = HazelcastClient.newHazelcastClient();
+        }
     }
 
     @Override
     protected CacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
         if (hazelcastInstance == null) {
-            hazelcastInstance = initHazelcast();
+            initHazelcast();
         }
         return new HazelcastClientCacheManager(this, hazelcastInstance, uri, classLoader, managerProperties);
     }

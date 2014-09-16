@@ -3,6 +3,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
 
 import javax.cache.Cache;
 import javax.cache.CacheException;
@@ -30,12 +31,11 @@ public abstract class HazelcastCacheManager
     protected final WeakReference<ClassLoader> classLoaderReference;
     protected final Properties properties;
     protected final String cacheNamePrefix;
+    protected final boolean isDefaultURI;
+    protected final boolean isDefaultClassLoader;
+    protected ILogger logger;
     protected HazelcastInstance hazelcastInstance;
     protected CachingProvider cachingProvider;
-
-    final boolean isDefaultURI;
-    final boolean isDefaultClassLoader;
-
     //    protected volatile boolean closeTriggered;
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
@@ -73,29 +73,29 @@ public abstract class HazelcastCacheManager
         }
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         final CacheConfig<K, V> cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
-        if (cacheConfig == null) {
+        if (cacheConfig != null) {
             final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
             //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
             final boolean created = createConfigOnPartition(newCacheConfig);
             if (created) {
+                //single thread region because createConfigOnPartition is single threaded by partition thread
                 //CREATE ON OTHERS TOO
                 createConfigOnAllMembers(newCacheConfig);
                 //UPDATE LOCAL MEMBER
                 addCacheConfigIfAbsentToLocal(newCacheConfig);
                 //create proxy object
                 final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
-                final ICache<?, ?> entries = caches.putIfAbsent(cacheNameWithPrefix, cacheProxy);
-                if(entries == null){
-                    if (newCacheConfig.isStatisticsEnabled()) {
-                        enableStatistics(cacheName, true);
-                    }
-                    if (newCacheConfig.isManagementEnabled()) {
-                        enableManagement(cacheName, true);
-                    }
-                    //REGISTER LISTENERS
-                    registerListeners(newCacheConfig, cacheProxy);
-                    return cacheProxy;
+                //no need to a putIfAbsent as this is a single threaded region
+                caches.put(cacheNameWithPrefix, cacheProxy);
+                if (newCacheConfig.isStatisticsEnabled()) {
+                    enableStatistics(cacheName, true);
                 }
+                if (newCacheConfig.isManagementEnabled()) {
+                    enableManagement(cacheName, true);
+                }
+                //REGISTER LISTENERS
+                registerListeners(newCacheConfig, cacheProxy);
+                return cacheProxy;
             } else {
                 //this node don't have the config, so grep it and spread that one to cluster
                 final CacheConfig<K, V> cacheConfigFromPartition = getCacheConfigFromPartition(cacheNameWithPrefix);
