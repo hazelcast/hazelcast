@@ -18,7 +18,9 @@ package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.ISet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,14 +33,11 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-/**
- * @author ali 3/6/13
- */
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class SetTest extends HazelcastTestSupport {
@@ -66,7 +65,7 @@ public class SetTest extends HazelcastTestSupport {
         for (int i = 1; i <= 10; i++) {
             assertTrue(set.add("item" + i));
         }
-        assertSizeEventually(10, set);
+        assertEquals(10, set.size());
     }
 
     @Test
@@ -76,7 +75,7 @@ public class SetTest extends HazelcastTestSupport {
         for (int i = 1; i <= 10; i++) {
             assertFalse(set.add("item" + i));
         }
-        assertSizeEventually(1, set);
+        assertEquals(1, set.size());
     }
 
     @Test(expected = NullPointerException.class)
@@ -87,36 +86,36 @@ public class SetTest extends HazelcastTestSupport {
 
     @Test
     public void testAddAll_Basic() {
-        Set setTest = new HashSet();
+        Set added = new HashSet();
         ISet set = newSet();
-        setTest.add("item1");
-        setTest.add("item2");
-        set.addAll(setTest);
-        assertSizeEventually(2, set);
+        added.add("item1");
+        added.add("item2");
+        set.addAll(added);
+        assertEquals(2, set.size());
     }
 
     @Test
     public void testAddAll_whenAllElementsSame() {
-        Set setTest = new HashSet();
+        Set added = new HashSet();
         ISet set = newSet();
         for (int i = 1; i <= 10; i++) {
-            setTest.add("item");
+            added.add("item");
         }
-        set.addAll(setTest);
-        assertSizeEventually(1, set);
+        set.addAll(added);
+        assertEquals(1, set.size());
     }
 
     @Test
     public void testAddAll_whenCollectionContainsNull() {
-        Set setTest = new HashSet();
+        Set added = new HashSet();
         ISet set = newSet();
-        setTest.add("item1");
-        setTest.add(null);
+        added.add("item1");
+        added.add(null);
         try {
-            assertFalse(set.addAll(setTest));
+            assertFalse(set.addAll(added));
         } catch (NullPointerException e) {
         }
-        assertSizeEventually(0, set);
+        assertEquals(0, set.size());
     }
 
     //    ======================== remove  - removeAll ==========================
@@ -127,7 +126,7 @@ public class SetTest extends HazelcastTestSupport {
         ISet set = newSet();
         set.add("item1");
         assertTrue(set.remove("item1"));
-        assertSizeEventually(0, set);
+        assertEquals(0, set.size());
     }
 
     @Test
@@ -135,25 +134,25 @@ public class SetTest extends HazelcastTestSupport {
         ISet set = newSet();
         set.add("item1");
         assertFalse(set.remove("notExist"));
-        assertSizeEventually(1, set);
+        assertEquals(1, set.size());
     }
 
     @Test(expected = NullPointerException.class)
     public void testRemove_whenArgumentNull() {
         ISet set = newSet();
-        assertFalse(set.remove(null));
+        set.remove(null);
     }
 
     @Test
     public void testRemoveAll() {
         ISet set = newSet();
-        Set setTest = new HashSet();
+        Set removed = new HashSet();
         for (int i = 1; i <= 10; i++) {
             set.add("item" + i);
-            setTest.add("item" + i);
+            removed.add("item" + i);
         }
-        set.removeAll(setTest);
-        assertSizeEventually(0, set);
+        set.removeAll(removed);
+        assertEquals(0, set.size());
     }
 
     //    ======================== iterator ==========================
@@ -164,103 +163,6 @@ public class SetTest extends HazelcastTestSupport {
         Iterator iterator = set.iterator();
         assertEquals("item", iterator.next());
         assertFalse(iterator.hasNext());
-    }
-
-    // this is a bug, because when we call iterator.remove, according to javadoc
-    // we need to remove this element from collection or throw illegal operation exception
-    @Ignore
-    @Test
-    public void testIteratorRemove() {
-        ISet set = newSet();
-        set.add("item");
-        Iterator iterator = set.iterator();
-        iterator.next();
-        iterator.remove();
-        assertSizeEventually(1, set);
-    }
-
-    //    ======================== clear ==========================
-
-    @Test
-    public void testClear() {
-        ISet set = newSet();
-        for (int i = 1; i <= 10; i++) {
-            set.add("item" + i);
-        }
-        assertSizeEventually(10, set);
-        set.clear();
-        assertSizeEventually(0, set);
-    }
-
-    //    ======================== retainAll ==========================
-
-    @Test
-    public void testRetainAll_whenArgumentEmptyCollection() {
-        ISet set = newSet();
-        Set setTest = new HashSet();
-
-        for (int i = 1; i <= 10; i++) {
-            set.add("item" + i);
-        }
-        set.retainAll(setTest);
-        assertSizeEventually(0, set);
-    }
-
-    @Test
-    public void testRetainAll_whenArgumentHasSameElements() {
-        ISet set = newSet();
-        Set setTest = new HashSet();
-
-        for (int i = 1; i <= 10; i++) {
-            set.add("item" + i);
-            setTest.add("item" + i);
-        }
-        set.retainAll(setTest);
-        assertSizeEventually(10, set);
-    }
-
-    //    ======================== contains - containsAll ==========================
-    @Test
-    public void testContains() {
-        ISet set = newSet();
-        set.add("item1");
-        assertTrue(set.contains("item1"));
-    }
-
-    @Test
-    public void testContains_whenNotContains() {
-        ISet set = newSet();
-        set.add("item1");
-        assertFalse(set.contains("notExist"));
-    }
-
-    @Test
-    public void testContainsAll() {
-        ISet set = newSet();
-        Set setTest = new HashSet();
-
-        setTest.add("item1");
-        setTest.add("item2");
-        for (int i = 1; i <= 10; i++) {
-            set.add("item" + i);
-            setTest.add("item" + i);
-        }
-        assertTrue(set.containsAll(setTest));
-    }
-
-    @Test
-    public void testContainsAll_whenSetNotContains() {
-        ISet set = newSet();
-        Set setTest = new HashSet();
-
-        setTest.add("item1");
-        setTest.add("item100");
-        for (int i = 1; i <= 10; i++) {
-            set.add("item" + i);
-            setTest.add("item" + i);
-        }
-        assertFalse(set.containsAll(setTest));
-
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -276,6 +178,112 @@ public class SetTest extends HazelcastTestSupport {
         Iterator iterator = set.iterator();
         iterator.next();
         iterator.remove();
+    }
+
+    //    ======================== clear ==========================
+
+    @Test
+    public void testClear() {
+        ISet set = newSet();
+        for (int i = 1; i <= 10; i++) {
+            set.add("item" + i);
+        }
+        assertEquals(10, set.size());
+        set.clear();
+        assertEquals(0, set.size());
+    }
+
+    @Test
+    public void testClear_whenSetEmpty() {
+        ISet set = newSet();
+        set.clear();
+        assertEquals(0, set.size());
+    }
+
+
+    //    ======================== retainAll ==========================
+
+    @Test
+    public void testRetainAll_whenArgumentEmptyCollection() {
+        ISet set = newSet();
+        Set retained = new HashSet();
+
+        for (int i = 1; i <= 10; i++) {
+            set.add("item" + i);
+        }
+        set.retainAll(retained);
+        assertEquals(0, set.size());
+    }
+
+    @Test
+    public void testRetainAll_whenArgumentHasSameElements() {
+        ISet set = newSet();
+        Set retained = new HashSet();
+
+        for (int i = 1; i <= 10; i++) {
+            set.add("item" + i);
+            retained.add("item" + i);
+        }
+        set.retainAll(retained);
+        assertEquals(10, set.size());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testRetainAll_whenCollectionNull() {
+        ISet set = newSet();
+        Set retained = null;
+        set.retainAll(retained);
+        assertEquals(0, set.size());
+    }
+
+    //    ======================== contains - containsAll ==========================
+    @Test
+    public void testContains() {
+        ISet set = newSet();
+        set.add("item1");
+        assertTrue(set.contains("item1"));
+    }
+
+    @Test
+    public void testContains_whenEmpty() {
+        ISet set = newSet();
+        assertFalse(set.contains("notExist"));
+    }
+
+    @Test
+    public void testContains_whenNotContains() {
+        ISet set = newSet();
+        set.add("item1");
+        assertFalse(set.contains("notExist"));
+    }
+
+    @Test
+    public void testContainsAll() {
+        ISet set = newSet();
+        Set contains = new HashSet();
+
+        contains.add("item1");
+        contains.add("item2");
+        for (int i = 1; i <= 10; i++) {
+            set.add("item" + i);
+            contains.add("item" + i);
+        }
+        assertTrue(set.containsAll(contains));
+    }
+
+    @Test
+    public void testContainsAll_whenSetNotContains() {
+        ISet set = newSet();
+        ILock lock = Hazelcast.newHazelcastInstance().getLock("asd");
+        Set contains = new HashSet();
+        contains.add("item1");
+        contains.add("item100");
+        for (int i = 1; i <= 10; i++) {
+            set.add("item" + i);
+            contains.add("item" + i);
+        }
+        assertFalse(set.containsAll(contains));
+
     }
 
     //    ======================== helper methods ==========================
