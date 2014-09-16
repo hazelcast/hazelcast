@@ -775,47 +775,47 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     // TODO why does not replace method load data from map store if currently not available in memory.
     @Override
-    public Object replace(Data key, Object value) {
+    public Object replace(Data key, Object update) {
         checkIfLoaded();
-        final long now = getNow();
 
-        Record record = getRecordOrNull(key, false);
-        Object oldValue;
-        if (record != null && record.getValue() != null) {
-            oldValue = record.getValue();
-            value = mapServiceContext.interceptPut(name, oldValue, value);
-            value = mapDataStore.add(key, value, now);
-            onStore(record);
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            setRecordValue(record, value, now);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-        } else {
+        final Record record = getRecordOrNull(key, false);
+        if (record == null || record.getValue() == null) {
             return null;
         }
+        final Object oldValue = record.getValue();
+        update = mapServiceContext.interceptPut(name, oldValue, update);
+        final long now = getNow();
+        update = mapDataStore.add(key, update, now);
+        onStore(record);
+        updateSizeEstimator(-calculateRecordHeapCost(record));
+        setRecordValue(record, update, now);
+        updateSizeEstimator(calculateRecordHeapCost(record));
         saveIndex(record);
         evictEntries(now, false);
         return oldValue;
     }
 
     @Override
-    public boolean replace(Data key, Object testValue, Object newValue) {
+    public boolean replace(Data key, Object expect, Object update) {
         checkIfLoaded();
-        final long now = getNow();
 
-        Record record = getRecordOrNull(key, false);
+        final Record record = getRecordOrNull(key, false);
         if (record == null) {
             return false;
         }
-        if (mapServiceContext.compare(name, record.getValue(), testValue)) {
-            newValue = mapServiceContext.interceptPut(name, record.getValue(), newValue);
-            newValue = mapDataStore.add(key, newValue, now);
-            onStore(record);
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            setRecordValue(record, newValue, now);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-        } else {
+        final MapServiceContext mapServiceContext = this.mapServiceContext;
+        final Object current = record.getValue();
+        final String mapName = this.name;
+        if (!mapServiceContext.compare(mapName, current, expect)) {
             return false;
         }
+        update = mapServiceContext.interceptPut(mapName, current, update);
+        final long now = getNow();
+        update = mapDataStore.add(key, update, now);
+        onStore(record);
+        updateSizeEstimator(-calculateRecordHeapCost(record));
+        setRecordValue(record, update, now);
+        updateSizeEstimator(calculateRecordHeapCost(record));
         saveIndex(record);
         evictEntries(now, false);
         return true;

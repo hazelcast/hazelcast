@@ -20,25 +20,26 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+
 import java.io.IOException;
 
 public class ReplaceIfSameOperation extends BasePutOperation {
 
-    private Data testValue;
+    private Data expect;
     private boolean successful;
 
-    public ReplaceIfSameOperation(String name, Data dataKey, Data testValue, Data value) {
-        super(name, dataKey, value);
-        this.testValue = testValue;
+    public ReplaceIfSameOperation(String name, Data dataKey, Data expect, Data update) {
+        super(name, dataKey, update);
+        this.expect = expect;
     }
 
     public ReplaceIfSameOperation() {
     }
 
     public void run() {
-        successful = recordStore.replace(dataKey, testValue, dataValue);
+        successful = recordStore.replace(dataKey, expect, dataValue);
         if (successful) {
-            dataOldValue = testValue;
+            dataOldValue = expect;
         }
     }
 
@@ -64,13 +65,13 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeNullableData(out, testValue);
+        IOUtil.writeNullableData(out, expect);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        testValue = IOUtil.readNullableData(in);
+        expect = IOUtil.readNullableData(in);
     }
 
     @Override
