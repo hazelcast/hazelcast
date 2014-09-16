@@ -31,22 +31,22 @@ public class IdGeneratorProxyTest {
 
     @Test
     public void testInitFailsOnNegativeValues() {
-        assertFalse( idGenerator.init(-1) );
+        assertFalse(idGenerator.init(-1));
     }
 
-	private static void assertNewIdAfterInit(int initialValue) {
-	    IdGenerator idGenerator = createIdGenerator();
+    private static void assertNewIdAfterInit(int initialValue) {
+        IdGenerator idGenerator = createIdGenerator();
 
-	    assertTrue( idGenerator.init(initialValue) );
+        assertTrue(idGenerator.init(initialValue));
 
-	    assertEquals(initialValue+1, idGenerator.newId());
-	}
+        assertEquals(initialValue + 1, idGenerator.newId());
+    }
 
-	private static IdGenerator createIdGenerator() {
-		String name = "id-" + UUID.randomUUID().toString();
+    private static IdGenerator createIdGenerator() {
+        String name = "id-" + UUID.randomUUID().toString();
 
-		IAtomicLong blockGenerator = mockIAtomicLong();
+        IAtomicLong blockGenerator = mockIAtomicLong();
 
-		return new IdGeneratorProxy(blockGenerator, name, null, null);
-	}
+        return new IdGeneratorProxy(blockGenerator, name, null, null);
+    }
 }
