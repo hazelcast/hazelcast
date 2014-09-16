@@ -19,8 +19,6 @@ package com.hazelcast.nio;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.QuickMath;
 
-import sun.misc.Unsafe;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -37,7 +35,7 @@ public final class UTFEncoderDecoder {
 
     private static final UTFEncoderDecoder INSTANCE;
     private static final long STRING_VALUE_FIELD_OFFSET;
-    private static final Unsafe UNSAFE = UnsafeHelper.UNSAFE;
+    private static final sun.misc.Unsafe UNSAFE = UnsafeHelper.UNSAFE;
 
     private static final DefaultDataOutputUtfWriter DEFAULT_DATA_OUTPUT_UTF_WRITER =
             new DefaultDataOutputUtfWriter();
@@ -77,8 +75,8 @@ public final class UTFEncoderDecoder {
         INSTANCE.writeUTF0(out, str, buffer);
     }
 
-    public static String readUTF(   final DataInput in,
-                                    final byte[] buffer) throws IOException {
+    public static String readUTF(final DataInput in,
+                                 final byte[] buffer) throws IOException {
         return INSTANCE.readUTF0(in, buffer);
     }
 
@@ -86,9 +84,9 @@ public final class UTFEncoderDecoder {
         return hazelcastEnterpriseActive;
     }
 
-    public void writeUTF0(  final DataOutput out,
-                            final String str,
-                            final byte[] buffer) throws IOException {
+    public void writeUTF0(final DataOutput out,
+                          final String str,
+                          final byte[] buffer) throws IOException {
         if (!QuickMath.isPowerOfTwo(buffer.length)) {
             throw new IllegalArgumentException(
                     "Size of the buffer has to be power of two, was " + buffer.length);
@@ -99,7 +97,7 @@ public final class UTFEncoderDecoder {
             return;
         }
 
-        final DataOutputAwareUtfWriter UTF_WRITER =
+        final DataOutputAwareUtfWriter utfWriter =
                 out instanceof BufferObjectDataOutput
                         ? BUFFERED_DATA_OUTPUT_UTF_WRITER
                         : DEFAULT_DATA_OUTPUT_UTF_WRITER;
@@ -111,29 +109,30 @@ public final class UTFEncoderDecoder {
             for (int i = 0; i < chunkSize; i++) {
                 int beginIndex = Math.max(0, i * STRING_CHUNK_SIZE - 1);
                 int endIndex = Math.min((i + 1) * STRING_CHUNK_SIZE - 1, length);
-                UTF_WRITER.writeShortUTF(out, str, beginIndex, endIndex, buffer);
+                utfWriter.writeShortUTF(out, str, beginIndex, endIndex, buffer);
             }
         }
     }
 
     private interface DataOutputAwareUtfWriter {
 
-        void writeShortUTF( final DataOutput out,
-                            final String str,
-                            final int beginIndex,
-                            final int endIndex,
-                            final byte[] buffer) throws IOException;
+        void writeShortUTF(final DataOutput out,
+                           final String str,
+                           final int beginIndex,
+                           final int endIndex,
+                           final byte[] buffer) throws IOException;
 
     }
 
     private static class BufferedDataOutputUtfWriter implements DataOutputAwareUtfWriter {
 
+        //CHECKSTYLE:OFF
         @Override
-        public void writeShortUTF(  final DataOutput out,
-                                    final String str,
-                                    final int beginIndex,
-                                    final int endIndex,
-                                    final byte[] buffer) throws IOException {
+        public void writeShortUTF(final DataOutput out,
+                                  final String str,
+                                  final int beginIndex,
+                                  final int endIndex,
+                                  final byte[] buffer) throws IOException {
             char[] chars = (char[]) UNSAFE.getObject(str, STRING_VALUE_FIELD_OFFSET);
             BufferObjectDataOutput bufferObjectDataOutput = (BufferObjectDataOutput) out;
 
@@ -141,7 +140,8 @@ public final class UTFEncoderDecoder {
             int c;
             int bufferPos = 0;
             int utfLength = 0;
-            int maxUtfLength = chars.length * 3; // At most, one character can hold 3 bytes
+            // At most, one character can hold 3 bytes
+            int maxUtfLength = chars.length * 3;
 
             // We save current position of buffer data output.
             // Then we write the length of UTF to here
@@ -158,14 +158,17 @@ public final class UTFEncoderDecoder {
                 }
                 for (; i < endIndex; i++) {
                     c = chars[i];
-                    if (c <= 0) { // X == 0 or 0x007F < X < 0x7FFF
+                    if (c <= 0) {
+                        // X == 0 or 0x007F < X < 0x7FFF
                         buffer[bufferPos++] = (byte) (0xC0 | ((c >> 6) & 0x1F));
                         buffer[bufferPos++] = (byte) (0x80 | ((c) & 0x3F));
-                    } else if (c > 0x007F) { // 0x007F < X <= 0x7FFF
+                    } else if (c > 0x007F) {
+                        // 0x007F < X <= 0x7FFF
                         buffer[bufferPos++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
                         buffer[bufferPos++] = (byte) (0x80 | ((c >> 6) & 0x3F));
                         buffer[bufferPos++] = (byte) (0x80 | ((c) & 0x3F));
-                    } else { // 0x0001 <= X <= 0x007F
+                    } else {
+                        // 0x0001 <= X <= 0x007F
                         buffer[bufferPos++] = (byte) c;
                     }
                 }
@@ -182,13 +185,15 @@ public final class UTFEncoderDecoder {
                 }
                 for (; i < endIndex; i++) {
                     c = chars[i];
-                    if (c <= 0) { // X == 0 or 0x007F < X < 0x7FFF
+                    if (c <= 0) {
+                        // X == 0 or 0x007F < X < 0x7FFF
                         bufferPos = buffering(buffer, bufferPos,
                                 (byte) (0xC0 | ((c >> 6) & 0x1F)), out);
                         bufferPos = buffering(buffer, bufferPos,
                                 (byte) (0x80 | ((c) & 0x3F)), out);
                         utfLength += 2;
-                    } else if (c > 0x007F) { // 0x007F < X <= 0x7FFF
+                    } else if (c > 0x007F) {
+                        // 0x007F < X <= 0x7FFF
                         bufferPos = buffering(buffer, bufferPos,
                                 (byte) (0xE0 | ((c >> 12) & 0x0F)), out);
                         bufferPos = buffering(buffer, bufferPos,
@@ -196,7 +201,8 @@ public final class UTFEncoderDecoder {
                         bufferPos = buffering(buffer, bufferPos,
                                 (byte) (0x80 | ((c) & 0x3F)), out);
                         utfLength += 3;
-                    } else { // 0x0001 <= X <= 0x007F
+                    } else {
+                        // 0x0001 <= X <= 0x007F
                         bufferPos = buffering(buffer, bufferPos, (byte) c, out);
                         utfLength++;
                     }
@@ -213,17 +219,18 @@ public final class UTFEncoderDecoder {
             // Write the length of UTF to save position before
             bufferObjectDataOutput.writeShort(pos, utfLength);
         }
-
+        //CHECKSTYLE:ON
     }
 
     private static class DefaultDataOutputUtfWriter implements DataOutputAwareUtfWriter {
 
+        //CHECKSTYLE:OFF
         @Override
-        public void writeShortUTF(  final DataOutput out,
-                                    final String str,
-                                    final int beginIndex,
-                                    final int endIndex,
-                                    final byte[] buffer) throws IOException {
+        public void writeShortUTF(final DataOutput out,
+                                  final String str,
+                                  final int beginIndex,
+                                  final int endIndex,
+                                  final byte[] buffer) throws IOException {
             char[] chars = (char[]) UNSAFE.getObject(str, STRING_VALUE_FIELD_OFFSET);
 
             int utfLength = calculateUtf8Length(chars, beginIndex, endIndex);
@@ -248,19 +255,22 @@ public final class UTFEncoderDecoder {
                 }
                 for (; i < endIndex; i++) {
                     c = chars[i];
-                    if (c <= 0) { // X == 0 or 0x007F < X < 0x7FFF
+                    if (c <= 0) {
+                        // X == 0 or 0x007F < X < 0x7FFF
                         bufferPos = buffering(buffer, bufferPos,
                                 (byte) (0xC0 | ((c >> 6) & 0x1F)), out);
                         bufferPos = buffering(buffer, bufferPos,
                                 (byte) (0x80 | ((c) & 0x3F)), out);
-                    } else if (c > 0x007F) { // 0x007F < X <= 0x7FFF
+                    } else if (c > 0x007F) {
+                        // 0x007F < X <= 0x7FFF
                         bufferPos = buffering(buffer, bufferPos,
                                 (byte) (0xE0 | ((c >> 12) & 0x0F)), out);
                         bufferPos = buffering(buffer, bufferPos,
                                 (byte) (0x80 | ((c >> 6) & 0x3F)), out);
                         bufferPos = buffering(buffer, bufferPos,
                                 (byte) (0x80 | ((c) & 0x3F)), out);
-                    } else { // 0x0001 <= X <= 0x007F
+                    } else {
+                        // 0x0001 <= X <= 0x007F
                         bufferPos = buffering(buffer, bufferPos, (byte) c, out);
                     }
                 }
@@ -276,21 +286,24 @@ public final class UTFEncoderDecoder {
                 }
                 for (; i < endIndex; i++) {
                     c = chars[i];
-                    if (c <= 0) { // X == 0 or 0x007F < X < 0x7FFF
+                    if (c <= 0) {
+                        // X == 0 or 0x007F < X < 0x7FFF
                         buffer[bufferPos++] = (byte) (0xC0 | ((c >> 6) & 0x1F));
                         buffer[bufferPos++] = (byte) (0x80 | ((c) & 0x3F));
-                    } else if (c > 0x007F) { // 0x007F < X <= 0x7FFF
+                    } else if (c > 0x007F) {
+                        // 0x007F < X <= 0x7FFF
                         buffer[bufferPos++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
                         buffer[bufferPos++] = (byte) (0x80 | ((c >> 6) & 0x3F));
                         buffer[bufferPos++] = (byte) (0x80 | ((c) & 0x3F));
-                    } else { // 0x0001 <= X <= 0x007F
+                    } else {
+                        // 0x0001 <= X <= 0x007F
                         buffer[bufferPos++] = (byte) c;
                     }
                 }
                 out.write(buffer, 0, bufferPos);
             }
         }
-
+        //CHECKSTYLE:ON
     }
 
     public String readUTF0(final DataInput in, final byte[] buffer) throws IOException {
@@ -319,25 +332,31 @@ public final class UTFEncoderDecoder {
         return stringCreator.buildString(data);
     }
 
-    private void readShortUTF(  final DataInput in,
-                                final char[] data,
-                                final int beginIndex,
-                                final byte[] buffer) throws IOException {
+    //CHECKSTYLE:OFF
+    private void readShortUTF(final DataInput in,
+                              final char[] data,
+                              final int beginIndex,
+                              final byte[] buffer) throws IOException {
         final int utfLength = in.readShort();
         // buffer[0] is used to hold read data
         // so actual useful length of buffer is as "length - 1"
         final int minUtfLenght = Math.min(utfLength, buffer.length - 1);
         int readCount = 0;
-        int bufferPos = 1; // We use buffer[0] to hold read data, so position starts from 1
+        // We use buffer[0] to hold read data, so position starts from 1
+        int bufferPos = 1;
         int i = 0;
-        int c1 = 0, c2 = 0, c3 = 0, cTemp = 0;
+        int c1 = 0;
+        int c2 = 0;
+        int c3 = 0;
+        int cTemp = 0;
         int charArrCount = beginIndex;
 
         // The first readable data is at 1. index since 0. index is used to hold read data.
         in.readFully(buffer, 1, minUtfLenght);
 
         for (; i < minUtfLenght; i++) {
-            if ((c1 = buffer[bufferPos++] & 0xFF) > 127) {
+            c1 = buffer[bufferPos++] & 0xFF;
+            if (c1  > 127) {
                 break;
             }
             data[charArrCount++] = (char) c1;
@@ -354,7 +373,8 @@ public final class UTFEncoderDecoder {
 
         for (readCount = i; readCount < utfLength;) {
             cTemp = c1 >> 4;
-            if (cTemp >> 3 == 0) { // ((cTemp & 0xF8) == 0) or (cTemp <= 7 && cTemp >= 0)
+            if (cTemp >> 3 == 0) {
+                // ((cTemp & 0xF8) == 0) or (cTemp <= 7 && cTemp >= 0)
                 /* 0xxxxxxx */
                 data[charArrCount++] = (char) c1;
                 readCount++;
@@ -399,28 +419,32 @@ public final class UTFEncoderDecoder {
             c1 = buffer[0] & 0xFF;
         }
     }
+    //CHECKSTYLE:OFF
 
-    private static int calculateUtf8Length( final char[] chars,
-                                            final int beginIndex,
-                                            final int endIndex) {
+    private static int calculateUtf8Length(final char[] chars,
+                                           final int beginIndex,
+                                           final int endIndex) {
         int utfLength = 0;
         for (int i = beginIndex; i < endIndex; i++) {
             int c = chars[i];
-            if (c <= 0) { // X == 0 or 0x007F < X < 0x7FFF
+            if (c <= 0) {
+                // X == 0 or 0x007F < X < 0x7FFF
                 utfLength += 2;
-            } else if (c > 0x007F) { // 0x007F < X <= 0x7FFF
+            } else if (c > 0x007F) {
+                // 0x007F < X <= 0x7FFF
                 utfLength += 3;
-            } else { // 0x0001 <= X <= 0x007F
+            } else {
+                // 0x0001 <= X <= 0x007F
                 utfLength++;
             }
         }
         return utfLength;
     }
 
-    private static int buffering(   final byte[] buffer,
-                                    final int pos,
-                                    final byte value,
-                                    final DataOutput out) throws IOException {
+    private static int buffering(final byte[] buffer,
+                                 final int pos,
+                                 final byte value,
+                                 final DataOutput out) throws IOException {
         try {
             buffer[pos] = value;
             return pos + 1;
@@ -434,10 +458,10 @@ public final class UTFEncoderDecoder {
         }
     }
 
-    private int buffered(   final byte[] buffer,
-                            final int pos,
-                            final int utfLength,
-                            final DataInput in) throws IOException {
+    private int buffered(final byte[] buffer,
+                         final int pos,
+                         final int utfLength,
+                         final DataInput in) throws IOException {
         try {
             // 0. index of buffer is used to hold read data
             // so copy read data to there.
