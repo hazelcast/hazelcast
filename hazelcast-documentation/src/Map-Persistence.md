@@ -4,13 +4,92 @@
 
 Hazelcast allows you to load and store the distributed map entries from/to a persistent data store such as a relational database. For these, you can use Hazelcast's `MapStore` and `MapLoader` interfaces.
 
+When you provide a `MapLoader` implementation and request an entry (`IMap.get()`) that does not exist in the memory, `MapLoader`'s `load` or `loadAll` methods will load that entry from the data store. This loaded entry is placed into the map and will stay there until it is removed or evicted.
 
-
-Hazelcast supports read-through, write-through and write-behind persistence modes which are explained in below subsections.
-
+When a `MapStore` implementation is provided, an entry is put also into a user defined data store. 
 
 ***ATTENTION:*** *Data store needs to be a centralized system that is
 accessible from all Hazelcast Nodes. Persisting to local file system is not supported.*
+
+Please see the below example.
+
+```java
+public class PersonMapStore implements MapStore<Long, Person> {
+    private final Connection con;
+
+    public PersonMapStore() {
+        try {
+            con = DriverManager.getConnection("jdbc:hsqldb:mydatabase", "SA", "");
+            con.createStatement().executeUpdate(
+                    "create table if not exists person (id bigint, name varchar(45))");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized void delete(Long key) {
+        System.out.println("Delete:" + key);
+        try {
+            con.createStatement().executeUpdate(
+                    format("delete from person where id = %s", key));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized void store(Long key, Person value) {
+        try {
+            con.createStatement().executeUpdate(
+                    format("insert into person values(%s,'%s')", key, value.name));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized void storeAll(Map<Long, Person> map) {
+        for (Map.Entry<Long, Person> entry : map.entrySet())
+            store(entry.getKey(), entry.getValue());
+    }
+
+    public synchronized void deleteAll(Collection<Long> keys) {
+        for (Long key : keys) delete(key);
+    }
+
+    public synchronized Person load(Long key) {
+        try {
+            ResultSet resultSet = con.createStatement().executeQuery(
+                    format("select name from person where id =%s", key));
+            try {
+                if (!resultSet.next()) return null;
+                String name = resultSet.getString(1);
+                return new Person(name);
+            } finally {
+                resultSet.close();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized Map<Long, Person> loadAll(Collection<Long> keys) {
+        Map<Long, Person> result = new HashMap<Long, Person>();
+        for (Long key : keys) result.put(key, load(key));
+        return result;
+    }
+
+    public Set<Long> loadAllKeys() {
+        return null;
+    }
+}
+```
+
+<br></br>
+***RELATED INFORMATION***
+
+*For more MapStore/MapLoader code samples please see [here](https://github.com/hazelcast/hazelcast-code-samples/tree/master/distributed-map/mapstore/src/main/java).*
+<br></br>
+
+Hazelcast supports read-through, write-through and write-behind persistence modes which are explained in below subsections.
 
 #### Read-Through
 
@@ -18,7 +97,7 @@ If a loader implementation is provided and the requested key does not exist in-m
 
 #### Write-Through
 
-Map Store can be configured as write-through by setting the `write-delay-seconds` property to **0**. This means the entries will be put to the data store synchronously.
+`MapStore` can be configured as write-through by setting the `write-delay-seconds` property to **0**. This means the entries will be put to the data store synchronously.
 
 In this mode, when the `map.put(key,value)` call returns, you can be sure that
 
@@ -34,7 +113,7 @@ If `MapStore` throws an exception, then the exception will be propagated back to
 
 #### Write-Behind
 
-Map Store can be configured as write-behind by setting the `write-delay-seconds` property to a value bigger than **0**. This means the modified entries will be put to the data store asynchronously after a configured delay. 
+`MapStore` can be configured as write-behind by setting the `write-delay-seconds` property to a value bigger than **0**. This means the modified entries will be put to the data store asynchronously after a configured delay. 
 
 ***NOTE:*** *In write-behind mode, Hazelcast coalesces updates on a specific key, i.e. applies only the last update on it.* 
 
