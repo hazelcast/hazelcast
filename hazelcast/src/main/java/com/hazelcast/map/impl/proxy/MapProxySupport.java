@@ -449,8 +449,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    protected boolean replaceInternal(final Data key, final Data oldValue, final Data newValue) {
-        ReplaceIfSameOperation operation = new ReplaceIfSameOperation(name, key, oldValue, newValue);
+    protected boolean replaceInternal(final Data key, final Data expect, final Data update) {
+        ReplaceIfSameOperation operation = new ReplaceIfSameOperation(name, key, expect, update);
         boolean replaceSuccessful = (Boolean) invokeOperation(key, operation);
         invalidateNearCache(key);
         return replaceSuccessful;
