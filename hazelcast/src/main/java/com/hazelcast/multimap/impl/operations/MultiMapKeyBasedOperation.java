@@ -28,6 +28,7 @@ import java.util.Collection;
 public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implements PartitionAwareOperation {
 
     protected Data dataKey;
+    protected long threadId;
 
     protected MultiMapKeyBasedOperation() {
     }
@@ -35,6 +36,20 @@ public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implem
     protected MultiMapKeyBasedOperation(String name, Data dataKey) {
         super(name);
         this.dataKey = dataKey;
+    }
+
+    protected MultiMapKeyBasedOperation(String name, Data dataKey, long threadId) {
+        super(name);
+        this.dataKey = dataKey;
+        this.threadId = threadId;
+    }
+
+    public long getThreadId() {
+        return threadId;
+    }
+
+    public void setThreadId(long threadId) {
+        this.threadId = threadId;
     }
 
     public final MultiMapWrapper getOrCreateCollectionWrapper() {

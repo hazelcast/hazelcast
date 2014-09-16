@@ -16,15 +16,20 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapWrapper;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ResponseHandler;
-
+import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.WaitSupport;
 import java.util.Collection;
 
-public class GetAllOperation extends MultiMapKeyBasedOperation {
+public class GetAllOperation extends MultiMapKeyBasedOperation implements WaitSupport {
 
     public GetAllOperation() {
     }
@@ -47,5 +52,24 @@ public class GetAllOperation extends MultiMapKeyBasedOperation {
 
     public int getId() {
         return MultiMapDataSerializerHook.GET_ALL;
+    }
+
+    @Override
+    public WaitNotifyKey getWaitKey() {
+        return new LockWaitNotifyKey(new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name), dataKey);
+    }
+
+    @Override
+    public boolean shouldWait() {
+        MultiMapContainer container = getOrCreateContainer();
+        if (container.isTransactionallyLocked(dataKey)) {
+            return !container.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
+        }
+        return false;
+    }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 }

@@ -84,6 +84,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public boolean containsKeyInternal(Data key) {
         ContainsKeyOperation operation = new ContainsKeyOperation(name, key);
+        operation.setThreadId(ThreadUtil.getThreadId());
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
@@ -108,6 +109,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             }
         }
         GetOperation operation = new GetOperation(name, key);
+        operation.setThreadId(ThreadUtil.getThreadId());
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {

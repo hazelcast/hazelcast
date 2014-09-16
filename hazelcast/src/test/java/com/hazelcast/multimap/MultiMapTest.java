@@ -136,6 +136,20 @@ public class MultiMapTest extends HazelcastTestSupport {
 
     }
 
+
+    @Test
+    public void testContainsKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+        System.out.println("test = " + multiMap.containsKey("test"));
+        multiMap.put("test","test");
+        System.out.println("test = " + multiMap.containsKey("test"));
+        multiMap.remove("test");
+        System.out.println("test = " + multiMap.containsKey("test"));
+
+
+    }
+
     @Test(expected = NullPointerException.class)
     public void testGet_whenNullKey() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);

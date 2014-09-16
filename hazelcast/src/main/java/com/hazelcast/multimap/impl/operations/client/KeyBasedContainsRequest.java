@@ -21,6 +21,7 @@ import java.io.IOException;
 public class KeyBasedContainsRequest extends MultiMapKeyBasedRequest {
 
     private Data value;
+    private long threadId;
 
     public KeyBasedContainsRequest() {
     }
@@ -30,9 +31,17 @@ public class KeyBasedContainsRequest extends MultiMapKeyBasedRequest {
         this.value = value;
     }
 
+    public KeyBasedContainsRequest(String name, Data key, Data value, long threadId) {
+        super(name, key);
+        this.value = value;
+        this.threadId = threadId;
+    }
+
     @Override
     protected Operation prepareOperation() {
-        return new ContainsEntryOperation(name, key, value);
+        ContainsEntryOperation operation = new ContainsEntryOperation(name, key, value);
+        operation.setThreadId(threadId);
+        return operation;
     }
 
     @Override
@@ -42,15 +51,15 @@ public class KeyBasedContainsRequest extends MultiMapKeyBasedRequest {
 
     @Override
     public void write(PortableWriter writer) throws IOException {
+        writer.writeLong("threadId", threadId);
         super.write(writer);
-
         IOUtil.writeNullableData(writer.getRawDataOutput(), value);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
+        threadId = reader.readLong("threadId");
         super.read(reader);
-
         final ObjectDataInput in = reader.getRawDataInput();
         value = IOUtil.readNullableData(in);
     }

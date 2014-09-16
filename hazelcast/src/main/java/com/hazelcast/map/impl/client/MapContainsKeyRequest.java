@@ -38,6 +38,7 @@ public class MapContainsKeyRequest extends KeyBasedClientRequest implements Port
 
     private String name;
     private Data key;
+    private long threadId;
 
     public MapContainsKeyRequest() {
     }
@@ -47,6 +48,12 @@ public class MapContainsKeyRequest extends KeyBasedClientRequest implements Port
         this.key = key;
     }
 
+    public MapContainsKeyRequest(String name, Data keyData, long threadId) {
+        this.name = name;
+        this.key = keyData;
+        this.threadId = threadId;
+    }
+
     @Override
     protected Object getKey() {
         return key;
@@ -54,7 +61,9 @@ public class MapContainsKeyRequest extends KeyBasedClientRequest implements Port
 
     @Override
     protected Operation prepareOperation() {
-        return new ContainsKeyOperation(name, key);
+        ContainsKeyOperation operation = new ContainsKeyOperation(name, key);
+        operation.setThreadId(threadId);
+        return operation;
     }
 
     public String getServiceName() {
@@ -72,12 +81,14 @@ public class MapContainsKeyRequest extends KeyBasedClientRequest implements Port
 
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeLong("threadId", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        threadId = reader.readLong("threadId");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

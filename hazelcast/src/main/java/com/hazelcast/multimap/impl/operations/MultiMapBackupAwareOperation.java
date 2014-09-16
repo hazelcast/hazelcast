@@ -30,14 +30,12 @@ import java.io.IOException;
 public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOperation
         implements BackupAwareOperation, WaitSupport {
 
-    protected long threadId;
 
     protected MultiMapBackupAwareOperation() {
     }
 
     protected MultiMapBackupAwareOperation(String name, Data dataKey, long threadId) {
-        super(name, dataKey);
-        this.threadId = threadId;
+        super(name, dataKey, threadId);
     }
 
     public boolean shouldBackup() {

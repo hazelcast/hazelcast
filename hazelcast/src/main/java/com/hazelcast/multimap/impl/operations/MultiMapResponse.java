@@ -35,8 +35,6 @@ public class MultiMapResponse implements DataSerializable {
 
     private long nextRecordId = -1;
 
-    private long txVersion = -1;
-
     private MultiMapConfig.ValueCollectionType collectionType
             = MultiMapConfig.DEFAULT_VALUE_COLLECTION_TYPE;
 
@@ -58,14 +56,6 @@ public class MultiMapResponse implements DataSerializable {
         return this;
     }
 
-    public long getTxVersion() {
-        return txVersion;
-    }
-
-    public MultiMapResponse setTxVersion(long txVersion) {
-        this.txVersion = txVersion;
-        return this;
-    }
 
     public Collection getCollection() {
         return collection == null ? emptyCollection(collectionType) : collection;
@@ -100,7 +90,6 @@ public class MultiMapResponse implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(collectionType.name());
         out.writeLong(nextRecordId);
-        out.writeLong(txVersion);
         if (collection == null) {
             out.writeInt(-1);
             return;
@@ -116,7 +105,6 @@ public class MultiMapResponse implements DataSerializable {
         String collectionTypeName = in.readUTF();
         collectionType = MultiMapConfig.ValueCollectionType.valueOf(collectionTypeName);
         nextRecordId = in.readLong();
-        txVersion = in.readLong();
         int size = in.readInt();
         if (size == -1) {
             collection = emptyCollection(collectionType);

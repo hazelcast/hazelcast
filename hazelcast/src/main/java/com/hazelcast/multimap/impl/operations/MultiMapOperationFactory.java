@@ -34,6 +34,8 @@ public class MultiMapOperationFactory implements OperationFactory {
 
     private Data value;
 
+    private long threadId;
+
     public MultiMapOperationFactory() {
     }
 
@@ -48,6 +50,13 @@ public class MultiMapOperationFactory implements OperationFactory {
         this.value = value;
     }
 
+    public MultiMapOperationFactory(String name, OperationFactoryType operationFactoryType, Data key, Data value, long threadId) {
+        this(name, operationFactoryType);
+        this.key = key;
+        this.value = value;
+        this.threadId = threadId;
+    }
+
     public Operation createOperation() {
         //TODO: Don't use a if/else, but use a switch case.
 
@@ -58,7 +67,7 @@ public class MultiMapOperationFactory implements OperationFactory {
         } else if (operationFactoryType == OperationFactoryType.ENTRY_SET) {
             return new EntrySetOperation(name);
         } else if (operationFactoryType == OperationFactoryType.CONTAINS) {
-            return new ContainsEntryOperation(name, key, value);
+            return new ContainsEntryOperation(name, key, value, threadId);
         } else if (operationFactoryType == OperationFactoryType.SIZE) {
             return new SizeOperation(name);
         } else if (operationFactoryType == OperationFactoryType.CLEAR) {
@@ -71,6 +80,7 @@ public class MultiMapOperationFactory implements OperationFactory {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(operationFactoryType.type);
+        out.writeLong(threadId);
         IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
     }
@@ -78,6 +88,7 @@ public class MultiMapOperationFactory implements OperationFactory {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         operationFactoryType = OperationFactoryType.getByType(in.readInt());
+        threadId = in.readLong();
         key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);
     }

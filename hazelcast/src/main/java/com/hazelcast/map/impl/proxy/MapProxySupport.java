@@ -219,6 +219,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             }
         }
         final GetOperation operation = new GetOperation(name, key);
+        operation.setThreadId(ThreadUtil.getThreadId());
         final Data value = (Data) invokeOperation(key, operation);
 
         if (nearCacheEnabled) {
@@ -570,6 +571,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         ContainsKeyOperation containsKeyOperation = new ContainsKeyOperation(name, key);
+        containsKeyOperation.setThreadId(ThreadUtil.getThreadId());
         containsKeyOperation.setServiceName(SERVICE_NAME);
         try {
             Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, containsKeyOperation,
@@ -927,10 +929,11 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected EntryView getEntryViewInternal(final Data key) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        GetEntryViewOperation getEntryViewOperation = new GetEntryViewOperation(name, key);
-        getEntryViewOperation.setServiceName(SERVICE_NAME);
+        GetEntryViewOperation operation = new GetEntryViewOperation(name, key);
+        operation.setThreadId(ThreadUtil.getThreadId());
+        operation.setServiceName(SERVICE_NAME);
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, getEntryViewOperation, partitionId);
+            Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
             Object o = getService().getMapServiceContext().toObject(f.get());
             return (EntryView) o;
         } catch (Throwable t) {
