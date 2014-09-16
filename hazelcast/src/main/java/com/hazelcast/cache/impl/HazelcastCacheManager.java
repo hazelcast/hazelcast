@@ -58,9 +58,8 @@ public abstract class HazelcastCacheManager
     }
 
     @Override
-    public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration)
+    public synchronized <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration)
             throws IllegalArgumentException {
-
         //TODO: WARNING important method, handles dynamic cache config
         if (isClosed()) {
             throw new IllegalStateException();
@@ -73,7 +72,7 @@ public abstract class HazelcastCacheManager
         }
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         final CacheConfig<K, V> cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
-        if (cacheConfig != null) {
+        if (cacheConfig == null) {
             final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
             //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
             final boolean created = createConfigOnPartition(newCacheConfig);
@@ -233,7 +232,7 @@ public abstract class HazelcastCacheManager
     }
 
     @Override
-    public void destroyCache(String cacheName) {
+    public synchronized void destroyCache(String cacheName) {
         if (isClosed()) {
             throw new IllegalStateException();
         }
