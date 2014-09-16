@@ -27,6 +27,7 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.InitialMembershipEvent;
@@ -37,6 +38,9 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -54,7 +58,10 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
@@ -621,4 +628,74 @@ public class ClientIssueTest extends HazelcastTestSupport {
         assertOpenEventually("dadas", latch);
     }
 
+
+    @Test(expected = ExecutionException.class, timeout = 120000)
+    public void testGithubIssue3557()
+            throws Exception {
+
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        UnDeserializable unDeserializable = new UnDeserializable(1);
+        IExecutorService executorService = client.getExecutorService("default");
+        Issue2509Runnable task = new Issue2509Runnable(unDeserializable);
+        Future<?> future = executorService.submitToMember(task, hz.getCluster().getLocalMember());
+        future.get();
+    }
+
+    public static class Issue2509Runnable
+            implements Callable<Integer>, DataSerializable {
+
+        private UnDeserializable unDeserializable;
+
+        public Issue2509Runnable() {
+        }
+
+        public Issue2509Runnable(UnDeserializable unDeserializable) {
+            this.unDeserializable = unDeserializable;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out)
+                throws IOException {
+
+            out.writeObject(unDeserializable);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in)
+                throws IOException {
+
+            unDeserializable = in.readObject();
+        }
+
+        @Override
+        public Integer call() {
+            return unDeserializable.foo;
+        }
+    }
+
+    public static class UnDeserializable
+            implements DataSerializable {
+
+        private int foo;
+
+        public UnDeserializable(int foo) {
+            this.foo = foo;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out)
+                throws IOException {
+
+            out.writeInt(foo);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in)
+                throws IOException {
+
+            foo = in.readInt();
+        }
+    }
 }
