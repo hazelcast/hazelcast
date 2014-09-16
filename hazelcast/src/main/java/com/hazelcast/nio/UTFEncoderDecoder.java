@@ -144,9 +144,14 @@ public final class UTFEncoderDecoder {
             int maxUtfLength = chars.length * 3;
 
             // We save current position of buffer data output.
-            // Then we write the length of UTF to here
+            // Then we write the length of UTF and ASCII state to here
             final int pos = bufferObjectDataOutput.position();
-            bufferObjectDataOutput.position(pos + 3);
+
+            // Moving position explicitly is not good way
+            // since it may cause overflow exceptions for example "ByteArrayObjectDataOutput".
+            // So, write dummy data and let DataOutput handle it by expanding or etc ...
+            bufferObjectDataOutput.writeShort(0);
+            bufferObjectDataOutput.writeBoolean(false);
 
             if (buffer.length >= maxUtfLength) {
                 for (i = beginIndex; i < endIndex; i++) {
@@ -220,7 +225,14 @@ public final class UTFEncoderDecoder {
             bufferObjectDataOutput.writeShort(pos, utfLength);
 
             // Write the ASCII status of UTF to saved position before
-            bufferObjectDataOutput.writeBoolean(pos + 2, utfLength == chars.length);
+
+            // TODO Currently ASCII state support is comment-out because of some failing unit tests.
+            // Because this flag is not set for Non-Buffered Data Output classes
+            // but results may be compared in unit tests.
+            // Buffered Data Output may set this flag
+            // but Non-Buffered Data Output class always set this flag to "false".
+            // So their results may be different.
+            bufferObjectDataOutput.writeBoolean(pos + 2, false); //utfLength == chars.length);
         }
         //CHECKSTYLE:ON
     }
