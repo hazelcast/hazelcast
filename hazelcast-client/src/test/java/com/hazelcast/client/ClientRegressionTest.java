@@ -77,7 +77,8 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientIssueTest extends HazelcastTestSupport {
+public class ClientRegressionTest
+        extends HazelcastTestSupport {
 
     @After
     @Before
