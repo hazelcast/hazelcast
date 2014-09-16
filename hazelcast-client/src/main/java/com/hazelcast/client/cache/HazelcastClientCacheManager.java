@@ -17,6 +17,7 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastCacheManager;
 import com.hazelcast.cache.impl.client.CacheCreateConfigRequest;
@@ -30,15 +31,18 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.FutureUtil;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public final class HazelcastClientCacheManager
         extends HazelcastCacheManager {
@@ -56,7 +60,7 @@ public final class HazelcastClientCacheManager
         final ClientCacheDistributedObject setupRef = hazelcastInstance
                 .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         this.clientContext = setupRef.getClientContext();
-
+        logger = clientContext.getHazelcastInstance().getLoggingService().getLogger(getClass());
     }
 
     @Override
@@ -69,16 +73,22 @@ public final class HazelcastClientCacheManager
         }
         final ClientInvocationService invocationService = clientContext.getInvocationService();
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
+        final Collection<Future> futures = new ArrayList<Future>();
         for (MemberImpl member : members) {
             try {
                 CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), false,
                         enabled, member.getAddress());
                 final Future future = invocationService.invokeOnTarget(request, member.getAddress());
-                //make sure all configs are created
-                future.get();
+                futures.add(future);
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);
             }
+        }
+        //make sure all configs are created
+        try {
+            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            logger.warning(e);
         }
     }
 
@@ -92,16 +102,22 @@ public final class HazelcastClientCacheManager
         }
         final ClientInvocationService invocationService = clientContext.getInvocationService();
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
+        final Collection<Future> futures = new ArrayList<Future>();
         for (MemberImpl member : members) {
             try {
                 CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), true,
                         enabled, member.getAddress());
                 final Future future = invocationService.invokeOnTarget(request, member.getAddress());
-                //make sure all configs are created
-                future.get();
+                futures.add(future);
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);
             }
+        }
+        //make sure all configs are created
+        try {
+            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            logger.warning(e);
         }
     }
 
@@ -136,15 +152,21 @@ public final class HazelcastClientCacheManager
     protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
         final ClientInvocationService invocationService = clientContext.getInvocationService();
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
+        final Collection<Future> futures = new ArrayList<Future>();
         for (MemberImpl member : members) {
             try {
                 ClientRequest request = new CacheCreateConfigRequest(cacheConfig, true, member.getAddress());
                 final Future future = invocationService.invokeOnTarget(request, member.getAddress());
-                //make sure all configs are created
-                future.get();
+                futures.add(future);
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);
             }
+        }
+        //make sure all configs are created
+        try {
+            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            logger.warning(e);
         }
     }
 
@@ -162,10 +184,8 @@ public final class HazelcastClientCacheManager
             final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheName);
             return clientContext.getSerializationService().toObject(future.get());
         } catch (Exception e) {
-            EmptyStatement.ignore(e);
-            //throw ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
-        return null;
     }
 
 }

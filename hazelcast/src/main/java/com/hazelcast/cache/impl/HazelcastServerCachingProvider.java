@@ -32,13 +32,18 @@ public final class HazelcastServerCachingProvider
         super();
     }
 
+    /**
+     * Helper method for creating caching provider for testing etc
+     * @param hazelcastInstance
+     * @return HazelcastServerCachingProvider
+     */
     public static HazelcastServerCachingProvider createCachingProvider(HazelcastInstance hazelcastInstance) {
         final HazelcastServerCachingProvider cachingProvider = new HazelcastServerCachingProvider();
         cachingProvider.hazelcastInstance = hazelcastInstance;
         return  cachingProvider;
     }
 
-    protected HazelcastInstance initHazelcast() {
+    private HazelcastInstance initHazelcast() {
         Config config = new XmlConfigBuilder().build();
         if (config.getInstanceName() == null) {
             config.setInstanceName("hz:cacheProvider");
@@ -49,6 +54,7 @@ public final class HazelcastServerCachingProvider
     @Override
     protected CacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
         if (hazelcastInstance == null) {
+            //initHazelcast always return a singleton instance
             hazelcastInstance = initHazelcast();
         }
         return new HazelcastServerCacheManager(this, hazelcastInstance, uri, classLoader, managerProperties);
