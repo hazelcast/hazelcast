@@ -37,6 +37,16 @@ public final class UTFEncoderDecoder {
     private static final long STRING_VALUE_FIELD_OFFSET;
     private static final sun.misc.Unsafe UNSAFE = UnsafeHelper.UNSAFE;
 
+    // TODO Currently ASCII state support is disabled as default because of some failing unit tests.
+    // Because this flag is not set for Non-Buffered Data Output classes
+    // but results may be compared in unit tests.
+    // Buffered Data Output may set this flag
+    // but Non-Buffered Data Output class always set this flag to "false".
+    // So their results may be different.
+    private static final boolean ASCII_AWARE =
+            Boolean.parseBoolean(
+                    System.getProperty("hazelcast.nio.asciiaware", "false"));
+
     private static final DefaultDataOutputUtfWriter DEFAULT_DATA_OUTPUT_UTF_WRITER =
             new DefaultDataOutputUtfWriter();
     private static final BufferedDataOutputUtfWriter BUFFERED_DATA_OUTPUT_UTF_WRITER =
@@ -151,7 +161,9 @@ public final class UTFEncoderDecoder {
             // since it may cause overflow exceptions for example "ByteArrayObjectDataOutput".
             // So, write dummy data and let DataOutput handle it by expanding or etc ...
             bufferObjectDataOutput.writeShort(0);
-            bufferObjectDataOutput.writeBoolean(false);
+            if (ASCII_AWARE) {
+                bufferObjectDataOutput.writeBoolean(false);
+            }
 
             if (buffer.length >= maxUtfLength) {
                 for (i = beginIndex; i < endIndex; i++) {
@@ -225,14 +237,9 @@ public final class UTFEncoderDecoder {
             bufferObjectDataOutput.writeShort(pos, utfLength);
 
             // Write the ASCII status of UTF to saved position before
-
-            // TODO Currently ASCII state support is comment-out because of some failing unit tests.
-            // Because this flag is not set for Non-Buffered Data Output classes
-            // but results may be compared in unit tests.
-            // Buffered Data Output may set this flag
-            // but Non-Buffered Data Output class always set this flag to "false".
-            // So their results may be different.
-            bufferObjectDataOutput.writeBoolean(pos + 2, false); //utfLength == chars.length);
+            if (ASCII_AWARE) {
+                bufferObjectDataOutput.writeBoolean(pos + 2, utfLength == chars.length);
+            }
         }
         //CHECKSTYLE:ON
     }
@@ -255,9 +262,11 @@ public final class UTFEncoderDecoder {
             }
 
             out.writeShort(utfLength);
-            // We cannot determine that all characters are ASCII or not without iterating over it
-            // So, we mark it as not ASCII, so all characters will be checked.
-            out.writeBoolean(false);
+            if (ASCII_AWARE) {
+                // We cannot determine that all characters are ASCII or not without iterating over it
+                // So, we mark it as not ASCII, so all characters will be checked.
+                out.writeBoolean(false);
+            }
 
             int i;
             int c;
@@ -356,7 +365,7 @@ public final class UTFEncoderDecoder {
                               final int beginIndex,
                               final byte[] buffer) throws IOException {
         final int utfLength = in.readShort();
-        final boolean allAscii = in.readBoolean();
+        final boolean allAscii = ASCII_AWARE ? in.readBoolean() : false;
         // buffer[0] is used to hold read data
         // so actual useful length of buffer is as "length - 1"
         final int minUtfLenght = Math.min(utfLength, buffer.length - 1);
