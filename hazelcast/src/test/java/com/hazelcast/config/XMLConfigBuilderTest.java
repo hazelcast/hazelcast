@@ -446,6 +446,41 @@ public class XMLConfigBuilderTest {
     }
 
     @Test
+    public void testMapConfig_optimizeQueries() {
+        String xml1 =
+                "<hazelcast>" +
+                    "<map name=\"mymap1\">" +
+                        "<optimize-queries>true</optimize-queries>" +
+                    "</map>" +
+                "</hazelcast>";
+        final Config config1 = buildConfig(xml1);
+        final MapConfig mapConfig1 = config1.getMapConfig("mymap1");
+        assertTrue(mapConfig1.isOptimizeQueries());
+
+        String xml2 =
+                "<hazelcast>" +
+                    "<map name=\"mymap2\">" +
+                        "<optimize-queries>false</optimize-queries>" +
+                    "</map>" +
+                "</hazelcast>";
+        final Config config2 = buildConfig(xml2);
+        final MapConfig mapConfig2 = config2.getMapConfig("mymap2");
+        assertFalse(mapConfig2.isOptimizeQueries());
+    }
+
+    @Test
+    public void testMapConfig_optimizeQueries_defaultValue() {
+        String xml =
+                "<hazelcast>" +
+                    "<map name=\"mymap\">" +
+                    "</map>" +
+                "</hazelcast>";
+        final Config config = buildConfig(xml);
+        final MapConfig mapConfig = config.getMapConfig("mymap");
+        assertFalse(mapConfig.isOptimizeQueries());
+    }
+
+    @Test
     public void testMapStoreInitialModeEager() {
         String xml =
                 "<hazelcast>\n" +
