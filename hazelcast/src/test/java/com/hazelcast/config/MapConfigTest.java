@@ -148,7 +148,7 @@ public class MapConfigTest {
 
     @Test
     public void testGetMaxSize() {
-        assertEquals(MapConfig.DEFAULT_MAX_SIZE, new MapConfig().getMaxSizeConfig().getSize());
+        assertEquals(MaxSizeConfig.DEFAULT_MAX_SIZE, new MapConfig().getMaxSizeConfig().getSize());
     }
 
     @Test
