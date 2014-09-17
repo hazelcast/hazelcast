@@ -571,7 +571,12 @@ public class EvictionTest extends HazelcastTestSupport {
         }
         //wait until eviction is complete
         assertSizeEventually(0, map, 600);
-        assertEquals(size, entryEvictedEventCount.get());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(size, entryEvictedEventCount.get());
+            }
+        }, 600);
     }
 
     @Test(timeout = 120000)
