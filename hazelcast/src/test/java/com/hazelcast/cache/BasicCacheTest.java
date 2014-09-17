@@ -68,6 +68,7 @@ import static junit.framework.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
+@Ignore
 public class BasicCacheTest
         extends HazelcastTestSupport {
 
@@ -89,6 +90,7 @@ public class BasicCacheTest
     @After
     public void tear() {
         cachingProvider.close();
+        cachingProvider2.close();
         hz.shutdown();
         hz2.shutdown();
     }
@@ -131,6 +133,7 @@ public class BasicCacheTest
         assertNull(cache.get(key));
 
         cacheManager.destroyCache(cacheName);
+        cacheManager.close();
     }
 
     @Test
