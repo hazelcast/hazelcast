@@ -32,17 +32,16 @@ import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -61,7 +60,7 @@ public class ClientMapReduceTest
         Hazelcast.shutdownAll();
     }
 
-    @Test(timeout = 60000, expected = ExecutionException.class)
+    @Test(expected = ExecutionException.class)
     public void testExceptionDistribution() throws Exception {
         Config config = buildConfig();
 
@@ -179,7 +178,7 @@ public class ClientMapReduceTest
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
-                                                             .submit();
+                .submit();
 
         Map<String, Integer> result = future.get();
 
@@ -274,7 +273,7 @@ public class ClientMapReduceTest
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         ICompletableFuture<Integer> future = job.keyPredicate(new TestKeyPredicate()).mapper(new TestMapper())
-                                                .submit(new GroupingTestCollator());
+                .submit(new GroupingTestCollator());
 
         int result = future.get();
 
@@ -302,7 +301,7 @@ public class ClientMapReduceTest
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
-                                                .submit(new TestCollator());
+                .submit(new TestCollator());
 
         int result = future.get();
 
@@ -436,7 +435,7 @@ public class ClientMapReduceTest
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
-                                                             .submit();
+                .submit();
 
         future.andThen(new ExecutionCallback<Map<String, Integer>>() {
             @Override
@@ -543,7 +542,7 @@ public class ClientMapReduceTest
         JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
-                                                .submit(new TestCollator());
+                .submit(new TestCollator());
 
         future.andThen(new ExecutionCallback<Integer>() {
             @Override
