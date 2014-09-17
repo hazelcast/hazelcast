@@ -26,15 +26,10 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.FutureUtil;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Properties;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class HazelcastServerCacheManager
         extends HazelcastCacheManager {
@@ -119,27 +114,6 @@ public class HazelcastServerCacheManager
     @Override
     protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
         cacheService.createCacheConfigIfAbsent(cacheConfig);
-    }
-
-    @Override
-    protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
-        final OperationService operationService = nodeEngine.getOperationService();
-        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        final Collection<Future> futures = new ArrayList<Future>();
-        for (MemberImpl member : members) {
-            if (!member.localMember()) {
-                final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true);
-                final InternalCompletableFuture<Object> future = operationService
-                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
-                futures.add(future);
-            }
-        }
-        //make sure all configs are created
-        try {
-            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            logger.warning(e);
-        }
     }
 
     @Override
