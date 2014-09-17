@@ -33,21 +33,29 @@ public final class HazelcastClientCachingProvider
         super();
     }
 
-    @Override
     protected HazelcastInstance initHazelcast() {
         ClientConfig config = new XmlClientConfigBuilder().build();
         return HazelcastClient.newHazelcastClient(config);
     }
 
+    public static HazelcastClientCachingProvider createCachingProvider(HazelcastInstance hazelcastInstance) {
+        final HazelcastClientCachingProvider cachingProvider = new HazelcastClientCachingProvider();
+        cachingProvider.hazelcastInstance = hazelcastInstance;
+        return  cachingProvider;
+    }
+
     @Override
-    protected CacheManager getHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
-        return new HazelcastClientCacheManager(this, getHazelcastInstance(), uri, classLoader, managerProperties);
+    protected CacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
+        if (hazelcastInstance == null) {
+            hazelcastInstance = initHazelcast();
+        }
+        return new HazelcastClientCacheManager(this, hazelcastInstance, uri, classLoader, managerProperties);
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("HazelcastClientCachingProvider{");
-        sb.append("hazelcastInstance=").append(getHazelcastInstance());
+        sb.append("hazelcastInstance=").append(hazelcastInstance);
         sb.append('}');
         return sb.toString();
     }

@@ -17,6 +17,8 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
+import com.hazelcast.cache.impl.HazelcastServerCacheManager;
+import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
@@ -29,6 +31,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.CacheConcurrentHashMap;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -64,23 +67,29 @@ import static junit.framework.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class BasicCacheTest
         extends HazelcastTestSupport {
 
     HazelcastInstance hz;
     HazelcastInstance hz2;
 
+    HazelcastServerCachingProvider cachingProvider;
+    HazelcastServerCachingProvider cachingProvider2;
+
     @Before
     public void init() {
+        Config config = new Config();
+        hz=Hazelcast.newHazelcastInstance(config);
+        hz2=Hazelcast.newHazelcastInstance(config);
+        cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz);
+        cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(hz2);
+    }
 
-        //        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-//        Config config = new Config();
-        //        hz=Hazelcast.newHazelcastInstance(config);
-        //        hz2=Hazelcast.newHazelcastInstance(config);
-        //        Hazelcast.newHazelcastInstance(config);
-        //        hz= factory.newHazelcastInstance(config);
-        //        hz2= factory.newHazelcastInstance(config);
+    @After
+    public void tear() {
+        cachingProvider.close();
+        hz.shutdown();
+        hz2.shutdown();
     }
 
     @Test
@@ -88,7 +97,7 @@ public class BasicCacheTest
             throws InterruptedException {
         final String cacheName = "simpleCache";
 
-        final CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
         assertNotNull(cacheManager);
 
         assertNull(cacheManager.getCache(cacheName));
@@ -128,7 +137,7 @@ public class BasicCacheTest
             throws InterruptedException {
         final String cacheName = "simpleCache";
 
-        final CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
 
         CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
@@ -158,7 +167,7 @@ public class BasicCacheTest
             throws InterruptedException {
         final String cacheName = "simpleCache";
 
-        final CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
 
         CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         SimpleEntryListener<Integer, String> listener = new SimpleEntryListener<Integer, String>();
@@ -187,7 +196,6 @@ public class BasicCacheTest
 
         assertEquals(2, listener.removed.get());
 
-//        cacheManager.destroyCache(cacheName);
     }
 
     @Test
@@ -195,7 +203,7 @@ public class BasicCacheTest
             throws InterruptedException {
         final String cacheName = "simpleCache";
 
-        final CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
         assertNotNull(cacheManager);
 
         assertNull(cacheManager.getCache(cacheName));
@@ -224,7 +232,7 @@ public class BasicCacheTest
 
     @Test
     public void testCaches_NotEmpty() {
-        final CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
 
         ArrayList<String> caches1 = new ArrayList<String>();
         cacheManager.createCache("c1", new MutableConfiguration());
@@ -239,17 +247,31 @@ public class BasicCacheTest
         while (iterator.hasNext()) {
             System.out.println(iterator.next());
         }
-        //        checkCollections(caches1, cacheNames);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testCachesDestroy() {
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
+        final CacheManager cacheManager2 = cachingProvider2.getCacheManager();
+
+        final MutableConfiguration configuration = new MutableConfiguration();
+
+        final Cache c1 = cacheManager.createCache("c1", configuration);
+        final Cache c2 = cacheManager2.getCache("c1");
+        c1.put("key","value");
+
+        cacheManager.destroyCache("c1");
+
+        c2.get("key");
     }
 
     @Test
     public void testIterator() {
 
-        final CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
 
         CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         config.setName("SimpleCache");
-        //        config.setInMemoryFormat(InMemoryFormat.OBJECT);
 
         ICache<Integer, String> cache = (ICache<Integer, String>) cacheManager.createCache("simpleCache", config);
 
@@ -272,12 +294,8 @@ public class BasicCacheTest
             final Cache.Entry<Integer, String> next = iterator.next();
             final Integer key = next.getKey();
             final String value = next.getValue();
-            //            System.out.println("ITERATOR ITEMS:" + key + " c:"+c );
             resultMap.put(key, value);
             c++;
-            //            if(c>98){
-            //                System.out.print("ready");
-            //            }
         }
         assertEquals(testSize, c);
 
@@ -298,13 +316,13 @@ public class BasicCacheTest
 
             int nti = Integer.MAX_VALUE;
             int total = 0;
-            int remainig = testSize;
-            while (remainig > 0 && nti > 0) {
-                int fsize = remainig > fetchSize ? fetchSize : remainig;
+            int remaining = testSize;
+            while (remaining > 0 && nti > 0) {
+                int fsize = remaining > fetchSize ? fetchSize : remaining;
                 final CacheKeyIteratorResult iteratorResult = cmap.fetchNext(nti, fsize);
                 final List<Data> keys = iteratorResult.getKeys();
                 nti = iteratorResult.getTableIndex();
-                remainig -= keys.size();
+                remaining -= keys.size();
                 total += keys.size();
             }
             assertEquals(testSize, total);
@@ -312,46 +330,22 @@ public class BasicCacheTest
     }
 
     @Test
-    //    @Ignore
-    public void testCacheMigration() {
-        final CachingProvider cachingProvider = Caching.getCachingProvider();
+    public void testCachesTypedConfig() {
         final CacheManager cacheManager = cachingProvider.getCacheManager();
 
-        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
-        config.setName("SimpleCache");
-        config.setInMemoryFormat(InMemoryFormat.OBJECT);
+        CacheConfig<Integer, Long> config = new CacheConfig();
+        final String cacheName = "test";
+        config.setName(cacheName);
+        config.setTypes(Integer.class, Long.class);
 
-        Cache<Integer, String> cache = cacheManager.createCache("simpleCache", config);
+        final Cache<Integer, Long> cache = cacheManager.createCache(cacheName, config);
+        Cache<Integer, Long> cache2 = cacheManager.getCache(cacheName, config.getKeyType(),
+                config.getValueType());
 
-        for (int i = 0; i < 100; i++) {
-            cache.put(i, "value" + i);
-        }
-
-        hz = Hazelcast.newHazelcastInstance();
-        //        hz2.shutdown();
-        //
-        //        for(int i=0;i<100;i++){
-        //            String val = cache.get(i);
-        //            assertEquals(val,"value" + i);
-        //        }
-        //
-
-        //        cachingProvider.close();
-
-        //        final CachingProvider cachingProvider2 = Caching.getCachingProvider();
-        //        final CacheManager cacheManager2 = cachingProvider2.getCacheManager();
-        //
-
-        Cache<Integer, String> cache2 = cacheManager.getCache("simpleCache");
-
+        assertNotNull(cache);
         assertNotNull(cache2);
-
-        for (int i = 0; i < 100; i++) {
-            String val = cache.get(i);
-            assertEquals(val, "value" + i);
-        }
-
     }
+
 
     public static class SimpleEntryListener<K, V>
             implements CacheEntryListener<K, V>, CacheEntryCreatedListener<K, V>, CacheEntryUpdatedListener<K, V>,

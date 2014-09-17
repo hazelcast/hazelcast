@@ -338,7 +338,7 @@ public class CacheProxy<K, V>
         try {
             FutureUtil.waitWithDeadline(futures, AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
-            logger.finest(e);
+            logger.warning(e);
         }
     }
 
@@ -385,4 +385,8 @@ public class CacheProxy<K, V>
         }
     }
 
+    @Override
+    protected boolean isDefaultClassLoader() {
+        return cacheManager.isDefaultClassLoader;
+    }
 }
