@@ -95,49 +95,54 @@ public class CacheStatisticsImpl
 
     @Override
     public float getCacheHitPercentage() {
-        Long hits = getCacheHits();
-        if (hits == 0) {
+        final long cacheHits = getCacheHits();
+        final long cacheGets = getCacheGets();
+        if (cacheHits == 0 || cacheGets == 0) {
             return 0;
         }
-        return (float) hits / getCacheGets() * FLOAT_HUNDRED;
+        return (float) cacheHits / cacheGets * FLOAT_HUNDRED;
     }
 
 
     @Override
     public float getCacheMissPercentage() {
-        Long misses = getCacheMisses();
-        if (misses == 0) {
+        final long cacheMisses = getCacheMisses();
+        final long cacheGets = getCacheGets();
+        if (cacheMisses == 0 || cacheGets == 0) {
             return 0;
         }
-        return (float) misses / getCacheGets() * FLOAT_HUNDRED;
+        return (float) cacheMisses / cacheGets * FLOAT_HUNDRED;
     }
 
 
     @Override
     public float getAverageGetTime() {
-        if (getCacheGetTimeTakenNanos() == 0 || getCacheGets() == 0) {
+        final long cacheGetTimeTakenNanos = getCacheGetTimeTakenNanos();
+        final long cacheGets = getCacheGets();
+        if (cacheGetTimeTakenNanos == 0 || cacheGets == 0) {
             return 0;
         }
-        float avgGetTime = ((1f * getCacheGetTimeTakenNanos()) / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
-        return avgGetTime;
+        return ((1f * cacheGetTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
     @Override
     public float getAveragePutTime() {
-        if (getCachePutTimeTakenNanos() == 0 || getCacheGets() == 0) {
+        final long cachePutTimeTakenNanos = getCachePutTimeTakenNanos();
+        final long cacheGets = getCacheGets();
+        if (cachePutTimeTakenNanos == 0 || cacheGets == 0) {
             return 0;
         }
-        float avgPutTime = ((1f * getCachePutTimeTakenNanos()) / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
-        return avgPutTime;
+        return ((1f * cachePutTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
     @Override
     public float getAverageRemoveTime() {
-        if (getCacheRemoveTimeTakenNanos() == 0 || getCacheGets() == 0) {
+        final long cacheRemoveTimeTakenNanos = getCacheRemoveTimeTakenNanos();
+        final long cacheGets = getCacheGets();
+        if (cacheRemoveTimeTakenNanos == 0 || cacheGets == 0) {
             return 0;
         }
-        float avgRemoveTime = ((1f * getCacheRemoveTimeTakenNanos()) / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
-        return avgRemoveTime;
+        return ((1f * cacheRemoveTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
     public void clear() {

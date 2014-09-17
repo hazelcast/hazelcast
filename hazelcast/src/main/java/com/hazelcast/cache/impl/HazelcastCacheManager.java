@@ -58,7 +58,7 @@ public abstract class HazelcastCacheManager
     }
 
     @Override
-    public synchronized <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration)
+    public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration)
             throws IllegalArgumentException {
         //TODO: WARNING important method, handles dynamic cache config
         if (isClosed()) {
@@ -232,7 +232,7 @@ public abstract class HazelcastCacheManager
     }
 
     @Override
-    public synchronized void destroyCache(String cacheName) {
+    public void destroyCache(String cacheName) {
         if (isClosed()) {
             throw new IllegalStateException();
         }
