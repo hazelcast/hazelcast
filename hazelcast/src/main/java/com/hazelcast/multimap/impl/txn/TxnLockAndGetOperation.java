@@ -37,7 +37,6 @@ import java.util.Collection;
 public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements WaitSupport {
 
     long ttl;
-    long threadId;
 
     public TxnLockAndGetOperation() {
     }
@@ -77,13 +76,11 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(ttl);
-        out.writeLong(threadId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ttl = in.readLong();
-        threadId = in.readLong();
     }
 
     public int getId() {

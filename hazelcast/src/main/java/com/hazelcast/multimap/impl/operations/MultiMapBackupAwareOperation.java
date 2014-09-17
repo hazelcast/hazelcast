@@ -44,12 +44,10 @@ public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOpera
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(threadId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        threadId = in.readLong();
     }
 
     public WaitNotifyKey getWaitKey() {
