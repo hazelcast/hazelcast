@@ -31,6 +31,7 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
@@ -60,7 +61,7 @@ public final class HazelcastClientCacheManager
         final ClientCacheDistributedObject setupRef = hazelcastInstance
                 .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         this.clientContext = setupRef.getClientContext();
-        logger = clientContext.getHazelcastInstance().getLoggingService().getLogger(getClass());
+        logger = Logger.getLogger(getClass());
     }
 
     @Override

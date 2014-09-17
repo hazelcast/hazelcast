@@ -47,7 +47,8 @@ public abstract class HazelcastAbstractCachingProvider
         this.cacheManagers = new WeakHashMap<ClassLoader, Map<URI, CacheManager>>();
         this.defaultClassLoader = this.getClass().getClassLoader();
         try {
-            defaultURI = new URI(this.getClass().getName());
+            defaultURI = new URI("hazelcast");
+//            defaultURI = new URI(this.getClass().getName());
         } catch (URISyntaxException e) {
             throw new CacheException("Cannot create Default URI", e);
         }
