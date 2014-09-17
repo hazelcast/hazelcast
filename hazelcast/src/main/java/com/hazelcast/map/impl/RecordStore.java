@@ -63,6 +63,7 @@ public interface RecordStore {
 
     /**
      * Gets record from {@link com.hazelcast.map.impl.RecordStore}
+     *
      * @param dataKey key.
      * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return value of an entry in {@link com.hazelcast.map.impl.RecordStore}
@@ -73,9 +74,21 @@ public interface RecordStore {
 
     boolean containsKey(Data dataKey);
 
-    Object replace(Data dataKey, Object value);
+    Object replace(Data dataKey, Object update);
 
-    boolean replace(Data dataKey, Object oldValue, Object newValue);
+
+    /**
+     * Sets the value to the given updated value
+     * if {@link com.hazelcast.map.impl.record.RecordFactory#isEquals} comparison
+     * of current value and expected value is {@code true}.
+     *
+     * @param dataKey key which's value is requested to be replaced.
+     * @param expect  the expected value
+     * @param update  the new value
+     * @return {@code true} if successful. False return indicates that
+     * the actual value was not equal to the expected value.
+     */
+    boolean replace(Data dataKey, Object expect, Object update);
 
     void putTransient(Data dataKey, Object value, long ttl);
 
