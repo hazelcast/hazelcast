@@ -44,7 +44,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
 
-
 /**
  * Tests for issue #274
  */
@@ -52,9 +51,11 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class MemberListTest {
 
+    private static final int INSTANCE_CREATE_ATTEMPT_COUNT = 10;
+
     @Before
     @After
-    public  void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() throws IOException {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -65,22 +66,10 @@ public class MemberListTest {
      */
     @Test
     public void testOutOfSyncMemberList() throws Exception {
-        Config c1 = buildConfig(false);
-        Config c2 = buildConfig(false);
-        Config c3 = buildConfig(false);
-
-        c1.getNetworkConfig().setPort(25701);
-        c2.getNetworkConfig().setPort(25702);
-        c3.getNetworkConfig().setPort(25703);
-
-        List<String> allMembers = Arrays.asList("127.0.0.1:25701, 127.0.0.1:25702, 127.0.0.1:25703");
-        c1.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(c3);
+        List<HazelcastInstance> instanceList = buildInstances(3, 25701);
+        final HazelcastInstance h1 = instanceList.get(0);
+        final HazelcastInstance h2 = instanceList.get(1);
+        final HazelcastInstance h3 = instanceList.get(2);
 
         // All three nodes join into one cluster
         assertEquals(3, h1.getCluster().getMembers().size());
@@ -154,22 +143,10 @@ public class MemberListTest {
      */
     @Test
     public void testOutOfSyncMemberListTwoMasters() throws Exception {
-        Config c1 = buildConfig(false);
-        Config c2 = buildConfig(false);
-        Config c3 = buildConfig(false);
-
-        c1.getNetworkConfig().setPort(35701);
-        c2.getNetworkConfig().setPort(35702);
-        c3.getNetworkConfig().setPort(35703);
-
-        List<String> allMembers = Arrays.asList("127.0.0.1:35701, 127.0.0.1:35702, 127.0.0.1:35703");
-        c1.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(c3);
+        List<HazelcastInstance> instanceList = buildInstances(3, 35701);
+        final HazelcastInstance h1 = instanceList.get(0);
+        final HazelcastInstance h2 = instanceList.get(1);
+        final HazelcastInstance h3 = instanceList.get(2);
 
         final MemberImpl m1 = (MemberImpl) h1.getCluster().getLocalMember();
         final MemberImpl m2 = (MemberImpl) h2.getCluster().getLocalMember();
@@ -208,22 +185,10 @@ public class MemberListTest {
      */
     @Test
     public void testSameMasterDifferentMemberList() throws Exception {
-        Config c1 = buildConfig(false);
-        Config c2 = buildConfig(false);
-        Config c3 = buildConfig(false);
-
-        c1.getNetworkConfig().setPort(45701);
-        c2.getNetworkConfig().setPort(45702);
-        c3.getNetworkConfig().setPort(45703);
-
-        List<String> allMembers = Arrays.asList("127.0.0.1:45701, 127.0.0.1:45702, 127.0.0.1:45703");
-        c1.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(c3);
+        List<HazelcastInstance> instanceList = buildInstances(3, 45701);
+        final HazelcastInstance h1 = instanceList.get(0);
+        final HazelcastInstance h2 = instanceList.get(1);
+        final HazelcastInstance h3 = instanceList.get(2);
 
         final MemberImpl m1 = (MemberImpl) h1.getCluster().getLocalMember();
         final MemberImpl m2 = (MemberImpl) h2.getCluster().getLocalMember();
@@ -254,31 +219,12 @@ public class MemberListTest {
 
     @Test
     public void testSwitchingMasters() throws Exception {
-        Config c1 = buildConfig(false);
-        Config c2 = buildConfig(false);
-        Config c3 = buildConfig(false);
-        Config c4 = buildConfig(false);
-        Config c5 = buildConfig(false);
-
-        c1.getNetworkConfig().setPort(55701);
-        c2.getNetworkConfig().setPort(55702);
-        c3.getNetworkConfig().setPort(55703);
-        c4.getNetworkConfig().setPort(55704);
-        c5.getNetworkConfig().setPort(55705);
-
-        List<String> allMembers = Arrays.asList("127.0.0.1:55701", "127.0.0.1:55702",
-                "127.0.0.1:55703", "127.0.0.1:55704", "127.0.0.1:55705");
-        c1.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        c4.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        c5.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(c3);
-        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(c4);
-        final HazelcastInstance h5 = Hazelcast.newHazelcastInstance(c5);
+        List<HazelcastInstance> instanceList = buildInstances(5, 55701);
+        final HazelcastInstance h1 = instanceList.get(0);
+        final HazelcastInstance h2 = instanceList.get(1);
+        final HazelcastInstance h3 = instanceList.get(2);
+        final HazelcastInstance h4 = instanceList.get(3);
+        final HazelcastInstance h5 = instanceList.get(4);
 
         assertEquals(5, h1.getCluster().getMembers().size());
         assertEquals(5, h2.getCluster().getMembers().size());
@@ -318,6 +264,49 @@ public class MemberListTest {
         assertEquals(master, h3.getCluster().getMembers().iterator().next());
         assertEquals(master, h4.getCluster().getMembers().iterator().next());
         assertEquals(master, h5.getCluster().getMembers().iterator().next());
+    }
+
+    private static List<HazelcastInstance> buildInstances(int instanceCount, int basePort) {
+        for (int i = 0; i < INSTANCE_CREATE_ATTEMPT_COUNT; i++) {
+            List<HazelcastInstance> instanceList = new ArrayList<HazelcastInstance>();
+            List<Config> configList = buildConfigurations(instanceCount, basePort);
+            try {
+                for (int j = 0; j < instanceCount; j++) {
+                    final HazelcastInstance instance =
+                            Hazelcast.newHazelcastInstance(configList.get(j));
+                    instanceList.add(instance);
+                }
+            } catch (Throwable t) {
+                // If there is a possibly port conflict, stop creating instances and
+                // try in new loop with new configurations
+            }
+            if (instanceList.size() == instanceCount) {
+                return instanceList;
+            }
+        }
+        throw
+            new IllegalStateException("Unable to create " + instanceCount
+                    + " instances from base port " + basePort
+                    + " at " + INSTANCE_CREATE_ATTEMPT_COUNT);
+    }
+
+    private static List<Config> buildConfigurations(int configCount, int basePort) {
+        List<Config> configList = new ArrayList<Config>();
+        List<Integer> availablePorts = TestUtil.getAvailablePorts(basePort, configCount);
+        List<String> allMembers = new ArrayList<String>();
+        for (int i = 0; i < configCount; i++) {
+            allMembers.add("127.0.0.1:" + availablePorts.get(i));
+        }
+        for (int i = 0; i < configCount; i++) {
+            Config c = buildConfig(false);
+            int port = availablePorts.get(i);
+
+            c.getNetworkConfig().setPort(port);
+            c.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
+
+            configList.add(c);
+        }
+        return configList;
     }
 
     private static Config buildConfig(boolean multicastEnabled) {
