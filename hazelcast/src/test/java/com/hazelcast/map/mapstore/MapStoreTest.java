@@ -563,7 +563,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(0, map.size());
     }
 
-    private int writeBehindQueueSize(HazelcastInstance node, String mapName){
+    private int writeBehindQueueSize(HazelcastInstance node, String mapName) {
         int size = 0;
         final NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
@@ -571,12 +571,12 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             final RecordStore recordStore = mapServiceContext.getExistingRecordStore(i, mapName);
-            if(recordStore == null){
+            if (recordStore == null) {
                 continue;
             }
             final MapDataStore<Data, Object> mapDataStore
-                    =recordStore.getMapDataStore();
-             size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
+                    = recordStore.getMapDataStore();
+            size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
         }
         return size;
     }
@@ -1412,8 +1412,15 @@ public class MapStoreTest extends HazelcastTestSupport {
         node2.getLifecycleService().shutdown();
         // wait store ops. finish.
         mapStore.awaitStores();
-        // we should reach at least expected store count.
-        assertTrue(expectedStoreCount <= mapStore.count.intValue());
+        // we should see at least expected store count.
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                int storeOperatinCount = mapStore.count.intValue();
+                assertTrue("expected : " + expectedStoreCount
+                        + ", actual : " + storeOperatinCount, expectedStoreCount <= storeOperatinCount);
+            }
+        });
     }
 
 

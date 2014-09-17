@@ -53,9 +53,8 @@ public class ClientClusterWideIterator<K, V>
             final ICompletableFuture<Object> f = context.getInvocationService().invokeOnRandomTarget(request);
             return toObject(f.get());
         } catch (Exception e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
-        return null;
     }
 
     @Override

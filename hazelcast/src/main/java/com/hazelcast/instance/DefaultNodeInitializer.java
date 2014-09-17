@@ -60,8 +60,13 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
 
     protected void parseSystemProps() {
-        version = node.getBuildInfo().getVersion();
-        build = node.getBuildInfo().getBuild();
+        final BuildInfo buildInfo = node.getBuildInfo();
+        version = buildInfo.getVersion();
+        build = buildInfo.getBuild();
+        String revision = buildInfo.getRevision();
+        if (!revision.isEmpty()) {
+            build += " - " + revision;
+        }
     }
 
     @Override

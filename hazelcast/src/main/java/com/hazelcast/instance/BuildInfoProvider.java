@@ -44,6 +44,10 @@ public final class BuildInfoProvider {
 
         String version = runtimeProperties.getProperty("hazelcast.version");
         String distribution = runtimeProperties.getProperty("hazelcast.distribution");
+        String revision = runtimeProperties.getProperty("hazelcast.git.revision", "");
+        if (!revision.isEmpty() && revision.equals("${git.commit.id.abbrev}")) {
+            revision = "";
+        }
         boolean enterprise = !"Hazelcast".equals(distribution);
 
         // override BUILD_NUMBER with a system property
@@ -56,7 +60,7 @@ public final class BuildInfoProvider {
         }
         int buildNumber = Integer.valueOf(build);
 
-        return new BuildInfo(version, build, buildNumber, enterprise);
+        return new BuildInfo(version, build, revision, buildNumber, enterprise);
     }
 
 }

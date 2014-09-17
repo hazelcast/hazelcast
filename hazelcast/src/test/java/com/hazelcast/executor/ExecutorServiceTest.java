@@ -1390,6 +1390,34 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         }
     }
 
+
+    @Test
+    public void testSubmitFailingCallableException_withExecutionCallback() throws ExecutionException, InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        IExecutorService service = instance.getExecutorService(randomString());
+        final CountDownLatch latch = new CountDownLatch(1);
+        service.submit(new FailingTestTask(), new ExecutionCallback<String>() {
+            @Override
+            public void onResponse(String response) {
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                latch.countDown();
+            }
+        });
+        assertTrue(latch.await(10,TimeUnit.SECONDS));
+    }
+
+
+    public static class FailingTestTask implements Callable<String>, Serializable {
+
+        public String call() throws Exception {
+            throw  new IllegalStateException();
+        }
+    }
+
     public static class BasicTestTask implements Callable<String>, Serializable {
 
         public static String RESULT = "Task completed";

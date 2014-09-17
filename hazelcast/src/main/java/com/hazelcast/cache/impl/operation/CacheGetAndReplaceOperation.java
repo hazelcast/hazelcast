@@ -17,8 +17,6 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -39,6 +37,10 @@ public class CacheGetAndReplaceOperation
     public CacheGetAndReplaceOperation() {
     }
 
+    public CacheGetAndReplaceOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
+        this(name, key, value, expiryPolicy, IGNORE_COMPLETION);
+    }
+
     public CacheGetAndReplaceOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, int completionId) {
         super(name, key, completionId);
         this.value = value;
@@ -48,8 +50,6 @@ public class CacheGetAndReplaceOperation
     @Override
     public void run()
             throws Exception {
-        CacheService service = getService();
-        ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
         response = cache.getAndReplace(key, value, expiryPolicy, getCallerUuid());
         backupRecord = cache.getRecord(key);
     }
