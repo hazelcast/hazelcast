@@ -70,39 +70,20 @@ public abstract class HazelcastCacheManager
         if (configuration == null) {
             throw new NullPointerException("configuration must not be null");
         }
-        final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        final CacheConfig<K, V> cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
-        if (cacheConfig == null) {
-            final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
-            //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
-            final boolean created = createConfigOnPartition(newCacheConfig);
-            if (created) {
-                //single thread region because createConfigOnPartition is single threaded by partition thread
-                //CREATE ON OTHERS TOO
-                createConfigOnAllMembers(newCacheConfig);
-                //UPDATE LOCAL MEMBER
-                addCacheConfigIfAbsentToLocal(newCacheConfig);
-                //create proxy object
-                final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
-                //no need to a putIfAbsent as this is a single threaded region
-                caches.put(cacheNameWithPrefix, cacheProxy);
-                if (newCacheConfig.isStatisticsEnabled()) {
-                    enableStatistics(cacheName, true);
-                }
-                if (newCacheConfig.isManagementEnabled()) {
-                    enableManagement(cacheName, true);
-                }
-                //REGISTER LISTENERS
-                registerListeners(newCacheConfig, cacheProxy);
-                return cacheProxy;
-            } else {
-                //this node don't have the config, so grep it and spread that one to cluster
-                final CacheConfig<K, V> cacheConfigFromPartition = getCacheConfigFromPartition(cacheNameWithPrefix);
-                //ADD CONFIG ON EACH NODE
-                createConfigOnAllMembers(cacheConfigFromPartition);
-                //UPDATE LOCAL MEMBER
-                addCacheConfigIfAbsentToLocal(cacheConfigFromPartition);
-            }
+        //CREATE THE CONFIG ON PARTITION
+        final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
+        final boolean created = createConfigOnPartition(newCacheConfig);
+        if (created) {
+            //single thread region because createConfigOnPartition is single threaded by partition thread
+            //UPDATE LOCAL MEMBER
+            addCacheConfigIfAbsentToLocal(newCacheConfig);
+            //create proxy object
+            final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
+            //no need to a putIfAbsent as this is a single threaded region
+            caches.put(newCacheConfig.getNameWithPrefix(), cacheProxy);
+            //REGISTER LISTENERS
+            registerListeners(newCacheConfig, cacheProxy);
+            return cacheProxy;
         }
         throw new CacheException("A cache named " + cacheName + " already exists.");
     }
@@ -255,7 +236,6 @@ public abstract class HazelcastCacheManager
         if (!isClosed.compareAndSet(false, true)) {
             return;
         }
-        releaseCacheManager(uri, classLoaderReference.get());
         for (ICache cache : caches.values()) {
             cache.close();
         }
@@ -282,10 +262,6 @@ public abstract class HazelcastCacheManager
         sb.append(", cachingProvider=").append(cachingProvider);
         sb.append('}');
         return sb.toString();
-    }
-
-    protected void releaseCacheManager(URI uri, ClassLoader classLoader) {
-        ((HazelcastAbstractCachingProvider) cachingProvider).releaseCacheManager(uri, classLoader);
     }
 
     protected String cacheNamePrefix() {
@@ -327,8 +303,6 @@ public abstract class HazelcastCacheManager
     protected abstract <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig);
 
     protected abstract <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig);
-
-    protected abstract <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig);
 
     protected abstract <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig);
 

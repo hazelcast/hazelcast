@@ -16,9 +16,11 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventPublishingService;
@@ -28,6 +30,7 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
@@ -149,7 +152,28 @@ public class CacheService
 
     public boolean createCacheConfigIfAbsent(CacheConfig config) {
         final CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
-        return localConfig == null;
+        final boolean created = localConfig == null;
+        if (created) {
+            createConfigOnAllMembers(config);
+            if (config.isStatisticsEnabled()) {
+                enableStatistics(config.getNameWithPrefix(), true);
+            }
+            if (config.isManagementEnabled()) {
+                enableManagement(config.getNameWithPrefix(), true);
+            }
+        }
+        return created;
+    }
+
+    protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
+        final OperationService operationService = nodeEngine.getOperationService();
+        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for (MemberImpl member : members) {
+            if (!member.localMember()) {
+                final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true);
+                operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+            }
+        }
     }
 
     public boolean updateCacheConfig(CacheConfig config) {

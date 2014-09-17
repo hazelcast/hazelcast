@@ -149,28 +149,6 @@ public final class HazelcastClientCacheManager
     }
 
     @Override
-    protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
-        final ClientInvocationService invocationService = clientContext.getInvocationService();
-        final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
-        final Collection<Future> futures = new ArrayList<Future>();
-        for (MemberImpl member : members) {
-            try {
-                ClientRequest request = new CacheCreateConfigRequest(cacheConfig, true, member.getAddress());
-                final Future future = invocationService.invokeOnTarget(request, member.getAddress());
-                futures.add(future);
-            } catch (Exception e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
-        }
-        //make sure all configs are created
-        try {
-            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            logger.warning(e);
-        }
-    }
-
-    @Override
     protected <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
         final ClientCacheDistributedObject cacheDistributedObject = hazelcastInstance
                 .getDistributedObject(CacheService.SERVICE_NAME, cacheConfig.getNameWithPrefix());
