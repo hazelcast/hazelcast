@@ -134,6 +134,8 @@
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY"/>
                                 <xs:attribute name="statistics-enabled" use="optional" type="xs:boolean"
                                               default="true"/>
+                                <xs:attribute name="optimize-queries" use="optional" type="xs:boolean"
+                                              default="false"/>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
