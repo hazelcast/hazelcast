@@ -40,7 +40,6 @@ public class MapConfig {
      * The number of maximum backup counter
      */
     public static final int MAX_BACKUP_COUNT = 6;
-
     /**
      * The number of minimum eviction percentage
      */
