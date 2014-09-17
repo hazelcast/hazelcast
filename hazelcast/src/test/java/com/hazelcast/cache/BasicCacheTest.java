@@ -27,6 +27,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -249,20 +250,46 @@ public class BasicCacheTest
         }
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testCachesDestroy() {
         final CacheManager cacheManager = cachingProvider.getCacheManager();
         final CacheManager cacheManager2 = cachingProvider2.getCacheManager();
-
         final MutableConfiguration configuration = new MutableConfiguration();
-
         final Cache c1 = cacheManager.createCache("c1", configuration);
         final Cache c2 = cacheManager2.getCache("c1");
         c1.put("key","value");
-
         cacheManager.destroyCache("c1");
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                try {
+                    c2.get("key");
+                    throw new AssertionError("get should throw IllegalStateException");
+                } catch (IllegalStateException e) {
+                    //ignored as expected
+                }
+            }
+        });
+    }
 
-        c2.get("key");
+    @Test
+    public void testCachesDestroyFromOtherManagers() {
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
+        final CacheManager cacheManager2 = cachingProvider2.getCacheManager();
+        final MutableConfiguration configuration = new MutableConfiguration();
+        final Cache c1 = cacheManager.createCache("c1", configuration);
+        final Cache c2 = cacheManager2.createCache("c2", configuration);
+        c1.put("key","value");
+        c2.put("key","value");
+        cacheManager.close();
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                c2.get("key");
+            }
+        }, 10);
     }
 
     @Test
