@@ -37,7 +37,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -347,7 +346,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testSubmitToKeyOwnerCallable() throws Exception {
         final int k = simpleTestNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
@@ -385,7 +383,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testSubmitToMemberCallable() throws ExecutionException, InterruptedException, TimeoutException {
         final int k = simpleTestNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
