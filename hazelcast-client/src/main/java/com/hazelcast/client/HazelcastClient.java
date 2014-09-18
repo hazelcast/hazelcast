@@ -16,7 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientProperties;
@@ -24,9 +23,11 @@ import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.impl.client.DistributedObjectInfo;
+import com.hazelcast.client.impl.client.GetDistributedObjectsRequest;
+import com.hazelcast.client.impl.client.txn.ClientTransactionManager;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
-import com.hazelcast.client.impl.client.GetDistributedObjectsRequest;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
@@ -40,7 +41,6 @@ import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
-import com.hazelcast.client.impl.client.txn.ClientTransactionManager;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
@@ -74,10 +74,8 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
-import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -86,12 +84,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceBuilder;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
-import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -102,9 +96,11 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ServiceLoader;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -134,7 +130,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientConfig config;
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
-    private final SerializationServiceImpl serializationService;
+    private final SerializationService serializationService;
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -145,16 +141,19 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
-
+    private final ClientExtension initializer;
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
         instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
+        initializer = createClientInitializer(config.getClassLoader());
+        initializer.beforeInitialize(this);
+
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         clientProperties = new ClientProperties(config);
-        serializationService = initSerializationService(config);
+        serializationService = initializer.createSerializationService();
         proxyManager = new ProxyManager(this);
         executionService = initExecutorService();
         transactionManager = new ClientTransactionManager(this);
@@ -170,6 +169,24 @@ public final class HazelcastClient implements HazelcastInstance {
         userContext = new ConcurrentHashMap<String, Object>();
         proxyManager.init(config);
         partitionService = new ClientPartitionServiceImpl(this);
+        initializer.afterInitialize(this);
+    }
+
+    private ClientExtension createClientInitializer(ClassLoader classLoader) {
+        try {
+            String factoryId = ClientExtension.class.getName();
+            Iterator<ClientExtension> iter = ServiceLoader.iterator(ClientExtension.class, factoryId, classLoader);
+            while (iter.hasNext()) {
+                ClientExtension initializer = iter.next();
+                if (!(initializer.getClass().equals(DefaultClientExtension.class))) {
+                    return initializer;
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.warning("ClientInitializer could not be instantiated! => "
+                    + e.getClass().getName() + ": " + e.getMessage());
+        }
+        return new DefaultClientExtension();
     }
 
     private ClientListenerServiceImpl initListenerService() {
@@ -181,28 +198,6 @@ public final class HazelcastClient implements HazelcastInstance {
     private ClientExecutionServiceImpl initExecutorService() {
         return new ClientExecutionServiceImpl(instanceName, threadGroup,
                 config.getClassLoader(), config.getExecutorPoolSize());
-    }
-
-    private SerializationServiceImpl initSerializationService(ClientConfig config) {
-        SerializationService ss;
-        try {
-            String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);
-            final PartitioningStrategy partitioningStrategy;
-            if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
-                partitioningStrategy = ClassLoaderUtil.newInstance(config.getClassLoader(), partitioningStrategyClassName);
-            } else {
-                partitioningStrategy = new DefaultPartitioningStrategy();
-            }
-            ss = new SerializationServiceBuilder()
-                    .setManagedContext(new HazelcastClientManagedContext(this, config.getManagedContext()))
-                    .setClassLoader(config.getClassLoader())
-                    .setConfig(config.getSerializationConfig())
-                    .setPartitioningStrategy(partitioningStrategy)
-                    .build();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-        return (SerializationServiceImpl) ss;
     }
 
     public static HazelcastInstance newHazelcastClient() {
@@ -502,6 +497,10 @@ public final class HazelcastClient implements HazelcastInstance {
         return threadGroup;
     }
 
+    public ClientExtension getInitializer() {
+        return initializer;
+    }
+
     @Override
     public void shutdown() {
         getLifecycleService().shutdown();
@@ -518,5 +517,13 @@ public final class HazelcastClient implements HazelcastInstance {
         listenerService.shutdown();
         proxyManager.destroy();
         serializationService.destroy();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("HazelcastClient{");
+        sb.append("instanceName='").append(instanceName).append('\'');
+        sb.append('}');
+        return sb.toString();
     }
 }
