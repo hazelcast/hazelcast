@@ -299,9 +299,14 @@ public class XMLConfigBuilderTest {
     }
 
     private void testConfig2Xml2Config(String fileName) {
+        String pass = "password";
         final Config config = new ClasspathXmlConfig(fileName);
+        config.getGroupConfig().setPassword(pass);
+
         final String xml = new ConfigXmlGenerator(true).generate(config);
         final Config config2 = new InMemoryXmlConfig(xml);
+        config2.getGroupConfig().setPassword(pass);
+
         assertTrue(config.isCompatible(config2));
         assertTrue(config2.isCompatible(config));
     }
