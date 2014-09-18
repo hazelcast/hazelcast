@@ -51,6 +51,7 @@ public class HazelcastServerCacheManager
 
         //TODO: should we destroy the ref ?
         //setupRef.destroy();
+        logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
@@ -113,21 +114,6 @@ public class HazelcastServerCacheManager
     @Override
     protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
         cacheService.createCacheConfigIfAbsent(cacheConfig);
-    }
-
-    @Override
-    protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
-        final OperationService operationService = nodeEngine.getOperationService();
-        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        for (MemberImpl member : members) {
-            if (!member.localMember()) {
-                final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true);
-                final InternalCompletableFuture<Object> f2 = operationService
-                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
-                //make sure all configs are created
-                f2.getSafely();
-            }
-        }
     }
 
     @Override

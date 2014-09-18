@@ -18,8 +18,6 @@ package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.impl.HazelcastAbstractCachingProvider;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 
 import javax.cache.CacheManager;
@@ -33,21 +31,36 @@ public final class HazelcastClientCachingProvider
         super();
     }
 
-    @Override
-    protected HazelcastInstance initHazelcast() {
-        ClientConfig config = new XmlClientConfigBuilder().build();
-        return HazelcastClient.newHazelcastClient(config);
+    /**
+     * Helper method for creating caching provider for testing etc
+     * @param hazelcastInstance
+     * @return HazelcastClientCachingProvider
+     */
+    public static HazelcastClientCachingProvider createCachingProvider(HazelcastInstance hazelcastInstance) {
+        final HazelcastClientCachingProvider cachingProvider = new HazelcastClientCachingProvider();
+        cachingProvider.hazelcastInstance = hazelcastInstance;
+        return cachingProvider;
+    }
+
+    protected synchronized void initHazelcast() {
+        //There is no HazelcastInstanceFactory for client so using synchronized
+        if (hazelcastInstance == null) {
+            hazelcastInstance = HazelcastClient.newHazelcastClient();
+        }
     }
 
     @Override
-    protected CacheManager getHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
-        return new HazelcastClientCacheManager(this, getHazelcastInstance(), uri, classLoader, managerProperties);
+    protected CacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
+        if (hazelcastInstance == null) {
+            initHazelcast();
+        }
+        return new HazelcastClientCacheManager(this, hazelcastInstance, uri, classLoader, managerProperties);
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("HazelcastClientCachingProvider{");
-        sb.append("hazelcastInstance=").append(getHazelcastInstance());
+        sb.append("hazelcastInstance=").append(hazelcastInstance);
         sb.append('}');
         return sb.toString();
     }

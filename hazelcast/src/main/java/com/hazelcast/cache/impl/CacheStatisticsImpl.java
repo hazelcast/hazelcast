@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -26,9 +27,10 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Some statistics of a {@link com.hazelcast.cache.ICache}
  */
-public class CacheStatistics
-        implements DataSerializable {
+public class CacheStatisticsImpl
+        implements DataSerializable, CacheStatistics {
 
+    private static final float FLOAT_HUNDRED = 100.0f;
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
 
     private final AtomicLong removals = new AtomicLong();
@@ -38,46 +40,109 @@ public class CacheStatistics
     private final AtomicLong misses = new AtomicLong();
     private final AtomicLong evictions = new AtomicLong();
     private final AtomicLong putTimeTakenNanos = new AtomicLong();
-    private final AtomicLong getTimeTakenNanos = new AtomicLong();
+    private final AtomicLong getCacheTimeTakenNanos = new AtomicLong();
     private final AtomicLong removeTimeTakenNanos = new AtomicLong();
 
-    public CacheStatistics() {
+    public CacheStatisticsImpl() {
     }
 
-    public long getRemovals() {
+    @Override
+    public long getCacheRemovals() {
         return removals.get();
     }
 
-    public long getExpiries() {
+    public long getCacheExpiries() {
         return expiries.get();
     }
 
-    public long getPuts() {
+    @Override
+    public long getCacheGets() {
+        return getCacheHits() + getCacheMisses();
+    }
+
+    @Override
+    public long getCachePuts() {
         return puts.get();
     }
 
-    public long getHits() {
+    @Override
+    public long getCacheHits() {
         return hits.get();
     }
 
-    public long getMisses() {
+    @Override
+    public long getCacheMisses() {
         return misses.get();
     }
 
-    public long getEvictions() {
+    @Override
+    public long getCacheEvictions() {
         return evictions.get();
     }
 
-    public long getPutTimeTakenNanos() {
+    public long getCachePutTimeTakenNanos() {
         return putTimeTakenNanos.get();
     }
 
-    public long getGetTimeTakenNanos() {
-        return getTimeTakenNanos.get();
+    public long getCacheGetTimeTakenNanos() {
+        return getCacheTimeTakenNanos.get();
     }
 
-    public long getRemoveTimeTakenNanos() {
+    public long getCacheRemoveTimeTakenNanos() {
         return removeTimeTakenNanos.get();
+    }
+
+
+    @Override
+    public float getCacheHitPercentage() {
+        final long cacheHits = getCacheHits();
+        final long cacheGets = getCacheGets();
+        if (cacheHits == 0 || cacheGets == 0) {
+            return 0;
+        }
+        return (float) cacheHits / cacheGets * FLOAT_HUNDRED;
+    }
+
+
+    @Override
+    public float getCacheMissPercentage() {
+        final long cacheMisses = getCacheMisses();
+        final long cacheGets = getCacheGets();
+        if (cacheMisses == 0 || cacheGets == 0) {
+            return 0;
+        }
+        return (float) cacheMisses / cacheGets * FLOAT_HUNDRED;
+    }
+
+
+    @Override
+    public float getAverageGetTime() {
+        final long cacheGetTimeTakenNanos = getCacheGetTimeTakenNanos();
+        final long cacheGets = getCacheGets();
+        if (cacheGetTimeTakenNanos == 0 || cacheGets == 0) {
+            return 0;
+        }
+        return ((1f * cacheGetTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
+    }
+
+    @Override
+    public float getAveragePutTime() {
+        final long cachePutTimeTakenNanos = getCachePutTimeTakenNanos();
+        final long cacheGets = getCacheGets();
+        if (cachePutTimeTakenNanos == 0 || cacheGets == 0) {
+            return 0;
+        }
+        return ((1f * cachePutTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
+    }
+
+    @Override
+    public float getAverageRemoveTime() {
+        final long cacheRemoveTimeTakenNanos = getCacheRemoveTimeTakenNanos();
+        final long cacheGets = getCacheGets();
+        if (cacheRemoveTimeTakenNanos == 0 || cacheGets == 0) {
+            return 0;
+        }
+        return ((1f * cacheRemoveTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
     public void clear() {
@@ -87,7 +152,7 @@ public class CacheStatistics
         expiries.set(0);
         hits.set(0);
         evictions.set(0);
-        getTimeTakenNanos.set(0);
+        getCacheTimeTakenNanos.set(0);
         putTimeTakenNanos.set(0);
         removeTimeTakenNanos.set(0);
     }
@@ -147,17 +212,17 @@ public class CacheStatistics
     }
 
     /**
-     * Increments the get time accumulator
+     * Increments the getCache time accumulator
      *
      * @param duration the time taken in nanoseconds
      */
     public void addGetTimeNano(long duration) {
-        if (getTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
-            getTimeTakenNanos.addAndGet(duration);
+        if (getCacheTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
+            getCacheTimeTakenNanos.addAndGet(duration);
         } else {
             //counter full. Just reset.
             clear();
-            getTimeTakenNanos.set(duration);
+            getCacheTimeTakenNanos.set(duration);
         }
     }
 
@@ -191,16 +256,16 @@ public class CacheStatistics
         }
     }
 
-    public CacheStatistics acumulate(CacheStatistics other) {
-        puts.addAndGet(other.getPuts());
-        removals.addAndGet(other.getRemovals());
-        expiries.addAndGet(other.getExpiries());
-        evictions.addAndGet(other.getEvictions());
-        hits.addAndGet(other.getHits());
-        misses.addAndGet(other.getMisses());
-        putTimeTakenNanos.addAndGet(other.getPutTimeTakenNanos());
-        getTimeTakenNanos.addAndGet(other.getGetTimeTakenNanos());
-        removeTimeTakenNanos.addAndGet(other.getRemoveTimeTakenNanos());
+    public CacheStatisticsImpl acumulate(CacheStatisticsImpl other) {
+        puts.addAndGet(other.getCachePuts());
+        removals.addAndGet(other.getCacheRemovals());
+        expiries.addAndGet(other.getCacheExpiries());
+        evictions.addAndGet(other.getCacheEvictions());
+        hits.addAndGet(other.getCacheHits());
+        misses.addAndGet(other.getCacheMisses());
+        putTimeTakenNanos.addAndGet(other.getCachePutTimeTakenNanos());
+        getCacheTimeTakenNanos.addAndGet(other.getCacheGetTimeTakenNanos());
+        removeTimeTakenNanos.addAndGet(other.getCacheRemoveTimeTakenNanos());
         return this;
     }
 
@@ -216,7 +281,7 @@ public class CacheStatistics
         out.writeLong(misses.get());
 
         out.writeLong(putTimeTakenNanos.get());
-        out.writeLong(getTimeTakenNanos.get());
+        out.writeLong(getCacheTimeTakenNanos.get());
         out.writeLong(removeTimeTakenNanos.get());
     }
 
@@ -232,7 +297,7 @@ public class CacheStatistics
         misses.set(in.readLong());
 
         putTimeTakenNanos.set(in.readLong());
-        getTimeTakenNanos.set(in.readLong());
+        getCacheTimeTakenNanos.set(in.readLong());
         removeTimeTakenNanos.set(in.readLong());
     }
 }
