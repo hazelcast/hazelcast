@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.PacketReader;
 import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
@@ -27,13 +28,15 @@ import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
 import com.hazelcast.wan.WanReplicationService;
 
-public interface NodeInitializer {
+public interface NodeExtension {
 
     void beforeInitialize(Node node);
 
     void printNodeInfo(Node node);
 
     void afterInitialize(Node node);
+
+    SerializationService createSerializationService();
 
     SecurityContext getSecurityContext();
 
@@ -51,4 +54,7 @@ public interface NodeInitializer {
 
     void destroy();
 
+    void onThreadStart(Thread thread);
+
+    void onThreadStop(Thread thread);
 }

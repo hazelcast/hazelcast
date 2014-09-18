@@ -22,20 +22,20 @@ import com.hazelcast.util.ServiceLoader;
 
 import java.util.Iterator;
 
-public final class NodeInitializerFactory {
+public final class NodeExtensionFactory {
 
-    private static final ILogger LOGGER = Logger.getLogger(NodeInitializerFactory.class);
-    private static final String FACTORY_ID = "com.hazelcast.NodeInitializer";
+    private static final ILogger LOGGER = Logger.getLogger(NodeExtensionFactory.class);
+    private static final String FACTORY_ID = "com.hazelcast.instance.NodeExtension";
 
-    private NodeInitializerFactory() {
+    private NodeExtensionFactory() {
     }
 
-    public static NodeInitializer create(ClassLoader classLoader) {
+    public static NodeExtension create(ClassLoader classLoader) {
         try {
-            Iterator<NodeInitializer> iter = ServiceLoader.iterator(NodeInitializer.class, FACTORY_ID, classLoader);
+            Iterator<NodeExtension> iter = ServiceLoader.iterator(NodeExtension.class, FACTORY_ID, classLoader);
             while (iter.hasNext()) {
-                NodeInitializer initializer = iter.next();
-                if (!(initializer.getClass().equals(DefaultNodeInitializer.class))) {
+                NodeExtension initializer = iter.next();
+                if (!(initializer.getClass().equals(DefaultNodeExtension.class))) {
                     return initializer;
                 }
             }
@@ -43,6 +43,6 @@ public final class NodeInitializerFactory {
             LOGGER.warning("NodeInitializer could not be instantiated! => "
                     + e.getClass().getName() + ": " + e.getMessage());
         }
-        return new DefaultNodeInitializer();
+        return new DefaultNodeExtension();
     }
 }
