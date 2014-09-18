@@ -21,12 +21,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
-/**
- * @ali 8/31/13
- */
 public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
 
     private Data value;
@@ -48,7 +44,7 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
     public void run() throws Exception {
         response = false;
         final CollectionItem item = getOrCreateContainer().remove(value);
-        if (item != null){
+        if (item != null) {
             response = true;
             itemId = item.getItemId();
         }
@@ -56,7 +52,7 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
 
     @Override
     public void afterRun() throws Exception {
-        if (itemId != -1){
+        if (itemId != -1) {
             publishEvent(ItemEventType.REMOVED, value);
         }
     }

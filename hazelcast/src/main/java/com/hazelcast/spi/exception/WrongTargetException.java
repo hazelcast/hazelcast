@@ -18,6 +18,10 @@ package com.hazelcast.spi.exception;
 
 import com.hazelcast.nio.Address;
 
+/**
+ * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} indicating that an operation is executed on
+ * the wrong machine.
+ */
 public class WrongTargetException extends RetryableHazelcastException {
 
     private transient Address target;

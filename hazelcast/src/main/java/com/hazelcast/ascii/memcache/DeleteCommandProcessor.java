@@ -16,6 +16,7 @@
 
 package com.hazelcast.ascii.memcache;
 
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TextCommandService;
 
 import java.io.UnsupportedEncodingException;
@@ -36,10 +37,10 @@ public class DeleteCommandProcessor extends MemcacheCommandProcessor<DeleteComma
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(format("failed to decode key [%s] using UTF-8", command.getKey()));
         }
-        String mapName = DefaultMapName;
+        String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {
-            mapName = MapNamePreceder + key.substring(0, index);
+            mapName = MAP_NAME_PRECEDER + key.substring(0, index);
             key = key.substring(index + 1);
         }
         if (key.equals("")) {
@@ -48,10 +49,10 @@ public class DeleteCommandProcessor extends MemcacheCommandProcessor<DeleteComma
             final Object oldValue = textCommandService.delete(mapName, key);
             if (oldValue == null) {
                 textCommandService.incrementDeleteMissCount();
-                command.setResponse(NOT_FOUND);
+                command.setResponse(TextCommandConstants.NOT_FOUND);
             } else {
                 textCommandService.incrementDeleteHitCount(1);
-                command.setResponse(DELETED);
+                command.setResponse(TextCommandConstants.DELETED);
             }
         }
 

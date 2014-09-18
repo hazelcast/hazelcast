@@ -19,13 +19,24 @@ package com.hazelcast.partition;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.partition.impl.SafeStateCheckOperation;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.Operation;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class PartitionServiceProxy implements com.hazelcast.core.PartitionService {
 
@@ -34,6 +45,7 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
             = new ConcurrentHashMap<Integer, PartitionProxy>();
     private final Set<Partition> partitions = new TreeSet<Partition>();
     private final Random random = new Random();
+    private final ILogger logger;
 
     public PartitionServiceProxy(InternalPartitionService partitionService) {
         this.partitionService = partitionService;
@@ -42,6 +54,7 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
             partitions.add(partitionProxy);
             mapPartitions.put(i, partitionProxy);
         }
+        logger = getNode().getLogger(PartitionServiceProxy.class);
     }
 
     @Override
@@ -68,6 +81,100 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
     @Override
     public boolean removeMigrationListener(final String registrationId) {
         return partitionService.removeMigrationListener(registrationId);
+    }
+
+    @Override
+    public boolean isClusterSafe() {
+        final Node node = getNode();
+        final Collection<MemberImpl> memberList = node.clusterService.getMemberList();
+        if (memberList == null || memberList.isEmpty() || memberList.size() < 2) {
+            return true;
+        }
+        final Collection<Future> futures = new ArrayList<Future>(memberList.size());
+        for (MemberImpl member : memberList) {
+            final Address target = member.getAddress();
+            final Operation operation = new SafeStateCheckOperation();
+            final InternalCompletableFuture future = node.getNodeEngine().getOperationService()
+                    .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
+            futures.add(future);
+        }
+        // todo this max wait is appropriate?
+        final int maxWaitTime = getMaxWaitTime(node);
+        for (Future future : futures) {
+            try {
+                final Object result = future.get(maxWaitTime, TimeUnit.SECONDS);
+                final boolean safe = (Boolean) result;
+                if (!safe) {
+                    return false;
+                }
+            } catch (Exception e) {
+                logger.warning("Error while querying cluster's safe state", e);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isMemberSafe(Member member) {
+        if (member == null) {
+            throw new NullPointerException("Parameter member should not be null");
+        }
+        final MemberImpl localMember = getNode().getLocalMember();
+        if (localMember.equals(member)) {
+            return isLocalMemberSafe();
+        }
+        final Address target = ((MemberImpl) member).getAddress();
+        final Operation operation = new SafeStateCheckOperation();
+        final InternalCompletableFuture future = getNode().getNodeEngine().getOperationService()
+                .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
+        boolean safe;
+        try {
+            final Object result = future.get(10, TimeUnit.SECONDS);
+            safe = (Boolean) result;
+        } catch (Throwable t) {
+            safe = false;
+            logger.warning("Error while querying member's safe state [" + member + "]", t);
+        }
+        return safe;
+    }
+
+    @Override
+    public boolean isLocalMemberSafe() {
+        if (!nodeActive()) {
+            return true;
+        }
+        return partitionService.isMemberStateSafe();
+    }
+
+    @Override
+    public boolean forceLocalMemberToBeSafe(long timeout, TimeUnit unit) {
+        if (unit == null) {
+            throw new NullPointerException();
+        }
+
+        if (timeout < 1L) {
+            throw new IllegalArgumentException();
+        }
+
+        if (!nodeActive()) {
+            return true;
+        }
+        return partitionService.prepareToSafeShutdown(timeout, unit);
+    }
+
+    private boolean nodeActive() {
+        final Node node = getNode();
+        return node.isActive();
+    }
+
+    private Node getNode() {
+        final InternalPartitionServiceImpl impl = (InternalPartitionServiceImpl) partitionService;
+        return impl.getNode();
+    }
+
+    private static int getMaxWaitTime(Node node) {
+        return node.getGroupProperties().GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
     }
 
     public PartitionProxy getPartition(int partitionId) {

@@ -103,10 +103,5 @@ public class ProxyFactoryTest {
         protected CustomClientProxy(String serviceName, String objectName) {
             super(serviceName, objectName);
         }
-
-        @Override
-        protected void onDestroy() {
-        }
     }
-
 }

@@ -21,12 +21,8 @@ import com.hazelcast.collection.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 
-/**
- * @ali 9/3/13
- */
 public class CollectionRollbackBackupOperation extends CollectionOperation implements BackupOperation {
 
     private long itemId;
@@ -53,7 +49,7 @@ public class CollectionRollbackBackupOperation extends CollectionOperation imple
 
     @Override
     public void run() throws Exception {
-        if (removeOperation){
+        if (removeOperation) {
             getOrCreateContainer().rollbackRemoveBackup(itemId);
         } else {
             getOrCreateContainer().rollbackAddBackup(itemId);

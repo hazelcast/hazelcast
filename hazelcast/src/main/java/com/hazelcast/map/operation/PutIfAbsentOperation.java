@@ -30,13 +30,15 @@ public class PutIfAbsentOperation extends BasePutOperation {
     }
 
     public void run() {
-        dataOldValue = mapService.toData(recordStore.putIfAbsent(dataKey, dataValue, ttl));
+        final Object oldValue = recordStore.putIfAbsent(dataKey, dataValue, ttl);
+        dataOldValue = mapService.getMapServiceContext().toData(oldValue);
         successful = dataOldValue == null;
     }
 
     public void afterRun() {
-        if (successful)
+        if (successful) {
             super.afterRun();
+        }
     }
 
     @Override

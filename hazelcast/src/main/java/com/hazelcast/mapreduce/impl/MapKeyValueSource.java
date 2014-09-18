@@ -73,7 +73,7 @@ public class MapKeyValueSource<K, V>
         if (partitionOwner == null) {
             return false;
         }
-        RecordStore recordStore = mapService.getRecordStore(partitionId, mapName);
+        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, mapName);
         iterator = recordStore.entrySetData().iterator();
         return true;
     }

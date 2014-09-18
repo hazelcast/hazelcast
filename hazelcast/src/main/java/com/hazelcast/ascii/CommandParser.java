@@ -18,6 +18,6 @@ package com.hazelcast.ascii;
 
 import com.hazelcast.nio.ascii.SocketTextReader;
 
-public interface CommandParser extends TextCommandConstants {
+public interface CommandParser  {
     TextCommand parser(SocketTextReader socketTextReader, String cmd, int space);
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.AuthenticationRequest;
+import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
@@ -27,7 +27,9 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
@@ -39,6 +41,12 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
@@ -50,11 +58,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -684,15 +687,31 @@ public class ClientMapTest {
         assertEquals(1, (int) map.get(9));
     }
 
+    @Test
+    public void testListeners_clearAllFromNode() {
+        final String name = randomString();
+        final MultiMap mm = client.getMultiMap(name);
+        final CountDownLatch gateClearAll = new CountDownLatch(1);
+        final CountDownLatch gateAdd = new CountDownLatch(1);
+        final EntryListener listener = new EntListener(gateAdd, null, null, null, gateClearAll, null);
+        mm.addEntryListener(listener, false);
+        mm.put("key", "value");
+        server.getMultiMap(name).clear();
+        assertOpenEventually(gateAdd);
+        assertOpenEventually(gateClearAll);
+    }
+
     /**
      * Issue #996
      */
     @Test
     public void testEntryListener() throws InterruptedException {
-        final CountDownLatch gateAdd = new CountDownLatch(2);
+        final CountDownLatch gateAdd = new CountDownLatch(3);
         final CountDownLatch gateRemove = new CountDownLatch(1);
         final CountDownLatch gateEvict = new CountDownLatch(1);
         final CountDownLatch gateUpdate = new CountDownLatch(1);
+        final CountDownLatch gateClearAll = new CountDownLatch(1);
+        final CountDownLatch gateEvictAll = new CountDownLatch(1);
 
         final String mapName = randomString();
 
@@ -703,7 +722,7 @@ public class ClientMapTest {
 
         assertEquals(1, clientMap.size());
 
-        final EntryListener listener = new EntListener(gateAdd, gateRemove, gateEvict, gateUpdate);
+        final EntryListener listener = new EntListener(gateAdd, gateRemove, gateEvict, gateUpdate, gateClearAll, gateEvictAll);
 
         clientMap.addEntryListener(listener, new SqlPredicate("id=1"), 2, true);
         clientMap.put(2, new Deal(1));
@@ -713,10 +732,16 @@ public class ClientMapTest {
         clientMap.put(2, new Deal(1));
         clientMap.evict(2);
 
+        clientMap.clear();
+        clientMap.put(2, new Deal(1));
+        clientMap.evictAll();
+
         assertTrue(gateAdd.await(10, TimeUnit.SECONDS));
         assertTrue(gateRemove.await(10, TimeUnit.SECONDS));
         assertTrue(gateEvict.await(10, TimeUnit.SECONDS));
         assertTrue(gateUpdate.await(10, TimeUnit.SECONDS));
+        assertTrue(gateClearAll.await(10, TimeUnit.SECONDS));
+        assertTrue(gateEvictAll.await(10, TimeUnit.SECONDS));
     }
 
     static class EntListener implements EntryListener<Integer, Deal>, Serializable {
@@ -724,12 +749,17 @@ public class ClientMapTest {
         private final CountDownLatch _gateRemove;
         private final CountDownLatch _gateEvict;
         private final CountDownLatch _gateUpdate;
+        private final CountDownLatch _gateClearAll;
+        private final CountDownLatch _gateEvictAll;
 
-        EntListener(CountDownLatch gateAdd, CountDownLatch gateRemove, CountDownLatch gateEvict, CountDownLatch gateUpdate) {
+        EntListener(CountDownLatch gateAdd, CountDownLatch gateRemove, CountDownLatch gateEvict,
+                    CountDownLatch gateUpdate, CountDownLatch gateClearAll, CountDownLatch gateEvictAll) {
             _gateAdd = gateAdd;
             _gateRemove = gateRemove;
             _gateEvict = gateEvict;
             _gateUpdate = gateUpdate;
+            _gateClearAll = gateClearAll;
+            _gateEvictAll = gateEvictAll;
         }
 
         @Override
@@ -740,6 +770,16 @@ public class ClientMapTest {
         @Override
         public void entryEvicted(EntryEvent<Integer, Deal> arg0) {
             _gateEvict.countDown();
+        }
+
+        @Override
+        public void mapEvicted(MapEvent event) {
+            _gateEvictAll.countDown();
+        }
+
+        @Override
+        public void mapCleared(MapEvent event) {
+            _gateClearAll.countDown();
         }
 
         @Override
@@ -828,7 +868,6 @@ public class ClientMapTest {
         final IMap<Object, Object> clientMap = client.getMap("A");
         final CountDownLatch latch = new CountDownLatch(1);
         clientMap.addEntryListener(new EntryAdapter<Object, Object>() {
-            @Override
             public void entryRemoved(EntryEvent<Object, Object> event) {
                 latch.countDown();
             }

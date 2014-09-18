@@ -26,6 +26,13 @@ import java.util.concurrent.ExecutionException;
  */
 public final class ExceptionUtil {
 
+    private static final String EXCEPTION_SEPARATOR = "------ End remote and begin local stack-trace ------";
+    private static final String EXCEPTION_MESSAGE_SEPARATOR = "------ %MSG% ------";
+
+    //we don't want instances
+    private ExceptionUtil() {
+    }
+
     public static RuntimeException rethrow(final Throwable t) {
         if (t instanceof Error) {
             if (t instanceof OutOfMemoryError) {
@@ -68,6 +75,33 @@ public final class ExceptionUtil {
         }
     }
 
+    /**
+     * This rethrow the exception providing an allowed Exception in first priority, even it is a Runtime exception
+     */
+    public static <T extends Throwable> RuntimeException rethrowAllowedTypeFirst(final Throwable t,
+                                                                                 Class<T> allowedType) throws T {
+        if (t instanceof Error) {
+            if (t instanceof OutOfMemoryError) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
+            }
+            throw (Error) t;
+        } else if (allowedType.isAssignableFrom(t.getClass())) {
+            throw (T) t;
+        } else if (t instanceof RuntimeException) {
+            throw (RuntimeException) t;
+        } else if (t instanceof ExecutionException) {
+            final Throwable cause = t.getCause();
+            if (cause != null) {
+                throw rethrowAllowedTypeFirst(cause, allowedType);
+            } else {
+                throw new HazelcastException(t);
+            }
+        } else {
+            throw new HazelcastException(t);
+        }
+    }
+
+
     public static RuntimeException rethrowAllowInterrupted(final Throwable t) throws InterruptedException {
         return rethrow(t, InterruptedException.class);
     }
@@ -82,9 +116,6 @@ public final class ExceptionUtil {
     private static <T extends Throwable> void sneakyThrowInternal(Throwable t) throws T {
         throw (T) t;
     }
-
-    private final static String EXCEPTION_SEPARATOR = "------ End remote and begin local stack-trace ------";
-    private final static String EXCEPTION_MESSAGE_SEPARATOR = "------ %MSG% ------";
 
     /**
      * This method changes the given remote cause and adds the also given local stacktrace.<br/>
@@ -134,11 +165,12 @@ public final class ExceptionUtil {
         System.arraycopy(remoteStackTrace, 0, newStackTrace, 0, remoteStackTrace.length);
         newStackTrace[remoteStackTrace.length] = new StackTraceElement(EXCEPTION_SEPARATOR, "", null, -1);
         StackTraceElement nextElement = localSideStackTrace[1];
-        newStackTrace[remoteStackTrace.length + 1] = new StackTraceElement(msg, nextElement.getMethodName(), nextElement.getFileName(), nextElement.getLineNumber());
+        newStackTrace[remoteStackTrace.length + 1] = new StackTraceElement(msg, nextElement.getMethodName(),
+                nextElement.getFileName(), nextElement.getLineNumber());
         System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 2, localSideStackTrace.length - 1);
         throwable.setStackTrace(newStackTrace);
     }
 
-    //we don't want instances
-    private ExceptionUtil(){}
+
+
 }

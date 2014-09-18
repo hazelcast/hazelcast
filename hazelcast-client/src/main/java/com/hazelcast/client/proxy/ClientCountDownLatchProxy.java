@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.countdownlatch.client.AwaitRequest;
 import com.hazelcast.concurrent.countdownlatch.client.CountDownRequest;
@@ -27,10 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author ali 5/28/13
- */
-public class ClientCountDownLatchProxy extends ClientProxy implements ICountDownLatch{
+public class ClientCountDownLatchProxy extends ClientProxy implements ICountDownLatch {
 
     private volatile Data key;
 
@@ -56,16 +53,16 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
     }
 
     public boolean trySetCount(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException("count can't be negative");
+        }
         SetCountRequest request = new SetCountRequest(getName(), count);
         Boolean result = invoke(request);
         return result;
     }
 
-    protected void onDestroy() {
-    }
-
-    private Data getKey(){
-        if (key == null){
+    private Data getKey() {
+        if (key == null) {
             key = toData(getName());
         }
         return key;
@@ -75,7 +72,7 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    protected  <T> T invoke(ClientRequest req) {
+    protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }
 

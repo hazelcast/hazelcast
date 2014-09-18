@@ -16,42 +16,75 @@
 
 package com.hazelcast.management;
 
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.ascii.rest.HttpCommand;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.management.operation.UpdateManagementCenterUrlOperation;
-import com.hazelcast.management.request.*;
+import com.hazelcast.management.request.ClusterPropsRequest;
+import com.hazelcast.management.request.ConsoleCommandRequest;
+import com.hazelcast.management.request.ConsoleRequest;
+import com.hazelcast.management.request.ExecuteScriptRequest;
+import com.hazelcast.management.request.GetLogsRequest;
+import com.hazelcast.management.request.GetMapEntryRequest;
+import com.hazelcast.management.request.GetMemberSystemPropertiesRequest;
+import com.hazelcast.management.request.GetSystemWarningsRequest;
+import com.hazelcast.management.request.MapConfigRequest;
+import com.hazelcast.management.request.MemberConfigRequest;
+import com.hazelcast.management.request.RunGcRequest;
+import com.hazelcast.management.request.ShutdownMemberRequest;
+import com.hazelcast.management.request.ThreadDumpRequest;
 import com.hazelcast.map.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.serialization.ObjectDataInputStream;
-import com.hazelcast.nio.serialization.ObjectDataOutputStream;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.JsonUtil.getInt;
+import static com.hazelcast.util.JsonUtil.getObject;
 
+/**
+ * ManagementCenterService is responsible for sending statistics data to the Management Center.
+ */
 public class ManagementCenterService {
 
-    private final static AtomicBoolean DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO = new AtomicBoolean(false);
-    public static final int HTTP_SUCCESS = 200;
-    static final int DEFAULT_UPDATE_INTERVAL = 3000;
+    static final int HTTP_SUCCESS = 200;
+    static final int CONNECTION_TIMEOUT_MILLIS = 5000;
+    static final long SLEEP_BETWEEN_POLL_MILLIS = 1000;
+    static final long DEFAULT_UPDATE_INTERVAL = 3000;
 
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
@@ -60,133 +93,39 @@ public class ManagementCenterService {
 
     private final ConsoleCommandHandler commandHandler;
     private final ManagementCenterConfig managementCenterConfig;
-    private final SerializationService serializationService;
     private final ManagementCenterIdentifier identifier;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
-    private final String clusterId;
-    private final String securityToken;
 
     private volatile String managementCenterUrl;
-    private volatile boolean urlChanged = false;
-    private volatile boolean versionMismatch = false;
+    private volatile boolean urlChanged;
     private volatile boolean manCenterConnectionLost;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         logger = instance.node.getLogger(ManagementCenterService.class);
         managementCenterConfig = getManagementCenterConfig();
-        securityToken = managementCenterConfig.getSecurityToken();
         managementCenterUrl = getManagementCenterUrl();
-        clusterId = getClusterId();
         commandHandler = new ConsoleCommandHandler(instance);
         taskPollThread = new TaskPollThread();
         stateSendThread = new StateSendThread();
-        serializationService = instance.node.getSerializationService();
         identifier = newManagementCenterIdentifier();
         registerListeners();
-        logHostedManagementCenterMessages();
     }
 
-    private void logHostedManagementCenterMessages() {
-        if (isHostedManagementCenterEnabled()) {
-            if (isSecurityTokenAvailable()) {
-                logHostedManagementCenterLoginUrl();
-            } else {
-                logHostedManagementCenterRegisterUrl();
-            }
-        }
-    }
-
-    private boolean isSecurityTokenAvailable() {
-        return !isNullOrEmpty(managementCenterConfig.getSecurityToken());
-    }
 
     private String getManagementCenterUrl() {
-        if (isHostedManagementCenterEnabled()) {
-            return getHostedManagementCenterUrl();
-        } else {
-            return managementCenterConfig.getUrl();
-        }
+        return managementCenterConfig.getUrl();
     }
 
-    private boolean isHostedManagementCenterEnabled() {
-        if (!getGroupProperties().HOSTED_MANAGEMENT_ENABLED.getBoolean()) {
-            return false;
-        }
-
-        return isNullOrEmpty(managementCenterConfig.getUrl());
-    }
-
-    private GroupProperties getGroupProperties() {
-        return instance.node.getGroupProperties();
-    }
-
-    private String getHostedManagementCenterUrl() {
-        return getGroupProperties().HOSTED_MANAGEMENT_URL.getString();
-    }
 
     private void registerListeners() {
-        if(!managementCenterConfig.isEnabled()){
+        if (!managementCenterConfig.isEnabled()) {
             return;
         }
-
         instance.getLifecycleService().addLifecycleListener(new LifecycleListenerImpl());
         instance.getCluster().addMembershipListener(new MemberListenerImpl());
     }
 
-    private void logHostedManagementCenterLoginUrl() {
-        if (managementCenterConfig.isEnabled()) {
-            logger.info("======================================================");
-            logger.info("You can access your Hazelcast instance at:");
-            logger.info(getHostedManagementCenterUrl() + "/start.do?clusterid=" + clusterId);
-            logger.info("======================================================");
-        } else {
-            logger.info("======================================================");
-            logger.info("To see your application on the Hosted Management Center, " +
-                    "you need to enable the ManagementCenterConfig.");
-            logger.info("======================================================");
-        }
-    }
-
-    private void logHostedManagementCenterRegisterUrl() {
-        //we only want to display the page for hosted management registration once. We don't want to pollute
-        //the logfile.
-        if (!DISPLAYED_HOSTED_MANAGEMENT_CENTER_INFO.compareAndSet(false, true)) {
-            return;
-        }
-
-        logger.info("======================================================");
-        logger.info("Manage your Hazelcast cluster with the Management Center SaaS Application");
-        logger.info("To register, copy/paste the following url in your browser and follow the instructions.");
-        logger.info(getHostedManagementCenterUrl() + "/register.jsp");
-        logger.info("======================================================");
-    }
-
-    private String getClusterId() {
-        String clusterId = managementCenterConfig.getClusterId();
-
-        if(!isNullOrEmpty(clusterId)){
-            return clusterId;
-        }
-
-        if (!isHostedManagementCenterEnabled()) {
-            return null;
-        }
-
-        return newClusterId();
-    }
-
-    private String newClusterId() {
-        IAtomicReference<String> clusterIdReference = instance.getAtomicReference("___clusterIdGenerator");
-        String id = clusterIdReference.get();
-        if (id == null) {
-            id = UUID.randomUUID().toString().replace("-", "");
-            if (!clusterIdReference.compareAndSet(null, id)) {
-                id = clusterIdReference.get();
-            }
-        }
-        return id;
-    }
 
     private ManagementCenterConfig getManagementCenterConfig() {
         ManagementCenterConfig config = instance.node.config.getManagementCenterConfig();
@@ -207,7 +146,6 @@ public class ManagementCenterService {
         if (url == null) {
             return null;
         }
-
         return url.endsWith("/") ? url : url + '/';
     }
 
@@ -238,6 +176,7 @@ public class ManagementCenterService {
             interruptThread(stateSendThread);
             interruptThread(taskPollThread);
         } catch (Throwable ignored) {
+            ignore(ignored);
         }
     }
 
@@ -275,18 +214,14 @@ public class ManagementCenterService {
         }
 
         urlChanged = true;
-        logger.info("Management Center URL has changed. " +
-                "Hazelcast will connect to Management Center on address: \n" + managementCenterUrl);
+        logger.info("Management Center URL has changed. "
+                + "Hazelcast will connect to Management Center on address: \n" + managementCenterUrl);
     }
 
     private void interruptThread(Thread t) {
         if (t != null) {
             t.interrupt();
         }
-    }
-
-    public void signalVersionMismatch() {
-        versionMismatch = true;
     }
 
     public Object callOnAddress(Address address, Operation operation) {
@@ -302,15 +237,17 @@ public class ManagementCenterService {
         }
     }
 
+    public Object callOnThis(Operation operation) {
+        return callOnAddress(instance.node.getThisAddress(), operation);
+    }
+
     public Object callOnMember(Member member, Operation operation) {
         Address address = ((MemberImpl) member).getAddress();
         return callOnAddress(address, operation);
     }
 
     public void send(Address address, Operation operation) {
-        //todo: clean up needed.
         OperationService operationService = instance.node.nodeEngine.getOperationService();
-
         operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, address).invoke();
     }
 
@@ -327,26 +264,18 @@ public class ManagementCenterService {
     }
 
     private void post(HttpURLConnection connection) throws IOException {
-        //we need to call 'getResponseCode'. If we don't the data placed in the outputstream, will not be send to the
-        //managementcenter. For more information see:
-        //http://stackoverflow.com/questions/4844535/why-do-you-have-to-call-urlconnectiongetinputstream-to-be-able-to-write-out-to
         int responseCode = connection.getResponseCode();
-
         if (responseCode != HTTP_SUCCESS) {
             logger.warning("Failed to send response, responseCode:" + responseCode + " url:" + connection.getURL());
         }
     }
 
-    private void sleepOnVersionMismatch() throws InterruptedException {
-        if (versionMismatch) {
-            Thread.sleep(1000 * 60);
-            versionMismatch = false;
-        }
-    }
-
-    private class StateSendThread extends Thread {
+    /**
+     * Thread for sending cluster state to the Management Center.
+     */
+    private final class StateSendThread extends Thread {
         private final TimedMemberStateFactory timedMemberStateFactory;
-        private final int updateIntervalMs;
+        private final long updateIntervalMs;
 
         private StateSendThread() {
             super(instance.getThreadGroup(), instance.node.getThreadNamePrefix("MC.State.Sender"));
@@ -354,23 +283,24 @@ public class ManagementCenterService {
             updateIntervalMs = calcUpdateInterval();
         }
 
-        private int calcUpdateInterval() {
-            int updateInterval = managementCenterConfig.getUpdateInterval();
-            return updateInterval > 0 ? updateInterval * 1000 : DEFAULT_UPDATE_INTERVAL;
+        private long calcUpdateInterval() {
+            long updateInterval = managementCenterConfig.getUpdateInterval();
+            return updateInterval > 0 ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
         }
 
         @Override
         public void run() {
             try {
                 while (isRunning()) {
-                    sleepOnVersionMismatch();
                     sendState();
                     sleep();
                 }
             } catch (Throwable throwable) {
                 inspectOutputMemoryError(throwable);
-                logger.warning("Hazelcast Management Center Service will be shutdown due to exception.", throwable);
-                shutdown();
+                if (!(throwable instanceof InterruptedException)) {
+                    logger.warning("Hazelcast Management Center Service will be shutdown due to exception.", throwable);
+                    shutdown();
+                }
             }
         }
 
@@ -381,14 +311,16 @@ public class ManagementCenterService {
         private void sendState() throws InterruptedException, MalformedURLException {
             URL url = newCollectorUrl();
             try {
-                //todo: does the connection not need to be closed?
                 HttpURLConnection connection = openConnection(url);
                 OutputStream outputStream = connection.getOutputStream();
+                final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
                 try {
-                    identifier.write(outputStream);
-                    ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(outputStream);
+                    JsonObject root = new JsonObject();
+                    root.add("identifier", identifier.toJson());
                     TimedMemberState timedMemberState = timedMemberStateFactory.createTimedMemberState();
-                    timedMemberState.writeData(out);
+                    root.add("timedMemberState", timedMemberState.toJson());
+                    root.writeTo(writer);
+                    writer.flush();
                     outputStream.flush();
                     post(connection);
                     if (manCenterConnectionLost) {
@@ -396,6 +328,7 @@ public class ManagementCenterService {
                     }
                     manCenterConnectionLost = false;
                 } finally {
+                    closeResource(writer);
                     closeResource(outputStream);
                 }
             } catch (ConnectException e) {
@@ -415,41 +348,31 @@ public class ManagementCenterService {
 
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
+            connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
+            connection.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("Content-Type", "application/json");
             connection.setRequestMethod("POST");
-            connection.setConnectTimeout(5000);
-            connection.setReadTimeout(5000);
             return connection;
         }
 
         private URL newCollectorUrl() throws MalformedURLException {
             String url = cleanupUrl(managementCenterUrl) + "collector.do";
-            if (clusterId != null) {
-                url += "?clusterid=" + clusterId;
-            }
-
-            if (securityToken != null) {
-                if (clusterId == null) {
-                    url += "?securitytoken=" + securityToken;
-                } else {
-                    url += "&securitytoken=" + securityToken;
-                }
-            }
-
             return new URL(url);
         }
     }
 
-    private class TaskPollThread extends Thread {
+    /**
+     * Thread for polling tasks/requests from  Management Center.
+     */
+    private final class TaskPollThread extends Thread {
         private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests =
                 new HashMap<Integer, Class<? extends ConsoleRequest>>();
-        private final Random rand = new Random();
 
         TaskPollThread() {
             super(instance.node.threadGroup, instance.node.getThreadNamePrefix("MC.Task.Poller"));
-            register(new RuntimeStateRequest());
             register(new ThreadDumpRequest());
             register(new ExecuteScriptRequest());
-            register(new EvictLocalMapRequest());
             register(new ConsoleCommandRequest());
             register(new MapConfigRequest());
             register(new MemberConfigRequest());
@@ -458,7 +381,6 @@ public class ManagementCenterService {
             register(new RunGcRequest());
             register(new GetMemberSystemPropertiesRequest());
             register(new GetMapEntryRequest());
-            register(new VersionMismatchLogRequest());
             register(new ShutdownMemberRequest());
             register(new GetSystemWarningsRequest());
         }
@@ -467,26 +389,6 @@ public class ManagementCenterService {
             consoleRequests.put(consoleRequest.getType(), consoleRequest.getClass());
         }
 
-        public void processTaskAndPostResponse(int taskId, ConsoleRequest task) {
-            try {
-                //todo: don't we need to close this connection?
-                HttpURLConnection connection = openPostResponseConnection();
-                OutputStream outputStream = connection.getOutputStream();
-                try {
-                    identifier.write(outputStream);
-                    ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(outputStream);
-                    out.writeInt(taskId);
-                    out.writeInt(task.getType());
-                    task.writeResponse(ManagementCenterService.this, out);
-                    out.flush();
-                    post(connection);
-                } finally {
-                    closeResource(outputStream);
-                }
-            } catch (Exception e) {
-                logger.warning("Failed process task:" + task, e);
-            }
-        }
 
         private HttpURLConnection openPostResponseConnection() throws IOException {
             URL url = newPostResponseUrl();
@@ -496,8 +398,8 @@ public class ManagementCenterService {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
             connection.setRequestMethod("POST");
-            connection.setConnectTimeout(2000);
-            connection.setReadTimeout(2000);
+            connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
+            connection.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
             return connection;
         }
 
@@ -509,81 +411,96 @@ public class ManagementCenterService {
         public void run() {
             try {
                 while (isRunning()) {
-                    sleepOnVersionMismatch();
                     processTask();
                     sleep();
                 }
             } catch (Throwable throwable) {
-                inspectOutputMemoryError(throwable);
-                logger.warning("Problem on Hazelcast Management Center Service while polling for a task.", throwable);
+                if (!(throwable instanceof InterruptedException)) {
+                    inspectOutputMemoryError(throwable);
+                    logger.warning("Problem on Hazelcast Management Center Service while polling for a task.", throwable);
+                }
             }
         }
 
         private void sleep() throws InterruptedException {
-            //todo: magic numbers are no good.
-            //todo: why the random part
-            //todo: we want configurable frequency for task polling
-            Thread.sleep(700 + rand.nextInt(300));
+            Thread.sleep(SLEEP_BETWEEN_POLL_MILLIS);
         }
 
         private void processTask() {
-            ObjectDataInputStream inputStream = null;
+            InputStream inputStream = null;
+            InputStreamReader reader = null;
             try {
-                //todo: don't we need to close the connection?
                 inputStream = openTaskInputStream();
-                int taskId = inputStream.readInt();
-                if (taskId <= 0) {
-                    return;
-                }
+                reader = new InputStreamReader(inputStream, "UTF-8");
+                JsonObject request = JsonValue.readFrom(reader).asObject();
+                if (!request.isEmpty()) {
+                    JsonObject innerRequest = getObject(request, "request");
+                    final int type = getInt(innerRequest, "type");
+                    final int taskId = getInt(request, "taskId");
 
-                ConsoleRequest task = newTask(inputStream);
-                processTaskAndPostResponse(taskId, task);
+                    Class<? extends ConsoleRequest> requestClass = consoleRequests.get(type);
+                    if (requestClass == null) {
+                        throw new RuntimeException("Failed to find a request for requestType:" + type);
+                    }
+                    ConsoleRequest task = requestClass.newInstance();
+                    task.fromJson(getObject(innerRequest, "request"));
+                    processTaskAndSendResponse(taskId, task);
+                }
                 if (manCenterConnectionLost) {
                     logger.info("Connection to management center restored.");
                 }
                 manCenterConnectionLost = false;
+
             } catch (ConnectException e) {
                 if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
                     log("Failed to connect to management center", e);
                 }
             } catch (Exception e) {
-                //todo: even if there is an internal error with the task, we don't see it. That is kinda shitty
-                logger.finest(e);
+                logger.warning(e);
             } finally {
+                IOUtil.closeResource(reader);
                 IOUtil.closeResource(inputStream);
             }
         }
 
-        private ObjectDataInputStream openTaskInputStream() throws IOException {
-            URLConnection connection = openGetTaskConnection();
-            InputStream inputStream = connection.getInputStream();
-            return serializationService.createObjectDataInputStream(inputStream);
-        }
-
-        private ConsoleRequest newTask(ObjectDataInputStream inputStream)
-                throws InstantiationException, IllegalAccessException, IOException {
-
-            int requestType = inputStream.readInt();
-
-            Class<? extends ConsoleRequest> requestClass = consoleRequests.get(requestType);
-            if (requestClass == null) {
-                throw new RuntimeException("Failed to find a request for requestType:" + requestType);
+        public void processTaskAndSendResponse(int taskId, ConsoleRequest task) {
+            try {
+                HttpURLConnection connection = openPostResponseConnection();
+                OutputStream outputStream = connection.getOutputStream();
+                final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
+                try {
+                    JsonObject root = new JsonObject();
+                    root.add("identifier", identifier.toJson());
+                    root.add("taskId", taskId);
+                    root.add("type", task.getType());
+                    task.writeResponse(ManagementCenterService.this, root);
+                    root.writeTo(writer);
+                    writer.flush();
+                    outputStream.flush();
+                    post(connection);
+                } finally {
+                    closeResource(writer);
+                    closeResource(outputStream);
+                }
+            } catch (Exception e) {
+                logger.warning("Failed process task:" + task, e);
             }
-
-            ConsoleRequest task = requestClass.newInstance();
-            task.readData(inputStream);
-            return task;
         }
+
+
+        private InputStream openTaskInputStream() throws IOException {
+            URLConnection connection = openGetTaskConnection();
+            return connection.getInputStream();
+        }
+
 
         private URLConnection openGetTaskConnection() throws IOException {
             URL url = newGetTaskUrl();
             if (logger.isFinestEnabled()) {
                 logger.finest("Opening getTask connection:" + url);
             }
-
             URLConnection connection = url.openConnection();
-            //todo: why do we set this property if the connection is not going to be re-used?
             connection.setRequestProperty("Connection", "keep-alive");
             return connection;
         }
@@ -595,16 +512,9 @@ public class ManagementCenterService {
 
             String urlString = cleanupUrl(managementCenterUrl) + "getTask.do?member=" + localAddress.getHost()
                     + ":" + localAddress.getPort() + "&cluster=" + groupConfig.getName();
-
-            if (clusterId != null) {
-                urlString += "&clusterid=" + clusterId;
-            }
-
-            if (securityToken != null) {
-                urlString += "&securitytoken=" + securityToken;
-            }
             return new URL(urlString);
         }
+
     }
 
     private void log(String msg, Throwable t) {
@@ -615,8 +525,11 @@ public class ManagementCenterService {
         }
     }
 
+    /**
+     * LifecycleListener for listening for LifecycleState.STARTED event to start
+     * {@link com.hazelcast.management.ManagementCenterService}.
+     */
     private class LifecycleListenerImpl implements LifecycleListener {
-
         @Override
         public void stateChanged(final LifecycleEvent event) {
             if (event.getState() == LifecycleState.STARTED) {
@@ -629,6 +542,9 @@ public class ManagementCenterService {
         }
     }
 
+    /**
+     * MembershipListener to send Management Center URL to the new members.
+     */
     public class MemberListenerImpl implements MembershipListener {
 
         @Override

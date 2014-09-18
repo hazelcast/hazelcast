@@ -17,7 +17,11 @@
 package com.hazelcast.spi;
 
 /**
- * @author mdogan 12/12/12
+ * A service for publishing events. For example a Topic that receives an message (the event)
+ * and dispatches it to a listener.
+ *
+ * @param <E>
+ * @param <T>
  */
 public interface EventPublishingService<E, T> {
 

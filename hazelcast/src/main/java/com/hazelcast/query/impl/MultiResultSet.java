@@ -18,12 +18,21 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.*;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ *  Multiple result set for Predicates.
+ */
 public class MultiResultSet extends AbstractSet<QueryableEntry> {
-    private Set<Object> index = null;
-    private final List<ConcurrentMap<Data, QueryableEntry>> resultSets = new ArrayList<ConcurrentMap<Data, QueryableEntry>>();
+    private Set<Object> index;
+    private final List<ConcurrentMap<Data, QueryableEntry>> resultSets
+            = new ArrayList<ConcurrentMap<Data, QueryableEntry>>();
 
     public MultiResultSet() {
     }
@@ -38,6 +47,7 @@ public class MultiResultSet extends AbstractSet<QueryableEntry> {
         if (index != null) {
             return checkFromIndex(entry);
         } else {
+            //todo: what is the point of this condition? Is it some kind of optimization?
             if (resultSets.size() > 3) {
                 index = new HashSet<Object>();
                 for (ConcurrentMap<Data, QueryableEntry> result : resultSets) {
@@ -67,11 +77,14 @@ public class MultiResultSet extends AbstractSet<QueryableEntry> {
     }
 
     class It implements Iterator<QueryableEntry> {
-        int currentIndex = 0;
+        int currentIndex;
         Iterator<QueryableEntry> currentIterator;
 
+        @Override
         public boolean hasNext() {
-            if (resultSets.size() == 0) return false;
+            if (resultSets.size() == 0) {
+                return false;
+            }
             if (currentIterator != null && currentIterator.hasNext()) {
                 return true;
             }
@@ -84,11 +97,15 @@ public class MultiResultSet extends AbstractSet<QueryableEntry> {
             return false;
         }
 
+        @Override
         public QueryableEntry next() {
-            if (resultSets.size() == 0) return null;
+            if (resultSets.size() == 0) {
+                return null;
+            }
             return currentIterator.next();
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }

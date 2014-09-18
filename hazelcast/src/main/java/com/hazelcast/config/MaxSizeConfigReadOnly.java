@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 /**
- * @ali 10/11/13
+ * Contains the configuration for a size of Map.
  */
 public class MaxSizeConfigReadOnly extends MaxSizeConfig {
 

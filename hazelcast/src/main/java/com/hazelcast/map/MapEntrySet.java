@@ -30,7 +30,7 @@ import java.util.Set;
 
 public final class MapEntrySet implements IdentifiedDataSerializable {
 
-    private final Set<Map.Entry<Data, Data>> entrySet;
+    private Set<Map.Entry<Data, Data>> entrySet;
 
     public MapEntrySet() {
         entrySet = new HashSet<Map.Entry<Data, Data>>();
@@ -78,4 +78,5 @@ public final class MapEntrySet implements IdentifiedDataSerializable {
     public int getId() {
         return MapDataSerializerHook.ENTRY_SET;
     }
+
 }

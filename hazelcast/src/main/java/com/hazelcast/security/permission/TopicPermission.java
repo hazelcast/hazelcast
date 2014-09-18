@@ -18,8 +18,8 @@ package com.hazelcast.security.permission;
 
 public class TopicPermission extends InstancePermission {
 
-    private static final int PUBLISH = 0x4;
-    private static final int LISTEN = 0x8;
+    private static final int PUBLISH = 4;
+    private static final int LISTEN = 8;
     private static final int ALL = CREATE | DESTROY | LISTEN | PUBLISH;
 
     public TopicPermission(String name, String... actions) {

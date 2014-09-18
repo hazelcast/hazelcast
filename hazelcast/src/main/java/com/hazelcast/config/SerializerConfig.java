@@ -35,20 +35,35 @@ public class SerializerConfig {
         super();
     }
 
+    /**
+     * @return class name of serializer implementation
+     */
     public String getClassName() {
         return className;
     }
 
+    /**
+     * @param clazz set class of serializer implementation
+     * @return SerializerConfig
+     */
     public SerializerConfig setClass(final Class<? extends Serializer> clazz) {
-        String className = clazz == null?null:clazz.getName();
+        String className = clazz == null ? null : clazz.getName();
         return setClassName(className);
     }
 
+    /**
+     * @param className class name of serializer implementation
+     * @return SerializationConfig
+     */
     public SerializerConfig setClassName(final String className) {
         this.className = className;
         return this;
     }
 
+    /**
+     * @return implementation of serializer class
+     * @see {@link com.hazelcast.config.SerializerConfig#setImplementation(com.hazelcast.nio.serialization.Serializer)}
+     */
     public Serializer getImplementation() {
         return implementation;
     }
@@ -67,19 +82,38 @@ public class SerializerConfig {
         return this;
     }
 
+    /**
+     * @return typeClass type of the class that will be serialized via this implementation
+     * @see {@link com.hazelcast.config.SerializerConfig#setTypeClass(Class)}
+     */
     public Class getTypeClass() {
         return typeClass;
     }
 
+    /**
+     * @param typeClass type of the class that will be serialized via this implementation
+     * @return SerializerConfig
+     */
     public SerializerConfig setTypeClass(final Class typeClass) {
         this.typeClass = typeClass;
         return this;
     }
 
+    /**
+     * @return typeClassName name of the class that will be serialized via this implementation
+     * @see {@link com.hazelcast.config.SerializerConfig#setTypeClassName(String)}
+     */
     public String getTypeClassName() {
         return typeClassName;
     }
 
+    /**
+     * This method is called only if typeClass is not set. If type class is not set class be tried to be loaded
+     * from class loader via given className in this method.
+     *
+     * @param typeClassName name of the class that will be serialized via this implementation
+     * @return SerializerConfig
+     */
     public SerializerConfig setTypeClassName(final String typeClassName) {
         this.typeClassName = typeClassName;
         return this;

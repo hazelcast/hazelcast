@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-3.2.xsd
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-3.3.xsd
            http://www.hazelcast.com/schema/sample hazelcast-sample-service.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:s="http://www.hazelcast.com/schema/sample"

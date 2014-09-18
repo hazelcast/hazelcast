@@ -16,18 +16,28 @@
 
 package com.hazelcast.config;
 
+/**
+ * Configuration for map's capacity.
+ * You can set a limit for number of entries or total memory cost of entries.
+ */
 public class MaxSizeConfig {
+
+    /**
+     * Default maximum size of map.
+     */
+    public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
 
     private MaxSizeConfigReadOnly readOnly;
 
-    private int size = MapConfig.DEFAULT_MAX_SIZE;
     private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
+
+    private int size = DEFAULT_MAX_SIZE;
 
     public MaxSizeConfig() {
     }
 
     public MaxSizeConfig(int size, MaxSizePolicy maxSizePolicy) {
-        this.size = size;
+        setSize(size);
         this.maxSizePolicy = maxSizePolicy;
     }
 
@@ -36,8 +46,26 @@ public class MaxSizeConfig {
         this.maxSizePolicy = config.maxSizePolicy;
     }
 
+    /**
+     * Maximum Size Policy
+     */
     public enum MaxSizePolicy {
-        PER_NODE, PER_PARTITION, USED_HEAP_PERCENTAGE, USED_HEAP_SIZE
+        /**
+         * Decide maximum size of map according to node
+         */
+        PER_NODE,
+        /**
+         * Decide maximum size of map according to partition
+         */
+        PER_PARTITION,
+        /**
+         * Decide maximum size of map with use heap percentage
+         */
+        USED_HEAP_PERCENTAGE,
+        /**
+         * Decide maximum size of map with use heap size
+         */
+        USED_HEAP_SIZE
     }
 
     public MaxSizeConfigReadOnly getAsReadOnly() {
@@ -52,10 +80,9 @@ public class MaxSizeConfig {
     }
 
     public MaxSizeConfig setSize(int size) {
-        if (size <= 0) {
-            size = Integer.MAX_VALUE;
+        if (size > 0) {
+            this.size = size;
         }
-        this.size = size;
         return this;
     }
 
@@ -70,9 +97,10 @@ public class MaxSizeConfig {
 
     @Override
     public String toString() {
-        return "MaxSizeConfig{" +
-                "maxSizePolicy='" + maxSizePolicy + '\'' +
-                ", size=" + size +
-                '}';
+        return "MaxSizeConfig{"
+                + "maxSizePolicy='" + maxSizePolicy
+                + '\''
+                + ", size=" + size
+                + '}';
     }
 }

@@ -16,11 +16,11 @@
 
 package com.hazelcast.ascii.memcache;
 
-import com.hazelcast.ascii.AbstractTextCommandProcessor;
+
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
 
-import java.util.logging.Level;
 
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
@@ -42,7 +42,7 @@ public class SimpleCommandProcessor extends MemcacheCommandProcessor<SimpleComma
                 logger.warning(e);
             }
         } else if (command.getType() == UNKNOWN) {
-            command.setResponse(ERROR);
+            command.setResponse(TextCommandConstants.ERROR);
             textCommandService.sendResponse(command);
         }
     }

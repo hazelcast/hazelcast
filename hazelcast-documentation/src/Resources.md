@@ -3,9 +3,10 @@
 
 
 -	Hazelcast source code can be found at [Github/Hazelcast](https://github.com/hazelcast/hazelcast).
--	Hazelcast API can be found at [Hazelcast.org](http://www.hazelcast.org/docs/latest/javadoc/).
+-	Hazelcast API can be found at [Hazelcast.org/docs/Javadoc](http://www.hazelcast.org/docs/latest/javadoc/).
+-	Code samples can be downloaded from [Hazelcast.org/download](http://hazelcast.org/download/).
 -	More use cases and resources can be found at [Hazelcast.com](http://www.hazelcast.com).
--	Questions and discussions can be post in [Hazelcast mail group](https://groups.google.com/forum/#!forum/hazelcast).
+-	Questions and discussions can be post at [Hazelcast mail group](https://groups.google.com/forum/#!forum/hazelcast).
 
 <br> </br>
 

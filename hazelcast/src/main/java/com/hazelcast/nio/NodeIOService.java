@@ -25,9 +25,8 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
@@ -48,47 +47,51 @@ public class NodeIOService implements IOService {
         this.nodeEngine = node.nodeEngine;
     }
 
+    @Override
     public boolean isActive() {
         return node.isActive();
     }
 
+    @Override
     public ILogger getLogger(String name) {
         return node.getLogger(name);
     }
 
-    public SystemLogService getSystemLogService() {
-        return node.getSystemLogService();
-    }
-
+    @Override
     public void onOutOfMemory(OutOfMemoryError oom) {
         OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
     }
 
+    @Override
     public Address getThisAddress() {
         return node.getThisAddress();
     }
 
+    @Override
     public void onFatalError(Exception e) {
-        getSystemLogService().logConnection(e.getClass().getName() + ": " + e.getMessage());
         new Thread(node.threadGroup, node.getThreadNamePrefix("io.error.shutdown")) {
             public void run() {
                 node.shutdown(false);
             }
-        }.start();
+        } .start();
     }
 
+    @Override
     public SocketInterceptorConfig getSocketInterceptorConfig() {
         return node.getConfig().getNetworkConfig().getSocketInterceptorConfig();
     }
 
+    @Override
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return node.getConfig().getNetworkConfig().getSymmetricEncryptionConfig();
     }
 
+    @Override
     public SSLConfig getSSLConfig() {
         return node.getConfig().getNetworkConfig().getSSLConfig();
     }
 
+    @Override
     public void handleMemberPacket(final Packet packet) {
         final Address endPoint = packet.getConn().getEndPoint();
         if (endPoint != null) {
@@ -100,109 +103,120 @@ public class NodeIOService implements IOService {
         nodeEngine.handlePacket(packet);
     }
 
-    public void handleClientPacket(ClientPacket p) {
+    @Override
+    public void handleClientPacket(Packet p) {
         node.clientEngine.handlePacket(p);
     }
 
+    @Override
     public TextCommandService getTextCommandService() {
         return node.getTextCommandService();
     }
 
+    @Override
     public boolean isMemcacheEnabled() {
         return node.groupProperties.MEMCACHE_ENABLED.getBoolean();
     }
 
+    @Override
     public boolean isRestEnabled() {
         return node.groupProperties.REST_ENABLED.getBoolean();
     }
 
+    @Override
     public void removeEndpoint(final Address endPoint) {
         nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
+            @Override
             public void run() {
                 node.clusterService.removeAddress(endPoint);
             }
         });
     }
 
+    @Override
     public String getThreadPrefix() {
         return node.getThreadPoolNamePrefix("IO");
     }
 
+    @Override
     public ThreadGroup getThreadGroup() {
         return node.threadGroup;
     }
 
+    @Override
     public void onFailedConnection(Address address) {
         if (!node.joined()) {
-            node.failedConnection(address);
+            node.getJoiner().blacklist(address);
         }
     }
 
+    @Override
     public void shouldConnectTo(Address address) {
         if (node.getThisAddress().equals(address)) {
             throw new RuntimeException("Connecting to self! " + address);
         }
     }
 
-    public boolean isReuseSocketAddress() {
-        return node.getConfig().getNetworkConfig().isReuseAddress();
-    }
-
-    public int getSocketPort() {
-        return node.getConfig().getNetworkConfig().getPort();
-    }
-
+    @Override
     public boolean isSocketBind() {
         return node.groupProperties.SOCKET_CLIENT_BIND.getBoolean();
     }
 
+    @Override
     public boolean isSocketBindAny() {
         return node.groupProperties.SOCKET_CLIENT_BIND_ANY.getBoolean();
     }
 
-    public boolean isSocketPortAutoIncrement() {
-        return node.getConfig().getNetworkConfig().isPortAutoIncrement();
-    }
-
+    @Override
     public int getSocketReceiveBufferSize() {
         return this.node.getGroupProperties().SOCKET_RECEIVE_BUFFER_SIZE.getInteger();
     }
 
+    @Override
     public int getSocketSendBufferSize() {
         return this.node.getGroupProperties().SOCKET_SEND_BUFFER_SIZE.getInteger();
     }
 
+    @Override
     public int getSocketLingerSeconds() {
         return this.node.getGroupProperties().SOCKET_LINGER_SECONDS.getInteger();
     }
 
+    @Override
     public boolean getSocketKeepAlive() {
         return this.node.getGroupProperties().SOCKET_KEEP_ALIVE.getBoolean();
     }
 
+    @Override
     public boolean getSocketNoDelay() {
         return this.node.getGroupProperties().SOCKET_NO_DELAY.getBoolean();
     }
 
+    @Override
     public int getSelectorThreadCount() {
         return node.groupProperties.IO_THREAD_COUNT.getInteger();
     }
 
+    @Override
     public void onDisconnect(final Address endpoint) {
     }
 
+    @Override
     public boolean isClient() {
         return false;
     }
 
+    @Override
     public long getConnectionMonitorInterval() {
         return node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong();
     }
 
+    @Override
     public int getConnectionMonitorMaxFaults() {
         return node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger();
     }
 
+    @Override
     public void executeAsync(final Runnable runnable) {
         nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, runnable);
     }
@@ -217,30 +231,43 @@ public class NodeIOService implements IOService {
         return nodeEngine.toData(obj);
     }
 
+    @Override
     public Object toObject(Data data) {
         return nodeEngine.toObject(data);
     }
 
+    @Override
     public SerializationService getSerializationService() {
         return node.getSerializationService();
     }
 
-    public SerializationContext getSerializationContext() {
-        return node.getSerializationService().getSerializationContext();
+    @Override
+    public PortableContext getPortableContext() {
+        return node.getSerializationService().getPortableContext();
     }
 
+    @Override
     public Collection<Integer> getOutboundPorts() {
         final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
-        final Collection<String> portDefinitions = networkConfig.getOutboundPortDefinitions() == null
-                ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
-        final Set<Integer> ports = networkConfig.getOutboundPorts() == null
-                ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
+        final Collection<String> portDefinitions = getPortDefinitions(networkConfig);
+        final Set<Integer> ports = getPorts(networkConfig);
         if (portDefinitions.isEmpty() && ports.isEmpty()) {
-            return Collections.emptySet(); // means any port
+            // means any port
+            return Collections.emptySet();
         }
         if (portDefinitions.contains("*") || portDefinitions.contains("0")) {
-            return Collections.emptySet(); // means any port
+            // means any port
+            return Collections.emptySet();
         }
+        transformPortDefinitionsToPorts(portDefinitions, ports);
+        if (ports.contains(0)) {
+            // means any port
+            return Collections.emptySet();
+        }
+        return ports;
+    }
+
+    private void transformPortDefinitionsToPorts(Collection<String> portDefinitions, Set<Integer> ports) {
         // not checking port ranges...
         for (String portDef : portDefinitions) {
             String[] portDefs = portDef.split("[,; ]");
@@ -258,10 +285,16 @@ public class NodeIOService implements IOService {
                 }
             }
         }
-        if (ports.contains(0)) {
-            return Collections.emptySet(); // means any port
-        }
-        return ports;
+    }
+
+    private Set<Integer> getPorts(NetworkConfig networkConfig) {
+        return networkConfig.getOutboundPorts() == null
+                ? new HashSet<Integer>() : new HashSet<Integer>(networkConfig.getOutboundPorts());
+    }
+
+    private Collection<String> getPortDefinitions(NetworkConfig networkConfig) {
+        return networkConfig.getOutboundPortDefinitions() == null
+                ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
     }
 }
 

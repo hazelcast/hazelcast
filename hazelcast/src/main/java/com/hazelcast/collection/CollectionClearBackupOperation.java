@@ -19,16 +19,12 @@ package com.hazelcast.collection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @ali 8/31/13
- */
 public class CollectionClearBackupOperation extends CollectionOperation implements BackupOperation {
-    
+
     Set<Long> itemIdSet;
 
     public CollectionClearBackupOperation() {
@@ -71,7 +67,7 @@ public class CollectionClearBackupOperation extends CollectionOperation implemen
         super.readInternal(in);
         final int size = in.readInt();
         itemIdSet = new HashSet<Long>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             itemIdSet.add(in.readLong());
         }
     }

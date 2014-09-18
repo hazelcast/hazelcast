@@ -16,49 +16,65 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
+import static com.hazelcast.util.JsonUtil.getLong;
 
 public class LocalExecutorStatsImpl implements LocalExecutorStats {
 
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> PENDING_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalExecutorStatsImpl.class, "pending");
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> STARTED_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalExecutorStatsImpl.class, "started");
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> COMPLETED_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalExecutorStatsImpl.class, "completed");
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> CANCELLED_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalExecutorStatsImpl.class, "cancelled");
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> TOTAL_START_LATENCY_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalExecutorStatsImpl.class, "totalStartLatency");
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> TOTAL_EXECUTION_TIME_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalExecutorStatsImpl.class, "totalExecutionTime");
     private long creationTime;
-    private final AtomicLong pending = new AtomicLong(0);
-    private final AtomicLong started = new AtomicLong(0);
-    private final AtomicLong completed = new AtomicLong(0);
-    private final AtomicLong cancelled = new AtomicLong(0);
-    private final AtomicLong totalStartLatency = new AtomicLong(0);
-    private final AtomicLong totalExecutionTime = new AtomicLong(0);
+
+    // These fields are only accessed through the updaters
+    private volatile long pending;
+    private volatile long started;
+    private volatile long completed;
+    private volatile long cancelled;
+    private volatile long totalStartLatency;
+    private volatile long totalExecutionTime;
 
     public LocalExecutorStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
 
     public void startPending() {
-        pending.incrementAndGet();
+        PENDING_UPDATER.incrementAndGet(this);
     }
 
     public void startExecution(long elapsed) {
-        totalStartLatency.addAndGet(elapsed);
-        started.incrementAndGet();
-        pending.decrementAndGet();
+        TOTAL_START_LATENCY_UPDATER.addAndGet(this, elapsed);
+        STARTED_UPDATER.incrementAndGet(this);
+        PENDING_UPDATER.decrementAndGet(this);
     }
 
     public void finishExecution(long elapsed) {
-        totalExecutionTime.addAndGet(elapsed);
-        completed.incrementAndGet();
+        TOTAL_EXECUTION_TIME_UPDATER.addAndGet(this, elapsed);
+        COMPLETED_UPDATER.incrementAndGet(this);
     }
 
     public void rejectExecution() {
-        pending.decrementAndGet();
+        PENDING_UPDATER.decrementAndGet(this);
     }
 
     public void cancelExecution() {
-        cancelled.incrementAndGet();
+        CANCELLED_UPDATER.incrementAndGet(this);
     }
 
     @Override
@@ -68,51 +84,74 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
 
     @Override
     public long getPendingTaskCount() {
-        return pending.get();
+        return pending;
     }
 
     @Override
     public long getStartedTaskCount() {
-        return started.get();
+        return started;
     }
 
     @Override
     public long getCompletedTaskCount() {
-        return completed.get();
+        return completed;
     }
 
     @Override
     public long getCancelledTaskCount() {
-        return cancelled.get();
+        return cancelled;
     }
 
     @Override
     public long getTotalStartLatency() {
-        return totalStartLatency.get();
+        return totalStartLatency;
     }
 
     @Override
     public long getTotalExecutionLatency() {
-        return totalExecutionTime.get();
+        return totalExecutionTime;
+    }
+
+    @Override
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+        root.add("creationTime", creationTime);
+        root.add("pending", pending);
+        root.add("started", started);
+        root.add("totalStartLatency", totalStartLatency);
+        root.add("completed", completed);
+        root.add("totalExecutionTime", totalExecutionTime);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+        creationTime = getLong(json, "creationTime", -1L);
+        PENDING_UPDATER.set(this, getLong(json, "pending", -1L));
+        STARTED_UPDATER.set(this, getLong(json, "started", -1L));
+        TOTAL_START_LATENCY_UPDATER.set(this, getLong(json, "totalStartLatency", -1L));
+        COMPLETED_UPDATER.set(this, getLong(json, "completed", -1L));
+        TOTAL_EXECUTION_TIME_UPDATER.set(this, getLong(json, "totalExecutionTime", -1L));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
-        out.writeLong(pending.get());
-        out.writeLong(started.get());
-        out.writeLong(totalStartLatency.get());
-        out.writeLong(completed.get());
-        out.writeLong(totalExecutionTime.get());
+        out.writeLong(pending);
+        out.writeLong(started);
+        out.writeLong(totalStartLatency);
+        out.writeLong(completed);
+        out.writeLong(totalExecutionTime);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         creationTime = in.readLong();
-        pending.set(in.readLong());
-        started.set(in.readLong());
-        totalStartLatency.set(in.readLong());
-        completed.set(in.readLong());
-        totalExecutionTime.set(in.readLong());
+        PENDING_UPDATER.set(this, in.readLong());
+        STARTED_UPDATER.set(this, in.readLong());
+        TOTAL_START_LATENCY_UPDATER.set(this, in.readLong());
+        COMPLETED_UPDATER.set(this, in.readLong());
+        TOTAL_EXECUTION_TIME_UPDATER.set(this, in.readLong());
     }
 }

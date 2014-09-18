@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
@@ -66,5 +67,10 @@ public class ApplyOperation extends AtomicReferenceBaseOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         function = in.readObject();
+    }
+
+    @Override
+    public int getId() {
+        return AtomicReferenceDataSerializerHook.APPLY;
     }
 }

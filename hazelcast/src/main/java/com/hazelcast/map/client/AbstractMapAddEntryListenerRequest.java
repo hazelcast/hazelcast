@@ -16,18 +16,20 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.DataAwareEntryEvent;
 import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.QueryEventFilter;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -37,11 +39,10 @@ import com.hazelcast.spi.impl.PortableEntryEvent;
 import java.security.Permission;
 
 /**
- * User: sancar
- * Date: 11/11/13
- * Time: 11:08
+ * Base class for adding entry listener to map
  */
-public abstract class AbstractMapAddEntryListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
+public abstract class AbstractMapAddEntryListenerRequest extends CallableClientRequest
+        implements RetryableRequest {
     protected String name;
     protected Data key;
     protected boolean includeValue;
@@ -64,35 +65,37 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
     @Override
     public Object call() {
         final ClientEndpoint endpoint = getEndpoint();
-        final ClientEngine clientEngine = getClientEngine();
         final MapService mapService = getService();
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
 
-            private void handleEvent(EntryEvent<Object, Object> event) {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+
+            @Override
+            public void onEntryEvent(EntryEvent<Object, Object> event) {
                 if (endpoint.live()) {
-                    Data key = clientEngine.toData(event.getKey());
-                    Data value = clientEngine.toData(event.getValue());
-                    Data oldValue = clientEngine.toData(event.getOldValue());
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, event.getEventType(), event.getMember().getUuid());
+                    if (!(event instanceof DataAwareEntryEvent)) {
+                        throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
+                                + event.getClass().getSimpleName());
+                    }
+                    DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+                    Data key = dataAwareEntryEvent.getKeyData();
+                    Data value = dataAwareEntryEvent.getNewValueData();
+                    Data oldValue = dataAwareEntryEvent.getOldValueData();
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue,
+                            event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(portableEntryEvent, getCallId());
                 }
             }
 
-            public void entryAdded(EntryEvent<Object, Object> event) {
-                handleEvent(event);
-            }
-
-            public void entryRemoved(EntryEvent<Object, Object> event) {
-                handleEvent(event);
-            }
-
-            public void entryUpdated(EntryEvent<Object, Object> event) {
-                handleEvent(event);
-            }
-
-            public void entryEvicted(EntryEvent<Object, Object> event) {
-                handleEvent(event);
+            @Override
+            public void onMapEvent(MapEvent event) {
+                if (endpoint.live()) {
+                    final EntryEventType type = event.getEventType();
+                    final String uuid = event.getMember().getUuid();
+                    PortableEntryEvent portableEntryEvent =
+                            new PortableEntryEvent(type, uuid, event.getNumberOfEntriesAffected());
+                    endpoint.sendEvent(portableEntryEvent, getCallId());
+                }
             }
         };
 
@@ -102,11 +105,12 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         } else {
             eventFilter = new QueryEventFilter(includeValue, key, getPredicate());
         }
-        String registrationId = mapService.addEventListener(listener, eventFilter, name);
+        String registrationId = mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
         endpoint.setListenerRegistration(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 
+    @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
@@ -116,8 +120,13 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         return MapPortableHook.F_ID;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_LISTEN);
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 }

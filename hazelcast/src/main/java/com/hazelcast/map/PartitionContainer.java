@@ -26,21 +26,41 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class PartitionContainer {
+
     private final MapService mapService;
+
     private final int partitionId;
+
     private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
+
+    private final ConstructorFunction<String, RecordStore> recordStoreConstructor
+            = new ConstructorFunction<String, RecordStore>() {
+        public RecordStore createNew(String name) {
+            final MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
+            return new DefaultRecordStore(mapContainer, partitionId);
+        }
+    };
+    /**
+     * Flag to check if there is a {@link com.hazelcast.map.operation.ClearExpiredOperation}
+     * is running on this partition at this moment or not.
+     */
+    private volatile boolean hasRunningCleanup;
+
+    private volatile long lastCleanupTime;
+
+    /**
+     * Used when sorting partition containers in {@link com.hazelcast.map.eviction.ExpirationManager}
+     * A non-volatile copy of lastCleanupTime is used with two reasons.
+     * <p/>
+     * 1. We need an un-modified field during sorting.
+     * 2. Decrease number of volatile reads.
+     */
+    private long lastCleanupTimeCopy;
 
     public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
         this.partitionId = partitionId;
     }
-
-    private final ConstructorFunction<String, RecordStore> recordStoreConstructor
-            = new ConstructorFunction<String, RecordStore>() {
-        public RecordStore createNew(String name) {
-            return new DefaultRecordStore(name, mapService, partitionId);
-        }
-    };
 
     public ConcurrentMap<String, RecordStore> getMaps() {
         return maps;
@@ -55,7 +75,7 @@ public class PartitionContainer {
     }
 
     public RecordStore getRecordStore(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(maps, name, this,recordStoreConstructor);
+        return ConcurrencyUtil.getOrPutSynchronized(maps, name, this, recordStoreConstructor);
     }
 
     public RecordStore getExistingRecordStore(String mapName) {
@@ -72,7 +92,7 @@ public class PartitionContainer {
     }
 
     private void clearLockStore(String name) {
-        final NodeEngine nodeEngine = mapService.getNodeEngine();
+        final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             final DefaultObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
@@ -87,5 +107,27 @@ public class PartitionContainer {
         maps.clear();
     }
 
+    public boolean hasRunningCleanup() {
+        return hasRunningCleanup;
+    }
 
+    public void setHasRunningCleanup(boolean hasRunningCleanup) {
+        this.hasRunningCleanup = hasRunningCleanup;
+    }
+
+    public long getLastCleanupTime() {
+        return lastCleanupTime;
+    }
+
+    public void setLastCleanupTime(long lastCleanupTime) {
+        this.lastCleanupTime = lastCleanupTime;
+    }
+
+    public long getLastCleanupTimeCopy() {
+        return lastCleanupTimeCopy;
+    }
+
+    public void setLastCleanupTimeCopy(long lastCleanupTimeCopy) {
+        this.lastCleanupTimeCopy = lastCleanupTimeCopy;
+    }
 }

@@ -25,14 +25,35 @@ import com.hazelcast.util.HealthMonitorLevel;
  */
 public class GroupProperties {
 
-    public static final String PROP_HOSTED_MANAGEMENT_ENABLED = "hazelcast.hosted.management.enabled";
-    public static final String PROP_HOSTED_MANAGEMENT_URL = "hazelcast.hosted.management.url";
+    /**
+     * This property can be used to verify that Hazelcast nodes only join when their 'application' level configuration is the
+     * same.
+     *
+     * So imagine that you have multiple machines, but you want to make sure that each machine that is going to join the cluster
+     * has exactly the same 'application level' settings, so settings that are not part of the Hazelcast configuration, but
+     * maybe some filepath. To prevent these machines, with potential different application level configuration, to form
+     * a cluster, this property can be set.
+     *
+     * You could use actual values, e.g. string paths, but you can also use e.g. an md5 hash. We'll give the give the guarantee
+     * that only nodes are going to form a cluster where the token is an exact match. If this token is different, the member
+     * can't be started and therefor you will get the guarantee that all members in the cluster, will have exactly the same
+     * application validation token.
+     *
+     * This validation-token will be checked before member join the cluster.
+     */
+    public static final String PROP_APPLICATION_VALIDATION_TOKEN = "hazelcast.application.validation.token";
+
     public static final String PROP_HEALTH_MONITORING_LEVEL = "hazelcast.health.monitoring.level";
     public static final String PROP_HEALTH_MONITORING_DELAY_SECONDS = "hazelcast.health.monitoring.delay.seconds";
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
-    public static final String PROP_OPERATION_THREAD_COUNT = "hazelcast.operation.thread.count";
+    /**
+     * The number of partition threads per Member. If this is less than the number of partitions on a Member, then
+     * partition operations will queue behind other operations of different partitions. The default is 4.
+     */
+    public static final String PROP_PARTITION_OPERATION_THREAD_COUNT = "hazelcast.operation.thread.count";
+    public static final String PROP_GENERIC_OPERATION_THREAD_COUNT = "hazelcast.operation.generic.thread.count";
     public static final String PROP_EVENT_THREAD_COUNT = "hazelcast.event.thread.count";
     public static final String PROP_EVENT_QUEUE_CAPACITY = "hazelcast.event.queue.capacity";
     public static final String PROP_EVENT_QUEUE_TIMEOUT_MILLIS = "hazelcast.event.queue.timeout.millis";
@@ -47,6 +68,13 @@ public class GroupProperties {
     public static final String PROP_SOCKET_SERVER_BIND_ANY = "hazelcast.socket.server.bind.any";
     public static final String PROP_SOCKET_CLIENT_BIND_ANY = "hazelcast.socket.client.bind.any";
     public static final String PROP_SOCKET_CLIENT_BIND = "hazelcast.socket.client.bind";
+    /**
+     * The number of threads the client engine has available for processing requests that are not partition specific.
+     * Most of the request e.g. map.put/map.get are partition specific and will use a partition-operation-thread, but
+     * there are also request that can't be executed on a partition-specific operation-thread, e.g. multimap.contain(value)
+     * because it needs to access all partitions on a given member.
+     */
+    public static final String PROP_CLIENT_ENGINE_THREAD_COUNT = "hazelcast.clientengine.thread.count";
     public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
     public static final String PROP_SOCKET_SEND_BUFFER_SIZE = "hazelcast.socket.send.buffer.size";
     public static final String PROP_SOCKET_LINGER_SECONDS = "hazelcast.socket.linger.seconds";
@@ -60,14 +88,17 @@ public class GroupProperties {
     public static final String PROP_HEARTBEAT_INTERVAL_SECONDS = "hazelcast.heartbeat.interval.seconds";
     public static final String PROP_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.max.no.heartbeat.seconds";
     public static final String PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS = "hazelcast.max.no.master.confirmation.seconds";
-    public static final String PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS = "hazelcast.master.confirmation.interval.seconds";
-    public static final String PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS = "hazelcast.member.list.publish.interval.seconds";
+    public static final String PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS
+            = "hazelcast.master.confirmation.interval.seconds";
+    public static final String PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS
+            = "hazelcast.member.list.publish.interval.seconds";
     public static final String PROP_ICMP_ENABLED = "hazelcast.icmp.enabled";
     public static final String PROP_ICMP_TIMEOUT = "hazelcast.icmp.timeout";
     public static final String PROP_ICMP_TTL = "hazelcast.icmp.ttl";
     public static final String PROP_INITIAL_MIN_CLUSTER_SIZE = "hazelcast.initial.min.cluster.size";
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
-    public static final String PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS = "hazelcast.map.replica.wait.seconds.for.scheduled.tasks";
+    public static final String PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
+            = "hazelcast.map.replica.scheduled.task.delay.seconds";
     public static final String PROP_PARTITION_COUNT = "hazelcast.partition.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
@@ -90,17 +121,23 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = "hazelcast.elastic.memory.shared.storage";
     public static final String PROP_ELASTIC_MEMORY_UNSAFE_ENABLED = "hazelcast.elastic.memory.unsafe.enabled";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
+    public static final String PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY = "hazelcast.map.write.behind.queue.capacity";
+    public static final String PROP_ENTERPRISE_WAN_REP_QUEUESIZE = "hazelcast.enterprise.wanrep.queuesize";
+    public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
 
     /**
-     * This property will only be used temporary until we have exposed the hosted management center to the public.
-     * So it will be disabled by default.
+     * forces the jcache provider which can have values client or server to force provider type,
+     * if not provided provider will be client or server whichever found on classPath first respectively
      */
-    public final GroupProperty HOSTED_MANAGEMENT_ENABLED;
-    public final GroupProperty HOSTED_MANAGEMENT_URL;
+    public static final String PROP_JCACHE_PROVIDER_TYPE = "hazelcast.jcache.provider.type";
 
-    public final GroupProperty OPERATION_THREAD_COUNT;
+    public final GroupProperty CLIENT_ENGINE_THREAD_COUNT;
+
+    public final GroupProperty PARTITION_OPERATION_THREAD_COUNT;
+
+    public final GroupProperty GENERIC_OPERATION_THREAD_COUNT;
 
     public final GroupProperty EVENT_THREAD_COUNT;
 
@@ -138,9 +175,11 @@ public class GroupProperties {
 
     public final GroupProperty SOCKET_CLIENT_BIND;
 
-    public final GroupProperty SOCKET_RECEIVE_BUFFER_SIZE; // number of kilobytes
+    // number of kilobytes
+    public final GroupProperty SOCKET_RECEIVE_BUFFER_SIZE;
 
-    public final GroupProperty SOCKET_SEND_BUFFER_SIZE;    // number of kilobytes
+    // number of kilobytes
+    public final GroupProperty SOCKET_SEND_BUFFER_SIZE;
 
     public final GroupProperty SOCKET_LINGER_SECONDS;
 
@@ -178,7 +217,7 @@ public class GroupProperties {
 
     public final GroupProperty INITIAL_MIN_CLUSTER_SIZE;
 
-    public final GroupProperty MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS;
+    public final GroupProperty MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS;
 
     public final GroupProperty PARTITION_COUNT;
 
@@ -224,23 +263,32 @@ public class GroupProperties {
 
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
+    public final GroupProperty MAP_WRITE_BEHIND_QUEUE_CAPACITY;
+
+    public final GroupProperty ENTERPRISE_WAN_REP_QUEUESIZE;
+
+    public final GroupProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS;
+
     public final GroupProperty MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS;
 
+    /**
+     * @param config
+     */
     public GroupProperties(Config config) {
-        HOSTED_MANAGEMENT_ENABLED = new GroupProperty(config, PROP_HOSTED_MANAGEMENT_ENABLED, "false");
-
-        //todo: we need to pull out the version.
-        HOSTED_MANAGEMENT_URL = new GroupProperty(config, PROP_HOSTED_MANAGEMENT_URL, "http://manage.hazelcast.com/3.2");
-
-        HEALTH_MONITORING_LEVEL = new GroupProperty(config,PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
+        HEALTH_MONITORING_LEVEL
+                = new GroupProperty(config, PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
         HEALTH_MONITORING_DELAY_SECONDS = new GroupProperty(config, PROP_HEALTH_MONITORING_DELAY_SECONDS, "30");
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
-        OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_OPERATION_THREAD_COUNT, "-1");
+        //-1 means that the value is worked out dynamically.
+        PARTITION_OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_PARTITION_OPERATION_THREAD_COUNT, "-1");
+        GENERIC_OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_GENERIC_OPERATION_THREAD_COUNT, "-1");
         EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "5");
         EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EVENT_QUEUE_CAPACITY, "1000000");
         EVENT_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_EVENT_QUEUE_TIMEOUT_MILLIS, "250");
+        CLIENT_ENGINE_THREAD_COUNT = new GroupProperty(config, PROP_CLIENT_ENGINE_THREAD_COUNT, "-1");
+
         CONNECT_ALL_WAIT_SECONDS = new GroupProperty(config, PROP_CONNECT_ALL_WAIT_SECONDS, "120");
         MEMCACHE_ENABLED = new GroupProperty(config, PROP_MEMCACHE_ENABLED, "true");
         REST_ENABLED = new GroupProperty(config, PROP_REST_ENABLED, "true");
@@ -264,15 +312,18 @@ public class GroupProperties {
         MAX_JOIN_MERGE_TARGET_SECONDS = new GroupProperty(config, PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "20");
         HEARTBEAT_INTERVAL_SECONDS = new GroupProperty(config, PROP_HEARTBEAT_INTERVAL_SECONDS, "1");
         MAX_NO_HEARTBEAT_SECONDS = new GroupProperty(config, PROP_MAX_NO_HEARTBEAT_SECONDS, "300");
-        MASTER_CONFIRMATION_INTERVAL_SECONDS = new GroupProperty(config, PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "30");
+        MASTER_CONFIRMATION_INTERVAL_SECONDS
+                = new GroupProperty(config, PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "30");
         MAX_NO_MASTER_CONFIRMATION_SECONDS = new GroupProperty(config, PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "500");
-        MEMBER_LIST_PUBLISH_INTERVAL_SECONDS = new GroupProperty(config, PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "300");
+        MEMBER_LIST_PUBLISH_INTERVAL_SECONDS
+                = new GroupProperty(config, PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "300");
         ICMP_ENABLED = new GroupProperty(config, PROP_ICMP_ENABLED, "false");
         ICMP_TIMEOUT = new GroupProperty(config, PROP_ICMP_TIMEOUT, "1000");
         ICMP_TTL = new GroupProperty(config, PROP_ICMP_TTL, "0");
         INITIAL_MIN_CLUSTER_SIZE = new GroupProperty(config, PROP_INITIAL_MIN_CLUSTER_SIZE, "0");
         INITIAL_WAIT_SECONDS = new GroupProperty(config, PROP_INITIAL_WAIT_SECONDS, "0");
-        MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_TASKS = new GroupProperty(config, PROP_MAP_REPLICA_WAIT_SECONDS_FOR_SCHEDULED_OPERATIONS, "10");
+        MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
+                = new GroupProperty(config, PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "10");
         PARTITION_COUNT = new GroupProperty(config, PROP_PARTITION_COUNT, "271");
         LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
@@ -295,6 +346,10 @@ public class GroupProperties {
         ELASTIC_MEMORY_SHARED_STORAGE = new GroupProperty(config, PROP_ELASTIC_MEMORY_SHARED_STORAGE, "false");
         ELASTIC_MEMORY_UNSAFE_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_UNSAFE_ENABLED, "false");
         ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY);
+        MAP_WRITE_BEHIND_QUEUE_CAPACITY
+                = new GroupProperty(config, PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY, "50000");
+        ENTERPRISE_WAN_REP_QUEUESIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_QUEUESIZE, "100000");
+        CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
     }

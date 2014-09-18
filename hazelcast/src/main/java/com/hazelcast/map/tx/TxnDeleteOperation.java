@@ -17,24 +17,25 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.map.operation.BaseRemoveOperation;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.map.operation.RemoveBackupOperation;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
 /**
- * @author mdogan 3/25/13
+ * Transactional delete operation
  */
 public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOperation {
 
     private long version;
-    private boolean successful = false;
+    private boolean successful;
     private String ownerUuid;
 
     public TxnDeleteOperation() {
@@ -46,10 +47,17 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     }
 
     @Override
+    public void innerBeforeRun() {
+        if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
+            throw new TransactionException("Cannot acquire lock uuid: " + ownerUuid + ", threadId: " + threadId);
+        }
+    }
+
+    @Override
     public void run() {
         recordStore.unlock(dataKey, ownerUuid, getThreadId());
         Record record = recordStore.getRecord(dataKey);
-        if (record == null || version == record.getVersion()){
+        if (record == null || version == record.getVersion()) {
             dataOldValue = getNodeEngine().toData(recordStore.remove(dataKey));
             successful = dataOldValue != null;
         }
@@ -57,12 +65,13 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
 
     @Override
     public boolean shouldWait() {
-        return !recordStore.canAcquireLock(dataKey, ownerUuid, getThreadId());
+        return false;
     }
 
     public void afterRun() {
-        if (successful)
+        if (successful) {
             super.afterRun();
+        }
     }
 
     @Override

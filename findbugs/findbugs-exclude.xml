@@ -1,41 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
 
-    <!--comment out packages as they pass findbugs. e.g. examples now passes-->
-
-    <!--Examples Package is now turned on.-->
-    <!--<Match>-->
-    <!--<Package name="com.hazelcast.examples" />-->
-    <!--</Match>-->
     <Match>
-        <Class name="com.hazelcast.examples.TestApp"/>
-        <!--System.exit()-->
-        <Bug code="Dm" />
-    </Match>
-
-
-    <Match>
-        <Package name="com.hazelcast.util" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.nio.ssl" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.spi.impl" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.nio.serialization" />
-    </Match>
-     <Match>
-        <Package name="com.hazelcast.util.executor" />
-    </Match>
-    <Match>
-        <Package name="com.hazelcast.client.examples" />
-    </Match>
-
-    <!-- todo: these findbugs warnings needs to be fixed -->
-    <Match>
-        <Package name="com.hazelcast.jca" />
+        <Class name="com.hazelcast.nio.ssl.SSLSocketChannelWrapper" />
+        <Bug pattern="SWL_SLEEP_WITH_LOCK_HELD" />
     </Match>
 
 </FindBugsFilter>

@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,6 +42,11 @@ public class LockBackupOperation extends BaseLockOperation implements BackupOper
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         response = lockStore.lock(key, originalCallerUuid, threadId, ttl);
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.LOCK_BACKUP;
     }
 
     @Override

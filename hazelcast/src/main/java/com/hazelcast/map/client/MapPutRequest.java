@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.KeyBasedClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -31,9 +31,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class MapPutRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
@@ -43,6 +43,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
     protected long threadId;
     protected long ttl;
     protected transient long startTime;
+    protected boolean async;
 
     public MapPutRequest() {
     }
@@ -84,9 +85,10 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
     protected void beforeResponse() {
         final long latency = System.currentTimeMillis() - startTime;
         final MapService mapService = getService();
-        MapContainer mapContainer = mapService.getMapContainer(name);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getLocalMapStatsImpl(name).incrementPuts(latency);
+            mapService.getMapServiceContext().getLocalMapStatsProvider()
+                    .getLocalMapStatsImpl(name).incrementPuts(latency);
         }
     }
 
@@ -97,6 +99,10 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         return op;
     }
 
+    public void setAsAsync() {
+        this.async = true;
+    }
+
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
@@ -105,6 +111,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         writer.writeUTF("n", name);
         writer.writeLong("t", threadId);
         writer.writeLong("ttl", ttl);
+        writer.writeBoolean("a", async);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         value.writeData(out);
@@ -114,6 +121,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         name = reader.readUTF("n");
         threadId = reader.readLong("t");
         ttl = reader.readLong("ttl");
+        async = reader.readBoolean("a");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
@@ -125,4 +133,24 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         return new MapPermission(name, ActionConstants.ACTION_PUT);
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public String getMethodName() {
+        if (async) {
+            return "putAsync";
+        }
+        return "put";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (ttl == -1) {
+            return new Object[]{key, value};
+        }
+        return new Object[]{key, value, ttl, TimeUnit.MILLISECONDS};
+    }
 }

@@ -26,7 +26,6 @@ import com.hazelcast.nio.Address;
  * replica's and this information will be updated. So one can cache the InternalPartition and keep asking for
  * partition information.
  *
- * @author mdogan 6/17/13
  */
 public interface InternalPartition {
 
@@ -49,7 +48,7 @@ public interface InternalPartition {
      *
      * @return the owner.
      */
-    Address getOwner();
+    Address getOwnerOrNull();
 
     /**
      * Checks if there currently is a migration going on in this partition.
@@ -67,14 +66,19 @@ public interface InternalPartition {
      * <p/>
      * The returned value could be null if the owner/replica has not yet been set.
      * <p/>
-     * todo: what to do when index is out of bounds.
-     * <p/>
      * The returned value could be stale when it is returned.
      *
      * @param replicaIndex the index of the replica.
+     * @throws java.lang.ArrayIndexOutOfBoundsException when replica index is out of bounds
      * @return the Address of the replica.
      */
     Address getReplicaAddress(int replicaIndex);
 
+    /**
+     * Checks if given address is owner of primary or backup of this partition.
+     *
+     * @param address owner address
+     * @return true if address is owner or backup, false otherwise
+     */
     boolean isOwnerOrBackup(Address address);
 }

@@ -23,30 +23,74 @@ import java.util.List;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
+/**
+ * Contains the configuration for an {@link com.hazelcast.core.IMap}.
+ */
 public class MapConfig {
 
-    public final static int MIN_BACKUP_COUNT = 0;
-    public final static int DEFAULT_BACKUP_COUNT = 1;
-    public final static int MAX_BACKUP_COUNT = 6;
+    /**
+     * The number of minimum backup counter
+     */
+    public static final int MIN_BACKUP_COUNT = 0;
+    /**
+     * The number of default backup counter
+     */
+    public static final int DEFAULT_BACKUP_COUNT = 1;
+    /**
+     * The number of maximum backup counter
+     */
+    public static final int MAX_BACKUP_COUNT = 6;
+    /**
+     * The number of minimum eviction percentage
+     */
+    public static final int MIN_EVICTION_PERCENTAGE = 0;
+    /**
+     * The number of default eviction percentage
+     */
+    public static final int DEFAULT_EVICTION_PERCENTAGE = 25;
+    /**
+     * The number of maximum eviction percentage
+     */
+    public static final int MAX_EVICTION_PERCENTAGE = 100;
 
-    public final static int MIN_EVICTION_PERCENTAGE = 0;
-    public final static int DEFAULT_EVICTION_PERCENTAGE = 25;
-    public final static int MAX_EVICTION_PERCENTAGE = 100;
+    /**
+     * Minimum time in milliseconds which should pass before asking
+     * if a partition of this map is evictable or not.
+     */
+    public static final long DEFAULT_MIN_EVICTION_CHECK_MILLIS = 100L;
 
-    public final static int DEFAULT_TTL_SECONDS = 0;
-    public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
-    public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
-    public final static EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
-    public final static String DEFAULT_MAP_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
-    public final static InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
+    /**
+     * The number of default Time to Live seconds
+     */
+    public static final int DEFAULT_TTL_SECONDS = 0;
 
-    private String name = null;
+    /**
+     * The number of default time to wait eviction
+     */
+    public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
+
+    /**
+     * Default policy for eviction
+     */
+    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
+    /**
+     * Default policy for merging
+     */
+    public static final String DEFAULT_MAP_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
+    /**
+     * Default In-Memory format is binary
+     */
+    public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
+
+    private String name;
 
     private int backupCount = DEFAULT_BACKUP_COUNT;
 
     private int asyncBackupCount = MIN_BACKUP_COUNT;
 
     private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
+
+    private long minEvictionCheckMillis = DEFAULT_MIN_EVICTION_CHECK_MILLIS;
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
@@ -56,13 +100,13 @@ public class MapConfig {
 
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
 
-    private MapStoreConfig mapStoreConfig = null;
+    private MapStoreConfig mapStoreConfig;
 
-    private NearCacheConfig nearCacheConfig = null;
+    private NearCacheConfig nearCacheConfig;
 
-    private boolean readBackupData = false;
+    private boolean readBackupData;
 
-    private boolean optimizeQueries = false;
+    private boolean optimizeQueries;
 
     private String mergePolicy = DEFAULT_MAP_MERGE_POLICY;
 
@@ -80,8 +124,22 @@ public class MapConfig {
 
     private MapConfigReadOnly readOnly;
 
+    /**
+     * Eviction Policy enum
+     */
     public enum EvictionPolicy {
-        LRU, LFU, NONE
+        /**
+         * Least Recently Used
+         */
+        LRU,
+        /**
+         * Least Frequently Used
+         */
+        LFU,
+        /**
+         * None
+         */
+        NONE
     }
 
     public MapConfig(String name) {
@@ -96,6 +154,7 @@ public class MapConfig {
         this.backupCount = config.backupCount;
         this.asyncBackupCount = config.asyncBackupCount;
         this.evictionPercentage = config.evictionPercentage;
+        this.minEvictionCheckMillis = config.minEvictionCheckMillis;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
         this.maxSizeConfig = config.maxSizeConfig != null ? new MaxSizeConfig(config.maxSizeConfig) : null;
@@ -114,8 +173,8 @@ public class MapConfig {
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
     }
 
-    public MapConfigReadOnly getAsReadOnly(){
-        if (readOnly == null){
+    public MapConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
             readOnly = new MapConfigReadOnly(this);
         }
         return readOnly;
@@ -154,7 +213,7 @@ public class MapConfig {
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat,"inMemoryFormat");
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
         return this;
     }
 
@@ -246,6 +305,34 @@ public class MapConfig {
     }
 
     /**
+     * Returns minimum milliseconds which should pass before asking if a partition of this map is evictable or not.
+     * <p/>
+     * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
+     *
+     * @return number of milliseconds should pass before asking next eviction.
+     * @since 3.3
+     */
+    public long getMinEvictionCheckMillis() {
+        return minEvictionCheckMillis;
+    }
+
+    /**
+     * Sets the minimum time in millis which should pass before asking if a partition of this map is evictable or not.
+     * <p/>
+     * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
+     *
+     * @param minEvictionCheckMillis time in millis.
+     * @since 3.3
+     */
+    public MapConfig setMinEvictionCheckMillis(long minEvictionCheckMillis) {
+        if (minEvictionCheckMillis < 0) {
+            throw new IllegalArgumentException("Parameter minEvictionCheckMillis can not get a negative value");
+        }
+        this.minEvictionCheckMillis = minEvictionCheckMillis;
+        return this;
+    }
+
+    /**
      * @return the timeToLiveSeconds
      */
     public int getTimeToLiveSeconds() {
@@ -276,7 +363,7 @@ public class MapConfig {
     /**
      * Maximum number of seconds for each entry to stay idle in the map. Entries that are
      * idle(not touched) for more than maxIdleSeconds will get
-     * automatically evicted from the map. Entry is touched if get, put or
+     * automatically evicted from the map. Entry is touched if get, getAll, put or
      * containsKey is called.
      * Any integer between 0 and Integer.MAX_VALUE.
      * 0 means infinite. Default is 0.
@@ -436,17 +523,18 @@ public class MapConfig {
         if (this == other) {
             return true;
         }
-        return other != null &&
-                (this.name != null ? this.name.equals(other.name) : other.name == null) &&
-                this.backupCount == other.backupCount &&
-                this.asyncBackupCount == other.asyncBackupCount &&
-                this.evictionPercentage == other.evictionPercentage &&
-                this.maxIdleSeconds == other.maxIdleSeconds &&
-                (this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() ||
-                        (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
-                                && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE)) &&
-                this.timeToLiveSeconds == other.timeToLiveSeconds &&
-                this.readBackupData == other.readBackupData;
+        return other != null
+                && (this.name != null ? this.name.equals(other.name) : other.name == null)
+                && this.backupCount == other.backupCount
+                && this.asyncBackupCount == other.asyncBackupCount
+                && this.evictionPercentage == other.evictionPercentage
+                && this.minEvictionCheckMillis == other.minEvictionCheckMillis
+                && this.maxIdleSeconds == other.maxIdleSeconds
+                && (this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize()
+                || (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
+                && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE))
+                && this.timeToLiveSeconds == other.timeToLiveSeconds
+                && this.readBackupData == other.readBackupData;
     }
 
     @Override
@@ -456,6 +544,7 @@ public class MapConfig {
         result = prime * result + this.backupCount;
         result = prime * result + this.asyncBackupCount;
         result = prime * result + this.evictionPercentage;
+        result = prime * result + (int) (minEvictionCheckMillis ^ (minEvictionCheckMillis >>> 32));
         result = prime
                 * result
                 + ((this.evictionPolicy == null) ? 0 : this.evictionPolicy
@@ -490,22 +579,24 @@ public class MapConfig {
         }
         MapConfig other = (MapConfig) obj;
         return
-                (this.name != null ? this.name.equals(other.name) : other.name == null) &&
-                        this.backupCount == other.backupCount &&
-                        this.asyncBackupCount == other.asyncBackupCount &&
-                        this.evictionPercentage == other.evictionPercentage &&
-                        this.maxIdleSeconds == other.maxIdleSeconds &&
-                        this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() &&
-                        this.timeToLiveSeconds == other.timeToLiveSeconds &&
-                        this.readBackupData == other.readBackupData &&
-                        (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null) &&
-                        (this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat) : other.inMemoryFormat == null) &&
-                        (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
-                                : other.evictionPolicy == null) &&
-                        (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig)
-                                : other.mapStoreConfig == null) &&
-                        (this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig)
-                                : other.nearCacheConfig == null);
+                (this.name != null ? this.name.equals(other.name) : other.name == null)
+                        && this.backupCount == other.backupCount
+                        && this.asyncBackupCount == other.asyncBackupCount
+                        && this.evictionPercentage == other.evictionPercentage
+                        && this.minEvictionCheckMillis == other.minEvictionCheckMillis
+                        && this.maxIdleSeconds == other.maxIdleSeconds
+                        && this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize()
+                        && this.timeToLiveSeconds == other.timeToLiveSeconds
+                        && this.readBackupData == other.readBackupData
+                        && (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null)
+                        && (this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat)
+                        : other.inMemoryFormat == null)
+                        && (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
+                        : other.evictionPolicy == null)
+                        && (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig)
+                        : other.mapStoreConfig == null)
+                        && (this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig)
+                        : other.nearCacheConfig == null);
     }
 
     @Override
@@ -520,6 +611,7 @@ public class MapConfig {
         sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
         sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
         sb.append(", evictionPercentage=").append(evictionPercentage);
+        sb.append(", minEvictionCheckMillis=").append(minEvictionCheckMillis);
         sb.append(", maxSizeConfig=").append(maxSizeConfig);
         sb.append(", readBackupData=").append(readBackupData);
         sb.append(", nearCacheConfig=").append(nearCacheConfig);

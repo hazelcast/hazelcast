@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapValueCollection;
@@ -30,7 +30,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
-
 import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
@@ -58,7 +57,7 @@ public class MapValuesRequest extends AllPartitionsClientRequest implements Port
         List<Data> values = new ArrayList<Data>();
         MapService mapService = getService();
         for (Object result : results.values()) {
-            values.addAll(((MapValueCollection) mapService.toObject(result)).getValues());
+            values.addAll(((MapValueCollection) mapService.getMapServiceContext().toObject(result)).getValues());
         }
         return new MapValueCollection(values);
     }
@@ -86,5 +85,15 @@ public class MapValuesRequest extends AllPartitionsClientRequest implements Port
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "values";
     }
 }

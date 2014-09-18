@@ -21,9 +21,6 @@ import com.hazelcast.collection.CollectionSizeOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
 
-/**
- * @ali 9/4/13
- */
 public class CollectionSizeRequest extends CollectionRequest {
 
     public CollectionSizeRequest() {
@@ -46,5 +43,10 @@ public class CollectionSizeRequest extends CollectionRequest {
     @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "size";
     }
 }

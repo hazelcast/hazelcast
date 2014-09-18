@@ -63,6 +63,31 @@ public interface SecurityContext {
      */
     void checkPermission(Subject subject, Permission permission) throws AccessControlException;
 
+
+    /**
+     * intercepts a request before process if any {@link SecurityInterceptor} configured
+     *
+     * @param credentials
+     * @param serviceName
+     * @param objectName
+     * @param methodName
+     * @param parameters
+     * @throws AccessControlException
+     */
+    void interceptBefore(Credentials credentials, String serviceName, String objectName,
+                         String methodName, Object[] parameters) throws AccessControlException;
+
+    /**
+     * intercepts a request after process if any {@link SecurityInterceptor} configured
+     * Any exception thrown during interception will be ignored
+     *
+     * @param credentials
+     * @param serviceName
+     * @param objectName
+     * @param methodName
+     */
+    void interceptAfter(Credentials credentials, String serviceName, String objectName, String methodName);
+
     /**
      * Creates secure callable that runs in a sandbox.
      *
@@ -77,4 +102,5 @@ public interface SecurityContext {
      * Destroys {@link SecurityContext} and all security elements.
      */
     void destroy();
+
 }

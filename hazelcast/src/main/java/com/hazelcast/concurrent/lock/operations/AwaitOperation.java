@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.concurrent.lock.ConditionKey;
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -117,6 +118,11 @@ public class AwaitOperation extends BaseLockOperation
             // expired but could not acquire lock, no response atm
             lockStore.registerExpiredAwaitOp(this);
         }
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.AWAIT;
     }
 
     @Override

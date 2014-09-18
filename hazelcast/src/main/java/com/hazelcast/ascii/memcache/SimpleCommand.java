@@ -17,13 +17,14 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.AbstractTextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 
 import java.nio.ByteBuffer;
 
 public class SimpleCommand extends AbstractTextCommand {
-    ByteBuffer response = null;
+    ByteBuffer response;
 
-    public SimpleCommand(TextCommandType type) {
+    public SimpleCommand(TextCommandConstants.TextCommandType type) {
         super(type);
     }
 
@@ -44,7 +45,8 @@ public class SimpleCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "SimpleCommand [" + type + "]{" +
-                '}' + super.toString();
+        return "SimpleCommand [" + type + "]{"
+                + '}'
+                + super.toString();
     }
 }

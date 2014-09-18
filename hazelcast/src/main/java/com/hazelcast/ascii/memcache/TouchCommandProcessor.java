@@ -16,6 +16,7 @@
 
 package com.hazelcast.ascii.memcache;
 
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
@@ -44,17 +45,17 @@ public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand
         } catch (UnsupportedEncodingException e) {
             throw new HazelcastException(e);
         }
-        String mapName = DefaultMapName;
+        String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {
-            mapName = MapNamePreceder + key.substring(0, index);
+            mapName = MAP_NAME_PRECEDER + key.substring(0, index);
             key = key.substring(index + 1);
         }
         int ttl = textCommandService.getAdjustedTTLSeconds(touchCommand.getExpiration());
         try {
             textCommandService.lock(mapName, key);
         } catch (Exception e) {
-            touchCommand.setResponse(NOT_STORED);
+            touchCommand.setResponse(TextCommandConstants.NOT_STORED);
             if (touchCommand.shouldReply()) {
                 textCommandService.sendResponse(touchCommand);
             }
@@ -64,9 +65,9 @@ public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand
         textCommandService.incrementTouchCount();
         if (value != null) {
             textCommandService.put(mapName, key, value, ttl);
-            touchCommand.setResponse(TOUCHED);
+            touchCommand.setResponse(TextCommandConstants.TOUCHED);
         } else {
-            touchCommand.setResponse(NOT_STORED);
+            touchCommand.setResponse(TextCommandConstants.NOT_STORED);
         }
         textCommandService.unlock(mapName, key);
 
@@ -76,7 +77,7 @@ public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand
     }
 
     public void handleRejection(TouchCommand request) {
-        request.setResponse(NOT_STORED);
+        request.setResponse(TextCommandConstants.NOT_STORED);
         if (request.shouldReply()) {
             textCommandService.sendResponse(request);
         }

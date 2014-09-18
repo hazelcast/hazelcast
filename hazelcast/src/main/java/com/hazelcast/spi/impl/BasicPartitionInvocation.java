@@ -31,14 +31,14 @@ public final class BasicPartitionInvocation extends BasicInvocation {
                                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
                                     Callback<Object> callback, String executorName, boolean resultDeserialized) {
         super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis,
-                callTimeout, callback, executorName,resultDeserialized);
+                callTimeout, callback, executorName, resultDeserialized);
     }
 
-    public final Address getTarget() {
+    public Address getTarget() {
         return getPartition().getReplicaAddress(getReplicaIndex());
     }
 
-    final ExceptionAction onException(Throwable t) {
+    ExceptionAction onException(Throwable t) {
         final ExceptionAction action = op.onException(t);
         return action != null ? action : ExceptionAction.THROW_EXCEPTION;
     }

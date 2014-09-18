@@ -19,7 +19,6 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractXmlConfigHelper;
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
@@ -27,8 +26,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -43,9 +41,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+/**
+ * Loads the {@link com.hazelcast.client.config.ClientConfig} using XML.
+ */
 public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
-    private final static ILogger logger = Logger.getLogger(XmlClientConfigBuilder.class);
+    private static final int DEFAULT_VALUE = 5;
 
     private ClientConfig clientConfig;
     private InputStream in;
@@ -76,64 +77,20 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         this.in = in;
     }
 
+    /**
+     * Loads the client config using the following resolution mechanism:
+     * <ol>
+     * <li>first it checks if a system property 'hazelcast.client.config' is set. If it exist and it begins with
+     * 'classpath:', then a classpath resource is loaded. Else it will assume it is a file reference</li>
+     * <li>it checks if a hazelcast-client.xml is available in the working dir</li>
+     * <li>it checks if a hazelcast-client.xml is available on the classpath</li>
+     * <li>it loads the hazelcast-client-default.xml</li>
+     * </ol>
+     */
     public XmlClientConfigBuilder() {
-        String configFile = System.getProperty("hazelcast.client.config");
-        try {
-            File configurationFile = null;
-            if (configFile != null) {
-                configurationFile = new File(configFile);
-                logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
-                if (!configurationFile.exists()) {
-                    String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
-                    msg += "\nHazelcast will try to use the hazelcast-client.xml config file in the working directory.";
-                    logger.warning(msg);
-                    configurationFile = null;
-                }
-            }
-            if (configurationFile == null) {
-                configFile = "hazelcast-client.xml";
-                configurationFile = new File("hazelcast-client.xml");
-                if (!configurationFile.exists()) {
-                    configurationFile = null;
-                }
-            }
-            URL configurationUrl;
-            if (configurationFile != null) {
-                logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
-                try {
-                    in = new FileInputStream(configurationFile);
-                } catch (final Exception e) {
-                    String msg = "Having problem reading config file at '" + configFile + "'.";
-                    msg += "\nException message: " + e.getMessage();
-                    msg += "\nHazelcast will try to use the hazelcast-client.xml config file in classpath.";
-                    logger.warning(msg);
-                    in = null;
-                }
-            }
-            if (in == null) {
-                logger.info("Looking for hazelcast-client.xml config file in classpath.");
-                configurationUrl = Config.class.getClassLoader().getResource("hazelcast-client.xml");
-                if (configurationUrl == null) {
-                    configurationUrl = Config.class.getClassLoader().getResource("hazelcast-client-default.xml");
-                    logger.warning(
-                            "Could not find hazelcast-client.xml in classpath.\nHazelcast will use hazelcast-client-default.xml config file in jar.");
-                    if (configurationUrl == null) {
-                        logger.warning("Could not find hazelcast-client-default.xml in the classpath!"
-                                + "\nThis may be due to a wrong-packaged or corrupted jar file.");
-                        return;
-                    }
-                }
-                logger.info("Using configuration file " + configurationUrl.getFile() + " in the classpath.");
-                in = configurationUrl.openStream();
-                if (in == null) {
-                    throw new IllegalStateException("Cannot read configuration file, giving up.");
-                }
-            }
-        } catch (final Throwable e) {
-            logger.severe("Error while creating configuration:" + e.getMessage(), e);
-        }
+        XmlClientConfigLocator locator = new XmlClientConfigLocator();
+        this.in = locator.getIn();
     }
-
 
     public ClientConfig build() {
         return build(Thread.currentThread().getContextClassLoader());
@@ -147,6 +104,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             return clientConfig;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
+        } finally {
+            IOUtil.closeResource(in);
         }
     }
 
@@ -175,6 +134,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 handleSecurity(node);
             } else if ("proxy-factories".equals(nodeName)) {
                 handleProxyFactories(node);
+            } else if ("properties".equals(nodeName)) {
+                fillProperties(node, clientConfig.getProperties());
             } else if ("serialization".equals(nodeName)) {
                 handleSerialization(node);
             } else if ("group".equals(nodeName)) {
@@ -249,9 +210,52 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 handleSocketInterceptorConfig(child, clientNetworkConfig);
             } else if ("ssl".equals(nodeName)) {
                 handleSSLConfig(child, clientNetworkConfig);
+            } else if ("aws".equals(nodeName)) {
+                handleAWS(child, clientNetworkConfig);
             }
         }
         clientConfig.setNetworkConfig(clientNetworkConfig);
+    }
+
+    private void handleAWS(Node node, ClientNetworkConfig clientNetworkConfig) {
+        final ClientAwsConfig clientAwsConfig = handleAwsAttributes(node);
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
+            final String value = getTextContent(n).trim();
+            if ("secret-key".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setSecretKey(value);
+            } else if ("access-key".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setAccessKey(value);
+            } else if ("region".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setRegion(value);
+            } else if ("host-header".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setHostHeader(value);
+            } else if ("security-group-name".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setSecurityGroupName(value);
+            } else if ("tag-key".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setTagKey(value);
+            } else if ("tag-value".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setTagValue(value);
+            } else if ("inside-aws".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setInsideAws(checkTrue(value));
+            }
+        }
+        clientNetworkConfig.setAwsConfig(clientAwsConfig);
+    }
+
+    private ClientAwsConfig handleAwsAttributes(Node node) {
+        final NamedNodeMap atts = node.getAttributes();
+        final ClientAwsConfig clientAwsConfig = new ClientAwsConfig();
+        for (int i = 0; i < atts.getLength(); i++) {
+            final Node att = atts.item(i);
+            final String value = getTextContent(att).trim();
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+                clientAwsConfig.setEnabled(checkTrue(value));
+            } else if (att.getNodeName().equals("connection-timeout-seconds")) {
+                int timeout = getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE);
+                clientAwsConfig.setConnectionTimeoutSeconds(timeout);
+            }
+        }
+        return clientAwsConfig;
     }
 
     private void handleSSLConfig(final org.w3c.dom.Node node, ClientNetworkConfig clientNetworkConfig) {

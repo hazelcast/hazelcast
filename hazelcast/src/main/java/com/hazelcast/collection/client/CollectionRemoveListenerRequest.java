@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.client;
 
-import com.hazelcast.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -70,5 +70,10 @@ public class CollectionRemoveListenerRequest extends BaseClientRemoveListenerReq
     @Override
     public Permission getRequiredPermission() {
         return ActionConstants.getPermission(name, serviceName, ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "removeItemListener";
     }
 }

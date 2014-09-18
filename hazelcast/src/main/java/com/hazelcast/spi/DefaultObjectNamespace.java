@@ -22,8 +22,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
-* @author mdogan 2/12/13
-*/
+ * Default {@link com.hazelcast.spi.ObjectNamespace} implementation.
+ */
 public final class DefaultObjectNamespace implements ObjectNamespace {
 
     private String service;
@@ -38,23 +38,46 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
         this.objectName = objectName;
     }
 
+    @Override
     public String getServiceName() {
         return service;
     }
 
+    @Override
     public String getObjectName() {
         return objectName;
     }
 
     @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(service);
+        // writing as object for backward-compatibility
+        out.writeObject(objectName);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        service = in.readUTF();
+        objectName = in.readObject();
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         DefaultObjectNamespace that = (DefaultObjectNamespace) o;
 
-        if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) return false;
-        if (service != null ? !service.equals(that.service) : that.service != null) return false;
+        if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) {
+            return false;
+        }
+        if (service != null ? !service.equals(that.service) : that.service != null) {
+            return false;
+        }
 
         return true;
     }
@@ -64,16 +87,6 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
         int result = service != null ? service.hashCode() : 0;
         result = 31 * result + (objectName != null ? objectName.hashCode() : 0);
         return result;
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(service);
-        out.writeObject(objectName);  // writing as object for backward-compatibility
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        service = in.readUTF();
-        objectName = in.readObject();
     }
 
     @Override

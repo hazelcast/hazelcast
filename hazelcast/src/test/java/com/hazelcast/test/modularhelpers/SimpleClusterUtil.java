@@ -14,8 +14,6 @@ public class SimpleClusterUtil {
 
     private Random random = new Random();
 
-    private HazelcastInstanceFactory factory = new HazelcastInstanceFactory();
-
     private int minClusterSize=-1;
     private int maxClusterSize=100;
     private int initialClusterSize=0;
@@ -34,7 +32,7 @@ public class SimpleClusterUtil {
 
     public void initCluster(){
         for(int i=0; i<initialClusterSize; i++){
-            cluster.add( factory.newHazelcastInstance( config ) );
+            cluster.add( HazelcastInstanceFactory.newHazelcastInstance( config ) );
         }
     }
 
@@ -79,7 +77,7 @@ public class SimpleClusterUtil {
 
     public void addNode(){
         if(cluster.size() < maxClusterSize){
-            cluster.add( factory.newHazelcastInstance( config ) );
+            cluster.add( HazelcastInstanceFactory.newHazelcastInstance( config ) );
         }
     }
 

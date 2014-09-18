@@ -19,12 +19,21 @@ package com.hazelcast.map.merge;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 
+/**
+ * A policy for merging maps after a splitbrain was detected and the different network partitions need
+ * to be merged.
+ *
+ * @see com.hazelcast.map.merge.MapMergePolicy
+ * @see com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
+ * @see com.hazelcast.map.merge.LatestUpdateMapMergePolicy
+ * @see com.hazelcast.map.merge.PassThroughMergePolicy
+ */
 public interface MapMergePolicy extends DataSerializable {
 
     /**
      * Returns the value of the entry after the merge
-     * of entries with the same key. Returning value can be
-     * You should consider the case where existingEntry is null.
+     * of entries with the same key.
+     * You should consider the case where existingEntry's value is null.
      *
      * @param mapName       name of the map
      * @param mergingEntry  entry merging into the destination cluster

@@ -17,75 +17,147 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.mapstore.MapDataStore;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Defines a record-store.
+ */
 public interface RecordStore {
 
     String getName();
-
-    Object remove(Data dataKey);
-
-    boolean remove(Data dataKey, Object testValue);
-
-    Object get(Data dataKey);
-
-    MapEntrySet getAll(Set<Data> keySet);
-
-    boolean containsKey(Data dataKey);
 
     Object put(Data dataKey, Object dataValue, long ttl);
 
     void put(Map.Entry<Data, Object> entry);
 
+    Object putIfAbsent(Data dataKey, Object value, long ttl);
+
     Record putBackup(Data key, Object value);
 
-    Record putBackup(Data key, Object value, long ttl, boolean shouldSchedule);
-
-    Object replace(Data dataKey, Object value);
-
-    boolean replace(Data dataKey, Object oldValue, Object newValue);
-
-    boolean set(Data dataKey, Object value, long ttl);
-
-    void putTransient(Data dataKey, Object value, long ttl);
-
-    void putFromLoad(Data dataKey, Object value, long ttl);
+    Record putBackup(Data key, Object value, long ttl);
 
     boolean tryPut(Data dataKey, Object value, long ttl);
 
-    Object putIfAbsent(Data dataKey, Object value, long ttl);
+    boolean set(Data dataKey, Object value, long ttl);
+
+    Object remove(Data dataKey);
+
+    boolean delete(Data dataKey);
+
+    boolean remove(Data dataKey, Object testValue);
+
+    /**
+     * Similar to {@link com.hazelcast.map.RecordStore#remove(com.hazelcast.nio.serialization.Data)}
+     * except removeBackup doesn't touch mapstore since it does not return previous value.
+     */
+    void removeBackup(Data dataKey);
+
+    /**
+     * Gets record from {@link com.hazelcast.map.RecordStore}
+     *
+     * @param dataKey key.
+     * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @return value of an entry in {@link com.hazelcast.map.RecordStore}
+     */
+    Object get(Data dataKey, boolean backup);
+
+    MapEntrySet getAll(Set<Data> keySet);
+
+    boolean containsKey(Data dataKey);
+
+    Object replace(Data dataKey, Object update);
+
+
+    /**
+     * Sets the value to the given updated value
+     * if {@link com.hazelcast.map.record.RecordFactory#isEquals} comparison
+     * of current value and expected value is {@code true}.
+     *
+     * @param dataKey key which's value is requested to be replaced.
+     * @param expect  the expected value
+     * @param update  the new value
+     * @return {@code true} if successful. False return indicates that
+     * the actual value was not equal to the expected value.
+     */
+    boolean replace(Data dataKey, Object expect, Object update);
+
+    void putTransient(Data dataKey, Object value, long ttl);
+
+    /**
+     * Puts key-value pair to map which is the result of a load from map store operation.
+     *
+     * @param key   key to put.
+     * @param value to put.
+     * @return the previous value associated with <tt>key</tt>, or
+     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @see {@link com.hazelcast.map.operation.PutFromLoadAllOperation}
+     */
+    Object putFromLoad(Data key, Object value);
+
+    /**
+     * Puts key-value pair to map which is the result of a load from map store operation.
+     *
+     * @param key   key to put.
+     * @param value to put.
+     * @param ttl   time to live seconds.
+     * @return the previous value associated with <tt>key</tt>, or
+     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * @see {@link com.hazelcast.map.operation.PutAllOperation}
+     */
+    Object putFromLoad(Data key, Object value, long ttl);
 
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 
     Record getRecord(Data key);
 
-    Record putRecord(Data key, Record record);
+    /**
+     * Puts a data key and a record value to record-store.
+     * Used in replication operations.
+     *
+     * @param key    the data key to put record store.
+     * @param record the value for record store.
+     * @see {@link com.hazelcast.map.operation.MapReplicationOperation}
+     */
+    void putRecord(Data key, Record record);
 
     void deleteRecord(Data key);
 
-    Map<Data, Record> getReadonlyRecordMap();
+    /**
+     * Iterates over record store values.
+     *
+     * @return read only iterator for map values.
+     */
+    Iterator<Record> iterator();
 
     /**
-     * Returns read only records map by waiting map store load.
-     * If an operation needs to wait a data source to load like querying
-     * in {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
-     * this method can be used to return a read-only view of key-value pairs.
+     * Iterates over record store values but first waits map store to load.
+     * If an operation needs to wait a data source load like query operations
+     * {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
+     * this method can be used to return a read-only iterator.
      *
-     * @return read only record map.
+     * @return read only iterator for map values.
      */
-    Map<Data, Record> getReadonlyRecordMapByWaitingMapStoreLoad();
+    Iterator<Record> loadAwareIterator();
+
+    /**
+     * Returns records map.
+     *
+     * @see com.hazelcast.map.RecordStoreLoader
+     */
+    Map<Data, Record> getRecordMap();
 
     Set<Data> keySet();
 
     int size();
-
-    boolean lock(Data key, String caller, long threadId, long ttl);
 
     boolean txnLock(Data key, String caller, long threadId, long ttl);
 
@@ -95,25 +167,25 @@ public interface RecordStore {
 
     boolean isLocked(Data key);
 
-    boolean isLockedBy(Data key, String caller, long threadId);
-
     boolean canAcquireLock(Data key, String caller, long threadId);
 
     String getLockOwnerInfo(Data key);
 
     boolean containsValue(Object testValue);
 
-    boolean delete(Data dataKey);
+    Object evict(Data key, boolean backup);
 
-    Object evict(Data key);
-
-    Collection<Object> valuesObject();
+    /**
+     * Evicts all keys except locked ones.
+     *
+     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @return number of evicted entries.
+     */
+    int evictAll(boolean backup);
 
     Collection<Data> valuesData();
 
     MapContainer getMapContainer();
-
-    Set<Map.Entry<Data, Object>> entrySetObject();
 
     Set<Map.Entry<Data, Data>> entrySetData();
 
@@ -131,15 +203,40 @@ public interface RecordStore {
 
     long getHeapCost();
 
-    SizeEstimator getSizeEstimator();
-
     boolean isLoaded();
 
     void checkIfLoaded();
 
     void setLoaded(boolean loaded);
 
-    void clear();
+    int clear();
 
     boolean isEmpty();
+
+    /**
+     * Do expiration operations.
+     *
+     * @param percentage of max expirables according to the record store size.
+     * @param backup     <code>true</code> if a backup partition, otherwise <code>false</code>.
+     */
+    void evictExpiredEntries(int percentage, boolean backup);
+
+    /**
+     * @return <code>true</code> if record store has at least one candidate entry
+     * for expiration else return <code>false</code>.
+     */
+    boolean isExpirable();
+
+    /**
+     * Loads all keys from defined map store.
+     *
+     * @param keys                  keys to be loaded.
+     * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
+     */
+    void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
+
+    MapDataStore<Data, Object> getMapDataStore();
+
+    int getPartitionId();
+
 }

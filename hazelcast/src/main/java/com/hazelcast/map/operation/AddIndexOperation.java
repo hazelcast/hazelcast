@@ -18,8 +18,8 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,7 +31,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.Iterator;
 
 public class AddIndexOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
@@ -50,13 +50,15 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
     @Override
     public void run() throws Exception {
         MapService mapService = getService();
-        MapContainer mapContainer = mapService.getMapContainer(name);
-        RecordStore rs = mapService.getPartitionContainer(getPartitionId()).getRecordStore(name);
-        Map<Data, Record> records = rs.getReadonlyRecordMap();
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
+        RecordStore recordStore = mapService.getMapServiceContext()
+                .getPartitionContainer(getPartitionId()).getRecordStore(name);
         IndexService indexService = mapContainer.getIndexService();
         SerializationService ss = getNodeEngine().getSerializationService();
         Index index = indexService.addOrGetIndex(attributeName, ordered);
-        for (Record record : records.values()) {
+        final Iterator<Record> iterator = recordStore.iterator();
+        while (iterator.hasNext()) {
+            final Record record = iterator.next();
             Data key = record.getKey();
             Object value = record.getValue();
             index.saveEntryIndex(new QueryEntry(ss, key, key, value));

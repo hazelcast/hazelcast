@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection.client;
 
-import com.hazelcast.client.PartitionClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.PartitionClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
@@ -31,9 +31,6 @@ import com.hazelcast.security.permission.SetPermission;
 import java.io.IOException;
 import java.security.Permission;
 
-/**
- * @ali 9/4/13
- */
 public abstract class CollectionRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     protected String serviceName;
@@ -79,13 +76,18 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
     @Override
     public final Permission getRequiredPermission() {
         final String action = getRequiredAction();
-        if (ListService.SERVICE_NAME.equals(serviceName)){
+        if (ListService.SERVICE_NAME.equals(serviceName)) {
             return new ListPermission(name, action);
-        } else if (SetService.SERVICE_NAME.equals(serviceName)){
+        } else if (SetService.SERVICE_NAME.equals(serviceName)) {
             return new SetPermission(name, action);
         }
         throw new IllegalArgumentException("No service matched!!!");
     }
 
     public abstract String getRequiredAction();
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 }

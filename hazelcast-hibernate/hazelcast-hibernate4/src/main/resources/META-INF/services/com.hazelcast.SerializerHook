@@ -1,0 +1,2 @@
+com.hazelcast.hibernate.serialization.Hibernate4CacheKeySerializerHook
+com.hazelcast.hibernate.serialization.Hibernate4CacheEntrySerializerHook

@@ -17,21 +17,15 @@
 package com.hazelcast.jca;
 
 import com.hazelcast.core.TransactionalMap;
-import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.arquillian.junit.InSequence;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import javax.annotation.Resource;
-import javax.inject.Inject;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 import javax.transaction.UserTransaction;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,32 +36,32 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
-* Arquillian tests for xa transactions
-*
-* @author asimarslan
-*/
+ * Arquillian tests for xa transactions
+ *
+ * @author asimarslan
+ */
 //@RunWith(Arquillian.class)
 @Ignore
 public class XATransactionTest extends AbstractDeploymentTest {
 
 
-//    @Inject
-//    UserTransaction userTx;
+    //    @Inject
+    //    UserTransaction userTx;
 
     @Resource(mappedName = "java:jboss/UserTransaction")
     private UserTransaction userTx;
 
 
     @Resource(mappedName = "java:jboss/datasources/ExampleDS")
-//    @Resource(mappedName = "java:/HazelcastDS")
+    //    @Resource(mappedName = "java:/HazelcastDS")
     protected DataSource h2Datasource;
 
-    private static boolean isDbInit=false;
+    private static boolean isDbInit = false;
 
     @Before
     public void Init() throws SQLException {
-        if(!isDbInit){
-            isDbInit=true;
+        if (!isDbInit) {
+            isDbInit = true;
             Connection con = h2Datasource.getConnection();
             Statement stmt = null;
             try {
@@ -81,7 +75,6 @@ public class XATransactionTest extends AbstractDeploymentTest {
             }
         }
     }
-
 
 
     @Test
@@ -170,12 +163,12 @@ public class XATransactionTest extends AbstractDeploymentTest {
 
             } catch (SQLException e) {
             }
-            if(hasdata){
+            if (hasdata) {
                 assertNotNull(resultSet);
                 assertTrue(resultSet.first());
                 assertEquals("txt", resultSet.getString("A"));
-            }else{
-                assertTrue(resultSet == null || resultSet.getFetchSize() == 0  );
+            } else {
+                assertTrue(resultSet == null || resultSet.getFetchSize() == 0);
             }
 
         } finally {
@@ -185,7 +178,6 @@ public class XATransactionTest extends AbstractDeploymentTest {
             con.close();
         }
     }
-
 
 
 }

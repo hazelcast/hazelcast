@@ -16,7 +16,10 @@
 
 package com.hazelcast.collection.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.collection.CollectionEventFilter;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
@@ -24,9 +27,9 @@ import com.hazelcast.collection.set.SetService;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.security.permission.SetPermission;
@@ -38,9 +41,9 @@ import java.io.IOException;
 import java.security.Permission;
 
 /**
- * @ali 9/4/13
+ * this class is used to attach a listener to node for collections
  */
-public class CollectionAddListenerRequest extends CallableClientRequest implements Portable, SecureRequest, RetryableRequest {
+public class CollectionAddListenerRequest extends CallableClientRequest implements RetryableRequest {
 
     private String name;
 
@@ -61,7 +64,17 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
         final ClientEndpoint endpoint = getEndpoint();
         final ClientEngine clientEngine = getClientEngine();
 
-        ItemListener listener = new ItemListener() {
+        ItemListener listener = createItemListener(endpoint);
+        final EventService eventService = clientEngine.getEventService();
+        final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
+        final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
+        final String registrationId = registration.getId();
+        endpoint.setListenerRegistration(getServiceName(), name, registrationId);
+        return registrationId;
+    }
+
+    private ItemListener createItemListener(final ClientEndpoint endpoint) {
+        return new ItemListener() {
             @Override
             public void itemAdded(ItemEvent item) {
                 send(item);
@@ -72,19 +85,21 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
                 send(item);
             }
 
-            private void send(ItemEvent event){
-                if (endpoint.live()){
-                    Data item = clientEngine.toData(event.getItem());
-                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
+            private void send(ItemEvent event) {
+                if (endpoint.live()) {
+                    if (!(event instanceof DataAwareItemEvent)) {
+                        throw new IllegalArgumentException("Expecting: DataAwareItemEvent, Found: "
+                                + event.getClass().getSimpleName());
+                    }
+
+                    DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
+                    Data item = dataAwareItemEvent.getItemData();
+                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(),
+                            event.getMember().getUuid());
                     endpoint.sendEvent(portableItemEvent, getCallId());
                 }
             }
         };
-        final EventService eventService = clientEngine.getEventService();
-        final EventRegistration registration = eventService.registerListener(getServiceName(), name, new CollectionEventFilter(includeValue), listener);
-        final String registrationId = registration.getId();
-        endpoint.setListenerRegistration(getServiceName(), name, registrationId);
-        return registrationId;
     }
 
     @Override
@@ -120,11 +135,26 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
 
     @Override
     public Permission getRequiredPermission() {
-        if (ListService.SERVICE_NAME.equals(serviceName)){
+        if (ListService.SERVICE_NAME.equals(serviceName)) {
             return new ListPermission(name, ActionConstants.ACTION_LISTEN);
-        } else if (SetService.SERVICE_NAME.equals(serviceName)){
+        } else if (SetService.SERVICE_NAME.equals(serviceName)) {
             return new SetPermission(name, ActionConstants.ACTION_LISTEN);
         }
         throw new IllegalArgumentException("No service matched!!!");
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "addItemListener";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{null, includeValue};
     }
 }

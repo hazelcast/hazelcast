@@ -26,8 +26,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+
 /**
  * Invalidates any map operation starter node's near cache immediately.
+ *
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)

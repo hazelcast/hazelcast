@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
@@ -79,7 +80,7 @@ public abstract class ClientTestSupport extends HazelcastTestSupport {
         if (node.isActive()) {
             if (TestEnvironment.isMockNetwork()) {
                 ClientEngineImpl engine = node.clientEngine;
-                return new MockSimpleClient(engine);
+                return new MockSimpleClient(engine, node.getSerializationService());
             } else {
                 return new SocketSimpleClient(node);
             }

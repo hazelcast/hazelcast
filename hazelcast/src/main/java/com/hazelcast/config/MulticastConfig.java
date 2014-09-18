@@ -24,20 +24,38 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * Contains the configuration for the multicast discovery mechanism.
- *
+ * <p/>
  * With the multicast discovery mechanism Hazelcast allows Hazelcast members to find each other using multicast. So
  * Hazelcast members do not need to know concrete addresses of members, they just multicast to everyone listening.
- *
+ * <p/>
  * It depends on your environment if multicast is possible or allowed; otherwise you need to have a look at the
  * tcp/ip cluster: {@link TcpIpConfig}.
  */
 public class MulticastConfig {
 
-    public final static boolean DEFAULT_ENABLED = true;
-    public final static String DEFAULT_MULTICAST_GROUP = "224.2.2.3";
-    public final static int DEFAULT_MULTICAST_PORT = 54327;
-    public final static int DEFAULT_MULTICAST_TIMEOUT_SECONDS = 2;
-    public final static int DEFAULT_MULTICAST_TTL = 32;
+    /**
+     * Whether the multicast discovery mechanism has been enabled
+     */
+    public static final boolean DEFAULT_ENABLED = true;
+    /**
+     * Default group of multicast.
+     */
+    public static final String DEFAULT_MULTICAST_GROUP = "224.2.2.3";
+    /**
+     * Default value of port.
+     */
+    public static final int DEFAULT_MULTICAST_PORT = 54327;
+    /**
+     * Default timeout of multicast in seconds.
+     */
+    public static final int DEFAULT_MULTICAST_TIMEOUT_SECONDS = 2;
+    /**
+     * Default value of time to live of multicast.
+     */
+    public static final int DEFAULT_MULTICAST_TTL = 32;
+
+    private static final int MULTICAST_TTL_UPPER_BOUND = 255;
+
 
     private boolean enabled = DEFAULT_ENABLED;
 
@@ -109,12 +127,12 @@ public class MulticastConfig {
      *
      * @param multicastPort the multicastPort to set
      * @return the updated MulticastConfig
+     * @throws IllegalArgumentException if multicastPort is smaller than 0.
      * @see #getMulticastPort()
      * @see #setMulticastGroup(String)
-     * @throws IllegalArgumentException if multicastPort is smaller than 0.
      */
     public MulticastConfig setMulticastPort(int multicastPort) {
-        if(multicastPort<0){
+        if (multicastPort < 0) {
             throw new IllegalArgumentException("multicastPort can't be smaller than 0");
         }
         this.multicastPort = multicastPort;
@@ -159,11 +177,11 @@ public class MulticastConfig {
 
     /**
      * Sets the trusted interfaces.
-     *
+     * <p/>
      * By default, so when the set of trusted interfaces is empty, a Hazelcast member will accept join-requests
      * from every member. With a trusted interface you can control the members you want to receive join request
      * from.
-     *
+     * <p/>
      * The interface is an ip address where the last octet can be a wildcard '*' or a range '10-20'.
      *
      * @param interfaces the new trusted interfaces.
@@ -171,7 +189,7 @@ public class MulticastConfig {
      * @see IllegalArgumentException if interfaces is null.
      */
     public MulticastConfig setTrustedInterfaces(Set<String> interfaces) {
-        isNotNull(interfaces,"interfaces");
+        isNotNull(interfaces, "interfaces");
 
         trustedInterfaces.clear();
         trustedInterfaces.addAll(interfaces);
@@ -187,7 +205,7 @@ public class MulticastConfig {
      * @see #setTrustedInterfaces(java.util.Set)
      */
     public MulticastConfig addTrustedInterface(final String ip) {
-        trustedInterfaces.add(isNotNull(ip,"ip"));
+        trustedInterfaces.add(isNotNull(ip, "ip"));
         return this;
     }
 
@@ -204,7 +222,7 @@ public class MulticastConfig {
 
     /**
      * Sets the time to live for the multicast package; a value between 0..255.
-     *
+     * <p/>
      * See this <a href="http://www.tldp.org/HOWTO/Multicast-HOWTO-2.html">link</a> for more information.
      *
      * @param multicastTimeToLive the time to live.
@@ -214,7 +232,7 @@ public class MulticastConfig {
      * @see java.net.MulticastSocket#setTimeToLive(int)
      */
     public MulticastConfig setMulticastTimeToLive(final int multicastTimeToLive) {
-        if (multicastTimeToLive < 0 || multicastTimeToLive > 255) {
+        if (multicastTimeToLive < 0 || multicastTimeToLive > MULTICAST_TTL_UPPER_BOUND) {
             throw new IllegalArgumentException("multicastTimeToLive out of range");
         }
         this.multicastTimeToLive = multicastTimeToLive;
@@ -228,7 +246,7 @@ public class MulticastConfig {
                 + ", multicastPort=" + multicastPort
                 + ", multicastTimeToLive=" + multicastTimeToLive
                 + ", multicastTimeoutSeconds=" + multicastTimeoutSeconds
-                + ", trustedInterfaces=" + trustedInterfaces +
-                "]";
+                + ", trustedInterfaces=" + trustedInterfaces
+                + "]";
     }
 }

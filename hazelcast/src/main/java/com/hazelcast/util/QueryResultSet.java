@@ -34,6 +34,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Collections.newSetFromMap;
 
+/**
+ * Collection(Set) class for result of query operations
+ */
 public class QueryResultSet extends AbstractSet implements IdentifiedDataSerializable {
 
     private final SerializationService serializationService;
@@ -51,7 +54,7 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
         this.iterationType = iterationType;
     }
 
-    public Iterator<Map.Entry> rawIterator(){
+    public Iterator<Map.Entry> rawIterator() {
         return new QueryResultIterator(IterationType.ENTRY);
     }
 
@@ -67,7 +70,10 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
         return new QueryResultIterator(iterationType);
     }
 
-    private class QueryResultIterator implements Iterator {
+    /**
+     * Iterator for this set.
+     */
+    private final class QueryResultIterator implements Iterator {
 
         final Iterator<QueryResultEntry> iter = entries.iterator();
 
@@ -94,8 +100,7 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
                 Data valueData = entry.getValueData();
                 if (data) {
                     return new AbstractMap.SimpleImmutableEntry(keyData, valueData);
-                }
-                else {
+                } else {
                     Object key = serializationService.toObject(keyData);
                     Object value = serializationService.toObject(valueData);
                     return new AbstractMap.SimpleImmutableEntry(key, value);
@@ -145,11 +150,29 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("QueryResultSet{");
-        sb.append("entries=").append(entries);
-        sb.append(", iterationType=").append(iterationType);
-        sb.append(", data=").append(data);
-        sb.append('}');
-        return sb.toString();
+        return "QueryResultSet{"
+                + "entries=" + entries()
+                + ", iterationType=" + iterationType
+                + ", data=" + data
+                + '}';
+
+    }
+
+    private String entries() {
+        final Iterator i = iterator();
+        if (!i.hasNext()) {
+            return "[]";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        for (;;) {
+            Object e = i.next();
+            sb.append(e == this ? "(this Collection)" : e);
+            if (!i.hasNext()) {
+                return sb.append(']').toString();
+            }
+            sb.append(", ");
+        }
     }
 }

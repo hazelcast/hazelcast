@@ -28,19 +28,23 @@ import java.util.concurrent.TimeUnit;
  */
 public final class TransactionOptions implements DataSerializable {
 
+    /** 2 minutes as default timeout value */
+    public static final long DEFAULT_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(2);
+
     private long timeoutMillis;
 
     private int durability;
 
     private TransactionType transactionType;
 
+
     /**
      * Creates a new default configured TransactionsOptions.
-     *
+     * <p/>
      * It will be configured with a timeout of 2 minutes, durability of 1 and a TransactionType.TWO_PHASE.
      */
     public TransactionOptions() {
-        setTimeout(2, TimeUnit.MINUTES).setDurability(1).setTransactionType(TransactionType.TWO_PHASE);
+        setDurability(1).setTransactionType(TransactionType.TWO_PHASE).setDefaultTimeout();
     }
 
     /**
@@ -54,7 +58,7 @@ public final class TransactionOptions implements DataSerializable {
 
     /**
      * Sets the {@link TransactionType}.
-     *
+     * <p/>
      * A local transaction is less safe than a two phase transaction; when a member fails during the commit
      * of a local transaction, it could be that some of the changes are committed, while others are not and this
      * can leave your system in an inconsistent state.
@@ -65,7 +69,7 @@ public final class TransactionOptions implements DataSerializable {
      * @see #setDurability(int)
      */
     public TransactionOptions setTransactionType(TransactionType transactionType) {
-        if(transactionType == null){
+        if (transactionType == null) {
             throw new IllegalArgumentException("transactionType can't be null");
         }
         this.transactionType = transactionType;
@@ -84,7 +88,7 @@ public final class TransactionOptions implements DataSerializable {
 
     /**
      * Sets the timeout.
-     *
+     * <p/>
      * The timeout determines the maximum lifespan of a transaction. So if a transaction is configured with a
      * timeout of 2 minutes, then it will automatically rollback if it hasn't committed yet.
      *
@@ -95,13 +99,17 @@ public final class TransactionOptions implements DataSerializable {
      * @see #getTimeoutMillis()
      */
     public TransactionOptions setTimeout(long timeout, TimeUnit timeUnit) {
-        if (timeout <= 0) {
-            throw new IllegalArgumentException("Timeout must be positive!");
+        if (timeout < 0) {
+            throw new IllegalArgumentException("Timeout can not be negative!");
         }
-        if(timeUnit == null){
+        if (timeUnit == null) {
             throw new IllegalArgumentException("timeunit can't be null");
         }
-        this.timeoutMillis = timeUnit.toMillis(timeout);
+        if (timeout == 0) {
+            setDefaultTimeout();
+        } else {
+            this.timeoutMillis = timeUnit.toMillis(timeout);
+        }
         return this;
     }
 
@@ -117,11 +125,11 @@ public final class TransactionOptions implements DataSerializable {
 
     /**
      * Sets the transaction durability.
-     *
+     * <p/>
      * The durability is the number of machines that can take over if a member fails during a transaction
      * commit or rollback. This value only has meaning when {@link TransactionType#TWO_PHASE} is selected.
      *
-     * @param durability  the durability
+     * @param durability the durability
      * @return the updated TransactionOptions.
      * @throws IllegalArgumentException if durability smaller than 0.
      */
@@ -143,12 +151,19 @@ public final class TransactionOptions implements DataSerializable {
         return new TransactionOptions();
     }
 
+    private void setDefaultTimeout() {
+        timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
+    }
+
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(timeoutMillis);
         out.writeInt(durability);
         out.writeInt(transactionType.value);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         timeoutMillis = in.readLong();
         durability = in.readInt();
@@ -167,18 +182,35 @@ public final class TransactionOptions implements DataSerializable {
         return sb.toString();
     }
 
+    /**
+     * The type of transaction. With the type you have influence on how much guarantee you get
+     * when a member crashes when a transaction is committing.
+     */
     public enum TransactionType {
-        TWO_PHASE(1), LOCAL(2);
+
+        /**
+         * The two phase commit is more than the classic two phase commit (if you want a regular two phase commit,
+         * use local). Before it commits, it copies the commit-log to other members, so in case of member failure,
+         * another member can complete the commit.
+         */
+        TWO_PHASE(1),
+
+        /**
+         * Unlike the name suggests, local is a two phase commit. So first all cohorts are asked
+         * to prepare if everyone agrees then all cohorts are asked to commit. The problem happens when
+         * during the commit phase one or more members crash, that the system could be left in an inconsistent state.
+         */
+        LOCAL(2);
 
         private final int value;
 
-        TransactionType(int value){
+        TransactionType(int value) {
             this.value = value;
         }
 
-        public static TransactionType getByValue(int value){
-            for (TransactionType type: values()){
-                if (type.value == value){
+        public static TransactionType getByValue(int value) {
+            for (TransactionType type : values()) {
+                if (type.value == value) {
                     return type;
                 }
             }

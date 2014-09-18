@@ -20,14 +20,10 @@ import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionReplicationOperation;
 import com.hazelcast.nio.ObjectDataInput;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @ali 9/9/13
- */
 public class ListReplicationOperation extends CollectionReplicationOperation {
 
     public ListReplicationOperation() {

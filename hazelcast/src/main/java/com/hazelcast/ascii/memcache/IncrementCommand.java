@@ -17,6 +17,7 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.AbstractTextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 
 import java.nio.ByteBuffer;
 
@@ -30,9 +31,9 @@ public class IncrementCommand extends AbstractTextCommand {
     String key;
     int value;
     boolean noreply;
-    ByteBuffer response = null;
+    ByteBuffer response;
 
-    public IncrementCommand(TextCommandType type, String key, int value, boolean noReply) {
+    public IncrementCommand(TextCommandConstants.TextCommandType type, String key, int value, boolean noReply) {
         super(type);
         this.key = key;
         this.value = value;

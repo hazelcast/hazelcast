@@ -20,7 +20,6 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.PostProcessingMapStore;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -70,7 +69,7 @@ public class MapStoreWrapper implements MapStore {
     }
 
     public void destroy() {
-        if(impl instanceof MapLoaderLifecycleSupport) {
+        if (impl instanceof MapLoaderLifecycleSupport) {
             ((MapLoaderLifecycleSupport) impl).destroy();
         }
     }
@@ -102,7 +101,7 @@ public class MapStoreWrapper implements MapStore {
     }
 
     public void deleteAll(Collection keys) {
-        if( keys == null || keys.isEmpty() ){
+        if (keys == null || keys.isEmpty()) {
             return;
         }
         if (isMapStore() && enabled.get()) {
@@ -125,13 +124,17 @@ public class MapStoreWrapper implements MapStore {
     }
 
     public Map loadAll(Collection keys) {
-        if( keys == null || keys.isEmpty() ){
+        if (keys == null || keys.isEmpty()) {
             return Collections.EMPTY_MAP;
         }
         if (isMapLoader() && enabled.get()) {
             return mapLoader.loadAll(keys);
         }
         return null;
+    }
+
+    public Object getImpl() {
+        return impl;
     }
 
     public boolean isPostProcessingMapStore() {

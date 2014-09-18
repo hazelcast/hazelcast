@@ -16,14 +16,15 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.MapPutAllOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -31,9 +32,9 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.io.IOException;
 import java.security.Permission;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MapPutAllRequest extends AllPartitionsClientRequest implements Portable, SecureRequest {
@@ -66,7 +67,7 @@ public class MapPutAllRequest extends AllPartitionsClientRequest implements Port
     protected Object reduce(Map<Integer, Object> map) {
         MapService mapService = getService();
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            Object result = mapService.toObject(entry.getValue());
+            Object result = mapService.getMapServiceContext().toObject(entry.getValue());
             if (result instanceof Throwable) {
                 throw ExceptionUtil.rethrow((Throwable) result);
             }
@@ -93,5 +94,24 @@ public class MapPutAllRequest extends AllPartitionsClientRequest implements Port
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_PUT);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "putAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        final HashMap map = new HashMap();
+        for (Map.Entry<Data, Data> entry : entrySet.getEntrySet()) {
+            map.put(entry.getKey(), entry.getValue());
+        }
+        return new Object[]{map};
     }
 }

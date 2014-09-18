@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.SecureRequest;
-import com.hazelcast.client.txn.BaseTransactionRequest;
+import com.hazelcast.transaction.client.BaseTransactionRequest;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapPortableHook;
@@ -41,11 +40,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-/**
- * User: sancar
- * Date: 9/18/13
- * Time: 2:28 PM
- */
 public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
 
     String name;
@@ -87,52 +81,74 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
     public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(txnId);
         final TransactionalMap map = context.getMap(name);
+        return innerCallInternal(map);
+    }
+
+
+    private Object innerCallInternal(final TransactionalMap map) {
+        Object result = null;
         switch (requestType) {
             case CONTAINS_KEY:
-                return map.containsKey(key);
+                result = map.containsKey(key);
+                break;
             case GET:
-                return map.get(key);
+                result = map.get(key);
+                break;
             case GET_FOR_UPDATE:
-                return map.getForUpdate(key);
+                result = map.getForUpdate(key);
+                break;
             case SIZE:
-                return map.size();
+                result = map.size();
+                break;
             case PUT:
-                return map.put(key, value);
+                result = map.put(key, value);
+                break;
             case PUT_WITH_TTL:
-                return map.put(key, value, ttl, TimeUnit.MILLISECONDS);
+                result = map.put(key, value, ttl, TimeUnit.MILLISECONDS);
+                break;
             case PUT_IF_ABSENT:
-                return map.putIfAbsent(key, value);
+                result = map.putIfAbsent(key, value);
+                break;
             case REPLACE:
-                return map.replace(key, value);
+                result = map.replace(key, value);
+                break;
             case REPLACE_IF_SAME:
-                return map.replace(key, value, newValue);
+                result = map.replace(key, value, newValue);
+                break;
             case SET:
                 map.set(key, value);
                 break;
             case REMOVE:
-                return map.remove(key);
+                result = map.remove(key);
+                break;
             case DELETE:
                 map.delete(key);
                 break;
             case REMOVE_IF_SAME:
-                return map.remove(key, value);
+                result = map.remove(key, value);
+                break;
             case KEYSET:
-                return getMapKeySet(map.keySet());
+                result = getMapKeySet(map.keySet());
+                break;
             case KEYSET_BY_PREDICATE:
-                return getMapKeySet(map.keySet(getPredicate()));
+                result = getMapKeySet(map.keySet(getPredicate()));
+                break;
             case VALUES:
-                return getMapValueCollection(map.values());
+                result = getMapValueCollection(map.values());
+                break;
             case VALUES_BY_PREDICATE:
-                return getMapValueCollection(map.values(getPredicate()));
-
+                result = getMapValueCollection(map.values(getPredicate()));
+                break;
+            default:
+                throw new IllegalArgumentException("Not a known TxnMapRequestType [" + requestType + "]");
         }
-        return null;
+        return result;
     }
 
     private MapKeySet getMapKeySet(Set keySet) {
         final HashSet<Data> dataKeySet = new HashSet<Data>();
         for (Object key : keySet) {
-            final Data dataKey = getClientEngine().toData(key);
+            final Data dataKey = serializationService.toData(key);
             dataKeySet.add(dataKey);
         }
         return new MapKeySet(dataKeySet);
@@ -141,7 +157,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
     private MapValueCollection getMapValueCollection(Collection coll) {
         final HashSet<Data> valuesCollection = new HashSet<Data>(coll.size());
         for (Object value : coll) {
-            final Data dataValue = getClientEngine().toData(value);
+            final Data dataValue = serializationService.toData(value);
             valuesCollection.add(dataValue);
         }
         return new MapValueCollection(valuesCollection);
@@ -186,23 +202,109 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
     protected abstract void readDataInner(ObjectDataInput reader) throws IOException;
 
     public enum TxnMapRequestType {
-        CONTAINS_KEY(1),
-        GET(2),
-        SIZE(3),
-        PUT(4),
-        PUT_IF_ABSENT(5),
-        REPLACE(6),
-        REPLACE_IF_SAME(7),
-        SET(8),
-        REMOVE(9),
-        DELETE(10),
-        REMOVE_IF_SAME(11),
-        KEYSET(12),
-        KEYSET_BY_PREDICATE(13),
-        VALUES(14),
-        VALUES_BY_PREDICATE(15),
-        GET_FOR_UPDATE(16),
-        PUT_WITH_TTL(17);
+        CONTAINS_KEY(1) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapReadPermission(name);
+            }
+        },
+
+        GET(2) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapReadPermission(name);
+            }
+        },
+        SIZE(3) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapReadPermission(name);
+            }
+        },
+        PUT(4) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapLockedWritePermission(name);
+            }
+        },
+        PUT_IF_ABSENT(5) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapLockedWritePermission(name);
+            }
+        },
+        REPLACE(6) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapLockedWritePermission(name);
+            }
+        },
+        REPLACE_IF_SAME(7) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapLockedWritePermission(name);
+            }
+        },
+        SET(8) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapLockedWritePermission(name);
+            }
+        },
+        REMOVE(9) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapLockedRemovePermission(name);
+            }
+        },
+        DELETE(10) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapLockedRemovePermission(name);
+            }
+        },
+        REMOVE_IF_SAME(11) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapLockedRemovePermission(name);
+            }
+        },
+        KEYSET(12) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapReadPermission(name);
+            }
+        },
+        KEYSET_BY_PREDICATE(13) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapReadPermission(name);
+            }
+        },
+        VALUES(14) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapReadPermission(name);
+            }
+        },
+        VALUES_BY_PREDICATE(15) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapReadPermission(name);
+            }
+        },
+        GET_FOR_UPDATE(16) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapLockedReadPermission(name);
+            }
+        },
+        PUT_WITH_TTL(17) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapLockedWritePermission(name);
+            }
+        };
         int type;
 
         TxnMapRequestType(int i) {
@@ -217,44 +319,27 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
             }
             return null;
         }
+
+        abstract Permission getRequiredPermission(String name);
+
+        private static Permission getMapReadPermission(String name) {
+            return new MapPermission(name, ActionConstants.ACTION_READ);
+        }
+
+        private static Permission getMapLockedReadPermission(String name) {
+            return new MapPermission(name, ActionConstants.ACTION_READ, ActionConstants.ACTION_LOCK);
+        }
+
+        private static Permission getMapLockedWritePermission(String name) {
+            return new MapPermission(name, ActionConstants.ACTION_PUT, ActionConstants.ACTION_LOCK);
+        }
+
+        private static Permission getMapLockedRemovePermission(String name) {
+            return new MapPermission(name, ActionConstants.ACTION_REMOVE, ActionConstants.ACTION_LOCK);
+        }
     }
 
     public Permission getRequiredPermission() {
-        String action;
-        boolean isLock = true;
-        switch (requestType) {
-            case CONTAINS_KEY:
-            case GET:
-            case SIZE:
-            case KEYSET:
-            case KEYSET_BY_PREDICATE:
-            case VALUES:
-            case VALUES_BY_PREDICATE:
-                action = ActionConstants.ACTION_READ;
-                isLock = false;
-                break;
-            case GET_FOR_UPDATE:
-                action = ActionConstants.ACTION_READ;
-                break;
-            case PUT:
-            case PUT_IF_ABSENT:
-            case REPLACE:
-            case REPLACE_IF_SAME:
-            case SET:
-            case PUT_WITH_TTL:
-                action = ActionConstants.ACTION_PUT;
-                break;
-            case REMOVE:
-            case DELETE:
-            case REMOVE_IF_SAME:
-                action = ActionConstants.ACTION_REMOVE;
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid request type: " + requestType);
-        }
-        if (isLock) {
-            return new MapPermission(name, action, ActionConstants.ACTION_LOCK);
-        }
-        return new MapPermission(name, action);
+        return requestType.getRequiredPermission(name);
     }
 }

@@ -16,12 +16,13 @@
 
 package com.hazelcast.management.request;
 
+import com.eclipsesource.json.JsonObject;
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.IOException;
-
+import static com.hazelcast.util.JsonUtil.getString;
+/**
+ * Request for shutting down the member.
+ */
 public class ShutdownMemberRequest implements ConsoleRequest {
 
     public ShutdownMemberRequest() {
@@ -33,21 +34,25 @@ public class ShutdownMemberRequest implements ConsoleRequest {
     }
 
     @Override
-    public Object readResponse(ObjectDataInput in) throws IOException {
-        return in.readUTF();
+    public Object readResponse(JsonObject json) {
+        return getString(json, "result", "successful");
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject root) {
         mcs.getHazelcastInstance().getLifecycleService().shutdown();
-        dos.writeUTF("successful");
+        JsonObject result = new JsonObject();
+        result.add("result", "successful");
+        root.add("result", result);
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public JsonObject toJson() {
+        return new JsonObject();
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void fromJson(JsonObject json) {
+
     }
 }

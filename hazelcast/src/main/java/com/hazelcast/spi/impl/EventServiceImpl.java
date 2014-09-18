@@ -35,9 +35,11 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 import com.hazelcast.util.executor.TimeoutRunnable;
@@ -58,11 +60,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * @author mdogan 12/14/12
- */
+import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.FutureUtil.ExceptionHandler;
+
 public class EventServiceImpl implements EventService {
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
+
+    private static final int REGISTRATION_TIMEOUT_SECONDS = 5;
+    private static final int EVENT_SYNC_FREQUENCY = 100000;
+    private static final int SEND_RETRY_COUNT = 50;
+    private static final int SEND_EVENT_TIMEOUT_SECONDS = 3;
+    private static final int DEREGISTER_TIMEOUT_SECONDS = 5;
+
+    private static final String LOG_MSG_MEM_LEFT_DEREGISTER = "Member left while de-registering listener...";
+    private static final String LOG_MSG_MEM_LEFT_REGISTER = "Member left while registering listener...";
+
+    private final ExceptionHandler registrationExceptionHandler = new FutureUtilExceptionHandler(LOG_MSG_MEM_LEFT_REGISTER);
+    private final ExceptionHandler deregistrationExceptionHandler = new FutureUtilExceptionHandler(LOG_MSG_MEM_LEFT_DEREGISTER);
 
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
@@ -74,14 +88,19 @@ public class EventServiceImpl implements EventService {
 
     EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        logger = nodeEngine.getLogger(EventService.class.getName());
+        this.logger = nodeEngine.getLogger(EventService.class.getName());
         final Node node = nodeEngine.getNode();
         GroupProperties groupProperties = node.getGroupProperties();
-        eventThreadCount = groupProperties.EVENT_THREAD_COUNT.getInteger();
-        eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
-        eventQueueTimeoutMs = groupProperties.EVENT_QUEUE_TIMEOUT_MILLIS.getInteger();
-        eventExecutor = new StripedExecutor(nodeEngine.executionService.getCachedExecutor(), eventThreadCount, eventQueueCapacity);
-        segments = new ConcurrentHashMap<String, EventServiceSegment>();
+        this.eventThreadCount = groupProperties.EVENT_THREAD_COUNT.getInteger();
+        this.eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
+        this.eventQueueTimeoutMs = groupProperties.EVENT_QUEUE_TIMEOUT_MILLIS.getInteger();
+        this.eventExecutor = new StripedExecutor(
+                node.getLogger(EventServiceImpl.class),
+                node.getThreadNamePrefix("event"),
+                node.threadGroup,
+                eventThreadCount,
+                eventQueueCapacity);
+        this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
     }
 
     @Override
@@ -99,18 +118,22 @@ public class EventServiceImpl implements EventService {
         return eventExecutor.getWorkQueueSize();
     }
 
+    @Override
     public EventRegistration registerLocalListener(String serviceName, String topic, Object listener) {
         return registerListenerInternal(serviceName, topic, new EmptyFilter(), listener, true);
     }
 
+    @Override
     public EventRegistration registerLocalListener(String serviceName, String topic, EventFilter filter, Object listener) {
         return registerListenerInternal(serviceName, topic, filter, listener, true);
     }
 
+    @Override
     public EventRegistration registerListener(String serviceName, String topic, Object listener) {
         return registerListenerInternal(serviceName, topic, new EmptyFilter(), listener, false);
     }
 
+    @Override
     public EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener) {
         return registerListenerInternal(serviceName, topic, filter, listener, false);
     }
@@ -144,6 +167,7 @@ public class EventServiceImpl implements EventService {
         return segment.addRegistration(reg.topic, reg);
     }
 
+    @Override
     public boolean deregisterListener(String serviceName, String topic, Object id) {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
@@ -156,6 +180,7 @@ public class EventServiceImpl implements EventService {
         return false;
     }
 
+    @Override
     public void deregisterAllListeners(String serviceName, String topic) {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
@@ -171,77 +196,76 @@ public class EventServiceImpl implements EventService {
     }
 
     private void invokeRegistrationOnOtherNodes(String serviceName, Registration reg) {
+        OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
-                        new RegistrationOperation(reg), member.getAddress());
+                RegistrationOperation operation = new RegistrationOperation(reg);
+                Future f = operationService.invokeOnTarget(serviceName, operation, member.getAddress());
                 calls.add(f);
             }
         }
-        for (Future f : calls) {
-            try {
-                f.get(5, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            } catch (TimeoutException ignored) {
-            } catch (MemberLeftException e) {
-                logger.finest("Member left while registering listener...", e);
-            } catch (ExecutionException e) {
-                throw new HazelcastException(e);
-            }
+
+        try {
+            FutureUtil.waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, TimeUnit.SECONDS, deregistrationExceptionHandler);
+        } catch (TimeoutException e) {
+            logger.finest(e);
         }
     }
 
     private void invokeDeregistrationOnOtherNodes(String serviceName, String topic, String id) {
+        OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                Future f = nodeEngine.getOperationService().invokeOnTarget(serviceName,
-                        new DeregistrationOperation(topic, id), member.getAddress());
+                DeregistrationOperation operation = new DeregistrationOperation(topic, id);
+                Future f = operationService.invokeOnTarget(serviceName, operation, member.getAddress());
                 calls.add(f);
             }
         }
-        for (Future f : calls) {
-            try {
-                f.get(5, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-            } catch (TimeoutException ignored) {
-            } catch (MemberLeftException e) {
-                logger.finest("Member left while de-registering listener...", e);
-            } catch (ExecutionException e) {
-                throw new HazelcastException(e);
-            }
+
+        try {
+            FutureUtil.waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, TimeUnit.SECONDS, deregistrationExceptionHandler);
+        } catch (TimeoutException e) {
+            logger.finest(e);
         }
     }
 
+    @Override
     public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             final Collection<Registration> registrations = segment.getRegistrations(topic, false);
-            return registrations != null && !registrations.isEmpty()
-                    ? registrations.toArray(new Registration[registrations.size()])
-                    : EMPTY_REGISTRATIONS;
+            if (registrations == null || registrations.isEmpty()) {
+                return EMPTY_REGISTRATIONS;
+            } else {
+                return registrations.toArray(new Registration[registrations.size()]);
+            }
         }
         return EMPTY_REGISTRATIONS;
     }
 
+    @Override
     public Collection<EventRegistration> getRegistrations(String serviceName, String topic) {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             final Collection<Registration> registrations = segment.getRegistrations(topic, false);
-            return registrations != null && !registrations.isEmpty()
-                    ? Collections.<EventRegistration>unmodifiableCollection(registrations)
-                    : Collections.<EventRegistration>emptySet();
+            if (registrations == null || registrations.isEmpty()) {
+                return Collections.<EventRegistration>emptySet();
+            } else {
+                return Collections.<EventRegistration>unmodifiableCollection(registrations);
+            }
         }
         return Collections.emptySet();
     }
+
     @Override
     public boolean hasEventRegistration(String serviceName, String topic) {
-        EventServiceSegment segment = getSegment(serviceName,false);
-        if(segment != null){
-            return segment.hasRegistrations(topic);
+        final EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment != null) {
+            return segment.hasRegistration(topic);
         }
         return false;
     }
@@ -266,24 +290,26 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    public void publishEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey) {
-        final Iterator<EventRegistration> iter = registrations.iterator();
+    @Override
+    public void publishEvent(String serviceName, Collection<EventRegistration> registrations,
+                             Object event, int orderKey) {
+
         Data eventData = null;
-        while (iter.hasNext()) {
-            EventRegistration registration = iter.next();
+        for (EventRegistration registration : registrations) {
             if (!(registration instanceof Registration)) {
                 throw new IllegalArgumentException();
             }
-            final Registration reg = (Registration) registration;
+            Registration reg = (Registration) registration;
             if (isLocal(reg)) {
                 executeLocal(serviceName, event, reg, orderKey);
-            } else {
-                if (eventData == null) {
-                    eventData = nodeEngine.toData(event);
-                }
-                final Address subscriber = registration.getSubscriber();
-                sendEventPacket(subscriber, new EventPacket(registration.getId(), serviceName, eventData), orderKey);
+                continue;
             }
+
+            if (eventData == null) {
+                eventData = nodeEngine.toData(event);
+            }
+            EventPacket eventPacket = new EventPacket(registration.getId(), serviceName, eventData);
+            sendEventPacket(registration.getSubscriber(), eventPacket, orderKey);
         }
     }
 
@@ -291,13 +317,15 @@ public class EventServiceImpl implements EventService {
         if (nodeEngine.isActive()) {
             try {
                 if (reg.listener != null) {
-                    eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey, eventQueueTimeoutMs));
+                    eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener
+                            , orderKey, eventQueueTimeoutMs));
                 } else {
                     logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
                 }
             } catch (RejectedExecutionException e) {
                 if (eventExecutor.isLive()) {
-                    logger.warning("EventQueue overloaded! " + event + " failed to publish to " + reg.serviceName + ":" + reg.topic);
+                    logger.warning("EventQueue overloaded! " + event
+                            + " failed to publish to " + reg.serviceName + ":" + reg.topic);
                 }
             }
         }
@@ -306,16 +334,20 @@ public class EventServiceImpl implements EventService {
     private void sendEventPacket(Address subscriber, EventPacket eventPacket, int orderKey) {
         final String serviceName = eventPacket.serviceName;
         final EventServiceSegment segment = getSegment(serviceName, true);
-        boolean sync = segment.incrementPublish() % 100000 == 0;
+        boolean sync = segment.incrementPublish() % EVENT_SYNC_FREQUENCY == 0;
+
         if (sync) {
-            Future f = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                    new SendEventOperation(eventPacket, orderKey), subscriber).setTryCount(50).invoke();
+            SendEventOperation op = new SendEventOperation(eventPacket, orderKey);
+            Future f = nodeEngine.getOperationService()
+                    .createInvocationBuilder(serviceName, op, subscriber)
+                    .setTryCount(SEND_RETRY_COUNT).invoke();
             try {
-                f.get(3, TimeUnit.SECONDS);
+                f.get(SEND_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             } catch (Exception ignored) {
+                ignore(ignored);
             }
         } else {
-            final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey, nodeEngine.getSerializationContext());
+            final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey, nodeEngine.getPortableContext());
             packet.setHeader(Packet.HEADER_EVENT);
             nodeEngine.send(packet, subscriber);
         }
@@ -324,11 +356,14 @@ public class EventServiceImpl implements EventService {
     private EventServiceSegment getSegment(String service, boolean forceCreate) {
         EventServiceSegment segment = segments.get(service);
         if (segment == null && forceCreate) {
-            return ConcurrencyUtil.getOrPutIfAbsent(segments, service, new ConstructorFunction<String, EventServiceSegment>() {
+            ConstructorFunction<String, EventServiceSegment> func
+                    = new ConstructorFunction<String, EventServiceSegment>() {
+                @Override
                 public EventServiceSegment createNew(String key) {
                     return new EventServiceSegment(key);
                 }
-            });
+            };
+            return ConcurrencyUtil.getOrPutIfAbsent(segments, service, func);
         }
         return segment;
     }
@@ -406,20 +441,19 @@ public class EventServiceImpl implements EventService {
 
         private Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
             Collection<Registration> listenerList = registrations.get(topic);
+
             if (listenerList == null && forceCreate) {
-                return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic, new ConstructorFunction<String, Collection<Registration>>() {
+                ConstructorFunction<String, Collection<Registration>> func
+                        = new ConstructorFunction<String, Collection<Registration>>() {
                     public Collection<Registration> createNew(String key) {
                         return Collections.newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
                     }
-                });
+                };
+
+                return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic, func);
             }
             return listenerList;
         }
-        private boolean hasRegistrations(String topic) {
-            Collection<Registration> topicRegistrations = registrations.get(topic);
-            return !(topicRegistrations == null || topicRegistrations.isEmpty());
-        }
-
 
         private boolean addRegistration(String topic, Registration registration) {
             final Collection<Registration> registrations = getRegistrations(topic, true);
@@ -471,11 +505,16 @@ public class EventServiceImpl implements EventService {
         int incrementPublish() {
             return totalPublishes.incrementAndGet();
         }
+
+        boolean hasRegistration(String topic) {
+            Collection<Registration> topicRegistrations = registrations.get(topic);
+            return !(topicRegistrations == null || topicRegistrations.isEmpty());
+        }
     }
 
     private class EventPacketProcessor implements StripedRunnable {
-        private EventPacket eventPacket;
         int orderKey;
+        private EventPacket eventPacket;
 
         private EventPacketProcessor() {
         }
@@ -485,30 +524,47 @@ public class EventServiceImpl implements EventService {
             this.orderKey = orderKey;
         }
 
+        @Override
         public void run() {
             process(eventPacket);
         }
 
         void process(EventPacket eventPacket) {
-            Object eventObject = eventPacket.event;
-            if (eventObject instanceof Data) {
-                eventObject = nodeEngine.toObject(eventObject);
+            Object eventObject = getEventObject(eventPacket);
+            String serviceName = eventPacket.serviceName;
+
+            EventPublishingService<Object, Object> service = getPublishingService(serviceName);
+            if (service == null) {
+                return;
             }
-            final String serviceName = eventPacket.serviceName;
+
+            Registration registration = getRegistration(eventPacket, serviceName);
+            if (registration == null) {
+                return;
+            }
+            service.dispatchEvent(eventObject, registration.listener);
+        }
+
+        private EventPublishingService<Object, Object> getPublishingService(String serviceName) {
             EventPublishingService<Object, Object> service = nodeEngine.getService(serviceName);
             if (service == null) {
                 if (nodeEngine.isActive()) {
                     logger.warning("There is no service named: " + serviceName);
                 }
-                return;
+                return null;
             }
+            return service;
+        }
+
+        private Registration getRegistration(EventPacket eventPacket, String serviceName) {
             EventServiceSegment segment = getSegment(serviceName, false);
             if (segment == null) {
                 if (nodeEngine.isActive()) {
                     logger.warning("No service registration found for " + serviceName);
                 }
-                return;
+                return null;
             }
+
             Registration registration = segment.registrationIdMap.get(eventPacket.id);
             if (registration == null) {
                 if (nodeEngine.isActive()) {
@@ -516,23 +572,36 @@ public class EventServiceImpl implements EventService {
                         logger.finest("No registration found for " + serviceName + " / " + eventPacket.id);
                     }
                 }
-                return;
+                return null;
             }
+
             if (!isLocal(registration)) {
                 logger.severe("Invalid target for  " + registration);
-                return;
+                return null;
             }
+
             if (registration.listener == null) {
                 logger.warning("Something seems wrong! Subscriber is local but listener instance is null! -> " + registration);
-                return;
+                return null;
             }
-            service.dispatchEvent(eventObject, registration.listener);
+
+            return registration;
         }
 
+        private Object getEventObject(EventPacket eventPacket) {
+            Object eventObject = eventPacket.event;
+            if (eventObject instanceof Data) {
+                eventObject = nodeEngine.toObject(eventObject);
+            }
+            return eventObject;
+        }
+
+        @Override
         public int getKey() {
             return orderKey;
         }
 
+        @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder("EventPacketProcessor{");
             sb.append("eventPacket=").append(eventPacket);
@@ -549,6 +618,7 @@ public class EventServiceImpl implements EventService {
             this.orderKey = packet.getPartitionId();
         }
 
+        @Override
         public void run() {
             Data data = packet.getData();
             EventPacket eventPacket = (EventPacket) nodeEngine.toObject(data);
@@ -556,7 +626,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private class LocalEventDispatcher implements StripedRunnable, TimeoutRunnable {
+    private final class LocalEventDispatcher implements StripedRunnable, TimeoutRunnable {
         final String serviceName;
         final Object event;
         final Object listener;
@@ -571,15 +641,18 @@ public class EventServiceImpl implements EventService {
             this.timeoutMs = timeoutMs;
         }
 
+        @Override
         public long getTimeout() {
             return timeoutMs;
         }
 
+        @Override
         public TimeUnit getTimeUnit() {
             return TimeUnit.MILLISECONDS;
         }
 
-        public final void run() {
+        @Override
+        public void run() {
             final EventPublishingService<Object, Object> service = nodeEngine.getService(serviceName);
             if (service != null) {
                 service.dispatchEvent(event, listener);
@@ -590,6 +663,7 @@ public class EventServiceImpl implements EventService {
             }
         }
 
+        @Override
         public int getKey() {
             return orderKey;
         }
@@ -619,37 +693,61 @@ public class EventServiceImpl implements EventService {
             this.localOnly = localOnly;
         }
 
+        @Override
         public EventFilter getFilter() {
             return filter;
         }
 
+        @Override
         public String getId() {
             return id;
         }
 
+        @Override
         public Address getSubscriber() {
             return subscriber;
         }
 
+        @Override
         public boolean isLocalOnly() {
             return localOnly;
         }
 
+        public Object getListener() {
+            return listener;
+        }
+
+        //CHECKSTYLE:OFF
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             Registration that = (Registration) o;
 
-            if (id != null ? !id.equals(that.id) : that.id != null) return false;
-            if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) return false;
-            if (topic != null ? !topic.equals(that.topic) : that.topic != null) return false;
-            if (filter != null ? !filter.equals(that.filter) : that.filter != null) return false;
-            if (subscriber != null ? !subscriber.equals(that.subscriber) : that.subscriber != null) return false;
+            if (id != null ? !id.equals(that.id) : that.id != null) {
+                return false;
+            }
+            if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) {
+                return false;
+            }
+            if (topic != null ? !topic.equals(that.topic) : that.topic != null) {
+                return false;
+            }
+            if (filter != null ? !filter.equals(that.filter) : that.filter != null) {
+                return false;
+            }
+            if (subscriber != null ? !subscriber.equals(that.subscriber) : that.subscriber != null) {
+                return false;
+            }
 
             return true;
         }
+        //CHECKSTYLE:ON
 
         @Override
         public int hashCode() {
@@ -661,6 +759,7 @@ public class EventServiceImpl implements EventService {
             return result;
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(id);
             out.writeUTF(serviceName);
@@ -669,6 +768,7 @@ public class EventServiceImpl implements EventService {
             out.writeObject(filter);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             id = in.readUTF();
             serviceName = in.readUTF();
@@ -692,7 +792,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    public final static class EventPacket implements IdentifiedDataSerializable {
+    public static final class EventPacket implements IdentifiedDataSerializable {
 
         private String id;
         private String serviceName;
@@ -707,22 +807,26 @@ public class EventServiceImpl implements EventService {
             this.serviceName = serviceName;
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(id);
             out.writeUTF(serviceName);
             out.writeObject(event);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             id = in.readUTF();
             serviceName = in.readUTF();
             event = in.readObject();
         }
 
+        @Override
         public int getFactoryId() {
             return SpiDataSerializerHook.F_ID;
         }
 
+        @Override
         public int getId() {
             return SpiDataSerializerHook.EVENT_PACKET;
         }
@@ -743,9 +847,11 @@ public class EventServiceImpl implements EventService {
             return true;
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
         }
 
@@ -772,21 +878,25 @@ public class EventServiceImpl implements EventService {
             this.orderKey = orderKey;
         }
 
+        @Override
         public void run() throws Exception {
             EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
             eventService.executeEventCallback(eventService.new EventPacketProcessor(eventPacket, orderKey));
         }
 
+        @Override
         public boolean returnsResponse() {
             return true;
         }
 
+        @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {
             super.writeInternal(out);
             eventPacket.writeData(out);
             out.writeInt(orderKey);
         }
 
+        @Override
         protected void readInternal(ObjectDataInput in) throws IOException {
             super.readInternal(in);
             eventPacket = new EventPacket();
@@ -798,7 +908,7 @@ public class EventServiceImpl implements EventService {
     public static class RegistrationOperation extends AbstractOperation {
 
         private Registration registration;
-        private boolean response = false;
+        private boolean response;
 
         public RegistrationOperation() {
         }
@@ -807,6 +917,7 @@ public class EventServiceImpl implements EventService {
             this.registration = registration;
         }
 
+        @Override
         public void run() throws Exception {
             EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
             response = eventService.handleRegistration(registration);
@@ -847,6 +958,7 @@ public class EventServiceImpl implements EventService {
             this.id = id;
         }
 
+        @Override
         public void run() throws Exception {
             EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
             eventService.deregisterSubscriber(getServiceName(), topic, id);
@@ -925,6 +1037,24 @@ public class EventServiceImpl implements EventService {
                     registrations.add(reg);
                     reg.readData(in);
                 }
+            }
+        }
+    }
+
+    private final class FutureUtilExceptionHandler implements FutureUtil.ExceptionHandler {
+
+        private final String message;
+
+        private FutureUtilExceptionHandler(String message) {
+            this.message = message;
+        }
+
+        @Override
+        public void handleException(Throwable throwable) {
+            if (throwable instanceof MemberLeftException) {
+                logger.finest(message, throwable);
+            } else if (throwable instanceof ExecutionException) {
+                throw new HazelcastException(throwable);
             }
         }
     }

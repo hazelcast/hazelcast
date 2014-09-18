@@ -20,6 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.mapreduce.aggregation.Aggregations;
+import com.hazelcast.mapreduce.aggregation.Supplier;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -29,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -60,7 +64,7 @@ public class MultiMapTest extends HazelcastTestSupport {
         mm1.put(key, 1);
         mm1.put(key, 2);
         final AtomicBoolean running = new AtomicBoolean(true);
-        new Thread(){
+        new Thread() {
             @Override
             public void run() {
                 int count = 3;
@@ -71,7 +75,7 @@ public class MultiMapTest extends HazelcastTestSupport {
         }.start();
 
 
-        for (int i=0; i<10; i++) {
+        for (int i = 0; i < 10; i++) {
             mm1.get(key);
         }
     }
@@ -118,6 +122,78 @@ public class MultiMapTest extends HazelcastTestSupport {
 
     }
 
+    @Test(expected = NullPointerException.class)
+    public void testGet_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.get(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPut_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.put(null, "someVal");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPut_whenNullValue() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.put("someVal", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testLock_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.lock(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testUnlock_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.unlock(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsKey_whenNullKey() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsKey(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsValue_whenNullKey() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsValue(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsEntry_whenNullKey() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsEntry(null, "someVal");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsEntry_whenNullValue() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsEntry("someVal", null);
+    }
+
     @Test
     public void testPutGetRemoveWhileCollectionTypeList() throws InterruptedException {
         Config config = new Config();
@@ -159,10 +235,10 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     /**
-     * test localKeySet, keySet, entrySet, values and contains methods
+     * test localKeySet, keySet, entrySet, values, contains, containsKey and containsValue methods
      */
     @Test
-    public void testCollectionInterfaceMethods(){
+    public void testCollectionInterfaceMethods() {
         Config config = new Config();
         final String name = "defMM";
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
@@ -171,17 +247,19 @@ public class MultiMapTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(config);
 
         getMultiMap(instances, name).put("key1", "key1_val1");
-        getMultiMap(instances, name).put("key1","key1_val2");
-        getMultiMap(instances, name).put("key1","key1_val3");
+        getMultiMap(instances, name).put("key1", "key1_val2");
+        getMultiMap(instances, name).put("key1", "key1_val3");
 
-        getMultiMap(instances, name).put("key2","key2_val1");
-        getMultiMap(instances, name).put("key2","key2_val2");
+        getMultiMap(instances, name).put("key2", "key2_val1");
+        getMultiMap(instances, name).put("key2", "key2_val2");
 
-        getMultiMap(instances, name).put("key3","key3_val1");
-        getMultiMap(instances, name).put("key3","key3_val2");
-        getMultiMap(instances, name).put("key3","key3_val3");
-        getMultiMap(instances, name).put("key3","key3_val4");
+        getMultiMap(instances, name).put("key3", "key3_val1");
+        getMultiMap(instances, name).put("key3", "key3_val2");
+        getMultiMap(instances, name).put("key3", "key3_val3");
+        getMultiMap(instances, name).put("key3", "key3_val4");
 
+        assertTrue(getMultiMap(instances, name).containsKey("key3"));
+        assertTrue(getMultiMap(instances, name).containsValue("key3_val4"));
 
         Set totalKeySet = new HashSet();
         Set localKeySet = instances[0].getMultiMap(name).localKeySet();
@@ -200,15 +278,15 @@ public class MultiMapTest extends HazelcastTestSupport {
         Set keySet = getMultiMap(instances, name).keySet();
         assertEquals(keySet.size(), 3);
 
-        for (Object key: keySet){
+        for (Object key : keySet) {
             assertTrue(totalKeySet.contains(key));
         }
 
         Set<Map.Entry> entrySet = getMultiMap(instances, name).entrySet();
         assertEquals(entrySet.size(), 9);
-        for (Map.Entry entry: entrySet){
-            String key = (String)entry.getKey();
-            String val = (String)entry.getValue();
+        for (Map.Entry entry : entrySet) {
+            String key = (String) entry.getKey();
+            String val = (String) entry.getValue();
             assertTrue(val.startsWith(key));
         }
 
@@ -218,9 +296,9 @@ public class MultiMapTest extends HazelcastTestSupport {
         assertTrue(getMultiMap(instances, name).containsKey("key2"));
         assertFalse(getMultiMap(instances, name).containsKey("key4"));
 
-        assertTrue(getMultiMap(instances, name).containsEntry("key3","key3_val3"));
-        assertFalse(getMultiMap(instances, name).containsEntry("key3","key3_val7"));
-        assertFalse(getMultiMap(instances, name).containsEntry("key2","key3_val3"));
+        assertTrue(getMultiMap(instances, name).containsEntry("key3", "key3_val3"));
+        assertFalse(getMultiMap(instances, name).containsEntry("key3", "key3_val7"));
+        assertFalse(getMultiMap(instances, name).containsEntry("key2", "key3_val3"));
 
         assertTrue(getMultiMap(instances, name).containsValue("key2_val2"));
         assertFalse(getMultiMap(instances, name).containsValue("key2_val4"));
@@ -229,13 +307,13 @@ public class MultiMapTest extends HazelcastTestSupport {
     @Test
     public void testListeners() throws Exception {
         Config config = new Config();
-        final String name = "defMM";
+        final String name = randomMapName();
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
         final int insCount = 4;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
-        final Set keys = new HashSet();
+        final Set keys = Collections.newSetFromMap(new ConcurrentHashMap());
 
         EntryListener listener = new EntryAdapter() {
             public void entryAdded(EntryEvent event) {
@@ -245,46 +323,57 @@ public class MultiMapTest extends HazelcastTestSupport {
             public void entryRemoved(EntryEvent event) {
                 keys.remove(event.getKey());
             }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+                keys.clear();
+            }
         };
 
         final String id = instances[0].getMultiMap(name).addLocalEntryListener(listener);
-        instances[0].getMultiMap(name).put("key1","val1");
-        instances[0].getMultiMap(name).put("key2","val2");
-        instances[0].getMultiMap(name).put("key3","val3");
-        instances[0].getMultiMap(name).put("key4","val4");
-        instances[0].getMultiMap(name).put("key5","val5");
-        instances[0].getMultiMap(name).put("key6","val6");
-        instances[0].getMultiMap(name).put("key7","val7");
-        instances[0].getMultiMap(name).put("key8","val8");
-        Thread.sleep(1500);
-        assertTrue(instances[0].getMultiMap(name).localKeySet().containsAll(keys));
-        if (keys.size() != 0){
+        instances[0].getMultiMap(name).put("key1", "val1");
+        instances[0].getMultiMap(name).put("key2", "val2");
+        instances[0].getMultiMap(name).put("key3", "val3");
+        instances[0].getMultiMap(name).put("key4", "val4");
+        instances[0].getMultiMap(name).put("key5", "val5");
+        instances[0].getMultiMap(name).put("key6", "val6");
+        instances[0].getMultiMap(name).put("key7", "val7");
+        instances[0].getMultiMap(name).put("key8", "val8");
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                instances[0].getMultiMap(name).localKeySet().containsAll(keys);
+            }
+        });
+        if (keys.size() != 0) {
             instances[0].getMultiMap(name).remove(keys.iterator().next());
         }
-        Thread.sleep(1500);
-        assertTrue(instances[0].getMultiMap(name).localKeySet().containsAll(keys));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                instances[0].getMultiMap(name).localKeySet().containsAll(keys);
+            }
+        });
         instances[0].getMultiMap(name).removeEntryListener(id);
         getMultiMap(instances, name).clear();
         keys.clear();
 
         final String id2 = instances[0].getMultiMap(name).addEntryListener(listener, true);
-        getMultiMap(instances, name).put("key3","val3");
-        getMultiMap(instances, name).put("key3","val33");
-        getMultiMap(instances, name).put("key4","val4");
-        getMultiMap(instances, name).remove("key3","val33");
-        Thread.sleep(1500);
-        assertEquals(1, keys.size());
+        getMultiMap(instances, name).put("key3", "val3");
+        getMultiMap(instances, name).put("key3", "val33");
+        getMultiMap(instances, name).put("key4", "val4");
+        getMultiMap(instances, name).remove("key3", "val33");
+        assertSizeEventually(1, keys);
         getMultiMap(instances, name).clear();
-        Thread.sleep(1500);
-        assertEquals(0, keys.size());
+        assertSizeEventually(0, keys);
 
         instances[0].getMultiMap(name).removeEntryListener(id2);
         instances[0].getMultiMap(name).addEntryListener(listener, "key7", true);
-        getMultiMap(instances, name).put("key2","val2");
-        getMultiMap(instances, name).put("key3","val3");
-        getMultiMap(instances, name).put("key7","val7");
-        Thread.sleep(1500);
-        assertEquals(1, keys.size());
+        getMultiMap(instances, name).put("key2", "val2");
+        getMultiMap(instances, name).put("key3", "val3");
+        getMultiMap(instances, name).put("key7", "val7");
+
+        assertSizeEventually(1, keys);
     }
 
     @Test
@@ -302,6 +391,36 @@ public class MultiMapTest extends HazelcastTestSupport {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
+    // it must throw ClassCastException wrapped by HazelcastException
+    @Test(expected = HazelcastException.class)
+    public void testAggregateMultiMap_differentDataTypes() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap<Object, Object> multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.put(1, "fail");
+        multiMap.put(2, 75);
+
+        Integer aggregate = multiMap.aggregate(Supplier.all(), Aggregations.integerAvg());
+
+        assertEquals(50, aggregate.intValue());
+    }
+
+    @Test
+    public void testAggregateMultiMap() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap<Object, Object> multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        Integer aggregate = multiMap.aggregate(Supplier.all(), Aggregations.integerAvg());
+        assertEquals(0, aggregate.intValue());
+
+        multiMap.put(1, 25);
+        multiMap.put(2, 75);
+
+        aggregate = multiMap.aggregate(Supplier.all(), Aggregations.integerAvg());
+        assertEquals(50, aggregate.intValue());
+    }
+
+
     @Test
     public void testLock() throws Exception {
         Config config = new Config();
@@ -312,7 +431,7 @@ public class MultiMapTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 instances[0].getMultiMap(name).lock("alo");
                 latch.countDown();
@@ -329,7 +448,7 @@ public class MultiMapTest extends HazelcastTestSupport {
         latch2.countDown();
         assertTrue(instances[0].getMultiMap(name).tryLock("alo", 20, TimeUnit.SECONDS));
 
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     Thread.sleep(3000);
@@ -344,7 +463,7 @@ public class MultiMapTest extends HazelcastTestSupport {
 
     }
 
-    private MultiMap getMultiMap(HazelcastInstance[] instances, String name){
+    private MultiMap getMultiMap(HazelcastInstance[] instances, String name) {
         final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getMultiMap(name);
     }

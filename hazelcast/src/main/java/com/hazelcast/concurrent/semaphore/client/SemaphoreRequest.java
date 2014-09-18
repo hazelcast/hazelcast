@@ -17,8 +17,8 @@
 package com.hazelcast.concurrent.semaphore.client;
 
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.PartitionClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.PartitionClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
@@ -44,7 +44,7 @@ public abstract class SemaphoreRequest extends PartitionClientRequest
     @Override
     protected int getPartition() {
         ClientEngine clientEngine = getClientEngine();
-        Data key = clientEngine.getSerializationService().toData(name);
+        Data key = serializationService.toData(name);
         return clientEngine.getPartitionService().getPartitionId(key);
     }
 
@@ -68,5 +68,15 @@ public abstract class SemaphoreRequest extends PartitionClientRequest
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         permitCount = reader.readInt("p");
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{permitCount};
     }
 }

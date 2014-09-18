@@ -17,9 +17,23 @@
 package com.hazelcast.spi;
 
 /**
- * @author mdogan 1/18/13
+ * The possible actions that can be taken when a certain exception is thrown. E.g. when a map.get is executed on a member
+ * where the partition has just moved to another box, the ExceptionAction.RETRY_INVOCATION would be used.
  */
 public enum ExceptionAction {
 
-    RETRY_INVOCATION, CONTINUE_WAIT, THROW_EXCEPTION
+    /**
+     * Indicates that the operation can be retried.
+     */
+    RETRY_INVOCATION,
+
+    /**
+     * Indicates that more waiting can be done (e.g. a Condition.await)
+     */
+    CONTINUE_WAIT,
+
+    /**
+     * Indicates that the exception should be bubble up.
+     */
+    THROW_EXCEPTION
 }

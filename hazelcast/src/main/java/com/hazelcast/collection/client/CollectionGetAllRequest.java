@@ -21,10 +21,7 @@ import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
 
-/**
- * @ali 9/4/13
- */
-public class CollectionGetAllRequest extends CollectionRequest{
+public class CollectionGetAllRequest extends CollectionRequest {
 
     public CollectionGetAllRequest() {
     }
@@ -47,4 +44,10 @@ public class CollectionGetAllRequest extends CollectionRequest{
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
     }
+
+    @Override
+    public String getMethodName() {
+        return "iterator";
+    }
+
 }

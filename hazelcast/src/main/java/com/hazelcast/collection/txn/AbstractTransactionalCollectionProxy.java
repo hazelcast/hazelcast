@@ -21,22 +21,19 @@ import com.hazelcast.collection.CollectionSizeOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-/**
- * @ali 9/4/13
- */
 public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E> extends AbstractDistributedObject<S> {
 
     protected final String name;
@@ -73,7 +70,9 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 }
                 getCollection().add(new CollectionItem(itemId, value));
                 CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
-                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, getServiceName(), tx.getTxnId(), op));
+                final String serviceName = getServiceName();
+                final String txnId = tx.getTxnId();
+                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, serviceName, txnId, op));
                 return true;
             }
         } catch (Throwable t) {
@@ -89,19 +88,24 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         final Data value = nodeEngine.toData(e);
         final Iterator<CollectionItem> iterator = getCollection().iterator();
         long reservedItemId = -1;
-        while (iterator.hasNext()){
+        while (iterator.hasNext()) {
             final CollectionItem item = iterator.next();
-            if (value.equals(item.getValue())){
+            if (value.equals(item.getValue())) {
                 reservedItemId = item.getItemId();
                 break;
             }
         }
-        final CollectionReserveRemoveOperation operation = new CollectionReserveRemoveOperation(name, reservedItemId, value, tx.getTxnId());
+        final CollectionReserveRemoveOperation operation = new CollectionReserveRemoveOperation(
+                name,
+                reservedItemId,
+                value,
+                tx.getTxnId());
         try {
-            Future<CollectionItem> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
+            final OperationService operationService = nodeEngine.getOperationService();
+            Future<CollectionItem> f = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
             CollectionItem item = f.get();
             if (item != null) {
-                if (reservedItemId == item.getItemId()){
+                if (reservedItemId == item.getItemId()) {
                     iterator.remove();
                     tx.removeTransactionLog(reservedItemId);
                     itemIdSet.remove(reservedItemId);
@@ -111,7 +115,13 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
                 CollectionTxnRemoveOperation op = new CollectionTxnRemoveOperation(name, item.getItemId());
-                tx.addTransactionLog(new CollectionTransactionLog(item.getItemId(), name, partitionId, getServiceName(), tx.getTxnId(), op));
+                tx.addTransactionLog(new CollectionTransactionLog(
+                        item.getItemId(),
+                        name,
+                        partitionId,
+                        getServiceName(),
+                        tx.getTxnId(),
+                        op));
                 return true;
             }
         } catch (Throwable t) {
@@ -132,8 +142,8 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         }
     }
 
-    protected void checkTransactionState(){
-        if(!tx.getState().equals(Transaction.State.ACTIVE)) {
+    protected void checkTransactionState() {
+        if (!tx.getState().equals(Transaction.State.ACTIVE)) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }

@@ -17,10 +17,12 @@
 package com.hazelcast.spi;
 
 /**
+ * A hook into the parsing system. So if your SPI service needs to parse XML in the hazelcast-xml configuration, then use
+ * this interface to hook into the XML parser.
  *
+ * @param <T>
  */
 public interface ServiceConfigurationParser<T> {
 
     T parse(org.w3c.dom.Element element);
-
 }

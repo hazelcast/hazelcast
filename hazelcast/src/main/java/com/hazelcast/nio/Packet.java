@@ -18,7 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
-import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.PortableContext;
 
 import java.nio.ByteBuffer;
 
@@ -27,32 +27,31 @@ import java.nio.ByteBuffer;
  */
 public final class Packet extends DataAdapter implements SocketWritable, SocketReadable {
 
-    public static final byte VERSION = 1;
-
-    private static final int stVersion = 11;
-    private static final int stHeader = 12;
-    private static final int stPartition = 13;
-
+    public static final byte VERSION = 2;
     public static final int HEADER_OP = 0;
     public static final int HEADER_RESPONSE = 1;
     public static final int HEADER_EVENT = 2;
     public static final int HEADER_WAN_REPLICATION = 3;
     public static final int HEADER_URGENT = 4;
 
+    private static final int ST_VERSION = 11;
+    private static final int ST_HEADER = 12;
+    private static final int ST_PARTITION = 13;
+
     private short header;
     private int partitionId;
 
     private transient Connection conn;
 
-    public Packet(SerializationContext context) {
+    public Packet(PortableContext context) {
         super(context);
     }
 
-    public Packet(Data value, SerializationContext context) {
+    public Packet(Data value, PortableContext context) {
         this(value, -1, context);
     }
 
-    public Packet(Data value, int partitionId, SerializationContext context) {
+    public Packet(Data value, int partitionId, PortableContext context) {
         super(value, context);
         this.partitionId = partitionId;
     }
@@ -68,7 +67,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
 
     /**
      * Sets the Connection this Packet is send with.
-     *
+     * <p/>
      * This is done on the reading side of the Packet to make it possible to retrieve information about
      * the sender of the Packet.
      *
@@ -90,7 +89,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
      * Returns the header of the Packet. The header is used to figure out what the content is of this Packet before
      * the actual payload needs to be processed.
      *
-     * @return  the header.
+     * @return the header.
      */
     public short getHeader() {
         return header;
@@ -106,62 +105,62 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     }
 
     @Override
-    public boolean isUrgent(){
+    public boolean isUrgent() {
         return isHeaderSet(HEADER_URGENT);
     }
 
     @Override
-    public final boolean writeTo(ByteBuffer destination) {
-        if (!isStatusSet(stVersion)) {
+    public boolean writeTo(ByteBuffer destination) {
+        if (!isStatusSet(ST_VERSION)) {
             if (!destination.hasRemaining()) {
                 return false;
             }
             destination.put(VERSION);
-            setStatus(stVersion);
+            setStatus(ST_VERSION);
         }
-        if (!isStatusSet(stHeader)) {
+        if (!isStatusSet(ST_HEADER)) {
             if (destination.remaining() < 2) {
                 return false;
             }
             destination.putShort(header);
-            setStatus(stHeader);
+            setStatus(ST_HEADER);
         }
-        if (!isStatusSet(stPartition)) {
+        if (!isStatusSet(ST_PARTITION)) {
             if (destination.remaining() < 4) {
                 return false;
             }
             destination.putInt(partitionId);
-            setStatus(stPartition);
+            setStatus(ST_PARTITION);
         }
         return super.writeTo(destination);
     }
 
     @Override
-    public final boolean readFrom(ByteBuffer source) {
-        if (!isStatusSet(stVersion)) {
+    public boolean readFrom(ByteBuffer source) {
+        if (!isStatusSet(ST_VERSION)) {
             if (!source.hasRemaining()) {
                 return false;
             }
             byte version = source.get();
-            setStatus(stVersion);
+            setStatus(ST_VERSION);
             if (VERSION != version) {
                 throw new IllegalArgumentException("Packet versions are not matching! This -> "
                         + VERSION + ", Incoming -> " + version);
             }
         }
-        if (!isStatusSet(stHeader)) {
+        if (!isStatusSet(ST_HEADER)) {
             if (source.remaining() < 2) {
                 return false;
             }
             header = source.getShort();
-            setStatus(stHeader);
+            setStatus(ST_HEADER);
         }
-        if (!isStatusSet(stPartition)) {
+        if (!isStatusSet(ST_PARTITION)) {
             if (source.remaining() < 4) {
                 return false;
             }
             partitionId = source.getInt();
-            setStatus(stPartition);
+            setStatus(ST_PARTITION);
         }
         return super.readFrom(source);
     }
@@ -172,13 +171,17 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
      * @return the size of the packet.
      */
     public int size() {
-        return (data != null  ? data.totalSize() : 0) + 7; // 7 = byte(version) + short(header) + int(partitionId)
+        // 7 = byte(version) + short(header) + int(partitionId)
+        return (data != null ? data.totalSize() : 0) + 7;
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Packet{");
         sb.append("header=").append(header);
+        sb.append(", isResponse=").append(isHeaderSet(Packet.HEADER_RESPONSE));
+        sb.append(", isOperation=").append(isHeaderSet(Packet.HEADER_OP));
+        sb.append(", isEvent=").append(isHeaderSet(Packet.HEADER_EVENT));
         sb.append(", partitionId=").append(partitionId);
         sb.append(", conn=").append(conn);
         sb.append('}');

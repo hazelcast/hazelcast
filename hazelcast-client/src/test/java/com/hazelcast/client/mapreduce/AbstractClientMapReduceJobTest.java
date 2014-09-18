@@ -24,14 +24,14 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 public abstract class AbstractClientMapReduceJobTest extends HazelcastTestSupport {
 
-    protected ClientConfig buildClientConfig()
-    {
+    protected ClientConfig buildClientConfig() {
         ClientConfig config = new XmlClientConfigBuilder().build();
         return config;
     }
 
     protected Config buildConfig() {
         Config config = new XmlConfigBuilder().build();
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
         return config;
     }

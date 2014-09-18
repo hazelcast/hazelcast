@@ -20,28 +20,18 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-
 import java.io.IOException;
 
 
 /**
- * Built-in MergePolicy implementation.
- * <p/>
  * PutIfAbsentMapMergePolicy causes the merging entry to be merged from source to destination map
  * if it does not exist in the destination map.
- *
- * <p/>
- *
- * @see com.hazelcast.map.merge.HigherHitsMapMergePolicy
- * @see com.hazelcast.map.merge.LatestUpdateMapMergePolicy
- * @see com.hazelcast.map.merge.PassThroughMergePolicy
- * @see com.hazelcast.map.merge.MapMergePolicy
- *
  */
 public class PutIfAbsentMapMergePolicy implements MapMergePolicy, DataSerializable {
 
+    @Override
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
-        if(existingEntry.getValue() == null) {
+        if (existingEntry.getValue() == null) {
             return mergingEntry.getValue();
         }
         return existingEntry.getValue();

@@ -32,7 +32,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
 
 /**
- * @author mdogan 8/24/12
+ * The NodeEngine is the internal heart of a member. Most of the services can be found here.
  */
 public interface NodeEngine {
 

@@ -17,8 +17,8 @@
 package com.hazelcast.concurrent.atomiclong.client;
 
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.PartitionClientRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.PartitionClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
@@ -46,7 +46,7 @@ public abstract class AtomicLongRequest extends PartitionClientRequest implement
     @Override
     protected int getPartition() {
         ClientEngine clientEngine = getClientEngine();
-        Data key = clientEngine.getSerializationService().toData(name);
+        Data key = serializationService.toData(name);
         return clientEngine.getPartitionService().getPartitionId(key);
     }
 
@@ -75,5 +75,15 @@ public abstract class AtomicLongRequest extends PartitionClientRequest implement
     @Override
     public Permission getRequiredPermission() {
         return new AtomicLongPermission(name, ActionConstants.ACTION_MODIFY);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{delta};
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 }

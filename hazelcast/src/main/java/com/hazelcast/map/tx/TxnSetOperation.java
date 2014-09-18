@@ -18,10 +18,12 @@ package com.hazelcast.map.tx;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.operation.BasePutOperation;
 import com.hazelcast.map.operation.PutBackupOperation;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
+import com.hazelcast.map.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,10 +31,12 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.transaction.TransactionException;
+
 import java.io.IOException;
 
 /**
- * @author mdogan 3/25/13
+ * An operation to unlock and set (key,value) on the partition .
  */
 public class TxnSetOperation extends BasePutOperation implements MapTxnOperation {
 
@@ -56,17 +60,26 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     @Override
     public boolean shouldWait() {
-        return !recordStore.canAcquireLock(dataKey, ownerUuid, getThreadId());
+        return false;
+    }
+
+
+    @Override
+    public void innerBeforeRun() {
+        if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
+            throw new TransactionException("Cannot acquire lock uuid: " + ownerUuid + ", threadId: " + threadId);
+        }
     }
 
     @Override
     public void run() {
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final EventService eventService = getNodeEngine().getEventService();
-        recordStore.unlock(dataKey, ownerUuid, getThreadId());
+        recordStore.unlock(dataKey, ownerUuid, threadId);
         Record record = recordStore.getRecord(dataKey);
         if (record == null || version == record.getVersion()) {
             if (eventService.hasEventRegistration(MapService.SERVICE_NAME, getName())) {
-                dataOldValue = record == null ? null : mapService.toData(record.getValue());
+                dataOldValue = record == null ? null : mapServiceContext.toData(record.getValue());
             }
             eventType = record == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
             recordStore.set(dataKey, dataValue, ttl);
@@ -97,7 +110,8 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     }
 
     public Operation getBackupOperation() {
-        RecordInfo replicationInfo = mapService.createRecordInfo(mapContainer, recordStore.getRecord(dataKey));
+        final Record record = recordStore.getRecord(dataKey);
+        final RecordInfo replicationInfo = Records.buildRecordInfo(record);
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, true);
     }
 
@@ -108,7 +122,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     @Override
     public boolean shouldBackup() {
-        return shouldBackup;
+        return shouldBackup && recordStore.getRecord(dataKey) != null;
     }
 
     public WaitNotifyKey getNotifiedKey() {

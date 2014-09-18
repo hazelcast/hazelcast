@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,17 @@ package com.hazelcast.web;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 import java.util.Map.Entry;
 
+/**
+ * Filters map entries to retrieve only the ones that belong to a specific session.
+ */
 public class SessionAttributePredicate implements Predicate, IdentifiedDataSerializable {
+
     private String sessionId;
 
     // Serialization Constructor

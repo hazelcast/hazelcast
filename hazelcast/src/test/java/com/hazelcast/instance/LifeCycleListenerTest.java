@@ -35,7 +35,7 @@ import static junit.framework.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class LifeCycleListenerTest extends HazelcastTestSupport {
+public class LifeCycleListenerTest extends HazelcastTestSupport{
 
     @Test(timeout = 15 * 1000)
     public void testListenerNoDeadLock() throws Exception {

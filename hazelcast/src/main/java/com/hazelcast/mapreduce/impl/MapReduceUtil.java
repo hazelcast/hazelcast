@@ -20,7 +20,6 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.mapreduce.RemoteMapReduceException;
@@ -40,6 +39,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -343,7 +343,7 @@ public final class MapReduceUtil {
                 try {
                     Thread.sleep(RETRY_PARTITION_TABLE_MILLIS);
                 } catch (Exception ignore) {
-                    Logger.getLogger(MapReduceUtil.class).finest(ignore);
+                    EmptyStatement.ignore(ignore);
                 }
 
                 if (Clock.currentTimeMillis() - startTime > PARTITION_READY_TIMEOUT) {

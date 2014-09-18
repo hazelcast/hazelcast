@@ -7,7 +7,7 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 ### Features:
 
 * Distributed implementations of `java.util.{Queue, Set, List, Map}`
-* Distributed implementation of `java.util.concurrency.locks.Lock`
+* Distributed implementation of `java.util.concurrent.locks.Lock`
 * Distributed implementation of `java.util.concurrent.ExecutorService`
 * Distributed `MultiMap` for one-to-many relationships
 * Distributed `Topic` for publish/subscribe messaging
@@ -27,6 +27,10 @@ See [Getting Started Guide](http://hazelcast.org/docs/latest/manual/html/getting
 ### Documentation
 
 See documentation at [www.hazelcast.org](http://hazelcast.org/documentation/)
+
+### Code Samples
+
+See [Hazelcast Code Samples](https://github.com/hazelcast/hazelcast-code-samples)
 
 ### Releases
 
@@ -75,6 +79,13 @@ Hazelcast has 3 testing profiles:
 * **Default**: Type `mvn test` to run quick/integration tests (those can be run in-parallel without using network).
 * **Slow Tests**: Type `mvn test -P slow-test` to run tests those are either slow or cannot be run in-parallel.
 * **All Tests**: Type `mvn test -P all-tests` to run all test serially using network.
+
+### Checkstyle && Findbugs
+
+In each Pull Request, we do static analyzing on the changes.
+Run following command locally to check if your contribution is checkstyle && findbugs compatible.
+
+`mvn clean compile -Pqa`
 
 ### Contributing to Hazelcast
 

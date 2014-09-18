@@ -18,9 +18,6 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.util.ConstructorFunction;
 
-/**
- * @author ali 5/14/13
- */
 public class ArrayPortableFactory implements PortableFactory {
 
     private final ConstructorFunction<Integer, Portable>[] constructors;

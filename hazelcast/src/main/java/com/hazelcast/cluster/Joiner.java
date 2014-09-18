@@ -18,11 +18,9 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 public interface Joiner {
 
-    void join(AtomicBoolean joined);
+    void join();
 
     void searchForOtherClusters();
 
@@ -33,4 +31,30 @@ public interface Joiner {
     void reset();
 
     String getType();
+
+    /**
+     * Adds an address to the blacklist. Blacklist is useful if a node should ignore another node, e.g. when
+     * the groupname of 2 machines is not the same and they should form different clusters.
+     *
+     * Method is thread-safe.
+     *
+     * If the address already is blacklisted, the call is ignored
+     *
+     * @param address the address to blacklist.
+     * @throws java.lang.NullPointerException if address is null.
+     * @see #isBlacklisted(com.hazelcast.nio.Address)
+     */
+    void blacklist(Address address);
+
+    /**
+     * Checks if an address is blacklisted.
+     *
+     * Method is thread-safe.
+     *
+     * @param address the address to check.
+     * @return true if blacklisted, false otherwise.
+     * @throws java.lang.NullPointerException if address is null.
+     * @see #blacklist(com.hazelcast.nio.Address)
+     */
+    boolean isBlacklisted(Address address);
 }

@@ -16,15 +16,25 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 public final class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {
@@ -41,7 +51,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     public PartitionIteratingOperation() {
     }
 
-    public final void run() throws Exception {
+    public void run() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
         results = new HashMap<Integer, Object>(partitions.size());
         try {
@@ -84,33 +94,37 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     }
 
     @Override
-    public final Object getResponse() {
+    public Object getResponse() {
         return new PartitionResponse(results);
     }
 
     @Override
-    public final boolean returnsResponse() {
+    public boolean returnsResponse() {
         return true;
     }
 
     private static class ResponseQueue implements ResponseHandler {
         final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
 
+        @Override
         public void sendResponse(Object obj) {
-            b.offer(obj);
+            if (!b.offer(obj)) {
+                throw new HazelcastException("Response could not be queued for transportation");
+            }
         }
 
         public Object get() throws InterruptedException {
             return b.take();
         }
 
+        @Override
         public boolean isLocal() {
             return true;
         }
     }
 
     // To make serialization of HashMap faster.
-    public final static class PartitionResponse implements IdentifiedDataSerializable {
+    public static final class PartitionResponse implements IdentifiedDataSerializable {
 
         private Map<Integer, Object> results;
 
@@ -121,6 +135,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             this.results = results != null ? results : Collections.<Integer, Object>emptyMap();
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             int len = results != null ? results.size() : 0;
             out.writeInt(len);
@@ -132,6 +147,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             }
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             int len = in.readInt();
             if (len > 0) {
@@ -150,10 +166,12 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             return results;
         }
 
+        @Override
         public int getFactoryId() {
             return SpiDataSerializerHook.F_ID;
         }
 
+        @Override
         public int getId() {
             return SpiDataSerializerHook.PARTITION_RESPONSE;
         }
@@ -181,10 +199,12 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         operationFactory = in.readObject();
     }
 
+    @Override
     public int getFactoryId() {
         return SpiDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return SpiDataSerializerHook.PARTITION_ITERATOR;
     }

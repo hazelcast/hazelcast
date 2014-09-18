@@ -38,4 +38,9 @@ public class AlterAndGetRequest extends AbstractAlterRequest {
     public int getClassId() {
         return AtomicReferencePortableHook.ALTER_AND_GET;
     }
+
+    @Override
+    public String getMethodName() {
+        return "alterAndGet";
+    }
 }

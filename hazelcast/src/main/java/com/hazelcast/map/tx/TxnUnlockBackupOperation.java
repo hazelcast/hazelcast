@@ -17,14 +17,12 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.map.operation.KeyBasedMapOperation;
-import com.hazelcast.map.operation.LockAwareOperation;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupOperation;
 
-import java.io.IOException;
-
+/**
+ * An operation to unlock key on the backup owner.
+ */
 public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
 
@@ -32,7 +30,7 @@ public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     public TxnUnlockBackupOperation(String name, Data dataKey) {
-        super(name, dataKey,  -1);
+        super(name, dataKey, -1);
     }
 
     @Override

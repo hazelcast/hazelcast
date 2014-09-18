@@ -149,21 +149,21 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getTotalRemoveLatency();
 
     /**
-     * Returns the maximum latency of put operations. To get the average latency, divide to number of puts
+     * Returns the maximum latency of put operations.
      *
      * @return
      */
     long getMaxPutLatency();
 
     /**
-     * Returns the maximum latency of get operations. To get the average latency, divide to number of gets
+     * Returns the maximum latency of get operations.
      *
      * @return
      */
     long getMaxGetLatency();
 
     /**
-     * Returns the maximum latency of remove operations. To get the average latency, divide to number of gets
+     * Returns the maximum latency of remove operations.
      *
      * @return
      */

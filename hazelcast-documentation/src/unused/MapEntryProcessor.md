@@ -58,6 +58,8 @@ public interface EntryProcessor<K, V> extends Serializable {
 
 If your code is modifying the data, then you should also provide a processor for backup entries:
 
+***NOTE***: You should explicitly call ```setValue``` method of ```Map.Entry``` when modifying data in EP otherwise EP will be accepted as read-only.
+
 ```java
 public interface EntryBackupProcessor<K, V> extends Serializable {
 

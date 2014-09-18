@@ -28,13 +28,15 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.query.Predicates.AndPredicate;
 import com.hazelcast.query.Predicates.EqualPredicate;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.IOException;
-import java.util.concurrent.ConcurrentMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.io.IOException;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.instance.TestUtil.toData;
 import static org.junit.Assert.assertEquals;
@@ -68,7 +70,7 @@ public class IndexTest {
         is.saveEntryIndex(new QueryEntry(ss, key, key, value));
         assertNotNull(is.getIndex("favoriteCity"));
         is.removeEntryIndex(key);
-        assertEquals(0, is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
+        assertEquals(0,is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
     }
 
     @Test
@@ -161,7 +163,6 @@ public class IndexTest {
             favoriteCity = in.readObject();
         }
     }
-
 
     private static class MainPortable implements Portable {
 

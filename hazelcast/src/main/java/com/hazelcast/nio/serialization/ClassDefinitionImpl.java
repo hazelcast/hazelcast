@@ -20,12 +20,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-/**
- * @author mdogan 12/26/12
- */
-public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
+class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
 
     private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
     private final Map<String, FieldDefinition> fieldDefinitionsMap = new HashMap<String,
@@ -35,9 +37,10 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
     public ClassDefinitionImpl() {
     }
 
-    public ClassDefinitionImpl(int factoryId, int classId) {
+    public ClassDefinitionImpl(int factoryId, int classId, int version) {
         this.factoryId = factoryId;
         this.classId = classId;
+        this.version = version;
     }
 
     public void addFieldDef(FieldDefinition fd) {
@@ -49,11 +52,11 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
         nestedClassDefinitions.add(cd);
     }
 
-    public FieldDefinition get(String name) {
+    public FieldDefinition getField(String name) {
         return fieldDefinitionsMap.get(name);
     }
 
-    public FieldDefinition get(int fieldIndex) {
+    public FieldDefinition getField(int fieldIndex) {
         return fieldDefinitions.get(fieldIndex);
     }
 
@@ -70,19 +73,27 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
     }
 
     public FieldType getFieldType(String fieldName) {
-        final FieldDefinition fd = get(fieldName);
+        final FieldDefinition fd = getField(fieldName);
         if (fd != null) {
             return fd.getType();
         }
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException("Unknown field: " + fieldName);
     }
 
     public int getFieldClassId(String fieldName) {
-        final FieldDefinition fd = get(fieldName);
+        final FieldDefinition fd = getField(fieldName);
         if (fd != null) {
             return fd.getClassId();
         }
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException("Unknown field: " + fieldName);
+    }
+
+    public int getFieldVersion(String fieldName) {
+        final FieldDefinition fd = getField(fieldName);
+        if (fd != null) {
+            return fd.getVersion();
+        }
+        throw new IllegalArgumentException("Unknown field: " + fieldName);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -117,22 +128,55 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
         }
     }
 
+    @Override
     public int getFieldCount() {
         return fieldDefinitions.size();
     }
 
+    void setVersionIfNotSet(int version) {
+        if (getVersion() < 0) {
+            this.version = version;
+            for (FieldDefinition fd : fieldDefinitions) {
+                ((FieldDefinitionImpl) fd).setVersionIfNotSet(version);
+            }
+        }
+    }
+
+    //CHECKSTYLE:OFF
+    //Generated equals method has too high NPath Complexity
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ClassDefinitionImpl that = (ClassDefinitionImpl) o;
 
-        if (classId != that.classId) return false;
-        if (version != that.version) return false;
+        if (classId != that.classId) {
+            return false;
+        }
+        if (version != that.version) {
+            return false;
+        }
+        if (getFieldCount() != that.getFieldCount()) {
+            return false;
+        }
+        for (FieldDefinition fd : fieldDefinitions) {
+            FieldDefinition fd2 = that.getField(fd.getName());
+            if (fd2 == null) {
+                return false;
+            }
+            if (!fd.equals(fd2)) {
+                return false;
+            }
+        }
 
         return true;
     }
+    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {

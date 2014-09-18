@@ -16,11 +16,10 @@
 
 package com.hazelcast.client.nearcache;
 
-import com.hazelcast.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.util.ListenerUtil;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.logging.Logger;
@@ -32,59 +31,67 @@ import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @ali 7/18/13
+ * ClientNearCache
+ *
+ * @param <K> key type
  */
 public class ClientNearCache<K> {
 
-    public static final int EVICTION_PERCENTAGE = 20;
-    public static final int TTL_CLEANUP_INTERVAL_MILLS = 5000;
-    final ClientNearCacheType cacheType;
-    final int maxSize;
-    volatile long lastCleanup;
-    final long maxIdleMillis;
-    final long timeToLiveMillis;
-    final boolean invalidateOnChange;
-    final EvictionPolicy evictionPolicy;
-    final InMemoryFormat inMemoryFormat;
-    final String mapName;
-    final ClientContext context;
-    final AtomicBoolean canCleanUp;
-    final AtomicBoolean canEvict;
-    final ConcurrentMap<K, CacheRecord<K>> cache;
+    /**
+     * Used when caching nonexistent values.
+     */
     public static final Object NULL_OBJECT = new Object();
-    String registrationId = null;
-    final NearCacheStatsImpl clientNearCacheStats;
+    private static final double EVICTION_PERCENTAGE = 0.2;
+    private final ClientNearCacheType cacheType;
+    private final int maxSize;
+    private volatile long lastCleanup;
+    private final long maxIdleMillis;
+    private final long timeToLiveMillis;
+    private final EvictionPolicy evictionPolicy;
+    private final InMemoryFormat inMemoryFormat;
+    private final String mapName;
+    private final ClientContext context;
+    private final AtomicBoolean canCleanUp;
+    private final AtomicBoolean canEvict;
+    private final ConcurrentMap<K, CacheRecord<K>> cache;
+    private final NearCacheStatsImpl clientNearCacheStats;
+    private String registrationId;
+
     private final Comparator<CacheRecord<K>> comparator = new Comparator<CacheRecord<K>>() {
         public int compare(CacheRecord<K> o1, CacheRecord<K> o2) {
-            if (EvictionPolicy.LRU.equals(evictionPolicy))
+            if (EvictionPolicy.LRU.equals(evictionPolicy)) {
                 return ((Long) o1.lastAccessTime).compareTo((o2.lastAccessTime));
-            else if (EvictionPolicy.LFU.equals(evictionPolicy))
+            } else if (EvictionPolicy.LFU.equals(evictionPolicy)) {
                 return ((Integer) o1.hit.get()).compareTo((o2.hit.get()));
+            }
 
             return 0;
         }
     };
 
 
-    public ClientNearCache(String mapName, ClientNearCacheType cacheType, ClientContext context, NearCacheConfig nearCacheConfig) {
+    public ClientNearCache(String mapName, ClientNearCacheType cacheType,
+                           ClientContext context, NearCacheConfig nearCacheConfig) {
         this.mapName = mapName;
         this.cacheType = cacheType;
         this.context = context;
         maxSize = nearCacheConfig.getMaxSize();
-        maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * 1000;
+        maxIdleMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getMaxIdleSeconds());
         inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-        timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * 1000;
-        invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
+        timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
+        boolean invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
         cache = new ConcurrentHashMap<K, CacheRecord<K>>();
         canCleanUp = new AtomicBoolean(true);
@@ -104,7 +111,26 @@ public class ClientNearCache<K> {
                 request = new MapAddEntryListenerRequest(mapName, false);
                 handler = new EventHandler<PortableEntryEvent>() {
                     public void handle(PortableEntryEvent event) {
-                        cache.remove(event.getKey());
+                        switch (event.getEventType()) {
+                            case ADDED:
+                            case REMOVED:
+                            case UPDATED:
+                            case EVICTED:
+                                final Data key = event.getKey();
+                                cache.remove(key);
+                                break;
+                            case CLEAR_ALL:
+                            case EVICT_ALL:
+                                cache.clear();
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+                        }
+                    }
+
+                    @Override
+                    public void beforeListenerRegister() {
+                        cache.clear();
                     }
 
                     @Override
@@ -115,9 +141,11 @@ public class ClientNearCache<K> {
             } else {
                 throw new IllegalStateException("Near cache is not available for this type of data structure");
             }
-            registrationId = ListenerUtil.listen(context, request, null, handler); //TODO callback
+            //TODO callback
+            registrationId = context.getListenerService().listen(request, null, handler);
         } catch (Exception e) {
-            Logger.getLogger(ClientNearCache.class).severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+            Logger.getLogger(ClientNearCache.class).
+                    severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
         }
 
     }
@@ -151,12 +179,13 @@ public class ClientNearCache<K> {
                         try {
                             TreeSet<CacheRecord<K>> records = new TreeSet<CacheRecord<K>>(comparator);
                             records.addAll(cache.values());
-                            int evictSize = cache.size() * EVICTION_PERCENTAGE / 100;
+                            int evictSize = (int) (EVICTION_PERCENTAGE * cache.size());
                             int i = 0;
                             for (CacheRecord<K> record : records) {
                                 cache.remove(record.key);
-                                if (++i > evictSize)
+                                if (++i > evictSize) {
                                     break;
+                                }
                             }
                         } finally {
                             canEvict.set(true);
@@ -172,8 +201,9 @@ public class ClientNearCache<K> {
     }
 
     private void fireTtlCleanup() {
-        if (Clock.currentTimeMillis() < (lastCleanup + TTL_CLEANUP_INTERVAL_MILLS))
+        if (Clock.currentTimeMillis() < (lastCleanup + timeToLiveMillis)) {
             return;
+        }
 
         if (canCleanUp.compareAndSet(true, false)) {
             try {
@@ -199,8 +229,21 @@ public class ClientNearCache<K> {
         }
     }
 
+    public void invalidate() {
+        cache.clear();
+    }
+
     public void invalidate(K key) {
         cache.remove(key);
+    }
+
+    public void invalidate(Collection<K> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+        for (K key : keys) {
+            cache.remove(key);
+        }
     }
 
     public Object get(K key) {
@@ -217,7 +260,8 @@ public class ClientNearCache<K> {
                 return NULL_OBJECT;
             }
             record.access();
-            return inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toObject((Data) record.value) : record.value;
+            return inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().
+                    toObject((Data) record.value) : record.value;
         } else {
             clientNearCacheStats.incrementMisses();
             return null;
@@ -247,11 +291,14 @@ public class ClientNearCache<K> {
             } else {
                 throw new IllegalStateException("Near cache is not available for this type of data structure");
             }
-            ListenerUtil.stopListening(context, request, registrationId);
+            context.getListenerService().stopListening(request, registrationId);
         }
         cache.clear();
     }
 
+    public void clear() {
+        cache.clear();
+    }
 
     class CacheRecord<K> {
         final K key;
@@ -277,8 +324,12 @@ public class ClientNearCache<K> {
 
         public long getCost() {
             // todo find object size  if not a Data instance.
-            if (!(value instanceof Data)) return 0;
-            if (!(key instanceof Data)) return 0;
+            if (!(value instanceof Data)) {
+                return 0;
+            }
+            if (!(key instanceof Data)) {
+                return 0;
+            }
             // value is Data
             return ((Data) key).getHeapCost()
                     + ((Data) value).getHeapCost()
@@ -291,7 +342,8 @@ public class ClientNearCache<K> {
 
         boolean expired() {
             long time = Clock.currentTimeMillis();
-            return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis) || (timeToLiveMillis > 0 && time > creationTime + timeToLiveMillis);
+            return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis)
+                    || (timeToLiveMillis > 0 && time > creationTime + timeToLiveMillis);
         }
 
     }

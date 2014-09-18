@@ -21,7 +21,8 @@ import com.hazelcast.partition.MigrationEndpoint;
 import java.util.EventObject;
 
 /**
- * @author mdogan 9/12/12
+ * An {@link java.util.EventObject} for a partition migration. Can be used by SPI services to get a callback
+ * to listen to partition migration.  See {@link com.hazelcast.spi.MigrationAwareService} for more info.
  */
 public class PartitionMigrationEvent extends EventObject {
 

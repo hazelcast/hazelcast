@@ -16,14 +16,18 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
@@ -31,15 +35,14 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 public abstract class AbstractCompletableFuture<V> implements ICompletableFuture<V> {
 
     protected static final Object NULL_VALUE = new Object();
-
-    private final AtomicReferenceFieldUpdater<AbstractCompletableFuture, ExecutionCallbackNode> callbackUpdater;
     protected final AtomicReferenceFieldUpdater<AbstractCompletableFuture, Object> resultUpdater;
-
-    private final ILogger logger;
     protected final NodeEngine nodeEngine;
     // This field is only assigned by the atomic updater
-    private volatile ExecutionCallbackNode<V> callbackHead;
     protected volatile Object result = NULL_VALUE;
+
+    private final AtomicReferenceFieldUpdater<AbstractCompletableFuture, ExecutionCallbackNode> callbackUpdater;
+    private final ILogger logger;
+    private volatile ExecutionCallbackNode<V> callbackHead;
 
     protected AbstractCompletableFuture(NodeEngine nodeEngine, ILogger logger) {
         this.nodeEngine = nodeEngine;
@@ -127,9 +130,9 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
                     } else {
                         callback.onResponse((V) result);
                     }
-                } catch (Throwable t) {
-                    //todo: improved error message
-                    logger.severe("Failed to async for " + AbstractCompletableFuture.this, t);
+                } catch (Throwable cause) {
+                    logger.severe("Failed asynchronous execution of execution callback: " + callback
+                            + "for call " + AbstractCompletableFuture.this, cause);
                 }
             }
         });
@@ -139,7 +142,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
-    private static class ExecutionCallbackNode<E> {
+    private static final class ExecutionCallbackNode<E> {
         private final ExecutionCallback<E> callback;
         private final Executor executor;
         private final ExecutionCallbackNode<E> next;
@@ -150,5 +153,4 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
             this.next = next;
         }
     }
-
 }

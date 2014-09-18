@@ -16,12 +16,17 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.EmptyStatement;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class ConfigLoader {
+/**
+ * Provides loading service for a configuration.
+ */
+public final class ConfigLoader {
 
     private ConfigLoader() {
     }
@@ -51,6 +56,7 @@ public class ConfigLoader {
             try {
                 return file.toURI().toURL();
             } catch (MalformedURLException ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
         return null;
@@ -60,6 +66,7 @@ public class ConfigLoader {
         try {
             return new URL(path);
         } catch (MalformedURLException ignored) {
+            EmptyStatement.ignore(ignored);
         }
         return null;
     }

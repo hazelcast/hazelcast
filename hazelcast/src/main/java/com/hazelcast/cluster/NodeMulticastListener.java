@@ -55,18 +55,18 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private void logDroppedMessage(Object msg) {
-        if(logger.isFinestEnabled()){
-            logger.info("Dropped: "+msg);
+        if (logger.isFinestEnabled()) {
+            logger.info("Dropped: " + msg);
         }
     }
 
     private void handleActiveAndJoined(JoinMessage joinMessage) {
-        if (!isJoinRequest(joinMessage)) {
+        if (!(joinMessage instanceof JoinRequest)) {
             logDroppedMessage(joinMessage);
             return;
         }
 
-        if (node.isMaster()) {
+       if (node.isMaster()) {
             JoinRequest request = (JoinRequest) joinMessage;
             JoinMessage response = new JoinMessage(request.getPacketVersion(), request.getBuildNumber(),
                     node.getThisAddress(), request.getUuid(), request.getConfigCheck(),
@@ -85,10 +85,16 @@ public class NodeMulticastListener implements MulticastListener {
             if (joiner instanceof MulticastJoiner) {
                 MulticastJoiner multicastJoiner = (MulticastJoiner) joiner;
                 multicastJoiner.onReceivedJoinRequest((JoinRequest) joinMessage);
-            } else{
+            } else {
                 logDroppedMessage(joinMessage);
             }
         } else {
+            Address address = joinMessage.address;
+            if (node.getJoiner().isBlacklisted(address)) {
+                logDroppedMessage(joinMessage);
+                return;
+            }
+
             if (!node.joined() && node.getMasterAddress() == null) {
                 String masterHost = joinMessage.getAddress().getHost();
                 if (trustedInterfaces.isEmpty() || matchAnyInterface(masterHost, trustedInterfaces)) {
@@ -98,7 +104,7 @@ public class NodeMulticastListener implements MulticastListener {
                 } else {
                     logJoinMessageDropped(masterHost);
                 }
-            }else{
+            } else {
                 logDroppedMessage(joinMessage);
             }
         }
@@ -124,17 +130,12 @@ public class NodeMulticastListener implements MulticastListener {
             return false;
         }
 
-        JoinMessage joinMessage = (JoinMessage)msg;
+        JoinMessage joinMessage = (JoinMessage) msg;
 
         if (isMessageToSelf(joinMessage)) {
             return false;
         }
-
-        try {
-            return node.getClusterService().validateJoinMessage(joinMessage);
-        } catch (Exception e) {
-            return false;
-        }
+        return true;
     }
 
     private boolean isMessageToSelf(JoinMessage joinMessage) {

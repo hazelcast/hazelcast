@@ -20,14 +20,18 @@ import com.hazelcast.map.operation.LockAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
 /**
- * @author mdogan 3/25/13
+ * An operation to unlock key on the partition owner.
  */
-public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOperation, BackupAwareOperation{
+public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOperation, BackupAwareOperation {
 
     private long version;
     private String ownerUuid;
@@ -36,18 +40,24 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
     }
 
     public TxnUnlockOperation(String name, Data dataKey, long version) {
-        super(name, dataKey,  -1);
+        super(name, dataKey, -1);
         this.version = version;
     }
 
     @Override
+    public void innerBeforeRun() {
+        if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
+            throw new TransactionException("Cannot acquire lock uuid: " + ownerUuid + ", threadId: " + threadId);
+        }
+    }
+
+    @Override
     public void run() {
-        System.out.println( "Owner tid:" + getThreadId() + " pid:"+getPartitionId());
-        recordStore.unlock(dataKey, ownerUuid, getThreadId());
+        recordStore.unlock(dataKey, ownerUuid, threadId);
     }
 
     public boolean shouldWait() {
-        return !recordStore.canAcquireLock(dataKey, ownerUuid, getThreadId());
+        return false;
     }
 
     public long getVersion() {

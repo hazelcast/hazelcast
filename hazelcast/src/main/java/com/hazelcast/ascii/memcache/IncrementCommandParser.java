@@ -16,7 +16,7 @@
 
 package com.hazelcast.ascii.memcache;
 
-import com.hazelcast.ascii.CommandParser;
+
 import com.hazelcast.ascii.TextCommand;
 import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TypeAwareCommandParser;
@@ -32,7 +32,7 @@ import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_CLI
  * Time: 3:32 PM
  */
 public class IncrementCommandParser extends TypeAwareCommandParser {
-    public IncrementCommandParser(TextCommandType type) {
+    public IncrementCommandParser(TextCommandConstants.TextCommandType type) {
         super(type);
     }
 

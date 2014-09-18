@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
  */
 public final class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
 
-    boolean successful = false;
+    boolean successful;
 
     public RemoveOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -35,13 +35,14 @@ public final class RemoveOperation extends BaseRemoveOperation implements Identi
     }
 
     public void run() {
-        dataOldValue = mapService.toData(recordStore.remove(dataKey));
+        dataOldValue = mapService.getMapServiceContext().toData(recordStore.remove(dataKey));
         successful = dataOldValue != null;
     }
 
     public void afterRun() {
-        if (successful)
+        if (successful) {
             super.afterRun();
+        }
     }
 
     public boolean shouldBackup() {

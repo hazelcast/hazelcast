@@ -25,16 +25,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
 
-/**
- * @author mdogan 1/23/13
- */
-public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable, SerializationContextAware {
+public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable, PortableContextAware {
 
+    private static final int UTF_BUFFER_SIZE = 1024;
     private final SerializationService serializationService;
     private final DataInputStream dataInput;
     private final ByteOrder byteOrder;
 
-    private final byte[] utfBuffer = new byte[1024];
+    private final byte[] utfBuffer = new byte[UTF_BUFFER_SIZE];
 
     public ObjectDataInputStream(InputStream in, SerializationService serializationService) {
         this(in, serializationService, ByteOrder.BIG_ENDIAN);
@@ -233,8 +231,8 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return serializationService.readObject(this);
     }
 
-    public SerializationContext getSerializationContext() {
-        return serializationService.getSerializationContext();
+    public PortableContext getPortableContext() {
+        return serializationService.getPortableContext();
     }
 
     public ClassLoader getClassLoader() {

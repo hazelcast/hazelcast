@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Address;
 import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Person;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -59,7 +58,7 @@ public class ObjectDataTest {
         byte[] bytes1 = out.toByteArray();
 
         ByteBuffer buffer = ByteBuffer.allocate(1024);
-        DataAdapter dataAdapter = new DataAdapter(data1, ss.getSerializationContext());
+        DataAdapter dataAdapter = new DataAdapter(data1, ss.getPortableContext());
         assertTrue(dataAdapter.writeTo(buffer));
 
         assertEquals(bytes1.length, buffer.position());

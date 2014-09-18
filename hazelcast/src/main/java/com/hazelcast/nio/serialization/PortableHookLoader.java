@@ -20,12 +20,12 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
-import java.util.*;
-import java.util.logging.Level;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Collection;
+import java.util.HashSet;
 
-/**
- * @author mdogan 5/8/13
- */
 final class PortableHookLoader {
 
     private static final String FACTORY_ID = "com.hazelcast.PortableHook";
@@ -34,7 +34,7 @@ final class PortableHookLoader {
     private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
     private final Collection<ClassDefinition> definitions = new HashSet<ClassDefinition>();
     private final ClassLoader classLoader;
-    
+
     PortableHookLoader(Map<Integer, ? extends PortableFactory> configuredFactories, ClassLoader classLoader) {
         this.configuredFactories = configuredFactories;
         this.classLoader = classLoader;
@@ -81,7 +81,8 @@ final class PortableHookLoader {
                 Logger.getLogger(getClass()).warning("PortableFactory[" + factoryId + "] is already registered! Skipping "
                         + factory);
             } else {
-                throw new IllegalArgumentException("PortableFactory[" + factoryId + "] is already registered! " + current + " -> " + factory);
+                throw new IllegalArgumentException("PortableFactory[" + factoryId
+                        + "] is already registered! " + current + " -> " + factory);
             }
         } else {
             factories.put(factoryId, factory);

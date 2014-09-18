@@ -18,12 +18,8 @@ package com.hazelcast.collection;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-
 import java.io.IOException;
 
-/**
- * @ali 9/9/13
- */
 public class CollectionTransactionRollbackOperation extends CollectionOperation {
 
     String transactionId;
@@ -52,6 +48,11 @@ public class CollectionTransactionRollbackOperation extends CollectionOperation 
 
     @Override
     public void afterRun() throws Exception {
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override

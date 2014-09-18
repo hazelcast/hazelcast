@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.IterationType;
-
 import java.io.IOException;
 
 public final class MapQueryRequest extends AbstractMapQueryRequest {
@@ -55,5 +54,22 @@ public final class MapQueryRequest extends AbstractMapQueryRequest {
     protected void readPortableInner(PortableReader reader) throws IOException {
         final ObjectDataInput in = reader.getRawDataInput();
         predicate = in.readObject();
+    }
+
+    @Override
+    public String getMethodName() {
+        if (iterationType == IterationType.KEY) {
+            return "keySet";
+        } else if (iterationType == IterationType.VALUE) {
+            return "values";
+        } else if (iterationType == IterationType.ENTRY) {
+            return "entrySet";
+        }
+        throw new IllegalArgumentException("IterationType[" + iterationType + "] is unknown!!!");
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{predicate};
     }
 }

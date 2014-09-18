@@ -43,9 +43,11 @@ public class FilteringClassLoader
 
     private final List<String> excludePackages;
     private final ClassLoader delegatingClassLoader;
+    private final String enforcedSelfLoadingPackage;
 
-    public FilteringClassLoader(List<String> excludePackages) {
+    public FilteringClassLoader(List<String> excludePackages, String enforcedSelfLoadingPackage) {
         this.excludePackages = Collections.unmodifiableList(excludePackages);
+        this.enforcedSelfLoadingPackage = enforcedSelfLoadingPackage;
 
         try {
             Field parent = ClassLoader.class.getDeclaredField("parent");
@@ -88,7 +90,7 @@ public class FilteringClassLoader
             }
         }
 
-        if (name.startsWith("com.hazelcast")) {
+        if (enforcedSelfLoadingPackage != null && name.startsWith(enforcedSelfLoadingPackage)) {
             Class<?> clazz = cache.get(name);
             if (clazz != null) {
                 return clazz;

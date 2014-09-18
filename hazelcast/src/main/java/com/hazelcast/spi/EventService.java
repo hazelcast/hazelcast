@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import java.util.Collection;
 
 /**
- * @author mdogan 12/14/12
+ * Component responsible for handling events like topic events or map.listener events.
  */
 public interface EventService {
 

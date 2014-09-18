@@ -15,14 +15,28 @@
  */
 
 package com.hazelcast.query.impl;
-
 /**
- * @author mdogan 9/5/12
+ * Type of Comparison
  */
 public enum ComparisonType {
+    /**
+     * Not equal
+     */
     NOT_EQUAL,
+    /**
+     * Lesser
+     */
     LESSER,
+    /**
+     * Greater
+     */
     GREATER,
+    /**
+     * Lesser Equal
+     */
     LESSER_EQUAL,
+    /**
+     * Grater Equal
+     */
     GREATER_EQUAL
 }

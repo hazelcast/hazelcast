@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.nio.IOSelector;
 import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.util.Clock;
 
 import java.nio.ByteBuffer;
@@ -26,7 +26,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ClientWriteHandler extends ClientAbstractSelectionHandler implements Runnable {
+public class ClientWriteHandler extends AbstractClientSelectionHandler implements Runnable {
 
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
 
@@ -34,11 +34,11 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
 
     private final ByteBuffer buffer;
 
-    private boolean ready = false;
+    private boolean ready;
 
     private SocketWritable lastWritable;
 
-    private volatile long lastHandle = 0;
+    private volatile long lastHandle;
 
 //    private boolean initialized = false;
 
@@ -60,39 +60,47 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
 //            registerWrite();
 //        }
 
-        if (lastWritable == null && (lastWritable = poll()) == null && buffer.position() == 0) {
+        if (lastWritable == null) {
+            lastWritable = poll();
+        }
+
+        if (lastWritable == null && buffer.position() == 0) {
             ready = true;
             return;
         }
         try {
-            while (buffer.hasRemaining() && lastWritable != null) {
-                boolean complete = lastWritable.writeTo(buffer);
-                if (complete) {
-                    lastWritable = poll();
-                } else {
-                    break;
-                }
-            }
-            if (buffer.position() > 0) {
-                buffer.flip();
-                try {
-                    socketChannel.write(buffer);
-                } catch (Exception e) {
-                    lastWritable = null;
-                    handleSocketException(e);
-                    return;
-                }
-                if (buffer.hasRemaining()) {
-                    buffer.compact();
-                } else {
-                    buffer.clear();
-                }
-            }
+            writeBuffer();
         } catch (Throwable t) {
             logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
         } finally {
             ready = false;
             registerWrite();
+        }
+    }
+
+    private void writeBuffer() {
+        while (buffer.hasRemaining() && lastWritable != null) {
+            boolean complete = lastWritable.writeTo(buffer);
+            if (complete) {
+                lastWritable = poll();
+            } else {
+                break;
+            }
+        }
+        if (buffer.position() > 0) {
+            buffer.flip();
+            try {
+                socketChannel.write(buffer);
+            } catch (Exception e) {
+                lastWritable = null;
+                handleSocketException(e);
+                return;
+            }
+            if (buffer.hasRemaining()) {
+                buffer.compact();
+            } else {
+                buffer.clear();
+            }
         }
     }
 
@@ -130,7 +138,6 @@ public class ClientWriteHandler extends ClientAbstractSelectionHandler implement
     @Override
     public void shutdown() {
         writeQueue.clear();
-        while (poll() != null) ;
     }
 
     long getLastHandle() {

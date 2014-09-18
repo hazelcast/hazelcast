@@ -83,6 +83,14 @@ public class MapConfigTest {
     }
 
     /**
+     * Test method for {@link MapConfig#getMinEvictionCheckMillis()}.
+     */
+    @Test
+    public void testMinEvictionCheckMillis() throws Exception {
+        assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, new MapConfig().getMinEvictionCheckMillis());
+    }
+
+    /**
      * Test method for {@link com.hazelcast.config.MapConfig#setEvictionPercentage(int)}.
      */
     @Test
@@ -140,7 +148,7 @@ public class MapConfigTest {
 
     @Test
     public void testGetMaxSize() {
-        assertEquals(MapConfig.DEFAULT_MAX_SIZE, new MapConfig().getMaxSizeConfig().getSize());
+        assertEquals(MaxSizeConfig.DEFAULT_MAX_SIZE, new MapConfig().getMaxSizeConfig().getSize());
     }
 
     @Test

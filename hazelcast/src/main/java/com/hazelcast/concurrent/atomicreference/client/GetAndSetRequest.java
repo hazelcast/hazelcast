@@ -38,4 +38,14 @@ public class GetAndSetRequest extends ModifyRequest {
     public int getClassId() {
         return AtomicReferencePortableHook.GET_AND_SET;
     }
+
+    @Override
+    public String getMethodName() {
+        return "getAndSet";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{update};
+    }
 }

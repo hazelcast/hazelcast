@@ -3,15 +3,15 @@
 
 ### Sample Glassfish v3 Web Application Configuration
 
-1. Place the `hazelcast-`*version*`.jar` into `GLASSFISH_HOME/glassfish/domains/domain1/lib/ext/` directory.
-2. Place the `hazelcast-ra-`*version*`.rar` into `GLASSFISH_HOME/glassfish/domains/domain1/autodeploy/` directory.
+1. Place the `hazelcast-`*version*`.jar` and `hazelcast-jca-`*version*`.jar` into `GLASSFISH_HOME/glassfish/domains/domain1/lib/ext/` directory.
+2. Place the `hazelcast-jca-rar-`*version*`.rar` into `GLASSFISH_HOME/glassfish/domains/domain1/autodeploy/` directory.
 3. Add the following lines to the `web.xml` file.
 
 ```xml
 <resource-ref>
-    <res-ref-name>HazelcastCF</res-ref-name>
-    <res-type>com.hazelcast.jca.ConnectionFactoryImpl</res-type>
-    <res-auth>Container</res-auth>
+  <res-ref-name>HazelcastCF</res-ref-name>
+  <res-type>com.hazelcast.jca.ConnectionFactoryImpl</res-type>
+  <res-auth>Container</res-auth>
 </resource-ref>
 ```
 

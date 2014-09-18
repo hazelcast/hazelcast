@@ -1,6 +1,5 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
@@ -57,6 +56,40 @@ public class ClientMapLoadAllTest extends HazelcastTestSupport {
         } finally {
             closeResources(client, server);
         }
+    }
+
+    @Test
+    public void testLoadAll_givenKeys() throws Exception {
+        final String mapName = randomMapName();
+        final Config config = createNewConfig(mapName);
+        final HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final IMap<Object, Object> map = client.getMap(mapName);
+        populateMap(map, 1000);
+        map.evictAll();
+        final Set keysToLoad = selectKeysToLoad(10, 910);
+        map.loadAll(keysToLoad, true);
+
+        assertEquals(900, map.size());
+        assertRangeLoaded(map, 10, 910);
+
+        closeResources(client, server);
+    }
+
+    @Test
+    public void testLoadAll_allKeys() throws Exception {
+        final String mapName = randomMapName();
+        final Config config = createNewConfig(mapName);
+        final HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final IMap<Object, Object> map = client.getMap(mapName);
+        populateMap(map, 1000);
+        map.evictAll();
+        map.loadAll(true);
+
+        assertEquals(1000, map.size());
+
+        closeResources(client, server);
     }
 
     private static Config createNewConfig(String mapName) {

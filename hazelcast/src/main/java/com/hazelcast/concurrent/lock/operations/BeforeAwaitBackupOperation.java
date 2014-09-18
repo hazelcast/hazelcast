@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -46,6 +47,11 @@ public class BeforeAwaitBackupOperation extends BaseLockOperation implements Bac
         lockStore.addAwait(key, conditionId, originalCaller, threadId);
         lockStore.unlock(key, originalCaller, threadId);
         response = true;
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.BEFORE_AWAIT_BACKUP;
     }
 
     @Override

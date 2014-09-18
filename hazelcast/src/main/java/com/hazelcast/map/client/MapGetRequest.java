@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.SecureRequest;
+import com.hazelcast.client.impl.client.KeyBasedClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -32,13 +32,13 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
 public class MapGetRequest extends KeyBasedClientRequest implements Portable, RetryableRequest, SecureRequest {
 
     private String name;
     private Data key;
+    private boolean async;
     private transient long startTime;
 
     public MapGetRequest() {
@@ -67,10 +67,15 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
     protected void beforeResponse() {
         final long latency = System.currentTimeMillis() - startTime;
         final MapService mapService = getService();
-        MapContainer mapContainer = mapService.getMapContainer(name);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getLocalMapStatsImpl(name).incrementGets(latency);
+            mapService.getMapServiceContext().getLocalMapStatsProvider()
+                    .getLocalMapStatsImpl(name).incrementGets(latency);
         }
+    }
+
+    public void setAsAsync() {
+        this.async = true;
     }
 
     public String getServiceName() {
@@ -88,12 +93,14 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
 
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeBoolean("a", async);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        async = reader.readBoolean("a");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
@@ -101,5 +108,23 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
 
     public MapPermission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public String getMethodName() {
+        if (async) {
+            return "getAsync";
+        }
+        return "get";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
     }
 }

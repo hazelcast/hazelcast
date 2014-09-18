@@ -15,13 +15,18 @@
  */
 
 package com.hazelcast.query;
-
 /**
- * @author mdogan 10/22/13
+ * Contains constants for Query.
  */
 public final class QueryConstants {
 
+    /**
+     * Attribute name of the key.
+     */
     public static final String KEY_ATTRIBUTE_NAME = "__key";
+    /**
+     * Attribute name of the "this".
+     */
     public static final String THIS_ATTRIBUTE_NAME = "this";
 
     private QueryConstants() {

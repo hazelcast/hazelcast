@@ -16,10 +16,10 @@
 
 package com.hazelcast.cluster.client;
 
-import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientPortableHook;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.ClientPortableHook;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.MemberAttributeEvent;
@@ -27,16 +27,12 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * @author mdogan 5/13/13
- */
 public final class AddMembershipListenerRequest extends CallableClientRequest implements RetryableRequest {
 
     public AddMembershipListenerRequest() {
@@ -82,7 +78,6 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
 
         final Collection<MemberImpl> memberList = service.getMemberList();
         final Collection<Data> response = new ArrayList<Data>(memberList.size());
-        final SerializationService serializationService = getClientEngine().getSerializationService();
         for (MemberImpl member : memberList) {
             response.add(serializationService.toData(member));
         }

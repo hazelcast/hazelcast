@@ -16,16 +16,10 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.MapEntrySet;
-import com.hazelcast.map.MapEntrySimple;
-import com.hazelcast.map.RecordStore;
-import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.map.record.Record;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -34,105 +28,61 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.util.Clock;
+
 import java.io.IOException;
-import java.util.AbstractMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
- * GOTCHA : This operation does not load missing keys from mapstore for now.
+ * GOTCHA : This operation does NOT load missing keys from map-store for now.
  */
-public class PartitionWideEntryOperation extends AbstractMapOperation
-        implements BackupAwareOperation, PartitionAwareOperation {
-
-    private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
-    EntryProcessor entryProcessor;
-    MapEntrySet response;
+public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation implements BackupAwareOperation {
 
     public PartitionWideEntryOperation(String name, EntryProcessor entryProcessor) {
-        super(name);
-        this.entryProcessor = entryProcessor;
+        super(name, entryProcessor);
     }
 
     public PartitionWideEntryOperation() {
     }
 
+    @Override
     public void innerBeforeRun() {
-        final ManagedContext managedContext = getNodeEngine().getSerializationService().getManagedContext();
+        super.innerBeforeRun();
+        final SerializationService serializationService = getNodeEngine().getSerializationService();
+        final ManagedContext managedContext = serializationService.getManagedContext();
         managedContext.initialize(entryProcessor);
     }
 
+    @Override
     public void run() {
-        response = new MapEntrySet();
-        MapEntrySimple entry;
-        final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        final LocalMapStatsImpl mapStats = mapService.getLocalMapStatsImpl(name);
-        final Map<Data, Record> records = recordStore.getReadonlyRecordMap();
-        for (final Map.Entry<Data, Record> recordEntry : records.entrySet()) {
-            final long start = System.currentTimeMillis();
-            final Data dataKey = recordEntry.getKey();
-            final Record record = recordEntry.getValue();
-            final Object valueBeforeProcess = record.getValue();
-            final Object valueBeforeProcessObject = mapService.toObject(valueBeforeProcess);
-            Object objectKey = mapService.toObject(record.getKey());
-            if (getPredicate() != null) {
-                final SerializationService ss = getNodeEngine().getSerializationService();
-                QueryEntry queryEntry = new QueryEntry(ss, dataKey, objectKey, valueBeforeProcessObject);
-                if (!getPredicate().apply(queryEntry)) {
-                    continue;
-                }
-            }
-            entry = new MapEntrySimple(objectKey, valueBeforeProcessObject);
-            final Object result = entryProcessor.process(entry);
-            final Object valueAfterProcess = entry.getValue();
-            Data dataValue = null;
-            if (result != null) {
-                dataValue = mapService.toData(result);
-                response.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, dataValue));
+        final Iterator<Record> iterator = recordStore.iterator();
+        while (iterator.hasNext()) {
+            final Record record = iterator.next();
+            final Data dataKey = record.getKey();
+            final Object oldValue = record.getValue();
+
+            final Object key = toObject(dataKey);
+            final Object value = toObject(oldValue);
+
+            if (!applyPredicate(dataKey, key, value)) {
+                continue;
             }
 
-            EntryEventType eventType;
-            if (valueAfterProcess == null) {
-                recordStore.remove(dataKey);
-                mapStats.incrementRemoves(getLatencyFrom(start));
-                eventType = EntryEventType.REMOVED;
-            } else {
-                if (valueBeforeProcessObject == null) {
-                    mapStats.incrementPuts(getLatencyFrom(start));
-                    eventType = EntryEventType.ADDED;
-                }
-                // take this case as a read so no need to fire an event.
-                else if (!entry.isModified()) {
-                    mapStats.incrementGets(getLatencyFrom(start));
-                    eventType = __NO_NEED_TO_FIRE_EVENT;
-                } else {
-                    mapStats.incrementPuts(getLatencyFrom(start));
-                    eventType = EntryEventType.UPDATED;
-                }
-                // todo if this is a read only operation, record access operations should be done.
-                if (eventType != __NO_NEED_TO_FIRE_EVENT) {
-                    recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, valueAfterProcess));
-                }
-            }
-            if (eventType != __NO_NEED_TO_FIRE_EVENT) {
-                final Data oldValue = mapService.toData(valueBeforeProcess);
-                final Data value = mapService.toData(valueAfterProcess);
-                mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, value);
-                if (mapService.isNearCacheAndInvalidationEnabled(name)) {
-                    mapService.invalidateAllNearCaches(name, dataKey);
-                }
-                if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
-                    if (EntryEventType.REMOVED.equals(eventType)) {
-                        mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
-                    } else {
-                        Record r = recordStore.getRecord(dataKey);
-                        final SimpleEntryView entryView = mapService.createSimpleEntryView(dataKey, dataValue, r);
-                        mapService.publishWanReplicationUpdate(name, entryView);
-                    }
-                }
-            }
+            final long now = getNow();
+            final Map.Entry entry = createMapEntry(key, value);
 
+            final Data response = process(entry);
+
+            addToResponses(dataKey, response);
+
+            // first call noOp, other if checks below depends on it.
+            if (noOp(entry, oldValue)) {
+                continue;
+            }
+            if (entryRemoved(entry, dataKey, oldValue, now)) {
+                continue;
+            }
+            entryAddedOrUpdated(entry, dataKey, oldValue, now);
         }
     }
 
@@ -143,11 +93,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
 
     @Override
     public Object getResponse() {
-        return response;
-    }
-
-    protected Predicate getPredicate() {
-        return null;
+        return responses;
     }
 
     @Override
@@ -185,8 +131,16 @@ public class PartitionWideEntryOperation extends AbstractMapOperation
         return backupProcessor != null ? new PartitionWideEntryBackupOperation(name, backupProcessor) : null;
     }
 
-    private long getLatencyFrom(long begin) {
-        return Clock.currentTimeMillis() - begin;
+    private boolean applyPredicate(Data dataKey, Object key, Object value) {
+        if (getPredicate() == null) {
+            return true;
+        }
+        final SerializationService ss = getNodeEngine().getSerializationService();
+        QueryEntry queryEntry = new QueryEntry(ss, dataKey, key, value);
+        return getPredicate().apply(queryEntry);
     }
 
+    protected Predicate getPredicate() {
+        return null;
+    }
 }

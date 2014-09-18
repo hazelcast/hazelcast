@@ -17,9 +17,11 @@
 package com.hazelcast.util;
 
 /**
- * @author mdogan 4/30/13
+ * See ConcurrencyUtil
+ *
+ * @param <K> key type
+ * @param <V> value type
  */
-
 public interface ConstructorFunction<K, V> {
 
     V createNew(K arg);

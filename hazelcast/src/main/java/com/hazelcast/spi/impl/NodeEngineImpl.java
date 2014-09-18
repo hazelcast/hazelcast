@@ -29,11 +29,21 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationContext;
+import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.spi.*;
+import com.hazelcast.partition.MigrationInfo;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.ServiceInfo;
+import com.hazelcast.spi.SharedService;
+import com.hazelcast.spi.WaitNotifyService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
@@ -47,6 +57,14 @@ import java.util.concurrent.TimeUnit;
 
 public class NodeEngineImpl implements NodeEngine {
 
+    private static final int RETRY_NUMBER = 5;
+    private static final int DELAY_FACTOR = 100;
+
+    final InternalOperationService operationService;
+    final ExecutionServiceImpl executionService;
+    final EventServiceImpl eventService;
+    final WaitNotifyServiceImpl waitNotifyService;
+
     private final Node node;
     private final ILogger logger;
 
@@ -54,11 +72,6 @@ public class NodeEngineImpl implements NodeEngine {
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
-
-    final InternalOperationService operationService;
-    final ExecutionServiceImpl executionService;
-    final EventServiceImpl eventService;
-    final WaitNotifyServiceImpl waitNotifyService;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -70,7 +83,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
-        wanReplicationService = new WanReplicationService(this);
+        wanReplicationService = node.initializer.geWanReplicationService();
     }
 
     @PrivateApi
@@ -79,50 +92,61 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.init();
     }
 
+    @Override
     public Address getThisAddress() {
         return node.getThisAddress();
     }
 
+    @Override
     public Address getMasterAddress() {
         return node.getMasterAddress();
     }
 
+    @Override
     public MemberImpl getLocalMember() {
         return node.getLocalMember();
     }
 
+    @Override
     public Config getConfig() {
         return node.getConfig();
     }
 
+    @Override
     public ClassLoader getConfigClassLoader() {
         return node.getConfigClassLoader();
     }
 
+    @Override
     public EventService getEventService() {
         return eventService;
     }
 
+    @Override
     public SerializationService getSerializationService() {
         return node.getSerializationService();
     }
 
-    public SerializationContext getSerializationContext() {
-        return node.getSerializationService().getSerializationContext();
+    public PortableContext getPortableContext() {
+        return node.getSerializationService().getPortableContext();
     }
 
+    @Override
     public OperationService getOperationService() {
         return operationService;
     }
 
+    @Override
     public ExecutionService getExecutionService() {
         return executionService;
     }
 
+    @Override
     public InternalPartitionService getPartitionService() {
         return node.getPartitionService();
     }
 
+    @Override
     public ClusterService getClusterService() {
         return node.getClusterService();
     }
@@ -131,26 +155,32 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getManagementCenterService();
     }
 
+    @Override
     public ProxyService getProxyService() {
         return proxyService;
     }
 
+    @Override
     public WaitNotifyService getWaitNotifyService() {
         return waitNotifyService;
     }
 
+    @Override
     public WanReplicationService getWanReplicationService() {
         return wanReplicationService;
     }
 
+    @Override
     public TransactionManagerService getTransactionManagerService() {
         return transactionManagerService;
     }
 
+    @Override
     public Data toData(final Object object) {
         return node.getSerializationService().toData(object);
     }
 
+    @Override
     public Object toObject(final Object object) {
         if (object instanceof Data) {
             return node.getSerializationService().toObject((Data) object);
@@ -158,16 +188,20 @@ public class NodeEngineImpl implements NodeEngine {
         return object;
     }
 
+    @Override
     public boolean isActive() {
         return node.isActive();
     }
 
+    @Override
     public HazelcastInstance getHazelcastInstance() {
         return node.hazelcastInstance;
     }
 
     public boolean send(Packet packet, Connection connection) {
-        if (connection == null || !connection.live()) return false;
+        if (connection == null || !connection.live()) {
+            return false;
+        }
         final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
         if (memberImpl != null) {
             memberImpl.didWrite();
@@ -182,53 +216,60 @@ public class NodeEngineImpl implements NodeEngine {
         return send(packet, target, null);
     }
 
-    private boolean send(Packet packet, Address target, FutureSend futureSend) {
-        final ConnectionManager connectionManager = node.getConnectionManager();
-        final Connection connection = connectionManager.getConnection(target);
+    private boolean send(Packet packet, Address target, SendTask sendTask) {
+        ConnectionManager connectionManager = node.getConnectionManager();
+        Connection connection = connectionManager.getConnection(target);
         if (connection != null) {
             return send(packet, connection);
-        } else {
-            if (futureSend == null) {
-                futureSend = new FutureSend(packet, target);
-            }
-            final int retries = futureSend.retries;
-            if (retries < 5 && node.isActive()) {
-                connectionManager.getOrConnect(target, true);
-                // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
-                executionService.schedule(futureSend, (retries + 1) * 100, TimeUnit.MILLISECONDS);
-                return true;
-            }
-            return false;
         }
+
+        if (sendTask == null) {
+            sendTask = new SendTask(packet, target);
+        }
+
+        final int retries = sendTask.retries;
+        if (retries < RETRY_NUMBER && node.isActive()) {
+            connectionManager.getOrConnect(target, true);
+            // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
+            executionService.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
+            return true;
+        }
+        return false;
     }
 
-    private class FutureSend implements Runnable {
+    private final class SendTask implements Runnable {
         private final Packet packet;
         private final Address target;
-        private volatile int retries = 0;
+        private volatile int retries;
 
-        private FutureSend(Packet packet, Address target) {
+        private SendTask(Packet packet, Address target) {
             this.packet = packet;
             this.target = target;
         }
 
+        //retries is incremented by a single thread, but will be read by multiple. So there is no problem.
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
+        @Override
         public void run() {
             retries++;
             if (logger.isFinestEnabled()) {
-                logger.finest( "Retrying[" + retries + "] packet send operation to: " + target);
+                logger.finest("Retrying[" + retries + "] packet send operation to: " + target);
             }
             send(packet, target, this);
         }
     }
 
+    @Override
     public ILogger getLogger(String name) {
         return node.getLogger(name);
     }
 
+    @Override
     public ILogger getLogger(Class clazz) {
         return node.getLogger(clazz);
     }
 
+    @Override
     public GroupProperties getGroupProperties() {
         return node.getGroupProperties();
     }
@@ -236,7 +277,7 @@ public class NodeEngineImpl implements NodeEngine {
     @PrivateApi
     public void handlePacket(Packet packet) {
         if (packet.isHeaderSet(Packet.HEADER_OP)) {
-            operationService.receive(packet);
+            operationService.executeOperation(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
@@ -319,8 +360,9 @@ public class NodeEngineImpl implements NodeEngine {
             final Operation pjOp = service.getPostJoinOperation();
             if (pjOp != null) {
                 if (pjOp instanceof PartitionAwareOperation) {
-                    logger.severe("Post-join operations cannot implement PartitionAwareOperation!" +
-                            " Service: " + service + ", Operation: " + pjOp);
+                    logger.severe(
+                            "Post-join operations cannot implement PartitionAwareOperation! Service: " + service + ", Operation: "
+                                    + pjOp);
                     continue;
                 }
                 postJoinOps.add(pjOp);
@@ -333,13 +375,14 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getClusterService().getClusterTime();
     }
 
+    @Override
     public Storage<DataRef> getOffHeapStorage() {
         return node.initializer.getOffHeapStorage();
     }
 
     @PrivateApi
     public void shutdown(final boolean terminate) {
-        logger.finest( "Shutting down services...");
+        logger.finest("Shutting down services...");
         waitNotifyService.shutdown();
         proxyService.shutdown();
         serviceManager.shutdown(terminate);

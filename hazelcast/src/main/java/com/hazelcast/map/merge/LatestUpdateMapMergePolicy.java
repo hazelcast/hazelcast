@@ -19,29 +19,21 @@ package com.hazelcast.map.merge;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
 import java.io.IOException;
 
 /**
- * Built-in MergePolicy implementation.
- * <p/>
  * LatestUpdateMapMergePolicy causes the merging entry to be merged from source to destination map
  * if source entry has updated more recently than the destination entry.
  *
- * <p/>
- *
- * @see com.hazelcast.map.merge.MapMergePolicy
- * @see com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
- * @see com.hazelcast.map.merge.HigherHitsMapMergePolicy
- * @see com.hazelcast.map.merge.PassThroughMergePolicy
- *
+ * This policy can only be used of the clocks of the machines are in sync.
  */
 public class LatestUpdateMapMergePolicy implements MapMergePolicy {
 
+    @Override
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
-        if(mergingEntry.getLastUpdateTime() > existingEntry.getLastUpdateTime())
+        if (mergingEntry.getLastUpdateTime() >= existingEntry.getLastUpdateTime()) {
             return mergingEntry.getValue();
+        }
         return existingEntry.getValue();
     }
 

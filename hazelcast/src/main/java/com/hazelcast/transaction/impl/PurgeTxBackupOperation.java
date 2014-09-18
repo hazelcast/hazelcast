@@ -25,9 +25,6 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 3/25/13
- */
 public final class PurgeTxBackupOperation extends Operation {
 
     private String txnId;

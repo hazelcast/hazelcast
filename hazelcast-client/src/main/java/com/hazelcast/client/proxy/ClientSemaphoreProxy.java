@@ -16,17 +16,19 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.semaphore.client.*;
+import com.hazelcast.concurrent.semaphore.client.InitRequest;
+import com.hazelcast.concurrent.semaphore.client.AcquireRequest;
+import com.hazelcast.concurrent.semaphore.client.AvailableRequest;
+import com.hazelcast.concurrent.semaphore.client.DrainRequest;
+import com.hazelcast.concurrent.semaphore.client.ReleaseRequest;
+import com.hazelcast.concurrent.semaphore.client.ReduceRequest;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author ali 5/23/13
- */
 public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
 
     private final String name;
@@ -45,12 +47,13 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     public void acquire() throws InterruptedException {
-        acquire(1);
+        AcquireRequest request = new AcquireRequest(name);
+        invoke(request);
     }
 
     public void acquire(int permits) throws InterruptedException {
         checkNegative(permits);
-        AcquireRequest request = new AcquireRequest(name, permits, -1);
+        AcquireRequest request = new AcquireRequest(name, permits);
         invoke(request);
     }
 
@@ -73,7 +76,8 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     public void release() {
-        release(1);
+        ReleaseRequest request = new ReleaseRequest(name, 1);
+        invoke(request);
     }
 
     public void release(int permits) {
@@ -83,7 +87,9 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     public boolean tryAcquire() {
-        return tryAcquire(1);
+        AcquireRequest request = new AcquireRequest(name, 1, 0);
+        Boolean result = invoke(request);
+        return result;
     }
 
     public boolean tryAcquire(int permits) {
@@ -96,7 +102,12 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     public boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException {
-        return tryAcquire(1, timeout, unit);
+        if (timeout == 0) {
+            return tryAcquire();
+        }
+        AcquireRequest request = new AcquireRequest(name, 1, unit.toMillis(timeout));
+        Boolean result = invoke(request);
+        return result;
     }
 
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
@@ -106,15 +117,12 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
         return result;
     }
 
-    protected void onDestroy() {
-    }
-
-    protected  <T> T invoke(ClientRequest req){
+    protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
     }
 
     public Data getKey() {
-        if (key == null){
+        if (key == null) {
             key = getContext().getSerializationService().toData(name);
         }
         return key;

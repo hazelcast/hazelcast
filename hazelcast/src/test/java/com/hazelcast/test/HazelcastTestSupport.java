@@ -18,28 +18,30 @@ package com.hazelcast.test;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import org.junit.After;
+import org.junit.ComparisonFailure;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public abstract class HazelcastTestSupport {
 
-    private static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+    public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     static {
         System.setProperty("hazelcast.repmap.hooks.allowed", "true");
@@ -48,6 +50,26 @@ public abstract class HazelcastTestSupport {
     }
 
     private TestHazelcastInstanceFactory factory;
+
+    public static String generateRandomString(int length) {
+        StringBuffer sb = new StringBuffer(length);
+        Random random = new Random();
+        for (int k = 0; k < length; k++) {
+            char c = (char) (random.nextInt(26) + 'a');
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
+    public static void assertStartsWith(String expected, String actual) {
+        if (actual != null && actual.startsWith(expected)) {
+            return;
+        } else if (expected instanceof String && actual instanceof String) {
+            throw new ComparisonFailure("", (String) expected, (String) actual);
+        } else {
+            fail(format0("", expected, actual));
+        }
+    }
 
     public static void assertJoinable(Thread... threads) {
         assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
@@ -61,19 +83,6 @@ public abstract class HazelcastTestSupport {
                 currentThread.interrupt();
             }
         }.start();
-    }
-
-    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance) {
-        assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-    }
-
-    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance, long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("the size of the cluster is not correct", expectedSize, instance.getCluster().getMembers().size());
-            }
-        }, timeoutSeconds);
     }
 
     public static void assertIterableEquals(Iterable iter, Object... values) {
@@ -97,10 +106,37 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("the size of the collection is correct", expectedSize, c.size());
+                assertEquals("the size of the collection is not correct", expectedSize, c.size());
             }
         }, timeoutSeconds);
     }
+
+    public static void assertSizeEventually(int expectedSize, Map<?, ?> m) {
+        assertSizeEventually(expectedSize, m, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertSizeEventually(final int expectedSize, final Map<?, ?> m, long timeoutSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals("the size of the map is not correct", expectedSize, m.size());
+            }
+        }, timeoutSeconds);
+    }
+
+    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance) {
+        assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance, long timeoutSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals("the size of the cluster is not correct", expectedSize, instance.getCluster().getMembers().size());
+            }
+        }, timeoutSeconds);
+    }
+
 
     public static void assertJoinable(long timeoutSeconds, Thread... threads) {
         try {
@@ -140,11 +176,11 @@ public abstract class HazelcastTestSupport {
         try {
             boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
             if (message == null) {
-                assertTrue(format("CountDownLatch failed to complete within %d seconds , count left: %d",
-                        timeoutSeconds, latch.getCount()), completed);
+                assertTrue(format("CountDownLatch failed to complete within %d seconds , count left: %d", timeoutSeconds,
+                        latch.getCount()), completed);
             } else {
-                assertTrue(format("%s, failed to complete within %d seconds , count left: %d",
-                        message, timeoutSeconds, latch.getCount()), completed);
+                assertTrue(format("%s, failed to complete within %d seconds , count left: %d", message, timeoutSeconds,
+                        latch.getCount()), completed);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -170,7 +206,6 @@ public abstract class HazelcastTestSupport {
         return randomString();
     }
 
-
     public static void sleepMillis(int millis) {
         try {
             Thread.sleep(millis);
@@ -187,15 +222,6 @@ public abstract class HazelcastTestSupport {
             }
             sleepSeconds(1);
         }
-    }
-
-    public static void assertSizeEventually(final int size, final IMap<String, String> map) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(size, map.size());
-            }
-        });
     }
 
     public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
@@ -250,7 +276,6 @@ public abstract class HazelcastTestSupport {
         return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
     }
 
-
     public HazelcastInstance createHazelcastInstance() {
         return createHazelcastInstance(new Config());
     }
@@ -300,7 +325,8 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public final class DummyUncheckedHazelcastTestException extends RuntimeException {
+    public final class DummyUncheckedHazelcastTestException
+            extends RuntimeException {
 
     }
 
@@ -315,4 +341,26 @@ public abstract class HazelcastTestSupport {
             }
         }
     }
+
+    private static String format0(String message, Object expected, Object actual) {
+        String formatted = "";
+        if (message != null && !message.equals("")) {
+            formatted = message + " ";
+        }
+        String expectedString = String.valueOf(expected);
+        String actualString = String.valueOf(actual);
+        if (expectedString.equals(actualString)) {
+            return formatted + "expected: " + formatClassAndValue(expected, expectedString) + " but was: " + formatClassAndValue(
+                    actual, actualString);
+        } else {
+            return formatted + "expected:<" + expectedString + "> but was:<" + actualString + ">";
+        }
+    }
+
+    private static String formatClassAndValue(Object value, String valueString) {
+        String className = value == null ? "null" : value.getClass().getName();
+        return className + "<" + valueString + ">";
+    }
+
+
 }

@@ -16,25 +16,23 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.ClientDestroyRequest;
-import com.hazelcast.client.ClientRequest;
-import com.hazelcast.client.util.ListenerUtil;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.ClientDestroyRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-/**
- * @author mdogan 5/16/13
- */
 public abstract class ClientProxy implements DistributedObject {
+
+    private static final AtomicReferenceFieldUpdater<ClientProxy, ClientContext> CONTEXT_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(ClientProxy.class, ClientContext.class, "context");
 
     private final String serviceName;
 
@@ -47,24 +45,20 @@ public abstract class ClientProxy implements DistributedObject {
         this.objectName = objectName;
     }
 
-    protected final String listen(ClientRequest registrationRequest, Object partitionKey, EventHandler handler){
-        return ListenerUtil.listen(context, registrationRequest, partitionKey, handler);
+    protected final String listen(ClientRequest registrationRequest, Object partitionKey, EventHandler handler) {
+        return context.getListenerService().listen(registrationRequest, partitionKey, handler);
     }
 
-    protected final String listen(ClientRequest registrationRequest, EventHandler handler){
-        return ListenerUtil.listen(context, registrationRequest, null, handler);
+    protected final String listen(ClientRequest registrationRequest, EventHandler handler) {
+        return context.getListenerService().listen(registrationRequest, null, handler);
     }
 
-    protected final boolean stopListening(BaseClientRemoveListenerRequest request, String registrationId){
-        return ListenerUtil.stopListening(context, request, registrationId);
+    protected final boolean stopListening(BaseClientRemoveListenerRequest request, String registrationId) {
+        return context.getListenerService().stopListening(request, registrationId);
     }
 
     protected final ClientContext getContext() {
-        final ClientContext ctx = context;
-        if (ctx == null) {
-            throw new DistributedObjectDestroyedException(serviceName, objectName);
-        }
-        return ctx;
+        return context;
     }
 
     protected final void setContext(ClientContext context) {
@@ -76,31 +70,36 @@ public abstract class ClientProxy implements DistributedObject {
         return objectName;
     }
 
+    @Override
     public final String getName() {
         return objectName;
     }
 
+    @Override
     public String getPartitionKey() {
         return StringPartitioningStrategy.getPartitionKey(getName());
     }
 
+    @Override
     public final String getServiceName() {
         return serviceName;
     }
 
+    @Override
     public final void destroy() {
+
         onDestroy();
         ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
+        context.removeProxy(this);
         try {
             context.getInvocationService().invokeOnRandomTarget(request).get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        context.removeProxy(this);
-        context = null;
     }
 
-    protected abstract void onDestroy();
+    protected void onDestroy() {
+    }
 
     protected void onShutdown() {
     }
@@ -115,7 +114,7 @@ public abstract class ClientProxy implements DistributedObject {
         }
     }
 
-    protected <T> T invokeInterruptibly(ClientRequest req, Object key)throws InterruptedException {
+    protected <T> T invokeInterruptibly(ClientRequest req, Object key) throws InterruptedException {
         try {
             final Future future = getInvocationService().invokeOnKeyOwner(req, key);
             Object result = future.get();
@@ -174,8 +173,12 @@ public abstract class ClientProxy implements DistributedObject {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ClientProxy that = (ClientProxy) o;
 

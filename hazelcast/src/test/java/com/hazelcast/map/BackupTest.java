@@ -115,7 +115,7 @@ public class BackupTest extends HazelcastTestSupport {
 
         long migrationActivationDelay =
                 node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong() *
-                node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 5;
+                        node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 5;
 
         int partitionTableSendInterval = node.groupProperties.PARTITION_TABLE_SEND_INTERVAL.getInteger();
         if (partitionTableSendInterval <= 0) {

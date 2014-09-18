@@ -21,6 +21,7 @@ import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.SecurityConfig;
+import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.IPermissionPolicy;
@@ -38,7 +39,10 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"secure-applicationContext-hazelcast.xml"})
@@ -79,6 +83,7 @@ public class TestSecureApplicationContext {
         assertFalse(securityConfig.getMemberLoginModuleConfigs().isEmpty());
         assertNotNull(securityConfig.getClientPolicyConfig());
         assertNotNull(securityConfig.getMemberCredentialsConfig());
+        assertEquals(1, securityConfig.getSecurityInterceptorConfigs().size());
     }
 
     @Test
@@ -145,5 +150,14 @@ public class TestSecureApplicationContext {
                     break;
             }
         }
+    }
+
+    @Test
+    public void testSecurityInterceptors() {
+        final List<SecurityInterceptorConfig> interceptorConfigs = securityConfig.getSecurityInterceptorConfigs();
+        assertEquals(1, interceptorConfigs.size());
+        final SecurityInterceptorConfig interceptorConfig = interceptorConfigs.get(0);
+        final String className = interceptorConfig.getClassName();
+        assertEquals(DummySecurityInterceptor.class.getName(), className);
     }
 }

@@ -20,14 +20,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @ali 9/1/13
- */
 public class CollectionAddAllBackupOperation extends CollectionOperation implements BackupOperation {
 
     protected Map<Long, Data> valueMap;
@@ -75,7 +71,7 @@ public class CollectionAddAllBackupOperation extends CollectionOperation impleme
         super.readInternal(in);
         final int size = in.readInt();
         valueMap = new HashMap<Long, Data>(size);
-        for (int i=0; i<size; i++){
+        for (int i = 0; i < size; i++) {
             final long itemId = in.readLong();
             final Data value = new Data();
             value.readData(in);

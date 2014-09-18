@@ -23,11 +23,19 @@ import com.hazelcast.hibernate.local.TimestampsRegionCache;
 import com.hazelcast.hibernate.region.HazelcastCollectionRegion;
 import com.hazelcast.hibernate.region.HazelcastEntityRegion;
 import com.hazelcast.hibernate.region.HazelcastTimestampsRegion;
-import org.hibernate.cache.*;
+import org.hibernate.cache.CacheDataDescription;
+import org.hibernate.cache.TimestampsRegion;
+import org.hibernate.cache.CollectionRegion;
+import org.hibernate.cache.CacheException;
+import org.hibernate.cache.EntityRegion;
+import org.hibernate.cache.RegionFactory;
 import org.hibernate.cfg.Settings;
 
 import java.util.Properties;
 
+/**
+ * Simple RegionFactory implementation to return Hazelcast based local Region implementations
+ */
 public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
     private CleanupService cleanupService;

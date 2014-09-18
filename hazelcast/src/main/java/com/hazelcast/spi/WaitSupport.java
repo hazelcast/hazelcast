@@ -16,6 +16,12 @@
 
 package com.hazelcast.spi;
 
+
+/**
+ * A interface that can be implemented to participate in the Wait/Notify System.
+ *
+ * See {@link  com.hazelcast.spi.WaitNotifyService}.
+ */
 public interface WaitSupport {
 
     WaitNotifyKey getWaitKey();

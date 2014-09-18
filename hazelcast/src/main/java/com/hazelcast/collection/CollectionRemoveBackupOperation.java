@@ -19,12 +19,8 @@ package com.hazelcast.collection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 
-/**
- * @ali 8/31/13
- */
 public class CollectionRemoveBackupOperation extends CollectionOperation implements BackupOperation {
 
     private long itemId;

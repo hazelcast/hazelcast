@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
@@ -58,5 +58,18 @@ public final class IsLockedRequest extends AbstractIsLockedRequest
     public Permission getRequiredPermission() {
         String name = getName();
         return new LockPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getMethodName() {
+        if (threadId != 0) {
+            return "isLockedByCurrentThread";
+        }
+        return super.getMethodName();
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
     }
 }

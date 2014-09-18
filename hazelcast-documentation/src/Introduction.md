@@ -2,44 +2,56 @@
 
 ## Hazelcast Overview
 
+Hazelcast is an open source in-memory data grid. It offers distributed implementation of interfaces from Java such as Map, Queue, ExecutorService, Lock and many more. It is designed to be very lightweight and easy to use. Hazelcast is highly scalable and available. Distributed applications can use Hazelcast for distributed caching, synchronization, clustering, processing, pub/sub messaging and etc. Hazelcast is implemented in Java and has clients for Java, C/C++, .NET as well as REST. Hazelcast can also speak memcache protocol.
 
-Hazelcast is a clustering and highly scalable data distribution platform for Java. Hazelcast helps architects and developers to easily design and develop faster, highly scalable and reliable applications for their businesses.
+**Hazelcast is simple**
 
--   Distributed implementations of `java.util.{Queue, Set, List, Map}`
+Hazelcast is written in Java with no dependency. It exposes the same API from Java util package. Just add `hazelcast.jar` dependency and enjoy JVMs clustering in less than a minute and start building scalable applications. 
 
--   Distributed implementation of `java.util.concurrent.ExecutorService`
+**Hazelcast is Peer-to-Peer**
 
--   Distributed implementation of `java.util.concurrency.locks.Lock`
+Unlike many NoSQL solutions, Hazelcast is peer-to-peer. There is no master and slave. All nodes store equal amount of data and do equal amount of processing. Hazelcast can be embedded to your existing application or used in client and server mode where your application is client to the Hazelcast nodes.
 
--   Distributed Topic for publish/subscribe messaging
+**Hazelcast is scalable**
 
--   Transaction support and J2EE container integration via JCA
+Hazelcast is designed to scale up to hundreds and thousands of nodes. Simply add new nodes and they will automatically discover the cluster and will linearly increase both memory and processing capacity. The nodes maintain a TCP connection between each other and all communication is performed through this layer.
 
--   Distributed listeners and events
+**Hazelcast is fast**
 
--   Support for cluster info and membership events
+Hazelcast stores everything in-memory. It is designed to perform very fast reads and updates.
 
--   Dynamic HTTP session clustering
+**Hazelcast is redundant**
 
--   Dynamic clustering
+Hazelcast keeps the backup of each data entry on multiple nodes. On a node failure, the data is restored from the backup and cluster will continue to operate without a downtime.
 
--   Dynamic scaling to hundreds of servers
+**Sharding in Hazelcast**
 
--   Dynamic partitioning with backups
+Hazelcast shards are called Partitions. By default Hazelcast has 271 partitions. Given a key; we serialize, hash and mode it with # of partitions to find the partition it belongs to. The partitions themselves are distributed equally among the members of the cluster. Hazelcast also creates the backups of partitions and also distributes them among nodes for redundancy.
 
--   Dynamic fail-over
+Partitions in a 1 node Hazelcast cluster.
 
--	A very small JAR file
+![](images/NodePartition.jpg)
 
--	Super simple to use; include a single jar
+Partitions in a 2 node cluster. 
 
--   Super fast; thousands of operations per sec.
+![](images/BackupPartitions.jpg)
 
--   Super efficient; very nice to CPU and RAM
+The blacks are primary partitions and reds are backups. In the above illustration, first node has 135 primary partitions (black) and each of these partitions are backed up in the second node (red). At the same time, first node has the backup partitions of second node's primary partitions.
+
+Ass you add more nodes, Hazelcast will move one by one some of the primary and backup partitions to new nodes to make all nodes equal and redundant. Only minimum amount of partitions will be moved to scale out Hazelcast.
+
+![](images/4NodeCluster.jpg)
+
+
+**Hazelcast Topology**
+
+If you have an application whose main focal point is asynchronous or high performance computing and lots of task executions, then embedded deployment is the most useful. In this type, nodes include both the application and data, see the below illustration.
+
+![](images/P2Pcluster.jpg)
 
 
 
+You can have a cluster of server nodes that can be independently created and scaled. Your clients communicate with these server nodes to reach to the data on them. Hazelcast provides native clients (Java, .NET and C++), Memcache clients and REST clients. See the below illustration.
 
-Hazelcast is pure Java. JVMs that are running Hazelcast will dynamically cluster. Although by default Hazelcast will use multicast for discovery, it can also be configured to only use TCP/IP for environments where multicast is not available or preferred ([Click here for more info](#network-configuration)). Communication among cluster members is always TCP/IP with Java NIO beauty. Default configuration comes with 1 backup so if one node fails, no data will be lost. It is as simple as using `java.util.{Queue, Set, List, Map}`. Just add the `hazelcast.jar` into your classpath and start coding.
-
+![](images/CSCluster.jpg)
 

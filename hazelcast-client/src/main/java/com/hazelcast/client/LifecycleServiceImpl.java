@@ -41,7 +41,6 @@ public final class LifecycleServiceImpl implements LifecycleService {
     private final HazelcastClient client;
     private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
             = new ConcurrentHashMap<String, LifecycleListener>();
-    private final Object lifecycleLock = new Object();
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final BuildInfo buildInfo;
 
@@ -75,7 +74,8 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
     public void fireLifecycleEvent(LifecycleEvent.LifecycleState lifecycleState) {
         final LifecycleEvent lifecycleEvent = new LifecycleEvent(lifecycleState);
-        getLogger().info("HazelcastClient[" + client.getName() + "]" + "[" + buildInfo.getVersion() + "] is " + lifecycleEvent.getState());
+        getLogger().info("HazelcastClient[" + client.getName() + "]" + "["
+                + buildInfo.getVersion() + "] is " + lifecycleEvent.getState());
         for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
             lifecycleListener.stateChanged(lifecycleEvent);
         }
@@ -91,12 +91,13 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void shutdown() {
-        active.set(false);
-        synchronized (lifecycleLock) {
-            fireLifecycleEvent(SHUTTING_DOWN);
-            client.doShutdown();
-            fireLifecycleEvent(SHUTDOWN);
+        if (!active.compareAndSet(true, false)) {
+            return;
         }
+
+        fireLifecycleEvent(SHUTTING_DOWN);
+        client.doShutdown();
+        fireLifecycleEvent(SHUTDOWN);
     }
 
     public void terminate() {

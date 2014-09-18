@@ -18,9 +18,12 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.EntryListener;
 
+/**
+ * Configuration for EntryListener
+ */
 public class EntryListenerConfig extends ListenerConfig {
 
-    private boolean local = false;
+    private boolean local;
 
     private boolean includeValue = true;
 
@@ -95,7 +98,9 @@ public class EntryListenerConfig extends ListenerConfig {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o) {
+            return true;
+        }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }

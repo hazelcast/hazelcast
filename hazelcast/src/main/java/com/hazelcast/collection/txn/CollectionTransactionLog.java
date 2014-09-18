@@ -22,26 +22,27 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.io.IOException;
 import java.util.concurrent.Future;
 
-/**
- * @ali 9/3/13
- */
 public class CollectionTransactionLog implements KeyAwareTransactionLog {
 
+    String transactionId;
     private long itemId;
     private String name;
     private Operation op;
     private int partitionId;
     private String serviceName;
-    String transactionId;
 
     public CollectionTransactionLog() {
     }
 
-    public CollectionTransactionLog(long itemId, String name, int partitionId, String serviceName, String transactionId, Operation op) {
+    public CollectionTransactionLog(long itemId,
+                                    String name,
+                                    int partitionId,
+                                    String serviceName,
+                                    String transactionId,
+                                    Operation op) {
         this.itemId = itemId;
         this.name = name;
         this.op = op;
@@ -80,7 +81,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
         CollectionRollbackOperation operation = new CollectionRollbackOperation(name, itemId, removeOperation);
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(serviceName,operation,partitionId);
+            return nodeEngine.getOperationService().invokeOnPartition(serviceName, operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

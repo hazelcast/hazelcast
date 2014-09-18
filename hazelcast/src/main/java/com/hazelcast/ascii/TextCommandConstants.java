@@ -18,26 +18,40 @@ package com.hazelcast.ascii;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-@edu.umd.cs.findbugs.annotations.SuppressWarnings("MS_OOI_PKGPROTECT")
-public interface TextCommandConstants {
-    int MONTH_SECONDS = 60 * 60 * 24 * 30;
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("MS_MUTABLE_ARRAY")
+public final class TextCommandConstants {
 
-    byte[] SPACE = stringToBytes(" ");
-    byte[] RETURN = stringToBytes("\r\n");
-    byte[] FLAG_ZERO = stringToBytes(" 0 ");
-    byte[] VALUE_SPACE = stringToBytes("VALUE ");
-    byte[] DELETED = stringToBytes("DELETED\r\n");
-    byte[] STORED = stringToBytes("STORED\r\n");
-    byte[] TOUCHED = stringToBytes("TOUCHED\r\n");
-    byte[] NOT_STORED = stringToBytes("NOT_STORED\r\n");
-    byte[] NOT_FOUND = stringToBytes("NOT_FOUND\r\n");
-    byte[] RETURN_END = stringToBytes("\r\nEND\r\n");
-    byte[] END = stringToBytes("END\r\n");
-    byte[] ERROR = stringToBytes("ERROR");
-    byte[] CLIENT_ERROR = stringToBytes("CLIENT_ERROR ");
-    byte[] SERVER_ERROR = stringToBytes("SERVER_ERROR ");
+    public static final byte[] SPACE = stringToBytes(" ");
+    public static final byte[] RETURN = stringToBytes("\r\n");
+    public static final byte[] FLAG_ZERO = stringToBytes(" 0 ");
+    public static final byte[] VALUE_SPACE = stringToBytes("VALUE ");
+    public static final byte[] DELETED = stringToBytes("DELETED\r\n");
+    public static final byte[] STORED = stringToBytes("STORED\r\n");
+    public static final byte[] TOUCHED = stringToBytes("TOUCHED\r\n");
+    public static final byte[] NOT_STORED = stringToBytes("NOT_STORED\r\n");
+    public static final byte[] NOT_FOUND = stringToBytes("NOT_FOUND\r\n");
+    public static final byte[] RETURN_END = stringToBytes("\r\nEND\r\n");
+    public static final byte[] END = stringToBytes("END\r\n");
+    public static final byte[] ERROR = stringToBytes("ERROR");
+    public static final byte[] CLIENT_ERROR = stringToBytes("CLIENT_ERROR ");
+    public static final byte[] SERVER_ERROR = stringToBytes("SERVER_ERROR ");
 
-    enum TextCommandType {
+    private static final int SECOND = 60;
+    private static final int MINUTE = 60;
+    private static final int HOUR = 24;
+    private static final int MONTH = 30;
+
+    private static int monthSeconds = SECOND * MINUTE * HOUR * MONTH;
+
+    private TextCommandConstants() {
+
+    }
+
+    public static int getMonthSeconds() {
+        return monthSeconds;
+    }
+
+    public enum TextCommandType {
         GET((byte) 0),
         PARTIAL_GET((byte) 1),
         GETS((byte) 2),

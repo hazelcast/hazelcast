@@ -25,9 +25,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * @ali 9/4/13
- */
 public class ListSubRequest extends CollectionRequest {
 
     private int from;
@@ -67,5 +64,21 @@ public class ListSubRequest extends CollectionRequest {
     @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_READ;
+    }
+
+    @Override
+    public String getMethodName() {
+        if (from == -1 && to == -1) {
+            return "listIterator";
+        }
+        return "subList";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (from == -1 && to == -1) {
+            return null;
+        }
+        return new Object[]{from, to};
     }
 }

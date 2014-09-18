@@ -23,11 +23,8 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
@@ -35,16 +32,20 @@ import com.hazelcast.util.Clock;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
 
 public class TcpIpJoiner extends AbstractJoiner {
 
     private static final int MAX_PORT_TRIES = 3;
+    public static final long JOIN_RETRY_WAIT_TIME = 1000L;
 
     private volatile boolean claimingMaster = false;
 
@@ -52,244 +53,289 @@ public class TcpIpJoiner extends AbstractJoiner {
         super(node);
     }
 
-    private void joinViaTargetMember(AtomicBoolean joined, Address targetAddress, long maxJoinMillis) {
-        try {
-            if (targetAddress == null) {
-                throw new IllegalArgumentException("Invalid target address -> NULL");
-            }
-            if (logger.isFinestEnabled()) {
-                logger.finest( "Joining over target member " + targetAddress);
-            }
-            if (targetAddress.equals(node.getThisAddress()) || isLocalAddress(targetAddress)) {
-                node.setAsMaster();
-                return;
-            }
-            long joinStartTime = Clock.currentTimeMillis();
-            Connection connection = null;
-            while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
-                connection = node.connectionManager.getOrConnect(targetAddress);
-                if (connection == null) {
-                    //noinspection BusyWait
-                    Thread.sleep(2000L);
-                    continue;
-                }
-                if (logger.isFinestEnabled()) {
-                    logger.finest( "Sending joinRequest " + targetAddress);
-                }
-                node.clusterService.sendJoinRequest(targetAddress, true);
-                //noinspection BusyWait
-                Thread.sleep(3000L);
-            }
-        } catch (final Exception e) {
-            logger.warning( e);
-        }
-    }
-
-    public static class MasterClaim extends AbstractOperation implements JoinOperation {
-
-        private transient boolean approvedAsMaster = false;
-
-        @Override
-        public void run() {
-            final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            Node node = nodeEngine.getNode();
-            Joiner joiner = node.getJoiner();
-            final ILogger logger = node.getLogger(getClass().getName());
-            if (joiner instanceof TcpIpJoiner) {
-                TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) joiner;
-                final Address endpoint = getCallerAddress();
-                final Address masterAddress = node.getMasterAddress();
-                approvedAsMaster = !tcpIpJoiner.claimingMaster && !node.isMaster()
-                                   && (masterAddress == null || masterAddress.equals(endpoint));
-            } else {
-                approvedAsMaster = false;
-                logger.warning("This node requires MulticastJoin strategy!");
-            }
-            if (logger.isFinestEnabled()) {
-                logger.finest( "Sending '" + approvedAsMaster + "' for master claim of node: " + getCallerAddress());
-            }
-        }
-
-        @Override
-        public boolean returnsResponse() {
-            return true;
-        }
-
-        @Override
-        public Object getResponse() {
-            return approvedAsMaster;
-        }
-    }
-
-    //todo: why are we passing argument if not used?
-    private void joinViaPossibleMembers(AtomicBoolean joined) {
-        try {
-            node.getFailedConnections().clear();
-            final Collection<Address> colPossibleAddresses = getPossibleAddresses();
-            colPossibleAddresses.remove(node.getThisAddress());
-            for (final Address possibleAddress : colPossibleAddresses) {
-                logger.info("Connecting to possible member: " + possibleAddress);
-                node.connectionManager.getOrConnect(possibleAddress);
-            }
-            boolean foundConnection = false;
-            int numberOfSeconds = 0;
-            final int connectionTimeoutSeconds = getConnTimeoutSeconds();
-            while (!foundConnection && numberOfSeconds < connectionTimeoutSeconds) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest( "Removing failedConnections: " + node.getFailedConnections());
-                }
-                colPossibleAddresses.removeAll(node.getFailedConnections());
-                if (colPossibleAddresses.size() == 0) {
-                    break;
-                }
-                if (logger.isFinestEnabled()) {
-                    logger.finest( "We are going to try to connect to each address" + colPossibleAddresses);
-                }
-                for (Address possibleAddress : colPossibleAddresses) {
-                    final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
-                    if (conn != null) {
-                        foundConnection = true;
-                        if (logger.isFinestEnabled()) {
-                            logger.finest( "Found a connection and sending join request to " + possibleAddress);
-                        }
-                        node.clusterService.sendJoinRequest(possibleAddress, true);
-                    }
-                }
-                if (!foundConnection) {
-                    Thread.sleep(1000L);
-                    numberOfSeconds++;
-                }
-            }
-            if (logger.isFinestEnabled()) {
-                logger.finest( "FOUND " + foundConnection);
-            }
-            if (!foundConnection) {
-                logger.finest( "This node will assume master role since no possible member where connected to.");
-                node.setAsMaster();
-            } else {
-                if (!node.joined()) {
-                    final int totalSleep = connectionTimeoutSeconds - numberOfSeconds;
-                    for (int i = 0; i < totalSleep * 2 && !node.joined(); i++) {
-                        logger.finest( "Waiting for join request answer, sleeping for 500 ms...");
-                        Thread.sleep(500L);
-                        Address masterAddress = node.getMasterAddress();
-                        if (masterAddress != null) {
-                            if (logger.isFinestEnabled()) {
-                                logger.finest( "Sending join request to " + masterAddress);
-                            }
-                            node.clusterService.sendJoinRequest(masterAddress, true);
-                        }
-                    }
-                    colPossibleAddresses.removeAll(node.getFailedConnections());
-                    if (colPossibleAddresses.size() == 0) {
-                        logger.finest( "This node will assume master role since none of the possible members accepted join request.");
-                        node.setAsMaster();
-                    } else if (!node.joined()) {
-                        boolean masterCandidate = true;
-                        for (Address address : colPossibleAddresses) {
-                            if (node.connectionManager.getConnection(address) != null) {
-                                if (node.getThisAddress().hashCode() > address.hashCode()) {
-                                    masterCandidate = false;
-                                }
-                            }
-                        }
-                        if (masterCandidate) {
-                            // ask others...
-                            claimingMaster = true;
-                            Collection<Future<Boolean>> responses = new LinkedList<Future<Boolean>>();
-                            for (Address address : colPossibleAddresses) {
-                                if (node.getConnectionManager().getConnection(address) != null) {
-                                    logger.finest( "Claiming myself as master node!");
-                                    Future future = node.nodeEngine.getOperationService().createInvocationBuilder(
-                                            ClusterServiceImpl.SERVICE_NAME, new MasterClaim(), address)
-                                            .setTryCount(1).invoke();
-                                    responses.add(future);
-                                }
-                            }
-                            final long maxWait = TimeUnit.SECONDS.toMillis(10);
-                            long waitTime = 0L;
-                            boolean allApprovedAsMaster = true;
-                            for (Future<Boolean> response : responses) {
-                                if (!allApprovedAsMaster || waitTime > maxWait) {
-                                    allApprovedAsMaster = false;
-                                    break;
-                                }
-                                long t = Clock.currentTimeMillis();
-                                try {
-                                    allApprovedAsMaster &= response.get(1, TimeUnit.SECONDS);
-                                } catch (Exception e) {
-                                    logger.finest(e);
-                                    allApprovedAsMaster = false;
-                                } finally {
-                                    waitTime += (Clock.currentTimeMillis() - t);
-                                }
-                            }
-                            if (allApprovedAsMaster) {
-                                if (logger.isFinestEnabled()) {
-                                    logger.finest( node.getThisAddress() + " Setting myself as master! group "
-                                            + node.getConfig().getGroupConfig().getName() + " possible addresses "
-                                            + colPossibleAddresses.size() + " " + colPossibleAddresses);
-                                }
-                                node.setAsMaster();
-                                return;
-                            } else {
-                                lookForMaster(colPossibleAddresses);
-                            }
-                        } else {
-                            lookForMaster(colPossibleAddresses);
-                        }
-                    }
-                }
-            }
-            colPossibleAddresses.clear();
-            node.getFailedConnections().clear();
-        } catch (Throwable t) {
-            logger.severe(t);
-        }
+    public boolean isClaimingMaster() {
+        return claimingMaster;
     }
 
     protected int getConnTimeoutSeconds() {
         return config.getNetworkConfig().getJoin().getTcpIpConfig().getConnectionTimeoutSeconds();
     }
 
-    private void lookForMaster(Collection<Address> colPossibleAddresses) throws InterruptedException {
-        int tryCount = 0;
-        claimingMaster = false;
-        while (!node.joined() && tryCount++ < 20 && (node.getMasterAddress() == null)) {
-            connectAndSendJoinRequest(colPossibleAddresses);
-            //noinspection BusyWait
-            Thread.sleep(1000L);
-        }
-        int requestCount = 0;
-        colPossibleAddresses.removeAll(node.getFailedConnections());
-        if (colPossibleAddresses.size() == 0) {
-            node.setAsMaster();
-            if (logger.isFinestEnabled()) {
-                logger.finest( node.getThisAddress() + " Setting myself as master! group " + node.getConfig().getGroupConfig().getName()
-                        + " no possible addresses without failed connection");
+    public void doJoin() {
+        final Address targetAddress = getTargetAddress();
+        if (targetAddress != null) {
+            long maxJoinMergeTargetMillis = node.getGroupProperties().MAX_JOIN_MERGE_TARGET_SECONDS.getInteger() * 1000;
+            joinViaTargetMember(targetAddress, maxJoinMergeTargetMillis);
+            if (!node.joined()) {
+                joinViaPossibleMembers();
             }
-            return;
+        } else if (config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember() != null) {
+            Address requiredMember = getRequiredMemberAddress();
+            long maxJoinMillis = getMaxJoinMillis();
+            joinViaTargetMember(requiredMember, maxJoinMillis);
+        } else {
+            joinViaPossibleMembers();
         }
-        if (logger.isFinestEnabled()) {
-            logger.finest( node.getThisAddress() + " joining to master " + node.getMasterAddress() + ", group " + node.getConfig().getGroupConfig().getName());
-        }
-        while (node.isActive() && !node.joined()) {
-            //noinspection BusyWait
-            Thread.sleep(1000L);
-            final Address master = node.getMasterAddress();
-            if (master != null) {
-                node.clusterService.sendJoinRequest(master, true);
-                if (requestCount++ > node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) {
-                    logger.warning("Couldn't join to the master : " + master);
-                    return;
-                }
-            } else {
-                if (logger.isFinestEnabled()) {
-                    logger.finest( node.getThisAddress() + " couldn't find a master! but there was connections available: " + colPossibleAddresses);
-                }
+    }
+
+    private void joinViaTargetMember(Address targetAddress, long maxJoinMillis) {
+        try {
+            if (targetAddress == null) {
+                throw new IllegalArgumentException("Invalid target address -> NULL");
+            }
+            if (logger.isFinestEnabled()) {
+                logger.finest("Joining over target member " + targetAddress);
+            }
+            if (targetAddress.equals(node.getThisAddress()) || isLocalAddress(targetAddress)) {
+                node.setAsMaster();
                 return;
             }
+            long joinStartTime = Clock.currentTimeMillis();
+            Connection connection;
+            while (node.isActive() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+                connection = node.connectionManager.getOrConnect(targetAddress);
+                if (connection == null) {
+                    //noinspection BusyWait
+                    Thread.sleep(JOIN_RETRY_WAIT_TIME);
+                    continue;
+                }
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Sending joinRequest " + targetAddress);
+                }
+                node.clusterService.sendJoinRequest(targetAddress, true);
+                //noinspection BusyWait
+                Thread.sleep(JOIN_RETRY_WAIT_TIME);
+            }
+        } catch (final Exception e) {
+            logger.warning(e);
         }
+    }
+
+    private void joinViaPossibleMembers() {
+        try {
+            blacklistedAddresses.clear();
+            Collection<Address> possibleAddresses = getPossibleAddresses();
+
+            boolean foundConnection = tryInitialConnection(possibleAddresses);
+            removeBlacklistedAddresses(possibleAddresses);
+
+            if (!foundConnection) {
+                logger.finest("This node will assume master role since no possible member where connected to.");
+                node.setAsMaster();
+                return;
+            }
+
+            long maxJoinMillis = getMaxJoinMillis();
+            long startTime = Clock.currentTimeMillis();
+
+            while (node.isActive() && !node.joined() && (Clock.currentTimeMillis() - startTime < maxJoinMillis)) {
+
+                tryToJoinPossibleAddresses(possibleAddresses);
+                if (node.joined()) {
+                    return;
+                }
+
+                removeBlacklistedAddresses(possibleAddresses);
+                if (possibleAddresses.size() == 0) {
+                    logger.finest(
+                            "This node will assume master role since none of the possible members accepted join request.");
+                    node.setAsMaster();
+                    return;
+                }
+
+                boolean masterCandidate = isThisNodeMasterCandidate(possibleAddresses);
+                if (masterCandidate) {
+                    boolean consensus = claimMastership(possibleAddresses);
+                    if (consensus) {
+                        if (logger.isFinestEnabled()) {
+                            logger.finest("Setting myself as master after consensus! " +
+                                    "Voting endpoints: " + possibleAddresses);
+                        }
+                        node.setAsMaster();
+                        claimingMaster = false;
+                        return;
+                    }
+                }
+
+                claimingMaster = false;
+                lookForMaster(possibleAddresses);
+            }
+        } catch (Throwable t) {
+            logger.severe(t);
+        }
+    }
+
+    private boolean claimMastership(Collection<Address> possibleAddresses) {
+        logger.finest("Claiming myself as master node!");
+        claimingMaster = true;
+        Collection<Future<Boolean>> responses = new LinkedList<Future<Boolean>>();
+        for (Address address : possibleAddresses) {
+            if (node.getConnectionManager().getConnection(address) != null) {
+                Future future = node.nodeEngine.getOperationService()
+                        .createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
+                                new MasterClaimOperation(), address).setTryCount(1).invoke();
+                responses.add(future);
+            }
+        }
+
+        final long maxWait = TimeUnit.SECONDS.toMillis(10);
+        long waitTime = 0L;
+        boolean consensus = true;
+        for (Future<Boolean> response : responses) {
+            long t = Clock.currentTimeMillis();
+            try {
+                consensus = response.get(1, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                logger.finest(e);
+                consensus = false;
+            } finally {
+                waitTime += (Clock.currentTimeMillis() - t);
+            }
+
+            if (!consensus) {
+                break;
+            }
+
+            if (waitTime > maxWait) {
+                consensus = false;
+                break;
+            }
+        }
+        return consensus;
+    }
+
+    private boolean isThisNodeMasterCandidate(Collection<Address> possibleAddresses) {
+        int thisHashCode = node.getThisAddress().hashCode();
+        for (Address address : possibleAddresses) {
+            if (node.connectionManager.getConnection(address) != null) {
+                if (thisHashCode > address.hashCode()) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private void tryToJoinPossibleAddresses(Collection<Address> possibleAddresses) throws InterruptedException {
+        long connectionTimeoutMillis = getConnTimeoutSeconds() * 1000L;
+        long start = Clock.currentTimeMillis();
+
+        while (!node.joined() && Clock.currentTimeMillis() - start < connectionTimeoutMillis) {
+
+            Address masterAddress = node.getMasterAddress();
+            if (possibleAddresses.isEmpty() && masterAddress == null) {
+                return;
+            }
+
+            if (masterAddress != null) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Sending join request to " + masterAddress);
+                }
+                node.clusterService.sendJoinRequest(masterAddress, true);
+            } else {
+                removeBlacklistedAddresses(possibleAddresses);
+                sendMasterQuestion(possibleAddresses);
+            }
+
+            if (!node.joined()) {
+                Thread.sleep(JOIN_RETRY_WAIT_TIME);
+            }
+        }
+    }
+
+    private void removeBlacklistedAddresses(Collection<Address> possibleAddresses) {
+        if (!blacklistedAddresses.isEmpty()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Removing failedConnections: " + blacklistedAddresses);
+            }
+            possibleAddresses.removeAll(blacklistedAddresses);
+        }
+    }
+
+    private boolean tryInitialConnection(Collection<Address> possibleAddresses) throws InterruptedException {
+        long connectionTimeoutMillis = getConnTimeoutSeconds() * 1000L;
+        long start = Clock.currentTimeMillis();
+        while (Clock.currentTimeMillis() - start < connectionTimeoutMillis) {
+            if (possibleAddresses.isEmpty()) {
+                return false;
+            }
+            if (logger.isFinestEnabled()) {
+                logger.finest("Will send master question to each address in: " + possibleAddresses);
+            }
+            if (sendMasterQuestion(possibleAddresses)) {
+                return true;
+            }
+            Thread.sleep(JOIN_RETRY_WAIT_TIME);
+            removeBlacklistedAddresses(possibleAddresses);
+        }
+        return false;
+    }
+
+    private void lookForMaster(Collection<Address> possibleAddresses) throws InterruptedException {
+        int tryCount = 0;
+        while (node.getMasterAddress() == null && tryCount++ < 20) {
+            sendMasterQuestion(possibleAddresses);
+            //noinspection BusyWait
+            Thread.sleep(JOIN_RETRY_WAIT_TIME);
+            possibleAddresses.removeAll(blacklistedAddresses);
+            if (possibleAddresses.size() == 0) {
+                break;
+            }
+        }
+
+        if (node.joined()) {
+            return;
+        }
+
+        if (possibleAddresses.size() == 0 && node.getMasterAddress() == null) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Setting myself as master! No possible addresses remaining to connect...");
+            }
+            node.setAsMaster();
+            return;
+        }
+
+        long maxMasterJoinTime = getMaxJoinTimeToMasterNode();
+        long start = Clock.currentTimeMillis();
+
+        while (node.isActive() && !node.joined() && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
+            Address master = node.getMasterAddress();
+            if (master != null) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Joining to master " + master);
+                }
+                node.clusterService.sendJoinRequest(master, true);
+            } else {
+                break;
+            }
+
+            //noinspection BusyWait
+            Thread.sleep(JOIN_RETRY_WAIT_TIME);
+        }
+
+        if (!node.joined()) {
+            Address master = node.getMasterAddress();
+            if (master != null) {
+                logger.warning("Couldn't join to the master : " + master);
+            } else {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Couldn't find a master! But there was connections available: " + possibleAddresses);
+                }
+            }
+        }
+    }
+
+    private boolean sendMasterQuestion(Collection<Address> possibleAddresses) {
+        boolean sent = false;
+        for (Address address : possibleAddresses) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Sending master question to " + address);
+            }
+            if (node.clusterService.sendMasterQuestion(address)) {
+                sent = true;
+            }
+        }
+        return sent;
     }
 
     private Address getRequiredMemberAddress() {
@@ -297,51 +343,34 @@ public class TcpIpJoiner extends AbstractJoiner {
         final String host = tcpIpConfig.getRequiredMember();
         try {
             final AddressHolder addressHolder = AddressUtil.getAddressHolder(host, config.getNetworkConfig().getPort());
-            if (AddressUtil.isIpAddress(addressHolder.address)) {
-                return new Address(addressHolder.address, addressHolder.port);
+            if (AddressUtil.isIpAddress(addressHolder.getAddress())) {
+                return new Address(addressHolder.getAddress(), addressHolder.getPort());
             } else {
                 final InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
                 if (interfaces.isEnabled()) {
-                    final InetAddress[] inetAddresses = InetAddress.getAllByName(addressHolder.address);
+                    final InetAddress[] inetAddresses = InetAddress.getAllByName(addressHolder.getAddress());
                     if (inetAddresses.length > 1) {
                         for (InetAddress inetAddress : inetAddresses) {
                             if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
                                     interfaces.getInterfaces())) {
-                                return new Address(inetAddress, addressHolder.port);
+                                return new Address(inetAddress, addressHolder.getPort());
                             }
                         }
                     } else {
                         final InetAddress inetAddress = inetAddresses[0];
                         if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
                                 interfaces.getInterfaces())) {
-                            return new Address(addressHolder.address, addressHolder.port);
+                            return new Address(addressHolder.getAddress(), addressHolder.getPort());
                         }
                     }
                 } else {
-                    return new Address(addressHolder.address, addressHolder.port);
+                    return new Address(addressHolder.getAddress(), addressHolder.getPort());
                 }
             }
         } catch (final Exception e) {
-            logger.warning( e);
+            logger.warning(e);
         }
         return null;
-    }
-
-    public void doJoin(AtomicBoolean joined) {
-        final Address targetAddress = getTargetAddress();
-        if (targetAddress != null) {
-            long maxJoinMergeTargetMillis = node.getGroupProperties().MAX_JOIN_MERGE_TARGET_SECONDS.getInteger() * 1000;
-            joinViaTargetMember(joined, targetAddress, maxJoinMergeTargetMillis);
-            if (!joined.get()) {
-                joinViaPossibleMembers(joined);
-            }
-        } else if (config.getNetworkConfig().getJoin().getTcpIpConfig().getRequiredMember() != null) {
-            Address requiredMember = getRequiredMemberAddress();
-            long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
-            joinViaTargetMember(joined, requiredMember, maxJoinMillis);
-        } else {
-            joinViaPossibleMembers(joined);
-        }
     }
 
     private Collection<Address> getPossibleAddresses() {
@@ -351,12 +380,12 @@ public class TcpIpJoiner extends AbstractJoiner {
         for (String possibleMember : possibleMembers) {
             AddressHolder addressHolder = AddressUtil.getAddressHolder(possibleMember);
             try {
-                boolean portIsDefined = addressHolder.port != -1 || !networkConfig.isPortAutoIncrement();
+                boolean portIsDefined = addressHolder.getPort() != -1 || !networkConfig.isPortAutoIncrement();
                 int count = portIsDefined ? 1 : MAX_PORT_TRIES;
-                int port = addressHolder.port != -1 ? addressHolder.port : networkConfig.getPort();
+                int port = addressHolder.getPort() != -1 ? addressHolder.getPort() : networkConfig.getPort();
                 AddressMatcher addressMatcher = null;
                 try {
-                    addressMatcher = AddressUtil.getAddressMatcher(addressHolder.address);
+                    addressMatcher = AddressUtil.getAddressMatcher(addressHolder.getAddress());
                 } catch (InvalidAddressException ignore) {
                 }
                 if (addressMatcher != null) {
@@ -365,13 +394,13 @@ public class TcpIpJoiner extends AbstractJoiner {
                         matchedAddresses = AddressUtil.getMatchingIpv4Addresses(addressMatcher);
                     } else {
                         // for IPv6 we are not doing wildcard matching
-                        matchedAddresses = Collections.singleton(addressHolder.address);
+                        matchedAddresses = Collections.singleton(addressHolder.getAddress());
                     }
                     for (String matchedAddress : matchedAddresses) {
                         addPossibleAddresses(possibleAddresses, null, InetAddress.getByName(matchedAddress), port, count);
                     }
                 } else {
-                    final String host = addressHolder.address;
+                    final String host = addressHolder.getAddress();
                     final InterfacesConfig interfaces = networkConfig.getInterfaces();
                     if (interfaces.isEnabled()) {
                         final InetAddress[] inetAddresses = InetAddress.getAllByName(host);
@@ -394,13 +423,15 @@ public class TcpIpJoiner extends AbstractJoiner {
                     }
                 }
             } catch (UnknownHostException e) {
-                logger.warning("Cannot resolve hostname '" + addressHolder.address
+                logger.warning("Cannot resolve hostname '" + addressHolder.getAddress()
                         + "'. Please make sure host is valid and reachable.");
                 if (logger.isFinestEnabled()) {
                     logger.finest("Error during resolving possible target!", e);
                 }
             }
         }
+
+        possibleAddresses.remove(node.getThisAddress());
         return possibleAddresses;
     }
 
@@ -420,7 +451,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         final Address thisAddress = node.getThisAddress();
         final boolean local = thisAddress.getInetSocketAddress().equals(address.getInetSocketAddress());
         if (logger.isFinestEnabled()) {
-            logger.finest( address + " is local? " + local);
+            logger.finest(address + " is local? " + local);
         }
         return local;
     }
@@ -458,7 +489,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
         for (Address possibleAddress : colPossibleAddresses) {
             if (logger.isFinestEnabled()) {
-                logger.finest( node.getThisAddress() + " is connecting to " + possibleAddress);
+                logger.finest(node.getThisAddress() + " is connecting to " + possibleAddress);
             }
             node.connectionManager.getOrConnect(possibleAddress, true);
             try {

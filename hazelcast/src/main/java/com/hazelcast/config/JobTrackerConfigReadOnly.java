@@ -17,7 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
-
+/**
+ * Contains the configuration for an {@link com.hazelcast.mapreduce.JobTracker}.
+ */
 public class JobTrackerConfigReadOnly
         extends JobTrackerConfig {
 

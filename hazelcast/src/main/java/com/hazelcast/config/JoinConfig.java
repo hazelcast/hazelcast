@@ -57,7 +57,7 @@ public class JoinConfig {
      * @throws IllegalArgumentException if tcpIpConfig is null.
      */
     public JoinConfig setTcpIpConfig(final TcpIpConfig tcpIpConfig) {
-        this.tcpIpConfig = isNotNull(tcpIpConfig,"tcpIpConfig");
+        this.tcpIpConfig = isNotNull(tcpIpConfig, "tcpIpConfig");
         return this;
     }
 
@@ -73,8 +73,27 @@ public class JoinConfig {
      * @throws IllegalArgumentException if awsConfig is null.
      */
     public JoinConfig setAwsConfig(final AwsConfig awsConfig) {
-        this.awsConfig = isNotNull(awsConfig,"awsConfig");
+        this.awsConfig = isNotNull(awsConfig, "awsConfig");
         return this;
+    }
+
+    /**
+     * Verifies this JoinConfig is valid. So at most a single joiner should be active.
+     *
+     * @throws IllegalStateException when the join config is not valid.
+     */
+    public void verify() {
+        if (getTcpIpConfig().isEnabled() && getMulticastConfig().isEnabled()) {
+            throw new IllegalStateException("TCP/IP and Multicast join be enabled at the same time");
+        }
+
+        if (getTcpIpConfig().isEnabled() && getAwsConfig().isEnabled()) {
+            throw new IllegalStateException("TCP/IP and AWS join can't be enabled at the same time");
+        }
+
+        if (getMulticastConfig().isEnabled() && getAwsConfig().isEnabled()) {
+            throw new IllegalStateException("Multicast and AWS join can't be enabled at the same time");
+        }
     }
 
     @Override

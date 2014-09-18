@@ -269,12 +269,12 @@ function moveImages {
     mkdir ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
     mkdir ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
     mkdir ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
-	mkdir ./$OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR"/images/"
+		mkdir ./$OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR"/images/"
 
     cp -aR ./images/ ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
     cp -aR ./images/ ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
     cp -aR ./images/ ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
-	cp -aR ./images/ ./$OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR"/images/"
+		cp -aR ./images/ ./$OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR"/images/"
 
 }
 

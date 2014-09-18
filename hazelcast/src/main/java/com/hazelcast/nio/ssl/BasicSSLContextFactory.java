@@ -74,7 +74,8 @@ public class BasicSSLContextFactory implements SSLContextFactory {
         sslContext.init(keyManagers, trustManagers, null);
     }
 
-    private void loadKeyStore(KeyStore ks, char[] passPhrase, String keyStoreFile) throws IOException, NoSuchAlgorithmException, CertificateException {
+    private void loadKeyStore(KeyStore ks, char[] passPhrase, String keyStoreFile)
+            throws IOException, NoSuchAlgorithmException, CertificateException {
         final InputStream in = new FileInputStream(keyStoreFile);
         try {
             ks.load(in, passPhrase);

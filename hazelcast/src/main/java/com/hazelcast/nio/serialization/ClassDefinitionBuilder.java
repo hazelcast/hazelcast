@@ -16,24 +16,39 @@
 
 package com.hazelcast.nio.serialization;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
- * @author mdogan 2/6/13
+ * ClassDefinitionBuilder is used to build and register ClassDefinitions manually.
+ *
+ * @see com.hazelcast.nio.serialization.ClassDefinition
+ * @see com.hazelcast.nio.serialization.Portable
+ * @see com.hazelcast.config.SerializationConfig#addClassDefinition(ClassDefinition)
  */
 public final class ClassDefinitionBuilder {
 
     private final int factoryId;
     private final int classId;
+    private final int version;
     private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
     private final Set<ClassDefinition> nestedClassDefinitions = new HashSet<ClassDefinition>();
 
-    private int index = 0;
-    private boolean done = false;
+    private int index;
+    private boolean done;
 
     public ClassDefinitionBuilder(int factoryId, int classId) {
         this.factoryId = factoryId;
         this.classId = classId;
+        this.version = -1;
+    }
+
+    public ClassDefinitionBuilder(int factoryId, int classId, int version) {
+        this.factoryId = factoryId;
+        this.classId = classId;
+        this.version = version;
     }
 
     public ClassDefinitionBuilder addIntField(String fieldName) {
@@ -137,7 +152,8 @@ public final class ClassDefinitionBuilder {
         if (def.getClassId() == Data.NO_CLASS_ID) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE, def.getFactoryId(), def.getClassId()));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
+                FieldType.PORTABLE, def.getFactoryId(), def.getClassId(), def.getVersion()));
         nestedClassDefinitions.add(def);
         return this;
     }
@@ -147,14 +163,15 @@ public final class ClassDefinitionBuilder {
         if (def.getClassId() == Data.NO_CLASS_ID) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId()));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
+                FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId(), def.getVersion()));
         nestedClassDefinitions.add(def);
         return this;
     }
 
     public ClassDefinition build() {
         done = true;
-        final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId);
+        final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId, version);
         for (FieldDefinition fd : fieldDefinitions) {
             cd.addFieldDef(fd);
         }

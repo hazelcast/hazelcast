@@ -20,10 +20,15 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
 import java.io.IOException;
 
-public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSerializable {
+/**
+ * SimpleEntryView is an implementation of {@link com.hazelcast.core.EntryView} and also it is writable.
+ *
+ * @param <K> the type of key.
+ * @param <V> the type of value.
+ */
+public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSerializable {
 
     private K key;
     private V value;
@@ -36,6 +41,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
     private long lastUpdateTime;
     private long version;
     private long evictionCriteriaNumber;
+    private long ttl;
 
     public SimpleEntryView(K key, V value) {
         this.key = key;
@@ -133,6 +139,14 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         this.evictionCriteriaNumber = evictionCriteriaNumber;
     }
 
+    public long getTtl() {
+        return ttl;
+    }
+
+    public void setTtl(long ttl) {
+        this.ttl = ttl;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(key);
@@ -146,6 +160,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         out.writeLong(lastUpdateTime);
         out.writeLong(version);
         out.writeLong(evictionCriteriaNumber);
+        out.writeLong(ttl);
     }
 
     @Override
@@ -161,6 +176,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         lastUpdateTime = in.readLong();
         version = in.readLong();
         evictionCriteriaNumber = in.readLong();
+        ttl = in.readLong();
     }
 
     public int getFactoryId() {

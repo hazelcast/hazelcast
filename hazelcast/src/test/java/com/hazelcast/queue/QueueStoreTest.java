@@ -46,11 +46,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-/**
- * User: sancar
- * Date: 2/22/13
- * Time: 2:20 PM
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class QueueStoreTest extends HazelcastTestSupport {

@@ -29,7 +29,7 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
-public class MemcacheEntry implements DataSerializable, TextCommandConstants {
+public class MemcacheEntry implements DataSerializable {
     private byte[] bytes;
     private byte[] value;
     private int flag;
@@ -39,21 +39,21 @@ public class MemcacheEntry implements DataSerializable, TextCommandConstants {
         byte[] valueLen = stringToBytes(String.valueOf(value.length));
         byte[] keyBytes = stringToBytes(key);
         this.value = value.clone();
-        int size = VALUE_SPACE.length
+        int size = TextCommandConstants.VALUE_SPACE.length
                 + keyBytes.length
                 + flagBytes.length
                 + valueLen.length
-                + RETURN.length
+                + TextCommandConstants.RETURN.length
                 + value.length
-                + RETURN.length;
+                + TextCommandConstants.RETURN.length;
         ByteBuffer entryBuffer = ByteBuffer.allocate(size);
-        entryBuffer.put(VALUE_SPACE);
+        entryBuffer.put(TextCommandConstants.VALUE_SPACE);
         entryBuffer.put(keyBytes);
         entryBuffer.put(flagBytes);
         entryBuffer.put(valueLen);
-        entryBuffer.put(RETURN);
+        entryBuffer.put(TextCommandConstants.RETURN);
         entryBuffer.put(value);
-        entryBuffer.put(RETURN);
+        entryBuffer.put(TextCommandConstants.RETURN);
         this.bytes = entryBuffer.array();
         this.flag = flag;
     }
@@ -96,14 +96,24 @@ public class MemcacheEntry implements DataSerializable, TextCommandConstants {
     }
 
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         MemcacheEntry that = (MemcacheEntry) o;
 
-        if (flag != that.flag) return false;
-        if (!Arrays.equals(bytes, that.bytes)) return false;
-        if (!Arrays.equals(value, that.value)) return false;
+        if (flag != that.flag) {
+            return false;
+        }
+        if (!Arrays.equals(bytes, that.bytes)) {
+            return false;
+        }
+        if (!Arrays.equals(value, that.value)) {
+            return false;
+        }
 
         return true;
     }
@@ -116,9 +126,11 @@ public class MemcacheEntry implements DataSerializable, TextCommandConstants {
     }
 
     public String toString() {
-        return "MemcacheEntry{" +
-                "bytes=" + bytesToString(bytes) +
-                ", flag=" + flag +
-                '}';
+        return "MemcacheEntry{"
+                + "bytes="
+                + bytesToString(bytes)
+                + ", flag="
+                + flag
+                + '}';
     }
 }

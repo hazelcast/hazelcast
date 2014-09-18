@@ -24,9 +24,6 @@ import com.hazelcast.security.permission.SetPermission;
 
 import java.security.Permission;
 
-/**
- * @ali 9/4/13
- */
 public class TxnSetRemoveRequest extends TxnCollectionRequest {
 
     public TxnSetRemoveRequest() {

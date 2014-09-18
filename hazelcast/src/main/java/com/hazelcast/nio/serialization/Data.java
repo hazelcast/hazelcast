@@ -25,24 +25,26 @@ public final class Data implements IdentifiedDataSerializable {
 
     public static final int FACTORY_ID = 0;
     public static final int ID = 0;
-    public static final int NO_CLASS_ID = 0; // WARNING: Portable class-id cannot be zero.
+    public static final int NO_CLASS_ID = 0;
+    // WARNING: Portable class-id cannot be zero.
 
     int type = SerializationConstants.CONSTANT_TYPE_DATA;
-    ClassDefinition classDefinition = null;
-    byte[] buffer = null;
-    int partitionHash = 0;
+    ClassDefinition classDefinition;
+    byte[] buffer;
+    int partitionHash;
 
 //    transient int hash;
 
     public Data() {
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP2")
     public Data(int type, byte[] bytes) {
         this.type = type;
         this.buffer = bytes;
     }
 
-    public void postConstruct(SerializationContext context) {
+    public void postConstruct(PortableContext context) {
         if (classDefinition != null && classDefinition instanceof BinaryClassDefinitionProxy) {
             try {
                 classDefinition = ((BinaryClassDefinitionProxy) classDefinition).toReal(context);
@@ -63,7 +65,7 @@ public final class Data implements IdentifiedDataSerializable {
         if (classId != NO_CLASS_ID) {
             final int factoryId = in.readInt();
             final int version = in.readInt();
-            SerializationContext context = ((SerializationContextAware) in).getSerializationContext();
+            PortableContext context = ((PortableContextAware) in).getPortableContext();
             classDefinition = context.lookup(factoryId, classId, version);
             int classDefSize = in.readInt();
             if (classDefinition != null) {
@@ -125,30 +127,45 @@ public final class Data implements IdentifiedDataSerializable {
      */
     public int totalSize() {
         int total = 0;
-        total += 4; // type
+        total += 4;
+        // type
         if (classDefinition != null) {
-            total += 4; // classDefinition-classId
-            total += 4; // // classDefinition-factory-id
-            total += 4; // classDefinition-version
-            total += 4; // classDefinition-binary-length
+            // classDefinition-classId
+            total += 4;
+            // // classDefinition-factory-id
+            total += 4;
+            // classDefinition-version
+            total += 4;
+            // classDefinition-binary-length
+            total += 4;
             final byte[] binary = ((BinaryClassDefinition) classDefinition).getBinary();
-            total += binary != null ? binary.length : 0; // classDefinition-binary
+            total += binary != null ? binary.length : 0;
+            // classDefinition-binary
         } else {
-            total += 4; // no-classId
+            // no-classId
+            total += 4;
         }
-        total += 4; // buffer-size
-        total += bufferSize(); // buffer
-        total += 4; // partition-hash
+        // buffer-size
+        total += 4;
+        // buffer
+        total += bufferSize();
+        // partition-hash
+        total += 4;
         return total;
     }
 
     public int getHeapCost() {
         int total = 0;
-        total += 4; // type
-        total += 4; // cd
-        total += 16; // buffer array ref (12: array header, 4: length)
-        total += bufferSize(); // buffer itself
-        total += 4; // partition-hash
+        // type
+        total += 4;
+        // cd
+        total += 4;
+        // buffer array ref (12: array header, 4: length)
+        total += 16;
+        // buffer itself
+        total += bufferSize();
+        // partition-hash
+        total += 4;
         return total;
     }
 
@@ -178,7 +195,8 @@ public final class Data implements IdentifiedDataSerializable {
     public int getPartitionHash() {
         int ph = partitionHash;
         if (ph == 0 && bufferSize() > 0) {
-            ph = partitionHash = hashCode();
+            partitionHash = hashCode();
+            ph = partitionHash;
         }
         return ph;
     }
@@ -191,16 +209,19 @@ public final class Data implements IdentifiedDataSerializable {
         return classDefinition;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
     public byte[] getBuffer() {
         return buffer;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof Data))
+        if (!(obj instanceof Data)) {
             return false;
-        if (this == obj)
+        }
+        if (this == obj) {
             return true;
+        }
         Data data = (Data) obj;
         return type == data.type && bufferSize() == data.bufferSize()
                 && equals(buffer, data.buffer);

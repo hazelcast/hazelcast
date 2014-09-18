@@ -22,9 +22,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.Set;
 
-/**
- * @author mdogan 1/3/13
- */
 public final class BinaryClassDefinitionProxy extends BinaryClassDefinition implements ClassDefinition {
 
     public BinaryClassDefinitionProxy(int factoryId, int classId, int version, byte[] binary) {
@@ -34,16 +31,16 @@ public final class BinaryClassDefinitionProxy extends BinaryClassDefinition impl
         setBinary(binary);
     }
 
-    public ClassDefinition toReal(SerializationContext context) throws IOException {
+    public ClassDefinition toReal(PortableContext context) throws IOException {
         final ClassDefinition cd = context.lookup(factoryId, classId, version);
         return cd != null ? cd : context.createClassDefinition(factoryId, getBinary());
     }
 
-    public FieldDefinition get(String name) {
+    public FieldDefinition getField(String name) {
         throw new UnsupportedOperationException();
     }
 
-    public FieldDefinition get(int fieldIndex) {
+    public FieldDefinition getField(int fieldIndex) {
         throw new UnsupportedOperationException();
     }
 
@@ -60,6 +57,10 @@ public final class BinaryClassDefinitionProxy extends BinaryClassDefinition impl
     }
 
     public int getFieldClassId(String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    public int getFieldVersion(String fieldName) {
         throw new UnsupportedOperationException();
     }
 

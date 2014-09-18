@@ -24,14 +24,11 @@ import javax.transaction.xa.Xid;
 import java.io.IOException;
 import java.util.Arrays;
 
-/**
- * @author ali 13/02/14
- */
 public class SerializableXID implements Xid, DataSerializable {
 
-    int formatId;
-    byte[] globalTransactionId;
-    byte[] branchQualifier;
+    private int formatId;
+    private byte[] globalTransactionId;
+    private byte[] branchQualifier;
 
     public SerializableXID() {
     }
@@ -49,7 +46,7 @@ public class SerializableXID implements Xid, DataSerializable {
 
     @Override
     public byte[] getGlobalTransactionId() {
-        return Arrays.copyOf(globalTransactionId, globalTransactionId.length) ;
+        return Arrays.copyOf(globalTransactionId, globalTransactionId.length);
     }
 
     @Override
@@ -78,25 +75,25 @@ public class SerializableXID implements Xid, DataSerializable {
     }
 
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("SerializableXid{");
-        sb.append("formatId=").append(formatId);
-        sb.append(", globalTransactionId=").append(Arrays.toString(globalTransactionId));
-        sb.append(", branchQualifier=").append(Arrays.toString(branchQualifier));
-        sb.append('}');
-        return sb.toString();
-    }
-
-    @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Xid)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Xid)) {
+            return false;
+        }
 
         Xid that = (Xid) o;
 
-        if (formatId != that.getFormatId()) return false;
-        if (!Arrays.equals(branchQualifier, that.getBranchQualifier())) return false;
-        if (!Arrays.equals(globalTransactionId, that.getGlobalTransactionId())) return false;
+        if (formatId != that.getFormatId()) {
+            return false;
+        }
+        if (!Arrays.equals(branchQualifier, that.getBranchQualifier())) {
+            return false;
+        }
+        if (!Arrays.equals(globalTransactionId, that.getGlobalTransactionId())) {
+            return false;
+        }
 
         return true;
     }
@@ -107,5 +104,15 @@ public class SerializableXID implements Xid, DataSerializable {
         result = 31 * result + Arrays.hashCode(globalTransactionId);
         result = 31 * result + Arrays.hashCode(branchQualifier);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("SerializableXid{");
+        sb.append("formatId=").append(formatId);
+        sb.append(", globalTransactionId=").append(Arrays.toString(globalTransactionId));
+        sb.append(", branchQualifier=").append(Arrays.toString(branchQualifier));
+        sb.append('}');
+        return sb.toString();
     }
 }

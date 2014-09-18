@@ -23,7 +23,7 @@ import com.hazelcast.util.ValidationUtil;
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.CANCELLED;
@@ -35,18 +35,23 @@ import static com.hazelcast.mapreduce.JobPartitionState.State.CANCELLED;
 public class JobProcessInformationImpl
         implements JobProcessInformation {
 
-    private final AtomicReferenceFieldUpdater<JobProcessInformationImpl, JobPartitionState[]> updater;
+    //CHECKSTYLE:OFF
+    private static final AtomicReferenceFieldUpdater<JobProcessInformationImpl, JobPartitionState[]> PARTITION_STATE_UPDATER = //
+            AtomicReferenceFieldUpdater.newUpdater(JobProcessInformationImpl.class, JobPartitionState[].class, "partitionStates");
+    private static final AtomicIntegerFieldUpdater<JobProcessInformationImpl> PROCESSED_RECORDS_UPDATER = AtomicIntegerFieldUpdater
+            .newUpdater(JobProcessInformationImpl.class, "processedRecords");
+    //CHECKSTYLE:ON
 
-    private final AtomicInteger processedRecords = new AtomicInteger();
     private final JobSupervisor supervisor;
+
+    // This field is only accessed through the updater
+    private volatile int processedRecords;
 
     private volatile JobPartitionState[] partitionStates;
 
     public JobProcessInformationImpl(int partitionCount, JobSupervisor supervisor) {
         this.supervisor = supervisor;
         this.partitionStates = new JobPartitionState[partitionCount];
-        this.updater = AtomicReferenceFieldUpdater
-                .newUpdater(JobProcessInformationImpl.class, JobPartitionState[].class, "partitionStates");
     }
 
     @Override
@@ -61,11 +66,11 @@ public class JobProcessInformationImpl
 
     @Override
     public int getProcessedRecords() {
-        return processedRecords.get();
+        return processedRecords;
     }
 
     public void addProcessedRecords(int records) {
-        processedRecords.addAndGet(records);
+        PROCESSED_RECORDS_UPDATER.addAndGet(this, records);
     }
 
     public void cancelPartitionState() {
@@ -111,7 +116,7 @@ public class JobProcessInformationImpl
         if (oldPartitionStates.length != newPartitionStates.length) {
             throw new IllegalArgumentException("partitionStates need to have same length");
         }
-        if (updater.compareAndSet(this, oldPartitionStates, newPartitionStates)) {
+        if (PARTITION_STATE_UPDATER.compareAndSet(this, oldPartitionStates, newPartitionStates)) {
             supervisor.checkFullyProcessed(this);
             return true;
         }

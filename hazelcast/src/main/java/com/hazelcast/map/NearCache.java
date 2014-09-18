@@ -21,13 +21,14 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -35,7 +36,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 
 /**
  * NearCache.
@@ -54,22 +54,20 @@ public class NearCache {
     private final long timeToLiveMillis;
     private final EvictionPolicy evictionPolicy;
     private final InMemoryFormat inMemoryFormat;
-    private final MapService mapService;
     private final NodeEngine nodeEngine;
     private final AtomicBoolean canCleanUp;
     private final AtomicBoolean canEvict;
     private final ConcurrentMap<Data, CacheRecord> cache;
-    private final MapContainer mapContainer;
     private final NearCacheStatsImpl nearCacheStats;
+    private final SerializationService serializationService;
+    private SizeEstimator nearCacheSizeEstimator;
 
     /**
-     * @param mapName
-     * @param mapService
+     * @param mapName    name of map which owns near cache.
+     * @param nodeEngine node engine.
      */
-    public NearCache(String mapName, MapService mapService) {
-        this.mapService = mapService;
-        this.nodeEngine = mapService.getNodeEngine();
-        this.mapContainer = mapService.getMapContainer(mapName);
+    public NearCache(String mapName, NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
         Config config = nodeEngine.getConfig();
         NearCacheConfig nearCacheConfig = config.findMapConfig(mapName).getNearCacheConfig();
         maxSize = nearCacheConfig.getMaxSize() <= 0 ? Integer.MAX_VALUE : nearCacheConfig.getMaxSize();
@@ -82,6 +80,7 @@ public class NearCache {
         canEvict = new AtomicBoolean(true);
         nearCacheStats = new NearCacheStatsImpl();
         lastCleanup = Clock.currentTimeMillis();
+        serializationService = nodeEngine.getSerializationService();
     }
 
     /**
@@ -99,7 +98,7 @@ public class NearCache {
             if (data == null) {
                 return null;
             } else {
-                return inMemoryFormat.equals(InMemoryFormat.OBJECT) ? mapService.toObject(data) : data;
+                return inMemoryFormat.equals(InMemoryFormat.OBJECT) ? serializationService.toObject(data) : data;
             }
         }
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
@@ -109,7 +108,7 @@ public class NearCache {
         if (data == null) {
             value = NULL_OBJECT;
         } else {
-            value = inMemoryFormat.equals(InMemoryFormat.OBJECT) ? mapService.toObject(data) : data;
+            value = inMemoryFormat.equals(InMemoryFormat.OBJECT) ? serializationService.toObject(data) : data;
         }
         final CacheRecord record = new CacheRecord(key, value);
         cache.put(key, record);
@@ -226,7 +225,7 @@ public class NearCache {
         }
     }
 
-    public void invalidate(Set<Data> keys) {
+    public void invalidate(Collection<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }
@@ -330,14 +329,22 @@ public class NearCache {
     }
 
     private void resetSizeEstimator() {
-        mapContainer.getNearCacheSizeEstimator().reset();
+        getNearCacheSizeEstimator().reset();
     }
 
     private void updateSizeEstimator(long size) {
-        mapContainer.getNearCacheSizeEstimator().add(size);
+        getNearCacheSizeEstimator().add(size);
     }
 
     private long calculateCost(CacheRecord record) {
-        return mapContainer.getNearCacheSizeEstimator().getCost(record);
+        return getNearCacheSizeEstimator().getCost(record);
+    }
+
+    public SizeEstimator getNearCacheSizeEstimator() {
+        return nearCacheSizeEstimator;
+    }
+
+    public void setNearCacheSizeEstimator(SizeEstimator nearCacheSizeEstimator) {
+        this.nearCacheSizeEstimator = nearCacheSizeEstimator;
     }
 }

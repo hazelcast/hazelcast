@@ -1,6 +1,6 @@
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
@@ -99,12 +99,6 @@ public class ClientConditionProxy extends ClientProxy implements ICondition {
         SignalRequest request = new SignalRequest(namespace, lockProxy.getName(), ThreadUtil.getThreadId(), conditionId, all);
         invoke(request);
     }
-
-    @Override
-    protected void onDestroy() {
-
-    }
-
 
     protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, key);

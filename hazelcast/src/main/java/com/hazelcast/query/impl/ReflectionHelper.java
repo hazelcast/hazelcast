@@ -16,6 +16,9 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.query.QueryException;
+import com.hazelcast.util.EmptyStatement;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -27,15 +30,19 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
-public class ReflectionHelper {
+/**
+ * Scans your classpath, indexes the metadata, allows you to query it on runtime.
+ */
+public final class ReflectionHelper {
 
-    private final static ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
-    private final static ConcurrentMap<String, Getter> getterCache = new ConcurrentHashMap<String, Getter>(1000);
+    private static final ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
+    private static final ConcurrentMap<String, Getter> GETTER_CACHE = new ConcurrentHashMap<String, Getter>(1000);
+    private static final int INITIAL_CAPACITY = 3;
 
-    private ReflectionHelper(){}
+    private ReflectionHelper() {
+    }
 
     public static AttributeType getAttributeType(Class klass) {
         if (klass == String.class) {
@@ -71,34 +78,24 @@ public class ReflectionHelper {
     }
 
     public static void reset() {
-        getterCache.clear();
+        GETTER_CACHE.clear();
     }
 
-    public static AttributeType getAttributeType(QueryableEntry entry, String attribute) {
-        return getAttributeType(createGetter(entry, attribute).getReturnType());
+    public static AttributeType getAttributeType(Object value, String attribute) {
+        return getAttributeType(createGetter(value, attribute).getReturnType());
     }
 
-    private static Getter createGetter(QueryableEntry entry, String attribute) {
-        Object obj;
-        if (attribute.startsWith(KEY_ATTRIBUTE_NAME)) {
-            obj = entry.getKey();
-            if (attribute.length() > KEY_ATTRIBUTE_NAME.length()) {
-                attribute = attribute.substring(KEY_ATTRIBUTE_NAME.length() + 1);
-            }
-        } else {
-            obj = entry.getValue();
-        }
-
+    private static Getter createGetter(Object obj, String attribute) {
         Class clazz = obj.getClass();
         final String cacheKey = clazz.getName() + ":" + attribute;
-        Getter getter = getterCache.get(cacheKey);
+        Getter getter = GETTER_CACHE.get(cacheKey);
         if (getter != null) {
             return getter;
         }
 
         try {
             Getter parent = null;
-            List<String> possibleMethodNames = new ArrayList<String>(3);
+            List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
             for (final String name : attribute.split("\\.")) {
                 Getter localGetter = null;
                 possibleMethodNames.clear();
@@ -117,6 +114,7 @@ public class ReflectionHelper {
                             clazz = method.getReturnType();
                             break;
                         } catch (NoSuchMethodException ignored) {
+                            EmptyStatement.ignore(ignored);
                         }
                     }
                     if (localGetter == null) {
@@ -125,6 +123,7 @@ public class ReflectionHelper {
                             localGetter = new FieldGetter(parent, field);
                             clazz = field.getType();
                         } catch (NoSuchFieldException ignored) {
+                            EmptyStatement.ignore(ignored);
                         }
                     }
                     if (localGetter == null) {
@@ -143,15 +142,16 @@ public class ReflectionHelper {
                     }
                 }
                 if (localGetter == null) {
-                    throw new IllegalArgumentException("There is no suitable accessor for '" + name + "' on class '"+clazz+"'");
+                    throw new IllegalArgumentException("There is no suitable accessor for '"
+                            + name + "' on class '" + clazz + "'");
                 }
                 parent = localGetter;
             }
             getter = parent;
             if (getter.isCacheable()) {
-                Getter foundGetter = getterCache.putIfAbsent(cacheKey, getter);
-                if(foundGetter != null){
-                     getter = foundGetter;
+                Getter foundGetter = GETTER_CACHE.putIfAbsent(cacheKey, getter);
+                if (foundGetter != null) {
+                    getter = foundGetter;
                 }
             }
             return getter;
@@ -160,11 +160,11 @@ public class ReflectionHelper {
         }
     }
 
-    public static Comparable extractValue(QueryEntry queryEntry, String attributeName, Object object) throws Exception {
-        return (Comparable) createGetter(queryEntry, attributeName).getValue(object);
+    public static Comparable extractValue(Object object, String attributeName) throws Exception {
+        return (Comparable) createGetter(object, attributeName).getValue(object);
     }
 
-    private static abstract class Getter {
+    private abstract static class Getter {
         protected final Getter parent;
 
         public Getter(final Getter parent) {
@@ -187,8 +187,9 @@ public class ReflectionHelper {
         }
 
         Object getValue(Object obj) throws Exception {
-            obj = parent != null ? parent.getValue(obj) : obj;
-            return obj != null ? method.invoke(obj) : null;
+            Object paramObj = obj;
+            paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
+            return paramObj != null ? method.invoke(paramObj) : null;
         }
 
         Class getReturnType() {
@@ -214,11 +215,14 @@ public class ReflectionHelper {
             this.field = field;
         }
 
+        @Override
         Object getValue(Object obj) throws Exception {
-            obj = parent != null ? parent.getValue(obj) : obj;
-            return obj != null ? field.get(obj) : null;
+            Object paramObj = obj;
+            paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
+            return paramObj != null ? field.get(paramObj) : null;
         }
 
+        @Override
         Class getReturnType() {
             return this.field.getType();
         }

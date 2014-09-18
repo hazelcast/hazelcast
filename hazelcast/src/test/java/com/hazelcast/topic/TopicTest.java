@@ -33,6 +33,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -74,7 +75,7 @@ public class TopicTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                boolean containsStats = topicService.statsMap.containsKey(topic.getName());
+                boolean containsStats = topicService.getStatsMap().containsKey(topic.getName());
                 assertFalse(containsStats);
             }
         });

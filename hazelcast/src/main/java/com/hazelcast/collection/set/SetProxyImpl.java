@@ -21,9 +21,6 @@ import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.core.ISet;
 import com.hazelcast.spi.NodeEngine;
 
-/**
- * @ali 9/3/13
- */
 public class SetProxyImpl<E> extends AbstractCollectionProxyImpl<SetService, E> implements ISet<E> {
 
     public SetProxyImpl(String name, NodeEngine nodeEngine, SetService service) {

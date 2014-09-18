@@ -18,10 +18,13 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastException;
 
+/**
+ * This exception is thrown when given credentials from client is not valid.
+ */
 public class AuthenticationException extends HazelcastException {
 
     public AuthenticationException() {
-        super("Wrong group name and password.");
+        super("Wrong group name or password.");
     }
 
     public AuthenticationException(String message) {

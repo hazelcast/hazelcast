@@ -16,18 +16,21 @@
 
 package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.lock.LockStoreContainer;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 
-public class LockReplicationOperation extends AbstractOperation {
+public class LockReplicationOperation extends AbstractOperation
+        implements IdentifiedDataSerializable {
 
     private final Collection<LockStoreImpl> locks = new LinkedList<LockStoreImpl>();
 
@@ -58,6 +61,16 @@ public class LockReplicationOperation extends AbstractOperation {
     @Override
     public String getServiceName() {
         return LockServiceImpl.SERVICE_NAME;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return LockDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.LOCK_REPLICATION;
     }
 
     @Override

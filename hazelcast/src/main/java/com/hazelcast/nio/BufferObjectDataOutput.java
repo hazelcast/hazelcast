@@ -19,30 +19,27 @@ package com.hazelcast.nio;
 import java.io.Closeable;
 import java.io.IOException;
 
-/**
- * @author mdogan 12/28/12
- */
 public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
     void write(int position, int b);
 
     void writeInt(int position, int v) throws IOException;
 
-    void writeLong(int position, final long v) throws IOException;
+    void writeLong(int position, long v) throws IOException;
 
-    void writeBoolean(int position, final boolean v) throws IOException;
+    void writeBoolean(int position, boolean v) throws IOException;
 
-    void writeByte(int position, final int v) throws IOException;
+    void writeByte(int position, int v) throws IOException;
 
     void writeZeroBytes(int count);
 
-    void writeChar(int position, final int v) throws IOException;
+    void writeChar(int position, int v) throws IOException;
 
-    void writeDouble(int position, final double v) throws IOException;
+    void writeDouble(int position, double v) throws IOException;
 
-    void writeFloat(int position, final float v) throws IOException;
+    void writeFloat(int position, float v) throws IOException;
 
-    void writeShort(int position, final int v) throws IOException;
+    void writeShort(int position, int v) throws IOException;
 
     int position();
 

@@ -34,6 +34,10 @@ import java.util.Map;
  * <p/>
  * Store implementation can be called synchronously (write-through)
  * or asynchronously (write-behind) depending on the configuration.
+ * <p/>
+ * Note that in write-behind mode, there is a possibility that a map-store
+ * implementation can be used by multiple threads at the same time, calling methods like
+ * {@link IMap#flush()} or {@link IMap#evict(Object)} may trigger this behavior.
  */
 public interface MapStore<K, V> extends MapLoader<K, V> {
     /**

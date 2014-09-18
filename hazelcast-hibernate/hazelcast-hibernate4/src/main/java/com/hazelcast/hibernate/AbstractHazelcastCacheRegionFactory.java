@@ -32,14 +32,17 @@ import org.hibernate.cache.spi.access.AccessType;
 import org.hibernate.cfg.Settings;
 
 import java.util.Properties;
-import java.util.logging.Level;
 
+/**
+ * Abstract superclass of Hazelcast based {@link org.hibernate.cache.RegionFactory} implementations
+ */
 public abstract class AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
-    private final ILogger LOG = Logger.getLogger(getClass());
-
-    private IHazelcastInstanceLoader instanceLoader = null;
     protected HazelcastInstance instance;
+    private final ILogger log = Logger.getLogger(getClass());
+
+    private IHazelcastInstanceLoader instanceLoader;
+
 
     public AbstractHazelcastCacheRegionFactory() {
     }
@@ -57,7 +60,8 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
         return new HazelcastQueryResultsRegion(instance, regionName, properties);
     }
 
-    public NaturalIdRegion buildNaturalIdRegion(final String regionName, final Properties properties, final CacheDataDescription metadata)
+    public NaturalIdRegion buildNaturalIdRegion(final String regionName, final Properties properties
+            , final CacheDataDescription metadata)
             throws CacheException {
         return new HazelcastNaturalIdRegion(instance, regionName, properties, metadata);
     }
@@ -74,7 +78,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
     }
 
     public void start(final Settings settings, final Properties properties) throws CacheException {
-        LOG.info("Starting up " + getClass().getSimpleName());
+        log.info("Starting up " + getClass().getSimpleName());
         if (instance == null || !instance.getLifecycleService().isRunning()) {
             instanceLoader = HazelcastInstanceFactory.createInstanceLoader(properties);
             instance = instanceLoader.loadInstance();
@@ -83,7 +87,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
 
     public void stop() {
         if (instanceLoader != null) {
-            LOG.info("Shutting down " + getClass().getSimpleName());
+            log.info("Shutting down " + getClass().getSimpleName());
             instanceLoader.unloadInstance();
             instance = null;
             instanceLoader = null;

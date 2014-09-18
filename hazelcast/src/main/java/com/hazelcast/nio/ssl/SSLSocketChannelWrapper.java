@@ -16,16 +16,18 @@
 
 package com.hazelcast.nio.ssl;
 
-import com.hazelcast.nio.DefaultSocketChannelWrapper;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
+import com.hazelcast.nio.tcp.DefaultSocketChannelWrapper;
+import com.hazelcast.util.EmptyStatement;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 
 public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
 
@@ -34,10 +36,12 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
     private final ByteBuffer applicationBuffer;
     private final Object lock = new Object();
     private final ByteBuffer emptyBuffer;
-    private final ByteBuffer netOutBuffer;      // "reliable" write transport
-    private final ByteBuffer netInBuffer;      // "reliable" read transport
+    private final ByteBuffer netOutBuffer;
+    // "reliable" write transport
+    private final ByteBuffer netInBuffer;
+    // "reliable" read transport
     private final SSLEngine sslEngine;
-    private volatile boolean handshakeCompleted = false;
+    private volatile boolean handshakeCompleted;
     private SSLEngineResult sslEngineResult;
 
     public SSLSocketChannelWrapper(SSLContext sslContext, SocketChannel sc, boolean client) throws Exception {
@@ -53,6 +57,9 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         netInBuffer = ByteBuffer.allocate(netBufferMax);
     }
 
+    /**
+     * TODO sleep in sync block
+     */
     private void handshake() throws IOException {
         if (handshakeCompleted) {
             return;
@@ -82,7 +89,7 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
                         log("Begin UNWRAP");
                     }
                     netInBuffer.clear();
-                    while (socketChannel.read(netInBuffer) < 1) {
+                    while (socketChannel.read(netInBuffer) == 0) {
                         try {
                             if (DEBUG) {
                                 log("Spinning on channel read...");
@@ -125,7 +132,8 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
                 }
             }
             if (sslEngineResult.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.FINISHED) {
-                throw new SSLHandshakeException("SSL handshake failed after " + counter + " trials! -> " + sslEngineResult.getHandshakeStatus());
+                throw new SSLHandshakeException("SSL handshake failed after " + counter
+                        + " trials! -> " + sslEngineResult.getHandshakeStatus());
             }
             if (DEBUG) {
                 log("Handshake completed!");
@@ -170,6 +178,7 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         return applicationBuffer;
     }
 
+    @Override
     public int write(ByteBuffer input) throws IOException {
         if (!handshakeCompleted) {
             handshake();
@@ -182,6 +191,7 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
             sslEngineResult = sslEngine.wrap(input, netOutBuffer);
         }
         netOutBuffer.flip();
+
         int written = socketChannel.write(netOutBuffer);
         if (netOutBuffer.hasRemaining()) {
             netOutBuffer.compact();
@@ -240,12 +250,20 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         return readBytesCount;
     }
 
-    public void close() throws IOException {
+    @Override
+    public void closeOutbound() throws IOException {
+        super.closeOutbound();
+
         sslEngine.closeOutbound();
         try {
             writeInternal(emptyBuffer);
         } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
         }
+    }
+
+    @Override
+    public void close() throws IOException {
         socketChannel.close();
     }
 

@@ -18,16 +18,16 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
 
-public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record<Data> {
+class DataRecord extends AbstractRecord<Data> {
 
     protected Data value;
 
-    public DataRecord(Data keyData, Data value, boolean statisticsEnabled) {
-        super(keyData, statisticsEnabled);
+    DataRecord(Data keyData, Data value) {
+        super(keyData);
         this.value = value;
     }
 
-    public DataRecord() {
+    DataRecord() {
     }
 
     /*
@@ -37,9 +37,9 @@ public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record
     @Override
     public long getCost() {
         long size = super.getCost();
-
+        final int objectReferenceInBytes = 4;
         // add value size.
-        size += 4 + (value == null ? 0 : value.getHeapCost());
+        size += objectReferenceInBytes + (value == null ? 0 : value.getHeapCost());
         return size;
     }
 
@@ -54,4 +54,5 @@ public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record
     public void invalidate() {
         value = null;
     }
+
 }

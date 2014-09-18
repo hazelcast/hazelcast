@@ -19,50 +19,46 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * @author mdogan 8/2/12
- */
 public final class ResponseHandlerFactory {
 
     private static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
 
-    public static void setLocalResponseHandler(Operation op, Callback<Object> callback) {
-        op.setResponseHandler(createLocalResponseHandler(op, callback));
+    private ResponseHandlerFactory() {
     }
 
-    public static ResponseHandler createLocalResponseHandler(Operation op, Callback<Object> callback) {
-        return new LocalInvocationResponseHandler(callback, op.getCallId());
+    public static void setRemoteResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
+        remotePropagatable.setResponseHandler(createRemoteResponseHandler(nodeEngine, remotePropagatable));
     }
 
-    public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
-        op.setResponseHandler(createRemoteResponseHandler(nodeEngine, op));
-    }
-
-    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
-        if (op.getCallId() == 0) {
-            if (op.returnsResponse()) {
-                throw new HazelcastException("Op: " + op.getClass().getName() + " can not return response without call-id!");
+    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
+        if (remotePropagatable.getCallId() == 0) {
+            if (remotePropagatable.returnsResponse()) {
+                throw new HazelcastException(
+                        "Op: " + remotePropagatable.getClass().getName() + " can not return response without call-id!");
             }
             return NO_RESPONSE_HANDLER;
         }
-        return new RemoteInvocationResponseHandler(nodeEngine, op);
+        return new RemoteInvocationResponseHandler(nodeEngine, remotePropagatable);
     }
 
     public static ResponseHandler createEmptyResponseHandler() {
         return NO_RESPONSE_HANDLER;
     }
 
-    private static class NoResponseHandler implements ResponseHandler {
+    private static class NoResponseHandler
+            implements ResponseHandler {
+
+        @Override
         public void sendResponse(final Object obj) {
         }
 
+        @Override
         public boolean isLocal() {
             return false;
         }
@@ -72,13 +68,14 @@ public final class ResponseHandlerFactory {
         return new ErrorLoggingResponseHandler(logger);
     }
 
-    private static class ErrorLoggingResponseHandler implements ResponseHandler {
+    private static final class ErrorLoggingResponseHandler implements ResponseHandler {
         private final ILogger logger;
 
         private ErrorLoggingResponseHandler(ILogger logger) {
             this.logger = logger;
         }
 
+        @Override
         public void sendResponse(final Object obj) {
             if (obj instanceof Throwable) {
                 Throwable t = (Throwable) obj;
@@ -86,69 +83,45 @@ public final class ResponseHandlerFactory {
             }
         }
 
+        @Override
         public boolean isLocal() {
             return true;
         }
     }
 
-    private static class RemoteInvocationResponseHandler implements ResponseHandler {
+    private static final class RemoteInvocationResponseHandler implements ResponseHandler {
 
         private final NodeEngine nodeEngine;
-        private final Operation op;
+        private final RemotePropagatable remotePropagatable;
         private final AtomicBoolean sent = new AtomicBoolean(false);
 
-        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Operation op) {
+        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
             this.nodeEngine = nodeEngine;
-            this.op = op;
+            this.remotePropagatable = remotePropagatable;
         }
 
+        @Override
         public void sendResponse(Object obj) {
-            long callId = op.getCallId();
-            Connection conn = op.getConnection();
-            if (!sent.compareAndSet(false, true)) {
+            long callId = remotePropagatable.getCallId();
+            Connection conn = remotePropagatable.getConnection();
+            if (!sent.compareAndSet(false, true) && !(obj instanceof Throwable)) {
                 throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
-                                                + " to " + conn.getEndPoint() + ", current-response: " + obj);
+                        + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
 
             NormalResponse response;
-            if(!(obj instanceof NormalResponse)){
-                response = new NormalResponse(obj, op.getCallId(),0, op.isUrgent());
-            }else{
-                response = (NormalResponse)obj;
+            if (!(obj instanceof NormalResponse)) {
+                response = new NormalResponse(obj, remotePropagatable.getCallId(), 0, remotePropagatable.isUrgent());
+            } else {
+                response = (NormalResponse) obj;
             }
 
-            nodeEngine.getOperationService().send(response, op.getCallerAddress());
+            nodeEngine.getOperationService().send(response, remotePropagatable.getCallerAddress());
         }
 
+        @Override
         public boolean isLocal() {
             return false;
         }
-    }
-
-    private static class LocalInvocationResponseHandler implements ResponseHandler {
-
-        private final Callback<Object> callback;
-        private final long callId;
-        private final AtomicBoolean sent = new AtomicBoolean(false);
-
-        private LocalInvocationResponseHandler(Callback<Object> callback, long callId) {
-            this.callback = callback;
-            this.callId = callId;
-        }
-
-        public void sendResponse(Object obj) {
-            if (!sent.compareAndSet(false, true)) {
-                throw new ResponseAlreadySentException("NormalResponse already sent for callback: " + callback
-                        + ", current-response: : " + obj);
-            }
-            callback.notify(obj);
-        }
-
-        public boolean isLocal() {
-            return true;
-        }
-    }
-
-    private ResponseHandlerFactory() {
     }
 }

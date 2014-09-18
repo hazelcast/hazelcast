@@ -18,8 +18,8 @@ package com.hazelcast.map;
 
 /**
  * Size estimator general contract.
- * @param <T> the type of object which's size going to be estimated.
  *
+ * @param <T> the type of object which's size going to be estimated.
  */
 public interface SizeEstimator<T> {
 

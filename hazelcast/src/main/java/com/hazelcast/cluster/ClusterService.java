@@ -23,9 +23,6 @@ import com.hazelcast.spi.CoreService;
 
 import java.util.Collection;
 
-/**
- * @author mdogan 1/24/13
- */
 public interface ClusterService extends CoreService {
 
     MemberImpl getMember(Address address);

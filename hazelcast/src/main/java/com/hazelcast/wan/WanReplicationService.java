@@ -16,119 +16,43 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.WanTargetClusterConfig;
-import com.hazelcast.instance.Node;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.CoreService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ReplicationSupportingService;
-import com.hazelcast.spi.impl.ExecutionServiceImpl;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.executor.StripedExecutor;
-import com.hazelcast.util.executor.StripedRunnable;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class WanReplicationService implements CoreService {
+/**
+ * This is the WAN replications service API core interface. The WanReplicationService needs to
+ * be capable of creating the actual {@link com.hazelcast.wan.WanReplicationPublisher} instances
+ * to replicate values to other clusters over the wide area network, so it has to deal with long
+ * delays, slow uploads and higher latencies.
+ */
+public interface WanReplicationService
+        extends CoreService {
 
-    public static final String SERVICE_NAME = "hz:core:wanReplicationService";
+    /**
+     * The service identifier
+     */
+    String SERVICE_NAME = "hz:core:wanReplicationService";
 
-    private final Node node;
-    private final ILogger logger;
+    /**
+     * Creates a new {@link com.hazelcast.wan.WanReplicationPublisher} by the given name, if
+     * already existing returns the previous instance.
+     *
+     * @param name name of the WAN replication configuration
+     * @return instance of the corresponding replication publisher
+     */
+    WanReplicationPublisher getWanReplicationPublisher(String name);
 
-    private final Map<String, WanReplicationDelegate> wanReplications = new ConcurrentHashMap<String, WanReplicationDelegate>(2);
-    private final StripedExecutor executor;
+    /**
+     * This method is called when a replication packet arrives at the connection handler. WAN
+     * replication messages are handled directly instead of going through the normal message
+     * process.
+     *
+     * @param packet the WAN replication packet to process
+     */
+    void handleEvent(Packet packet);
 
-    public WanReplicationService(NodeEngineImpl nodeEngine) {
-        this.node = nodeEngine.getNode();
-        this.logger = node.getLogger(WanReplicationService.class.getName());
-        final ExecutionServiceImpl executionService = (ExecutionServiceImpl) nodeEngine.getExecutionService();
-        this.executor = new StripedExecutor(
-                executionService.getCachedExecutor(),
-                ExecutorConfig.DEFAULT_POOL_SIZE,
-                ExecutorConfig.DEFAULT_QUEUE_CAPACITY
-        );
-    }
-
-    @SuppressWarnings("SynchronizeOnThis")
-    public WanReplicationPublisher getWanReplicationListener(String name) {
-        WanReplicationDelegate wr = wanReplications.get(name);
-        if (wr != null) return wr;
-        synchronized (this) {
-            wr = wanReplications.get(name);
-            if (wr != null) return wr;
-            WanReplicationConfig wanReplicationConfig = node.getConfig().getWanReplicationConfig(name);
-            if (wanReplicationConfig == null) return null;
-            List<WanTargetClusterConfig> targets = wanReplicationConfig.getTargetClusterConfigs();
-            WanReplicationEndpoint[] targetEndpoints = new WanReplicationEndpoint[targets.size()];
-            int count = 0;
-            for (WanTargetClusterConfig targetClusterConfig : targets) {
-                WanReplicationEndpoint target;
-                if (targetClusterConfig.getReplicationImpl() != null) {
-                    try {
-                        target = ClassLoaderUtil.newInstance(node.getConfigClassLoader(), targetClusterConfig.getReplicationImpl());
-                    } catch (Exception e) {
-                        throw ExceptionUtil.rethrow(e);
-                    }
-                } else {
-                    target = new WanNoDelayReplication();
-                }
-                String groupName = targetClusterConfig.getGroupName();
-                String password = targetClusterConfig.getGroupPassword();
-                String[] addresses = new String[targetClusterConfig.getEndpoints().size()];
-                targetClusterConfig.getEndpoints().toArray(addresses);
-                target.init(node, groupName, password, addresses);
-                targetEndpoints[count++] = target;
-            }
-            wr = new WanReplicationDelegate(name, targetEndpoints);
-            wanReplications.put(name, wr);
-            return wr;
-        }
-    }
-
-    public void handleEvent(final Packet packet) {
-        executor.execute(new StripedRunnable() {
-            @Override
-            public void run() {
-                final Data data = packet.getData();
-                try {
-                    WanReplicationEvent replicationEvent = (WanReplicationEvent) node.nodeEngine.toObject(data);
-                    String serviceName = replicationEvent.getServiceName();
-                    ReplicationSupportingService service = node.nodeEngine.getService(serviceName);
-                    service.onReplicationEvent(replicationEvent);
-                } catch (Exception e) {
-                    logger.severe(e);
-                }
-            }
-
-            @Override
-            public int getKey() {
-                return packet.getPartitionId();
-            }
-        });
-    }
-
-    public void shutdown() {
-        synchronized (this) {
-            for (WanReplicationDelegate wanReplication : wanReplications.values()) {
-                WanReplicationEndpoint[] wanReplicationEndpoints = wanReplication.getEndpoints();
-                if (wanReplicationEndpoints != null) {
-                    for (WanReplicationEndpoint wanReplicationEndpoint : wanReplicationEndpoints) {
-                        if (wanReplicationEndpoint != null) {
-                            wanReplicationEndpoint.shutdown();
-                        }
-                    }
-                }
-            }
-            wanReplications.clear();
-            executor.shutdown();
-        }
-    }
+    /**
+     * Starts the shutdown process of the WAN replication service
+     */
+    void shutdown();
 }

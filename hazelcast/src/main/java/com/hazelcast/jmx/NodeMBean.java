@@ -19,18 +19,22 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
-
 import java.util.Hashtable;
 
 import static com.hazelcast.jmx.ManagementService.quote;
 
+/**
+ * Management bean for {@link com.hazelcast.instance.Node}
+ */
 @ManagedDescription("HazelcastInstance.Node")
 public class NodeMBean extends HazelcastMBean<Node> {
+
+    private static final int INITIAL_CAPACITY = 3;
 
     public NodeMBean(HazelcastInstance hazelcastInstance, Node node, ManagementService service) {
         super(node, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.Node"));
         properties.put("name", quote("node" + node.address));
         properties.put("instance", quote(hazelcastInstance.getName()));

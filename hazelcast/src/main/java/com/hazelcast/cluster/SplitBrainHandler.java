@@ -32,7 +32,7 @@ final class SplitBrainHandler implements Runnable {
     @Override
     public void run() {
         if (node.isMaster() && node.joined() && node.isActive() && !node.clusterService.isJoinInProgress()
-            && inProgress.compareAndSet(false, true)) {
+                && inProgress.compareAndSet(false, true)) {
             try {
                 searchForOtherClusters();
             } finally {

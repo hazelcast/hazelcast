@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.2.xsd"
+<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.3.xsd"
                   xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -23,6 +23,10 @@
         <name>dev</name>
         <password>dev-pass</password>
     </group>
+    <properties>
+        <property name="hazelcast.client.connection.timeout">10000</property>
+        <property name="hazelcast.client.retry.count">6</property>
+    </properties>
 
     <network>
         <cluster-members>
@@ -38,6 +42,17 @@
                 <property name="foo">bar</property>
             </properties>
         </socket-interceptor>
+
+        <aws enabled="true" connection-timeout-seconds="11">
+            <inside-aws>true</inside-aws>
+            <access-key>TEST_ACCESS_KEY</access-key>
+            <secret-key>TEST_SECRET_KEY</secret-key>
+            <region>us-east-1</region>
+            <host-header>ec2.amazonaws.com</host-header>
+            <security-group-name>hazelcast-sg</security-group-name>
+            <tag-key>type</tag-key>
+            <tag-value>hz-nodes</tag-value>
+        </aws>
 
     </network>
 
@@ -70,8 +85,7 @@
         </portable-factories>
         <serializers>
             <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
-            <serializer type-class="com.hazelcast.examples.DummyType">com.hazelcast.examples.SerializerFactory
-            </serializer>
+            <serializer type-class="com.hazelcast.examples.DummyType" class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>

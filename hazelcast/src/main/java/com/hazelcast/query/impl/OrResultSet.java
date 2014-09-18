@@ -16,12 +16,19 @@
 
 package com.hazelcast.query.impl;
 
-import java.util.*;
-
+import java.util.AbstractSet;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+/**
+ * Or result set for Predicates.
+ */
 public class OrResultSet extends AbstractSet<QueryableEntry> {
 
     private final List<Set<QueryableEntry>> indexedResults;
-    private Set<QueryableEntry> entries = null;
+    private Set<QueryableEntry> entries;
 
     public OrResultSet(List<Set<QueryableEntry>> indexedResults) {
         this.indexedResults = indexedResults;
@@ -30,7 +37,9 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
     @Override
     public boolean contains(Object o) {
         for (Set<QueryableEntry> otherIndexedResult : indexedResults) {
-            if (otherIndexedResult.contains(o)) return true;
+            if (otherIndexedResult.contains(o)) {
+                return true;
+            }
         }
         return false;
     }
@@ -38,7 +47,9 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
     @Override
     public Iterator<QueryableEntry> iterator() {
         if (entries == null) {
-            if (!indexedResults.isEmpty()) {
+            if (indexedResults.isEmpty()) {
+                entries = Collections.emptySet();
+            } else {
                 if (indexedResults.size() == 1) {
                     entries = new HashSet<QueryableEntry>(indexedResults.get(0));
                 } else {
@@ -47,8 +58,6 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
                         entries.addAll(result);
                     }
                 }
-            } else {
-                entries = Collections.emptySet();
             }
         }
         return entries.iterator();
@@ -56,6 +65,10 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public int size() {
-        return indexedResults.isEmpty() ? 0 : indexedResults.get(0).size();
+        if (indexedResults.isEmpty()) {
+            return 0;
+        } else {
+            return indexedResults.get(0).size();
+        }
     }
 }

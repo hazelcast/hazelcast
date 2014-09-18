@@ -63,7 +63,7 @@ public class MemberAttributeChange implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(uuid);
         out.writeUTF(key);
-        out.writeByte(operationType.id);
+        out.writeByte(operationType.getId());
         if (operationType == PUT) {
             IOUtil.writeAttributeValue(value, out);
         }
@@ -78,5 +78,4 @@ public class MemberAttributeChange implements DataSerializable {
             value = IOUtil.readAttributeValue(in);
         }
     }
-
 }

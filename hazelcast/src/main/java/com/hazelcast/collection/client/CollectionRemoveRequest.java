@@ -26,9 +26,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * @ali 9/4/13
- */
 public class CollectionRemoveRequest extends CollectionRequest {
 
     private Data value;
@@ -65,5 +62,15 @@ public class CollectionRemoveRequest extends CollectionRequest {
     @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_REMOVE;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "remove";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{value};
     }
 }

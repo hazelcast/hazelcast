@@ -43,21 +43,21 @@ public class AddressUtilTest {
     @Test
     public void testParsingHostAndPort() {
         AddressHolder addressHolder = AddressUtil.getAddressHolder("[fe80::62c5:*:fe05:480a%en0]:8080");
-        assertEquals("fe80::62c5:*:fe05:480a", addressHolder.address);
-        assertEquals(8080, addressHolder.port);
-        assertEquals("en0", addressHolder.scopeId);
+        assertEquals("fe80::62c5:*:fe05:480a", addressHolder.getAddress());
+        assertEquals(8080, addressHolder.getPort());
+        assertEquals("en0", addressHolder.getScopeId());
 
         addressHolder = AddressUtil.getAddressHolder("[::ffff:192.0.2.128]:5700");
-        assertEquals("::ffff:192.0.2.128", addressHolder.address);
-        assertEquals(5700, addressHolder.port);
+        assertEquals("::ffff:192.0.2.128", addressHolder.getAddress());
+        assertEquals(5700, addressHolder.getPort());
 
         addressHolder = AddressUtil.getAddressHolder("192.168.1.1:5700");
-        assertEquals("192.168.1.1", addressHolder.address);
-        assertEquals(5700, addressHolder.port);
+        assertEquals("192.168.1.1", addressHolder.getAddress());
+        assertEquals(5700, addressHolder.getPort());
 
         addressHolder = AddressUtil.getAddressHolder("hazelcast.com:80");
-        assertEquals("hazelcast.com", addressHolder.address);
-        assertEquals(80, addressHolder.port);
+        assertEquals("hazelcast.com", addressHolder.getAddress());
+        assertEquals(80, addressHolder.getPort());
     }
 
     @Test

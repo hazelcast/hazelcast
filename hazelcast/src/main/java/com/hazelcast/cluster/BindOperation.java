@@ -16,7 +16,11 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -25,19 +29,15 @@ public class BindOperation extends AbstractClusterOperation implements JoinOpera
 
     private Address localAddress;
     private Address targetAddress;
-    private boolean replyBack = false;
+    private boolean reply;
 
     public BindOperation() {
     }
 
-    public BindOperation(Address localAddress) {
-        this(localAddress, null, false);
-    }
-
-    public BindOperation(Address localAddress, final Address targetAddress, final boolean replyBack) {
+    public BindOperation(Address localAddress, final Address targetAddress, final boolean reply) {
         this.localAddress = localAddress;
         this.targetAddress = targetAddress;
-        this.replyBack = replyBack;
+        this.reply = reply;
     }
 
     @Override
@@ -45,7 +45,7 @@ public class BindOperation extends AbstractClusterOperation implements JoinOpera
         NodeEngineImpl ns = (NodeEngineImpl) getNodeEngine();
         TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) ns.getNode().getConnectionManager();
         TcpIpConnection connection = (TcpIpConnection) getConnection();
-        connectionManager.bind(connection, localAddress, targetAddress, replyBack);
+        connectionManager.bind(connection, localAddress, targetAddress, reply);
     }
 
     @Override
@@ -57,7 +57,7 @@ public class BindOperation extends AbstractClusterOperation implements JoinOpera
             targetAddress = new Address();
             targetAddress.readData(in);
         }
-        replyBack = in.readBoolean();
+        reply = in.readBoolean();
     }
 
     @Override
@@ -68,7 +68,7 @@ public class BindOperation extends AbstractClusterOperation implements JoinOpera
         if (hasTarget) {
             targetAddress.writeData(out);
         }
-        out.writeBoolean(replyBack);
+        out.writeBoolean(reply);
     }
 
     @Override

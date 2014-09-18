@@ -23,10 +23,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 1/30/13
- */
-
 public class JoinMessage implements DataSerializable {
 
     protected byte packetVersion;
@@ -39,7 +35,8 @@ public class JoinMessage implements DataSerializable {
     public JoinMessage() {
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck configCheck, int memberCount) {
+    public JoinMessage(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck configCheck,
+                       int memberCount) {
         this.packetVersion = packetVersion;
         this.buildNumber = buildNumber;
         this.address = address;

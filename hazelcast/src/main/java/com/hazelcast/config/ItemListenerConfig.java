@@ -18,6 +18,9 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.ItemListener;
 
+/**
+ * Contains the configuration for an Item Listener.
+ */
 public class ItemListenerConfig extends ListenerConfig {
 
     private boolean includeValue = true;
@@ -80,7 +83,9 @@ public class ItemListenerConfig extends ListenerConfig {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o) {
+            return true;
+        }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }

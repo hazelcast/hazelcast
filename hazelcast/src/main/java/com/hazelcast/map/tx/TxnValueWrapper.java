@@ -16,6 +16,9 @@
 
 package com.hazelcast.map.tx;
 
+/**
+ * Wrapper for value objects with type information.
+ */
 public class TxnValueWrapper {
 
     Object value;

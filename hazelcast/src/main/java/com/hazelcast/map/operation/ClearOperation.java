@@ -17,19 +17,17 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.map.RecordStore;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
-import java.io.IOException;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 public class ClearOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     boolean shouldBackup = true;
+
+    private int numberOfClearedEntries;
 
     public ClearOperation() {
     }
@@ -41,15 +39,16 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     public void run() {
         // near-cache clear will be called multiple times by each clear operation,
         // but it's still preferred to send a separate operation to clear near-cache.
-        mapService.clearNearCache(name);
+        mapService.getMapServiceContext().getNearCacheProvider().clearNearCache(name);
 
-        final RecordStore recordStore = mapService.getExistingRecordStore(getPartitionId(), name);
+        final RecordStore recordStore = mapService.getMapServiceContext().getExistingRecordStore(getPartitionId(), name);
         //if there is no recordStore, then there is nothing to clear.
-        if(recordStore == null) {
+        if (recordStore == null) {
             shouldBackup = false;
             return;
         }
-        recordStore.clear();
+
+        numberOfClearedEntries = recordStore.clear();
     }
 
     public boolean shouldBackup() {
@@ -57,16 +56,21 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapContainer(name).getBackupCount();
+        return mapService.getMapServiceContext().getMapContainer(name).getBackupCount();
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapContainer(name).getAsyncBackupCount();
+        return mapService.getMapServiceContext().getMapContainer(name).getAsyncBackupCount();
     }
 
     @Override
     public boolean returnsResponse() {
         return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return numberOfClearedEntries;
     }
 
     public Operation getBackupOperation() {
@@ -77,7 +81,8 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
 
     @Override
     public String toString() {
-        return "ClearOperation{" +
-                '}';
+        return "ClearOperation{"
+                + '}';
+
     }
 }

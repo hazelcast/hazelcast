@@ -17,6 +17,7 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -26,7 +27,9 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -36,6 +39,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -47,10 +52,19 @@ import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
+import static com.hazelcast.util.FutureUtil.ExceptionHandler;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 final class TransactionImpl implements Transaction, TransactionSupport {
 
-    private static final ThreadLocal<Boolean> threadFlag = new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> THREAD_FLAG = new ThreadLocal<Boolean>();
+    private static final int ROLLBACK_TIMEOUT_MINUTES = 5;
+    private static final int COMMIT_TIMEOUT_MINUTES = 5;
+
+    private final ExceptionHandler commitExceptionHandler;
+    private final ExceptionHandler rollbackExceptionHandler;
+    private final ExceptionHandler rollbackTxExceptionHandler;
 
     private final TransactionManagerServiceImpl transactionManagerService;
     private final NodeEngine nodeEngine;
@@ -64,9 +78,9 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     private final String txOwnerUuid;
     private final boolean checkThreadAccess;
     private State state = NO_TXN;
-    private long startTime = 0L;
+    private long startTime;
     private Address[] backupAddresses;
-    private SerializableXID xid = null;
+    private SerializableXID xid;
 
     public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
                            TransactionOptions options, String txOwnerUuid) {
@@ -78,6 +92,11 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         this.transactionType = options.getTransactionType();
         this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
         this.checkThreadAccess = txOwnerUuid == null;
+
+        ILogger logger = nodeEngine.getLogger(getClass());
+        this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
+        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
+        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", Level.WARNING);
     }
 
     // used by tx backups
@@ -94,6 +113,11 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         this.state = PREPARED;
         this.txOwnerUuid = txOwnerUuid;
         this.checkThreadAccess = false;
+
+        ILogger logger = nodeEngine.getLogger(getClass());
+        this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
+        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
+        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", Level.WARNING);
     }
 
     public void setXid(SerializableXID xid) {
@@ -104,6 +128,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         return xid;
     }
 
+    @Override
     public String getTxnId() {
         return txnId;
     }
@@ -112,6 +137,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         return transactionType;
     }
 
+    @Override
     public void addTransactionLog(TransactionLog transactionLog) {
         if (state != Transaction.State.ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active!");
@@ -158,38 +184,15 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
         }
-        if (threadFlag.get() != null) {
+        if (THREAD_FLAG.get() != null) {
             throw new IllegalStateException("Nested transactions are not allowed!");
         }
         startTime = Clock.currentTimeMillis();
         backupAddresses = transactionManagerService.pickBackupAddresses(durability);
 
         if (durability > 0 && backupAddresses != null && transactionType == TransactionType.TWO_PHASE) {
-            final OperationService operationService = nodeEngine.getOperationService();
-            List<Future> futures = new ArrayList<Future>(backupAddresses.length);
-            for (Address backupAddress : backupAddresses) {
-                if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                    final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                            new BeginTxBackupOperation(txOwnerUuid, txnId, xid), backupAddress);
-                    futures.add(f);
-                }
-            }
-            for (Future future : futures) {
-                try {
-                    future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-                } catch (MemberLeftException e) {
-                    nodeEngine.getLogger(Transaction.class).warning("Member left while replicating tx begin: " + e);
-                } catch (Throwable e) {
-                    if (e instanceof ExecutionException) {
-                        e = e.getCause() != null ? e.getCause() : e;
-                    }
-                    if (e instanceof TargetNotMemberException) {
-                        nodeEngine.getLogger(Transaction.class).warning("Member left while replicating tx begin: " + e);
-                    } else {
-                        throw ExceptionUtil.rethrow(e);
-                    }
-                }
-            }
+            List<Future> futures = startTxBackup();
+            awaitTxBackupCompletion(futures);
         }
 
         //init caller thread
@@ -200,9 +203,41 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         state = ACTIVE;
     }
 
+    private void awaitTxBackupCompletion(List<Future> futures) {
+        for (Future future : futures) {
+            try {
+                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+            } catch (MemberLeftException e) {
+                nodeEngine.getLogger(Transaction.class).warning("Member left while replicating tx begin: " + e);
+            } catch (Throwable e) {
+                if (e instanceof ExecutionException) {
+                    e = e.getCause() != null ? e.getCause() : e;
+                }
+                if (e instanceof TargetNotMemberException) {
+                    nodeEngine.getLogger(Transaction.class).warning("Member left while replicating tx begin: " + e);
+                } else {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }
+        }
+    }
+
+    private List<Future> startTxBackup() {
+        final OperationService operationService = nodeEngine.getOperationService();
+        List<Future> futures = new ArrayList<Future>(backupAddresses.length);
+        for (Address backupAddress : backupAddresses) {
+            if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
+                final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
+                        new BeginTxBackupOperation(txOwnerUuid, txnId, xid), backupAddress);
+                futures.add(f);
+            }
+        }
+        return futures;
+    }
+
     private void setThreadFlag(Boolean flag) {
         if (checkThreadAccess) {
-            threadFlag.set(flag);
+            THREAD_FLAG.set(flag);
         }
     }
 
@@ -218,31 +253,30 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             for (TransactionLog txLog : txLogs) {
                 futures.add(txLog.prepare(nodeEngine));
             }
-            for (Future future : futures) {
-                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-            }
+            waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, FutureUtil.RETHROW_EVERYTHING);
             futures.clear();
             state = PREPARED;
-            // replicate tx log
             if (durability > 0) {
-                final OperationService operationService = nodeEngine.getOperationService();
-                for (Address backupAddress : backupAddresses) {
-                    if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                        final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                                new ReplicateTxOperation(txLogs, txOwnerUuid, txnId, timeoutMillis, startTime),
-                                backupAddress);
-                        futures.add(f);
-                    }
-                }
-                for (Future future : futures) {
-                    future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-                }
-                futures.clear();
+                replicateTxnLog();
             }
-
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e, TransactionException.class);
         }
+    }
+
+    private void replicateTxnLog() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+        final List<Future> futures = new ArrayList<Future>(txLogs.size());
+        final OperationService operationService = nodeEngine.getOperationService();
+        for (Address backupAddress : backupAddresses) {
+            if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
+                final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
+                        new ReplicateTxOperation(txLogs, txOwnerUuid, txnId, timeoutMillis, startTime),
+                        backupAddress);
+                futures.add(f);
+            }
+        }
+        waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, FutureUtil.RETHROW_EVERYTHING);
+        futures.clear();
     }
 
     public void commit() throws TransactionException, IllegalStateException {
@@ -261,9 +295,10 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 for (TransactionLog txLog : txLogs) {
                     futures.add(txLog.commit(nodeEngine));
                 }
+                waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, TimeUnit.MINUTES, commitExceptionHandler);
                 for (Future future : futures) {
                     try {
-                        future.get(5, TimeUnit.MINUTES);
+                        future.get(COMMIT_TIMEOUT_MINUTES, TimeUnit.MINUTES);
                     } catch (Throwable e) {
                         nodeEngine.getLogger(getClass()).warning("Error during commit!", e);
                     }
@@ -295,40 +330,15 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             checkThread();
             state = ROLLING_BACK;
             try {
+                rollbackTxBackup();
+
                 final List<Future> futures = new ArrayList<Future>(txLogs.size());
-                final OperationService operationService = nodeEngine.getOperationService();
-
-                // rollback tx backup
-                if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
-                    for (Address backupAddress : backupAddresses) {
-                        if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                            final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                                    new RollbackTxBackupOperation(txnId), backupAddress);
-                            futures.add(f);
-                        }
-                    }
-                    for (Future future : futures) {
-                        try {
-                            future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-                        } catch (Throwable e) {
-                            nodeEngine.getLogger(getClass()).warning("Error during tx rollback backup!", e);
-                        }
-                    }
-                    futures.clear();
-                }
-
                 final ListIterator<TransactionLog> iter = txLogs.listIterator(txLogs.size());
                 while (iter.hasPrevious()) {
                     final TransactionLog txLog = iter.previous();
                     futures.add(txLog.rollback(nodeEngine));
                 }
-                for (Future future : futures) {
-                    try {
-                        future.get(5, TimeUnit.MINUTES);
-                    } catch (Throwable e) {
-                        nodeEngine.getLogger(getClass()).warning("Error during rollback!", e);
-                    }
-                }
+                waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES, rollbackExceptionHandler);
                 // purge tx backup
                 purgeTxBackups();
             } catch (Throwable e) {
@@ -340,6 +350,29 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             setThreadFlag(null);
         }
 
+    }
+
+    private void rollbackTxBackup() {
+        final OperationService operationService = nodeEngine.getOperationService();
+        final List<Future> futures = new ArrayList<Future>(txLogs.size());
+        // rollback tx backup
+        if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
+            for (Address backupAddress : backupAddresses) {
+                if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
+                    final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
+                            new RollbackTxBackupOperation(txnId), backupAddress);
+                    futures.add(f);
+                }
+            }
+
+            try {
+                waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, rollbackTxExceptionHandler);
+            } catch (TimeoutException e) {
+                ILogger logger = nodeEngine.getLogger(getClass());
+                logger.warning("Timeout during tx rollback backup!", e);
+            }
+            futures.clear();
+        }
     }
 
     public void setRollbackOnly() {
@@ -379,8 +412,18 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     }
 
     public boolean setTimeoutMillis(long timeoutMillis) {
-        if (state == NO_TXN) {
-            this.timeoutMillis = timeoutMillis;
+
+        if (timeoutMillis < 0) {
+            throw new IllegalArgumentException("Timeout can not be negative!");
+        }
+
+        if (state == NO_TXN && getTimeoutMillis() != timeoutMillis) {
+
+            if (timeoutMillis == 0) {
+                this.timeoutMillis = TransactionOptions.DEFAULT_TIMEOUT_MILLIS;
+            } else {
+                this.timeoutMillis = timeoutMillis;
+            }
             return true;
         }
         return false;

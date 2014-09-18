@@ -27,8 +27,8 @@ import java.io.IOException;
 
 public class EvictOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    boolean evicted = false;
-    boolean asyncBackup = false;
+    boolean evicted;
+    boolean asyncBackup;
 
     public EvictOperation(String name, Data dataKey, boolean asyncBackup) {
         super(name, dataKey);
@@ -39,7 +39,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void run() {
-        dataValue = mapService.toData(recordStore.evict(dataKey));
+        dataValue = mapService.getMapServiceContext().toData(recordStore.evict(dataKey, false));
         evicted = dataValue != null;
     }
 
@@ -59,9 +59,9 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
 
     public int getAsyncBackupCount() {
         if (asyncBackup) {
-            return mapService.getMapContainer(name).getTotalBackupCount();
+            return mapService.getMapServiceContext().getMapContainer(name).getTotalBackupCount();
         } else {
-            return mapService.getMapContainer(name).getAsyncBackupCount();
+            return mapService.getMapServiceContext().getMapContainer(name).getAsyncBackupCount();
         }
     }
 
@@ -69,7 +69,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
         if (asyncBackup) {
             return 0;
         } else {
-            return mapService.getMapContainer(name).getBackupCount();
+            return mapService.getMapServiceContext().getMapContainer(name).getBackupCount();
         }
     }
 
@@ -79,9 +79,10 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
 
     public void afterRun() {
         if (evicted) {
-            mapService.interceptAfterRemove(name, dataValue);
+            mapService.getMapServiceContext().interceptAfterRemove(name, dataValue);
             EntryEventType eventType = EntryEventType.EVICTED;
-            mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
+            mapService.getMapServiceContext().getMapEventPublisher()
+                    .publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
             invalidateNearCaches();
         }
     }

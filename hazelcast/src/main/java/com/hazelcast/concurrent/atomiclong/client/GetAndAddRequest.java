@@ -53,4 +53,24 @@ public class GetAndAddRequest extends AtomicLongRequest {
         }
         return new AtomicLongPermission(name, ActionConstants.ACTION_MODIFY);
     }
+
+    @Override
+    public String getMethodName() {
+        if (delta == 1) {
+            return "getAndIncrement";
+        } else if (delta == -1) {
+            return "getAndDecrement";
+        } else if (delta == 0) {
+            return "get";
+        }
+        return "getAndAdd";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (delta > 1 || delta < -1) {
+            return super.getParameters();
+        }
+        return null;
+    }
 }

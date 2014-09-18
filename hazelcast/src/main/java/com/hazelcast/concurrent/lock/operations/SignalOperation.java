@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -53,5 +54,10 @@ public class SignalOperation extends BaseSignalOperation implements BackupAwareO
     @Override
     public Operation getBackupOperation() {
         return new SignalBackupOperation(namespace, key, threadId, conditionId, all);
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.SIGNAL;
     }
 }

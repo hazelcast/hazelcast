@@ -20,7 +20,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
-
 import java.io.IOException;
 
 /**

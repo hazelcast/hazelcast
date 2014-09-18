@@ -20,12 +20,32 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.io.Serializable;
 
+/**
+ * DataSerializable is a serialization method as an alternative to standard Java serialization.
+ * DataSerializable is very similar to {@link java.io.Externalizable} and relies on reflection to create
+ * instances using classnames.
+ *
+ * @see com.hazelcast.nio.serialization.IdentifiedDataSerializable
+ * @see com.hazelcast.nio.serialization.Portable
+ * @see com.hazelcast.nio.serialization.VersionedPortable
+ */
 public interface DataSerializable {
 
+    /**
+     * Writes object fields to output stream
+     *
+     * @param out output
+     * @throws IOException
+     */
     void writeData(ObjectDataOutput out) throws IOException;
 
+    /**
+     * Reads fields from the input stream
+     *
+     * @param in input
+     * @throws IOException
+     */
     void readData(ObjectDataInput in) throws IOException;
 
 }

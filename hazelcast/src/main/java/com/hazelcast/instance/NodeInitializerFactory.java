@@ -24,7 +24,7 @@ import java.util.Iterator;
 
 public final class NodeInitializerFactory {
 
-    private static final ILogger logger = Logger.getLogger(NodeInitializerFactory.class);
+    private static final ILogger LOGGER = Logger.getLogger(NodeInitializerFactory.class);
     private static final String FACTORY_ID = "com.hazelcast.NodeInitializer";
 
     private NodeInitializerFactory() {
@@ -40,8 +40,8 @@ public final class NodeInitializerFactory {
                 }
             }
         } catch (Exception e) {
-            logger.warning("NodeInitializer could not be instantiated! => "
-                                      + e.getClass().getName() + ": " + e.getMessage());
+            LOGGER.warning("NodeInitializer could not be instantiated! => "
+                    + e.getClass().getName() + ": " + e.getMessage());
         }
         return new DefaultNodeInitializer();
     }

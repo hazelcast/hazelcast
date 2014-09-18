@@ -226,4 +226,17 @@ public class ClientListTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
 
     }
+
+    @Test
+    public void testIsEmpty_whenEmpty() {
+        assertTrue(list.isEmpty());
+        assertEquals(0,list.size());
+    }
+
+    @Test
+    public void testIsEmpty_whenNotEmpty() {
+        list.add("item");
+        assertFalse(list.isEmpty());
+        assertEquals(1,list.size());
+    }
 }

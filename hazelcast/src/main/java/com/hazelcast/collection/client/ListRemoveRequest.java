@@ -25,9 +25,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * @ali 9/4/13
- */
 public class ListRemoveRequest extends CollectionRequest {
 
     int index;
@@ -63,5 +60,15 @@ public class ListRemoveRequest extends CollectionRequest {
     @Override
     public String getRequiredAction() {
         return ActionConstants.ACTION_REMOVE;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "remove";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{index};
     }
 }

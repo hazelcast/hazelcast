@@ -21,7 +21,6 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.util.Map;
 import java.util.Set;
 
@@ -36,10 +35,11 @@ public class MapEntrySetOperation extends AbstractMapOperation implements Partit
     }
 
     public void run() {
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
         entrySet = recordStore.entrySetData();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();
+            ((MapService) getService()).getMapServiceContext()
+                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
         }
     }
 

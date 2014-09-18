@@ -33,14 +33,15 @@ final class HazelcastClientManagedContext implements ManagedContext {
     }
 
     @Override
-    public final Object initialize(Object obj) {
-        if (obj instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) obj).setHazelcastInstance(instance);
+    public Object initialize(Object obj) {
+        Object object = obj;
+        if (object instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) object).setHazelcastInstance(instance);
         }
 
         if (hasExternalContext) {
-            obj = externalContext.initialize(obj);
+            object = externalContext.initialize(object);
         }
-        return obj;
+        return object;
     }
 }

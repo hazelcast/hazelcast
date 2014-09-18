@@ -27,7 +27,8 @@ public final class SortingUtil {
             case VALUE:
                 comparable = entry.getValue();
                 break;
-            default: // Possibly ENTRY
+            // Possibly ENTRY
+            default:
                 // If entry is comparable, we can compare them
                 if (entry instanceof Comparable) {
                     comparable = entry;
@@ -61,7 +62,8 @@ public final class SortingUtil {
                 comparable1 = entry1.getValue();
                 comparable2 = entry2.getValue();
                 break;
-            default: // Possibly ENTRY
+            default:
+                // Possibly ENTRY
                 // If entries are comparable, we can compare them
                 if (entry1 instanceof Comparable && entry2 instanceof Comparable) {
                     comparable1 = entry1;

@@ -17,9 +17,8 @@
 package com.hazelcast.util.scheduler;
 
 /**
- * @author enesakar 9/4/13
- *
- * This object is first needed for having different key objects that are created for the same key updated in different times so should be persisted consequently.
+ * This object is first needed for having different key objects that are created for the same key updated in
+ * different times so should be persisted consequently.
  * So using ScheduleType.FOR_EACH, all the updates will be scheduled seperately.
  */
 final class TimeKey {
@@ -38,13 +37,21 @@ final class TimeKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         TimeKey that = (TimeKey) o;
 
-        if (time != that.time) return false;
-        if (key != null ? !key.equals(that.key) : that.key != null) return false;
+        if (time != that.time) {
+            return false;
+        }
+        if (key != null ? !key.equals(that.key) : that.key != null) {
+            return false;
+        }
 
         return true;
     }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.impl.client.AuthenticationRequest;
+import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.serialization.Data;
@@ -35,21 +37,20 @@ import java.net.Socket;
  */
 public class SocketSimpleClient implements SimpleClient {
 
-    private final Node node;
     final Socket socket = new Socket();
     final ObjectDataInputStream in;
     final ObjectDataOutputStream out;
+    final SerializationService serializationService;
 
     public SocketSimpleClient(Node node) throws IOException {
-        this.node = node;
         socket.connect(node.address.getInetSocketAddress());
         OutputStream outputStream = socket.getOutputStream();
         outputStream.write(Protocols.CLIENT_BINARY.getBytes());
         outputStream.write(ClientTypes.JAVA.getBytes());
         outputStream.flush();
-        SerializationService ss = getSerializationService();
-        in = ss.createObjectDataInputStream(new BufferedInputStream(socket.getInputStream()));
-        out = ss.createObjectDataOutputStream(new BufferedOutputStream(outputStream));
+        serializationService = node.getSerializationService();
+        in = serializationService.createObjectDataInputStream(new BufferedInputStream(socket.getInputStream()));
+        out = serializationService.createObjectDataOutputStream(new BufferedOutputStream(outputStream));
     }
 
     public void auth() throws IOException {
@@ -59,7 +60,7 @@ public class SocketSimpleClient implements SimpleClient {
     }
 
     public void send(Object o) throws IOException {
-        final Data data = getSerializationService().toData(o);
+        final Data data = serializationService.toData(o);
         data.writeData(out);
         out.flush();
     }
@@ -67,16 +68,12 @@ public class SocketSimpleClient implements SimpleClient {
     public Object receive() throws IOException {
         Data responseData = new Data();
         responseData.readData(in);
-        ClientResponse clientResponse = getSerializationService().toObject(responseData);
-        return getSerializationService().toObject(clientResponse.getResponse());
+        ClientResponse clientResponse = serializationService.toObject(responseData);
+        return serializationService.toObject(clientResponse.getResponse());
     }
 
     public void close() throws IOException {
         socket.close();
     }
 
-    @Override
-    public SerializationService getSerializationService() {
-        return node.getSerializationService();
-    }
 }

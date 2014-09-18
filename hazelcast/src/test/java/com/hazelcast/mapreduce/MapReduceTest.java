@@ -153,6 +153,8 @@ public class MapReduceTest
 
         try {
             Map<String, List<Integer>> result = future.get();
+            fail();
+
         } catch (Exception e) {
             e.printStackTrace();
             assertTrue(e.getCause() instanceof NullPointerException);
@@ -186,6 +188,8 @@ public class MapReduceTest
 
         try {
             Map<String, List<Integer>> result = future.get();
+            fail();
+
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
@@ -767,6 +771,34 @@ public class MapReduceTest
     }
 
     @Test(timeout = 60000)
+    public void testNullFromObjectReducer()
+            throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker jobTracker = h1.getJobTracker("default");
+        Job<Integer, Integer> job = jobTracker.newJob(KeyValueSource.fromMap(m1));
+        JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(10).mapper(new GroupingTestMapper())
+                                                                  .combiner(new ObjectCombinerFactory())
+                                                                  .reducer(new NullReducerFactory()).submit();
+
+        Map<String, BigInteger> map = future.get();
+        assertEquals(0, map.size());
+    }
+
+    @Test(timeout = 60000)
     public void testDataSerializableIntermediateObject()
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -836,26 +868,29 @@ public class MapReduceTest
             implements CombinerFactory<String, Integer, BigInteger> {
 
         @Override
-        public Combiner<String, Integer, BigInteger> newCombiner(String key) {
+        public Combiner<Integer, BigInteger> newCombiner(String key) {
             return new ObjectCombiner();
         }
     }
 
     public static class ObjectCombiner
-            extends Combiner<String, Integer, BigInteger> {
+            extends Combiner<Integer, BigInteger> {
 
         private BigInteger count;
 
         @Override
-        public void combine(String key, Integer value) {
+        public void combine(Integer value) {
             count = count == null ? BigInteger.valueOf(value) : count.add(BigInteger.valueOf(value));
         }
 
         @Override
         public BigInteger finalizeChunk() {
-            BigInteger count = this.count;
-            this.count = null;
             return count;
+        }
+
+        @Override
+        public void reset() {
+            count = null;
         }
     }
 
@@ -863,13 +898,13 @@ public class MapReduceTest
             implements ReducerFactory<String, BigInteger, BigInteger> {
 
         @Override
-        public Reducer<String, BigInteger, BigInteger> newReducer(String key) {
+        public Reducer<BigInteger, BigInteger> newReducer(String key) {
             return new ObjectReducer();
         }
     }
 
     public static class ObjectReducer
-            extends Reducer<String, BigInteger, BigInteger> {
+            extends Reducer<BigInteger, BigInteger> {
 
         private volatile BigInteger count;
 
@@ -888,19 +923,19 @@ public class MapReduceTest
             implements CombinerFactory<String, Integer, TupleIntInt> {
 
         @Override
-        public Combiner<String, Integer, TupleIntInt> newCombiner(String key) {
+        public Combiner<Integer, TupleIntInt> newCombiner(String key) {
             return new DataSerializableIntermediateCombiner();
         }
     }
 
     public static class DataSerializableIntermediateCombiner
-            extends Combiner<String, Integer, TupleIntInt> {
+            extends Combiner<Integer, TupleIntInt> {
 
         private int count;
         private int amount;
 
         @Override
-        public void combine(String key, Integer value) {
+        public void combine(Integer value) {
             count++;
             amount += value;
         }
@@ -919,13 +954,13 @@ public class MapReduceTest
             implements ReducerFactory<String, TupleIntInt, TupleIntInt> {
 
         @Override
-        public Reducer<String, TupleIntInt, TupleIntInt> newReducer(String key) {
+        public Reducer<TupleIntInt, TupleIntInt> newReducer(String key) {
             return new DataSerializableIntermediateReducer();
         }
     }
 
     public static class DataSerializableIntermediateReducer
-            extends Reducer<String, TupleIntInt, TupleIntInt> {
+            extends Reducer<TupleIntInt, TupleIntInt> {
 
         private volatile int count;
         private volatile int amount;
@@ -1019,7 +1054,7 @@ public class MapReduceTest
     }
 
     public static class TestReducer
-            extends Reducer<String, Integer, Integer> {
+            extends Reducer<Integer, Integer> {
 
         private volatile int sum = 0;
 
@@ -1041,7 +1076,7 @@ public class MapReduceTest
         }
 
         @Override
-        public Reducer<String, Integer, Integer> newReducer(String key) {
+        public Reducer<Integer, Integer> newReducer(String key) {
             return new TestReducer();
         }
     }
@@ -1071,6 +1106,28 @@ public class MapReduceTest
                 sum += entry.getValue();
             }
             return sum;
+        }
+    }
+
+    public static class NullReducerFactory
+            implements ReducerFactory<String, BigInteger, BigInteger> {
+
+        @Override
+        public Reducer<BigInteger, BigInteger> newReducer(String key) {
+            return new NullReducer();
+        }
+    }
+
+    public static class NullReducer
+            extends Reducer<BigInteger, BigInteger> {
+
+        @Override
+        public void reduce(BigInteger value) {
+        }
+
+        @Override
+        public BigInteger finalizeReduce() {
+            return null;
         }
     }
 

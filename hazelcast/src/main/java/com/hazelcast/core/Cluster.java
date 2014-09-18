@@ -30,7 +30,6 @@ public interface Cluster {
      * the {@link InitialMembershipEvent}.
      *
      * @param listener membership listener
-     *
      * @return returns registration id.
      */
     String addMembershipListener(MembershipListener listener);
@@ -38,12 +37,11 @@ public interface Cluster {
     /**
      * Removes the specified membership listener.
      *
-     *
      * @param registrationId Id of listener registration.
      *
      * @return true if registration is removed, false otherwise
      */
-    boolean removeMembershipListener(final String registrationId);
+    boolean removeMembershipListener(String registrationId);
 
     /**
      * Set of current members of the cluster.

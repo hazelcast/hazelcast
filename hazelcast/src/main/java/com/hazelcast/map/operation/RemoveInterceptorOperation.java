@@ -20,7 +20,6 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-
 import java.io.IOException;
 
 public class RemoveInterceptorOperation extends AbstractOperation {
@@ -39,7 +38,7 @@ public class RemoveInterceptorOperation extends AbstractOperation {
 
     public void run() {
         mapService = (MapService) getService();
-        mapService.getMapContainer(mapName).removeInterceptor(id);
+        mapService.getMapServiceContext().getMapContainer(mapName).removeInterceptor(id);
     }
 
     public boolean returnsResponse() {

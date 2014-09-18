@@ -21,19 +21,13 @@ import com.hazelcast.collection.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
 import java.io.IOException;
 
-/**
- * @ali 9/3/13
- */
 public class CollectionReserveRemoveOperation extends CollectionOperation {
 
-    private long reservedItemId = -1;
-
-    private Data value;
-
     String transactionId;
+    private Data value;
+    private long reservedItemId = -1;
 
     public CollectionReserveRemoveOperation() {
     }

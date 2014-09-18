@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
@@ -44,6 +45,11 @@ public class AlterOperation extends AbstractAlterOperation {
             backup = nodeEngine.toData(output);
             reference.set(backup);
         }
+    }
+
+    @Override
+    public int getId() {
+        return AtomicReferenceDataSerializerHook.ALTER;
     }
 }
 

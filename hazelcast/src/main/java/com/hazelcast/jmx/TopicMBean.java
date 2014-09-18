@@ -21,9 +21,13 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
-
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
+/**
+ * Management bean for {@link com.hazelcast.core.ITopic}
+ */
 @ManagedDescription("ITopic")
 public class TopicMBean extends HazelcastMBean<ITopic> {
 
@@ -45,19 +49,19 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
 
     @ManagedAnnotation("localCreationTime")
     @ManagedDescription("the creation time of this topic on this member")
-    public long getLocalCreationTime(){
-       return managedObject.getLocalTopicStats().getCreationTime();
+    public long getLocalCreationTime() {
+        return managedObject.getLocalTopicStats().getCreationTime();
     }
 
     @ManagedAnnotation("localPublishOperationCount")
     @ManagedDescription(" the total number of published messages of this topic on this member")
-    public long getLocalPublishOperationCount(){
-      return managedObject.getLocalTopicStats().getPublishOperationCount();
+    public long getLocalPublishOperationCount() {
+        return managedObject.getLocalTopicStats().getPublishOperationCount();
     }
 
     @ManagedAnnotation("localReceiveOperationCount")
     @ManagedDescription("the total number of received messages of this topic on this member")
-    public long getLocalReceiveOperationCount(){
+    public long getLocalReceiveOperationCount() {
         return managedObject.getLocalTopicStats().getReceiveOperationCount();
     }
 
@@ -85,6 +89,7 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
         try {
             managedObject.removeMessageListener(registrationId);
         } catch (Exception ignored) {
+            ignore(ignored);
         }
     }
 }

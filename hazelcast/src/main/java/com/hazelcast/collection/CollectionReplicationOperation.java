@@ -19,13 +19,9 @@ package com.hazelcast.collection;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
-
 import java.io.IOException;
 import java.util.Map;
 
-/**
- * @ali 9/9/13
- */
 public abstract class CollectionReplicationOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
     protected Map<String, CollectionContainer> migrationData;

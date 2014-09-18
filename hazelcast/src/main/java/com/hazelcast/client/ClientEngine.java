@@ -21,13 +21,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ProxyService;
-import com.hazelcast.transaction.TransactionManagerService;
 
 public interface ClientEngine {
 
@@ -37,23 +34,13 @@ public interface ClientEngine {
 
     ClusterService getClusterService();
 
-    SerializationService getSerializationService();
-
     EventService getEventService();
-
-    TransactionManagerService getTransactionManagerService();
 
     ProxyService getProxyService();
 
     Config getConfig();
 
     ILogger getLogger(Class clazz);
-
-    ILogger getLogger(String className);
-
-    Object toObject(Data data);
-
-    Data toData(Object obj);
 
     Address getMasterAddress();
 
@@ -62,5 +49,4 @@ public interface ClientEngine {
     MemberImpl getLocalMember();
 
     SecurityContext getSecurityContext();
-
 }

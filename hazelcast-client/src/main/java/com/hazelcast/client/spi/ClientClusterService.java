@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.core.Client;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 
@@ -25,6 +27,8 @@ import java.util.Collection;
  * @author mdogan 5/16/13
  */
 public interface ClientClusterService {
+
+    Client getLocalClient();
 
     MemberImpl getMember(Address address);
 
@@ -37,5 +41,10 @@ public interface ClientClusterService {
     int getSize();
 
     long getClusterTime();
+
+    String addMembershipListener(MembershipListener listener);
+
+    boolean removeMembershipListener(String registrationId);
+
 
 }

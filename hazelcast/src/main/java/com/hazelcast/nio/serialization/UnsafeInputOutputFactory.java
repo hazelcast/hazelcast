@@ -18,7 +18,6 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.UnsafeHelper;
 
 /**
  * @author mdogan 6/15/13
@@ -38,13 +37,5 @@ final class UnsafeInputOutputFactory implements InputOutputFactory {
     @Override
     public BufferObjectDataOutput createOutput(int size, SerializationService service) {
         return new UnsafeObjectDataOutput(size, service);
-    }
-
-    static boolean unsafeAvailable() {
-        try {
-            return UnsafeHelper.UNSAFE != null;
-        } catch (Throwable ignored) {
-        }
-        return false;
     }
 }

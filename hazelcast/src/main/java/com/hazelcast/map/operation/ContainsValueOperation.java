@@ -28,7 +28,7 @@ import java.io.IOException;
 
 public class ContainsValueOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
-    private boolean contains = false;
+    private boolean contains;
     private Data testValue;
 
     public ContainsValueOperation(String name, Data testValue) {
@@ -40,11 +40,12 @@ public class ContainsValueOperation extends AbstractMapOperation implements Part
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        MapService mapService = getService();
+        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
         contains = recordStore.containsValue(testValue);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();
+            ((MapService) getService()).getMapServiceContext().getLocalMapStatsProvider()
+                    .getLocalMapStatsImpl(name).incrementOtherOperations();
         }
     }
 

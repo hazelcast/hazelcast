@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @author mdogan 1/15/13
+ * A key for a wait notify object e.g. an ICondition.
  */
 public interface WaitNotifyKey {
 

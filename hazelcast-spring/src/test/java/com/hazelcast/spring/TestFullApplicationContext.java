@@ -23,6 +23,7 @@ import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanReplicationEndpoint;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -33,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -135,6 +137,7 @@ public class TestFullApplicationContext {
         assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
         assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
+        assertEquals(1000, testMapConfig.getMinEvictionCheckMillis());
         assertEquals("PUT_IF_ABSENT", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
         assertEquals(2, testMapConfig.getMapIndexConfigs().size());
@@ -153,6 +156,7 @@ public class TestFullApplicationContext {
         assertEquals("com.hazelcast.spring.DummyStore", testMapStoreConfig.getClassName());
         assertTrue(testMapStoreConfig.isEnabled());
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
+        assertEquals(10, testMapStoreConfig.getWriteBatchSize());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER,testMapStoreConfig.getInitialLoadMode());
         // Test that the testMapConfig has a nearCacheConfig and it is correct
         NearCacheConfig testNearCacheConfig = testMapConfig.getNearCacheConfig();
@@ -386,7 +390,7 @@ public class TestFullApplicationContext {
         assertNotNull(targetCfg);
         assertEquals("tokyo", targetCfg.getGroupName());
         assertEquals("tokyo-pass", targetCfg.getGroupPassword());
-        assertEquals("com.hazelcast.wan.WanNoDelayReplication", targetCfg.getReplicationImpl());
+        assertEquals("com.hazelcast.wan.impl.WanNoDelayReplication", targetCfg.getReplicationImpl());
         assertEquals(2, targetCfg.getEndpoints().size());
         assertEquals("10.2.1.1:5701", targetCfg.getEndpoints().get(0));
         assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
@@ -447,5 +451,19 @@ public class TestFullApplicationContext {
         assertTrue(managementCenterConfig.isEnabled());
         assertEquals("myserver:80", managementCenterConfig.getUrl());
         assertEquals(4, managementCenterConfig.getUpdateInterval());
+    }
+    
+    @Test
+    public void testMemberAttributesConfig() {
+        MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();
+        assertNotNull(memberAttributeConfig);
+        assertEquals("spring-group", memberAttributeConfig.getStringAttribute("cluster.group.name"));
+        assertEquals(new Integer(5700), memberAttributeConfig.getIntAttribute("cluster.port.int"));
+        assertEquals(new Long(5700), memberAttributeConfig.getLongAttribute("cluster.port.long"));
+        assertEquals(new Short("5700"), memberAttributeConfig.getShortAttribute("cluster.port.short"));
+        assertEquals(new Byte("111"), memberAttributeConfig.getByteAttribute("attribute.byte"));
+        assertTrue(memberAttributeConfig.getBooleanAttribute("attribute.boolean"));
+        assertEquals(0.0d, memberAttributeConfig.getDoubleAttribute("attribute.double"), 0.0001d);
+        assertEquals(1234.5678, memberAttributeConfig.getFloatAttribute("attribute.float"), 0.0001);
     }
 }

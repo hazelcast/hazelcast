@@ -23,12 +23,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
 import java.io.IOException;
 
-/**
- * @author ali 12/24/12
- */
 public class CollectionEvent implements IdentifiedDataSerializable {
 
     String name;

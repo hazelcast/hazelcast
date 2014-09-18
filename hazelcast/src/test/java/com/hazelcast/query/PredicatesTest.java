@@ -45,10 +45,12 @@ import static com.hazelcast.query.Predicates.greaterEqual;
 import static com.hazelcast.query.Predicates.greaterThan;
 import static com.hazelcast.query.Predicates.ilike;
 import static com.hazelcast.query.Predicates.in;
+import static com.hazelcast.query.Predicates.instanceOf;
 import static com.hazelcast.query.Predicates.lessEqual;
 import static com.hazelcast.query.Predicates.lessThan;
 import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.notEqual;
+import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
 import static com.hazelcast.query.SampleObjects.Employee;
 import static com.hazelcast.query.SampleObjects.Value;
@@ -121,6 +123,17 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertPredicateTrue(and1, 5);
         final Predicate and2 = and(greaterThan(null, 5), lessThan(null, 6));
         assertPredicateFalse(and2, 4);
+        final Predicate and3 = and(greaterThan(null, 4), lessThan(null, 6), equal(null, 5));
+        assertPredicateTrue(and3, 5);
+        final Predicate and4 = and(greaterThan(null, 3), lessThan(null, 6), equal(null, 4));
+        assertPredicateFalse(and4, 5);
+    }
+
+    @Test
+    public void testOr() {
+        final Predicate or1 = or(equal(null, 3), equal(null, 4), equal(null, 5));
+        assertPredicateTrue(or1, 4);
+        assertPredicateFalse(or1, 6);
     }
 
     @Test
@@ -222,6 +235,13 @@ public class PredicatesTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIsInstanceOf() {
+        assertTrue(instanceOf(Long.class).apply(new DummyEntry(1L)));
+        assertFalse(instanceOf(Long.class).apply(new DummyEntry("Java")));
+        assertTrue(instanceOf(Number.class).apply(new DummyEntry(4)));
+    }
+
+    @Test
     public void testCriteriaAPI() {
         Object value = new Employee(12, "abc-123-xvz", 34, true, 10D);
         EntryObject e = new PredicateBuilder().getEntryObject();
@@ -310,7 +330,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Comparable getAttribute(String attributeName) throws com.hazelcast.query.impl.QueryException {
+        public Comparable getAttribute(String attributeName) throws QueryException {
             return null;
         }
 
@@ -333,6 +353,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         public Data getIndexKey() {
             return null;
         }
+
     }
 
     private static Entry createEntry(final Object key, final Object value) {

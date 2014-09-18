@@ -16,36 +16,45 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.PROP_REQUEST_RETRY_COUNT_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT;
+
 public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
-    private final ILogger logger = Logger.getLogger(ClientCallFuture.class);
+    static final ILogger LOGGER = Logger.getLogger(ClientCallFuture.class);
 
-    private static final int MAX_RESEND_COUNT = 20;
+    private final int heartBeatInterval;
+    private final int retryCount;
+    private final int retryWaitTime;
 
     private Object response;
 
@@ -54,6 +63,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private final ClientExecutionServiceImpl executionService;
 
     private final ClientInvocationServiceImpl invocationService;
+
+    private final ClientListenerServiceImpl clientListenerService;
 
     private final SerializationService serializationService;
 
@@ -66,8 +77,20 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
 
     public ClientCallFuture(HazelcastClient client, ClientRequest request, EventHandler handler) {
+        final ClientProperties clientProperties = client.getClientProperties();
+        int interval = clientProperties.getHeartbeatInterval().getInteger();
+        this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
+
+        int retry = clientProperties.getRetryCount().getInteger();
+        this.retryCount = retry > 0 ? retry : Integer.parseInt(PROP_REQUEST_RETRY_COUNT_DEFAULT);
+
+        int waitTime = clientProperties.getRetryWaitTime().getInteger();
+        this.retryWaitTime = waitTime > 0 ? waitTime : Integer.parseInt(PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
+
+
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.serializationService = client.getSerializationService();
         this.request = request;
         this.handler = handler;
@@ -100,13 +123,24 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
                 synchronized (this) {
                     while (waitMillis > 0 && response == null) {
                         long start = Clock.currentTimeMillis();
-                        this.wait(waitMillis);
-                        waitMillis -= (Clock.currentTimeMillis() - start);
+                        this.wait(Math.min(heartBeatInterval, waitMillis));
+                        long elapsed = Clock.currentTimeMillis() - start;
+                        waitMillis -= elapsed;
+                        if (!isConnectionHealthy(elapsed)) {
+                            notify(new TargetDisconnectedException());
+                        }
                     }
                 }
             }
         }
         return resolveResponse();
+    }
+
+    private boolean isConnectionHealthy(long elapsed) {
+        if (elapsed >= heartBeatInterval) {
+            return connection.isHeartBeating();
+        }
+        return true;
     }
 
     public void notify(Object response) {
@@ -131,7 +165,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private void setResponse(Object response) {
         synchronized (this) {
             if (this.response != null && handler == null) {
-                logger.warning("The Future.set() method can only be called once. Request: " + request
+                LOGGER.warning("The Future.set() method can only be called once. Request: " + request
                         + ", current response: " + this.response + ", new response: " + response);
                 return;
             }
@@ -143,14 +177,14 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             if (this.response != null && !(response instanceof Throwable)) {
                 String uuid = serializationService.toObject(this.response);
                 String alias = serializationService.toObject(response);
-                invocationService.reRegisterListener(uuid, alias, request.getCallId());
+                clientListenerService.reRegisterListener(uuid, alias, request.getCallId());
                 return;
             }
             this.response = response;
             this.notifyAll();
         }
         for (ExecutionCallbackNode node : callbackNodeList) {
-            runAsynchronous(node.callback, node.executor);
+            runAsynchronous(node.callback, node.executor, node.deserialized);
         }
         callbackNodeList.clear();
     }
@@ -185,10 +219,21 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     public void andThen(ExecutionCallback<V> callback, Executor executor) {
         synchronized (this) {
             if (response != null) {
-                runAsynchronous(callback, executor);
+                runAsynchronous(callback, executor, true);
                 return;
             }
-            callbackNodeList.add(new ExecutionCallbackNode(callback, executor));
+            callbackNodeList.add(new ExecutionCallbackNode(callback, executor, true));
+        }
+    }
+
+    public void andThenInternal(ExecutionCallback<Data> callback) {
+        ExecutorService executor = executionService.getAsyncExecutor();
+        synchronized (this) {
+            if (response != null) {
+                runAsynchronous(callback, executor, false);
+                return;
+            }
+            callbackNodeList.add(new ExecutionCallbackNode(callback, executor, false));
         }
     }
 
@@ -208,23 +253,42 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         if (request.isSingleConnection()) {
             return false;
         }
-        if (handler == null && reSendCount.incrementAndGet() > MAX_RESEND_COUNT) {
+        if (handler == null && reSendCount.incrementAndGet() > retryCount) {
             return false;
         }
-        executionService.execute(new ReSendTask());
+        if (handler != null) {
+            handler.beforeListenerRegister();
+        }
+        executionService.schedule(new ReSendTask(), retryWaitTime, TimeUnit.MILLISECONDS);
         return true;
     }
 
-    private void runAsynchronous(final ExecutionCallback callback, Executor executor) {
-        executor.execute(new Runnable() {
-            public void run() {
-                try {
-                    callback.onResponse(serializationService.toObject(resolveResponse()));
-                } catch (Throwable t) {
-                    callback.onFailure(t);
+    private void runAsynchronous(final ExecutionCallback callback, Executor executor, final boolean deserialized) {
+        try {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Object resp;
+                        try {
+                            resp = resolveResponse();
+                        } catch (Throwable t) {
+                            callback.onFailure(t);
+                            return;
+                        }
+                        if (deserialized) {
+                            resp = serializationService.toObject(resp);
+                        }
+                        callback.onResponse(resp);
+                    } catch (Throwable t) {
+                        LOGGER.severe("Failed to execute callback: " + callback
+                                + "! Request: " + request + ", response: " + response, t);
+                    }
                 }
-            }
-        });
+            });
+        } catch (RejectedExecutionException e) {
+            LOGGER.warning("Execution of callback: " + callback + " is rejected!", e);
+        }
     }
 
     public void setConnection(ClientConnection connection) {
@@ -237,22 +301,25 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
                 invocationService.reSend(ClientCallFuture.this);
             } catch (Exception e) {
                 if (handler != null) {
-                    invocationService.registerFailedListener(ClientCallFuture.this);
+                    clientListenerService.registerFailedListener(ClientCallFuture.this);
                 } else {
                     setResponse(e);
                 }
             }
         }
+
     }
 
     class ExecutionCallbackNode {
 
         final ExecutionCallback callback;
         final Executor executor;
+        final boolean deserialized;
 
-        ExecutionCallbackNode(ExecutionCallback callback, Executor executor) {
+        ExecutionCallbackNode(ExecutionCallback callback, Executor executor, boolean deserialized) {
             this.callback = callback;
             this.executor = executor;
+            this.deserialized = deserialized;
         }
     }
 }

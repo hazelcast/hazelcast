@@ -25,15 +25,15 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -45,10 +45,19 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
     private static final int ENTRIES = 10;
     private static final long ITERATIONS = 50;
     private static String MAP_NAME = "test-map";
-    private TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(50);
+    private TestHazelcastInstanceFactory instanceFactory;
+
+
+    @Before
+    public void setUp() throws Exception {
+        if (instanceFactory != null) {
+            instanceFactory.shutdownAll();
+        }
+        instanceFactory = new TestHazelcastInstanceFactory(500);
+    }
 
     @Test
-    public void testRepartitioningCluster() throws InterruptedException {
+    public void testEntryProcessorWhile2NodesAreBouncing() throws InterruptedException {
         CountDownLatch startLatch = new CountDownLatch(1);
         AtomicBoolean isRunning = new AtomicBoolean(true);
 
@@ -73,10 +82,8 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         assertEquals(ENTRIES, map.size());
 
         // spin up the threads that stop/start the instance2 and instance3, leaving one instance always running
-        Thread bounceThread1 = new Thread(new RestartNodeRunnable(instance2, startLatch, isRunning));
-        Thread bounceThread2 = new Thread(new RestartNodeRunnable(instance3, startLatch, isRunning));
+        Thread bounceThread1 = new Thread(new TwoNodesRestartingRunnable(instance2, instance3, startLatch, isRunning));
         bounceThread1.start();
-        bounceThread2.start();
 
         // now, with nodes joining and leaving the cluster concurrently, start adding numbers to the lists
         int iteration = 0;
@@ -99,7 +106,6 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
         // wait for the instance bounces to complete
         bounceThread1.join();
-        bounceThread2.join();
 
 
         final CountDownLatch latch = new CountDownLatch(ENTRIES);
@@ -117,13 +123,11 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
                     latch.countDown();
                 }
             }).start();
-
         }
-
         assertOpenEventually(latch);
     }
 
-    private HazelcastInstance newInstance() {
+    private  HazelcastInstance newInstance() {
         final Config config = new Config();
         final MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setBackupCount(2);
@@ -131,13 +135,15 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         return instanceFactory.newHazelcastInstance(config);
     }
 
-    private class RestartNodeRunnable implements Runnable {
+    private class TwoNodesRestartingRunnable implements Runnable {
         private final CountDownLatch start;
         private final AtomicBoolean isRunning;
-        private HazelcastInstance instance;
+        private HazelcastInstance instance1;
+        private HazelcastInstance instance2;
 
-        private RestartNodeRunnable(HazelcastInstance instance, CountDownLatch startLatch, AtomicBoolean isRunning) {
-            this.instance = instance;
+        private TwoNodesRestartingRunnable(HazelcastInstance h1, HazelcastInstance h2, CountDownLatch startLatch, AtomicBoolean isRunning) {
+            this.instance1 = h1;
+            this.instance2 = h2;
             this.start = startLatch;
             this.isRunning = isRunning;
         }
@@ -147,9 +153,11 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
             try {
                 start.await();
                 while (isRunning.get()) {
-                    instance.shutdown();
+                    instance1.shutdown();
+                    instance2.shutdown();
                     Thread.sleep(10l);
-                    instance = newInstance();
+                    instance1 = newInstance();
+                    instance2 = newInstance();
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();

@@ -17,6 +17,7 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.AbstractTextCommand;
+import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
@@ -24,20 +25,20 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class ErrorCommand extends AbstractTextCommand {
-    private final String message;
     ByteBuffer response;
+    private final String message;
 
-    public ErrorCommand(TextCommandType type) {
+    public ErrorCommand(TextCommandConstants.TextCommandType type) {
         this(type, null);
     }
 
-    public ErrorCommand(TextCommandType type, String message) {
+    public ErrorCommand(TextCommandConstants.TextCommandType type, String message) {
         super(type);
-        byte[] error = ERROR;
-        if (type == TextCommandType.ERROR_CLIENT) {
-            error = CLIENT_ERROR;
-        } else if (type == TextCommandType.ERROR_SERVER) {
-            error = SERVER_ERROR;
+        byte[] error = TextCommandConstants.ERROR;
+        if (type == TextCommandConstants.TextCommandType.ERROR_CLIENT) {
+            error = TextCommandConstants.CLIENT_ERROR;
+        } else if (type == TextCommandConstants.TextCommandType.ERROR_SERVER) {
+            error = TextCommandConstants.SERVER_ERROR;
         }
         this.message = message;
         byte[] msg = (message == null) ? null : stringToBytes(message);
@@ -51,7 +52,7 @@ public class ErrorCommand extends AbstractTextCommand {
         if (msg != null) {
             response.put(msg);
         }
-        response.put(RETURN);
+        response.put(TextCommandConstants.RETURN);
         response.flip();
     }
 
@@ -66,9 +67,10 @@ public class ErrorCommand extends AbstractTextCommand {
 
     @Override
     public String toString() {
-        return "ErrorCommand{" +
-                "type=" + type +
-                ", msg=" + message +
-                '}' + super.toString();
+        return "ErrorCommand{"
+                + "type=" + type
+                + ", msg=" + message
+                + '}'
+                + super.toString();
     }
 }

@@ -16,10 +16,6 @@
 
 package com.hazelcast.cluster;
 
-/**
- * @author mdogan 7/25/12
- */
-
 import com.hazelcast.spi.UrgentSystemOperation;
 
 /**

@@ -16,7 +16,11 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.TransactionalList;
+import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.core.TransactionalSet;
 
 /**
  * Provides a context to access transactional data-structures like the {@link TransactionalMap}.
@@ -26,7 +30,6 @@ public interface TransactionalTaskContext {
     /**
      * Returns the transactional distributed map instance with the specified name.
      *
-     *
      * @param name name of the distributed map
      * @return transactional distributed map instance with the specified name
      */
@@ -34,7 +37,6 @@ public interface TransactionalTaskContext {
 
     /**
      * Returns the transactional queue instance with the specified name.
-     *
      *
      * @param name name of the queue
      * @return transactional queue instance with the specified name
@@ -44,7 +46,6 @@ public interface TransactionalTaskContext {
     /**
      * Returns the transactional multimap instance with the specified name.
      *
-     *
      * @param name name of the multimap
      * @return transactional multimap instance with the specified name
      */
@@ -53,7 +54,6 @@ public interface TransactionalTaskContext {
     /**
      * Returns the transactional list instance with the specified name.
      *
-     *
      * @param name name of the list
      * @return transactional list instance with the specified name
      */
@@ -61,7 +61,6 @@ public interface TransactionalTaskContext {
 
     /**
      * Returns the transactional set instance with the specified name.
-     *
      *
      * @param name name of the set
      * @return transactional set instance with the specified name

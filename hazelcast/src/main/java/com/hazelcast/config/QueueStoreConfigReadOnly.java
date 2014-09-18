@@ -22,7 +22,7 @@ import com.hazelcast.core.QueueStoreFactory;
 import java.util.Properties;
 
 /**
- * @ali 10/11/13
+ * Contains the configuration for an {@link com.hazelcast.core.QueueStore}.
  */
 public class QueueStoreConfigReadOnly extends QueueStoreConfig {
 
