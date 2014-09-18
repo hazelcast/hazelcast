@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
@@ -116,7 +117,10 @@ public final class ResponseHandlerFactory {
                 response = (NormalResponse) obj;
             }
 
-            nodeEngine.getOperationService().send(response, remotePropagatable.getCallerAddress());
+            OperationService operationService = nodeEngine.getOperationService();
+            if (!operationService.send(response, remotePropagatable.getCallerAddress())) {
+                throw new HazelcastException("Cannot send response: " + obj + " to " + conn.getEndPoint());
+            }
         }
 
         @Override

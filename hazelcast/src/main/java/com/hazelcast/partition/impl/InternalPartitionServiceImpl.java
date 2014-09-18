@@ -38,7 +38,6 @@ import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
 import com.hazelcast.spi.Callback;
-import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -51,6 +50,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
@@ -98,8 +98,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             logAllExceptions(EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT, Level.INFO);
 
     private static final int DEFAULT_PAUSE_MILLIS = 1000;
-    private static final int DEFAULT_SLEEP_MILLIS = 10;
-    private static final float DEFAULT_MIGRATION_TIMEOUT_MULTIPLICATOR = 1.5f;
+    private static final float MIGRATION_TIMEOUT_MULTIPLICATOR = 1.5f;
+    private static final int PARTITION_OWNERSHIP_WAIT_MILLIS = 10;
+    private static final int REPLICA_SYNC_CHECK_TIMEOUT_SECONDS = 10;
+
+    private static final Object DUMMY_VALUE = new Object();
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -108,11 +111,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final InternalPartitionImpl[] partitions;
     private final PartitionReplicaVersions[] replicaVersions;
     private final AtomicReferenceArray<ReplicaSyncInfo> replicaSyncRequests;
-    private final EntryTaskScheduler<Integer, ReplicaSyncInfo> replicaSyncScheduler;
+    private final EntryTaskScheduler<ReplicaSyncInfo, Object> replicaSyncScheduler;
     private final AtomicInteger replicaSyncProcessCount = new AtomicInteger();
     private final MigrationThread migrationThread;
     private final long partitionMigrationInterval;
     private final long partitionMigrationTimeout;
+    private final long backupSyncCheckInterval;
+    private final int maxParallelReplications;
     private final PartitionStateGenerator partitionStateGenerator;
     private final MemberGroupFactory memberGroupFactory;
     private final PartitionServiceProxy proxy;
@@ -154,20 +159,22 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig());
         partitionStateGenerator = new PartitionStateGeneratorImpl();
 
-        partitionMigrationInterval = node.groupProperties.PARTITION_MIGRATION_INTERVAL.getLong() * DEFAULT_PAUSE_MILLIS;
+        long interval = node.groupProperties.PARTITION_MIGRATION_INTERVAL.getLong();
+        partitionMigrationInterval = interval > 0 ? TimeUnit.SECONDS.toMillis(interval) : 0;
+
         // partitionMigrationTimeout is 1.5 times of real timeout
         long defaultMigrationTimeout = node.groupProperties.PARTITION_MIGRATION_TIMEOUT.getLong();
-        partitionMigrationTimeout = (long) (defaultMigrationTimeout * DEFAULT_MIGRATION_TIMEOUT_MULTIPLICATOR);
+        partitionMigrationTimeout = (long) (defaultMigrationTimeout * MIGRATION_TIMEOUT_MULTIPLICATOR);
 
         migrationThread = new MigrationThread(node);
         proxy = new PartitionServiceProxy(this);
 
-        replicaSyncRequests = new AtomicReferenceArray<ReplicaSyncInfo>(new ReplicaSyncInfo[partitionCount]);
         ExecutionService executionService = nodeEngine.getExecutionService();
         ScheduledExecutorService scheduledExecutor = executionService.getDefaultScheduledExecutor();
+
         replicaSyncScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor,
                 new ReplicaSyncEntryProcessor(this), ScheduleType.SCHEDULE_IF_NEW);
-
+        replicaSyncRequests = new AtomicReferenceArray<ReplicaSyncInfo>(partitionCount);
 
         long maxMigrationDelayMs = calculateMaxMigrationDelayOnMemberRemoved();
         long minMigrationDelayMs = calculateMigrationDelayOnMemberRemoved(maxMigrationDelayMs);
@@ -179,6 +186,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         });
 
+        long definedBackupSyncCheckInterval = node.groupProperties.PARTITION_BACKUP_SYNC_INTERVAL.getInteger();
+        backupSyncCheckInterval = definedBackupSyncCheckInterval > 0
+                ? TimeUnit.SECONDS.toMillis(definedBackupSyncCheckInterval) : 1000;
+
+        maxParallelReplications = node.groupProperties.PARTITION_MAX_PARALLEL_REPLICATIONS.getInteger();
     }
 
     private long calculateMaxMigrationDelayOnMemberRemoved() {
@@ -212,11 +224,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         executionService.scheduleAtFixedRate(new SendClusterStateTask(),
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
 
-
-        int backupSyncCheckInterval = node.groupProperties.PARTITION_BACKUP_SYNC_INTERVAL.getInteger();
-        if (backupSyncCheckInterval <= 0) {
-            backupSyncCheckInterval = 1;
-        }
         executionService.scheduleWithFixedDelay(new SyncReplicaVersionTask(),
                 backupSyncCheckInterval, backupSyncCheckInterval, TimeUnit.SECONDS);
     }
@@ -451,7 +458,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return;
         }
 
-        if (!migrationActive.get()) {
+        if (!isMigrationActive()) {
             // migration is disabled because of a member leave, wait till enabled!
             return;
         }
@@ -693,7 +700,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 MigrationInfo newMigration;
                 MemberImpl masterMember = getMasterMember();
                 String master = masterMember.getUuid();
-                //todo: 2 different branches with the same content.
                 if (!master.equals(currentMigrationInfo.getMasterUuid())) {
                     // master changed
                     oldMigration = currentMigrationInfo;
@@ -778,87 +784,75 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
 
-    void triggerPartitionReplicaSync(int partitionId, int replicaIndex) {
-        syncPartitionReplica(partitionId, replicaIndex, 0L, false);
-    }
-
-    void forcePartitionReplicaSync(int partitionId, int replicaIndex) {
-        syncPartitionReplica(partitionId, replicaIndex, 0L, true);
-    }
-
-    void schedulePartitionReplicaSync(int partitionId, int replicaIndex, long delayMillis) {
-        syncPartitionReplica(partitionId, replicaIndex, delayMillis, true);
-    }
-
-    private void syncPartitionReplica(int partitionId, int replicaIndex, long delayMillis, boolean force) {
+    void triggerPartitionReplicaSync(int partitionId, int replicaIndex, long delayMillis) {
         if (replicaIndex < 0 || replicaIndex > InternalPartition.MAX_REPLICA_COUNT) {
             throw new IllegalArgumentException("Invalid replica index: " + replicaIndex);
         }
-        final InternalPartitionImpl partitionImpl = getPartition(partitionId);
+        final InternalPartitionImpl partitionImpl = getPartitionImpl(partitionId);
         final Address target = partitionImpl.getOwnerOrNull();
-        if (target != null) {
-            if (checkSyncPartitionTarget(partitionId, replicaIndex, force, partitionImpl, target)) {
-                return;
-            }
-
-            final ReplicaSyncRequest syncRequest = new ReplicaSyncRequest();
-            syncRequest.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-            final ReplicaSyncInfo currentSyncInfo = replicaSyncRequests.get(partitionId);
-            final ReplicaSyncInfo syncInfo = new ReplicaSyncInfo(partitionId, replicaIndex, target);
-            boolean sendRequest = false;
-            if (currentSyncInfo == null) {
-                sendRequest = replicaSyncRequests.compareAndSet(partitionId, null, syncInfo);
-            } else if (currentSyncInfo.requestTime < (Clock.currentTimeMillis() - 10000)
-                    || nodeEngine.getClusterService().getMember(currentSyncInfo.target) == null) {
-                sendRequest = replicaSyncRequests.compareAndSet(partitionId, currentSyncInfo, syncInfo);
-            } else if (force) {
-                replicaSyncRequests.set(partitionId, syncInfo);
-                sendRequest = true;
-            }
-
-            if (sendRequest) {
-                fireSyncReplicaRequest(partitionId, replicaIndex, delayMillis, target, syncRequest, syncInfo);
-            }
-        } else {
-            logger.warning("Sync replica target is null, no need to sync -> partition: " + partitionId
+        if (target == null) {
+            logger.info("Sync replica target is null, no need to sync -> partition: " + partitionId
                     + ", replica: " + replicaIndex);
-        }
-    }
-
-    private void fireSyncReplicaRequest(int partitionId, int replicaIndex, long delayMillis, Address target,
-                                        ReplicaSyncRequest syncRequest, ReplicaSyncInfo syncInfo) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Sending sync replica request to -> " + target + "; for partition: " + partitionId
-                    + ", replica: " + replicaIndex);
+            return;
         }
 
-        replicaSyncScheduler.cancel(partitionId);
+        if (!checkSyncPartitionTarget(partitionId, replicaIndex, target)) {
+            return;
+        }
+
+        ReplicaSyncInfo syncInfo = new ReplicaSyncInfo(partitionId, replicaIndex, target);
         if (delayMillis <= 0) {
-            replicaSyncScheduler.schedule(DEFAULT_REPLICA_SYNC_DELAY, partitionId, syncInfo);
-            nodeEngine.getOperationService().send(syncRequest, target);
+            if (replicaSyncRequests.compareAndSet(partitionId, null, syncInfo)) {
+                if (startReplicaSyncProcess()) {
+                    fireSyncReplicaRequest(syncInfo, target);
+                } else {
+                    schedulePartitionReplicaSync(syncInfo, target, REPLICA_SYNC_RETRY_DELAY);
+                }
+            } else {
+                schedulePartitionReplicaSync(syncInfo, target, DEFAULT_REPLICA_SYNC_DELAY);
+            }
         } else {
-            replicaSyncScheduler.schedule(delayMillis, partitionId, syncInfo);
+            schedulePartitionReplicaSync(syncInfo, target, delayMillis);
         }
     }
 
-    private boolean checkSyncPartitionTarget(int partitionId, int replicaIndex, boolean force,
-                                             InternalPartitionImpl partitionImpl, Address target) {
+    private void fireSyncReplicaRequest(ReplicaSyncInfo syncInfo, Address target) {
+        int partitionId = syncInfo.partitionId;
+        int replicaIndex = syncInfo.replicaIndex;
+        replicaSyncScheduler.cancel(syncInfo);
 
-        if (target.equals(nodeEngine.getThisAddress())) {
-            if (force) {
-                Address thisAddress = node.nodeEngine.getThisAddress();
-                throw new IllegalStateException("Replica target cannot be this node -> thisNode: " + thisAddress
-                        + " partitionId: " + partitionId + ", replicaIndex: " + replicaIndex
-                        + ", partition-info: " + partitionImpl);
-            } else {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("This node is now owner of partition, cannot sync replica -> partitionId: " + partitionId
-                            + ", replicaIndex: " + replicaIndex + ", partition-info: " + partitionImpl);
-                }
-                return true;
-            }
+        if (logger.isFinestEnabled()) {
+            logger.finest(
+                    "Sending sync replica request to -> " + target + "; for partition: " + partitionId + ", replica: "
+                            + replicaIndex);
         }
-        return false;
+        replicaSyncScheduler.schedule(backupSyncCheckInterval, syncInfo, DUMMY_VALUE);
+        ReplicaSyncRequest syncRequest = new ReplicaSyncRequest(partitionId, replicaIndex);
+        nodeEngine.getOperationService().send(syncRequest, target);
+    }
+
+    private void schedulePartitionReplicaSync(ReplicaSyncInfo syncInfo, Address target, long delayMillis) {
+        int partitionId = syncInfo.partitionId;
+        int replicaIndex = syncInfo.replicaIndex;
+
+        if (logger.isFinestEnabled()) {
+            logger.finest(
+                    "Scheduling [" + delayMillis + "ms] sync replica request to -> " + target + "; for partition: "
+                            + partitionId + ", replica: " + replicaIndex);
+        }
+        replicaSyncScheduler.schedule(delayMillis, syncInfo, DUMMY_VALUE);
+    }
+
+    private boolean checkSyncPartitionTarget(int partitionId, int replicaIndex, Address target) {
+        if (target.equals(nodeEngine.getThisAddress())) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("This node is now owner of partition, cannot sync replica -> partitionId: " + partitionId
+                                + ", replicaIndex: " + replicaIndex + ", partition-info: " + getPartitionImpl(
+                                partitionId));
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -897,7 +891,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     @Override
     public boolean prepareToSafeShutdown(long timeout, TimeUnit unit) {
         long timeoutInMillis = unit.toMillis(timeout);
-        int sleep = DEFAULT_PAUSE_MILLIS;
+        long sleep = DEFAULT_PAUSE_MILLIS;
         while (timeoutInMillis > 0) {
             while (timeoutInMillis > 0 && shouldWaitMigrationOrBackups(Level.INFO)) {
                 timeoutInMillis = sleepWithBusyWait(timeoutInMillis, sleep);
@@ -933,7 +927,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return false;
     }
 
-    private long waitForOngoingMigrations(long timeoutInMillis, int sleep) {
+    private long waitForOngoingMigrations(long timeoutInMillis, long sleep) {
         long timeout = timeoutInMillis;
         while (timeout > 0 && hasOnGoingMigrationMaster(Level.WARNING)) {
             // ignore elapsed time during master inv.
@@ -943,7 +937,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return timeout;
     }
 
-    private long sleepWithBusyWait(long timeoutInMillis, int sleep) {
+    private long sleepWithBusyWait(long timeoutInMillis, long sleep) {
         try {
             //noinspection BusyWait
             Thread.sleep(sleep);
@@ -989,7 +983,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     boolean hasOnGoingMigrationLocal() {
         return !activeMigrations.isEmpty() || !migrationQueue.isEmpty()
-                || !migrationActive.get()
+                || !isMigrationActive()
                 || migrationThread.isMigrating()
                 || shouldWaitMigrationOrBackups(Level.OFF);
     }
@@ -1089,7 +1083,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         s.release(notOwnedCount);
         try {
             if (ok.get()) {
-                return s.tryAcquire(partitionCount, DEFAULT_SLEEP_MILLIS, TimeUnit.SECONDS) && ok.get();
+                return s.tryAcquire(partitionCount, REPLICA_SYNC_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS) && ok.get();
             } else {
                 return false;
             }
@@ -1217,7 +1211,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     public void updatePartitionReplicaVersions(int partitionId, long[] versions, int replicaIndex) {
         PartitionReplicaVersions partitionVersion = replicaVersions[partitionId];
         if (!partitionVersion.update(versions, replicaIndex)) {
-            triggerPartitionReplicaSync(partitionId, replicaIndex);
+            triggerPartitionReplicaSync(partitionId, replicaIndex, 0L);
         }
     }
 
@@ -1231,7 +1225,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     // called in operation threads
     @Override
     public void setPartitionReplicaVersions(int partitionId, long[] versions) {
-        replicaVersions[partitionId].reset(versions);
+        replicaVersions[partitionId].set(versions);
     }
 
     @Override
@@ -1240,26 +1234,32 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     // called in operation threads
-    void finalizeReplicaSync(int partitionId, long[] versions) {
+    void finalizeReplicaSync(int partitionId, int replicaIndex, long[] versions) {
         setPartitionReplicaVersions(partitionId, versions);
-        replicaSyncRequests.set(partitionId, null);
-        replicaSyncScheduler.cancel(partitionId);
+        clearReplicaSync(partitionId, replicaIndex);
     }
 
-    boolean incrementReplicaSyncProcessCount() {
+    // called in operation threads
+    void clearReplicaSync(int partitionId, int replicaIndex) {
+        replicaSyncRequests.set(partitionId, null);
+        replicaSyncScheduler.cancel(new ReplicaSyncInfo(partitionId, replicaIndex, null));
+        finishReplicaSyncProcess();
+    }
+
+    boolean startReplicaSyncProcess() {
         int c = replicaSyncProcessCount.get();
-        if (c >= MAX_PARALLEL_REPLICATIONS) {
+        if (c >= maxParallelReplications) {
             return false;
         }
         c = replicaSyncProcessCount.incrementAndGet();
-        if (c >= MAX_PARALLEL_REPLICATIONS) {
+        if (c >= maxParallelReplications) {
             replicaSyncProcessCount.decrementAndGet();
             return false;
         }
         return true;
     }
 
-    void decrementReplicaSyncProcessCount() {
+    void finishReplicaSyncProcess() {
         replicaSyncProcessCount.decrementAndGet();
     }
 
@@ -1271,7 +1271,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             Address owner;
             while ((owner = getPartitionOwner(i)) == null) {
                 try {
-                    Thread.sleep(DEFAULT_SLEEP_MILLIS);
+                    Thread.sleep(PARTITION_OWNERSHIP_WAIT_MILLIS);
                 } catch (InterruptedException e) {
                     throw new HazelcastException(e);
                 }
@@ -1305,6 +1305,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             replicaSyncRequests.set(k, null);
         }
         replicaSyncScheduler.cancelAll();
+        replicaSyncProcessCount.set(0);
+
         lock.lock();
         try {
             initialized = false;
@@ -1328,6 +1330,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     public void resumeMigration() {
         migrationActive.set(true);
+    }
+
+    public boolean isMigrationActive() {
+        return migrationActive.get();
     }
 
     @Override
@@ -1402,7 +1408,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         @Override
         public void run() {
             if (node.isMaster() && node.isActive()) {
-                if (!migrationQueue.isEmpty() && migrationActive.get()) {
+                if (!migrationQueue.isEmpty() && isMigrationActive()) {
                     logger.info("Remaining migration tasks in queue => " + migrationQueue.size());
                 }
                 publishPartitionRuntimeState();
@@ -1516,7 +1522,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         private boolean isMigrationAllowed() {
-            if (migrationActive.get()) {
+            if (isMigrationActive()) {
                 return true;
             }
             migrationQueue.add(this);
@@ -1591,7 +1597,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     return;
                 }
                 sendMigrationEvent(migrationInfo, MigrationStatus.STARTED);
-                Boolean result = Boolean.FALSE;
+                Boolean result;
                 MemberImpl fromMember = getMember(migrationInfo.getSource());
                 if (logger.isFinestEnabled()) {
                     logger.finest("Started Migration : " + migrationInfo);
@@ -1608,21 +1614,20 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
                 logger.log(level, "Error [" + t.getClass() + ": " + t.getMessage() + "] while executing " + migrationRequestOp);
                 logger.finest(t);
-                migrationTaskFailed();
+                migrationOperationFailed();
             }
         }
 
         private void processMigrationResult(Boolean result) {
             if (Boolean.TRUE.equals(result)) {
-                String message = "Finished Migration: " + migrationInfo;
                 if (logger.isFinestEnabled()) {
-                    logger.finest(message);
+                    logger.finest("Finished Migration: " + migrationInfo);
                 }
-                processMigrationResult();
+                migrationOperationSucceeded();
             } else {
                 final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
                 logger.log(level, "Migration failed: " + migrationInfo);
-                migrationTaskFailed();
+                migrationOperationFailed();
             }
         }
 
@@ -1640,23 +1645,22 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return Boolean.FALSE;
         }
 
-        private void migrationTaskFailed() {
+        private void migrationOperationFailed() {
             lock.lock();
             try {
                 addCompletedMigration(migrationInfo);
                 finalizeActiveMigration(migrationInfo);
-                syncPartitionRuntimeState();
+                publishPartitionRuntimeState();
             } finally {
                 lock.unlock();
             }
             sendMigrationEvent(migrationInfo, MigrationStatus.FAILED);
 
-            // migration failed, clear current pending migration tasks and re-execute RepartitioningTask
-            migrationQueue.clear();
+            // migration failed, re-execute RepartitioningTask when all other migration tasks are done
             migrationQueue.add(new RepartitioningTask());
         }
 
-        private void processMigrationResult() {
+        private void migrationOperationSucceeded() {
             lock.lock();
             try {
                 final int partitionId = migrationInfo.getPartitionId();
@@ -1709,7 +1713,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         private void doRun() throws InterruptedException {
             for (;;) {
-                if (!migrationActive.get()) {
+                if (!isMigrationActive()) {
                     break;
                 }
                 Runnable r = migrationQueue.poll(1, TimeUnit.SECONDS);
@@ -1730,7 +1734,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 }
                 evictCompletedMigrations();
                 Thread.sleep(sleepTime);
-            } else if (!migrationActive.get()) {
+            } else if (!isMigrationActive()) {
                 Thread.sleep(sleepTime);
             }
         }
@@ -1739,8 +1743,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             if (r == null || isInterrupted()) {
                 return false;
             }
+            migrating = (r instanceof MigrateTask);
             try {
-                migrating = (r instanceof MigrateTask);
                 r.run();
             } catch (Throwable t) {
                 logger.warning(t);
@@ -1775,12 +1779,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 // backup replica owner changed!
                 int partitionId = event.getPartitionId();
                 if (thisAddress.equals(event.getOldAddress())) {
-                    InternalPartitionImpl partition = partitionService.partitions[partitionId];
-                    if (!partition.isOwnerOrBackup(thisAddress)) {
-                        partitionService.clearPartitionReplica(partitionId, replicaIndex);
-                    }
+                    clearPartition(replicaIndex, partitionId);
                 } else if (thisAddress.equals(newAddress)) {
-                    partitionService.forcePartitionReplicaSync(partitionId, replicaIndex);
+                    synchronizePartition(replicaIndex, partitionId);
                 }
             }
             Node node = partitionService.node;
@@ -1792,6 +1793,29 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         }
 
+        private void clearPartition(int replicaIndex, int partitionId) {
+            InternalPartitionImpl partition = partitionService.partitions[partitionId];
+            // not owner or backup, clear partition data
+            if (!partition.isOwnerOrBackup(thisAddress)) {
+                partitionService.clearPartitionReplica(partitionId, replicaIndex);
+            }
+        }
+
+        private void synchronizePartition(int replicaIndex, int partitionId) {
+            partitionService.clearPartitionReplica(partitionId, replicaIndex);
+            // if not initialized yet, no need to sync, since this is the initial partition assignment
+            if (partitionService.initialized) {
+                long delayMillis = 0L;
+                if (replicaIndex > 1) {
+                    // immediately trigger replica synchronization for the first backups
+                    // postpone replica synchronization for greater backups to a later time
+                    // high priority is 1st backups
+                    delayMillis = DEFAULT_REPLICA_SYNC_DELAY;
+                }
+                partitionService.triggerPartitionReplicaSync(partitionId, replicaIndex, delayMillis);
+            }
+        }
+
         private void logOwnerOfPartitionIsRemoved(PartitionReplicaChangeEvent event) {
             String warning = "Owner of partition is being removed! "
                     + "Possible data loss for partition[" + event.getPartitionId() + "]. " + event;
@@ -1799,7 +1823,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
-    private static class ReplicaSyncEntryProcessor implements ScheduledEntryProcessor<Integer, ReplicaSyncInfo> {
+    private static class ReplicaSyncEntryProcessor implements ScheduledEntryProcessor<ReplicaSyncInfo, Object> {
 
         private InternalPartitionServiceImpl partitionService;
 
@@ -1808,22 +1832,19 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         @Override
-        public void process(EntryTaskScheduler<Integer, ReplicaSyncInfo> scheduler,
-                            Collection<ScheduledEntry<Integer, ReplicaSyncInfo>> entries) {
-            for (ScheduledEntry<Integer, ReplicaSyncInfo> entry : entries) {
-                ReplicaSyncInfo syncInfo = entry.getValue();
-                if (partitionService.replicaSyncRequests.compareAndSet(entry.getKey(), syncInfo, null)) {
-                    logRendingSyncReplicaRequest(syncInfo);
-                    partitionService.triggerPartitionReplicaSync(syncInfo.partitionId, syncInfo.replicaIndex);
-                }
-            }
-        }
+        public void process(EntryTaskScheduler<ReplicaSyncInfo, Object> scheduler,
+                            Collection<ScheduledEntry<ReplicaSyncInfo, Object>> entries) {
 
-        private void logRendingSyncReplicaRequest(ReplicaSyncInfo syncInfo) {
-            ILogger logger = partitionService.logger;
-            if (logger.isFinestEnabled()) {
-                logger.finest("Re-sending sync replica request for partition: " + syncInfo.partitionId + ", replica: "
-                        + syncInfo.replicaIndex);
+            for (ScheduledEntry<ReplicaSyncInfo, Object> entry : entries) {
+                ReplicaSyncInfo syncInfo = entry.getKey();
+
+                if (partitionService.replicaSyncRequests.compareAndSet(syncInfo.partitionId, syncInfo, null)) {
+                    partitionService.clearReplicaSync(syncInfo.partitionId, syncInfo.replicaIndex);
+                    partitionService.triggerPartitionReplicaSync(syncInfo.partitionId, syncInfo.replicaIndex, 0L);
+                }  else {
+                    partitionService.triggerPartitionReplicaSync(syncInfo.partitionId, syncInfo.replicaIndex,
+                            InternalPartitionService.DEFAULT_REPLICA_SYNC_DELAY);
+                }
             }
         }
     }

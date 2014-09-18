@@ -130,8 +130,9 @@ public final class BasicOperationScheduler {
     private int getGenericOperationThreadCount() {
         int threadCount = node.getGroupProperties().GENERIC_OPERATION_THREAD_COUNT.getInteger();
         if (threadCount <= 0) {
+            // default generic operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
-            threadCount = coreSize * 2;
+            threadCount = Math.max(2, coreSize / 2);
         }
         return threadCount;
     }
@@ -139,8 +140,9 @@ public final class BasicOperationScheduler {
     private int getPartitionOperationThreadCount() {
         int threadCount = node.getGroupProperties().PARTITION_OPERATION_THREAD_COUNT.getInteger();
         if (threadCount <= 0) {
+            // default partition operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
-            threadCount = coreSize * 2;
+            threadCount = Math.max(2, coreSize);
         }
         return threadCount;
     }
@@ -404,12 +406,15 @@ public final class BasicOperationScheduler {
 
         @Override
         public void run() {
+            node.getNodeExtension().onThreadStart(this);
             try {
                 doRun();
             } catch (OutOfMemoryError e) {
                 onOutOfMemory(e);
             } catch (Throwable t) {
                 logger.severe(t);
+            } finally {
+                node.getNodeExtension().onThreadStop(this);
             }
         }
 

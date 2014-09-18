@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -96,10 +95,11 @@ public class PortableEntryEvent implements Portable {
         writer.writeInt("e", eventType.getType());
         writer.writeUTF("u", uuid);
         writer.writeInt("n", numberOfAffectedEntries);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        IOUtil.writeNullableData(out, key);
-        IOUtil.writeNullableData(out, value);
-        IOUtil.writeNullableData(out, oldValue);
+
+        ObjectDataOutput out = writer.getRawDataOutput();
+        out.writeData(key);
+        out.writeData(value);
+        out.writeData(oldValue);
     }
 
     @Override
@@ -107,9 +107,10 @@ public class PortableEntryEvent implements Portable {
         eventType = EntryEventType.getByType(reader.readInt("e"));
         uuid = reader.readUTF("u");
         numberOfAffectedEntries = reader.readInt("n");
-        final ObjectDataInput in = reader.getRawDataInput();
-        key = IOUtil.readNullableData(in);
-        value = IOUtil.readNullableData(in);
-        oldValue = IOUtil.readNullableData(in);
+
+        ObjectDataInput in = reader.getRawDataInput();
+        key = in.readData();
+        value = in.readData();
+        oldValue = in.readData();
     }
 }

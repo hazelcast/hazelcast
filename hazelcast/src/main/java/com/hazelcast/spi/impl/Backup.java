@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -134,7 +133,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        IOUtil.writeNullableData(out, backupOpData);
+        out.writeData(backupOpData);
         if (originalCaller != null) {
             out.writeBoolean(true);
             originalCaller.writeData(out);
@@ -147,7 +146,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        backupOpData = IOUtil.readNullableData(in);
+        backupOpData = in.readData();
         if (in.readBoolean()) {
             originalCaller = new Address();
             originalCaller.readData(in);
@@ -170,7 +169,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("Backup");
-        sb.append("{backupOp=").append(backupOp);
+        sb.append("{backupOpBinary=").append(backupOpData);
         sb.append(", originalCaller=").append(originalCaller);
         sb.append(", version=").append(Arrays.toString(replicaVersions));
         sb.append(", sync=").append(sync);

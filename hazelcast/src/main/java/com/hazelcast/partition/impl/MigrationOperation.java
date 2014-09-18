@@ -19,10 +19,8 @@ package com.hazelcast.partition.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.MigrationAwareService;
@@ -34,11 +32,9 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Level;
-
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.nio.IOUtil.decompress;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public final class MigrationOperation extends BaseMigrationOperation {
@@ -57,18 +53,14 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     private long[] replicaVersions;
     private Collection<Operation> tasks;
-    private byte[] taskData;
-    private boolean compressed;
 
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions,
-            byte[] taskData, boolean compressed) {
+    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions, Collection<Operation> tasks) {
         super(migrationInfo);
         this.replicaVersions = replicaVersions;
-        this.taskData = taskData;
-        this.compressed = compressed;
+        this.tasks = tasks;
     }
 
     @Override
@@ -91,6 +83,9 @@ public final class MigrationOperation extends BaseMigrationOperation {
         if (startMigration()) {
             try {
                 migrate();
+            } catch (Throwable e) {
+                success = false;
+                getLogger().severe("Error while processing " + migrationInfo, e);
             } finally {
                 afterMigrate();
             }
@@ -135,7 +130,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
     }
 
     private void migrate() throws Exception {
-        buildMigrationTasks();
         addActiveMigration();
 
         for (Operation op : tasks) {
@@ -152,29 +146,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
     private void addActiveMigration() {
         InternalPartitionServiceImpl partitionService = getService();
         partitionService.addActiveMigration(migrationInfo);
-    }
-
-    private void buildMigrationTasks() throws IOException {
-        SerializationService serializationService = getNodeEngine().getSerializationService();
-        BufferObjectDataInput in = serializationService.createObjectDataInput(toData());
-        try {
-            int size = in.readInt();
-            tasks = new ArrayList<Operation>(size);
-            for (int i = 0; i < size; i++) {
-                Operation task = (Operation) serializationService.readObject(in);
-                tasks.add(task);
-            }
-        } finally {
-            closeResource(in);
-        }
-    }
-
-    private byte[] toData() throws IOException {
-        if (compressed) {
-            return decompress(taskData);
-        } else {
-            return taskData;
-        }
     }
 
     private void runMigrationTask(Operation op) throws Exception {
@@ -195,20 +166,28 @@ public final class MigrationOperation extends BaseMigrationOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(compressed);
-        out.writeInt(taskData.length);
-        out.write(taskData);
         out.writeLongArray(replicaVersions);
+        int size = tasks != null ? tasks.size() : 0;
+        out.writeInt(size);
+        if (size > 0) {
+            for (Operation task : tasks) {
+                out.writeObject(task);
+            }
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        compressed = in.readBoolean();
-        int size = in.readInt();
-        taskData = new byte[size];
-        in.readFully(taskData);
         replicaVersions = in.readLongArray();
+        int size = in.readInt();
+        if (size > 0) {
+            tasks = new ArrayList<Operation>(size);
+            for (int i = 0; i < size; i++) {
+                Operation op = in.readObject();
+                tasks.add(op);
+            }
+        }
     }
 
     @Override
@@ -217,7 +196,8 @@ public final class MigrationOperation extends BaseMigrationOperation {
         sb.append(getClass().getName());
         sb.append("{partitionId=").append(getPartitionId());
         sb.append(", migration=").append(migrationInfo);
-        sb.append(", compressed=").append(compressed);
+        sb.append(", version=").append(Arrays.toString(replicaVersions));
+        sb.append(", tasks=").append(tasks != null ? tasks.size() : 0);
         sb.append('}');
         return sb.toString();
     }

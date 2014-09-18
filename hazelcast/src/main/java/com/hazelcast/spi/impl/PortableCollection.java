@@ -64,7 +64,7 @@ public final class PortableCollection implements Portable {
         writer.writeInt("s", collection.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
         for (Data data : collection) {
-            data.writeData(out);
+            out.writeData(data);
         }
     }
 
@@ -82,8 +82,7 @@ public final class PortableCollection implements Portable {
         }
         final ObjectDataInput in = reader.getRawDataInput();
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             collection.add(data);
         }
     }

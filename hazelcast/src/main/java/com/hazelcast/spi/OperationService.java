@@ -30,7 +30,6 @@ import java.util.Map;
  * <p/>
  * It also is possible to execute multiple operation one multiple partitions using one of the invoke methods.
  *
- * @author mdogan 12/14/12
  */
 public interface OperationService {
 

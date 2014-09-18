@@ -69,8 +69,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private static final long PERIOD = 100;
     private static final int BEGIN_INDEX = 3;
     private static final long AWAIT_TIME = 3;
-    private static final int POOL_MULTIPLIER = 5;
-    private static final int QUEUE_MULTIPIER = 100000;
+    private static final int POOL_MULTIPLIER = 2;
+    private static final int QUEUE_MULTIPLIER = 100000;
 
     private final NodeEngineImpl nodeEngine;
     private final ExecutorService cachedExecutorService;
@@ -119,7 +119,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         final int coreSize = Runtime.getRuntime().availableProcessors();
         // default executors
         register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE, ExecutorType.CACHED);
-        register(SCHEDULED_EXECUTOR, coreSize * POOL_MULTIPLIER, coreSize * QUEUE_MULTIPIER, ExecutorType.CACHED);
+        register(SCHEDULED_EXECUTOR, coreSize * POOL_MULTIPLIER, coreSize * QUEUE_MULTIPLIER, ExecutorType.CACHED);
         defaultScheduledExecutorServiceDelegate = getScheduledExecutor(SCHEDULED_EXECUTOR);
 
         // Register CompletableFuture task
