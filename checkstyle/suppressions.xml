@@ -17,14 +17,6 @@
     <suppress checks="CyclomaticComplexityCheck" files="ConsoleApp.java"/>
     <suppress checks="NPathComplexityCheck" files="ConsoleApp.java"/>
     <suppress checks="MethodLengthCheck" files="ConsoleApp.java"/>
-    <suppress checks="MethodLengthCheck" files="AllTest.java"/>
-    <suppress checks="MethodCountCheck" files="AllTest.java"/>
-    <suppress checks="AnonInnerLengthCheck" files="SimpleFunctionalMapTest.java"/>
-    <suppress checks="MethodLengthCheck" files="SimpleFunctionalMapTest.java"/>
-    <suppress checks="CyclomaticComplexityCheck" files="SimpleFunctionalMapTest.java"/>
-    <suppress checks="MethodLengthCheck" files="StartServer.java"/>
-    <suppress checks="CyclomaticComplexityCheck" files="StartServer.java"/>
-    <suppress checks="NPathComplexityCheck" files="StartServer.java"/>
 
     <!--Code Smells -->
 
@@ -33,7 +25,6 @@
 
     <!-- Exclude implementation packages from JavaDoc on public methods checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
-
 
     <!-- Cluster -->
     <suppress checks="JavadocMethod" files="com.hazelcast.cluster[\\/]"/>
@@ -108,7 +99,7 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.concurrent[\\/]"/>
 
-    <!-- current.atomiclong-->
+    <!-- concurrent.atomiclong-->
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook"/>
     <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
@@ -167,6 +158,7 @@
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.impl.ClientEngineImpl"/>
     <!-- TODO: We need to get this wildcard suppressions fixed -->
     <suppress checks="" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.config.XmlClientConfigBuilder"/>
 
     <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.client[\\/]"/>
@@ -397,6 +389,11 @@
     <!-- Too complex to change, I am leaving it to implementer -->
     <suppress checks="" files="com.hazelcast.util.Base64"/>
 
+    <suppress checks="" files="com.hazelcast.util.HashUtil"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.util.QuickMath"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.nio.Bits"/>
+    <suppress checks="MethodCount" files="com.hazelcast.nio.Bits"/>
+
     <!-- Util executor package javadocs, leaving javadocs to someone who can explain better -->
     <suppress checks="JavadocMethod" files="com.hazelcast.util.executor[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.util.executor[\\/]"/>
@@ -404,9 +401,6 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.util.executor[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler"/>
     <suppress checks="" files="com.hazelcast.util.scheduler.ScheduleType"/>
-
-    <!-- This Class have lots of magic numbers, We can make an exception for this class  -->
-    <suppress checks="MagicNumber" files="com.hazelcast.util.ByteUtil"/>
 
     <!-- ReplicatedMap -->
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.client.proxy.ClientReplicatedMapProxy"/>
@@ -432,7 +426,6 @@
     <suppress checks="MethodCount" files="com.hazelcast.nio.serialization.ByteBufferObjectDataOutput"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.CipherHelper"/>
     <suppress checks="MagicNumber|NPathComplexity" files="com.hazelcast.nio.ClassLoaderUtil"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.Data"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity|ReturnCount|MethodLength"
               files="com.hazelcast.nio.serialization.DataAdapter"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.DefaultPortableReader"/>
@@ -444,9 +437,6 @@
     <suppress checks="MethodCount" files="com.hazelcast.nio.NodeIOService"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.Packet"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.ReadHandler"/>
-    <suppress checks="MagicNumber|MethodLength|MagicNumber|CyclomaticComplexity|EmptyBlock|NPathComplexity"
-              files="com.hazelcast.nio.ssl.SSLSocketChannelWrapper"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.SerializationServiceBuilder"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
               files="com.hazelcast.nio.serialization.SerializationServiceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
