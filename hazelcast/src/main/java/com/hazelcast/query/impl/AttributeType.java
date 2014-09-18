@@ -83,7 +83,7 @@ public enum AttributeType {
     /**
      * UUID
      */
-    UUID(TypeConverters.UUID_CONVERTER);
+    UUID(UUIDConverter.INSTANCE);
 
     private final TypeConverters.TypeConverter converter;
 
