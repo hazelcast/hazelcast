@@ -1,7 +1,25 @@
 
 ### Fixes
 
-This section lists issues solved for Hazelcast 3.3 release.
+**3.3 Fixes**
+
+This section lists issues solved for **Hazelcast 3.3.1** release.
+
+- If deserialization of the client request fails, the exception is not propagated back to the client  [[#3557]](https://github.com/hazelcast/hazelcast/issues/3557).
+- "Lock is not owned by by the transaction" exception. This exception was received while testing how transactions are working with Map and MultiMap for some last Hazelcast releases [[#3545]](https://github.com/hazelcast/hazelcast/issues/3545).
+- Main classes in `manifest.mf` files are not correctly set [#3537](https://github.com/hazelcast/hazelcast/issues/3537).
+- Count of evicted events may exceed the map size when "read backup data" feature is enabled [#3515](https://github.com/hazelcast/hazelcast/issues/3515).
+- `mancenter.war` from Hazelcast release 3.2.5 cannot be deployed to Glassfish 3.1.2.2 and it fails to deploy [#3501](https://github.com/hazelcast/hazelcast/issues/3501).
+- While evicting entries from a map with the method `evictAll`, locked keys should stay in the map [#3473](https://github.com/hazelcast/hazelcast/issues/3473).
+- In `hazelcast-vm` module, before every test, new server container is started. And after every test, running server is terminated. This behavior causes a long test execution time. Server start-up and termination should be done before and after test class initialization and finalization [#3473](https://github.com/hazelcast/hazelcast/issues/3473).
+- The method `IQueue.take()` method should throw InterruptedException, but throws HazelcastException instead [#3133](https://github.com/hazelcast/hazelcast/issues/3133).
+- Multicast discovery doesn't work without network [#2594](https://github.com/hazelcast/hazelcast/issues/2594).
+
+
+
+**3.3 Fixes**
+
+This section lists issues solved for **Hazelcast 3.3** release.
 
 - TxQueue cannot find reserved items upon ownership changes [[#3432]](https://github.com/hazelcast/hazelcast/issues/3432).
 - Documentation update is needed to tell that PagingPredicate is only supported for Comparable objects if there is no comparator [[#3428]](https://github.com/hazelcast/hazelcast/issues/3432).
@@ -18,7 +36,7 @@ This section lists issues solved for Hazelcast 3.3 release.
 
 **RC3 Fixes**
 
-This section lists issues solved for Hazelcast 3.3-RC3 release.
+This section lists issues solved for **Hazelcast 3.3-RC3** release.
 
 
 - Parallel execution of `MapStore#store` method for the same key triggered by `IMap#flush` [[#3338]](https://github.com/hazelcast/hazelcast/issues/3338).
@@ -60,7 +78,7 @@ This section lists issues solved for Hazelcast 3.3-RC3 release.
 
 **RC2 Fixes**
 
-This section lists issues solved for Hazelcast 3.3-RC2 release.
+This section lists issues solved for **Hazelcast 3.3-RC2** release.
 
 -	`evictAll` should flush to staging area [#2969](https://github.com/hazelcast/hazelcast/issues/2969).
 -	NPE exception in MapStoreTest [[#2956]](https://github.com/hazelcast/hazelcast/issues/2956).
@@ -88,7 +106,7 @@ This section lists issues solved for Hazelcast 3.3-RC2 release.
 
 **RC1 Fixes**
 
-This section lists issues solved for Hazelcast 3.3-RC1 release.
+This section lists issues solved for **Hazelcast 3.3-RC1** release.
 
 -	It is not possible to copy the link from *http://hazelcast.org/download/* and run `wget` on it [[#2814]](https://github.com/hazelcast/hazelcast/issues/2814).
 -	`mapCleared` method for EntryListener is needed [[#2789]](https://github.com/hazelcast/hazelcast/issues/2789).
