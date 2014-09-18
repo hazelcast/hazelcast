@@ -69,10 +69,7 @@ public class MapConfig {
      * The number of default time to wait eviction
      */
     public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
-    /**
-     * Maximum size
-     */
-    public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+
     /**
      * Default policy for eviction
      */
