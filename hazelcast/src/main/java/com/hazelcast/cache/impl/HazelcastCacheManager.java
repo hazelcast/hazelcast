@@ -352,7 +352,6 @@ public abstract class HazelcastCacheManager
             final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
             iterator.remove();
             source.registerCacheEntryListener(listenerConfig);
-            //cacheService.registerCacheEntryListener(cacheConfig.getNameWithPrefix(), source, listenerConfig);
         }
     }
 
