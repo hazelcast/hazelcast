@@ -34,6 +34,7 @@ import com.hazelcast.queue.impl.PeekOperation;
 import com.hazelcast.queue.impl.PollOperation;
 import com.hazelcast.queue.impl.QueueOperation;
 import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.queue.impl.RemainingCapacityOperation;
 import com.hazelcast.queue.impl.RemoveOperation;
 import com.hazelcast.queue.impl.SizeOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -101,6 +102,11 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
 
     public int size() {
         SizeOperation operation = new SizeOperation(name);
+        return (Integer) invokeAndGet(operation);
+    }
+
+    public int remainingCapacity() {
+        RemainingCapacityOperation operation = new RemainingCapacityOperation(name);
         return (Integer) invokeAndGet(operation);
     }
 
