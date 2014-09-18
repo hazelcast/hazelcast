@@ -17,6 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
@@ -38,7 +39,6 @@ import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
@@ -52,15 +52,12 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.ssl.BasicSSLContextFactory;
-import com.hazelcast.nio.ssl.SSLContextFactory;
-import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
-import com.hazelcast.nio.tcp.DefaultSocketChannelWrapper;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.IOSelectorOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.InSelectorImpl;
 import com.hazelcast.nio.tcp.OutSelectorImpl;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
+import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.exception.RetryableIOException;
@@ -160,21 +157,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 Logger.getLogger(OutSelectorImpl.class),
                 OUT_OF_MEMORY_HANDLER);
 
-        socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
         socketOptions = networkConfig.getSocketOptions();
-        socketChannelWrapperFactory = initSocketChannel(networkConfig);
-    }
-
-    private SocketChannelWrapperFactory initSocketChannel(ClientNetworkConfig networkConfig) {
-        //ioService.getSSLConfig(); TODO
-        SSLConfig sslConfig = networkConfig.getSSLConfig();
-
-        if (sslConfig != null && sslConfig.isEnabled()) {
-            LOGGER.info("SSL is enabled");
-            return new SSLSocketChannelWrapperFactory(sslConfig);
-        } else {
-            return new DefaultSocketChannelWrapperFactory();
-        }
+        ClientExtension initializer = client.getInitializer();
+        socketChannelWrapperFactory = initializer.getSocketChannelWrapperFactory();
+        socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
     }
 
     private Credentials initCredentials(ClientConfig config) {
@@ -183,7 +169,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         Credentials c = securityConfig.getCredentials();
         if (c == null) {
             final String credentialsClassname = securityConfig.getCredentialsClassname();
-            //todo: Should be moved to a reflection utility.
             if (credentialsClassname != null) {
                 try {
                     c = ClassLoaderUtil.newInstance(config.getClassLoader(), credentialsClassname);
@@ -199,22 +184,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
-        SocketInterceptor implementation = null;
         if (sic != null && sic.isEnabled()) {
-            implementation = (SocketInterceptor) sic.getImplementation();
-            if (implementation == null && sic.getClassName() != null) {
-                try {
-                    implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
-                } catch (Throwable e) {
-                    LOGGER.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
-                }
-            }
+            ClientExtension initializer = client.getInitializer();
+            return initializer.getSocketInterceptor();
         }
-
-        if (implementation != null) {
-            implementation.init(sic.getProperties());
-        }
-        return implementation;
+        return null;
     }
 
     @Override
@@ -235,7 +209,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         inSelector.start();
         outSelector.start();
         invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
-        final HeartBeat heartBeat = new HeartBeat();
+        HeartBeat heartBeat = new HeartBeat();
         executionService.scheduleWithFixedDelay(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
     }
 
@@ -266,6 +240,29 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             throw new RetryableIOException(address + " can not be translated! ");
         }
         return ownerConnectionFuture.createNew(translatedAddress);
+    }
+
+    public ClientConnection connectToAddress(Address target) throws Exception {
+        Authenticator authenticator = new ClusterAuthenticator();
+        int count = 0;
+        IOException lastError = null;
+        while (count < RETRY_COUNT) {
+            try {
+                return getOrConnect(target, authenticator);
+            } catch (IOException e) {
+                lastError = e;
+            }
+            count++;
+            sleep();
+        }
+        throw lastError;
+    }
+
+    private void sleep(){
+        try {
+            Thread.sleep(250);
+        } catch (InterruptedException ignored) {
+        }
     }
 
     @Override
@@ -505,46 +502,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             throw new Exception(t);
         }
         return response;
-    }
-
-    interface SocketChannelWrapperFactory {
-        SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
-    }
-
-    static class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
-        @Override
-        public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-            return new DefaultSocketChannelWrapper(socketChannel);
-        }
-    }
-
-    static class SSLSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
-        final SSLContextFactory sslContextFactory;
-
-        SSLSocketChannelWrapperFactory(SSLConfig sslConfig) {
-//            if (CipherHelper.isSymmetricEncryptionEnabled(ioService)) {
-//                throw new RuntimeException("SSL and SymmetricEncryption cannot be both enabled!");
-//            }
-            SSLContextFactory sslContextFactoryObject = (SSLContextFactory) sslConfig.getFactoryImplementation();
-            try {
-                String factoryClassName = sslConfig.getFactoryClassName();
-                if (sslContextFactoryObject == null && factoryClassName != null) {
-                    sslContextFactoryObject = (SSLContextFactory) Class.forName(factoryClassName).newInstance();
-                }
-                if (sslContextFactoryObject == null) {
-                    sslContextFactoryObject = new BasicSSLContextFactory();
-                }
-                sslContextFactoryObject.init(sslConfig.getProperties());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            sslContextFactory = sslContextFactoryObject;
-        }
-
-        @Override
-        public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-            return new SSLSocketChannelWrapper(sslContextFactory.getSSLContext(), socketChannel, client);
-        }
     }
 
     private Object getLock(Address address) {

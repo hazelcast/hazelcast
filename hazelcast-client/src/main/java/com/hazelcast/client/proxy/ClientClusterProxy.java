@@ -40,7 +40,7 @@ public class ClientClusterProxy implements Cluster {
 
     @Override
     public String addMembershipListener(MembershipListener listener) {
-        return clusterService.addMembershipListenerWithInit(listener);
+        return clusterService.addMembershipListener(listener);
     }
 
     @Override

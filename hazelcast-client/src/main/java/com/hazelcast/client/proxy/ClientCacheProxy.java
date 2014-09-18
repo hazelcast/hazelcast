@@ -46,7 +46,6 @@ import com.hazelcast.client.cache.HazelcastClientCacheManager;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
-import com.hazelcast.client.nearcache.IClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
@@ -107,7 +106,7 @@ public class ClientCacheProxy<K, V>
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
     private final AtomicInteger completionIdCounter = new AtomicInteger();
-    private final IClientNearCache<Data, Object> nearCache;
+    private final ClientNearCache<Data, Object> nearCache;
     private final ClientCacheDistributedObject delegate;
     //this will represent the name from the user perspective
     private final String name;

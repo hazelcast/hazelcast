@@ -27,6 +27,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -109,6 +110,15 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         }
     }
 
+    ClientConfig build(ClientConfig clientConfig) {
+        try {
+            parse(clientConfig);
+            return clientConfig;
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
     private void parse(ClientConfig clientConfig) throws Exception {
         this.clientConfig = clientConfig;
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -138,6 +148,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 fillProperties(node, clientConfig.getProperties());
             } else if ("serialization".equals(nodeName)) {
                 handleSerialization(node);
+            } else if ("off-heap-memory".equals(nodeName)) {
+                fillOffHeapMemoryConfig(node, clientConfig.getOffHeapMemoryConfig());
             } else if ("group".equals(nodeName)) {
                 handleGroup(node);
             } else if ("listeners".equals(nodeName)) {
@@ -174,6 +186,15 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
             } else if ("cache-local-entries".equals(nodeName)) {
                 nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(getTextContent(child)));
+            } else if ("local-update-policy".equals(nodeName)) {
+                String value = getTextContent(child);
+                NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
+                try {
+                    policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
+                } catch (IllegalArgumentException ignored) {
+                    EmptyStatement.ignore(ignored);
+                }
+                nearCacheConfig.setLocalUpdatePolicy(policy);
             }
         }
         clientConfig.addNearCacheConfig(name, nearCacheConfig);

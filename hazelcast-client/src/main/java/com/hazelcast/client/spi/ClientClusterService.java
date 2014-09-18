@@ -46,5 +46,4 @@ public interface ClientClusterService {
 
     boolean removeMembershipListener(String registrationId);
 
-
 }

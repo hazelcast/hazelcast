@@ -65,6 +65,9 @@ public abstract class ClientProxy implements DistributedObject {
         this.context = context;
     }
 
+    protected void onInitialize() {
+    }
+
     @Deprecated
     public final Object getId() {
         return objectName;

@@ -255,4 +255,12 @@ public final class HazelcastClientProxy
         }
         return c;
     }
+
+    public String toString() {
+        final HazelcastClient hazelcastInstance = client;
+        if (hazelcastInstance != null) {
+            return hazelcastInstance.toString();
+        }
+        return "HazelcastInstance {NOT ACTIVE}";
+    }
 }

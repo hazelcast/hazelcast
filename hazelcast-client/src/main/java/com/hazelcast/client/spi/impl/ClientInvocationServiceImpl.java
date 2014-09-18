@@ -87,14 +87,22 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
     }
 
     @Override
+    public <T> ICompletableFuture<T> invokeOnPartitionOwner(ClientRequest request, int partitionId) throws Exception {
+        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
+        final Address owner = partitionService.getPartitionOwner(partitionId);
+        return send(request, owner);
+    }
+
+    @Override
     public <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception {
         return sendAndHandle(request, handler);
     }
 
-    @Override
     public <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler)
             throws Exception {
-        return sendAndHandle(request, target, handler);
+        final ClientConnection clientConnection = connectionManager.connectToAddress(target);
+        request.setSingleConnection();
+        return doSend(request, clientConnection, handler);
     }
 
     // NIO public
@@ -128,11 +136,6 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     private ICompletableFuture sendAndHandle(ClientRequest request, EventHandler handler) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(null);
-        return doSend(request, connection, handler);
-    }
-
-    private ICompletableFuture sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws Exception {
-        final ClientConnection connection = connectionManager.tryToConnect(target);
         return doSend(request, connection, handler);
     }
 

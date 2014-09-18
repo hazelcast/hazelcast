@@ -56,7 +56,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private final int retryCount;
     private final int retryWaitTime;
 
-    private Object response;
+    private volatile Object response;
 
     private final ClientRequest request;
 

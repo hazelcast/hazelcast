@@ -18,6 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
@@ -107,8 +108,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private PartitionsResponse getPartitionsFrom(Address address) {
         try {
-            final Future<PartitionsResponse> future =
-                    client.getInvocationService().invokeOnTarget(new GetPartitionsRequest(), address);
+            ClientInvocationService invocationService = client.getInvocationService();
+            Future<PartitionsResponse> future = invocationService.invokeOnTarget(new GetPartitionsRequest(), address);
             return client.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             LOGGER.severe("Error while fetching cluster partition table!", e);
