@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.UUID;
 
 final class TypeConverters {
     public static final TypeConverter BIG_INTEGER_CONVERTER = new BigIntegerConverter();
@@ -37,12 +38,26 @@ final class TypeConverters {
     public static final TypeConverter SQL_DATE_CONVERTER = new SqlDateConverter();
     public static final TypeConverter SQL_TIMESTAMP_CONVERTER = new SqlTimestampConverter();
     public static final TypeConverter DATE_CONVERTER = new DateConverter();
+    public static final TypeConverter UUID_CONVERTER = new UUIDConverter();
 
     private TypeConverters() {
     }
 
     public interface TypeConverter {
         Comparable convert(Comparable value);
+    }
+
+    static class UUIDConverter implements TypeConverter {
+        @Override
+        public Comparable convert(Comparable value) {
+            if (value instanceof UUID) {
+                return value;
+            }
+            if (value instanceof String) {
+                return UUID.fromString((String) value);
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.util.UUID");
+        }
     }
 
     static class EnumConverter implements TypeConverter {

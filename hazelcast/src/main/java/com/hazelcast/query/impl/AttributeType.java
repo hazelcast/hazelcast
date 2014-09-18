@@ -79,7 +79,11 @@ public enum AttributeType {
     /**
      * Date
      */
-    DATE(TypeConverters.DATE_CONVERTER);
+    DATE(TypeConverters.DATE_CONVERTER),
+    /**
+     * UUID
+     */
+    UUID(TypeConverters.UUID_CONVERTER);
 
     private final TypeConverters.TypeConverter converter;
 
