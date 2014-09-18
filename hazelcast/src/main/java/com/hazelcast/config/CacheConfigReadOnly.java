@@ -28,31 +28,32 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
         super(config);
     }
 
-//    public CacheConfig setName(String name) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setBackupCount(int backupCount) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setAsyncBackupCount(int asyncBackupCount) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setEvictionPercentage(int evictionPercentage) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setStatisticsEnabled(boolean statisticsEnabled) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
+    public CacheConfig setName(String name) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    public CacheConfig setBackupCount(int backupCount) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    public CacheConfig setAsyncBackupCount(int asyncBackupCount) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    public CacheConfig setEvictionPercentage(int evictionPercentage) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    public CacheConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    public CacheConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    public CacheConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
 }

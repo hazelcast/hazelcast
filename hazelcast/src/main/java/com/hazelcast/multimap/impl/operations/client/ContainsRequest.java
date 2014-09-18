@@ -19,7 +19,6 @@ package com.hazelcast.multimap.impl.operations.client;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -66,13 +65,13 @@ public class ContainsRequest extends MultiMapAllPartitionRequest implements Retr
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        IOUtil.writeNullableData(out, value);
+        out.writeData(value);
     }
 
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
-        value = IOUtil.readNullableData(in);
+        value = in.readData();
     }
 
     @Override

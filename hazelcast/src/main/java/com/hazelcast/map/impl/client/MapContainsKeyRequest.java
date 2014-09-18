@@ -83,15 +83,14 @@ public class MapContainsKeyRequest extends KeyBasedClientRequest implements Port
         writer.writeUTF("n", name);
         writer.writeLong("threadId", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
     }
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         threadId = reader.readLong("threadId");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     public Permission getRequiredPermission() {

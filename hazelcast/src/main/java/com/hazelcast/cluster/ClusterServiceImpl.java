@@ -684,7 +684,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         try {
             if (!node.joined() && !node.getThisAddress().equals(masterAddress)) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Handling master response: " + this);
+                    logger.finest("Handling master response: " + masterAddress);
                 }
                 final Address currentMaster = node.getMasterAddress();
                 if (currentMaster != null && !currentMaster.equals(masterAddress)) {

@@ -65,7 +65,7 @@ public class CacheEntryProcessorRequest
         writer.writeUTF("n", name);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
         out.writeObject(entryProcessor);
         out.writeBoolean(arguments != null);
         if (arguments != null) {
@@ -81,8 +81,7 @@ public class CacheEntryProcessorRequest
         name = reader.readUTF("n");
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
         entryProcessor = in.readObject();
         final boolean hasArguments = in.readBoolean();
         if (hasArguments) {

@@ -151,8 +151,7 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
             return String.valueOf(key);
         } else {
             Data data = serializationService.toData(key, PARTITIONING_STRATEGY);
-//            name = Integer.toString(data.hashCode());
-            byte[] buffer = data.getBuffer();
+            byte[] buffer = data.getData();
             return Arrays.toString(buffer);
         }
     }

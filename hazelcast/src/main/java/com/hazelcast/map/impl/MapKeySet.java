@@ -44,7 +44,7 @@ public class MapKeySet implements IdentifiedDataSerializable {
         int size = keySet.size();
         out.writeInt(size);
         for (Data o : keySet) {
-            o.writeData(out);
+            out.writeData(o);
         }
     }
 
@@ -52,8 +52,7 @@ public class MapKeySet implements IdentifiedDataSerializable {
         int size = in.readInt();
         keySet = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             keySet.add(data);
         }
     }

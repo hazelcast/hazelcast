@@ -54,17 +54,15 @@ public class TxnMultiMapPutRequest extends TxnMultiMapRequest {
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
-        value.writeData(out);
+        out.writeData(key);
+        out.writeData(value);
     }
 
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
-        value = new Data();
-        value.readData(in);
+        key = in.readData();
+        value = in.readData();
     }
 
     public Permission getRequiredPermission() {

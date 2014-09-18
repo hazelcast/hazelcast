@@ -298,7 +298,7 @@ public interface IMap<K, V>
      * // do some other stuff, when ready get the result
      * Object oldValue = future.get();
      * </code>
-     * Future.get() will block until the actual map.get() completes.
+     * Future.get() will block until the actual map.put() completes.
      * If the application requires timely response,
      * then Future.get(timeout, timeunit) can be used.
      * <code>

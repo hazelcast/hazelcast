@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -58,17 +57,17 @@ public class EntryEventData extends AbstractEventData {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        dataKey.writeData(out);
-        IOUtil.writeNullableData(out, dataNewValue);
-        IOUtil.writeNullableData(out, dataOldValue);
+        out.writeData(dataKey);
+        out.writeData(dataNewValue);
+        out.writeData(dataOldValue);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        dataKey = IOUtil.readData(in);
-        dataNewValue = IOUtil.readNullableData(in);
-        dataOldValue = IOUtil.readNullableData(in);
+        dataKey = in.readData();
+        dataNewValue = in.readData();
+        dataOldValue = in.readData();
     }
 
     public Object cloneWithoutValues() {

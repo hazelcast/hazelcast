@@ -78,7 +78,7 @@ public class CachePutOperation
         super.writeInternal(out);
         out.writeBoolean(get);
         out.writeObject(expiryPolicy);
-        value.writeData(out);
+        out.writeData(value);
     }
 
     @Override
@@ -87,8 +87,7 @@ public class CachePutOperation
         super.readInternal(in);
         get = in.readBoolean();
         expiryPolicy = in.readObject();
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
     }
 
     @Override

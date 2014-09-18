@@ -29,7 +29,6 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.RecordReplicationInfo;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -48,9 +47,6 @@ import java.util.Set;
 
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 
-/**
- * @author mdogan 7/24/12
- */
 public class MapReplicationOperation extends AbstractOperation {
 
     private Map<String, Set<RecordReplicationInfo>> data;
@@ -59,7 +55,8 @@ public class MapReplicationOperation extends AbstractOperation {
     public MapReplicationOperation() {
     }
 
-    public MapReplicationOperation(MapService mapService, PartitionContainer container, int partitionId, int replicaIndex) {
+    public MapReplicationOperation(MapService mapService, PartitionContainer container, int partitionId,
+            int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
@@ -92,8 +89,8 @@ public class MapReplicationOperation extends AbstractOperation {
             if (!mapContainer.isWriteBehindMapStoreEnabled()) {
                 continue;
             }
-            final WriteBehindQueue<DelayedEntry> writeBehindQueue
-                    = ((WriteBehindStore) recordStore.getMapDataStore()).getWriteBehindQueue();
+            final WriteBehindQueue<DelayedEntry> writeBehindQueue = ((WriteBehindStore) recordStore.getMapDataStore())
+                    .getWriteBehindQueue();
             final List<DelayedEntry> delayedEntries = writeBehindQueue.getSnapShot().asList();
             if (delayedEntries != null && delayedEntries.size() == 0) {
                 continue;
@@ -155,12 +152,11 @@ public class MapReplicationOperation extends AbstractOperation {
             final int listSize = in.readInt();
             final List<DelayedEntry> delayedEntriesList = new ArrayList<DelayedEntry>(listSize);
             for (int j = 0; j < listSize; j++) {
-                final Data key = IOUtil.readNullableData(in);
-                final Data value = IOUtil.readNullableData(in);
-                final long storeTime = in.readLong();
-                final int partitionId = in.readInt();
-                final DelayedEntry<Data, Data> entry
-                        = DelayedEntry.create(key, value, storeTime, partitionId);
+                Data key = in.readData();
+                Data value = in.readData();
+                long storeTime = in.readLong();
+                int partitionId = in.readInt();
+                DelayedEntry<Data, Data> entry = DelayedEntry.create(key, value, storeTime, partitionId);
                 delayedEntriesList.add(entry);
             }
             delayedEntries.put(mapName, delayedEntriesList);
@@ -187,8 +183,8 @@ public class MapReplicationOperation extends AbstractOperation {
             for (DelayedEntry e : delayedEntryList) {
                 final Data key = mapServiceContext.toData(e.getKey());
                 final Data value = mapServiceContext.toData(e.getValue());
-                IOUtil.writeNullableData(out, key);
-                IOUtil.writeNullableData(out, value);
+                out.writeData(key);
+                out.writeData(value);
                 out.writeLong(e.getStoreTime());
                 out.writeInt(e.getPartitionId());
             }
@@ -201,7 +197,8 @@ public class MapReplicationOperation extends AbstractOperation {
 
     private RecordReplicationInfo createRecordReplicationInfo(Record record, MapService mapService) {
         final RecordInfo info = Records.buildRecordInfo(record);
-        return new RecordReplicationInfo(record.getKey(), mapService.getMapServiceContext().toData(record.getValue()), info);
+        return new RecordReplicationInfo(record.getKey(), mapService.getMapServiceContext().toData(record.getValue()),
+                info);
     }
 
 }

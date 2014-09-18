@@ -20,7 +20,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -124,18 +123,17 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        dataKey.writeData(out);
+        out.writeData(dataKey);
         out.writeLong(threadId);
-        IOUtil.writeNullableData(out, dataValue);
+        out.writeData(dataValue);
         out.writeLong(ttl);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        dataKey = new Data();
-        dataKey.readData(in);
+        dataKey = in.readData();
         threadId = in.readLong();
-        dataValue = IOUtil.readNullableData(in);
+        dataValue = in.readData();
         ttl = in.readLong();
     }
 }

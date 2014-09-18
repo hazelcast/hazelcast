@@ -98,6 +98,8 @@ public class Config {
 
     private MemberAttributeConfig memberAttributeConfig = new MemberAttributeConfig();
 
+    private OffHeapMemoryConfig offHeapMemoryConfig = new OffHeapMemoryConfig();
+
     private String licenseKey;
 
     public Config() {
@@ -777,6 +779,15 @@ public class Config {
             throw new IllegalArgumentException("userContext can't be null");
         }
         this.userContext = userContext;
+        return this;
+    }
+
+    public OffHeapMemoryConfig getOffHeapMemoryConfig() {
+        return offHeapMemoryConfig;
+    }
+
+    public Config setOffHeapMemoryConfig(OffHeapMemoryConfig offHeapMemoryConfig) {
+        this.offHeapMemoryConfig = offHeapMemoryConfig;
         return this;
     }
 

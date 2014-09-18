@@ -68,7 +68,7 @@ public class CacheGetAndReplaceOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        value.writeData(out);
+        out.writeData(value);
         out.writeObject(expiryPolicy);
     }
 
@@ -76,8 +76,7 @@ public class CacheGetAndReplaceOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
         expiryPolicy = in.readObject();
     }
 

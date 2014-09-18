@@ -24,6 +24,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.HeapData;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.util.Clock;
 
@@ -128,12 +129,12 @@ public final class CacheReplicationOperation
                         final CacheRecord record = e.getValue();
                         final long expirationTime = record.getExpirationTime();
                         if (expirationTime > now) {
-                            key.writeData(out);
+                            out.writeData(key);
                             out.writeObject(record);
                         }
                     }
                     //empty data will terminate the iteration for read
-                    new Data().writeData(out);
+                    out.writeData(new HeapData());
                 }
             }
         }
@@ -160,9 +161,8 @@ public final class CacheReplicationOperation
                     Map<Data, CacheRecord> m = new HashMap<Data, CacheRecord>(subCount);
                     data.put(name, m);
                     for (int j = 0; j < subCount; j++) {
-                        final Data key = new Data();
-                        key.readData(in);
-                        if (key.bufferSize() == 0) {
+                        final Data key = in.readData();
+                        if (key.dataSize() == 0) {
                             //empty data received so reading done here
                             break;
                         }

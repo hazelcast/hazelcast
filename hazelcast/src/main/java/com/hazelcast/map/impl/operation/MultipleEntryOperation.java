@@ -110,8 +110,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
         int size = in.readInt();
         keys = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data key = new Data();
-            key.readData(in);
+            Data key = in.readData();
             keys.add(key);
         }
 
@@ -123,7 +122,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
         out.writeObject(entryProcessor);
         out.writeInt(keys.size());
         for (Data key : keys) {
-            key.writeData(out);
+            out.writeData(key);
         }
     }
 

@@ -71,12 +71,11 @@ public class TxnMultiMapGetRequest extends TxnMultiMapRequest {
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        key.writeData(writer.getRawDataOutput());
+        writer.getRawDataOutput().writeData(key);
     }
 
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
-        key = new Data();
-        key.readData(reader.getRawDataInput());
+        key = reader.getRawDataInput().readData();
     }
 }

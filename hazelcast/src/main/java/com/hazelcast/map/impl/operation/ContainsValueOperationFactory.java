@@ -44,12 +44,12 @@ public final class ContainsValueOperationFactory implements OperationFactory {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeObject(value);
+        out.writeData(value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        value = in.readObject();
+        value = in.readData();
     }
 }

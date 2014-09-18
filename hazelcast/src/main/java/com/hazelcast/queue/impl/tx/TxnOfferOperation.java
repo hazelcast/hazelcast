@@ -89,15 +89,14 @@ public class TxnOfferOperation extends QueueBackupAwareOperation implements Noti
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
-        data.writeData(out);
+        out.writeData(data);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
-        data = new Data();
-        data.readData(in);
+        data = in.readData();
     }
 
     @Override

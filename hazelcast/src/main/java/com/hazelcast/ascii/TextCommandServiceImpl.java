@@ -130,7 +130,7 @@ public class TextCommandServiceImpl implements TextCommandService {
     @Override
     public byte[] toByteArray(Object value) {
         Data data = node.getSerializationService().toData(value);
-        return data.getBuffer();
+        return data.getData();
     }
 
     @Override
@@ -328,6 +328,7 @@ public class TextCommandServiceImpl implements TextCommandService {
     public void stop() {
         final ResponseThreadRunnable rtr = responseThreadRunnable;
         if (rtr != null) {
+            logger.info("Stopping text command service...");
             rtr.stop();
         }
     }

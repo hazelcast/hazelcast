@@ -1,5 +1,6 @@
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
@@ -62,7 +63,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         final MapConfig mapConfig = mapContainer.getMapConfig();
         this.minEvictionCheckMillis = mapConfig.getMinEvictionCheckMillis();
         this.evictionEnabled
-                = !MapConfig.EvictionPolicy.NONE.equals(mapConfig.getEvictionPolicy());
+                = !EvictionPolicy.NONE.equals(mapConfig.getEvictionPolicy());
         this.expirable = isRecordStoreExpirable();
     }
 
@@ -356,7 +357,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         fireEvent(key, value, name, mapServiceContext);
     }
 
-    protected void increaseRecordEvictionCriteriaNumber(Record record, MapConfig.EvictionPolicy evictionPolicy) {
+    protected void increaseRecordEvictionCriteriaNumber(Record record, EvictionPolicy evictionPolicy) {
         switch (evictionPolicy) {
             case LRU:
                 ++lruAccessSequenceNumber;

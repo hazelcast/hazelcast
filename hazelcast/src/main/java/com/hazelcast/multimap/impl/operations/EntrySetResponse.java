@@ -17,7 +17,6 @@
 package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -79,11 +78,11 @@ public class EntrySetResponse implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(map.size());
         for (Map.Entry<Data, Collection<Data>> entry : map.entrySet()) {
-            entry.getKey().writeData(out);
+            out.writeData(entry.getKey());
             Collection<Data> coll = entry.getValue();
             out.writeInt(coll.size());
             for (Data data : coll) {
-                data.writeData(out);
+                out.writeData(data);
             }
         }
     }
@@ -92,11 +91,11 @@ public class EntrySetResponse implements DataSerializable {
         int size = in.readInt();
         map = new HashMap<Data, Collection<Data>>(size);
         for (int i = 0; i < size; i++) {
-            Data key = IOUtil.readData(in);
+            Data key = in.readData();
             int collSize = in.readInt();
             Collection coll = new ArrayList(collSize);
             for (int j = 0; j < collSize; j++) {
-                coll.add(IOUtil.readData(in));
+                coll.add(in.readData());
             }
             map.put(key, coll);
         }

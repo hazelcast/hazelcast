@@ -17,6 +17,7 @@
 package com.hazelcast.map.mapstore;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
@@ -771,7 +772,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         testMapStore.assertAwait(1);
         assertEquals(1, testMapStore.getInitCount());
         assertEquals("default", testMapStore.getMapName());
-        assertEquals(TestUtil.getNode((HazelcastInstanceProxy) h1), TestUtil.getNode(testMapStore.getHazelcastInstance()));
+        assertEquals(TestUtil.getNode(h1), TestUtil.getNode(testMapStore.getHazelcastInstance()));
     }
 
     @Test
@@ -784,13 +785,13 @@ public class MapStoreTest extends HazelcastTestSupport {
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
         maxSizeConfig.setSize(size);
         MapConfig mapConfig = config.getMapConfig("default");
-        mapConfig.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
+        mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
         mapConfig.setMaxSizeConfig(maxSizeConfig);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
-        final CountDownLatch countDownLatch = new CountDownLatch(10000);
+        final CountDownLatch countDownLatch = new CountDownLatch(size);
         map.addEntryListener(new EntryAdapter() {
             @Override
             public void entryEvicted(EntryEvent event) {

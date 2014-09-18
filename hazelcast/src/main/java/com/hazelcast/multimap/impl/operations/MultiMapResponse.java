@@ -18,6 +18,7 @@ package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.multimap.impl.MultiMapRecord;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -96,7 +97,7 @@ public class MultiMapResponse implements DataSerializable {
         }
         out.writeInt(collection.size());
         for (Object obj : collection) {
-            out.writeObject(obj);
+            IOUtil.writeObject(out, obj);
         }
     }
 
@@ -112,7 +113,7 @@ public class MultiMapResponse implements DataSerializable {
         }
         collection = createCollection(collectionType, size);
         for (int i = 0; i < size; i++) {
-            collection.add(in.readObject());
+            collection.add(IOUtil.readObject(in));
         }
     }
 }

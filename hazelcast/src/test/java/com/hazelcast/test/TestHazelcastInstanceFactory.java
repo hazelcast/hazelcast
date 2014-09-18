@@ -135,6 +135,7 @@ public final class TestHazelcastInstanceFactory {
         }
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
         config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "120");
+        config.setProperty(GroupProperties.PROP_PARTITION_BACKUP_SYNC_INTERVAL, "1");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;
     }

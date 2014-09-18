@@ -93,7 +93,7 @@ public class CacheGetAllRequest
         ObjectDataOutput output = writer.getRawDataOutput();
         if (!keys.isEmpty()) {
             for (Data key : keys) {
-                key.writeData(output);
+                output.writeData(key);
             }
         }
         output.writeObject(expiryPolicy);
@@ -106,8 +106,7 @@ public class CacheGetAllRequest
         ObjectDataInput input = reader.getRawDataInput();
         if (size > 0) {
             for (int i = 0; i < size; i++) {
-                Data key = new Data();
-                key.readData(input);
+                Data key = input.readData();
                 keys.add(key);
             }
         }

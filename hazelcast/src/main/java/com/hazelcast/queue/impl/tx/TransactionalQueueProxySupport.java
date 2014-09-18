@@ -51,7 +51,8 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
     private final LinkedList<QueueItem> offeredQueue = new LinkedList<QueueItem>();
     private final Set<Long> itemIdSet = new HashSet<Long>();
 
-    protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name, TransactionSupport tx) {
+    protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name,
+                                             TransactionSupport tx) {
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;

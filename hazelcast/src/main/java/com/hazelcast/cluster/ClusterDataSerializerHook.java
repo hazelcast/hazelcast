@@ -19,16 +19,14 @@ package com.hazelcast.cluster;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class ClusterDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = Data.FACTORY_ID;
+    public static final int F_ID = 0;
 
-    public static final int DATA = Data.ID;
     public static final int ADDRESS = Address.ID;
     public static final int MEMBER = 2;
     public static final int HEARTBEAT = 3;
@@ -48,8 +46,6 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-                    case DATA:
-                        return new Data();
                     case ADDRESS:
                         return new Address();
                     case MEMBER:

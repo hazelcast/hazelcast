@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -67,8 +66,8 @@ public class CacheRemoveRequest
         writer.writeUTF("n", name);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
-        IOUtil.writeNullableData(out, currentValue);
+        out.writeData(key);
+        out.writeData(currentValue);
     }
 
     public void read(PortableReader reader)
@@ -76,9 +75,8 @@ public class CacheRemoveRequest
         name = reader.readUTF("n");
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
-        currentValue = IOUtil.readNullableData(in);
+        key = in.readData();
+        currentValue = in.readData();
     }
 
     public void setCompletionId(Integer completionId) {

@@ -82,7 +82,7 @@ public class CacheGetAllOperation
         } else {
             out.writeInt(keys.size());
             for (Data key : keys) {
-                key.writeData(out);
+                out.writeData(key);
             }
         }
     }
@@ -95,9 +95,8 @@ public class CacheGetAllOperation
         int size = in.readInt();
         if (size > -1) {
             for (int i = 0; i < size; i++) {
-                Data data = new Data();
-                data.readData(in);
-                keys.add(data);
+                Data key = in.readData();
+                keys.add(key);
             }
         }
     }

@@ -61,8 +61,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation
         int size = in.readInt();
         keys = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data key = new Data();
-            key.readData(in);
+            Data key = in.readData();
             keys.add(key);
         }
     }
@@ -73,7 +72,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation
         out.writeObject(backupProcessor);
         out.writeInt(keys.size());
         for (Data key : keys) {
-            key.writeData(out);
+            out.writeData(key);
         }
     }
 

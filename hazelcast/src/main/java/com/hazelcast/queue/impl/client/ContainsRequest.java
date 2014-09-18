@@ -61,7 +61,7 @@ public class ContainsRequest extends QueueRequest implements RetryableRequest {
         writer.writeInt("s", dataList.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
         for (Data data : dataList) {
-            data.writeData(out);
+            out.writeData(data);
         }
     }
 
@@ -72,8 +72,7 @@ public class ContainsRequest extends QueueRequest implements RetryableRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         dataList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             dataList.add(data);
         }
     }
@@ -91,6 +90,6 @@ public class ContainsRequest extends QueueRequest implements RetryableRequest {
         if (dataList.size() == 1) {
             return dataList.toArray();
         }
-        return new Object[]{dataList};
+        return new Object[] {dataList};
     }
 }

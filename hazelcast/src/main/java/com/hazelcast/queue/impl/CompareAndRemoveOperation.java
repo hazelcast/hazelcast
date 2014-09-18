@@ -18,7 +18,6 @@ package com.hazelcast.queue.impl;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -84,7 +83,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
         out.writeBoolean(retain);
         out.writeInt(dataList.size());
         for (Data data : dataList) {
-            data.writeData(out);
+            out.writeData(data);
         }
     }
 
@@ -95,7 +94,7 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
         int size = in.readInt();
         dataList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            dataList.add(IOUtil.readData(in));
+            dataList.add(in.readData());
         }
     }
 

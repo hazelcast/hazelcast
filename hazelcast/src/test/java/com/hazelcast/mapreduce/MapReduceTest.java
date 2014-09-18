@@ -51,7 +51,6 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 @SuppressWarnings("unused")
-//@Repeat(100)
 public class MapReduceTest
         extends HazelcastTestSupport {
 

@@ -21,9 +21,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -336,7 +336,7 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue2674_multibyte_char_at_position_that_even_multiple_of_buffer_size() throws Exception {
-        SerializationService serializationService = new SerializationServiceBuilder().build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         for (int i : new int[]{50240, 100240, 80240}) {
             String originalString = createString(i);
@@ -350,7 +350,7 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue2705_integer_overflow_on_old_version_multicast_package() throws Exception {
-        SerializationService serializationService = new SerializationServiceBuilder().build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(64000);
         byte[] temp = new byte[1024];

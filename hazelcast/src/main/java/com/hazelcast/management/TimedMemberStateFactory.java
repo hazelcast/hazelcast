@@ -10,8 +10,6 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -26,6 +24,7 @@ import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
@@ -86,18 +85,20 @@ public class TimedMemberStateFactory {
 
     private void createMemberState(MemberStateImpl memberState) {
         final Node node = instance.node;
+        Address thisAddress = node.getThisAddress();
+        InternalPartitionService partitionService = node.getPartitionService();
+        InternalPartition[] partitions = partitionService.getPartitions();
         final HashSet<SerializableClientEndPoint> serializableClientEndPoints = new HashSet<SerializableClientEndPoint>();
         for (Client client : instance.node.clientEngine.getClients()) {
             serializableClientEndPoints.add(new SerializableClientEndPoint(client));
         }
         memberState.setClients(serializableClientEndPoints);
-        memberState.setAddress(node.getThisAddress().getHost() + ":" + node.getThisAddress().getPort());
+        memberState.setAddress(thisAddress.getHost() + ":" + thisAddress.getPort());
         createJMXBeans(memberState);
-        PartitionService partitionService = instance.getPartitionService();
-        Set<Partition> partitions = partitionService.getPartitions();
         memberState.clearPartitions();
-        for (Partition partition : partitions) {
-            if (partition.getOwner() != null && partition.getOwner().localMember()) {
+        for (InternalPartition partition : partitions) {
+            Address owner = partition.getOwnerOrNull();
+            if (owner != null && thisAddress.equals(owner)) {
                 memberState.addPartition(partition.getPartitionId());
             }
         }

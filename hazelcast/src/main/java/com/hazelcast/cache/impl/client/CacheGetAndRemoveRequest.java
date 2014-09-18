@@ -59,7 +59,7 @@ public class CacheGetAndRemoveRequest
         writer.writeUTF("n", name);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
     }
 
     public void read(PortableReader reader)
@@ -67,8 +67,7 @@ public class CacheGetAndRemoveRequest
         name = reader.readUTF("n");
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     public void setCompletionId(Integer completionId) {
