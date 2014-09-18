@@ -21,6 +21,8 @@ import java.io.IOException;
 
 public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
+    int UTF_BUFFER_SIZE = 1024;
+
     void write(int position, int b);
 
     void writeInt(int position, int v) throws IOException;
@@ -44,8 +46,6 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
     int position();
 
     void position(int newPos);
-
-    byte[] getBuffer();
 
     void clear();
 }

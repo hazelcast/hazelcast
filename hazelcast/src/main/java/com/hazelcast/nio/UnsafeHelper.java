@@ -54,6 +54,8 @@ public final class UnsafeHelper {
     public static final int LONG_ARRAY_INDEX_SCALE;
     public static final int DOUBLE_ARRAY_INDEX_SCALE;
 
+    public static final int MEM_COPY_THRESHOLD = 1024 * 1024;
+
     private static final String UNSAFE_WARNING = "sun.misc.Unsafe isn't available, some features might be not available";
 
     static {

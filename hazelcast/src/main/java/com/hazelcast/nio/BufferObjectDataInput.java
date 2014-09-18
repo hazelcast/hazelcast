@@ -21,6 +21,8 @@ import java.io.IOException;
 
 public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
 
+    int UTF_BUFFER_SIZE = 1024;
+
     int read(int position) throws IOException;
 
     int readInt(int position) throws IOException;

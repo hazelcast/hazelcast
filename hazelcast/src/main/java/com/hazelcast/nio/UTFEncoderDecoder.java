@@ -241,7 +241,7 @@ public final class UTFEncoderDecoder {
     }
 
     private void buffering(byte[] buffer, int pos, byte value, DataOutput out) throws IOException {
-        int innerPos = QuickMath.mod(pos, buffer.length);
+        int innerPos = QuickMath.modPowerOfTwo(pos, buffer.length);
         if (pos > 0 && innerPos == 0) {
             out.write(buffer, 0, buffer.length);
         }
@@ -249,7 +249,7 @@ public final class UTFEncoderDecoder {
     }
 
     private byte buffered(byte[] buffer, int pos, int utfLength, DataInput in) throws IOException {
-        int innerPos = QuickMath.mod(pos, buffer.length);
+        int innerPos = QuickMath.modPowerOfTwo(pos, buffer.length);
         if (innerPos == 0) {
             int length = Math.min(buffer.length, utfLength - pos);
             in.readFully(buffer, 0, length);
