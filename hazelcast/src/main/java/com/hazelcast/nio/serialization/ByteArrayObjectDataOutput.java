@@ -16,16 +16,16 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.DynamicByteBuffer;
 import com.hazelcast.nio.UTFEncoderDecoder;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 
-class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, PortableContextAware {
-
-    private static final int UTF_BUFFER_SIZE = 1024;
+class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, PortableDataOutput {
 
     final int initialSize;
 
@@ -33,14 +33,19 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     int pos;
 
+    DynamicByteBuffer header;
+
     final SerializationService service;
 
     private byte[] utfBuffer;
 
-    ByteArrayObjectDataOutput(int size, SerializationService service) {
+    private final boolean bigEndian;
+
+    ByteArrayObjectDataOutput(int size, SerializationService service, ByteOrder byteOrder) {
         this.initialSize = size;
         this.buffer = new byte[size];
         this.service = service;
+        bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
     }
 
     public void write(int b) {
@@ -64,29 +69,29 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         pos += len;
     }
 
-    public void writeBoolean(final boolean v) throws IOException {
+    public final void writeBoolean(final boolean v) throws IOException {
         write(v ? 1 : 0);
     }
 
-    public void writeBoolean(int position, final boolean v) throws IOException {
+    public final void writeBoolean(int position, final boolean v) throws IOException {
         write(position, v ? 1 : 0);
     }
 
-    public void writeByte(final int v) throws IOException {
+    public final void writeByte(final int v) throws IOException {
         write(v);
     }
 
-    public void writeZeroBytes(int count) {
+    public final void writeZeroBytes(int count) {
         for (int k = 0; k < count; k++) {
             write(0);
         }
     }
 
-    public void writeByte(int position, final int v) throws IOException {
+    public final void writeByte(int position, final int v) throws IOException {
         write(position, v);
     }
 
-    public void writeBytes(final String s) throws IOException {
+    public final void writeBytes(final String s) throws IOException {
         final int len = s.length();
         ensureAvailable(len);
         for (int i = 0; i < len; i++) {
@@ -96,13 +101,12 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeChar(final int v) throws IOException {
         ensureAvailable(2);
-        buffer[pos++] = (byte) ((v >>> 8) & 0xFF);
-        buffer[pos++] = (byte) ((v) & 0xFF);
+        Bits.writeChar(buffer, pos, (char) v, bigEndian);
+        pos += 2;
     }
 
     public void writeChar(int position, final int v) throws IOException {
-        write(position, (v >>> 8) & 0xFF);
-        write(position + 1, (v) & 0xFF);
+        Bits.writeChar(buffer, position, (char) v, bigEndian);
     }
 
     public void writeChars(final String s) throws IOException {
@@ -133,51 +137,32 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeInt(final int v) throws IOException {
         ensureAvailable(4);
-        buffer[pos++] = (byte) ((v >>> 24) & 0xFF);
-        buffer[pos++] = (byte) ((v >>> 16) & 0xFF);
-        buffer[pos++] = (byte) ((v >>> 8) & 0xFF);
-        buffer[pos++] = (byte) ((v) & 0xFF);
+        Bits.writeInt(buffer, pos, v, bigEndian);
+        pos += 4;
     }
 
     public void writeInt(int position, int v) throws IOException {
-        write(position, (v >>> 24) & 0xFF);
-        write(position + 1, (v >>> 16) & 0xFF);
-        write(position + 2, (v >>> 8) & 0xFF);
-        write(position + 3, (v) & 0xFF);
+        Bits.writeInt(buffer, position, v, bigEndian);
     }
 
     public void writeLong(final long v) throws IOException {
         ensureAvailable(8);
-        buffer[pos++] = (byte) (v >>> 56);
-        buffer[pos++] = (byte) (v >>> 48);
-        buffer[pos++] = (byte) (v >>> 40);
-        buffer[pos++] = (byte) (v >>> 32);
-        buffer[pos++] = (byte) (v >>> 24);
-        buffer[pos++] = (byte) (v >>> 16);
-        buffer[pos++] = (byte) (v >>> 8);
-        buffer[pos++] = (byte) (v);
+        Bits.writeLong(buffer, pos, v, bigEndian);
+        pos += 8;
     }
 
     public void writeLong(int position, final long v) throws IOException {
-        write(position, (int) (v >>> 56));
-        write(position + 1, (int) (v >>> 48));
-        write(position + 2, (int) (v >>> 40));
-        write(position + 3, (int) (v >>> 32));
-        write(position + 4, (int) (v >>> 24));
-        write(position + 5, (int) (v >>> 16));
-        write(position + 6, (int) (v >>> 8));
-        write(position + 7, (int) (v));
+        Bits.writeLong(buffer, position, v, bigEndian);
     }
 
     public void writeShort(final int v) throws IOException {
         ensureAvailable(2);
-        buffer[pos++] = (byte) ((v >>> 8) & 0xFF);
-        buffer[pos++] = (byte) ((v) & 0xFF);
+        Bits.writeShort(buffer, pos, (short) v, bigEndian);
+        pos += 2;
     }
 
     public void writeShort(int position, final int v) throws IOException {
-        write(position, (v >>> 8) & 0xFF);
-        write(position + 1, (v) & 0xFF);
+        Bits.writeShort(buffer, position, (short) v, bigEndian);
     }
 
     public void writeUTF(final String str) throws IOException {
@@ -185,6 +170,14 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
             utfBuffer = new byte[UTF_BUFFER_SIZE];
         }
         UTFEncoderDecoder.writeUTF(this, str, utfBuffer);
+    }
+
+    public void writeByteArray(byte[] bytes) throws IOException {
+        int len = (bytes == null) ? 0 : bytes.length;
+        writeInt(len);
+        if (len > 0) {
+            write(bytes);
+        }
     }
 
     public void writeCharArray(char[] chars) throws IOException {
@@ -264,6 +257,10 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         service.writeObject(this, object);
     }
 
+    public void writeData(Data data) throws IOException {
+        service.writeData(this, data);
+    }
+
     /**
      * Returns this buffer's position.
      */
@@ -283,12 +280,8 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         return buffer != null ? buffer.length - pos : 0;
     }
 
-    public byte[] getBuffer() {
-        return buffer;
-    }
-
     public byte toByteArray()[] {
-        if (buffer == null) {
+        if (buffer == null || pos == 0) {
             return new byte[0];
         }
         final byte[] newBuffer = new byte[pos];
@@ -301,19 +294,45 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         if (buffer != null && buffer.length > initialSize * 8) {
             buffer = new byte[initialSize * 8];
         }
+        if (header != null) {
+            header.clear();
+        }
     }
 
     public void close() {
-        clear();
+        pos = 0;
         buffer = null;
-    }
-
-    public PortableContext getPortableContext() {
-        return service.getPortableContext();
+        if (header != null) {
+            header.close();
+            header = null;
+        }
     }
 
     public ByteOrder getByteOrder() {
-        return ByteOrder.BIG_ENDIAN;
+        return bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+    }
+
+    @Override
+    public DynamicByteBuffer getHeaderBuffer() {
+        if (header == null) {
+            header = new DynamicByteBuffer(new byte[64]).order(getByteOrder());
+        }
+        return header;
+    }
+
+    @Override
+    public byte[] getPortableHeader() {
+        if (header == null) {
+            return null;
+        }
+        header.flip();
+        if (!header.hasRemaining()) {
+            return null;
+        }
+        final byte[] buff = new byte[header.limit()];
+        header.get(buff);
+        header.clear();
+        return buff;
     }
 
     @Override

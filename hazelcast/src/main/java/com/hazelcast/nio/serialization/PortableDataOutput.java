@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,13 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.DynamicByteBuffer;
 
-import java.nio.ByteOrder;
+interface PortableDataOutput extends BufferObjectDataOutput {
 
-public interface InputOutputFactory {
+    DynamicByteBuffer getHeaderBuffer();
 
-    BufferObjectDataInput createInput(Data data, SerializationService service);
+    byte[] getPortableHeader();
 
-    BufferObjectDataInput createInput(byte[] buffer, SerializationService service);
-
-    BufferObjectDataOutput createOutput(int size, SerializationService service);
-
-    ByteOrder getByteOrder();
 }

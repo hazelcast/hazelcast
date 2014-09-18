@@ -21,10 +21,10 @@ import com.hazelcast.nio.UnsafeHelper;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
+class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     UnsafeObjectDataOutput(int size, SerializationService service) {
-        super(size, service);
+        super(size, service, ByteOrder.nativeOrder());
     }
 
     public void writeChar(final int v) throws IOException {
@@ -36,16 +36,6 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     public void writeChar(int position, final int v) throws IOException {
         checkAvailable(position, 2);
         UnsafeHelper.UNSAFE.putChar(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, (char) v);
-    }
-
-    public void writeChars(final String s) throws IOException {
-        final int len = s.length();
-        ensureAvailable(len * 2);
-        for (int i = 0; i < len; i++) {
-            final int v = s.charAt(i);
-            writeChar(pos, v);
-            pos += 2;
-        }
     }
 
     public void writeDouble(final double v) throws IOException {
@@ -107,7 +97,7 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : 0;
         writeInt(len);
         if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.CHAR_ARRAY_BASE_OFFSET, len, UnsafeHelper.CHAR_ARRAY_INDEX_SCALE);
+            memCopy(values, UnsafeHelper.CHAR_ARRAY_BASE_OFFSET, len, UnsafeHelper.CHAR_ARRAY_INDEX_SCALE);
         }
     }
 
@@ -115,7 +105,7 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : 0;
         writeInt(len);
         if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.SHORT_ARRAY_BASE_OFFSET, len, UnsafeHelper.SHORT_ARRAY_INDEX_SCALE);
+            memCopy(values, UnsafeHelper.SHORT_ARRAY_BASE_OFFSET, len, UnsafeHelper.SHORT_ARRAY_INDEX_SCALE);
         }
     }
 
@@ -123,7 +113,7 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : 0;
         writeInt(len);
         if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.INT_ARRAY_BASE_OFFSET, len, UnsafeHelper.INT_ARRAY_INDEX_SCALE);
+            memCopy(values, UnsafeHelper.INT_ARRAY_BASE_OFFSET, len, UnsafeHelper.INT_ARRAY_INDEX_SCALE);
         }
     }
 
@@ -131,7 +121,7 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : 0;
         writeInt(len);
         if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.FLOAT_ARRAY_BASE_OFFSET, len, UnsafeHelper.FLOAT_ARRAY_INDEX_SCALE);
+            memCopy(values, UnsafeHelper.FLOAT_ARRAY_BASE_OFFSET, len, UnsafeHelper.FLOAT_ARRAY_INDEX_SCALE);
         }
     }
 
@@ -139,7 +129,7 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : 0;
         writeInt(len);
         if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.LONG_ARRAY_BASE_OFFSET, len, UnsafeHelper.LONG_ARRAY_INDEX_SCALE);
+            memCopy(values, UnsafeHelper.LONG_ARRAY_BASE_OFFSET, len, UnsafeHelper.LONG_ARRAY_INDEX_SCALE);
         }
     }
 
@@ -147,22 +137,26 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : 0;
         writeInt(len);
         if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.DOUBLE_ARRAY_BASE_OFFSET, len, UnsafeHelper.DOUBLE_ARRAY_INDEX_SCALE);
+            memCopy(values, UnsafeHelper.DOUBLE_ARRAY_BASE_OFFSET, len, UnsafeHelper.DOUBLE_ARRAY_INDEX_SCALE);
         }
     }
 
-    private void unsafeMemCopy(final Object srcArray, final long srcArrayTypeOffset,
-                               final int srcArrayLength, final int indexScale) {
-        if (srcArray == null) {
-            throw new IllegalArgumentException("Source array is NULL!");
+    private void memCopy(final Object src, final long srcOffset, final int length, final int indexScale) {
+        if (length < 0) {
+            throw new NegativeArraySizeException("Source length is negative: " + length);
         }
-        if (srcArrayLength < 0) {
-            throw new NegativeArraySizeException("Source array length is negative: " + srcArrayLength);
+
+        int remaining = indexScale * length;
+        long offset = srcOffset;
+        ensureAvailable(remaining);
+
+        while (remaining > 0) {
+            int chunk = (remaining > UnsafeHelper.MEM_COPY_THRESHOLD) ? UnsafeHelper.MEM_COPY_THRESHOLD : remaining;
+            UnsafeHelper.UNSAFE.copyMemory(src, offset, buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, chunk);
+            remaining -= chunk;
+            offset += chunk;
+            pos += chunk;
         }
-        final int len = indexScale * srcArrayLength;
-        ensureAvailable(len);
-        UnsafeHelper.UNSAFE.copyMemory(srcArray, srcArrayTypeOffset, buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, len);
-        pos += len;
     }
 
     public ByteOrder getByteOrder() {

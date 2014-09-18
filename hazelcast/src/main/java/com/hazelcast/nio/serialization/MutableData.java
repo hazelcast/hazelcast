@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,17 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+interface MutableData extends Data {
 
-import java.nio.ByteOrder;
+    byte[] getData();
 
-public interface InputOutputFactory {
+    void setData(byte[] data);
 
-    BufferObjectDataInput createInput(Data data, SerializationService service);
+    void setType(int type);
 
-    BufferObjectDataInput createInput(byte[] buffer, SerializationService service);
+    void setPartitionHash(int partitionHash);
 
-    BufferObjectDataOutput createOutput(int size, SerializationService service);
+    byte[] getHeader();
 
-    ByteOrder getByteOrder();
+    void setHeader(byte[] header);
 }

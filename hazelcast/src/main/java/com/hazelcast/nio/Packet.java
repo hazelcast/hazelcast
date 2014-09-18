@@ -27,16 +27,16 @@ import java.nio.ByteBuffer;
  */
 public final class Packet extends DataAdapter implements SocketWritable, SocketReadable {
 
-    public static final byte VERSION = 2;
+    public static final byte VERSION = 3;
     public static final int HEADER_OP = 0;
     public static final int HEADER_RESPONSE = 1;
     public static final int HEADER_EVENT = 2;
     public static final int HEADER_WAN_REPLICATION = 3;
     public static final int HEADER_URGENT = 4;
 
-    private static final int ST_VERSION = 11;
-    private static final int ST_HEADER = 12;
-    private static final int ST_PARTITION = 13;
+    private static final int ST_VERSION = 10;
+    private static final int ST_HEADER = 11;
+    private static final int ST_PARTITION = 12;
 
     private short header;
     private int partitionId;
@@ -172,7 +172,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
      */
     public int size() {
         // 7 = byte(version) + short(header) + int(partitionId)
-        return (data != null ? data.totalSize() : 0) + 7;
+        return (data != null ? getDataSize(data, context) : 0) + 7;
     }
 
     @Override

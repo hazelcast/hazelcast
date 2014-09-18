@@ -19,20 +19,33 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 
+import java.nio.ByteOrder;
+
 final class ByteArrayInputOutputFactory implements InputOutputFactory {
+
+    private final ByteOrder byteOrder;
+
+    public ByteArrayInputOutputFactory(ByteOrder byteOrder) {
+        this.byteOrder = byteOrder;
+    }
 
     @Override
     public BufferObjectDataInput createInput(Data data, SerializationService service) {
-        return new ByteArrayObjectDataInput(data, service);
+        return new ByteArrayObjectDataInput(data, service, byteOrder);
     }
 
     @Override
     public BufferObjectDataInput createInput(byte[] buffer, SerializationService service) {
-        return new ByteArrayObjectDataInput(buffer, service);
+        return new ByteArrayObjectDataInput(buffer, service, byteOrder);
     }
 
     @Override
     public BufferObjectDataOutput createOutput(int size, SerializationService service) {
-        return new ByteArrayObjectDataOutput(size, service);
+        return new ByteArrayObjectDataOutput(size, service, byteOrder);
+    }
+
+    @Override
+    public ByteOrder getByteOrder() {
+        return byteOrder;
     }
 }
