@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
@@ -284,10 +285,10 @@ abstract class AbstractCacheProxy<K, V>
     }
 
     @Override
-    public CacheStatisticsMXBeanImpl getLocalCacheStatistics() {
+    public CacheStatistics getLocalCacheStatistics() {
         final CacheService service = getService();
-        final CacheStatistics statistics = service.getStatistics(name);
-        return new CacheStatisticsMXBeanImpl(statistics);
+        final CacheStatisticsImpl statistics = service.createCacheStatIfAbsent(name);
+        return statistics;
     }
 
     //endregion

@@ -64,7 +64,6 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 public class CacheProxy<K, V>
         extends AbstractCacheProxy<K, V> {
 
-    private static final int AWAIT_COMPLETION_TIMEOUT_SECONDS = 30;
     protected final ILogger logger;
 
     private HazelcastCacheManager cacheManager;
@@ -336,9 +335,9 @@ public class CacheProxy<K, V>
         }
         //make sure all configs are created
         try {
-            FutureUtil.waitWithDeadline(futures, AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
-            logger.finest(e);
+            logger.warning(e);
         }
     }
 
@@ -385,4 +384,8 @@ public class CacheProxy<K, V>
         }
     }
 
+    @Override
+    protected boolean isDefaultClassLoader() {
+        return cacheManager.isDefaultClassLoader;
+    }
 }
