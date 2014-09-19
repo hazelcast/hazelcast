@@ -135,8 +135,6 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
 
     public static class Task implements Callable, Serializable {
 
-        private String uuid;
-
         public Task() {
         }
 
