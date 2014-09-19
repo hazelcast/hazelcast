@@ -19,8 +19,10 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import com.hazelcast.cache.impl.CacheStatistics;
 import com.hazelcast.management.SerializableClientEndPoint;
 import com.hazelcast.management.SerializableMXBeans;
+import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
@@ -50,6 +52,7 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     private Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     private Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
+    private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
     private List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
     private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
     private SerializableMXBeans beans = new SerializableMXBeans();
@@ -86,6 +89,11 @@ public class MemberStateImpl implements MemberState {
             executorStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("executorStats", executorStatsObject);
+        JsonObject cacheStatsObject = new JsonObject();
+        for (Map.Entry<String, LocalCacheStats> entry : cacheStats.entrySet()) {
+            cacheStatsObject.add(entry.getKey(), entry.getValue().toJson());
+        }
+        root.add("cacheStats", cacheStatsObject);
         JsonObject runtimePropsObject = new JsonObject();
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
             runtimePropsObject.add(entry.getKey(), entry.getValue());
@@ -142,6 +150,13 @@ public class MemberStateImpl implements MemberState {
             LocalExecutorStatsImpl stats = new LocalExecutorStatsImpl();
             stats.fromJson(next.getValue().asObject());
             executorStats.put(next.getName(), stats);
+        }
+        final Iterator<JsonObject.Member> cacheStatsIterator = getObject(json, "cacheStats", new JsonObject()).iterator();
+        while (cacheStatsIterator.hasNext()) {
+            final JsonObject.Member next = cacheStatsIterator.next();
+            LocalCacheStats stats = new LocalCacheStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            cacheStats.put(next.getName(), stats);
         }
         final Iterator<JsonObject.Member> propsIterator = getObject(json, "runtimeProps").iterator();
         while (propsIterator.hasNext()) {
@@ -212,6 +227,11 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public LocalCacheStats getLocalCacheStats(String cacheName) {
+        return cacheStats.get(cacheName);
+    }
+
+    @Override
     public String getAddress() {
         return address;
     }
@@ -240,6 +260,10 @@ public class MemberStateImpl implements MemberState {
         executorStats.put(name, localExecutorStats);
     }
 
+    public void putLocalCacheStats(String name, LocalCacheStats localCacheStats) {
+        cacheStats.put(name, localCacheStats);
+    }
+
     public Collection<SerializableClientEndPoint> getClients() {
         return clients;
     }
@@ -265,6 +289,7 @@ public class MemberStateImpl implements MemberState {
         result = 31 * result + (queueStats != null ? queueStats.hashCode() : 0);
         result = 31 * result + (topicStats != null ? topicStats.hashCode() : 0);
         result = 31 * result + (executorStats != null ? executorStats.hashCode() : 0);
+        result = 31 * result + (cacheStats != null ? cacheStats.hashCode() : 0);
         result = 31 * result + (partitions != null ? partitions.hashCode() : 0);
         return result;
     }
@@ -304,6 +329,9 @@ public class MemberStateImpl implements MemberState {
         if (topicStats != null ? !topicStats.equals(that.topicStats) : that.topicStats != null) {
             return false;
         }
+        if (cacheStats != null ? !cacheStats.equals(that.cacheStats) : that.cacheStats != null) {
+            return false;
+        }
 
         return true;
     }
@@ -319,6 +347,7 @@ public class MemberStateImpl implements MemberState {
                 + ", queueStats=" + queueStats
                 + ", topicStats=" + topicStats
                 + ", executorStats=" + executorStats
+                + ", cacheStats=" + cacheStats
                 + ", partitions=" + partitions
                 + '}';
     }
