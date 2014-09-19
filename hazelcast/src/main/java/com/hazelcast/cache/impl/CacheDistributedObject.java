@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 
@@ -51,4 +52,11 @@ class CacheDistributedObject
     public boolean isDestroy() {
         return isDestroy;
     }
+
+    public CacheStatistics getLocalCacheStatistics() {
+        final CacheService service = getService();
+        final CacheStatisticsImpl statistics = service.createCacheStatIfAbsent(name);
+        return statistics;
+    }
+
 }
