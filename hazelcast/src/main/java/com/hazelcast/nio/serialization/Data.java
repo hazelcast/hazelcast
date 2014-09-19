@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import java.nio.ByteOrder;
+
 public interface Data {
 
     byte[] getData();
@@ -35,4 +37,10 @@ public interface Data {
     boolean isPortable();
 
     byte[] getHeader();
+
+    int headerSize();
+
+    int readIntHeader(int offset, ByteOrder order);
+
+    long readLongHeader(int offset, ByteOrder order);
 }

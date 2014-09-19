@@ -126,9 +126,9 @@ public class SerializationServiceImpl implements SerializationService {
             portableContext.registerClassDefinition(cd);
         }
 
-        dataSerializerAdapter = new StreamSerializerAdapter(this, new DataSerializer(dataSerializableFactories, classLoader));
+        dataSerializerAdapter = createSerializerAdapter(new DataSerializer(dataSerializableFactories, classLoader));
         portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
-        portableSerializerAdapter = new StreamSerializerAdapter(this, portableSerializer);
+        portableSerializerAdapter = createSerializerAdapter(portableSerializer);
 
         registerConstantSerializers();
         registerJvmTypeSerializers(enableCompression, enableSharedObject);
@@ -339,14 +339,15 @@ public class SerializationServiceImpl implements SerializationService {
     }
 
     protected final void writePortableHeader(ObjectDataOutput out, Data data) throws IOException {
-        byte[] header = data.getHeader();
-        if (header == null) {
+        if (data.headerSize() == 0) {
             out.writeInt(0);
         } else {
             if (!(out instanceof PortableDataOutput)) {
                 throw new HazelcastSerializationException("PortableDataOutput is required to be able "
                         + "to write Portable header.");
             }
+
+            byte[] header = data.getHeader();
             PortableDataOutput output = (PortableDataOutput) out;
             DynamicByteBuffer headerBuffer = output.getHeaderBuffer();
             out.writeInt(header.length);
@@ -471,7 +472,7 @@ public class SerializationServiceImpl implements SerializationService {
         }
     }
 
-    private SerializerAdapter createSerializerAdapter(Serializer serializer) {
+    protected SerializerAdapter createSerializerAdapter(Serializer serializer) {
         final SerializerAdapter s;
         if (serializer instanceof StreamSerializer) {
             s = new StreamSerializerAdapter(this, (StreamSerializer) serializer);

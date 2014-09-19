@@ -313,7 +313,7 @@ public class MapLockTest extends HazelcastTestSupport {
         final HazelcastInstance node1 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance node2 = nodeFactory.newHazelcastInstance();
 
-        final IMap map = node1.getMap(randomString());
+        final IMap map = node2.getMap(randomString());
 
         for(int i=0; i<1000; i++){
             map.put(i, i);
@@ -333,9 +333,9 @@ public class MapLockTest extends HazelcastTestSupport {
 
         assertOpenEventually(cleared);
 
-        node2.getLifecycleService().terminate();
+        node1.getLifecycleService().terminate();
 
+        assertTrue("a key present in a map, should be locked after map clear", map.isLocked(key));
         assertEquals("unlocked keys not removed", 1, map.size());
-        assertEquals("a key present in a map, should be locked after map clear", true, map.isLocked(key));
     }
 }

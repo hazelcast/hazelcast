@@ -17,7 +17,6 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -81,15 +80,13 @@ final class PortableContextImpl implements PortableContext {
         }
 
         ByteOrder byteOrder = serializationService.getByteOrder();
-        boolean bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
-        byte[] metadata = data.getHeader();
-        return readClassDefinition(metadata, 0, bigEndian);
+        return readClassDefinition(data, 0, byteOrder);
     }
 
-    private ClassDefinition readClassDefinition(byte[] metadata, int start, boolean bigEndian) {
-        int factoryId = Bits.readInt(metadata, start + HEADER_FACTORY_OFFSET, bigEndian);
-        int classId = Bits.readInt(metadata, start + HEADER_CLASS_OFFSET, bigEndian);
-        int version = Bits.readInt(metadata, start + HEADER_VERSION_OFFSET, bigEndian);
+    private ClassDefinition readClassDefinition(Data data, int start, ByteOrder order) {
+        int factoryId =  data.readIntHeader(start + HEADER_FACTORY_OFFSET, order);
+        int classId = data.readIntHeader(start + HEADER_CLASS_OFFSET, order);
+        int version = data.readIntHeader(start + HEADER_VERSION_OFFSET, order);
         return lookupClassDefinition(factoryId, classId, version);
     }
 
@@ -98,33 +95,25 @@ final class PortableContextImpl implements PortableContext {
         if (data.isPortable()) {
             return true;
         }
-
-        byte[] header = data.getHeader();
-        if (header != null && header.length > 0) {
-            return true;
-        }
-        return false;
+        return data.headerSize() > 0;
     }
 
     @Override
     public ClassDefinition[] getClassDefinitions(Data data) {
-        byte[] header = data.getHeader();
-        if (header == null || header.length == 0) {
+        if (data.headerSize() == 0) {
             return null;
         }
 
-        int len = header.length;
+        int len =  data.headerSize();
         if (len % HEADER_ENTRY_LENGTH != 0) {
             throw new AssertionError("Header length should be factor of " + HEADER_ENTRY_LENGTH);
         }
         int k = len / HEADER_ENTRY_LENGTH;
 
         ByteOrder byteOrder = serializationService.getByteOrder();
-        boolean bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
-
         ClassDefinition[] definitions = new ClassDefinition[k];
         for (int i = 0; i < k; i++) {
-            definitions[i] = readClassDefinition(header, i * HEADER_ENTRY_LENGTH, bigEndian);
+            definitions[i] = readClassDefinition(data, i * HEADER_ENTRY_LENGTH, byteOrder);
         }
         return definitions;
     }

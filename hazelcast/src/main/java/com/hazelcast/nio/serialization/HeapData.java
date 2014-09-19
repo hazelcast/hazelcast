@@ -16,7 +16,10 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.Bits;
 import com.hazelcast.util.HashUtil;
+
+import java.nio.ByteOrder;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public final class HeapData implements MutableData {
@@ -63,6 +66,11 @@ public final class HeapData implements MutableData {
     }
 
     @Override
+    public int headerSize() {
+        return header != null ? header.length : 0;
+    }
+
+    @Override
     public byte[] getHeader() {
         return header;
     }
@@ -95,6 +103,16 @@ public final class HeapData implements MutableData {
     @Override
     public void setHeader(byte[] header) {
         this.header = header;
+    }
+
+    @Override
+    public int readIntHeader(int offset, ByteOrder order) {
+        return Bits.readInt(header, offset, order == ByteOrder.BIG_ENDIAN);
+    }
+
+    @Override
+    public long readLongHeader(int offset, ByteOrder order) {
+        return Bits.readLong(header, offset, order == ByteOrder.BIG_ENDIAN);
     }
 
     @Override
@@ -187,21 +205,6 @@ public final class HeapData implements MutableData {
     public boolean isPortable() {
         return SerializationConstants.CONSTANT_TYPE_PORTABLE == type;
     }
-
-    //    @Override
-//    public int getPortableFactoryId(ByteOrder byteOrder) {
-//        return Bits.readInt(data, 0, byteOrder == ByteOrder.BIG_ENDIAN);
-//    }
-//
-//    @Override
-//    public int getPortableClassId(ByteOrder byteOrder) {
-//        return Bits.readInt(data, 4, byteOrder == ByteOrder.BIG_ENDIAN);
-//    }
-//
-//    @Override
-//    public int getPortableVersion(ByteOrder byteOrder) {
-//        return Bits.readInt(data, 8, byteOrder == ByteOrder.BIG_ENDIAN);
-//    }
 
     @Override
     public String toString() {
