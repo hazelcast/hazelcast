@@ -188,9 +188,10 @@ public class DataAdapter implements SocketWritable, SocketReadable {
     }
 
     public static int getDataSize(Data data, PortableContext context) {
-        int total = 0;
         // type
-        total += INT_SIZE_IN_BYTES;
+        int total = INT_SIZE_IN_BYTES;
+        // class def flag
+        total += 1;
 
         if (context.hasClassDefinition(data)) {
             ClassDefinition[] classDefinitions = context.getClassDefinitions(data);

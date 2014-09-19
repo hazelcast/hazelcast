@@ -119,14 +119,14 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
             setStatus(ST_VERSION);
         }
         if (!isStatusSet(ST_HEADER)) {
-            if (destination.remaining() < 2) {
+            if (destination.remaining() < Bits.SHORT_SIZE_IN_BYTES) {
                 return false;
             }
             destination.putShort(header);
             setStatus(ST_HEADER);
         }
         if (!isStatusSet(ST_PARTITION)) {
-            if (destination.remaining() < 4) {
+            if (destination.remaining() < Bits.INT_SIZE_IN_BYTES) {
                 return false;
             }
             destination.putInt(partitionId);
