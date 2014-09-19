@@ -16,8 +16,6 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.CacheStatisticsMXBeanImpl;
-
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.Map;
 import java.util.Set;
@@ -321,6 +319,6 @@ public interface ICache<K, V>
      * Directly access to local Cache Statistics
      * @return CacheStatistics
      */
-    CacheStatisticsMXBeanImpl getLocalCacheStatistics();
+    CacheStatistics getLocalCacheStatistics();
 
 }

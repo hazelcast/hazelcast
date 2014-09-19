@@ -27,12 +27,9 @@ public class CacheStatisticsMXBeanImpl
 
     private static final long serialVersionUID = -1;
 
-    private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
-    private static final float FLOAT_HUNDRED = 100.0f;
+    private transient CacheStatisticsImpl statistics;
 
-    private transient CacheStatistics statistics;
-
-    public CacheStatisticsMXBeanImpl(CacheStatistics statistics) {
+    public CacheStatisticsMXBeanImpl(CacheStatisticsImpl statistics) {
         this.statistics = statistics;
     }
 
@@ -43,76 +40,56 @@ public class CacheStatisticsMXBeanImpl
 
     @Override
     public long getCacheHits() {
-        return statistics.getHits();
+        return statistics.getCacheHits();
     }
 
     @Override
     public float getCacheHitPercentage() {
-        Long hits = getCacheHits();
-        if (hits == 0) {
-            return 0;
-        }
-        return (float) hits / getCacheGets() * FLOAT_HUNDRED;
+        return statistics.getCacheHitPercentage();
     }
 
     @Override
     public long getCacheMisses() {
-        return statistics.getMisses();
+        return statistics.getCacheMisses();
     }
 
     @Override
     public float getCacheMissPercentage() {
-        Long misses = getCacheMisses();
-        if (misses == 0) {
-            return 0;
-        }
-        return (float) misses / getCacheGets() * FLOAT_HUNDRED;
+        return statistics.getCacheMissPercentage();
     }
 
     @Override
     public long getCacheGets() {
-        return statistics.getHits() + statistics.getMisses();
+        return statistics.getCacheGets();
     }
 
     @Override
     public long getCachePuts() {
-        return statistics.getPuts();
+        return statistics.getCachePuts();
     }
 
     @Override
     public long getCacheRemovals() {
-        return statistics.getRemovals();
+        return statistics.getCacheRemovals();
     }
 
     @Override
     public long getCacheEvictions() {
-        return statistics.getEvictions();
+        return statistics.getCacheEvictions();
     }
 
     @Override
     public float getAverageGetTime() {
-        if (statistics.getGetTimeTakenNanos() == 0 || getCacheGets() == 0) {
-            return 0;
-        }
-        float avgGetTime = ((1f * statistics.getGetTimeTakenNanos()) / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
-        return avgGetTime;
+        return statistics.getAverageGetTime();
     }
 
     @Override
     public float getAveragePutTime() {
-        if (statistics.getPutTimeTakenNanos() == 0 || getCacheGets() == 0) {
-            return 0;
-        }
-        float avgPutTime = ((1f * statistics.getPutTimeTakenNanos()) / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
-        return avgPutTime;
+        return statistics.getAveragePutTime();
     }
 
     @Override
     public float getAverageRemoveTime() {
-        if (statistics.getRemoveTimeTakenNanos() == 0 || getCacheGets() == 0) {
-            return 0;
-        }
-        float avgRemoveTime = ((1f * statistics.getRemoveTimeTakenNanos()) / getCacheGets()) / NANOSECONDS_IN_A_MICROSECOND;
-        return avgRemoveTime;
+        return statistics.getAverageRemoveTime();
     }
 }

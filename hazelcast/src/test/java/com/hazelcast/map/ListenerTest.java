@@ -31,15 +31,16 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -221,30 +222,25 @@ public class ListenerTest extends HazelcastTestSupport {
      */
     @Test
     public void replaceFiresUpdatedEvent() throws InterruptedException {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        IMap<Object, Object> map = h1.getMap(randomMapName());
-        map.put(1, 1);
-        final AtomicInteger updateCount = new AtomicInteger(0);
-        final AtomicInteger addCount = new AtomicInteger(0);
-        map.addEntryListener(new EntryAdapter<Object, Object>() {
-            @Override
-            public void entryAdded(EntryEvent<Object, Object> event) {
-                addCount.incrementAndGet();
-            }
+        final AtomicInteger entryUpdatedEventCount = new AtomicInteger(0);
 
+        HazelcastInstance node = createHazelcastInstance();
+        IMap<Integer, Integer> map = node.getMap(randomMapName());
+        map.put(1, 1);
+
+        map.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryUpdated(EntryEvent<Object, Object> event) {
-                updateCount.incrementAndGet();
+            public void entryUpdated(EntryEvent<Integer, Integer> event) {
+                entryUpdatedEventCount.incrementAndGet();
             }
         }, true);
-        map.replace(1, 1, 2);  // should succeed and fire entryUpdated() exactly once
-        map.replace(1, 1, 2);  // should fail
+
+        map.replace(1, 1, 2);
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(0, addCount.get());
-                assertEquals(1, updateCount.get());
+                assertEquals(1, entryUpdatedEventCount.get());
             }
         });
     }
