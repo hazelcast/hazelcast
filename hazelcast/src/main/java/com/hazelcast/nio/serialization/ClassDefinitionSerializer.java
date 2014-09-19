@@ -22,6 +22,7 @@ import com.hazelcast.nio.IOUtil;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.serialization.PortableContext.HEADER_CLASS_OFFSET;
 import static com.hazelcast.nio.serialization.PortableContext.HEADER_ENTRY_LENGTH;
 import static com.hazelcast.nio.serialization.PortableContext.HEADER_FACTORY_OFFSET;
@@ -35,7 +36,6 @@ import static com.hazelcast.nio.serialization.PortableContext.HEADER_VERSION_OFF
 public class ClassDefinitionSerializer {
 
     private static final int CLASS_DEF_HEADER_SIZE = 16;
-    private static final int INT_SIZE_IN_BYTES = 4;
 
     private static final int ST_PREPARED = 1;
     private static final int ST_HEADER = 2;

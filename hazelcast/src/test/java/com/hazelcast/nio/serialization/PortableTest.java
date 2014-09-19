@@ -299,7 +299,7 @@ public class PortableTest {
         testClassDefinitionLookup(ss);
     }
 
-    private void testClassDefinitionLookup(SerializationService ss) {
+    static void testClassDefinitionLookup(SerializationService ss) {
         NamedPortableV2 p = new NamedPortableV2("test-portable", 123456789);
         Data data = ss.toData(p);
 
@@ -307,10 +307,13 @@ public class PortableTest {
         assertNotNull(metadata);
 
         boolean bigEndian = ss.getByteOrder() == ByteOrder.BIG_ENDIAN;
-
         assertEquals(p.getFactoryId(), Bits.readInt(metadata, 0, bigEndian));
         assertEquals(p.getClassId(), Bits.readInt(metadata, 4, bigEndian));
         assertEquals(p.getClassVersion(), Bits.readInt(metadata, 8, bigEndian));
+
+        assertEquals(p.getFactoryId(), data.readIntHeader(0, ss.getByteOrder()));
+        assertEquals(p.getClassId(), data.readIntHeader(4, ss.getByteOrder()));
+        assertEquals(p.getClassVersion(), data.readIntHeader(8, ss.getByteOrder()));
 
         PortableContext portableContext = ss.getPortableContext();
         ClassDefinition cd = portableContext.lookupClassDefinition(data);
@@ -367,8 +370,8 @@ public class PortableTest {
 
     public static class GrandParentPortableObject implements Portable {
 
-        private long timestamp;
-        private ParentPortableObject child;
+        long timestamp;
+        ParentPortableObject child;
 
         public GrandParentPortableObject(long timestamp) {
             this.timestamp = timestamp;
@@ -405,8 +408,8 @@ public class PortableTest {
 
     public static class ParentPortableObject implements Portable {
 
-        private long timestamp;
-        private ChildPortableObject child;
+        long timestamp;
+        ChildPortableObject child;
 
         public ParentPortableObject(long timestamp) {
             this.timestamp = timestamp;
@@ -443,7 +446,7 @@ public class PortableTest {
 
     public static class ChildPortableObject implements Portable {
 
-        private long timestamp;
+        long timestamp;
 
         public ChildPortableObject(long timestamp) {
             this.timestamp = timestamp;
@@ -470,7 +473,7 @@ public class PortableTest {
         }
     }
 
-    private class TestObject1 implements Portable {
+    static class TestObject1 implements Portable {
 
         private Portable[] portables;
 
@@ -504,7 +507,7 @@ public class PortableTest {
 
     }
 
-    private class TestObject2 implements Portable {
+    static class TestObject2 implements Portable {
 
         private String shortString;
 
@@ -645,7 +648,7 @@ public class PortableTest {
         ss.toObject(data);
     }
 
-    private static class ParentGenericPortable<T extends Portable> implements Portable {
+    static class ParentGenericPortable<T extends Portable> implements Portable {
         static final int CLASS_ID = 1;
 
         T child;
@@ -678,7 +681,7 @@ public class PortableTest {
         }
     }
 
-    private static class ChildGenericPortable1 implements Portable {
+    static class ChildGenericPortable1 implements Portable {
         static final int CLASS_ID = 2;
 
         String s1;
@@ -715,7 +718,7 @@ public class PortableTest {
         }
     }
 
-    private static class ChildGenericPortable2 implements Portable {
+    static class ChildGenericPortable2 implements Portable {
         static final int CLASS_ID = 3;
 
         String s;

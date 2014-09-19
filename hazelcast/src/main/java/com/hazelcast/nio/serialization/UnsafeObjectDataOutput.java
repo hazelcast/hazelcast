@@ -21,6 +21,13 @@ import com.hazelcast.nio.UnsafeHelper;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
+import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.DOUBLE_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.FLOAT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+
 class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
     UnsafeObjectDataOutput(int size, SerializationService service) {
@@ -28,68 +35,68 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     }
 
     public void writeChar(final int v) throws IOException {
-        ensureAvailable(2);
+        ensureAvailable(CHAR_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putChar(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, (char) v);
-        pos += 2;
+        pos += CHAR_SIZE_IN_BYTES;
     }
 
     public void writeChar(int position, final int v) throws IOException {
-        checkAvailable(position, 2);
+        checkAvailable(position, CHAR_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putChar(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, (char) v);
     }
 
     public void writeDouble(final double v) throws IOException {
-        ensureAvailable(8);
+        ensureAvailable(DOUBLE_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putDouble(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
-        pos += 8;
+        pos += DOUBLE_SIZE_IN_BYTES;
     }
 
     public void writeDouble(int position, final double v) throws IOException {
-        checkAvailable(position, 8);
+        checkAvailable(position, DOUBLE_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putDouble(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
     }
 
     public void writeFloat(final float v) throws IOException {
-        ensureAvailable(4);
+        ensureAvailable(FLOAT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putFloat(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
-        pos += 4;
+        pos += FLOAT_SIZE_IN_BYTES;
     }
 
     public void writeFloat(int position, final float v) throws IOException {
-        checkAvailable(position, 4);
+        checkAvailable(position, FLOAT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putFloat(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
     }
 
     public void writeInt(final int v) throws IOException {
-        ensureAvailable(4);
+        ensureAvailable(INT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putInt(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
-        pos += 4;
+        pos += INT_SIZE_IN_BYTES;
     }
 
     public void writeInt(int position, int v) throws IOException {
-        checkAvailable(position, 4);
+        checkAvailable(position, INT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putInt(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
     }
 
     public void writeLong(final long v) throws IOException {
-        ensureAvailable(8);
+        ensureAvailable(LONG_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putLong(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
-        pos += 8;
+        pos += LONG_SIZE_IN_BYTES;
     }
 
     public void writeLong(int position, final long v) throws IOException {
-        checkAvailable(position, 8);
+        checkAvailable(position, LONG_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putLong(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
     }
 
     public void writeShort(final int v) throws IOException {
-        ensureAvailable(2);
+        ensureAvailable(SHORT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putShort(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, (short) v);
-        pos += 2;
+        pos += SHORT_SIZE_IN_BYTES;
     }
 
     public void writeShort(int position, final int v) throws IOException {
-        checkAvailable(position, 2);
+        checkAvailable(position, SHORT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putShort(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, (short) v);
     }
 

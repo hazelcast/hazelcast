@@ -21,6 +21,13 @@ import com.hazelcast.nio.UnsafeHelper;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
+import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.DOUBLE_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.FLOAT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+
 class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
     UnsafeObjectDataInput(Data data, SerializationService service) {
@@ -40,44 +47,44 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
     }
 
     public char readChar(int position) throws IOException {
-        checkAvailable(position, 2);
+        checkAvailable(position, CHAR_SIZE_IN_BYTES);
         return UnsafeHelper.UNSAFE.getChar(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position);
     }
 
     public double readDouble() throws IOException {
         final double d = readDouble(pos);
-        pos += 8;
+        pos += DOUBLE_SIZE_IN_BYTES;
         return d;
     }
 
     public double readDouble(int position) throws IOException {
-        checkAvailable(position, 8);
+        checkAvailable(position, DOUBLE_SIZE_IN_BYTES);
         return UnsafeHelper.UNSAFE.getDouble(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position);
     }
 
     public float readFloat() throws IOException {
         final float f = readFloat(pos);
-        pos += 4;
+        pos += FLOAT_SIZE_IN_BYTES;
         return f;
     }
 
     public float readFloat(int position) throws IOException {
-        checkAvailable(position, 4);
+        checkAvailable(position, FLOAT_SIZE_IN_BYTES);
         return UnsafeHelper.UNSAFE.getFloat(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position);
     }
 
     public int readInt(int position) throws IOException {
-        checkAvailable(position, 4);
+        checkAvailable(position, INT_SIZE_IN_BYTES);
         return UnsafeHelper.UNSAFE.getInt(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position);
     }
 
     public long readLong(int position) throws IOException {
-        checkAvailable(position, 8);
+        checkAvailable(position, LONG_SIZE_IN_BYTES);
         return UnsafeHelper.UNSAFE.getLong(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position);
     }
 
     public short readShort(int position) throws IOException {
-        checkAvailable(position, 2);
+        checkAvailable(position, SHORT_SIZE_IN_BYTES);
         return UnsafeHelper.UNSAFE.getShort(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position);
     }
 

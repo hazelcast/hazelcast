@@ -21,6 +21,31 @@ package com.hazelcast.nio;
  */
 public final class Bits {
 
+    /**
+     * Short size in bytes
+     */
+    public static final int SHORT_SIZE_IN_BYTES = 2;
+    /**
+     * Char size in bytes
+     */
+    public static final int CHAR_SIZE_IN_BYTES = 2;
+    /**
+     * Integer size in bytes
+     */
+    public static final int INT_SIZE_IN_BYTES = 4;
+    /**
+     * Float size in bytes
+     */
+    public static final int FLOAT_SIZE_IN_BYTES = 4;
+    /**
+     * Long size in bytes
+     */
+    public static final int LONG_SIZE_IN_BYTES = 8;
+    /**
+     * Double size in bytes
+     */
+    public static final int DOUBLE_SIZE_IN_BYTES = 8;
+
     private Bits() {
     }
 

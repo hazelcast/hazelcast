@@ -412,7 +412,6 @@
     <!-- NIO -->
     <suppress checks="JavadocMethod" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.nio[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="IllegalType" files="com.hazelcast.nio.serialization.serializers.ArrayListSerializerHook"/>
     <suppress checks="IllegalType" files="com.hazelcast.nio.serialization.serializers.LinkedListSerializerHook"/>

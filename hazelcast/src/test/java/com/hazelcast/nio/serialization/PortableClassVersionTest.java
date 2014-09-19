@@ -72,7 +72,7 @@ public class PortableClassVersionTest {
         testDifferentClassVersions(serializationService, serializationService2);
     }
 
-    private void testDifferentClassVersions(SerializationService serializationService,
+    static void testDifferentClassVersions(SerializationService serializationService,
             SerializationService serializationService2) {
 
         NamedPortable p1 = new NamedPortable("named-portable", 123);
@@ -130,7 +130,7 @@ public class PortableClassVersionTest {
         testDifferentClassVersionsUsingDataWriteAndRead(serializationService, serializationService2);
     }
 
-    private void testDifferentClassVersionsUsingDataWriteAndRead(SerializationService serializationService,
+    static void testDifferentClassVersionsUsingDataWriteAndRead(SerializationService serializationService,
             SerializationService serializationService2) throws IOException {
 
         NamedPortable p1 = new NamedPortable("portable-v1", 111);
@@ -200,7 +200,7 @@ public class PortableClassVersionTest {
         testPreDefinedDifferentVersions(serializationService, serializationService2, mainWithNullInner);
     }
 
-    private void testPreDefinedDifferentVersions(SerializationService serializationService,
+    static void testPreDefinedDifferentVersions(SerializationService serializationService,
             SerializationService serializationService2, MainPortable mainPortable) {
         final Data data = serializationService.toData(mainPortable);
 

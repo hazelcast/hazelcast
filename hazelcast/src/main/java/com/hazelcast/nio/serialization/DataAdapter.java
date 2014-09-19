@@ -22,9 +22,9 @@ import com.hazelcast.nio.SocketWritable;
 
 import java.nio.ByteBuffer;
 
-public class DataAdapter implements SocketWritable, SocketReadable {
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 
-    private static final int INT_SIZE_IN_BYTES = 4;
+public class DataAdapter implements SocketWritable, SocketReadable {
 
     private static final int ST_TYPE = 1;
     private static final int ST_SIZE = 2;

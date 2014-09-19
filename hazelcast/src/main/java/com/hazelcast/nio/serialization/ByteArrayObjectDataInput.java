@@ -26,6 +26,11 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+
 class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataInput, PortableDataInput {
 
     private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
@@ -151,12 +156,12 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      */
     public final char readChar() throws IOException {
         final char c = readChar(pos);
-        pos += 2;
+        pos += CHAR_SIZE_IN_BYTES;
         return c;
     }
 
     public char readChar(int position) throws IOException {
-        checkAvailable(position, 2);
+        checkAvailable(position, CHAR_SIZE_IN_BYTES);
         return Bits.readChar(data, position, bigEndian);
     }
 
@@ -231,12 +236,12 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      */
     public final int readInt() throws IOException {
         final int i = readInt(pos);
-        pos += 4;
+        pos += INT_SIZE_IN_BYTES;
         return i;
     }
 
     public int readInt(int position) throws IOException {
-        checkAvailable(position, 4);
+        checkAvailable(position, INT_SIZE_IN_BYTES);
         return Bits.readInt(data, position, bigEndian);
     }
 
@@ -260,12 +265,12 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      */
     public final long readLong() throws IOException {
         final long l = readLong(pos);
-        pos += 8;
+        pos += LONG_SIZE_IN_BYTES;
         return l;
     }
 
     public long readLong(int position) throws IOException {
-        checkAvailable(position, 8);
+        checkAvailable(position, LONG_SIZE_IN_BYTES);
         return Bits.readLong(data, position, bigEndian);
     }
 
@@ -284,12 +289,12 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      */
     public final short readShort() throws IOException {
         short s = readShort(pos);
-        pos += 2;
+        pos += SHORT_SIZE_IN_BYTES;
         return s;
     }
 
     public short readShort(int position) throws IOException {
-        checkAvailable(position, 2);
+        checkAvailable(position, SHORT_SIZE_IN_BYTES);
         return Bits.readShort(data, position, bigEndian);
     }
 

@@ -25,6 +25,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 
+import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+
 class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, PortableDataOutput {
 
     final int initialSize;
@@ -100,9 +105,9 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void writeChar(final int v) throws IOException {
-        ensureAvailable(2);
+        ensureAvailable(CHAR_SIZE_IN_BYTES);
         Bits.writeChar(buffer, pos, (char) v, bigEndian);
-        pos += 2;
+        pos += CHAR_SIZE_IN_BYTES;
     }
 
     public void writeChar(int position, final int v) throws IOException {
@@ -111,11 +116,11 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeChars(final String s) throws IOException {
         final int len = s.length();
-        ensureAvailable(len * 2);
+        ensureAvailable(len * CHAR_SIZE_IN_BYTES);
         for (int i = 0; i < len; i++) {
             final int v = s.charAt(i);
             writeChar(pos, v);
-            pos += 2;
+            pos += CHAR_SIZE_IN_BYTES;
         }
     }
 
@@ -136,9 +141,9 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void writeInt(final int v) throws IOException {
-        ensureAvailable(4);
+        ensureAvailable(INT_SIZE_IN_BYTES);
         Bits.writeInt(buffer, pos, v, bigEndian);
-        pos += 4;
+        pos += INT_SIZE_IN_BYTES;
     }
 
     public void writeInt(int position, int v) throws IOException {
@@ -146,9 +151,9 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void writeLong(final long v) throws IOException {
-        ensureAvailable(8);
+        ensureAvailable(LONG_SIZE_IN_BYTES);
         Bits.writeLong(buffer, pos, v, bigEndian);
-        pos += 8;
+        pos += LONG_SIZE_IN_BYTES;
     }
 
     public void writeLong(int position, final long v) throws IOException {
@@ -156,9 +161,9 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void writeShort(final int v) throws IOException {
-        ensureAvailable(2);
+        ensureAvailable(SHORT_SIZE_IN_BYTES);
         Bits.writeShort(buffer, pos, (short) v, bigEndian);
-        pos += 2;
+        pos += SHORT_SIZE_IN_BYTES;
     }
 
     public void writeShort(int position, final int v) throws IOException {
