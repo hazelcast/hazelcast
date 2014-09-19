@@ -68,7 +68,7 @@ config.setLicenseKey( "HAZELCAST_ENTERPRISE_LICENSE_KEY" );
   ...
   <hz:license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</hz:license-key>
   ...
-</hazelcast>
+</hz:config>
 ```
 
 -   **JVM System Property**

@@ -18,171 +18,151 @@ package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.ISet;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
-
-/**
- * @author ali 3/6/13
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class SetTest extends HazelcastTestSupport {
 
+    //    ======================== isEmpty test ============================
+
     @Test
-    public void testSetMethods() throws Exception {
-        Config config = new Config();
-        final String name = "defSet";
-        final int count = 100;
-        final int insCount = 2;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-
-        for (int i=0; i<count; i++){
-            assertTrue(getSet(instances, name).add("item"+i));
-        }
-        assertFalse(getSet(instances, name).add("item0"));
-
-        Iterator iter = getSet(instances, name).iterator();
-        int item = 0;
-        while (iter.hasNext()){
-            getSet(instances, name).contains(iter.next());
-            item++;
-        }
-        assertEquals(count, item);
-
-        assertEquals(count, getSet(instances, name).size());
-
-        assertTrue(getSet(instances, name).remove("item99"));
-        assertFalse(getSet(instances, name).remove("item99"));
-
-        List list = new ArrayList();
-        list.add("item-1");
-        list.add("item-2");
-
-        assertTrue(getSet(instances, name).addAll(list));
-        assertEquals(count+list.size()-1, getSet(instances, name).size());
-        assertFalse(getSet(instances, name).addAll(list));
-        assertEquals(count+list.size()-1, getSet(instances, name).size());
-
-        assertTrue(getSet(instances, name).containsAll(list));
-        list.add("asd");
-        assertFalse(getSet(instances, name).containsAll(list));
-        assertTrue(getSet(instances, name).contains("item98"));
-        assertFalse(getSet(instances, name).contains("item99"));
+    public void testIsEmpty_whenEmpty() {
+        ISet set = newSet();
+        assertTrue(set.isEmpty());
     }
 
     @Test
-    public void testListener() throws Exception {
-        Config config = new Config();
-        final String name = "defSet";
-        final int count = 10;
-        final int insCount = 4;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-        final CountDownLatch latchAdd = new CountDownLatch(count);
-        final CountDownLatch latchRemove = new CountDownLatch(count);
-
-        ItemListener listener = new ItemListener() {
-            public void itemAdded(ItemEvent item) {
-                latchAdd.countDown();
-            }
-
-            public void itemRemoved(ItemEvent item) {
-                latchRemove.countDown();
-            }
-        };
-
-        getSet(instances, name).addItemListener(listener, true);
-
-        for (int i = 0; i < count; i++) {
-            assertTrue(getSet(instances, name).add("item" + i));
-        }
-        for (int i = 0; i < count; i++) {
-            assertTrue(getSet(instances, name).remove("item" + i));
-        }
-        assertTrue(latchAdd.await(5, TimeUnit.SECONDS));
-        assertTrue(latchRemove.await(5, TimeUnit.SECONDS));
-
+    public void testIsEmpty_whenNotEmpty() {
+        ISet set = newSet();
+        set.add("item1");
+        assertFalse(set.isEmpty());
     }
 
-    @Test
-    public void testMigration(){
-        final String name = "defSet";
-
-        final int insCount = 4;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
-
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-
-        ISet set = instance1.getSet(name);
-
-        for (int i=0; i<100; i++){
-            set.add("item" + i);
-        }
-
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
-        assertEquals(100, instance2.getSet(name).size());
-
-        HazelcastInstance instance3 = factory.newHazelcastInstance();
-        assertEquals(100, instance3.getSet(name).size());
-
-        instance1.shutdown();
-        assertEquals(100, instance3.getSet(name).size());
-
-        set = instance2.getSet(name);
-        for (int i=0; i<100; i++){
-            set.add("item-" + i);
-        }
-
-        instance2.shutdown();
-        assertEquals(200, instance3.getSet(name).size());
-
-        instance1 = factory.newHazelcastInstance();
-        assertEquals(200, instance1.getSet(name).size());
-
-        instance3.shutdown();
-        assertEquals(200, instance1.getSet(name).size());
-    }
+    //    ======================== add - addAll test =======================
 
     @Test
-    public void testMaxSize(){
-        Config config = new Config();
-        final String name = "defSet";
-        config.addSetConfig(new SetConfig().setName(name).setBackupCount(1).setMaxSize(100));
-
-        final int insCount = 2;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
-
-        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-
-        ISet set = instance1.getSet(name);
-
-        for (int i=0; i<100; i++){
+    public void testAdd() {
+        ISet set = newSet();
+        for (int i = 1; i <= 10; i++) {
             assertTrue(set.add("item" + i));
         }
-        assertFalse(set.add("item"));
-        assertNotNull(set.remove("item0"));
-        assertTrue(set.add("item"));
+        assertEquals(10, set.size());
+    }
+
+    @Test
+    public void testAdd_withMaxCapacity() {
+        ISet set = newSetWithMaxSize(1);
+        set.add("item");
+        for (int i = 1; i <= 10; i++) {
+            assertFalse(set.add("item" + i));
+        }
+        assertEquals(1, set.size());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testAddNull() {
+        ISet set = newSet();
+        set.add(null);
+    }
+
+    @Test
+    public void testAddAll_Basic() {
+        Set added = new HashSet();
+        ISet set = newSet();
+        added.add("item1");
+        added.add("item2");
+        set.addAll(added);
+        assertEquals(2, set.size());
+    }
+
+    @Test
+    public void testAddAll_whenAllElementsSame() {
+        Set added = new HashSet();
+        ISet set = newSet();
+        for (int i = 1; i <= 10; i++) {
+            added.add("item");
+        }
+        set.addAll(added);
+        assertEquals(1, set.size());
+    }
+
+    @Test
+    public void testAddAll_whenCollectionContainsNull() {
+        Set added = new HashSet();
+        ISet set = newSet();
+        added.add("item1");
+        added.add(null);
+        try {
+            assertFalse(set.addAll(added));
+        } catch (NullPointerException e) {
+        }
+        assertEquals(0, set.size());
+    }
+
+    //    ======================== remove  - removeAll ==========================
+
+
+    @Test
+    public void testRemoveBasic() {
+        ISet set = newSet();
+        set.add("item1");
+        assertTrue(set.remove("item1"));
+        assertEquals(0, set.size());
+    }
+
+    @Test
+    public void testRemove_whenElementNotExist() {
+        ISet set = newSet();
+        set.add("item1");
+        assertFalse(set.remove("notExist"));
+        assertEquals(1, set.size());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testRemove_whenArgumentNull() {
+        ISet set = newSet();
+        set.remove(null);
+    }
+
+    @Test
+    public void testRemoveAll() {
+        ISet set = newSet();
+        Set removed = new HashSet();
+        for (int i = 1; i <= 10; i++) {
+            set.add("item" + i);
+            removed.add("item" + i);
+        }
+        set.removeAll(removed);
+        assertEquals(0, set.size());
+    }
+
+    //    ======================== iterator ==========================
+    @Test
+    public void testIterator() {
+        ISet set = newSet();
+        set.add("item");
+        Iterator iterator = set.iterator();
+        assertEquals("item", iterator.next());
+        assertFalse(iterator.hasNext());
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -200,8 +180,124 @@ public class SetTest extends HazelcastTestSupport {
         iterator.remove();
     }
 
-    private ISet getSet(HazelcastInstance[] instances, String name){
-        final Random rnd = new Random();
-        return instances[rnd.nextInt(instances.length)].getSet(name);
+    //    ======================== clear ==========================
+
+    @Test
+    public void testClear() {
+        ISet set = newSet();
+        for (int i = 1; i <= 10; i++) {
+            set.add("item" + i);
+        }
+        assertEquals(10, set.size());
+        set.clear();
+        assertEquals(0, set.size());
+    }
+
+    @Test
+    public void testClear_whenSetEmpty() {
+        ISet set = newSet();
+        set.clear();
+        assertEquals(0, set.size());
+    }
+
+
+    //    ======================== retainAll ==========================
+
+    @Test
+    public void testRetainAll_whenArgumentEmptyCollection() {
+        ISet set = newSet();
+        Set retained = new HashSet();
+
+        for (int i = 1; i <= 10; i++) {
+            set.add("item" + i);
+        }
+        set.retainAll(retained);
+        assertEquals(0, set.size());
+    }
+
+    @Test
+    public void testRetainAll_whenArgumentHasSameElements() {
+        ISet set = newSet();
+        Set retained = new HashSet();
+
+        for (int i = 1; i <= 10; i++) {
+            set.add("item" + i);
+            retained.add("item" + i);
+        }
+        set.retainAll(retained);
+        assertEquals(10, set.size());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testRetainAll_whenCollectionNull() {
+        ISet set = newSet();
+        Set retained = null;
+        set.retainAll(retained);
+        assertEquals(0, set.size());
+    }
+
+    //    ======================== contains - containsAll ==========================
+    @Test
+    public void testContains() {
+        ISet set = newSet();
+        set.add("item1");
+        assertTrue(set.contains("item1"));
+    }
+
+    @Test
+    public void testContains_whenEmpty() {
+        ISet set = newSet();
+        assertFalse(set.contains("notExist"));
+    }
+
+    @Test
+    public void testContains_whenNotContains() {
+        ISet set = newSet();
+        set.add("item1");
+        assertFalse(set.contains("notExist"));
+    }
+
+    @Test
+    public void testContainsAll() {
+        ISet set = newSet();
+        Set contains = new HashSet();
+
+        contains.add("item1");
+        contains.add("item2");
+        for (int i = 1; i <= 10; i++) {
+            set.add("item" + i);
+            contains.add("item" + i);
+        }
+        assertTrue(set.containsAll(contains));
+    }
+
+    @Test
+    public void testContainsAll_whenSetNotContains() {
+        ISet set = newSet();
+        ILock lock = Hazelcast.newHazelcastInstance().getLock("asd");
+        Set contains = new HashSet();
+        contains.add("item1");
+        contains.add("item100");
+        for (int i = 1; i <= 10; i++) {
+            set.add("item" + i);
+            contains.add("item" + i);
+        }
+        assertFalse(set.containsAll(contains));
+
+    }
+
+    //    ======================== helper methods ==========================
+    protected ISet newSet() {
+        HazelcastInstance instance = createHazelcastInstance();
+        return instance.getSet(randomString());
+    }
+
+    protected ISet newSetWithMaxSize(int maxSize) {
+        String name = randomString();
+        Config config = new Config();
+        SetConfig setConfig = config.getSetConfig(name);
+        setConfig.setMaxSize(maxSize);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        return instance.getSet(name);
     }
 }

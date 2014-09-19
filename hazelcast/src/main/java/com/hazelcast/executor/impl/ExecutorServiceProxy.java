@@ -515,7 +515,7 @@ public class ExecutorServiceProxy
     }
 
     @Override
-    protected RuntimeException throwNotActiveException() {
+    protected void throwNotActiveException() {
         throw new RejectedExecutionException();
     }
 

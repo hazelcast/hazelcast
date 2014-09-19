@@ -54,7 +54,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Ignore;
@@ -1453,21 +1452,16 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(NightlyTest.class)
     public void testIssue1085WriteBehindBackupTransactional() throws InterruptedException {
-        Config config = new Config();
-        String name = "testIssue1085WriteBehindBackupTransactional";
-        MapConfig writeBehindBackup = config.getMapConfig(name);
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setWriteDelaySeconds(5);
-        int size = 1000;
-        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 20);
-        mapStoreConfig.setImplementation(mapStore);
-        writeBehindBackup.setMapStoreConfig(mapStoreConfig);
+        final String name = randomMapName();
+        final int size = 1000;
+        MapStoreWithStoreCount mapStore = new MapStoreWithStoreCount(size, 120);
+        Config config = newConfig(name, mapStore, 5);
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        final IMap map = instance.getMap(name);
+
         TransactionContext context = instance.newTransactionContext();
         context.beginTransaction();
         TransactionalMap<Object, Object> tmap = context.getMap(name);
@@ -1589,12 +1583,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(0, store.getStore().keySet().size());
     }
 
-    /**
-     * At least sleep 1 second so entries can fall different time slices in
-     * {@link com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler}
-     */
     @Test
-    @Category(NightlyTest.class)
     public void testWriteBehindWriteRemoveOrderOfSameKey() throws Exception {
         final String mapName = randomMapName("_testWriteBehindWriteRemoveOrderOfSameKey_");
         final int iterationCount = 5;
@@ -1603,22 +1592,22 @@ public class MapStoreTest extends HazelcastTestSupport {
         final int removeOps = 2;
         final int expectedStoreSizeEventually = 1;
         final RecordingMapStore store = new RecordingMapStore(iterationCount * putOps, iterationCount * removeOps);
-        final Config config = newConfig(store, delaySeconds);
+        final Config config = newConfig(mapName, store, delaySeconds);
         final HazelcastInstance node = createHazelcastInstance(config);
-        final IMap<Object, Object> map = node.getMap(mapName);
+        final IMap<String, String> map = node.getMap(mapName);
+
+        String key = "key";
+
         for (int i = 0; i < iterationCount; i++) {
-            String key = "key";
             String value = "value" + i;
+
             map.put(key, value);
-            sleepMillis(1000);
             map.remove(key);
-            sleepMillis(1000);
+
             map.put(key, value);
-            sleepMillis(1000);
             map.remove(key);
-            sleepMillis(1000);
+
             map.put(key, value);
-            sleepMillis(1000);
         }
 
         assertTrueEventually(new AssertTask() {
@@ -1627,6 +1616,8 @@ public class MapStoreTest extends HazelcastTestSupport {
                 assertEquals(expectedStoreSizeEventually, store.getStore().size());
             }
         });
+
+        assertEquals("value" + (iterationCount - 1), map.get(key));
     }
 
     @Test

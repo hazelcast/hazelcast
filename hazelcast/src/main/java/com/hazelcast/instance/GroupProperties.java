@@ -132,6 +132,12 @@ public class GroupProperties {
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
 
+    /**
+     * forces the jcache provider which can have values client or server to force provider type,
+     * if not provided provider will be client or server whichever found on classPath first respectively
+     */
+    public static final String PROP_JCACHE_PROVIDER_TYPE = "hazelcast.jcache.provider.type";
+
     public final GroupProperty CLIENT_ENGINE_THREAD_COUNT;
 
     public final GroupProperty PARTITION_OPERATION_THREAD_COUNT;

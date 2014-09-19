@@ -73,11 +73,11 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     private void lifecycleCheck(final NodeEngine engine) {
         if (engine == null || !engine.isActive()) {
-            throw throwNotActiveException();
+            throwNotActiveException();
         }
     }
 
-    protected RuntimeException throwNotActiveException() {
+    protected void throwNotActiveException() {
         throw new HazelcastInstanceNotActiveException();
     }
 
