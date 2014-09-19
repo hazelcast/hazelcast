@@ -52,10 +52,7 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test
     public void testIsEmpty_whenNotEmpty() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add("item" + i);
-        }
+        IList list = newList_withInitialData(1);
         assertFalse(list.isEmpty());
     }
 
@@ -63,11 +60,8 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test
     public void testAdd() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            assertTrue(list.add("item" + i));
-        }
-        assertSizeEventually(10, list);
+        IList list = newList_withInitialData(10);
+        assertEquals(10, list.size());
     }
 
     @Test
@@ -76,7 +70,7 @@ public class BasicListTest extends HazelcastTestSupport {
         try {
             list.add(null);
             fail();
-        } catch (NullPointerException e) {
+        } catch (NullPointerException expected) {
         }
         assertTrue(list.isEmpty());
     }
@@ -99,15 +93,12 @@ public class BasicListTest extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             list.add(i, "item" + i);
         }
-        assertSizeEventually(10, list);
+        assertEquals(10, list.size());
     }
 
     @Test
     public void testAddWithIndex_whenIndexAlreadyTaken() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
         assertEquals("item4", list.get(4));
         list.add(4, "test");
         assertEquals("test", list.get(4));
@@ -115,45 +106,26 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test
     public void testAddWithIndex_whenIndexAlreadyTaken_ArgNull() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
         assertEquals("item4", list.get(4));
         try {
             list.add(4, null);
             fail();
-        } catch (NullPointerException e) {
+        } catch (NullPointerException expected) {
         }
         assertEquals("item4", list.get(4));
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testAddWithIndex_whenIndexOutOfBound() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-        assertSizeEventually(10, list);
-
-        try {
-            list.add(14, "item14");
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
-        assertEquals(10, list.size());
+        IList list = newList_withInitialData(10);
+        list.add(14, "item14");
     }
 
-    @Test // fixed
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testAddWithIndex_whenIndexNegative() {
         IList list = newList();
-        try {
-            list.add(-1, "item0");
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
-        assertEquals(0, list.size());
-
+        list.add(-1, "item0");
     }
 
 
@@ -168,7 +140,7 @@ public class BasicListTest extends HazelcastTestSupport {
         listTest.add("item2");
 
         assertTrue(list.addAll(listTest));
-        assertSizeEventually(3, list);
+        assertEquals(3, list.size());
     }
 
     @Test
@@ -180,46 +152,35 @@ public class BasicListTest extends HazelcastTestSupport {
         listTest.add(null);
 
         try {
-            assertFalse(list.addAll(listTest));
-        } catch (NullPointerException e) {
+            list.addAll(listTest);
+            fail();
+        } catch (NullPointerException expected) {
         }
-        assertSizeEventually(0, list);
+        assertEquals(0, list.size());
     }
 
     @Test
     public void testAddAll_whenEmptyCollection() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-        List listTest = new ArrayList<String>();
+        IList list = newList_withInitialData(10);
 
-        assertSizeEventually(10, list);
+        List listTest = new ArrayList<String>();
+        assertEquals(10, list.size());
         assertFalse(list.addAll(listTest));
-        assertSizeEventually(10, list);
+        assertEquals(10, list.size());
     }
 
     @Test
     public void testAddAll_whenDuplicateItems() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
         List listTest = new ArrayList<String>();
         listTest.add("item4");
-
-        assertSizeEventually(10, list);
-        assertTrue(list.contains("item4"));
         list.addAll(listTest);
-        assertSizeEventually(11, list);
+        assertEquals(11, list.size());
     }
 
     @Test
     public void testAddAllWithIndex() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
         List listTest = new ArrayList<String>();
         listTest.add("test1");
         listTest.add("test2");
@@ -234,41 +195,19 @@ public class BasicListTest extends HazelcastTestSupport {
         assertEquals("test3", list.get(3));
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testAddAllWithIndex_whenIndexNegative() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
         List listTest = new ArrayList<String>();
         listTest.add("test1");
-
-        try {
-            assertFalse(list.addAll(-2, listTest));
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
-
-        assertSizeEventually(10, list);
+        list.addAll(-2, listTest);
     }
 
 //    ====================== Clear =======================
 
     @Test
-    public void testClear_whenNotEmpty() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
-        list.clear();
-        assertEquals(0, list.size());
-    }
-
-    @Test
-    public void testClear_whenEmpty() {
-        IList list = newList();
-        assertEquals(0, list.size());
+    public void testClear() {
+        IList list = newList_withInitialData(10);
         list.clear();
         assertEquals(0, list.size());
     }
@@ -277,11 +216,7 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test
     public void testContains() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
+        IList list = newList_withInitialData(10);
         assertTrue(list.contains("item1"));
         assertTrue(list.contains("item5"));
         assertTrue(list.contains("item7"));
@@ -292,10 +227,7 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsAll() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
         List listTest = new ArrayList<String>();
         listTest.add("item1");
         listTest.add("item4");
@@ -306,10 +238,7 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test
     public void testContainsAll_whenListNotContains() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
         List listTest = new ArrayList<String>();
         listTest.add("item1");
         listTest.add("item4");
@@ -318,70 +247,40 @@ public class BasicListTest extends HazelcastTestSupport {
         assertFalse(list.containsAll(listTest));
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testContainsAll_whenCollectionNull() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
         List listTest = null;
-
-        try {
-            assertFalse(list.containsAll(listTest));
-            fail();
-        } catch (NullPointerException e) {
-        }
-
+        list.containsAll(listTest);
     }
 
 //    ===================== Get ========================
 
     @Test
     public void testGet() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
+        IList list = newList_withInitialData(10);
         assertEquals("item1", list.get(1));
         assertEquals("item7", list.get(7));
         assertEquals("item9", list.get(9));
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testGet_whenIndexNotExists() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
-        try {
-            list.get(14);
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
+        IList list = newList_withInitialData(10);
+        list.get(14);
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testGet_whenIndexNegative() {
         IList list = newList();
-
-        try {
-            list.get(-1);
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
+        list.get(-1);
     }
 
 //    ========================= Set ==========================
 
     @Test
     public void testSet() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
+        IList list = newList_withInitialData(10);
         assertEquals("item1", list.set(1, "test1"));
         assertEquals("item3", list.set(3, "test3"));
         assertEquals("item8", list.set(8, "test8"));
@@ -390,51 +289,29 @@ public class BasicListTest extends HazelcastTestSupport {
         assertEquals("test8", list.get(8));
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testSet_whenListEmpty() {
         IList list = newList();
-
-        try {
-            list.set(0, "item0");
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
+        list.set(0, "item0");
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testSet_whenElementNull() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
-        try {
-            list.set(0, null);
-            fail();
-        } catch (NullPointerException e) {
-        }
+        IList list = newList_withInitialData(10);
+        list.set(0, null);
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testSet_whenIndexNegative() {
         IList list = newList();
-
-        try {
-            list.set(-1, "item1");
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
+        list.set(-1, "item1");
     }
 
 //    ========================= IndexOf =============================
 
     @Test
     public void testIndexOf() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
+        IList list = newList_withInitialData(10);
         assertEquals(0, list.indexOf("item0"));
         assertEquals(6, list.indexOf("item6"));
         assertEquals(9, list.indexOf("item9"));
@@ -454,19 +331,10 @@ public class BasicListTest extends HazelcastTestSupport {
         assertNotEquals(3, list.indexOf("item1"));
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testIndexOf_whenObjectNull() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
-        try {
-            assertEquals(0, list.indexOf(null));
-            assertEquals(-1, list.indexOf(null));
-            fail();
-        } catch (NullPointerException e) {
-        }
+        IList list = newList_withInitialData(10);
+        list.indexOf(null);
     }
 
 
@@ -487,19 +355,10 @@ public class BasicListTest extends HazelcastTestSupport {
         assertNotEquals(3, list.lastIndexOf("item1"));
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testLastIndexOf_whenObjectNull() {
         IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
-        try {
-            assertEquals(0, list.lastIndexOf(null));
-            assertEquals(-1, list.lastIndexOf(null));
-            fail();
-        } catch (NullPointerException e) {
-        }
+        list.lastIndexOf(null);
     }
 
 
@@ -507,50 +366,28 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveIndex() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
+        IList list = newList_withInitialData(10);
         assertEquals("item0", list.remove(0));
         assertEquals("item4", list.remove(3));
         assertEquals("item7", list.remove(5));
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testRemoveIndex_whenIndexNegative() {
         IList list = newList();
-
-        try {
-            list.remove(-1);
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
+        list.remove(-1);
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testRemoveIndex_whenIndexNotExists() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
-        try {
-            list.remove(14);
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
+        IList list = newList_withInitialData(10);
+        list.remove(14);
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testRemoveIndex_whenListEmpty() {
         IList list = newList();
-
-        try {
-            list.remove(0);
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
+        list.remove(0);
     }
 
     @Test
@@ -563,20 +400,14 @@ public class BasicListTest extends HazelcastTestSupport {
 
         assertTrue(list.remove("item0"));
         assertFalse(list.remove("item3"));
-        assertNotEquals("item0", list.get(0));
         assertEquals("item1", list.get(0));
         assertEquals("item0", list.get(2));
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testRemoveObject_whenObjectNull() {
         IList list = newList();
-
-        try {
-            assertFalse(list.remove(null));
-            fail();
-        } catch (NullPointerException e) {
-        }
+        list.remove(null);
     }
 
     @Test
@@ -589,158 +420,98 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAll() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
         List listTest = new ArrayList<String>();
         listTest.add("item0");
         listTest.add("item1");
         listTest.add("item2");
 
-        assertSizeEventually(10, list);
-        assertEquals("item0", list.get(0));
+
         assertTrue(list.removeAll(listTest));
-        assertSizeEventually(7, list);
+        assertEquals(7, list.size());
         assertEquals("item3", list.get(0));
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testRemoveAll_whenCollectionNull() {
         IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
-        try {
-            assertFalse(list.removeAll(null));
-            fail();
-        } catch (NullPointerException e) {
-        }
+        list.removeAll(null);
     }
 
     @Test
     public void testRemoveAll_whenCollectionEmpty() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
+        IList list = newList_withInitialData(10);
         List listTest = new ArrayList<String>();
-
-        assertSizeEventually(10, list);
         assertFalse(list.removeAll(listTest));
-        assertSizeEventually(10, list);
+        assertEquals(10, list.size());
     }
 
 //    ======================= RetainAll =======================
 
     @Test
     public void testRetainAll() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
 
         List listTest = new ArrayList<String>();
         listTest.add("item0");
         listTest.add("item1");
         listTest.add("item2");
 
-        assertSizeEventually(10, list);
+
         assertTrue(list.retainAll(listTest));
-        assertSizeEventually(3, list);
+        assertEquals(3, list.size());
         assertIterableEquals(list, "item0", "item1", "item2");
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testRetainAll_whenCollectionNull() {
         IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
-        try {
-            assertFalse(list.retainAll(null));
-        } catch (NullPointerException e) {
-        }
+        list.retainAll(null);
     }
 
     @Test
     public void testRetainAll_whenCollectionEmpty() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
         List listTest = new ArrayList<String>();
-
         assertTrue(list.retainAll(listTest));
-        assertSizeEventually(0, list);
+        assertEquals(0, list.size());
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testRetainAll_whenCollectionContainsNull() {
         IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
         List listTest = new ArrayList<String>();
         listTest.add(null);
-
-        try {
-            assertTrue(list.retainAll(listTest));
-            fail();
-        } catch (NullPointerException e) {
-        }
-        assertSizeEventually(10, list);
+        list.retainAll(listTest);
     }
 
 //  ===================== SubList ========================
 
     @Test
     public void testSublist() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-
+        IList list = newList_withInitialData(10);
         List listTest = list.subList(3, 7);
-        assertSizeEventually(4, listTest);
+        assertEquals(4, listTest.size());
         assertIterableEquals(listTest, "item3", "item4", "item5", "item6");
-        assertSizeEventually(10, list);
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testSublist_whenFromIndexIllegal() {
         IList list = newList();
-        try {
-            list.subList(8, 7);
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
+        list.subList(8, 7);
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testSublist_whenToIndexIllegal() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-        try {
-            list.subList(4, 14);
-            fail();
-        } catch (IndexOutOfBoundsException e) {
-        }
+        IList list = newList_withInitialData(10);
+        list.subList(4, 14);
     }
 
 //    ================== Iterator ====================
 
     @Test
     public void testIterator() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
+        IList list = newList_withInitialData(10);
         ListIterator iterator = list.listIterator();
         int i = 0;
         while (iterator.hasNext()) {
@@ -751,15 +522,12 @@ public class BasicListTest extends HazelcastTestSupport {
 
     @Test
     public void testIteratorWithIndex() {
-        IList list = newList();
-        for (int i = 0; i < 10; i++) {
-            list.add(i, "item" + i);
-        }
-        int i = 0;
-        ListIterator iterator = list.listIterator(4);
+        IList list = newList_withInitialData(10);
+        int i = 4;
+        ListIterator iterator = list.listIterator(i);
         while (iterator.hasNext()) {
             Object o = iterator.next();
-            assertEquals(o, "item" + (4 + i++));
+            assertEquals(o, "item" + i++);
         }
     }
 
@@ -768,6 +536,15 @@ public class BasicListTest extends HazelcastTestSupport {
     protected IList newList() {
         HazelcastInstance instance = createHazelcastInstance();
         return instance.getList(randomString());
+    }
+
+    protected IList newList_withInitialData(int count) {
+        HazelcastInstance instance = createHazelcastInstance();
+        final IList<String> list = instance.getList(randomString());
+        for (int i = 0; i < count; i++) {
+            list.add("item" + i);
+        }
+        return list;
     }
 
     protected IList newListWithMaxSizeCfg(int maxSize) {

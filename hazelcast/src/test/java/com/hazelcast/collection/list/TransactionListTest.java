@@ -18,47 +18,85 @@ package com.hazelcast.collection.list;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IList;
 import com.hazelcast.core.TransactionalList;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class TransactionListTest extends HazelcastTestSupport {
 
     @Test
-    public void testAddRemoveList() {
-        Config config = new Config();
-        final String name = "defList";
-
-        final int insCount = 2;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-        TransactionContext context = instances[0].newTransactionContext();
-        assertTrue(instances[1].getList(name).add("value1"));
+    public void testAdd(){
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        String item = randomString();
+        IList<Object> list = instance.getList(name);
+        TransactionContext context = instance.newTransactionContext();
         try {
             context.beginTransaction();
-
-            TransactionalList l = context.getList(name);
-            assertEquals(1, l.size());
-            assertTrue(l.add("value1"));
-            assertEquals(2, l.size());
-            assertFalse(l.remove("value2"));
-            assertEquals(2, l.size());
-            assertTrue(l.remove("value1"));
-            assertEquals(1, l.size());
+            TransactionalList<Object> txnList = context.getList(name);
+            assertTrue(txnList.add(item));
             context.commitTransaction();
         } catch (Exception e) {
             fail(e.getMessage());
             context.rollbackTransaction();
         }
-
-        assertEquals(1, instances[1].getList(name).size());
+        assertEquals(1, list.size());
+        assertEquals(item, list.get(0));
     }
+
+    @Test
+    public void testRemove(){
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        String item = randomString();
+        IList<Object> list = instance.getList(name);
+        list.add(item);
+        TransactionContext context = instance.newTransactionContext();
+        try {
+            context.beginTransaction();
+            TransactionalList<Object> txnList = context.getList(name);
+            assertTrue(txnList.remove(item));
+            context.commitTransaction();
+        } catch (Exception e) {
+            fail(e.getMessage());
+            context.rollbackTransaction();
+        }
+        assertEquals(0, list.size());
+    }
+
+    @Test
+    public void testRemove_withNotContainedItem(){
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        String item = randomString();
+        String notContainedItem = randomString();
+        IList<Object> list = instance.getList(name);
+        list.add(item);
+        TransactionContext context = instance.newTransactionContext();
+        try {
+            context.beginTransaction();
+            TransactionalList<Object> txnList = context.getList(name);
+            assertFalse(txnList.remove(notContainedItem));
+            context.commitTransaction();
+        } catch (Exception e) {
+            fail(e.getMessage());
+            context.rollbackTransaction();
+        }
+        assertEquals(1, list.size());
+    }
+
 }
