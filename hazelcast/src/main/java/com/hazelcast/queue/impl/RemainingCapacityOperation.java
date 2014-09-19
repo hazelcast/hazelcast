@@ -1,6 +1,9 @@
 package com.hazelcast.queue.impl;
 
 
+/**
+ * Returns the remaining capacity of the queue based on config max-size
+ */
 public class RemainingCapacityOperation extends QueueOperation {
 
     public RemainingCapacityOperation() {
