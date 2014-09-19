@@ -102,4 +102,14 @@ public class PartitionCallableRequest extends PartitionClientRequest {
         ObjectDataInput rawDataInput = reader.getRawDataInput();
         callable = rawDataInput.readObject();
     }
+
+    @Override
+    public String toString() {
+        return "PartitionCallableRequest{"
+                + "name='" + name + '\''
+                + ", uuid='" + uuid + '\''
+                + ", callable=" + callable
+                + ", partitionId=" + partitionId
+                + '}';
+    }
 }
