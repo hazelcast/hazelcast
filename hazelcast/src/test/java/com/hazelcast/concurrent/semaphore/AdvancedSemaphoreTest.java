@@ -20,18 +20,19 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class AdvancedSemaphoreTest extends HazelcastTestSupport {
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void testSemaphoreWithFailures() throws InterruptedException {
         final int k = 4;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k + 1);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k + 1);
         final HazelcastInstance[] instances = factory.newInstances();
-
         final ISemaphore semaphore = instances[k].getSemaphore("test");
         int initialPermits = 20;
-        semaphore.init(initialPermits);
-        for (int i = 0; i < k; i++) {
 
+        semaphore.init(initialPermits);
+
+        for (int i = 0; i < k; i++) {
             int rand = (int) (Math.random() * 5) + 1;
+
             semaphore.acquire(rand);
             initialPermits -= rand;
             assertEquals(initialPermits, semaphore.availablePermits());
@@ -39,7 +40,7 @@ public class AdvancedSemaphoreTest extends HazelcastTestSupport {
             initialPermits += rand;
             assertEquals(initialPermits, semaphore.availablePermits());
 
-            instances[i].getLifecycleService().shutdown();
+            instances[i].shutdown();
 
             semaphore.acquire(rand);
             initialPermits -= rand;
@@ -50,14 +51,14 @@ public class AdvancedSemaphoreTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void testSemaphoreWithFailuresAndJoin() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-
         final HazelcastInstance instance1 = factory.newHazelcastInstance();
         final HazelcastInstance instance2 = factory.newHazelcastInstance();
         final ISemaphore semaphore = instance1.getSemaphore("test");
         final CountDownLatch countDownLatch = new CountDownLatch(1);
+
         assertTrue(semaphore.init(0));
 
         final Thread thread = new Thread() {
@@ -74,12 +75,13 @@ public class AdvancedSemaphoreTest extends HazelcastTestSupport {
         };
         thread.start();
 
-        instance2.getLifecycleService().shutdown();
+        instance2.shutdown();
         semaphore.release();
-        HazelcastInstance instance3 = factory.newHazelcastInstance();
 
+        HazelcastInstance instance3 = factory.newHazelcastInstance();
         ISemaphore semaphore1 = instance3.getSemaphore("test");
         semaphore1.release();
+
         try {
             assertTrue(countDownLatch.await(15, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
@@ -89,8 +91,7 @@ public class AdvancedSemaphoreTest extends HazelcastTestSupport {
         }
     }
 
-
-    @Test(timeout = 30000)
+    @Test(timeout = 120000)
     public void testMutex() throws InterruptedException {
         final int threadCount = 2;
         final HazelcastInstance[] instances = createHazelcastInstanceFactory(threadCount).newInstances();
@@ -131,6 +132,7 @@ public class AdvancedSemaphoreTest extends HazelcastTestSupport {
                 }
             }.start();
         }
+
         assertOpenEventually(latch);
         assertEquals(loopCount * threadCount, counter.get());
     }

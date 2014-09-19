@@ -45,7 +45,7 @@ public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
     }
 
     public boolean init(long id) {
-        if (id <= 0) {
+        if (id < 0) {
             return false;
         }
         long step = (id / BLOCK_SIZE);

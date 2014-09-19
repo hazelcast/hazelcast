@@ -48,7 +48,7 @@ public class IdGeneratorProxy
 
     @Override
     public boolean init(long id) {
-        if (id <= 0) {
+        if (id < 0) {
             return false;
         }
         long step = (id / BLOCK_SIZE);
