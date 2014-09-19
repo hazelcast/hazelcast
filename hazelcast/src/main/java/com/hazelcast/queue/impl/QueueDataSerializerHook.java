@@ -86,6 +86,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int QUEUE_CONTAINER = 38;
     public static final int TXN_PEEK = 39;
     public static final int IS_EMPTY = 40;
+    public static final int REMAINING_CAPACITY = 41;
 
 
     public int getFactoryId() {
@@ -94,7 +95,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
 
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[IS_EMPTY + 1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[REMAINING_CAPACITY + 1];
         constructors[OFFER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new OfferOperation();
@@ -296,6 +297,12 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new IsEmptyOperation();
+            }
+        };
+        constructors[REMAINING_CAPACITY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemainingCapacityOperation();
             }
         };
 
