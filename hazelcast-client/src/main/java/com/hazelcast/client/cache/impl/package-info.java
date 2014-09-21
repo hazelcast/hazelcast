@@ -19,4 +19,4 @@
  *     Hazelcast JSR-107 aka JCache implementation client side
  * </p>
  */
-package com.hazelcast.client.cache;
+package com.hazelcast.client.cache.impl;

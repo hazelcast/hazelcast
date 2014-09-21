@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.proxy;
+package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.ICache;
@@ -47,12 +47,12 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 /**
  * Abstract ICache implementation
  */
-abstract class AbstractClientCacheProxy<K, V>
-        extends AbstractBaseClientCacheProxy<K, V>
+abstract class AbstractClientCacheProxyExtension<K, V>
+        extends AbstractClientCacheProxyInternal<K, V>
         implements ICache<K, V> {
 
-    protected AbstractClientCacheProxy(CacheConfig cacheConfig, ClientCacheDistributedObject delegate) {
-        super(cacheConfig, delegate);
+    protected AbstractClientCacheProxyExtension(CacheConfig cacheConfig, ClientContext clientContext) {
+        super(cacheConfig, clientContext);
     }
 
     //region ICACHE: JCACHE EXTENSION
@@ -70,9 +70,9 @@ abstract class AbstractClientCacheProxy<K, V>
         if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
             return createCompletedFuture(cached);
         }
-        CacheGetRequest request = new CacheGetRequest(getDistributedObjectName(), keyData, expiryPolicy);
+        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy);
         ClientCallFuture future;
-        final ClientContext context = getContext();
+        final ClientContext context = clientContext;
         try {
             future = (ClientCallFuture) context.getInvocationService().invokeOnKeyOwner(request, keyData);
         } catch (Exception e) {
@@ -88,7 +88,7 @@ abstract class AbstractClientCacheProxy<K, V>
                 }
             });
         }
-        return new DelegatingFuture<V>(future, getContext().getSerializationService());
+        return new DelegatingFuture<V>(future, clientContext.getSerializationService());
     }
 
     @Override
@@ -187,8 +187,8 @@ abstract class AbstractClientCacheProxy<K, V>
         if (keySet.isEmpty()) {
             return result;
         }
-        final CacheGetAllRequest request = new CacheGetAllRequest(getDistributedObjectName(), keySet, expiryPolicy);
-        final MapEntrySet mapEntrySet = toObject(delegate.invoke(request));
+        final CacheGetAllRequest request = new CacheGetAllRequest(nameWithPrefix, keySet, expiryPolicy);
+        final MapEntrySet mapEntrySet = toObject(invoke(request));
         final Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
         for (Map.Entry<Data, Data> dataEntry : entrySet) {
             final Data keyData = dataEntry.getKey();
@@ -291,8 +291,8 @@ abstract class AbstractClientCacheProxy<K, V>
     public int size() {
         ensureOpen();
         try {
-            CacheSizeRequest request = new CacheSizeRequest(getDistributedObjectName());
-            Integer result = delegate.invoke(request);
+            CacheSizeRequest request = new CacheSizeRequest(nameWithPrefix);
+            Integer result = invoke(request);
             if (result == null) {
                 return 0;
             }
