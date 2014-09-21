@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
+import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.DistributedObject;
@@ -90,22 +91,13 @@ public class CacheService
     //endregion
 
     //region RemoteService
-    @Override
+        @Override
     public DistributedObject createDistributedObject(String objectName) {
         return new CacheDistributedObject(objectName, nodeEngine, this);
     }
 
-    @Override
+//    @Override
     public void destroyDistributedObject(String objectName) {
-        for (CachePartitionSegment segment : segments) {
-            segment.deleteCache(objectName);
-        }
-        deregisterAllListener(objectName);
-        enableStatistics(objectName, false);
-        enableManagement(objectName, false);
-
-        deleteCacheConfig(objectName);
-        deleteCacheStat(objectName);
     }
     //endregion
 
@@ -150,6 +142,30 @@ public class CacheService
         return segments[partitionId].getCache(name);
     }
 
+    public void destroyCache(String objectName) {
+        for (CachePartitionSegment segment : segments) {
+            segment.deleteCache(objectName);
+        }
+        deregisterAllListener(objectName);
+        enableStatistics(objectName, false);
+        enableManagement(objectName, false);
+
+        deleteCacheConfig(objectName);
+        deleteCacheStat(objectName);
+
+        destroyCacheOnAllMembers(objectName);
+    }
+
+    protected <K, V> void destroyCacheOnAllMembers(String objectName) {
+        final OperationService operationService = nodeEngine.getOperationService();
+        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for (MemberImpl member : members) {
+            if (!member.localMember()) {
+                final CacheDestroyOperation op = new CacheDestroyOperation(objectName);
+                operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+            }
+        }
+    }
     public boolean createCacheConfigIfAbsent(CacheConfig config) {
         final CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
         final boolean created = localConfig == null;
@@ -198,15 +214,16 @@ public class CacheService
 
     public void enableStatistics(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
+        final String cacheManagerName = cacheConfig.getUriString();
         if (cacheConfig != null) {
             cacheConfig.setStatisticsEnabled(enabled);
             if (enabled) {
                 final CacheStatisticsImpl cacheStatistics = createCacheStatIfAbsent(cacheNameWithPrefix);
                 final CacheStatisticsMXBeanImpl mxBean = new CacheStatisticsMXBeanImpl(cacheStatistics);
 
-                MXBeanUtil.registerCacheObject(mxBean, cacheConfig.getUriString(), cacheConfig.getName(), true);
+                MXBeanUtil.registerCacheObject(mxBean, cacheManagerName, cacheConfig.getName(), true);
             } else {
-                MXBeanUtil.unregisterCacheObject(cacheConfig.getUriString(), cacheConfig.getName(), true);
+                MXBeanUtil.unregisterCacheObject(cacheManagerName, cacheConfig.getName(), true);
                 deleteCacheStat(cacheNameWithPrefix);
             }
         }
@@ -214,13 +231,14 @@ public class CacheService
 
     public void enableManagement(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
+        final String cacheManagerName = cacheConfig.getUriString();
         if (cacheConfig != null) {
             cacheConfig.setManagementEnabled(enabled);
             if (enabled) {
                 final CacheMXBeanImpl mxBean = new CacheMXBeanImpl(cacheConfig);
-                MXBeanUtil.registerCacheObject(mxBean, cacheConfig.getUriString(), cacheConfig.getName(), false);
+                MXBeanUtil.registerCacheObject(mxBean, cacheManagerName, cacheConfig.getName(), false);
             } else {
-                MXBeanUtil.unregisterCacheObject(cacheConfig.getUriString(), cacheConfig.getName(), false);
+                MXBeanUtil.unregisterCacheObject(cacheManagerName, cacheConfig.getName(), false);
                 deleteCacheStat(cacheNameWithPrefix);
             }
         }
