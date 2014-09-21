@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache;
+package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheProxyUtil;
@@ -24,8 +24,6 @@ import com.hazelcast.cache.impl.client.CacheCreateConfigRequest;
 import com.hazelcast.cache.impl.client.CacheGetConfigRequest;
 import com.hazelcast.cache.impl.client.CacheManagementConfigRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.proxy.ClientCacheDistributedObject;
-import com.hazelcast.client.proxy.ClientCacheProxy;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.config.CacheConfig;
@@ -151,9 +149,7 @@ public final class HazelcastClientCacheManager
 
     @Override
     protected <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
-        final ClientCacheDistributedObject cacheDistributedObject = hazelcastInstance
-                .getDistributedObject(CacheService.SERVICE_NAME, cacheConfig.getNameWithPrefix());
-        return new ClientCacheProxy<K, V>(cacheConfig, cacheDistributedObject, this);
+        return new ClientCacheProxy<K, V>(cacheConfig, clientContext, this);
     }
 
     @Override

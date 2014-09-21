@@ -18,13 +18,9 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
+import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.config.CacheConfig;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Callback;
@@ -34,23 +30,19 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-public class CacheCreateConfigRequest
+public class CacheDestroyRequest
         extends ClientRequest {
 
     private static final int TRY_COUNT = 100;
 
-    private CacheConfig cacheConfig;
-    private boolean create;
-
-    private Address target;
+    private String name;
     private int partitionId;
 
-    public CacheCreateConfigRequest() {
+    public CacheDestroyRequest() {
     }
 
-    public CacheCreateConfigRequest(CacheConfig cacheConfig, boolean create, int partitionId) {
-        this.cacheConfig = cacheConfig;
-        this.create = create;
+    public CacheDestroyRequest(String name, int partitionId) {
+        this.name = name;
         this.partitionId = partitionId;
     }
 
@@ -60,7 +52,7 @@ public class CacheCreateConfigRequest
         final ClientEndpoint endpoint = getEndpoint();
         final Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
-        final InvocationBuilder builder  = operationService.createInvocationBuilder(getServiceName(), op, partitionId);
+        final InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, partitionId);
         builder.setTryCount(TRY_COUNT).setResultDeserialized(false).setCallback(new Callback<Object>() {
             public void notify(Object object) {
                 endpoint.sendResponse(object, getCallId());
@@ -70,7 +62,7 @@ public class CacheCreateConfigRequest
     }
 
     protected Operation prepareOperation() {
-        return new CacheCreateConfigOperation(cacheConfig, true);
+        return new CacheDestroyOperation(name);
     }
 
     public final int getFactoryId() {
@@ -78,7 +70,7 @@ public class CacheCreateConfigRequest
     }
 
     public int getClassId() {
-        return CachePortableHook.CREATE_CONFIG;
+        return CachePortableHook.DESTROY_CACHE;
     }
 
     @Override
@@ -88,20 +80,14 @@ public class CacheCreateConfigRequest
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeBoolean("c", create);
+        writer.writeUTF("n", name);
         writer.writeInt("p", partitionId);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(cacheConfig);
-        out.writeObject(target);
     }
 
     public void read(PortableReader reader)
             throws IOException {
-        create = reader.readBoolean("c");
+        name = reader.readUTF("n");
         partitionId = reader.readInt("p");
-        final ObjectDataInput in = reader.getRawDataInput();
-        cacheConfig = in.readObject();
-        target = in.readObject();
     }
 
     @Override

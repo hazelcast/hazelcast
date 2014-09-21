@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.proxy;
+package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheEventType;
 import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
 import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
+import com.hazelcast.cache.impl.client.CacheClearRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndReplaceRequest;
-import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.cache.impl.client.CachePutIfAbsentRequest;
 import com.hazelcast.cache.impl.client.CachePutRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
@@ -35,14 +36,11 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.IClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -50,77 +48,49 @@ import com.hazelcast.util.executor.DelegatingFuture;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
-import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
-import javax.cache.integration.CacheLoader;
-import javax.cache.integration.CompletionListener;
-import java.io.Closeable;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
 /**
  * Base Client Cache Proxy
  */
-abstract class AbstractBaseClientCacheProxy<K, V> {
+abstract class AbstractClientCacheProxyInternal<K, V>
+        extends AbstractClientCacheProxyBase<K, V> {
 
-    static final int TIMEOUT = 10;
-    protected final ClientCacheDistributedObject delegate;
-    protected final CacheConfig<K, V> cacheConfig;
-    //this will represent the name from the user perspective
-    protected final String name;
     protected final IClientNearCache<Data, Object> nearCache;
 
     private final boolean cacheOnUpdate;
-    private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
-    private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
 
     private final AtomicInteger completionIdCounter = new AtomicInteger();
-    private final CacheLoader<K, V> cacheLoader;
     private final Object completionRegistrationMutex = new Object();
     private volatile String completionRegistrationId;
 
-    protected AbstractBaseClientCacheProxy(CacheConfig cacheConfig, ClientCacheDistributedObject delegate) {
-        this.name = cacheConfig.getName();
-        this.cacheConfig = cacheConfig;
-        this.delegate = delegate;
-        if (cacheConfig.getCacheLoaderFactory() != null) {
-            final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
-            cacheLoader = cacheLoaderFactory.create();
-        } else {
-            cacheLoader = null;
-        }
+    protected AbstractClientCacheProxyInternal(CacheConfig cacheConfig, ClientContext clientContext) {
+        super(cacheConfig, clientContext);
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
 
         NearCacheConfig nearCacheConfig = cacheConfig.getNearCacheConfig();
         if (nearCacheConfig != null) {
-            nearCache = new ClientHeapNearCache<Data>(getDistributedObjectName(), delegate.getClientContext(), nearCacheConfig);
+            nearCache = new ClientHeapNearCache<Data>(nameWithPrefix, clientContext, nearCacheConfig);
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
         } else {
             nearCache = null;
             cacheOnUpdate = false;
-        }
-
-    }
-
-    protected void ensureOpen() {
-        if (isClosed()) {
-            throw new IllegalStateException("Cache operations can not be performed. The cache closed");
         }
     }
 
@@ -134,14 +104,14 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
             }
         }
         try {
-            final ICompletableFuture<T> f = delegate.getClientContext().getInvocationService().invokeOnKeyOwner(req, keyData);
+            final ICompletableFuture<T> f = clientContext.getInvocationService().invokeOnKeyOwner(req, keyData);
             if (completionOperation) {
                 waitCompletionLatch(completionId);
             }
             return f;
         } catch (Throwable e) {
             if (e instanceof IllegalStateException) {
-                isClosed.set(true);
+                close();
             }
             if (completionOperation) {
                 deregisterCompletionLatch(completionId);
@@ -150,6 +120,15 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
         }
     }
 
+    protected <T> T getSafely(Future<T> future) {
+        try {
+            return future. get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
+    }
+
+    //region internal base operations
     protected <T> ICompletableFuture<T> removeAsyncInternal(K key, V oldValue, boolean hasOldValue, boolean isGet,
                                                             boolean withCompletionEvent) {
         ensureOpen();
@@ -164,9 +143,9 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
         final Data oldValueData = oldValue != null ? toData(oldValue) : null;
         ClientRequest request;
         if (isGet) {
-            request = new CacheGetAndRemoveRequest(getDistributedObjectName(), keyData);
+            request = new CacheGetAndRemoveRequest(nameWithPrefix, keyData);
         } else {
-            request = new CacheRemoveRequest(getDistributedObjectName(), keyData, oldValueData);
+            request = new CacheRemoveRequest(nameWithPrefix, keyData, oldValueData);
         }
         ICompletableFuture future;
         try {
@@ -175,7 +154,7 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DelegatingFuture<T>(future, getContext().getSerializationService());
+        return new DelegatingFuture<T>(future, clientContext.getSerializationService());
     }
 
     protected <T> ICompletableFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
@@ -194,9 +173,9 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
         final Data newValueData = newValue != null ? toData(newValue) : null;
         ClientRequest request;
         if (isGet) {
-            request = new CacheGetAndReplaceRequest(getDistributedObjectName(), keyData, newValueData, expiryPolicy);
+            request = new CacheGetAndReplaceRequest(nameWithPrefix, keyData, newValueData, expiryPolicy);
         } else {
-            request = new CacheReplaceRequest(getDistributedObjectName(), keyData, oldValueData, newValueData, expiryPolicy);
+            request = new CacheReplaceRequest(nameWithPrefix, keyData, oldValueData, newValueData, expiryPolicy);
         }
         ICompletableFuture future;
         try {
@@ -205,7 +184,7 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DelegatingFuture<T>(future, getContext().getSerializationService());
+        return new DelegatingFuture<T>(future, clientContext.getSerializationService());
 
     }
 
@@ -216,7 +195,7 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        CachePutRequest request = new CachePutRequest(getDistributedObjectName(), keyData, valueData, expiryPolicy, isGet);
+        CachePutRequest request = new CachePutRequest(nameWithPrefix, keyData, valueData, expiryPolicy, isGet);
         ICompletableFuture future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -238,8 +217,7 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        final CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(getDistributedObjectName(), keyData, valueData,
-                expiryPolicy);
+        final CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData, expiryPolicy);
         ICompletableFuture<Boolean> future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -251,35 +229,62 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DelegatingFuture<Boolean>(future, getContext().getSerializationService());
+        return new DelegatingFuture<Boolean>(future, clientContext.getSerializationService());
 
     }
 
-    protected void validateConfiguredTypes(Set<? extends K> keys)
-            throws ClassCastException {
-        for (K key : keys) {
-            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
+    protected void removeAllInternal(Set<? extends K> keys, boolean isRemoveAll) {
+        final Set<Data> keysData;
+        if (keys != null) {
+            keysData = new HashSet<Data>();
+            for (K key : keys) {
+                keysData.add(toData(key));
+            }
+        } else {
+            keysData = null;
+        }
+        final int partitionCount = clientContext.getPartitionService().getPartitionCount();
+        final Integer completionId = registerCompletionLatch(partitionCount);
+        CacheClearRequest request = new CacheClearRequest(nameWithPrefix, keysData, isRemoveAll, completionId);
+        try {
+            final Map<Integer, Object> results = invoke(request);
+            int completionCount = 0;
+            for (Object result : results.values()) {
+                if (result != null && result instanceof CacheClearResponse) {
+                    final Object response = ((CacheClearResponse) result).getResponse();
+                    if (response instanceof Boolean) {
+                        completionCount++;
+                    }
+                    if (response instanceof Throwable) {
+                        throw (Throwable) response;
+                    }
+                }
+            }
+            waitCompletionLatch(completionId, partitionCount - completionCount);
+        } catch (Throwable t) {
+            deregisterCompletionLatch(completionId);
+            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
 
-    protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
-        final LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
-        final ClientExecutionService executionService = delegate.getClientContext().getExecutionService();
-
-        final ICompletableFuture<?> future = executionService.submit(loadAllTask);
-        loadAllTasks.add(future);
-        future.andThen(new ExecutionCallback() {
-            @Override
-            public void onResponse(Object response) {
-                loadAllTasks.remove(future);
+    protected void storeInNearCache(Data key, Data valueData, V value) {
+        if (nearCache != null) {
+            final Object valueToStore;
+            if (nearCache.getInMemoryFormat() == InMemoryFormat.OBJECT) {
+                valueToStore = value != null ? value : valueData;
+            } else {
+                valueToStore = valueData != null ? valueData : value;
             }
-
-            @Override
-            public void onFailure(Throwable t) {
-                loadAllTasks.remove(future);
-            }
-        });
+            nearCache.put(key, valueToStore);
+        }
     }
+
+    protected void invalidateNearCache(Data key) {
+        if (nearCache != null) {
+            nearCache.remove(key);
+        }
+    }
+    //endregion internal base operations
 
     protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration.isSynchronous()) {
@@ -300,88 +305,23 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
         return regs.remove(cacheEntryListenerConfiguration);
     }
 
-    protected void validateCacheLoader(CompletionListener completionListener) {
-        if (cacheLoader == null && completionListener != null) {
-            completionListener.onCompletion();
+    public void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
+        for (String regId : listenerRegistrations) {
+            CacheRemoveEntryListenerRequest removeReq = new CacheRemoveEntryListenerRequest(nameWithPrefix, regId);
+            clientContext.getListenerService().stopListening(removeReq, regId);
         }
     }
 
-    protected boolean isDefaultClassLoader() {
-        throw new UnsupportedOperationException("not impl yet");
-        //        return cacheManager.isDefaultClassLoader;
-    }
+    @Override
+    protected void closeListeners() {
+        deregisterAllCacheEntryListener(syncListenerRegistrations.values());
+        deregisterAllCacheEntryListener(asyncListenerRegistrations.values());
 
-    //region base cache method impls
+        syncListenerRegistrations.clear();
+        asyncListenerRegistrations.clear();
 
-    public void close() {
-        if (!isClosed.compareAndSet(false, true)) {
-            return;
-        }
-        for (Future f : loadAllTasks) {
-            try {
-                f.get(TIMEOUT, TimeUnit.SECONDS);
-            } catch (Exception e) {
-                throw new CacheException(e);
-            }
-        }
-        loadAllTasks.clear();
-        //TODO close cache issue:
-        //        if(!isDefaultClassLoader()){
-        delegate.destroy();
-        //        }
-        //close the configured CacheLoader
-        closeCacheLoader();
         deregisterCompletionListener();
     }
-
-    public boolean isClosed() {
-        return isClosed.get();
-    }
-
-    //endregion
-
-    //region DISTRIBUTED OBJECT
-    public String getDistributedObjectName() {
-        return delegate.getName();
-    }
-
-    protected ClientContext getContext() {
-        return delegate.getClientContext();
-    }
-
-    protected void storeInNearCache(Data key, Data valueData, V value) {
-        if (nearCache != null) {
-            final Object valueToStore;
-            if (nearCache.getInMemoryFormat() == InMemoryFormat.OBJECT) {
-                valueToStore = value != null ? value : valueData;
-            } else {
-                valueToStore = valueData != null ? valueData : value;
-            }
-            nearCache.put(key, valueToStore);
-        }
-    }
-
-    protected void invalidateNearCache(Data key) {
-        if (nearCache != null) {
-            nearCache.remove(key);
-        }
-    }
-
-    protected <T> T toObject(Object data) {
-        return delegate.toObject(data);
-    }
-
-    protected Data toData(Object o) {
-        return delegate.toData(o);
-    }
-
-    protected void closeCacheLoader() {
-        //close the configured CacheLoader
-        if (cacheLoader instanceof Closeable) {
-            IOUtil.closeResource((Closeable) cacheLoader);
-        }
-    }
-    //endregion
 
     protected void countDownCompletionLatch(int id) {
         final CountDownLatch countDownLatch = syncLocks.get(id);
@@ -436,9 +376,8 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
             synchronized (completionRegistrationMutex) {
                 if (completionRegistrationId == null) {
                     final EventHandler<Object> handler = new CacheCompletionEventHandler();
-                    final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(
-                            getDistributedObjectName());
-                    completionRegistrationId = getContext().getListenerService().listen(registrationRequest, null, handler);
+                    final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(nameWithPrefix);
+                    completionRegistrationId = clientContext.getListenerService().listen(registrationRequest, null, handler);
                 }
             }
         }
@@ -448,10 +387,10 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
         if (syncListenerRegistrations.isEmpty() && completionRegistrationId != null) {
             synchronized (completionRegistrationMutex) {
                 if (completionRegistrationId != null) {
-                    CacheRemoveEntryListenerRequest removeRequest = new CacheRemoveEntryListenerRequest(
-                            getDistributedObjectName(), completionRegistrationId);
-                    boolean isDeregistered = getContext().getListenerService()
-                                                         .stopListening(removeRequest, completionRegistrationId);
+                    CacheRemoveEntryListenerRequest removeRequest = new CacheRemoveEntryListenerRequest(nameWithPrefix,
+                            completionRegistrationId);
+                    boolean isDeregistered = clientContext.getListenerService()
+                                                          .stopListening(removeRequest, completionRegistrationId);
                     if (isDeregistered) {
                         completionRegistrationId = null;
                     }
@@ -479,8 +418,8 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
     }
 
     protected ICompletableFuture createCompletedFuture(Object value) {
-        return new CompletedFuture(getContext().getSerializationService(), value,
-                getContext().getExecutionService().getAsyncExecutor());
+        return new CompletedFuture(clientContext.getSerializationService(), value,
+                clientContext.getExecutionService().getAsyncExecutor());
     }
 
     private final class CacheCompletionEventHandler
@@ -503,34 +442,6 @@ abstract class AbstractBaseClientCacheProxy<K, V> {
 
         @Override
         public void onListenerRegister() {
-        }
-    }
-
-    private final class LoadAllTask
-            implements Runnable {
-
-        private final CacheLoadAllRequest request;
-        private final CompletionListener completionListener;
-
-        private LoadAllTask(CacheLoadAllRequest request, CompletionListener completionListener) {
-            this.request = request;
-            this.completionListener = completionListener;
-        }
-
-        @Override
-        public void run() {
-            try {
-                final Map<Integer, Object> results = delegate.invoke(request);
-                validateResults(results);
-                if (completionListener != null) {
-                    completionListener.onCompletion();
-                }
-
-            } catch (Exception e) {
-                if (completionListener != null) {
-                    completionListener.onException(e);
-                }
-            }
         }
     }
 

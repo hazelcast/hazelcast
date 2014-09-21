@@ -164,7 +164,8 @@ public abstract class HazelcastCacheManager
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
         if (cache == null) {
-            CacheConfig<K, V> cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
+            //FIXME review getCache
+            CacheConfig<K, V> cacheConfig = null;//= getCacheConfigLocal(cacheNameWithPrefix);
             if (cacheConfig == null) {
                 //remote check
                 cacheConfig = getCacheConfigFromPartition(cacheNameWithPrefix);
