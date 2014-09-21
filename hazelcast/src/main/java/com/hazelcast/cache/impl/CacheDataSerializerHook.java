@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.operation.CacheClearOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
+import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
@@ -85,8 +86,11 @@ public final class CacheDataSerializerHook
     public static final short GET_CONFIG = 27;
     public static final short MANAGEMENT_CONFIG = 28;
     public static final short LISTENER_REGISTRATION = 29;
+    public static final short DESTROY_CACHE = 30;
+    public static final short CACHE_EVENT_DATA = 31;
+    public static final short CACHE_EVENT_DATA_SET = 32;
 
-    private static final int LEN = 30;
+    private static final int LEN = 33;
 
     public int getFactoryId() {
         return F_ID;
@@ -194,12 +198,6 @@ public final class CacheDataSerializerHook
                 return new CacheLoadAllOperationFactory();
             }
         };
-        //TODO we may need this just keeping it for now
-        //        constructors[EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-        //            public IdentifiedDataSerializable createNew(Integer arg) {
-        ////                        return new CacheEntryEventImpl<>();
-        //            }
-        //        };
         constructors[KEY_ITERATOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheKeyIteratorOperation();
@@ -239,6 +237,21 @@ public final class CacheDataSerializerHook
         constructors[LISTENER_REGISTRATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheListenerRegistrationOperation();
+            }
+        };
+        constructors[DESTROY_CACHE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheDestroyOperation();
+            }
+        };
+        constructors[CACHE_EVENT_DATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheEventDataImpl();
+            }
+        };
+        constructors[CACHE_EVENT_DATA_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheEventSet();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

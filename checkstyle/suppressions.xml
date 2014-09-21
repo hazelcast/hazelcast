@@ -65,9 +65,13 @@
 
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheRecordStore"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheService"/>
+
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CachePortableHook"/>
     <suppress checks="MethodLength" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
+
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CachePortableHook"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.cache.impl.CachePortableHook"/>
     <suppress checks="MethodLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
     <suppress checks="AnonInnerLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
 

@@ -118,9 +118,7 @@ public class HazelcastServerCacheManager
 
     @Override
     protected <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
-        final CacheDistributedObject cacheDistributedObject = hazelcastInstance
-                .getDistributedObject(CacheService.SERVICE_NAME, cacheConfig.getNameWithPrefix());
-        return new CacheProxy<K, V>(cacheConfig, cacheDistributedObject, this);
+        return new CacheProxy<K, V>(cacheConfig, nodeEngine, cacheService, this);
     }
 
     @Override
