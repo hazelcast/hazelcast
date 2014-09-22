@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * This {@link java.util.ArrayList} subclass exists to prevent
@@ -32,6 +33,14 @@ import java.util.ArrayList;
  */
 public class CombinerResultList<E> extends ArrayList<E>
         implements IdentifiedDataSerializable {
+
+    public CombinerResultList() {
+        super();
+    }
+
+    public CombinerResultList(Collection<? extends E> c) {
+        super(c);
+    }
 
     @Override
     public int getFactoryId() {
