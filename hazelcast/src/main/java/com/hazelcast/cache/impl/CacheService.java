@@ -69,6 +69,10 @@ public class CacheService
 
     @Override
     public void reset() {
+        final ConcurrentMap<String, CacheConfig> cacheConfigs = configs;
+        for(String objectName:cacheConfigs.keySet()) {
+            destroyCache(objectName, true, null);
+        }
         final CachePartitionSegment[] partitionSegments = segments;
         for (CachePartitionSegment partitionSegment : partitionSegments) {
             if (partitionSegment != null) {
@@ -213,8 +217,8 @@ public class CacheService
 
     public void enableStatistics(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
-        final String cacheManagerName = cacheConfig.getUriString();
         if (cacheConfig != null) {
+            final String cacheManagerName = cacheConfig.getUriString();
             cacheConfig.setStatisticsEnabled(enabled);
             if (enabled) {
                 final CacheStatisticsImpl cacheStatistics = createCacheStatIfAbsent(cacheNameWithPrefix);
@@ -230,8 +234,8 @@ public class CacheService
 
     public void enableManagement(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
-        final String cacheManagerName = cacheConfig.getUriString();
         if (cacheConfig != null) {
+            final String cacheManagerName = cacheConfig.getUriString();
             cacheConfig.setManagementEnabled(enabled);
             if (enabled) {
                 final CacheMXBeanImpl mxBean = new CacheMXBeanImpl(cacheConfig);
