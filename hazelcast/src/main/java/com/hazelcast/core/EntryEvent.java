@@ -78,9 +78,9 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
     public String toString() {
         return "EntryEvent{"
                 + super.toString()
-                + ", key=" + key
-                + ", oldValue=" + oldValue
-                + ", value=" + value
+                + ", key=" + getKey()
+                + ", oldValue=" + getOldValue()
+                + ", value=" + getValue()
                 + '}';
     }
 }
