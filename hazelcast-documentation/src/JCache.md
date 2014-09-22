@@ -3,8 +3,11 @@
 
 ***NOTE:*** *This feature will be included in the next Hazelcast release.* 
 
+Starting with release 3.3.1, Hazelcast offers JCache API (JSR-107) implementation. JCache defines a standard Java API for caching temporary Java objects in memory. If retrieving or calculating data is costly, caching the objects in memory can help. By this way, you retrieve your data directly from the memory, which leads to improved performance. This chapter explains the usage of JCache with Hazelcast’s implementation.
 
-Hazelcast provides JSR 107 implementation. In order to use Hazelcast as a JCache provider, just add `hazelcast-3.3-JCACHE.jar` and `cache-api` dependency.
+For the full details of JCache, please visit its website on Java Community Process (JCP):
+
+[https://www.jcp.org/en/jsr/detail?id=107](#https://www.jcp.org/en/jsr/detail?id=107)
 
 ## Setup
 
@@ -60,7 +63,7 @@ Please see [Hazelcast Code Samples](https://github.com/hazelcast/hazelcast-code-
 
 ## Work In Progress
 
-Below features are still in progress:
+Below features are still in progress and will be implemented in Hazelcast 3.3.1 release:
 
 - Hazelcast Java client support for JCache
 - Statistics and MXBean support 
