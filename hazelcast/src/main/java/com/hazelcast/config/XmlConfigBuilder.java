@@ -859,6 +859,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 mapConfig.setReadBackupData(checkTrue(value));
             } else if ("statistics-enabled".equals(nodeName)) {
                 mapConfig.setStatisticsEnabled(checkTrue(value));
+            } else if ("optimize-queries".equals(nodeName)) {
+                mapConfig.setOptimizeQueries(checkTrue(value));
             } else if ("wan-replication-ref".equals(nodeName)) {
                 mapWanReplicationRefHandle(n, mapConfig);
             } else if ("indexes".equals(nodeName)) {

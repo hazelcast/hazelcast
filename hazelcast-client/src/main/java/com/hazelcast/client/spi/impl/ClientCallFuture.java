@@ -16,11 +16,11 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -34,7 +34,6 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -270,15 +269,17 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
                 @Override
                 public void run() {
                     try {
-                        Object resp = resolveResponse();
+                        Object resp;
+                        try {
+                            resp = resolveResponse();
+                        } catch (Throwable t) {
+                            callback.onFailure(t);
+                            return;
+                        }
                         if (deserialized) {
                             resp = serializationService.toObject(resp);
                         }
-                        if (resp == null || !(resp instanceof Throwable)) {
-                            callback.onResponse(resp);
-                        } else {
-                            callback.onFailure((Throwable) resp);
-                        }
+                        callback.onResponse(resp);
                     } catch (Throwable t) {
                         LOGGER.severe("Failed to execute callback: " + callback
                                 + "! Request: " + request + ", response: " + response, t);

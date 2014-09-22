@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
@@ -23,7 +24,6 @@ import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheEventType;
 import com.hazelcast.cache.impl.CacheProxyUtil;
-import com.hazelcast.cache.impl.CacheStatisticsMXBeanImpl;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
 import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
@@ -90,8 +90,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
 public class ClientCacheProxy<K, V>
         implements ICache<K, V> {
@@ -1068,7 +1068,7 @@ public class ClientCacheProxy<K, V>
     }
 
     @Override
-    public CacheStatisticsMXBeanImpl getLocalCacheStatistics() {
+    public CacheStatistics getLocalCacheStatistics() {
         //TODO implement statistic support for client
         throw new UnsupportedOperationException("not impl yet");
     }

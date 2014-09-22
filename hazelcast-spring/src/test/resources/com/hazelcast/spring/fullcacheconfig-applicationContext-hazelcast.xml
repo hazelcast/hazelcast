@@ -197,9 +197,12 @@
                     eviction-policy="LRU"
                     merge-policy="LATEST_UPDATE"/>
 
+            <hz:map name="mapWithOptimizedQueries" optimize-queries="true"/>
+            <hz:map name="mapWithNotOptimizedQueries" optimize-queries="false"/>
+            <hz:map name="mapWithDefaultOptimizedQueries"/>
+
             <hz:multimap name="testMultimap"
                          value-collection-type="LIST">
-
                 <hz:entry-listeners>
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
                     <hz:entry-listener implementation="dummyEntryListener" local="true"/>

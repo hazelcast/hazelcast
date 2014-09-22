@@ -16,9 +16,11 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventPublishingService;
@@ -28,6 +30,7 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
@@ -48,7 +51,7 @@ public class CacheService
      */
     public static final String SERVICE_NAME = "hz:impl:cacheService";
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
-    private final ConcurrentMap<String, CacheStatistics> statistics = new ConcurrentHashMap<String, CacheStatistics>();
+    private final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
     private NodeEngine nodeEngine;
     private CachePartitionSegment[] segments;
 
@@ -149,7 +152,28 @@ public class CacheService
 
     public boolean createCacheConfigIfAbsent(CacheConfig config) {
         final CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
-        return localConfig == null;
+        final boolean created = localConfig == null;
+        if (created) {
+            createConfigOnAllMembers(config);
+            if (config.isStatisticsEnabled()) {
+                enableStatistics(config.getNameWithPrefix(), true);
+            }
+            if (config.isManagementEnabled()) {
+                enableManagement(config.getNameWithPrefix(), true);
+            }
+        }
+        return created;
+    }
+
+    protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
+        final OperationService operationService = nodeEngine.getOperationService();
+        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for (MemberImpl member : members) {
+            if (!member.localMember()) {
+                final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true);
+                operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+            }
+        }
     }
 
     public boolean updateCacheConfig(CacheConfig config) {
@@ -161,9 +185,9 @@ public class CacheService
         configs.remove(name);
     }
 
-    public CacheStatistics createCacheStatIfAbsent(String name) {
+    public CacheStatisticsImpl createCacheStatIfAbsent(String name) {
         if (!statistics.containsKey(name)) {
-            statistics.putIfAbsent(name, new CacheStatistics());
+            statistics.putIfAbsent(name, new CacheStatisticsImpl());
         }
         return statistics.get(name);
     }
@@ -177,7 +201,7 @@ public class CacheService
         if (cacheConfig != null) {
             cacheConfig.setStatisticsEnabled(enabled);
             if (enabled) {
-                final CacheStatistics cacheStatistics = createCacheStatIfAbsent(cacheNameWithPrefix);
+                final CacheStatisticsImpl cacheStatistics = createCacheStatIfAbsent(cacheNameWithPrefix);
                 final CacheStatisticsMXBeanImpl mxBean = new CacheStatisticsMXBeanImpl(cacheStatistics);
 
                 MXBeanUtil.registerCacheObject(mxBean, cacheConfig.getUriString(), cacheConfig.getName(), true);
@@ -304,7 +328,7 @@ public class CacheService
         nodeEngine.getEventService().deregisterAllListeners(CacheService.SERVICE_NAME, name);
     }
 
-    public CacheStatistics getStatistics(String name) {
+    public CacheStatisticsImpl getStatistics(String name) {
         return statistics.get(name);
     }
 

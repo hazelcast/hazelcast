@@ -56,13 +56,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
 /**
  * Base Cache Proxy
  */
-class AbstractBaseCacheProxy<K, V> {
+abstract class AbstractBaseCacheProxy<K, V> {
 
     static final int TIMEOUT = 10;
 
@@ -125,6 +125,9 @@ class AbstractBaseCacheProxy<K, V> {
             }
             return f;
         } catch (Throwable e) {
+            if (e instanceof IllegalStateException) {
+                isClosed.set(true);
+            }
             if (completionOperation) {
                 deregisterCompletionLatch(completionId);
             }
@@ -255,6 +258,8 @@ class AbstractBaseCacheProxy<K, V> {
         }
     }
 
+    protected abstract boolean isDefaultClassLoader();
+
     //region base cache method impls
 
     public void close() {
@@ -269,7 +274,10 @@ class AbstractBaseCacheProxy<K, V> {
             }
         }
         loadAllTasks.clear();
+        //TODO close cache issue:
+        //        if(!isDefaultClassLoader()){
         delegate.destroy();
+        //        }
         //close the configured CacheLoader
         closeCacheLoader();
         deregisterCompletionListener();

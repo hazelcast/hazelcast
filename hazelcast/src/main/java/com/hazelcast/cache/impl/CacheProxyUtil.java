@@ -30,6 +30,8 @@ import java.util.Set;
  */
 public final class CacheProxyUtil {
 
+    public static final int AWAIT_COMPLETION_TIMEOUT_SECONDS = 60;
+
     static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 

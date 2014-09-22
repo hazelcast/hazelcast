@@ -50,7 +50,9 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
             op.run();
             op.afterRun();
         }
-        getOrCreateContainer().unlock(dataKey, caller, threadId);
+        // changed to forceUnlock because replica-sync of lock causes problems, same as IMap
+        // real solution is to make 'lock-and-get' backup-aware
+        getOrCreateContainer().forceUnlock(dataKey);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

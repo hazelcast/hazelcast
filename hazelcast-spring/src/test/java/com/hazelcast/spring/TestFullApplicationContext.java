@@ -128,7 +128,8 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(6, config.getMapConfigs().size());
+        assertEquals(9, config.getMapConfigs().size());
+
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
         assertEquals("testMap", testMapConfig.getName());
@@ -150,6 +151,7 @@ public class TestFullApplicationContext {
                 fail("unknown index!");
             }
         }
+
         // Test that the testMapConfig has a mapStoreConfig and it is correct
         MapStoreConfig testMapStoreConfig = testMapConfig.getMapStoreConfig();
         assertNotNull(testMapStoreConfig);
@@ -158,6 +160,7 @@ public class TestFullApplicationContext {
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
         assertEquals(10, testMapStoreConfig.getWriteBatchSize());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER,testMapStoreConfig.getInitialLoadMode());
+
         // Test that the testMapConfig has a nearCacheConfig and it is correct
         NearCacheConfig testNearCacheConfig = testMapConfig.getNearCacheConfig();
         assertNotNull(testNearCacheConfig);
@@ -166,13 +169,13 @@ public class TestFullApplicationContext {
         assertEquals("LRU", testNearCacheConfig.getEvictionPolicy());
         assertEquals(5000, testNearCacheConfig.getMaxSize());
         assertTrue(testNearCacheConfig.isInvalidateOnChange());
+
         // Test that the testMapConfig2's mapStoreConfig implementation
         MapConfig testMapConfig2 = config.getMapConfig("testMap2");
         assertNotNull(testMapConfig2.getMapStoreConfig().getImplementation());
         assertEquals(dummyMapStore, testMapConfig2.getMapStoreConfig().getImplementation());
         assertEquals(MapStoreConfig.InitialLoadMode.LAZY, testMapConfig2.getMapStoreConfig().getInitialLoadMode());
         assertEquals("testWan", testMapConfig2.getWanReplicationRef().getName());
-//        assertEquals("hz.ADD_NEW_ENTRY", testMapConfig2.getWanReplicationRef().getMergePolicy());
         assertEquals(1000, testMapConfig2.getMaxSizeConfig().getSize());
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, testMapConfig2.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(2, testMapConfig2.getEntryListenerConfigs().size());
@@ -188,6 +191,7 @@ public class TestFullApplicationContext {
                 assertTrue(listener.isIncludeValue());
             }
         }
+
         MapConfig simpleMapConfig = config.getMapConfig("simpleMap");
         assertNotNull(simpleMapConfig);
         assertEquals("simpleMap", simpleMapConfig.getName());
@@ -202,12 +206,23 @@ public class TestFullApplicationContext {
         assertNull(simpleMapConfig.getMapStoreConfig());
         // Test that the simpleMapConfig does NOT have a nearCacheConfig
         assertNull(simpleMapConfig.getNearCacheConfig());
+
         MapConfig testMapConfig3 = config.getMapConfig("testMap3");
         assertEquals("com.hazelcast.spring.DummyStoreFactory", testMapConfig3.getMapStoreConfig().getFactoryClassName());
         assertFalse(testMapConfig3.getMapStoreConfig().getProperties().isEmpty());
         assertEquals(testMapConfig3.getMapStoreConfig().getProperty("dummy.property"), "value");
+
         MapConfig testMapConfig4 = config.getMapConfig("testMap4");
         assertEquals(dummyMapStoreFactory, testMapConfig4.getMapStoreConfig().getFactoryImplementation());
+
+        MapConfig mapWithOptimizedQueriesConfig = config.getMapConfig("mapWithOptimizedQueries");
+        assertTrue(mapWithOptimizedQueriesConfig.isOptimizeQueries());
+
+        MapConfig mapWithNotOptimizedQueriesConfig = config.getMapConfig("mapWithNotOptimizedQueries");
+        assertFalse(mapWithNotOptimizedQueriesConfig.isOptimizeQueries());
+
+        MapConfig mapWithDefaultOptimizedQueriesConfig = config.getMapConfig("mapWithDefaultOptimizedQueries");
+        assertFalse(mapWithDefaultOptimizedQueriesConfig.isOptimizeQueries());
     }
 
     @Test
