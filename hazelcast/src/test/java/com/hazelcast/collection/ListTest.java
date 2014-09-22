@@ -18,25 +18,34 @@ package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.TransactionalList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author ali 3/6/13
@@ -297,4 +306,33 @@ public class ListTest extends HazelcastTestSupport {
     }
 
 
+    @Test
+    public void testMigrationSerializationNotFails_whenTransactionsAreUsed() throws Exception {
+        System.setProperty("hazelcast.partition.count", "2");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        String listName = randomString();
+        TransactionContext tr = instance1.newTransactionContext();
+        tr.beginTransaction();
+        TransactionalList<Object> list = tr.getList(listName);
+        for (int i = 0; i < 10; i++) {
+            list.add(i);
+        }
+        tr.commitTransaction();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        Member owner = instance1.getPartitionService().getPartition(listName).getOwner();
+        HazelcastInstance aliveInstance;
+        if (instance1.getCluster().getLocalMember().equals(owner)) {
+            instance1.shutdown();
+            aliveInstance = instance2;
+        } else {
+            instance2.shutdown();
+            aliveInstance = instance1;
+        }
+        IList<Object> l = aliveInstance.getList(listName);
+
+        for (int i = 0; i < 10; i++) {
+            assertEquals(i,l.get(i));
+        }
+    }
 }
