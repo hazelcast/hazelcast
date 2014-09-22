@@ -18,11 +18,10 @@ package com.hazelcast.multimap.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
-import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,10 +29,11 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+/**
+ * Multi-map container.
+ */
 public class MultiMapContainer extends MultiMapContainerSupport {
 
     private static final AtomicLongFieldUpdater<MultiMapContainer> ID_GEN_UPDATER = AtomicLongFieldUpdater
@@ -42,16 +42,6 @@ public class MultiMapContainer extends MultiMapContainerSupport {
             .newUpdater(MultiMapContainer.class, "lastAccessTime");
     private static final AtomicLongFieldUpdater<MultiMapContainer> LAST_UPDATE_TIME_UPDATER = AtomicLongFieldUpdater
             .newUpdater(MultiMapContainer.class, "lastUpdateTime");
-
-    private final String name;
-
-    private final MultiMapService service;
-
-    private final NodeEngine nodeEngine;
-
-    private final MultiMapConfig config;
-
-    private final ConcurrentMap<Data, MultiMapWrapper> multiMapWrappers = new ConcurrentHashMap<Data, MultiMapWrapper>(1000);
 
     private final DefaultObjectNamespace lockNamespace;
 
@@ -67,12 +57,8 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     private volatile long lastUpdateTime;
 
     public MultiMapContainer(String name, MultiMapService service, int partitionId) {
-        this.name = name;
-        this.service = service;
-        this.nodeEngine = service.getNodeEngine();
+        super(name, service.getNodeEngine());
         this.partitionId = partitionId;
-        this.config = nodeEngine.getConfig().findMultiMapConfig(name);
-
         this.lockNamespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name);
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
@@ -113,21 +99,6 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     public long nextId() {
         return ID_GEN_UPDATER.getAndIncrement(this);
-    }
-
-    public MultiMapWrapper getOrCreateMultiMapWrapper(Data dataKey) {
-        MultiMapWrapper wrapper = multiMapWrappers.get(dataKey);
-        if (wrapper == null) {
-            final Collection<MultiMapRecord> collection
-                    = createCollection(config.getValueCollectionType());
-            wrapper = new MultiMapWrapper(collection);
-            multiMapWrappers.put(dataKey, wrapper);
-        }
-        return wrapper;
-    }
-
-    public MultiMapWrapper getMultiMapWrapper(Data dataKey) {
-        return multiMapWrappers.get(dataKey);
     }
 
     public void delete(Data dataKey) {
@@ -209,10 +180,6 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         return numberOfAffectedEntries;
     }
 
-    public MultiMapConfig getConfig() {
-        return config;
-    }
-
     public void destroy() {
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
@@ -245,7 +212,4 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         return lockStore.getLockedKeys().size();
     }
 
-    public ConcurrentMap<Data, MultiMapWrapper> getMultiMapWrappers() {
-        return multiMapWrappers;
-    }
 }

@@ -26,8 +26,8 @@ import com.hazelcast.spi.NodeEngine;
 import java.io.IOException;
 import java.util.Collection;
 
-import static com.hazelcast.multimap.impl.MultiMapContainerSupport.createCollection;
-import static com.hazelcast.multimap.impl.MultiMapContainerSupport.emptyCollection;
+import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
+import static com.hazelcast.multimap.impl.ValueCollectionFactory.emptyCollection;
 
 public class MultiMapResponse implements DataSerializable {
 
