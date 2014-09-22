@@ -18,20 +18,16 @@ package com.hazelcast.cache;
 
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
-import java.lang.management.ManagementFactory;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -68,7 +64,7 @@ public final class SimpleCacheTest {
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty("hazelcast.jmx", "true");
+//        System.setProperty("hazelcast.jmx", "true");
 
         // randomize multicast group...
         Random rand = new Random();
@@ -87,14 +83,6 @@ public final class SimpleCacheTest {
         this.putPercentage = putPercentage;
         this.load = load;
         Config cfg = new XmlConfigBuilder().build();
-
-        ManagementCenterConfig mcfg2 = new ManagementCenterConfig();
-        mcfg2.setEnabled(true);
-        mcfg2.setUrl("http://localhost:8083/mancenter");
-        // mcfg.setUrl("http://localhost:8080/mancenter-3.2.4");
-        // mcfg.setUrl("http://localhost:8080/mancenter-3.4-SNAPSHOT");
-        // mcfg.setUrl("http://localhost:8080/mancenter");
-        cfg.setManagementCenterConfig(mcfg2);
 
         instance = Hazelcast.newHazelcastInstance(cfg);
 //        Hazelcast.newHazelcastInstance(cfg);
@@ -164,37 +152,26 @@ public final class SimpleCacheTest {
 
         CacheConfig<String, Object> config = new CacheConfig<String, Object>();
         config.setTypes(String.class, Object.class);
-        config.setStatisticsEnabled(true);
-        config.setManagementEnabled(true);
 
         cacheManager.createCache(NAMESPACE, config);
-        cacheManager.createCache("test", config);
-        cacheManager.createCache("test2", config);
 
-        ManagementFactory.getPlatformMBeanServer();
-
-        final IMap<String, Object> map = instance.getMap(NAMESPACE);
-        map.put("1",1);
+//        final IMap<String, Object> map = instance.getMap(NAMESPACE);
         for (int i = 0; i < threadCount; i++) {
             es.execute(new Runnable() {
                 public void run() {
                     try {
                         while (true) {
                             final Cache<String, Object> cache = cacheManager.getCache(NAMESPACE,String.class, Object.class);
-
                             int key = (int) (random.nextFloat() * entryCount);
                             int operation = ((int) (random.nextFloat() * 100));
                             if (operation < getPercentage) {
                                 cache.get(String.valueOf(key));
-
                                 stats.gets.incrementAndGet();
                             } else if (operation < getPercentage + putPercentage) {
                                 cache.put(String.valueOf(key), createValue());
-
                                 stats.puts.incrementAndGet();
                             } else {
                                 cache.remove(String.valueOf(key));
-
                                 stats.removes.incrementAndGet();
                             }
                         }
