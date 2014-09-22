@@ -20,11 +20,16 @@ import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.queue.impl.QueueContainer;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.queue.impl.SizeOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.InvocationBuilder;
 
 import java.io.IOException;
 import java.security.Permission;
@@ -65,9 +70,17 @@ public class RemainingCapacityRequest extends CallableClientRequest implements R
 
     @Override
     public Object call() throws Exception {
+        String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
+        InternalPartitionService partitionService = clientEngine.getPartitionService();
+        int partitionId = partitionService.getPartitionId(partitionKey);
+        SizeOperation operation = new SizeOperation(name);
+        InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), operation, partitionId);
+        InternalCompletableFuture<Integer> future = builder.invoke();
+        Integer size = future.get();
+
         QueueService service = getService();
-        QueueContainer container = service.getOrCreateContainer(name, false);
-        return container.getConfig().getMaxSize() - container.size();
+        QueueContainer container = service.getOrCreateContainer(name, true);
+        return container.getConfig().getMaxSize() - size;
     }
 
     @Override

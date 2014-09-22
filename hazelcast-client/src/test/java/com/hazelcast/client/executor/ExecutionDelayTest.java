@@ -42,7 +42,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -54,7 +54,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
     private final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(CLUSTER_SIZE);
 
     @Before
-    public void setup() {
+    public void setUp() {
         for (int i = 0; i < CLUSTER_SIZE; i++) {
             instances.add(Hazelcast.newHazelcastInstance());
         }
@@ -62,14 +62,14 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
     }
 
     @After
-    public void teardown() {
+    public void tearDown() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testExecutorOneNodeFailsUnexpectedly() throws InterruptedException, ExecutionException {
-        final int executions = 20;
+    public void testExecutorRetriesTask_whenOneNodeTerminates() throws InterruptedException, ExecutionException {
+        final int taskCount = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
             ex.schedule(new Runnable() {
@@ -80,12 +80,13 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
             }, 1000, TimeUnit.MILLISECONDS);
 
             Task task = new Task();
-            runClient(task, executions);
+            runClient(task, taskCount);
 
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() {
-                    assertEquals(executions, COUNTER.get());
+                public void run() throws Exception {
+                    final int taskExecutions = COUNTER.get();
+                    assertTrue(taskExecutions >= taskCount);
                 }
             });
         } finally {
@@ -94,8 +95,8 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecutorOneNodeShutdown() throws InterruptedException, ExecutionException {
-        final int executions = 20;
+    public void testExecutorRetriesTask_whenOneNodeShutdowns() throws InterruptedException, ExecutionException {
+        final int taskCount = 20;
         ScheduledExecutorService ex = Executors.newSingleThreadScheduledExecutor();
         try {
             ex.schedule(new Runnable() {
@@ -106,12 +107,13 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
             }, 1000, TimeUnit.MILLISECONDS);
 
             Task task = new Task();
-            runClient(task, executions);
+            runClient(task, taskCount);
 
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() {
-                    assertEquals(executions, COUNTER.get());
+                public void run() throws Exception {
+                    final int taskExecutions = COUNTER.get();
+                    assertTrue(taskExecutions >= taskCount);
                 }
             });
         } finally {
@@ -131,11 +133,23 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
         }
     }
 
-    private static class Task implements Callable, Serializable {
+    public static class Task implements Callable, Serializable {
+
+        public Task() {
+        }
+
         @Override
         public Object call() throws Exception {
             COUNTER.incrementAndGet();
             return null;
         }
+
+        @Override
+        public String toString() {
+            return "Task{}";
+        }
+
     }
+
+
 }

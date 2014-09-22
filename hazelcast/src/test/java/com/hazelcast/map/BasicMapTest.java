@@ -31,6 +31,7 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -325,7 +326,6 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
 
-
     @Test
     public void testMapRemove() {
         IMap<String, String> map = getInstance().getMap("testMapRemove");
@@ -489,7 +489,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.containsKey("key2"), true);
         assertEquals(map.containsKey("key5"), false);
     }
-
 
 
     @Test
@@ -1135,8 +1134,9 @@ public class BasicMapTest extends HazelcastTestSupport {
             map.put(i, new SampleIndexableObject("My-" + i, i));
         }
 
-        SqlPredicate predicate = new SqlPredicate("name='My-5'");
+        final SqlPredicate predicate = new SqlPredicate("name='My-5'");
         Set<Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
+
         assertEquals(1, result.size());
         assertEquals(5, (int) result.iterator().next().getValue().value);
 
@@ -1145,10 +1145,16 @@ public class BasicMapTest extends HazelcastTestSupport {
         map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
         assertFalse(map.isEmpty());
 
-        predicate = new SqlPredicate("name='My-5'");
-        result = map.entrySet(predicate);
-        assertEquals(1, result.size());
-        assertEquals(5, (int) result.iterator().next().getValue().value);
+        final IMap<Integer, SampleIndexableObject> mapFinal = map;
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Set<Entry<Integer, SampleIndexableObject>> result = mapFinal.entrySet(predicate);
+                assertEquals(1, result.size());
+                assertEquals(5, (int) result.iterator().next().getValue().value);
+            }
+        });
+
     }
 
     @Test
