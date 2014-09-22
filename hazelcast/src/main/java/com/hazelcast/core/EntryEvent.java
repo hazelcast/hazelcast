@@ -35,7 +35,6 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
 
     protected V value;
 
-
     public EntryEvent(Object source, Member member, int eventType, K key, V value) {
         this(source, member, eventType, key, null, value);
     }
