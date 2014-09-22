@@ -73,18 +73,25 @@ public abstract class HazelcastCacheManager
         }
         //CREATE THE CONFIG ON PARTITION
         final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
+        //create proxy object
+        final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
         final boolean created = createConfigOnPartition(newCacheConfig);
         if (created) {
             //single thread region because createConfigOnPartition is single threaded by partition thread
             //UPDATE LOCAL MEMBER
             addCacheConfigIfAbsentToLocal(newCacheConfig);
-            //create proxy object
-            final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
             //no need to a putIfAbsent as this is a single threaded region
             caches.put(newCacheConfig.getNameWithPrefix(), cacheProxy);
             //REGISTER LISTENERS
             registerListeners(newCacheConfig, cacheProxy);
             return cacheProxy;
+        } else {
+            final ICache<?, ?> entries = caches.putIfAbsent(newCacheConfig.getNameWithPrefix(), cacheProxy);
+            if(entries == null) {
+                //REGISTER LISTENERS
+                registerListeners(newCacheConfig, cacheProxy);
+                return cacheProxy;
+            }
         }
         throw new CacheException("A cache named " + cacheName + " already exists.");
     }

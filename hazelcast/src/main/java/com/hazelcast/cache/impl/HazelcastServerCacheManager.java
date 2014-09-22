@@ -102,7 +102,7 @@ public class HazelcastServerCacheManager
     @Override
     protected <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
         //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
-        final CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheConfig, true);
+        final CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheConfig);
         final OperationService operationService = nodeEngine.getOperationService();
 
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
@@ -113,7 +113,7 @@ public class HazelcastServerCacheManager
 
     @Override
     protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
-        cacheService.createCacheConfigIfAbsent(cacheConfig);
+        cacheService.createCacheConfigIfAbsent(cacheConfig, false);
     }
 
     @Override

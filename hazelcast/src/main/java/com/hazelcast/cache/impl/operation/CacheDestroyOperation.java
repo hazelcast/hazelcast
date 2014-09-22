@@ -18,8 +18,12 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+
+import java.io.IOException;
 
 /**
  * Cache CreateConfig Operation
@@ -28,18 +32,25 @@ public class CacheDestroyOperation
         extends AbstractNamedOperation
         implements IdentifiedDataSerializable {
 
+    boolean isLocal;
+
     public CacheDestroyOperation() {
     }
 
     public CacheDestroyOperation(String name) {
+        this(name, false);
+    }
+
+    public CacheDestroyOperation(String name, boolean isLocal) {
         super(name);
+        this.isLocal = isLocal;
     }
 
     @Override
     public void run()
             throws Exception {
         final CacheService service = getService();
-        service.destroyCache(name);
+        service.destroyCache(name, isLocal, getCallerUuid());
     }
 
     @Override
@@ -50,6 +61,20 @@ public class CacheDestroyOperation
     @Override
     public int getFactoryId() {
         return CacheDataSerializerHook.F_ID;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
+        super.writeInternal(out);
+        out.writeBoolean(isLocal);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
+        super.readInternal(in);
+        isLocal = in.readBoolean();
     }
 
 }

@@ -34,28 +34,28 @@ public class CacheCreateConfigOperation
         implements IdentifiedDataSerializable {
 
     private CacheConfig config;
-    private boolean create;
+    private boolean isLocal;
 
     private transient Object response;
 
     public CacheCreateConfigOperation() {
     }
 
-    public CacheCreateConfigOperation(CacheConfig config, boolean create) {
+    public CacheCreateConfigOperation(CacheConfig config) {
+        this(config, false);
+    }
+
+    public CacheCreateConfigOperation(CacheConfig config, boolean isLocal) {
         super(config.getNameWithPrefix());
         this.config = config;
-        this.create = create;
+        this.isLocal = isLocal;
     }
 
     @Override
     public void run()
             throws Exception {
         final CacheService service = getService();
-        if (create) {
-            response = service.createCacheConfigIfAbsent(config);
-        } else {
-            response = service.updateCacheConfig(config);
-        }
+        response = service.createCacheConfigIfAbsent(config, isLocal);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class CacheCreateConfigOperation
             throws IOException {
         super.writeInternal(out);
         out.writeObject(config);
-        out.writeBoolean(create);
+        out.writeBoolean(isLocal);
     }
 
     @Override
@@ -81,7 +81,7 @@ public class CacheCreateConfigOperation
             throws IOException {
         super.readInternal(in);
         config = in.readObject();
-        create = in.readBoolean();
+        isLocal = in.readBoolean();
     }
 
     @Override
