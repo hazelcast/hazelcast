@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.mapreduce.Combiner;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Context;
+import com.hazelcast.mapreduce.impl.CombinerResultList;
 import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
 
@@ -131,7 +132,7 @@ public class DefaultContext<KeyIn, ValueIn>
 
                 @Override
                 public List<ValueIn> finalizeChunk() {
-                    return new ArrayList<ValueIn>(this.values);
+                    return new CombinerResultList<ValueIn>(this.values);
                 }
 
                 @Override
