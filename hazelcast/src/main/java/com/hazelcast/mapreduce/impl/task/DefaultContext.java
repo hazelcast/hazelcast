@@ -23,9 +23,10 @@ import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /**
@@ -44,7 +45,7 @@ public class DefaultContext<KeyIn, ValueIn>
     private static final AtomicIntegerFieldUpdater<DefaultContext> COLLECTED_UPDATER = AtomicIntegerFieldUpdater
             .newUpdater(DefaultContext.class, "collected");
 
-    private final Map<KeyIn, Combiner<ValueIn, ?>> combiners = new HashMap<KeyIn, Combiner<ValueIn, ?>>();
+    private final ConcurrentMap<KeyIn, Combiner<ValueIn, ?>> combiners = new ConcurrentHashMap<KeyIn, Combiner<ValueIn, ?>>();
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;
     private final MapCombineTask mapCombineTask;
 
@@ -97,12 +98,16 @@ public class DefaultContext<KeyIn, ValueIn>
         return requestChunk();
     }
 
-    private Combiner<ValueIn, ?> getOrCreateCombiner(KeyIn key) {
+    public Combiner<ValueIn, ?> getOrCreateCombiner(KeyIn key) {
         Combiner<ValueIn, ?> combiner = combiners.get(key);
         if (combiner == null) {
             combiner = combinerFactory.newCombiner(key);
-            combiners.put(key, combiner);
             combiner.beginCombine();
+
+            Combiner<ValueIn, ?> temp = combiners.putIfAbsent(key, combiner);
+            if (temp != null) {
+                combiner = temp;
+            }
         }
         return combiner;
     }
