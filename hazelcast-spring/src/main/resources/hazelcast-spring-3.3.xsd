@@ -134,8 +134,6 @@
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY"/>
                                 <xs:attribute name="statistics-enabled" use="optional" type="xs:boolean"
                                               default="true"/>
-                                <xs:attribute name="optimize-queries" use="optional" type="xs:boolean"
-                                              default="false"/>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
@@ -254,6 +252,7 @@
                                 <xs:field xpath="@name"/>
                             </xs:unique>
                         </xs:element>
+                        <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -986,6 +985,31 @@
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="services">
+        <xs:sequence>
+            <xs:element name="service" type="service" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="enable-defaults" type="xs:boolean" default="true"/>
+    </xs:complexType>
+    <xs:complexType name="service">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <!--
+            <xs:element name="configuration" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:any minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                    <xs:attribute name="parser" type="xs:string" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            -->
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" default="true"/>
     </xs:complexType>
 
     <xs:simpleType name="parameterizedValueType">

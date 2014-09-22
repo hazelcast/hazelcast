@@ -16,6 +16,8 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.config.ServiceConfig;
+import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
@@ -57,6 +59,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.spring.context.SpringManagedContext;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
@@ -68,6 +71,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import javax.xml.ws.Service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -118,6 +122,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap executorManagedMap;
         private ManagedMap wanReplicationManagedMap;
         private ManagedMap jobTrackerManagedMap;
+        private ManagedMap servicesManagedMap;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -194,6 +199,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
                 } else if ("management-center".equals(nodeName)) {
                     handleManagementCenter(node);
+                } else if ("services".equals(nodeName)) {
+                    handleServices(node);
                 }
             }
         }
@@ -221,6 +228,41 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
+        }
+
+        public void handleServices(Node node) {
+        	System.out.println("Into handleServices");
+            BeanDefinitionBuilder servicesConfigBuilder = createBeanBuilder(ServicesConfig.class);
+            final AbstractBeanDefinition beanDefinition = servicesConfigBuilder.getBeanDefinition();
+            fillAttributeValues(node,servicesConfigBuilder);
+            ManagedList<AbstractBeanDefinition> serviceConfigManagedList = new ManagedList<AbstractBeanDefinition>();
+            for(org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                final String nodeName = cleanNodeName(child);
+                if("service".equals(nodeName)) {
+                    serviceConfigManagedList.add(handleService(child));
+                }
+
+            }
+            servicesConfigBuilder.addPropertyValue("serviceConfigs", serviceConfigManagedList);
+            configBuilder.addPropertyValue("servicesConfig", beanDefinition);
+        }
+
+        private AbstractBeanDefinition handleService(Node node) {
+        	System.out.println("Into handleService");
+            BeanDefinitionBuilder serviceConfigBuilder = createBeanBuilder(ServiceConfig.class);
+            final AbstractBeanDefinition beanDefinition = serviceConfigBuilder.getBeanDefinition();
+            fillAttributeValues(node, serviceConfigBuilder);
+            for(org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                final String nodeName = cleanNodeName(child);
+                if ("name".equals(nodeName)) {
+                    serviceConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
+                } else if("class-name".equals(nodeName)) {
+                    serviceConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
+                } else if("properties".equals(nodeName)) {
+                    handleProperties(child, serviceConfigBuilder);
+                }
+            }
+            return beanDefinition;
         }
 
 /*
