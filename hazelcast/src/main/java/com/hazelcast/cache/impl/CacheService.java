@@ -70,7 +70,7 @@ public class CacheService
     @Override
     public void reset() {
         final ConcurrentMap<String, CacheConfig> cacheConfigs = configs;
-        for(String objectName:cacheConfigs.keySet()) {
+        for (String objectName : cacheConfigs.keySet()) {
             destroyCache(objectName, true, null);
         }
         final CachePartitionSegment[] partitionSegments = segments;
@@ -80,9 +80,9 @@ public class CacheService
             }
         }
         //TODO: near cache not implemented yet. enable wen ready
-//        for (NearCache nearCache : nearCacheMap.values()) {
-//            nearCache.clear();
-//        }
+        //        for (NearCache nearCache : nearCacheMap.values()) {
+        //            nearCache.clear();
+        //        }
 
     }
 
@@ -95,12 +95,12 @@ public class CacheService
     //endregion
 
     //region RemoteService
-        @Override
+    @Override
     public DistributedObject createDistributedObject(String objectName) {
         return new CacheDistributedObject(objectName, nodeEngine, this);
     }
 
-//    @Override
+    //    @Override
     public void destroyDistributedObject(String objectName) {
     }
     //endregion
@@ -150,14 +150,14 @@ public class CacheService
         for (CachePartitionSegment segment : segments) {
             segment.deleteCache(objectName);
         }
-        if(!isLocal){
+        if (!isLocal) {
             deregisterAllListener(objectName);
         }
         enableStatistics(objectName, false);
         enableManagement(objectName, false);
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
-        if(!isLocal){
+        if (!isLocal) {
             destroyCacheOnAllMembers(objectName, callerUuid);
         }
     }
@@ -172,6 +172,7 @@ public class CacheService
             }
         }
     }
+
     public boolean createCacheConfigIfAbsent(CacheConfig config, boolean isLocal) {
         final CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
         final boolean created = localConfig == null;
@@ -182,7 +183,7 @@ public class CacheService
             if (config.isManagementEnabled()) {
                 enableManagement(config.getNameWithPrefix(), true);
             }
-            if(!isLocal){
+            if (!isLocal) {
                 createConfigOnAllMembers(config);
             }
         }

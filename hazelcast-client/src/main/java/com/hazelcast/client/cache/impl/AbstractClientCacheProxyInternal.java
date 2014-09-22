@@ -122,7 +122,7 @@ abstract class AbstractClientCacheProxyInternal<K, V>
 
     protected <T> T getSafely(Future<T> future) {
         try {
-            return future. get();
+            return future.get();
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
