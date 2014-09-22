@@ -64,35 +64,15 @@ public final class HazelcastClientCacheManager
 
     @Override
     public void enableManagement(String cacheName, boolean enabled) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException();
-        }
-        final ClientInvocationService invocationService = clientContext.getInvocationService();
-        final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
-        final Collection<Future> futures = new ArrayList<Future>();
-        for (MemberImpl member : members) {
-            try {
-                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), false,
-                        enabled, member.getAddress());
-                final Future future = invocationService.invokeOnTarget(request, member.getAddress());
-                futures.add(future);
-            } catch (Exception e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
-        }
-        //make sure all configs are created
-        try {
-            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            logger.warning(e);
-        }
+        enableStatisticManagementOnNodes(cacheName, false, enabled);
     }
 
     @Override
     public void enableStatistics(String cacheName, boolean enabled) {
+        enableStatisticManagementOnNodes(cacheName, true, enabled);
+    }
+
+    private void enableStatisticManagementOnNodes(String cacheName, boolean statOrMan, boolean enabled) {
         if (isClosed()) {
             throw new IllegalStateException();
         }
@@ -104,7 +84,7 @@ public final class HazelcastClientCacheManager
         final Collection<Future> futures = new ArrayList<Future>();
         for (MemberImpl member : members) {
             try {
-                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), true,
+                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), statOrMan,
                         enabled, member.getAddress());
                 final Future future = invocationService.invokeOnTarget(request, member.getAddress());
                 futures.add(future);
@@ -118,6 +98,7 @@ public final class HazelcastClientCacheManager
         } catch (TimeoutException e) {
             logger.warning(e);
         }
+
     }
 
     @Override
