@@ -1,7 +1,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
-import com.hazelcast.cache.impl.CacheStatistics;
+import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -11,6 +11,7 @@ import java.io.IOException;
 
 import static com.hazelcast.util.JsonUtil.getFloat;
 import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.util.JsonUtil.getString;
 
 /**
  * Default implementation of {@link com.hazelcast.monitor.LocalCacheStats}
@@ -20,13 +21,13 @@ import static com.hazelcast.util.JsonUtil.getLong;
  * Management center.
  *
  * There are no calculations are done in this class, all statistics gathered from
- * {@link com.hazelcast.cache.impl.CacheStatistics}
+ * {@link com.hazelcast.cache.CacheStatistics}
  *
  * No setter methods are provided, all class fields supposed to be populated either
- * by a {@link com.hazelcast.cache.impl.CacheStatistics} or while deserialization process
+ * by a {@link com.hazelcast.cache.CacheStatistics} or while deserialization process
  * ({@link #fromJson(com.eclipsesource.json.JsonObject)}, or {@link #readData(com.hazelcast.nio.ObjectDataInput)}).
  *
- * @see com.hazelcast.cache.impl.CacheStatistics
+ * @see com.hazelcast.cache.CacheStatistics
  */
 public class LocalCacheStatsImpl implements LocalCacheStats {
 
@@ -47,17 +48,17 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
 
     public LocalCacheStatsImpl(CacheStatistics cacheStatistics) {
         creationTime = Clock.currentTimeMillis();
-        cacheHits = cacheStatistics.getHits();
-        cacheHitPercentage = 0.0f; //TODO: get from cache statistics
-        cacheMisses = cacheStatistics.getMisses();
-        cacheMissPercentage = 0.0f; //TODO: get from cache statistics
-        cacheGets = cacheHits + cacheMisses; //TODO: get from cache statistics
-        cachePuts = cacheStatistics.getPuts();
-        cacheRemovals = cacheStatistics.getRemovals();
-        cacheEvictions = cacheStatistics.getEvictions();
-        averageGetTime = 0.0f; //TODO: get from cache statistics
-        averagePutTime = 0.0f; //TODO: get from cache statistics
-        averageRemoveTime = 0.0f; //TODO: get from cache statistics;
+        cacheHits = cacheStatistics.getCacheHits();
+        cacheHitPercentage = cacheStatistics.getCacheHitPercentage();
+        cacheMisses = cacheStatistics.getCacheMisses();
+        cacheMissPercentage = cacheStatistics.getCacheMissPercentage();
+        cacheGets = cacheStatistics.getCacheGets();
+        cachePuts = cacheStatistics.getCachePuts();
+        cacheRemovals = cacheStatistics.getCacheRemovals();
+        cacheEvictions = cacheStatistics.getCacheEvictions();
+        averageGetTime = cacheStatistics.getAverageGetTime();
+        averagePutTime = cacheStatistics.getAveragePutTime();
+        averageRemoveTime = cacheStatistics.getAverageRemoveTime();
     }
 
     @Override

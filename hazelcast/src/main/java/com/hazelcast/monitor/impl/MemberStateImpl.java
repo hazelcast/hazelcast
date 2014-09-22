@@ -19,7 +19,6 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.cache.impl.CacheStatistics;
 import com.hazelcast.management.SerializableClientEndPoint;
 import com.hazelcast.management.SerializableMXBeans;
 import com.hazelcast.monitor.LocalCacheStats;
@@ -29,6 +28,7 @@ import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.MemberState;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;

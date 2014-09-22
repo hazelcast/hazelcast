@@ -1,6 +1,9 @@
 package com.hazelcast.management;
 
+import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.cache.impl.CacheDistributedObject;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
@@ -29,22 +32,12 @@ import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
-import javax.management.BadAttributeValueExpException;
-import javax.management.BadBinaryOpValueExpException;
-import javax.management.BadStringOperationException;
-import javax.management.InstanceNotFoundException;
-import javax.management.InvalidApplicationException;
-import javax.management.MBeanServer;
-import javax.management.ObjectInstance;
-import javax.management.ObjectName;
-import javax.management.QueryExp;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -248,38 +241,19 @@ public class TimedMemberStateFactory {
                 count = handleMultimap(memberState, count, config, (MultiMap) distributedObject);
             } else if (distributedObject instanceof IExecutorService) {
                 count = handleExecutorService(memberState, count, config, (IExecutorService) distributedObject);
-            } else if (distributedObject instanceof AbstractDistributedObject) {
-                ((AbstractDistributedObject<CacheService>) distributedObject).getService();
-                //   count = handleCache(memberState, count, config, (ICache) distributedObject);
-                Set<ObjectName> sdf = ManagementFactory.getPlatformMBeanServer().queryNames(null, new QueryExp() {
-                    @Override
-                    public boolean apply(ObjectName name) throws BadStringOperationException, BadBinaryOpValueExpException, BadAttributeValueExpException, InvalidApplicationException {
-                        return name.getCanonicalName().startsWith("javax.cache");
-
-                    }
-
-                    @Override
-                    public void setMBeanServer(MBeanServer s) {
-
-                    }
-                });
-                for (ObjectName objectName : sdf) {
-                    try {
-                        ObjectInstance objectinstance = ManagementFactory.getPlatformMBeanServer().getObjectInstance(objectName);
-                        //   CacheStatisticsMXBean testdsf = JMX.newMXBeanProxy(MB, objectName, CacheStatisticsMXBean.class);
-                        System.out.println();
-                    } catch (InstanceNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                }
-                System.out.println();
-                count = handleCache(memberState, count, config, distributedObject);
-                //      ManagementFactory.getPlatformMBeanServer().getObjectInstance(MXBeanUtil.calculateObjectName("","",true));
             } else {
                 LOGGER.finest("Distributed object ignored for monitoring: " + distributedObject.getName());
             }
         }
 
+        final CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
+        final CacheService cacheService = setupRef.getService();
+        for(CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
+            if(cacheConfig.isStatisticsEnabled()) {
+                CacheStatistics statistics = cacheService.getStatistics(cacheConfig.getNameWithPrefix());
+                count = handleCache(memberState, count, cacheConfig, statistics);
+            }
+        }
     }
 
     private int handleExecutorService(MemberStateImpl memberState, int count, Config config, IExecutorService executorService) {
@@ -326,9 +300,8 @@ public class TimedMemberStateFactory {
         return count;
     }
 
-    private int handleCache(MemberStateImpl memberState, int count, Config config, DistributedObject cache) {
-        //TODO:
-        memberState.putLocalCacheStats(cache.getName(), new LocalCacheStatsImpl());
+    private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, CacheStatistics cacheStatistics) {
+        memberState.putLocalCacheStats(config.getNameWithPrefix(), new LocalCacheStatsImpl(cacheStatistics));
         return count + 1;
     }
 
@@ -355,13 +328,20 @@ public class TimedMemberStateFactory {
                     count = collectTopicName(setLongInstanceNames, count, config, (ITopic) distributedObject);
                 } else if (distributedObject instanceof IExecutorService) {
                     count = collectExecutorServiceName(setLongInstanceNames, count, config, (IExecutorService) distributedObject);
-                } else if (distributedObject instanceof AbstractDistributedObject) {
-                    count = collectCacheName(setLongInstanceNames, count, config, distributedObject);
                 } else {
                     LOGGER.finest("Distributed object ignored for monitoring: " + distributedObject.getName());
                 }
             }
         }
+
+        final CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
+        final CacheService cacheService = setupRef.getService();
+        for(CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
+            if(cacheConfig.isStatisticsEnabled()) {
+                count = collectCacheName(setLongInstanceNames, count, cacheConfig);
+            }
+        }
+
     }
 
     private int collectExecutorServiceName(Set<String> setLongInstanceNames, int count, Config config,
@@ -398,9 +378,12 @@ public class TimedMemberStateFactory {
         return count;
     }
 
-    private int collectCacheName(Set<String> setLongInstanceNames, int count, Config config, DistributedObject distributedObject) {
-        setLongInstanceNames.add("j:" + distributedObject.getName());
-        return count + 1;
+    private int collectCacheName(Set<String> setLongInstanceNames, int count, CacheConfig config) {
+        if (config.isStatisticsEnabled()) {
+            setLongInstanceNames.add("j:" + config.getNameWithPrefix());
+            return count + 1;
+        }
+        return count;
     }
 
     private int collectMultiMapName(Set<String> setLongInstanceNames, int count, Config config, MultiMap multiMap) {
