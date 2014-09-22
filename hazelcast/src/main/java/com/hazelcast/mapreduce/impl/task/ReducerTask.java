@@ -17,6 +17,7 @@
 package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.Reducer;
+import com.hazelcast.mapreduce.impl.CombinerResultList;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.notification.ReducingFinishedNotification;
 import com.hazelcast.nio.Address;
@@ -113,7 +114,7 @@ public class ReducerTask<Key, Chunk>
             Reducer reducer = supervisor.getReducerByKey(entry.getKey());
             if (reducer != null) {
                 Chunk chunkValue = entry.getValue();
-                if (chunkValue instanceof List) {
+                if (chunkValue instanceof CombinerResultList) {
                     for (Object value : (List) chunkValue) {
                         reducer.reduce(value);
                     }
