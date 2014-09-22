@@ -161,7 +161,7 @@ public final class UTFEncoderDecoder {
                     stringValueFieldOffset =
                             unsafe.objectFieldOffset(String.class.getDeclaredField("value"));
                 } catch (Throwable t) {
-
+                    t.printStackTrace();
                 }
             }
         }
@@ -188,6 +188,7 @@ public final class UTFEncoderDecoder {
                 valueArrayField = String.class.getDeclaredField("value");
                 valueArrayField.setAccessible(true);
             } catch (Throwable t) {
+                t.printStackTrace();
                 valueArrayField = null;
             }
         }
