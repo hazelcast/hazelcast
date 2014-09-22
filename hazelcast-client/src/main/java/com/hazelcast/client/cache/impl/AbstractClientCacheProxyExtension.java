@@ -251,7 +251,7 @@ abstract class AbstractClientCacheProxyExtension<K, V>
     public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
         final Future<Boolean> f = putIfAbsentAsyncInternal(key, value, expiryPolicy, true);
         try {
-            return toObject(f.get());
+            return (Boolean) toObject(f.get());
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
@@ -261,7 +261,7 @@ abstract class AbstractClientCacheProxyExtension<K, V>
     public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
         final Future<Boolean> f = replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
         try {
-            return toObject(f.get());
+            return (Boolean) toObject(f.get());
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
@@ -271,7 +271,7 @@ abstract class AbstractClientCacheProxyExtension<K, V>
     public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
         final Future<Boolean> f = replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true);
         try {
-            return toObject(f.get());
+            return (Boolean) toObject(f.get());
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }

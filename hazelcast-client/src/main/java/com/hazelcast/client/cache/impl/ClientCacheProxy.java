@@ -100,7 +100,7 @@ public class ClientCacheProxy<K, V>
         ICompletableFuture future;
         try {
             future = invoke(request, keyData, false);
-            return toObject(future.get());
+            return (Boolean) toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

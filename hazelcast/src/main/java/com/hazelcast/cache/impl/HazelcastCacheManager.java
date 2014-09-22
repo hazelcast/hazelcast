@@ -33,10 +33,11 @@ public abstract class HazelcastCacheManager
     protected final String cacheNamePrefix;
     protected final boolean isDefaultURI;
     protected final boolean isDefaultClassLoader;
+
     protected ILogger logger;
-    protected HazelcastInstance hazelcastInstance;
     protected CachingProvider cachingProvider;
-    //    protected volatile boolean closeTriggered;
+    protected HazelcastInstance hazelcastInstance;
+
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
@@ -87,7 +88,7 @@ public abstract class HazelcastCacheManager
             return cacheProxy;
         } else {
             final ICache<?, ?> entries = caches.putIfAbsent(newCacheConfig.getNameWithPrefix(), cacheProxy);
-            if(entries == null) {
+            if (entries == null) {
                 //REGISTER LISTENERS
                 registerListeners(newCacheConfig, cacheProxy);
                 return cacheProxy;
@@ -172,7 +173,7 @@ public abstract class HazelcastCacheManager
         ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
         if (cache == null) {
             //FIXME review getCache
-            CacheConfig<K, V> cacheConfig = null;//= getCacheConfigLocal(cacheNameWithPrefix);
+            CacheConfig<K, V> cacheConfig = null;
             if (cacheConfig == null) {
                 //remote check
                 cacheConfig = getCacheConfigFromPartition(cacheNameWithPrefix);
@@ -232,7 +233,7 @@ public abstract class HazelcastCacheManager
             cache.close();
         }
         //TODO do we need to clear it
-//        caches.clear();
+        //        caches.clear();
     }
 
     public void destroy() {

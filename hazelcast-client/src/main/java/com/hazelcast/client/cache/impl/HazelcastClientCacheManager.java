@@ -84,8 +84,8 @@ public final class HazelcastClientCacheManager
         final Collection<Future> futures = new ArrayList<Future>();
         for (MemberImpl member : members) {
             try {
-                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), statOrMan,
-                        enabled, member.getAddress());
+                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName),
+                        statOrMan, enabled, member.getAddress());
                 final Future future = invocationService.invokeOnTarget(request, member.getAddress());
                 futures.add(future);
             } catch (Exception e) {
