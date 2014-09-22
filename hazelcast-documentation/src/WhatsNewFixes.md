@@ -1,10 +1,11 @@
 
 ### Fixes
 
-**3.3 Fixes**
+**3.3.1 Fixes**
 
 This section lists issues solved for **Hazelcast 3.3.1** release.
 
+- `MaxSizeConfig` constructor should convert zero size to `Integer.MAX_VALUE` [[#3579]](https://github.com/hazelcast/hazelcast/issues/3579).
 - If deserialization of the client request fails, the exception is not propagated back to the client  [[#3557]](https://github.com/hazelcast/hazelcast/issues/3557).
 - "Lock is not owned by by the transaction" exception. This exception was received while testing how transactions are working with Map and MultiMap for some last Hazelcast releases [[#3545]](https://github.com/hazelcast/hazelcast/issues/3545).
 - Main classes in `manifest.mf` files are not correctly set [#3537](https://github.com/hazelcast/hazelcast/issues/3537).
