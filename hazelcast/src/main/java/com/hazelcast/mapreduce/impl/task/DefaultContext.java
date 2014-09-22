@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.mapreduce.Combiner;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Context;
+import com.hazelcast.mapreduce.impl.CombinerResultList;
 import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
 
@@ -122,7 +123,7 @@ public class DefaultContext<KeyIn, ValueIn>
         public Combiner<ValueIn, List<ValueIn>> newCombiner(KeyIn key) {
             return new Combiner<ValueIn, List<ValueIn>>() {
 
-                private final List<ValueIn> values = new ArrayList<ValueIn>();
+                private final List<ValueIn> values = new CombinerResultList<ValueIn>();
 
                 @Override
                 public void combine(ValueIn value) {
