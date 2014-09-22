@@ -142,40 +142,44 @@ public class CacheService
         return segments[partitionId].getCache(name);
     }
 
-    public void destroyCache(String objectName) {
+    public void destroyCache(String objectName, boolean isLocal, String callerUuid) {
         for (CachePartitionSegment segment : segments) {
             segment.deleteCache(objectName);
         }
-        deregisterAllListener(objectName);
+        if(!isLocal){
+            deregisterAllListener(objectName);
+        }
         enableStatistics(objectName, false);
         enableManagement(objectName, false);
-
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
-
-        destroyCacheOnAllMembers(objectName);
+        if(!isLocal){
+            destroyCacheOnAllMembers(objectName, callerUuid);
+        }
     }
 
-    protected <K, V> void destroyCacheOnAllMembers(String objectName) {
+    protected void destroyCacheOnAllMembers(String objectName, String callerUuid) {
         final OperationService operationService = nodeEngine.getOperationService();
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
-            if (!member.localMember()) {
-                final CacheDestroyOperation op = new CacheDestroyOperation(objectName);
+            if (!member.localMember() && !member.getUuid().equals(callerUuid)) {
+                final CacheDestroyOperation op = new CacheDestroyOperation(objectName, true);
                 operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
             }
         }
     }
-    public boolean createCacheConfigIfAbsent(CacheConfig config) {
+    public boolean createCacheConfigIfAbsent(CacheConfig config, boolean isLocal) {
         final CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
         final boolean created = localConfig == null;
         if (created) {
-            createConfigOnAllMembers(config);
             if (config.isStatisticsEnabled()) {
                 enableStatistics(config.getNameWithPrefix(), true);
             }
             if (config.isManagementEnabled()) {
                 enableManagement(config.getNameWithPrefix(), true);
+            }
+            if(!isLocal){
+                createConfigOnAllMembers(config);
             }
         }
         return created;
@@ -190,11 +194,6 @@ public class CacheService
                 operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
             }
         }
-    }
-
-    public boolean updateCacheConfig(CacheConfig config) {
-        final CacheConfig oldConfig = configs.put(config.getNameWithPrefix(), config);
-        return oldConfig != null;
     }
 
     public void deleteCacheConfig(String name) {

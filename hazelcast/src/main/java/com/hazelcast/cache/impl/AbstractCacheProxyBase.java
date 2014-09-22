@@ -113,6 +113,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         final InternalCompletableFuture f = getNodeEngine().getOperationService()
                                                            .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         f.getSafely();
+        cacheService.destroyCache(getDistributedObjectName(), true, null);
     }
 
     public boolean isClosed() {

@@ -22,7 +22,6 @@ import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -41,8 +40,6 @@ public class CacheCreateConfigRequest
 
     private CacheConfig cacheConfig;
     private boolean create;
-
-    private Address target;
     private int partitionId;
 
     public CacheCreateConfigRequest() {
@@ -70,7 +67,7 @@ public class CacheCreateConfigRequest
     }
 
     protected Operation prepareOperation() {
-        return new CacheCreateConfigOperation(cacheConfig, true);
+        return new CacheCreateConfigOperation(cacheConfig);
     }
 
     public final int getFactoryId() {
@@ -92,7 +89,6 @@ public class CacheCreateConfigRequest
         writer.writeInt("p", partitionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(cacheConfig);
-        out.writeObject(target);
     }
 
     public void read(PortableReader reader)
@@ -101,7 +97,6 @@ public class CacheCreateConfigRequest
         partitionId = reader.readInt("p");
         final ObjectDataInput in = reader.getRawDataInput();
         cacheConfig = in.readObject();
-        target = in.readObject();
     }
 
     @Override
