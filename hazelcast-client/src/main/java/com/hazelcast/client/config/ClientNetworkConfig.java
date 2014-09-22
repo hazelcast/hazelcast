@@ -135,6 +135,7 @@ public class ClientNetworkConfig {
 
     /**
      * @param connectionTimeout Timeout value in millis for nodes to accept client connection requests.
+     *                          A zero value means wait until connection established or an error occurs.
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
     public ClientNetworkConfig setConnectionTimeout(int connectionTimeout) {
