@@ -123,7 +123,7 @@ public class DefaultContext<KeyIn, ValueIn>
         public Combiner<ValueIn, List<ValueIn>> newCombiner(KeyIn key) {
             return new Combiner<ValueIn, List<ValueIn>>() {
 
-                private final List<ValueIn> values = new CombinerResultList<ValueIn>();
+                private final List<ValueIn> values = new ArrayList<ValueIn>();
 
                 @Override
                 public void combine(ValueIn value) {
@@ -132,7 +132,7 @@ public class DefaultContext<KeyIn, ValueIn>
 
                 @Override
                 public List<ValueIn> finalizeChunk() {
-                    return new ArrayList<ValueIn>(this.values);
+                    return new CombinerResultList<ValueIn>(this.values);
                 }
 
                 @Override
