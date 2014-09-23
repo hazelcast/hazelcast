@@ -15,10 +15,10 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class ListSplitBrainTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.terminateAll();
+        HazelcastInstanceFactory.shutdownAll();
     }
 
     @Test
@@ -71,6 +71,8 @@ public class ListSplitBrainTest extends HazelcastTestSupport {
         }
 
         assertSizeEventually(100, list);
+
+        waitAllForSafeState();
 
         closeConnectionBetween(h1, h3);
         closeConnectionBetween(h2, h3);
