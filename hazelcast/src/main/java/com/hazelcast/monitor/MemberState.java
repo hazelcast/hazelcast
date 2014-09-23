@@ -39,6 +39,8 @@ public interface MemberState extends JsonSerializable {
 
     LocalExecutorStats getLocalExecutorStats(String executorName);
 
+    LocalCacheStats getLocalCacheStats(String cacheName);
+
     List<Integer> getPartitions();
 
     Collection<SerializableClientEndPoint> getClients();
