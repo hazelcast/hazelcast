@@ -248,8 +248,8 @@ public class TimedMemberStateFactory {
 
         final CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         final CacheService cacheService = setupRef.getService();
-        for(CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
-            if(cacheConfig.isStatisticsEnabled()) {
+        for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
+            if (cacheConfig.isStatisticsEnabled()) {
                 CacheStatistics statistics = cacheService.getStatistics(cacheConfig.getNameWithPrefix());
                 count = handleCache(memberState, count, cacheConfig, statistics);
             }
@@ -336,8 +336,8 @@ public class TimedMemberStateFactory {
 
         final CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         final CacheService cacheService = setupRef.getService();
-        for(CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
-            if(cacheConfig.isStatisticsEnabled()) {
+        for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
+            if (cacheConfig.isStatisticsEnabled()) {
                 count = collectCacheName(setLongInstanceNames, count, cacheConfig);
             }
         }

@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -116,51 +115,37 @@ public class MemberStateImpl implements MemberState {
     @Override
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
-        final Iterator<JsonObject.Member> mapStatsIterator = getObject(json, "mapStats").iterator();
-        while (mapStatsIterator.hasNext()) {
-            final JsonObject.Member next = mapStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "mapStats")) {
             LocalMapStatsImpl stats = new LocalMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
             mapStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> multiMapStatsIterator = getObject(json, "multiMapStats").iterator();
-        while (multiMapStatsIterator.hasNext()) {
-            final JsonObject.Member next = multiMapStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "multiMapStats")) {
             LocalMultiMapStatsImpl stats = new LocalMultiMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
             multiMapStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> queueStatsIterator = getObject(json, "queueStats").iterator();
-        while (queueStatsIterator.hasNext()) {
-            final JsonObject.Member next = queueStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "queueStats")) {
             LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
             stats.fromJson(next.getValue().asObject());
             queueStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> topicStatsIterator = getObject(json, "topicStats").iterator();
-        while (topicStatsIterator.hasNext()) {
-            final JsonObject.Member next = topicStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "topicStats")) {
             LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
             stats.fromJson(next.getValue().asObject());
             topicStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> executorStatsIterator = getObject(json, "executorStats").iterator();
-        while (executorStatsIterator.hasNext()) {
-            final JsonObject.Member next = executorStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "executorStats")) {
             LocalExecutorStatsImpl stats = new LocalExecutorStatsImpl();
             stats.fromJson(next.getValue().asObject());
             executorStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> cacheStatsIterator = getObject(json, "cacheStats", new JsonObject()).iterator();
-        while (cacheStatsIterator.hasNext()) {
-            final JsonObject.Member next = cacheStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "cacheStats", new JsonObject())) {
             LocalCacheStats stats = new LocalCacheStatsImpl();
             stats.fromJson(next.getValue().asObject());
             cacheStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> propsIterator = getObject(json, "runtimeProps").iterator();
-        while (propsIterator.hasNext()) {
-            final JsonObject.Member next = propsIterator.next();
+        for (JsonObject.Member next : getObject(json, "runtimeProps")) {
             runtimeProps.put(next.getName(), next.getValue().asLong());
         }
         final JsonArray jsonPartitions = getArray(json, "partitions");

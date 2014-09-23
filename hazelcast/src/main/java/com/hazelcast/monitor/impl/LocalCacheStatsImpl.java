@@ -11,7 +11,6 @@ import java.io.IOException;
 
 import static com.hazelcast.util.JsonUtil.getFloat;
 import static com.hazelcast.util.JsonUtil.getLong;
-import static com.hazelcast.util.JsonUtil.getString;
 
 /**
  * Default implementation of {@link com.hazelcast.monitor.LocalCacheStats}
@@ -44,7 +43,7 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     private float averagePutTime;
     private float averageRemoveTime;
 
-    public LocalCacheStatsImpl() {}
+    public LocalCacheStatsImpl() { }
 
     public LocalCacheStatsImpl(CacheStatistics cacheStatistics) {
         creationTime = Clock.currentTimeMillis();
