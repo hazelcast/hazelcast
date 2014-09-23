@@ -608,15 +608,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         private ClientConnection getOrWaitForCreation() throws IOException {
             ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
-            int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
-            int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
-            int waitTime;
-            if (connectionAttemptLimit == Integer.MAX_VALUE || connectionAttemptPeriod == Integer.MAX_VALUE) {
-                waitTime = Integer.MAX_VALUE;
-            } else {
-                // "times 2" is for this thread to wait until ClusterListenerThread make all attempts.
-                waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
+            long connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
+            long connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+            long waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
+            if (waitTime < 0) {
+                waitTime = Long.MAX_VALUE;
             }
+
             final ClientConnection currentOwnerConnection = ownerConnection;
             if (currentOwnerConnection != null) {
                 return currentOwnerConnection;
