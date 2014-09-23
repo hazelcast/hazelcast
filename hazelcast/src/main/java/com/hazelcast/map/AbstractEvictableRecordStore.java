@@ -200,7 +200,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected boolean shouldEvict(long now) {
-        return inEvictableTimeWindow(now) && isEvictable();
+        return evictionEnabled && inEvictableTimeWindow(now) && isEvictable();
     }
 
     private void removeEvictables(boolean backup) {
