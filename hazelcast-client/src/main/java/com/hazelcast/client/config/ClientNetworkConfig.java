@@ -100,7 +100,7 @@ public class ClientNetworkConfig {
      */
     public ClientNetworkConfig setConnectionAttemptPeriod(int connectionAttemptPeriod) {
         if (connectionAttemptPeriod < 0) {
-            throw new IllegalArgumentException("connectionAttemptPeriod can't be smaller than 0");
+            throw new IllegalArgumentException("connectionAttemptPeriod cannot be negative");
         }
         this.connectionAttemptPeriod = connectionAttemptPeriod;
         return this;
@@ -125,7 +125,7 @@ public class ClientNetworkConfig {
      */
     public ClientNetworkConfig setConnectionAttemptLimit(int connectionAttemptLimit) {
         if (connectionAttemptLimit < 0) {
-            throw new IllegalArgumentException("connectionAttemptLimit can't be smaller than 0");
+            throw new IllegalArgumentException("connectionAttemptLimit cannot be negative");
         }
         this.connectionAttemptLimit = connectionAttemptLimit;
         return this;
@@ -147,7 +147,7 @@ public class ClientNetworkConfig {
      */
     public ClientNetworkConfig setConnectionTimeout(int connectionTimeout) {
         if (connectionTimeout < 0) {
-            throw new IllegalArgumentException("connectionTimeout can't be smaller than 0");
+            throw new IllegalArgumentException("connectionTimeout cannot be negative");
         }
         this.connectionTimeout = connectionTimeout;
         return this;
