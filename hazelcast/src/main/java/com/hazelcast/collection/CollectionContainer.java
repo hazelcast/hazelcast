@@ -247,9 +247,10 @@ public abstract class CollectionContainer implements DataSerializable {
         final TxCollectionItem txItem = txMap.remove(itemId);
         if (txItem == null) {
             logger.warning("rollbackRemove No txn item for itemId: " + itemId);
+        } else {
+            CollectionItem item = new CollectionItem(itemId, txItem.value);
+            getCollection().add(item);
         }
-        CollectionItem item = new CollectionItem(itemId, txItem.value);
-        getCollection().add(item);
     }
 
     public void rollbackRemoveBackup(long itemId) {
