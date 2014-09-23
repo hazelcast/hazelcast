@@ -192,11 +192,15 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size() == 0) {
             return;
         }
-        if (inEvictableTimeWindow(now) && isEvictable()) {
+        if ( shouldEvict(now) ) {
             removeEvictables(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
         }
+    }
+
+    protected boolean shouldEvict(long now) {
+        return inEvictableTimeWindow(now) && isEvictable();
     }
 
     private void removeEvictables(boolean backup) {
