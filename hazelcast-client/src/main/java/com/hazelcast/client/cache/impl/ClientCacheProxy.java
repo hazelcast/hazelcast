@@ -14,21 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl;
+package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
-import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
-import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
-import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
+import com.hazelcast.cache.impl.CacheEntryProcessorResult;
+import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
+import com.hazelcast.cache.impl.CacheProxyUtil;
+import com.hazelcast.cache.impl.HazelcastCacheManager;
+import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
+import com.hazelcast.cache.impl.client.CacheContainsKeyRequest;
+import com.hazelcast.cache.impl.client.CacheEntryProcessorRequest;
+import com.hazelcast.cache.impl.client.CacheListenerRegistrationRequest;
+import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
+import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
+import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -49,27 +56,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * javax.cache.Cache implementation
+ * ICache implementation for client
  *
  * @param <K> key
  * @param <V> value
  */
-public class CacheProxy<K, V>
-        extends AbstractCacheProxyExtension<K, V> {
-
+public class ClientCacheProxy<K, V>
+        extends AbstractClientCacheProxyExtension<K, V> {
     protected final ILogger logger;
 
     private HazelcastCacheManager cacheManager;
 
-    protected CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService,
-                         HazelcastServerCacheManager cacheManager) {
-        super(cacheConfig, nodeEngine, cacheService);
+    public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext clientContext,
+                            HazelcastClientCacheManager cacheManager) {
+        super(cacheConfig, clientContext);
         this.cacheManager = cacheManager;
-        logger = getNodeEngine().getLogger(getClass());
+        logger = Logger.getLogger(getClass());
     }
 
     @Override
@@ -86,11 +91,19 @@ public class CacheProxy<K, V>
     public boolean containsKey(K key) {
         ensureOpen();
         validateNotNull(key);
-        final Data k = serializationService.toData(key);
-        final Operation op = new CacheContainsKeyOperation(getDistributedObjectName(), k);
-        final InternalCompletableFuture<Boolean> f = getNodeEngine().getOperationService().invokeOnPartition(getServiceName(), op,
-                getPartitionId(getNodeEngine(), k));
-        return f.getSafely();
+        final Data keyData = toData(key);
+        Object cached = nearCache != null ? nearCache.get(keyData) : null;
+        if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+            return true;
+        }
+        CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData);
+        ICompletableFuture future;
+        try {
+            future = invoke(request, keyData, false);
+            return (Boolean) toObject(future.get());
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     @Override
@@ -103,12 +116,11 @@ public class CacheProxy<K, V>
         validateCacheLoader(completionListener);
         HashSet<Data> keysData = new HashSet<Data>();
         for (K key : keys) {
-            keysData.add(serializationService.toData(key));
+            keysData.add(toData(key));
         }
-        final OperationFactory operationFactory = new CacheLoadAllOperationFactory(getDistributedObjectName(), keysData,
-                replaceExistingValues);
+        final CacheLoadAllRequest request = new CacheLoadAllRequest(nameWithPrefix, keysData, replaceExistingValues);
         try {
-            submitLoadAllTask(operationFactory, completionListener);
+            submitLoadAllTask(request, completionListener);
         } catch (Exception e) {
             if (completionListener != null) {
                 completionListener.onException(e);
@@ -139,7 +151,7 @@ public class CacheProxy<K, V>
 
     @Override
     public boolean remove(K key) {
-        final InternalCompletableFuture<Boolean> f = removeAsyncInternal(key, null, false, false, true);
+        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, null, false, false, true);
         try {
             return f.get();
         } catch (Throwable e) {
@@ -149,7 +161,7 @@ public class CacheProxy<K, V>
 
     @Override
     public boolean remove(K key, V oldValue) {
-        final InternalCompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, true, false, true);
+        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, true, false, true);
         try {
             return f.get();
         } catch (Throwable e) {
@@ -159,7 +171,7 @@ public class CacheProxy<K, V>
 
     @Override
     public V getAndRemove(K key) {
-        final InternalCompletableFuture<V> f = removeAsyncInternal(key, null, false, true, true);
+        final ICompletableFuture<V> f = removeAsyncInternal(key, null, false, true, true);
         try {
             return f.get();
         } catch (Throwable e) {
@@ -218,21 +230,16 @@ public class CacheProxy<K, V>
         if (entryProcessor == null) {
             throw new NullPointerException("Entry Processor is null");
         }
-        final Data k = serializationService.toData(key);
-        final Integer completionId = registerCompletionLatch(1);
-        final Operation op = new CacheEntryProcessorOperation(getDistributedObjectName(), k, completionId, entryProcessor,
+        final Data keyData = toData(key);
+        final CacheEntryProcessorRequest request = new CacheEntryProcessorRequest(nameWithPrefix, keyData, entryProcessor,
                 arguments);
         try {
-            final InternalCompletableFuture<T> f = getNodeEngine().getOperationService().invokeOnPartition(getServiceName(), op,
-                    getPartitionId(getNodeEngine(), k));
-            final T safely = f.getSafely();
-            waitCompletionLatch(completionId);
-            return safely;
+            final ICompletableFuture<Data> f = invoke(request, keyData, true);
+            final Data data = getSafely(f);
+            return toObject(data);
         } catch (CacheException ce) {
-            deregisterCompletionLatch(completionId);
             throw ce;
         } catch (Exception e) {
-            deregisterCompletionLatch(completionId);
             throw new EntryProcessorException(e);
         }
     }
@@ -286,10 +293,11 @@ public class CacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
         }
-        final CacheService service = getService();
-        final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
-                cacheEntryListenerConfiguration, getNodeEngine().getSerializationService());
-        final String regId = service.registerListener(getDistributedObjectName(), entryListener);
+        final CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
+                clientContext.getSerializationService());
+        final EventHandler<Object> handler = createHandler(adaptor);
+        final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(nameWithPrefix);
+        final String regId = clientContext.getListenerService().listen(registrationRequest, null, handler);
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             addListenerLocally(regId, cacheEntryListenerConfiguration);
@@ -303,10 +311,12 @@ public class CacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
         }
-        final CacheService service = getService();
         final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
         if (regId != null) {
-            if (!service.deregisterListener(getDistributedObjectName(), regId)) {
+            CacheRemoveEntryListenerRequest removeReq = new CacheRemoveEntryListenerRequest(nameWithPrefix, regId);
+            boolean isDeregistered = clientContext.getListenerService().stopListening(removeReq, regId);
+
+            if (!isDeregistered) {
                 addListenerLocally(regId, cacheEntryListenerConfiguration);
             } else {
                 cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -319,30 +329,32 @@ public class CacheProxy<K, V>
 
     protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                                          boolean isRegister) {
-        final OperationService operationService = getNodeEngine().getOperationService();
-        final Collection<MemberImpl> members = getNodeEngine().getClusterService().getMemberList();
-        Collection<Future> futures = new ArrayList<Future>();
+        final ClientInvocationService invocationService = clientContext.getInvocationService();
+        final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
+        final Collection<Future> futures = new ArrayList<Future>();
         for (MemberImpl member : members) {
-            if (!member.localMember()) {
-                final Operation op = new CacheListenerRegistrationOperation(getDistributedObjectName(),
-                        cacheEntryListenerConfiguration, isRegister);
-                final InternalCompletableFuture<Object> future = operationService
-                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+            try {
+                final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(nameWithPrefix,
+                        cacheEntryListenerConfiguration, isRegister, member.getAddress());
+                final Future future = invocationService.invokeOnTarget(request, member.getAddress());
                 futures.add(future);
+            } catch (Exception e) {
+                ExceptionUtil.sneakyThrow(e);
             }
         }
         //make sure all configs are created
         //TODO do we need this ???s
-//        try {
-//            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-//        } catch (TimeoutException e) {
-//            logger.warning(e);
-//        }
+        //        try {
+        //            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        //        } catch (TimeoutException e) {
+        //            logger.warning(e);
+        //        }
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
-        return new ClusterWideIterator<K, V>(this);
+        return new ClientClusterWideIterator<K, V>(this, clientContext);
     }
+
 }

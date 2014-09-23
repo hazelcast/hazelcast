@@ -40,14 +40,15 @@ public abstract class HazelcastAbstractCachingProvider
     protected final ClassLoader defaultClassLoader;
     protected final URI defaultURI;
 
-    private final Map<ClassLoader, Map<URI, CacheManager>> cacheManagers;
+    private final Map<ClassLoader, Map<URI, HazelcastCacheManager>> cacheManagers;
 
     public HazelcastAbstractCachingProvider() {
         //we use a WeakHashMap to prevent strong references to a classLoader to avoid memory leak.
-        this.cacheManagers = new WeakHashMap<ClassLoader, Map<URI, CacheManager>>();
+        this.cacheManagers = new WeakHashMap<ClassLoader, Map<URI, HazelcastCacheManager>>();
         this.defaultClassLoader = this.getClass().getClassLoader();
         try {
-            defaultURI = new URI(this.getClass().getName());
+            defaultURI = new URI("hazelcast");
+            //            defaultURI = new URI(this.getClass().getName());
         } catch (URISyntaxException e) {
             throw new CacheException("Cannot create Default URI", e);
         }
@@ -59,12 +60,12 @@ public abstract class HazelcastAbstractCachingProvider
         final ClassLoader managerClassLoader = getManagerClassLoader(classLoader);
         final Properties managerProperties = properties == null ? new Properties() : properties;
         synchronized (cacheManagers) {
-            Map<URI, CacheManager> cacheManagersByURI = cacheManagers.get(managerClassLoader);
+            Map<URI, HazelcastCacheManager> cacheManagersByURI = cacheManagers.get(managerClassLoader);
             if (cacheManagersByURI == null) {
-                cacheManagersByURI = new HashMap<URI, CacheManager>();
+                cacheManagersByURI = new HashMap<URI, HazelcastCacheManager>();
                 cacheManagers.put(managerClassLoader, cacheManagersByURI);
             }
-            CacheManager cacheManager = cacheManagersByURI.get(managerURI);
+            HazelcastCacheManager cacheManager = cacheManagersByURI.get(managerURI);
             if (cacheManager == null || cacheManager.isClosed()) {
                 try {
                     cacheManager = createHazelcastCacheManager(uri, classLoader, managerProperties);
@@ -106,9 +107,13 @@ public abstract class HazelcastAbstractCachingProvider
     public void close() {
         //closing a cacheProvider do not close it forever see javadoc of close()
         synchronized (cacheManagers) {
-            for (Map<URI, CacheManager> cacheManagersByURI : cacheManagers.values()) {
-                for (CacheManager cacheManager : cacheManagersByURI.values()) {
-                    cacheManager.close();
+            for (Map<URI, HazelcastCacheManager> cacheManagersByURI : cacheManagers.values()) {
+                for (HazelcastCacheManager cacheManager : cacheManagersByURI.values()) {
+                    if (cacheManager.isDefaultClassLoader) {
+                        cacheManager.close();
+                    } else {
+                        cacheManager.destroy();
+                    }
                 }
             }
         }
@@ -128,7 +133,7 @@ public abstract class HazelcastAbstractCachingProvider
     public void close(ClassLoader classLoader) {
         final ClassLoader managerClassLoader = getManagerClassLoader(classLoader);
         synchronized (cacheManagers) {
-            final Map<URI, CacheManager> cacheManagersByURI = this.cacheManagers.get(managerClassLoader);
+            final Map<URI, HazelcastCacheManager> cacheManagersByURI = this.cacheManagers.get(managerClassLoader);
             if (cacheManagersByURI != null) {
                 for (CacheManager cacheManager : cacheManagersByURI.values()) {
                     cacheManager.close();
@@ -142,7 +147,7 @@ public abstract class HazelcastAbstractCachingProvider
         final URI managerURI = getManagerUri(uri);
         final ClassLoader managerClassLoader = getManagerClassLoader(classLoader);
         synchronized (cacheManagers) {
-            final Map<URI, CacheManager> cacheManagersByURI = this.cacheManagers.get(managerClassLoader);
+            final Map<URI, HazelcastCacheManager> cacheManagersByURI = this.cacheManagers.get(managerClassLoader);
             if (cacheManagersByURI != null) {
                 final CacheManager cacheManager = cacheManagersByURI.remove(managerURI);
                 if (cacheManager != null) {
@@ -173,5 +178,6 @@ public abstract class HazelcastAbstractCachingProvider
         return classLoader == null ? defaultClassLoader : classLoader;
     }
 
-    protected abstract CacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties);
+    protected abstract HazelcastCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader,
+                                                                         Properties managerProperties);
 }

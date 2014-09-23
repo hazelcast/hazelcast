@@ -269,6 +269,7 @@ public class CacheConfig<K, V>
         out.writeBoolean(isWriteThrough);
         out.writeBoolean(isStoreByValue);
         out.writeBoolean(isManagementEnabled);
+        out.writeBoolean(isStatisticsEnabled);
 
         final boolean listNotEmpty = listenerConfigurations != null && !listenerConfigurations.isEmpty();
         out.writeBoolean(listNotEmpty);
@@ -309,6 +310,7 @@ public class CacheConfig<K, V>
         isWriteThrough = in.readBoolean();
         isStoreByValue = in.readBoolean();
         isManagementEnabled = in.readBoolean();
+        isStatisticsEnabled = in.readBoolean();
 
         final boolean listNotEmpty = in.readBoolean();
         if (listNotEmpty) {

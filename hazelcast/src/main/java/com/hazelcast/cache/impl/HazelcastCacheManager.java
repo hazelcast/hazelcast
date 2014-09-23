@@ -33,11 +33,13 @@ public abstract class HazelcastCacheManager
     protected final String cacheNamePrefix;
     protected final boolean isDefaultURI;
     protected final boolean isDefaultClassLoader;
+
     protected ILogger logger;
-    protected HazelcastInstance hazelcastInstance;
     protected CachingProvider cachingProvider;
-    //    protected volatile boolean closeTriggered;
+    protected HazelcastInstance hazelcastInstance;
+
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
+    private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
     public HazelcastCacheManager(CachingProvider cachingProvider, URI uri, ClassLoader classLoader, Properties properties) {
         if (cachingProvider == null) {
@@ -72,18 +74,25 @@ public abstract class HazelcastCacheManager
         }
         //CREATE THE CONFIG ON PARTITION
         final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
+        //create proxy object
+        final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
         final boolean created = createConfigOnPartition(newCacheConfig);
         if (created) {
             //single thread region because createConfigOnPartition is single threaded by partition thread
             //UPDATE LOCAL MEMBER
             addCacheConfigIfAbsentToLocal(newCacheConfig);
-            //create proxy object
-            final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
             //no need to a putIfAbsent as this is a single threaded region
             caches.put(newCacheConfig.getNameWithPrefix(), cacheProxy);
             //REGISTER LISTENERS
             registerListeners(newCacheConfig, cacheProxy);
             return cacheProxy;
+        } else {
+            final ICache<?, ?> entries = caches.putIfAbsent(newCacheConfig.getNameWithPrefix(), cacheProxy);
+            if (entries == null) {
+                //REGISTER LISTENERS
+                registerListeners(newCacheConfig, cacheProxy);
+                return cacheProxy;
+            }
         }
         throw new CacheException("A cache named " + cacheName + " already exists.");
     }
@@ -163,7 +172,8 @@ public abstract class HazelcastCacheManager
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
         if (cache == null) {
-            CacheConfig<K, V> cacheConfig = getCacheConfigLocal(cacheNameWithPrefix);
+            //FIXME review getCache
+            CacheConfig<K, V> cacheConfig = null;
             if (cacheConfig == null) {
                 //remote check
                 cacheConfig = getCacheConfigFromPartition(cacheNameWithPrefix);
@@ -182,8 +192,6 @@ public abstract class HazelcastCacheManager
 
     @Override
     public Iterable<String> getCacheNames() {
-        //TODO implementation decision: should this return all cluster names, or just the managed ones
-/* OPTION 1: */
         Set<String> names;
         if (isClosed()) {
             names = Collections.emptySet();
@@ -195,21 +203,6 @@ public abstract class HazelcastCacheManager
             }
         }
         return Collections.unmodifiableCollection(names);
-        //        return Collections.unmodifiableCollection(caches.keySet());
-/* OPTION 2:*/
-        //TODO see above todo comment for this code block
-        //        Set<String> names;
-        //        if (isClosed()) {
-        //            names = Collections.emptySet();
-        //        } else {
-        //            names = new LinkedHashSet<String>();
-        //            for(String nameWithPrefix:cacheService.getCacheNames()){
-        //                final String name = nameWithPrefix.substring
-        //                             (nameWithPrefix.indexOf(cacheNamePrefix)+cacheNamePrefix.length());
-        //                names.add(name);
-        //            }
-        //        }
-        //        return Collections.unmodifiableCollection(names);
     }
 
     @Override
@@ -223,7 +216,7 @@ public abstract class HazelcastCacheManager
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         final ICache<?, ?> cache = caches.remove(cacheNameWithPrefix);
         if (cache != null) {
-            cache.close();
+            cache.destroy();
         }
         removeCacheConfigFromLocal(cacheNameWithPrefix);
     }
@@ -233,11 +226,23 @@ public abstract class HazelcastCacheManager
 
     @Override
     public void close() {
-        if (!isClosed.compareAndSet(false, true)) {
+        if (isDestroyed.get() || !isClosed.compareAndSet(false, true)) {
             return;
         }
         for (ICache cache : caches.values()) {
             cache.close();
+        }
+        //TODO do we need to clear it
+        //        caches.clear();
+    }
+
+    public void destroy() {
+        if (!isDestroyed.compareAndSet(false, true)) {
+            return;
+        }
+        isClosed.set(true);
+        for (ICache cache : caches.values()) {
+            cache.destroy();
         }
         caches.clear();
     }
