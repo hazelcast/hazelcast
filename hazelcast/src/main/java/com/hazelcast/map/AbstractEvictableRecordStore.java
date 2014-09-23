@@ -1,18 +1,18 @@
 package com.hazelcast.map;
 
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.map.record.Record;
-import com.hazelcast.nio.serialization.Data;
+import static com.hazelcast.map.eviction.EvictionHelper.checkEvictable;
+import static com.hazelcast.map.eviction.EvictionHelper.evictableSize;
+import static com.hazelcast.map.eviction.EvictionHelper.fireEvent;
+import static com.hazelcast.map.eviction.EvictionHelper.removeEvictableRecords;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.eviction.EvictionHelper.checkEvictable;
-import static com.hazelcast.map.eviction.EvictionHelper.evictableSize;
-import static com.hazelcast.map.eviction.EvictionHelper.fireEvent;
-import static com.hazelcast.map.eviction.EvictionHelper.removeEvictableRecords;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.map.record.Record;
+import com.hazelcast.nio.serialization.Data;
 
 /**
  * Contains eviction specific functionality.
@@ -192,7 +192,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size() == 0) {
             return;
         }
-        if ( shouldEvict(now) ) {
+        if (shouldEvict(now)) {
             removeEvictables(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;

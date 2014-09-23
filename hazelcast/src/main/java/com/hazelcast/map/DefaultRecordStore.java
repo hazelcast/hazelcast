@@ -16,7 +16,17 @@
 
 package com.hazelcast.map;
 
-import java.util.*;
+
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
@@ -846,8 +856,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
         final long now = getNow();
 
-        if ( shouldEvict(now) ) {
-            return null; // record store is already full
+        if (shouldEvict(now)) {
+            return null;
         }
 
         markRecordStoreExpirable(ttl);
