@@ -192,7 +192,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size() == 0) {
             return;
         }
-        if ( shouldEvict(now) ) {
+        if (shouldEvict(now)) {
             removeEvictables(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
