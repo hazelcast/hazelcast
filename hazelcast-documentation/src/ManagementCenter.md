@@ -10,9 +10,8 @@ Hazelcast Management Center enables you to monitor and manage your nodes running
 
 #### Installation
 
-There are two choices to install Hazelcast Management Center. Either you will deploy `mancenter`-*version*`.war` application into your Java application server / container or start Hazelcast Management Center directly from command line
-then tell Hazelcast nodes to talk to that web application. That means, your Hazelcast nodes should know the URL of `mancenter` application before they start.
-
+There are two options for installing Hazelcast Management Center. You can either deploy `mancenter`-*version*`.war` application into your Java application server/container or start Hazelcast Management Center directly from the command line
+and then have the Hazelcast nodes communicate with that web application. That means, your Hazelcast nodes should know the URL of `mancenter` application before they start.
 
 
 
@@ -21,16 +20,19 @@ Here are the steps:
 -   Download the latest Hazelcast ZIP from [hazelcast.org](http://www.hazelcast.org/download/).
 
 -   ZIP contains `mancenter`-*version*`.war` file.
-    - You can directly start `mancenter`-*version*`.war` file from command line
+    - You can directly start `mancenter`-*version*`.war` file from the command line:
+    
         ```
         java -jar mancenter-*version*.war 8080 mancenter
         ```
-      The above command will start Hazelcast Management Center on port 8080 with context root 'mancenter' (`http://localhost:8080/mancenter`)
-    - Or deploy it to your web server (Tomcat, Jetty, etc.). Let us say it is running at `http://localhost:8080/mancenter`.
+        
+      The above command will start Hazelcast Management Center on port 8080 with context root 'mancenter' (`http://localhost:8080/mancenter`).
+      
+    - Or, you can deploy it to your web server (Tomcat, Jetty, etc.). Let us say it is running at `http://localhost:8080/mancenter`.
 
--   After above steps make sure that `http://localhost:8080/mancenter` is up.
+-   After above steps are performed, make sure that `http://localhost:8080/mancenter` is up.
 
--   Configure your Hazelcast nodes by adding the URL of your web app to your `hazelcast.xml`. Hazelcast nodes will send their states to this URL.
+-   Configure your Hazelcast nodes by adding the URL of your web application to your `hazelcast.xml`. Hazelcast nodes will send their states to this URL.
 
 ```xml
 <management-center enabled="true">http://localhost:8080/mancenter</management-center>
