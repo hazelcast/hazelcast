@@ -22,7 +22,7 @@ import com.hazelcast.spi.NodeEngine;
 /**
  * distributed object for cache, it will be used as a delegate in CacheProxy
  */
-public class CacheDistributedObject
+class CacheDistributedObject
         extends AbstractDistributedObject<CacheService> {
 
     private String name;
