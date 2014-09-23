@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl;
 
+import java.util.*;
+
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
@@ -28,17 +30,6 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
-
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Default implementation of record-store.
@@ -857,7 +848,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public Object putFromLoad(Data key, Object value, long ttl) {
+
         final long now = getNow();
+
+        if ( shouldEvict(now) ) {
+            return null; // record store is already full
+        }
+
         markRecordStoreExpirable(ttl);
 
         Record record = getRecordOrNull(key, false);
@@ -876,7 +873,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateTtl(record, ttl);
         }
         saveIndex(record);
-        evictEntries(now, false);
+
         return oldValue;
     }
 

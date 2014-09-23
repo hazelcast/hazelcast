@@ -1,18 +1,18 @@
 package com.hazelcast.map.impl;
 
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.nio.serialization.Data;
+import static com.hazelcast.map.impl.eviction.EvictionHelper.checkEvictable;
+import static com.hazelcast.map.impl.eviction.EvictionHelper.evictableSize;
+import static com.hazelcast.map.impl.eviction.EvictionHelper.fireEvent;
+import static com.hazelcast.map.impl.eviction.EvictionHelper.removeEvictableRecords;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.impl.eviction.EvictionHelper.checkEvictable;
-import static com.hazelcast.map.impl.eviction.EvictionHelper.evictableSize;
-import static com.hazelcast.map.impl.eviction.EvictionHelper.fireEvent;
-import static com.hazelcast.map.impl.eviction.EvictionHelper.removeEvictableRecords;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.nio.serialization.Data;
 
 /**
  * Contains eviction specific functionality.
@@ -192,11 +192,15 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size() == 0) {
             return;
         }
-        if (inEvictableTimeWindow(now) && isEvictable()) {
+        if ( shouldEvict(now) ) {
             removeEvictables(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
         }
+    }
+
+    protected boolean shouldEvict(long now) {
+        return inEvictableTimeWindow(now) && isEvictable();
     }
 
     private void removeEvictables(boolean backup) {
