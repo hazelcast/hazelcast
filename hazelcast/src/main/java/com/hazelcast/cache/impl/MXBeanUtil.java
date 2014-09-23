@@ -18,9 +18,9 @@ package com.hazelcast.cache.impl;
 
 import javax.cache.CacheException;
 import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import java.lang.management.ManagementFactory;
 import java.util.Set;
 
 /**
@@ -30,17 +30,16 @@ import java.util.Set;
 public final class MXBeanUtil {
 
     //ensure everything gets put in one MBeanServer
-    private static MBeanServer mBeanServer = MBeanServerFactory.createMBeanServer();
+    private static MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
-    //    private static MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
     private MXBeanUtil() {
     }
 
-    public static void registerCacheObject(Object mxbean, String uri, String name, boolean stats) {
+    public static void registerCacheObject(Object mxbean, String cacheManagerName, String name, boolean stats) {
         //these can change during runtime, so always look it up
-        ObjectName registeredObjectName = calculateObjectName(uri, name, stats);
+        ObjectName registeredObjectName = calculateObjectName(cacheManagerName, name, stats);
         try {
-            if (!isRegistered(uri, name, stats)) {
+            if (!isRegistered(cacheManagerName, name, stats)) {
                 mBeanServer.registerMBean(mxbean, registeredObjectName);
             }
         } catch (Exception e) {
@@ -50,19 +49,19 @@ public final class MXBeanUtil {
         }
     }
 
-    static boolean isRegistered(String uri, String name, boolean stats) {
+    static boolean isRegistered(String cacheManagerName, String name, boolean stats) {
         Set<ObjectName> registeredObjectNames = null;
 
-        ObjectName objectName = calculateObjectName(uri, name, stats);
+        ObjectName objectName = calculateObjectName(cacheManagerName, name, stats);
         registeredObjectNames = mBeanServer.queryNames(objectName, null);
 
         return !registeredObjectNames.isEmpty();
     }
 
-    public static void unregisterCacheObject(String uri, String name, boolean stats) {
+    public static void unregisterCacheObject(String cacheManagerName, String name, boolean stats) {
         Set<ObjectName> registeredObjectNames = null;
 
-        ObjectName objectName = calculateObjectName(uri, name, stats);
+        ObjectName objectName = calculateObjectName(cacheManagerName, name, stats);
         registeredObjectNames = mBeanServer.queryNames(objectName, null);
 
         //should just be one
@@ -80,18 +79,18 @@ public final class MXBeanUtil {
      * Creates an object name using the scheme
      * "javax.cache:type=Cache&lt;Statistics|Configuration&gt;,name=&lt;cacheName&gt;"
      */
-    public static ObjectName calculateObjectName(String uri, String name, boolean stats) {
-        String cacheManagerName = mbeanSafe(uri);
+    public static ObjectName calculateObjectName(String cacheManagerName, String name, boolean stats) {
+        String cacheManagerNameSafe = mbeanSafe(cacheManagerName);
         String cacheName = mbeanSafe(name);
 
         try {
             String objectNameType = stats ? "Statistics" : "Configuration";
             return new ObjectName(
-                    "javax.cache:type=Cache" + objectNameType + ",CacheManager=" + cacheManagerName + ",Cache=" + cacheName);
+                    "javax.cache:type=Cache" + objectNameType + ",CacheManager=" + cacheManagerNameSafe + ",Cache=" + cacheName);
         } catch (MalformedObjectNameException e) {
             throw new CacheException(
-                    "Illegal ObjectName for Management Bean. " + "CacheManager=[" + cacheManagerName + "], Cache=[" + cacheName
-                            + "]", e);
+                    "Illegal ObjectName for Management Bean. " + "CacheManager=[" + cacheManagerNameSafe + "], Cache=["
+                            + cacheName + "]", e);
         }
     }
 

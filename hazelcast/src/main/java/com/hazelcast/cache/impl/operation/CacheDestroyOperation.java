@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -29,25 +28,21 @@ import java.io.IOException;
 /**
  * Cache CreateConfig Operation
  */
-public class CacheCreateConfigOperation
+public class CacheDestroyOperation
         extends AbstractNamedOperation
         implements IdentifiedDataSerializable {
 
-    private CacheConfig config;
-    private boolean isLocal;
+    boolean isLocal;
 
-    private transient Object response;
-
-    public CacheCreateConfigOperation() {
+    public CacheDestroyOperation() {
     }
 
-    public CacheCreateConfigOperation(CacheConfig config) {
-        this(config, false);
+    public CacheDestroyOperation(String name) {
+        this(name, false);
     }
 
-    public CacheCreateConfigOperation(CacheConfig config, boolean isLocal) {
-        super(config.getNameWithPrefix());
-        this.config = config;
+    public CacheDestroyOperation(String name, boolean isLocal) {
+        super(name);
         this.isLocal = isLocal;
     }
 
@@ -55,24 +50,23 @@ public class CacheCreateConfigOperation
     public void run()
             throws Exception {
         final CacheService service = getService();
-        response = service.createCacheConfigIfAbsent(config, isLocal);
+        service.destroyCache(name, isLocal, getCallerUuid());
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
+    public int getId() {
+        return CacheDataSerializerHook.DESTROY_CACHE;
     }
 
     @Override
-    public Object getResponse() {
-        return response;
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeObject(config);
         out.writeBoolean(isLocal);
     }
 
@@ -80,18 +74,7 @@ public class CacheCreateConfigOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        config = in.readObject();
         isLocal = in.readBoolean();
-    }
-
-    @Override
-    public int getId() {
-        return CacheDataSerializerHook.CREATE_CONFIG;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return CacheDataSerializerHook.F_ID;
     }
 
 }

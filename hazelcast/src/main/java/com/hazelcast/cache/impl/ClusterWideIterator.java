@@ -16,12 +16,10 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
@@ -38,20 +36,19 @@ public class ClusterWideIterator<K, V>
         extends AbstractClusterWideIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
-    private final CacheDistributedObject cacheDistributedObject;
     private final SerializationService serializationService;
+    private final CacheProxy<K, V> cacheProxy;
 
-    public ClusterWideIterator(ICache<K, V> cache, CacheDistributedObject cacheDistributedObject) {
-        super(cache, cacheDistributedObject.getNodeEngine().getPartitionService().getPartitionCount());
-        this.cacheDistributedObject = cacheDistributedObject;
-        final NodeEngine nodeEngine = cacheDistributedObject.getNodeEngine();
-        this.serializationService = nodeEngine.getSerializationService();
+    public ClusterWideIterator(CacheProxy<K, V> cache) {
+        super(cache, cache.getNodeEngine().getPartitionService().getPartitionCount());
+        this.cacheProxy = cache;
+        this.serializationService = cache.getNodeEngine().getSerializationService();
         advance();
     }
 
     protected CacheKeyIteratorResult fetch() {
-        final Operation op = new CacheKeyIteratorOperation(getDistributedObject().getName(), lastTableIndex, fetchSize);
-        final OperationService operationService = getDistributedObject().getNodeEngine().getOperationService();
+        final Operation op = new CacheKeyIteratorOperation(cacheProxy.nameWithPrefix, lastTableIndex, fetchSize);
+        final OperationService operationService = cacheProxy.getNodeEngine().getOperationService();
         final InternalCompletableFuture<CacheKeyIteratorResult> f = operationService
                 .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionIndex);
         return f.getSafely();
@@ -67,7 +64,4 @@ public class ClusterWideIterator<K, V>
         return serializationService.toObject(data);
     }
 
-    private CacheDistributedObject getDistributedObject() {
-        return cacheDistributedObject;
-    }
 }

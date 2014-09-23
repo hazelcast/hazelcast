@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache;
+package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheProxyUtil;
@@ -24,13 +24,12 @@ import com.hazelcast.cache.impl.client.CacheCreateConfigRequest;
 import com.hazelcast.cache.impl.client.CacheGetConfigRequest;
 import com.hazelcast.cache.impl.client.CacheManagementConfigRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.proxy.ClientCacheDistributedObject;
-import com.hazelcast.client.proxy.ClientCacheProxy;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
@@ -60,40 +59,20 @@ public final class HazelcastClientCacheManager
         final ClientCacheDistributedObject setupRef = hazelcastInstance
                 .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         this.clientContext = setupRef.getClientContext();
-        logger = clientContext.getHazelcastInstance().getLoggingService().getLogger(getClass());
+        logger = Logger.getLogger(getClass());
     }
 
     @Override
     public void enableManagement(String cacheName, boolean enabled) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException();
-        }
-        final ClientInvocationService invocationService = clientContext.getInvocationService();
-        final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
-        final Collection<Future> futures = new ArrayList<Future>();
-        for (MemberImpl member : members) {
-            try {
-                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), false,
-                        enabled, member.getAddress());
-                final Future future = invocationService.invokeOnTarget(request, member.getAddress());
-                futures.add(future);
-            } catch (Exception e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
-        }
-        //make sure all configs are created
-        try {
-            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            logger.warning(e);
-        }
+        enableStatisticManagementOnNodes(cacheName, false, enabled);
     }
 
     @Override
     public void enableStatistics(String cacheName, boolean enabled) {
+        enableStatisticManagementOnNodes(cacheName, true, enabled);
+    }
+
+    private void enableStatisticManagementOnNodes(String cacheName, boolean statOrMan, boolean enabled) {
         if (isClosed()) {
             throw new IllegalStateException();
         }
@@ -105,8 +84,8 @@ public final class HazelcastClientCacheManager
         final Collection<Future> futures = new ArrayList<Future>();
         for (MemberImpl member : members) {
             try {
-                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName), true,
-                        enabled, member.getAddress());
+                CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName),
+                        statOrMan, enabled, member.getAddress());
                 final Future future = invocationService.invokeOnTarget(request, member.getAddress());
                 futures.add(future);
             } catch (Exception e) {
@@ -119,6 +98,7 @@ public final class HazelcastClientCacheManager
         } catch (TimeoutException e) {
             logger.warning(e);
         }
+
     }
 
     @Override
@@ -150,9 +130,7 @@ public final class HazelcastClientCacheManager
 
     @Override
     protected <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
-        final ClientCacheDistributedObject cacheDistributedObject = hazelcastInstance
-                .getDistributedObject(CacheService.SERVICE_NAME, cacheConfig.getNameWithPrefix());
-        return new ClientCacheProxy<K, V>(cacheConfig, cacheDistributedObject, this);
+        return new ClientCacheProxy<K, V>(cacheConfig, clientContext, this);
     }
 
     @Override

@@ -73,7 +73,7 @@ public final class CacheReplicationOperation
         //        //migrate CacheConfigs first
         CacheService service = getService();
         for (CacheConfig config : configs) {
-            service.createCacheConfigIfAbsent(config);
+            service.createCacheConfigIfAbsent(config, true);
         }
     }
 

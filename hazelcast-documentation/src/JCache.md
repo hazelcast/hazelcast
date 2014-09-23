@@ -58,7 +58,7 @@ System.out.println(value);//prints 'Hello World'
 
 ## Code Samples
 
-Please see [Hazelcast Code Samples](https://github.com/hazelcast/hazelcast-code-samples) for more examples.
+Please see [Hazelcast JCache Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/jcache/src/main/java/com/hazelcast/examples) for more examples.
 
 
 ## Work In Progress

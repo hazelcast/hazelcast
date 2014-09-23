@@ -115,25 +115,45 @@ public final class CacheProxyUtil {
 
     }
 
-    public static <K, V> void validateConfiguredTypes(CacheConfig cacheConfig, boolean validateValues, K key, V... values)
+    public static <K> void validateConfiguredTypes(CacheConfig cacheConfig, K key)
+            throws ClassCastException {
+        final Class keyType = cacheConfig.getKeyType();
+        validateConfiguredKeyType(keyType, key);
+    }
+
+    public static <K, V> void validateConfiguredTypes(CacheConfig cacheConfig, K key, V value)
             throws ClassCastException {
         final Class keyType = cacheConfig.getKeyType();
         final Class valueType = cacheConfig.getValueType();
+        validateConfiguredKeyType(keyType, key);
+        validateConfiguredValueType(valueType, value);
+    }
+
+    public static <K, V> void validateConfiguredTypes(CacheConfig cacheConfig, K key, V value1, V value2)
+            throws ClassCastException {
+        final Class keyType = cacheConfig.getKeyType();
+        final Class valueType = cacheConfig.getValueType();
+        validateConfiguredKeyType(keyType, key);
+        validateConfiguredValueType(valueType, value1);
+        validateConfiguredValueType(valueType, value2);
+    }
+
+    public static <K> void validateConfiguredKeyType(Class<K> keyType, K key)
+            throws ClassCastException {
         if (Object.class != keyType) {
             //means type checks required
             if (!keyType.isAssignableFrom(key.getClass())) {
                 throw new ClassCastException("Key " + key + "is not assignable to " + keyType);
             }
         }
-        if (!validateValues) {
-            return;
-        }
-        for (V value : values) {
-            if (Object.class != valueType) {
-                //means type checks required
-                if (!valueType.isAssignableFrom(value.getClass())) {
-                    throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
-                }
+    }
+
+    public static <V> void validateConfiguredValueType(Class<V> valueType, V value)
+            throws ClassCastException {
+        if (Object.class != valueType) {
+            //means type checks required
+            if (!valueType.isAssignableFrom(value.getClass())) {
+                throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
             }
         }
     }
