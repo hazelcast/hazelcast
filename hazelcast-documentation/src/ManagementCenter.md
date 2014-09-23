@@ -149,7 +149,7 @@ You can see each node's partition percentages by moving the mouse cursor on the 
 
 ### Caches
 
-You can monitor your caches' metrics by clicking the cache name listed on the left panel under **Caches** menu item. A new tab for monitoring that cache instance is opened on the right, as shown below.
+You can monitor your caches' metrics by clicking the cache name listed on the left panel under **Caches** menu item. Once clicked, a new tab for monitoring that cache instance opens on the right, as shown below.
 
 ![](images/ManCenter-Caches.jpg)
 
@@ -161,7 +161,7 @@ You can navigate through the pages using the buttons placed at the bottom right 
 
 ### Maps
 
-Map instances are listed under the **Maps** menu item on the left. When you click on a map, a new tab for monitoring that map instance is opened on the right, as shown below. In this tab, you can monitor metrics and also re-configure the selected map.
+Map instances are listed under the **Maps** menu item on the left. When you click on a map, a new tab for monitoring that map instance opens on the right, as shown below. In this tab, you can monitor metrics and also re-configure the selected map.
 
 ![](images/MapsHome.jpg)
 
@@ -220,7 +220,7 @@ You can navigate through the pages using the buttons placed at the bottom right 
 
 ### Queues
 
-Using the menu item **Queues**, you can monitor your queues data structure. When you expand this menu item and click on a queue, a new tab for monitoring that queue instance is opened on the right, as shown below.
+Using the menu item **Queues**, you can monitor your queues data structure. When you expand this menu item and click on a queue, a new tab for monitoring that queue instance opens on the right, as shown below.
 
 ![](images/Queues-Home.jpg)
 
@@ -267,7 +267,7 @@ As you know, MultiMap is a specialized map where you can associate a key with mu
 
 
 ### Executors
-Executor instances are listed under the **Executors** menu item on the left. When you click on a executor, a new tab for monitoring that executor instance is opened on the right, as shown below.
+Executor instances are listed under the **Executors** menu item on the left. When you click on a executor, a new tab for monitoring that executor instance opens on the right, as shown below.
 
 ![](images/ExecutorsHome.jpg)
 
@@ -292,7 +292,7 @@ From left to right, this table lists the IP address and port of nodes, counts of
 
 ### Members
 
-This menu item is used to monitor each cluster member (node) and also perform operations like running garbage collection (GC) and taking a thread dump. Once a member is selected from the menu, a new tab for monitoring that member is opened on the right, as shown below.
+This menu item is used to monitor each cluster member (node) and also perform operations like running garbage collection (GC) and taking a thread dump. Once a member is selected from the menu, a new tab for monitoring that member opens on the right, as shown below.
 
 ![](images/MembersHome.jpg)
 
@@ -312,7 +312,7 @@ Besides the aforementioned monitoring charts and windows, there are also operati
 ### Scripting
 
 
-Scripting feature of this tool is used to execute codes on the cluster. You can open this feature as a tab by selecting **Scripting** located at the toolbar on top. Once selected, it is opened as shown below.
+Scripting feature of this tool is used to execute codes on the cluster. You can open this feature as a tab by selecting **Scripting** located at the toolbar on top. Once selected, it opens as shown below.
 
 ![](images/scripting.jpg)
 
