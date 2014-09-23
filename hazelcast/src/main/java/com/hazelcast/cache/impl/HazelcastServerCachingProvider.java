@@ -21,7 +21,6 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 
-import javax.cache.CacheManager;
 import java.net.URI;
 import java.util.Properties;
 
@@ -34,13 +33,14 @@ public final class HazelcastServerCachingProvider
 
     /**
      * Helper method for creating caching provider for testing etc
+     *
      * @param hazelcastInstance
      * @return HazelcastServerCachingProvider
      */
     public static HazelcastServerCachingProvider createCachingProvider(HazelcastInstance hazelcastInstance) {
         final HazelcastServerCachingProvider cachingProvider = new HazelcastServerCachingProvider();
         cachingProvider.hazelcastInstance = hazelcastInstance;
-        return  cachingProvider;
+        return cachingProvider;
     }
 
     private HazelcastInstance initHazelcast() {
@@ -52,7 +52,8 @@ public final class HazelcastServerCachingProvider
     }
 
     @Override
-    protected CacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
+    protected HazelcastServerCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader,
+                                                                      Properties managerProperties) {
         if (hazelcastInstance == null) {
             //initHazelcast always return a singleton instance
             hazelcastInstance = initHazelcast();

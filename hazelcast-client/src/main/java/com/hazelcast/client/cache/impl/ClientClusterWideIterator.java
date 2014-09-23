@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache;
+package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.AbstractClusterWideIterator;
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.cache.impl.client.CacheIterateRequest;
-import com.hazelcast.client.proxy.ClientCacheProxy;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
@@ -38,17 +37,19 @@ public class ClientClusterWideIterator<K, V>
         extends AbstractClusterWideIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
+    private ClientCacheProxy<K, V> cacheProxy;
     private ClientContext context;
 
     public ClientClusterWideIterator(ClientCacheProxy<K, V> cacheProxy, ClientContext context) {
         super(cacheProxy, context.getPartitionService().getPartitionCount());
+        this.cacheProxy = cacheProxy;
         this.context = context;
         advance();
     }
 
     protected CacheKeyIteratorResult fetch() {
-        CacheIterateRequest request = new CacheIterateRequest(getCacheProxy().getDistributedObjectName(), partitionIndex,
-                lastTableIndex, fetchSize);
+        CacheIterateRequest request = new CacheIterateRequest(cacheProxy.getNameWithPrefix(), partitionIndex, lastTableIndex,
+                fetchSize);
         try {
             final ICompletableFuture<Object> f = context.getInvocationService().invokeOnRandomTarget(request);
             return toObject(f.get());
@@ -67,7 +68,4 @@ public class ClientClusterWideIterator<K, V>
         return context.getSerializationService().toObject(data);
     }
 
-    private ClientCacheProxy<K, V> getCacheProxy() {
-        return (ClientCacheProxy) cache;
-    }
 }

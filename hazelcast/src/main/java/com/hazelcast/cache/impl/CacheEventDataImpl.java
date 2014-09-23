@@ -92,4 +92,14 @@ public class CacheEventDataImpl
         dataOldValue = IOUtil.readNullableData(in);
         isOldValueAvailable = in.readBoolean();
     }
+
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.CACHE_EVENT_DATA;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
+    }
 }

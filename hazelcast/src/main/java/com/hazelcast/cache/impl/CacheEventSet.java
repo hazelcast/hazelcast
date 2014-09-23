@@ -18,14 +18,14 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
 public class CacheEventSet
-        implements DataSerializable {
+        implements IdentifiedDataSerializable {
 
     private CacheEventType eventType;
     private Set<CacheEventData> events;
@@ -77,5 +77,15 @@ public class CacheEventSet
             CacheEventData ced = in.readObject();
             events.add(ced);
         }
+    }
+
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.CACHE_EVENT_DATA_SET;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
     }
 }
