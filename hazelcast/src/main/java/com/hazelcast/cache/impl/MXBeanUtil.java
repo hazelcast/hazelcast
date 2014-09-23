@@ -30,7 +30,6 @@ import java.util.Set;
 public final class MXBeanUtil {
 
     //ensure everything gets put in one MBeanServer
-//    private static MBeanServer mBeanServer = MBeanServerFactory.createMBeanServer();
     private static MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
     private MXBeanUtil() {
