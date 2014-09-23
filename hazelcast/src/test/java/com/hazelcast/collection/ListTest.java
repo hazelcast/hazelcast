@@ -308,9 +308,10 @@ public class ListTest extends HazelcastTestSupport {
 
     @Test
     public void testMigrationSerializationNotFails_whenTransactionsAreUsed() throws Exception {
-        System.setProperty("hazelcast.partition.count", "2");
+        Config config = new Config();
+        config.setProperty("hazelcast.partition.count" , "2");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         String listName = randomString();
         TransactionContext tr = instance1.newTransactionContext();
         tr.beginTransaction();
@@ -319,7 +320,7 @@ public class ListTest extends HazelcastTestSupport {
             list.add(i);
         }
         tr.commitTransaction();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         Member owner = instance1.getPartitionService().getPartition(listName).getOwner();
         HazelcastInstance aliveInstance;
         if (instance1.getCluster().getLocalMember().equals(owner)) {
