@@ -30,10 +30,6 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         deserialized.fromJson(json);
 
         assertNotNull(deserialized);
-        assertEquals(state.getMemberList(), deserialized.getMemberList());
-        assertEquals(state.getClusterName(), deserialized.getClusterName());
-        assertEquals(state.getInstanceNames(), deserialized.getInstanceNames());
-        assertEquals(state.getMaster(), deserialized.getMaster());
-        assertEquals(state.getMemberState(), deserialized.getMemberState());
+        assertEquals(state, deserialized);
     }
 }
