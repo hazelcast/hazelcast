@@ -87,6 +87,7 @@ Home page includes a menu on the left which lists the distributed data structure
 
 Menu items can be expanded/collapsed by clicking on them. Below is the list of menu items with the links to their explanations.
 
+-   [Caches](#caches)
 -	[Maps](#maps)
 -	[Queues](#queues)
 -	[Topics](#topics)
@@ -145,6 +146,18 @@ This pie chart shows what percentage of partitions each node has, as shown below
 You can see each node's partition percentages by moving the mouse cursor on the chart. In the above example, you can see the node "127.0.0.1:5708" has 5.64% of the total partition count (which is 271 by default and configurable, please see [Advanced Configuration Properties](http://hazelcast.org/docs/latest/manual/html-single/hazelcast-documentation.html#advanced-configuration-properties)).
 
 ---
+
+### Caches
+
+You can monitor your caches' metrics by clicking the cache name listed on the left panel under **Caches** menu item. A new tab for monitoring that cache instance is opened on the right, as shown below.
+
+![](images/ManCenter-Caches.jpg)
+
+On top of the page, there are four charts to monitor the **Gets**, **Puts**, **Removals** and **Evictions** in real-time. For all charts' X-axis shows the current system time and a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart.
+
+Under these charts, there is Cache Statistics Data Table. From left to right, this table lists the IP addresses and ports of each node, get, put, removal, eviction, hit and miss count per second in real-time.
+
+You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
 ### Maps
 
