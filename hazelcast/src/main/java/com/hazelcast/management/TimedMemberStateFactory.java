@@ -63,10 +63,12 @@ public class TimedMemberStateFactory {
     private static final ILogger LOGGER = Logger.getLogger(TimedMemberStateFactory.class);
     private final HazelcastInstanceImpl instance;
     private final int maxVisibleInstanceCount;
+    private final boolean cacheServiceEnabled;
 
     public TimedMemberStateFactory(HazelcastInstanceImpl instance) {
         this.instance = instance;
         maxVisibleInstanceCount = instance.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
+        cacheServiceEnabled = instance.node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
     }
 
     public TimedMemberState createTimedMemberState() {
@@ -246,12 +248,13 @@ public class TimedMemberStateFactory {
             }
         }
 
-        final CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
-        final CacheService cacheService = setupRef.getService();
-        for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
-            if (cacheConfig.isStatisticsEnabled()) {
-                CacheStatistics statistics = cacheService.getStatistics(cacheConfig.getNameWithPrefix());
-                count = handleCache(memberState, count, cacheConfig, statistics);
+        if (cacheServiceEnabled) {
+            final CacheService cacheService = getCacheService();
+            for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
+                if (cacheConfig.isStatisticsEnabled()) {
+                    CacheStatistics statistics = cacheService.getStatistics(cacheConfig.getNameWithPrefix());
+                    count = handleCache(memberState, count, cacheConfig, statistics);
+                }
             }
         }
     }
@@ -334,11 +337,11 @@ public class TimedMemberStateFactory {
             }
         }
 
-        final CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
-        final CacheService cacheService = setupRef.getService();
-        for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
-            if (cacheConfig.isStatisticsEnabled()) {
-                count = collectCacheName(setLongInstanceNames, count, cacheConfig);
+        if (cacheServiceEnabled) {
+            for (CacheConfig cacheConfig : getCacheService().getCacheConfigs()) {
+                if (cacheConfig.isStatisticsEnabled()) {
+                    count = collectCacheName(setLongInstanceNames, count, cacheConfig);
+                }
             }
         }
 
@@ -392,5 +395,10 @@ public class TimedMemberStateFactory {
             return count + 1;
         }
         return count;
+    }
+
+    private CacheService getCacheService() {
+        final CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
+        return setupRef.getService();
     }
 }
