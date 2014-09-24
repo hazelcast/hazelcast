@@ -247,6 +247,7 @@ class ClusterListenerThread extends Thread {
             for (InetSocketAddress isa : socketAddresses) {
                 Address address = new Address(isa);
                 triedAddresses.add(address);
+                LOGGER.finest("Trying to connect to " + address);
                 try {
                     final ClientConnection connection = connectionManager.ownerConnection(address);
                     clusterService.fireConnectionEvent(false);
