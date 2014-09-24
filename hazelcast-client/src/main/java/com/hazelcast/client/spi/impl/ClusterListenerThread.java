@@ -247,7 +247,7 @@ class ClusterListenerThread extends Thread {
                     return connection;
                 } catch (IOException e) {
                     lastError = e;
-                    LOGGER.finest("IO error during initial connection to "+address, e);
+                    LOGGER.finest("IO error during initial connection to " + address, e);
                 } catch (AuthenticationException e) {
                     lastError = e;
                     LOGGER.warning("Authentication error on " + address, e);
@@ -259,7 +259,7 @@ class ClusterListenerThread extends Thread {
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             LOGGER.warning(
                     String.format("Unable to get alive cluster connection,"
-                            + " try in %d ms later, attempt %d of %d.",
+                                    + " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
             if (remainingTime > 0) {
@@ -270,7 +270,7 @@ class ClusterListenerThread extends Thread {
                 }
             }
         }
-        throw new IllegalStateException("Unable to connect to any address in the config! "+socketAddresses, lastError);
+        throw new IllegalStateException("Unable to connect to any address in the config! " + socketAddresses, lastError);
     }
 }
 
