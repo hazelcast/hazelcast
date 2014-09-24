@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -236,11 +237,13 @@ class ClusterListenerThread extends Thread {
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
         int attempt = 0;
         Throwable lastError = null;
-        final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
+        Set<Address> triedAddresses = new HashSet<Address>();
         while (true) {
             final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
+            final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
             for (InetSocketAddress isa : socketAddresses) {
                 Address address = new Address(isa);
+                triedAddresses.add(address);
                 try {
                     final ClientConnection connection = connectionManager.ownerConnection(address);
                     clusterService.fireConnectionEvent(false);
@@ -270,7 +273,8 @@ class ClusterListenerThread extends Thread {
                 }
             }
         }
-        throw new IllegalStateException("Unable to connect to any address in the config! " + socketAddresses, lastError);
+        throw new IllegalStateException("Unable to connect to any address in the config! The following addresses were tried:"
+                + triedAddresses, lastError);
     }
 }
 
