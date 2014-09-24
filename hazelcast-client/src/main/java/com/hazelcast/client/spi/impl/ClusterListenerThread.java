@@ -236,9 +236,9 @@ class ClusterListenerThread extends Thread {
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
         int attempt = 0;
         Throwable lastError = null;
+        final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
         while (true) {
             final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
-            final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
             for (InetSocketAddress isa : socketAddresses) {
                 Address address = new Address(isa);
                 try {
@@ -247,7 +247,7 @@ class ClusterListenerThread extends Thread {
                     return connection;
                 } catch (IOException e) {
                     lastError = e;
-                    LOGGER.finest("IO error during initial connection...", e);
+                    LOGGER.finest("IO error during initial connection to "+address, e);
                 } catch (AuthenticationException e) {
                     lastError = e;
                     LOGGER.warning("Authentication error on " + address, e);
@@ -270,7 +270,7 @@ class ClusterListenerThread extends Thread {
                 }
             }
         }
-        throw new IllegalStateException("Unable to connect to any address in the config!", lastError);
+        throw new IllegalStateException("Unable to connect to any address in the config! "+socketAddresses, lastError);
     }
 }
 
