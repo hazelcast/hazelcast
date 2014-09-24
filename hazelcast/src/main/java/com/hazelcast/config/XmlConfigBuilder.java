@@ -27,14 +27,6 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -45,8 +37,16 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.*;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -64,6 +64,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private File configurationFile;
     private URL configurationUrl;
     private Properties properties = System.getProperties();
+    private Set<String> occurrenceSet = new HashSet<String>();
 
     /**
      * Constructs a XmlConfigBuilder that reads from the provided file.
@@ -227,52 +228,60 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handleConfig(final Element docElement) throws Exception {
         for (org.w3c.dom.Node node : new IterableNodeList(docElement.getChildNodes())) {
             final String nodeName = cleanNodeName(node.getNodeName());
-            if ("network".equals(nodeName)) {
+            if (occurrenceSet.contains(nodeName)) {
+                throw new IllegalStateException("Duplicate '" + nodeName +"' definition found in XML configuration. ");
+            }
+            if (NETWORK.isEqual(nodeName)) {
                 handleNetwork(node);
-            } else if ("group".equals(nodeName)) {
+            } else if (GROUP.isEqual(nodeName)) {
                 handleGroup(node);
-            } else if ("properties".equals(nodeName)) {
+            } else if (PROPERTIES.isEqual(nodeName)) {
                 fillProperties(node, config.getProperties());
-            } else if ("wan-replication".equals(nodeName)) {
+            } else if (WAN_REPLICATION.isEqual(nodeName)) {
                 handleWanReplication(node);
-            } else if ("executor-service".equals(nodeName)) {
+            } else if (EXECUTOR_SERVICE.isEqual(nodeName)) {
                 handleExecutor(node);
-            } else if ("services".equals(nodeName)) {
+            } else if (SERVICES.isEqual(nodeName)) {
                 handleServices(node);
-            } else if ("queue".equals(nodeName)) {
+            } else if (QUEUE.isEqual(nodeName)) {
                 handleQueue(node);
-            } else if ("map".equals(nodeName)) {
+            } else if (MAP.isEqual(nodeName)) {
                 handleMap(node);
-            } else if ("multimap".equals(nodeName)) {
+            } else if (MULTIMAP.isEqual(nodeName)) {
                 handleMultiMap(node);
-            } else if ("replicatedmap".equals(nodeName)) {
+            } else if (REPLICATED_MAP.isEqual(nodeName)) {
                 handleReplicatedMap(node);
-            } else if ("list".equals(nodeName)) {
+            } else if (LIST.isEqual(nodeName)) {
                 handleList(node);
-            } else if ("set".equals(nodeName)) {
+            } else if (SET.isEqual(nodeName)) {
                 handleSet(node);
-            } else if ("topic".equals(nodeName)) {
+            } else if (TOPIC.isEqual(nodeName)) {
                 handleTopic(node);
-            } else if ("off-heap-memory".equals(nodeName)) {
+            } else if (OFF_HEAP_MEMORY.isEqual(nodeName)) {
                 fillOffHeapMemoryConfig(node, config.getOffHeapMemoryConfig());
-            } else if ("jobtracker".equals(nodeName)) {
+            } else if (JOB_TRACKER.isEqual(nodeName)) {
                 handleJobTracker(node);
-            } else if ("semaphore".equals(nodeName)) {
+            } else if (SEMAPHORE.isEqual(nodeName)) {
                 handleSemaphore(node);
-            } else if ("listeners".equals(nodeName)) {
+            } else if (LISTENERS.isEqual(nodeName)) {
                 handleListeners(node);
-            } else if ("partition-group".equals(nodeName)) {
+            } else if (PARTITION_GROUP.isEqual(nodeName)) {
                 handlePartitionGroup(node);
-            } else if ("serialization".equals(nodeName)) {
+            } else if (SERIALIZATION.isEqual(nodeName)) {
                 handleSerialization(node);
-            } else if ("security".equals(nodeName)) {
+            } else if (SECURITY.isEqual(nodeName)) {
                 handleSecurity(node);
-            } else if ("member-attributes".equals(nodeName)) {
+            } else if (MEMBER_ATTRIBUTES.isEqual(nodeName)) {
                 handleMemberAttributes(node);
-            } else if ("license-key".equals(nodeName)) {
+            } else if (LICENSE_KEY.isEqual(nodeName)) {
                 config.setLicenseKey(getTextContent(node));
-            } else if ("management-center".equals(nodeName)) {
+            } else if (MANAGEMENT_CENTER.isEqual(nodeName)) {
                 handleManagementCenterConfig(node);
+            } else {
+                continue;
+            }
+            if (!canOccurMultipleTimes(nodeName)) {
+                occurrenceSet.add(nodeName);
             }
         }
     }
@@ -1358,4 +1367,54 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
     }
+
+    enum Elements {
+        IMPORT("import", true),
+        GROUP("group", false),
+        LICENSE_KEY("license-key", false),
+        MANAGEMENT_CENTER("management-center", false),
+        PROPERTIES("properties", false),
+        WAN_REPLICATION("wan-replication", true),
+        NETWORK("network", false),
+        PARTITION_GROUP("partition-group", false),
+        EXECUTOR_SERVICE("executor-service", true),
+        QUEUE("queue", true),
+        MAP("map", true),
+        MULTIMAP("multimap", true),
+        REPLICATED_MAP("replicatedmap", true),
+        LIST("list", true),
+        SET("set", true),
+        TOPIC("topic", true),
+        JOB_TRACKER("jobtracker", true),
+        SEMAPHORE("semaphore", true),
+        LISTENERS("listeners", false),
+        SERIALIZATION("serialization", false),
+        SERVICES("services", false),
+        SECURITY("security", false),
+        MEMBER_ATTRIBUTES("member-attributes", false),
+        OFF_HEAP_MEMORY("off-heap-memory", false);
+
+        private final String name;
+        private final boolean multipleOccurance;
+
+        Elements(String name, boolean multipleOccurance) {
+            this.name = name;
+            this.multipleOccurance = multipleOccurance;
+        }
+
+        public static boolean canOccurMultipleTimes(String name){
+            for(Elements element : values()){
+                if(name.equals(element.name)){
+                    return element.multipleOccurance;
+                }
+            }
+            return false;
+        }
+
+        public boolean isEqual(String name){
+            return this.name.equals(name);
+        }
+
+    }
+
 }

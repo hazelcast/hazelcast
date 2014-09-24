@@ -569,6 +569,192 @@ public class XMLConfigBuilderTest {
         assertTrue(o instanceof DummyMapStore);
     }
 
+    @Test(expected = HazelcastException.class)
+    public void testXmlDeniesDuplicateNetworkConfig() throws Exception {
+        String xml = "<hazelcast>\n" +
+                "    <network>\n" +
+                "        <join>\n" +
+                "            <tcp-ip enabled=\"true\"/>\n" +
+                "        </join>\n" +
+                "    </network>\n" +
+                "    <network>\n" +
+                "        <join>\n" +
+                "            <tcp-ip enabled=\"false\"/>\n" +
+                "        </join>\n" +
+                "    </network>\n" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testXmlDeniesDuplicateGroupConfig() throws Exception {
+        String xml = "<hazelcast>\n" +
+                "    <group>\n" +
+                "        <name>foobar</name>\n" +
+                "        <password>dev-pass</password>\n" +
+                "    </group>" +
+                "    <group>\n" +
+                "        <name>foobar</name>\n" +
+                "        <password>dev-pass</password>\n" +
+                "    </group>" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+    @Test(expected = HazelcastException.class)
+    public void testXmlDeniesDuplicateLicenseKeyConfig() throws Exception {
+        String xml = "<hazelcast>\n" +
+                "    <license-key>foo</license-key>" +
+                "    <license-key>bar</license-key>" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+    @Test(expected = HazelcastException.class)
+    public void testXmlDeniesDuplicatePropertiesConfig() throws Exception {
+        String xml = "<hazelcast>\n" +
+                "    <properties>\n" +
+                "        <property>foo</property>\n" +
+                "    </properties>" +
+                "    <properties>\n" +
+                "        <property>bar</property>\n" +
+                "    </properties>" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+    @Test(expected = HazelcastException.class)
+    public void testXmlDeniesDuplicatePartitionGroupConfig() throws Exception {
+        String xml = "<hazelcast>\n" +
+                "   <partition-group>\n" +
+                "      <member-group>\n" +
+                "          <interface>foo</interface>\n" +
+                "      </member-group>\n" +
+                "   </partition-group>\n" +
+                "   <partition-group>\n" +
+                "      <member-group>\n" +
+                "          <interface>bar</interface>\n" +
+                "      </member-group>\n" +
+                "   </partition-group>\n" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+    @Test(expected = HazelcastException.class)
+    public void testXmlDeniesDuplicateListenersConfig() throws Exception {
+        String xml = "<hazelcast>\n" +
+                "   <listeners>" +
+                "        <listener>foo</listener>\n\n" +
+                "   </listeners>\n" +
+                "   <listeners>" +
+                "        <listener>bar</listener>\n\n" +
+                "   </listeners>\n" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testXmlDeniesDuplicateSerializationConfig() throws Exception {
+        String xml = "<hazelcast>\n" +
+                "       <serialization>\n" +
+                "        <portable-version>0</portable-version>\n" +
+                "        <data-serializable-factories>\n" +
+                "            <data-serializable-factory factory-id=\"1\">com.hazelcast.examples.DataSerializableFactory\n" +
+                "            </data-serializable-factory>\n" +
+                "        </data-serializable-factories>\n" +
+                "        <portable-factories>\n" +
+                "            <portable-factory factory-id=\"1\">com.hazelcast.examples.PortableFactory</portable-factory>\n" +
+                "        </portable-factories>\n" +
+                "        <serializers>\n" +
+                "            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>\n" +
+                "            <serializer type-class=\"com.hazelcast.examples.DummyType\" class-name=\"com.hazelcast.examples.SerializerFactory\"/>\n" +
+                "        </serializers>\n" +
+                "        <check-class-def-errors>true</check-class-def-errors>\n" +
+                "    </serialization>\n <serialization>\n" +
+                "        <portable-version>0</portable-version>\n" +
+                "        <data-serializable-factories>\n" +
+                "            <data-serializable-factory factory-id=\"1\">com.hazelcast.examples.DataSerializableFactory\n" +
+                "            </data-serializable-factory>\n" +
+                "        </data-serializable-factories>\n" +
+                "        <portable-factories>\n" +
+                "            <portable-factory factory-id=\"1\">com.hazelcast.examples.PortableFactory</portable-factory>\n" +
+                "        </portable-factories>\n" +
+                "        <serializers>\n" +
+                "            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>\n" +
+                "            <serializer type-class=\"com.hazelcast.examples.DummyType\" class-name=\"com.hazelcast.examples.SerializerFactory\"/>\n" +
+                "        </serializers>\n" +
+                "        <check-class-def-errors>true</check-class-def-errors>\n" +
+                "    </serialization>\n" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testXmlDeniesDuplicateServicesConfig() throws Exception {
+        String xml = "<hazelcast>\n" +
+                "   <services>       " +
+                "       <service enabled=\"true\">\n" +
+                "            <name>custom-service</name>\n" +
+                "            <class-name>com.hazelcast.examples.MyService</class-name>\n" +
+                "        </service>\n" +
+                "   </services>" +
+                "   <services>   " +
+                "        <service enabled=\"true\">\n" +
+                "            <name>custom-service</name>\n" +
+                "            <class-name>com.hazelcast.examples.MyService</class-name>\n" +
+                "        </service>\n" +
+                "   </services>" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+    @Test(expected = HazelcastException.class)
+    public void testXmlDeniesDuplicateSecurityConfig() throws Exception {
+        String xml = "<hazelcast>\n" +
+                "   <security>       " +
+                "   </security>" +
+                "   <security>   " +
+                "   </security>" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+    @Test(expected = HazelcastException.class)
+    public void testXmlDeniesDuplicateMemberAttributesConfig() throws Exception {
+        String xml = "<hazelcast>\n" +
+                "    <member-attributes>\n" +
+                "        <attribute name=\"attribute.float\" type=\"float\">1234.5678</attribute>\n" +
+                "    </member-attributes>\n" +
+                "    <member-attributes>\n" +
+                "        <attribute name=\"attribute.float\" type=\"float\">1234.5678</attribute>\n" +
+                "    </member-attributes>\n" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
