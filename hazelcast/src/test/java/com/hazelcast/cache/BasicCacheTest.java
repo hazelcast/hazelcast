@@ -17,31 +17,25 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
-import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.CacheConcurrentHashMap;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
-import javax.cache.Caching;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.configuration.MutableConfiguration;
@@ -52,7 +46,6 @@ import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryListenerException;
 import javax.cache.event.CacheEntryRemovedListener;
 import javax.cache.event.CacheEntryUpdatedListener;
-import javax.cache.spi.CachingProvider;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,31 +61,25 @@ import static junit.framework.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class BasicCacheTest
         extends HazelcastTestSupport {
 
-    HazelcastInstance hz;
-    HazelcastInstance hz2;
-
     HazelcastServerCachingProvider cachingProvider;
     HazelcastServerCachingProvider cachingProvider2;
+    TestHazelcastInstanceFactory hazelcastInstanceFactory;
 
     @Before
     public void init() {
-        Config config = new Config();
-        hz=Hazelcast.newHazelcastInstance(config);
-        hz2=Hazelcast.newHazelcastInstance(config);
-        cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz);
-        cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(hz2);
+        hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
+        cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstanceFactory.newHazelcastInstance());
+        cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstanceFactory.newHazelcastInstance());
     }
 
     @After
     public void tear() {
+        hazelcastInstanceFactory.shutdownAll();
         cachingProvider.close();
         cachingProvider2.close();
-        hz.shutdown();
-        hz2.shutdown();
     }
 
     @Test
@@ -108,8 +95,6 @@ public class BasicCacheTest
         CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
         assertNotNull(cache);
-
-        Thread.sleep(2000);
 
         Integer key = 1;
         String value1 = "value";
@@ -175,8 +160,8 @@ public class BasicCacheTest
 
         CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         SimpleEntryListener<Integer, String> listener = new SimpleEntryListener<Integer, String>();
-        final MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
-                new MutableCacheEntryListenerConfiguration<Integer, String>(FactoryBuilder.factoryOf(listener), null, true, true);
+        final MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration = new MutableCacheEntryListenerConfiguration<Integer, String>(
+                FactoryBuilder.factoryOf(listener), null, true, true);
 
         config.addCacheEntryListenerConfiguration(listenerConfiguration);
 
@@ -200,6 +185,9 @@ public class BasicCacheTest
 
         assertEquals(2, listener.removed.get());
 
+        cache.put(key1, value1);
+        cache.remove(key1);
+        assertEquals(3, listener.removed.get());
     }
 
     @Test
@@ -215,8 +203,6 @@ public class BasicCacheTest
         CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
         assertNotNull(cache);
-
-        Thread.sleep(1000);
 
         Integer key = 1;
         String value1 = "value";
@@ -260,7 +246,7 @@ public class BasicCacheTest
         final MutableConfiguration configuration = new MutableConfiguration();
         final Cache c1 = cacheManager.createCache("c1", configuration);
         final Cache c2 = cacheManager2.getCache("c1");
-        c1.put("key","value");
+        c1.put("key", "value");
         cacheManager.destroyCache("c1");
         assertTrueEventually(new AssertTask() {
             @Override
@@ -283,8 +269,8 @@ public class BasicCacheTest
         final MutableConfiguration configuration = new MutableConfiguration();
         final Cache c1 = cacheManager.createCache("c1", configuration);
         final Cache c2 = cacheManager2.createCache("c2", configuration);
-        c1.put("key","value");
-        c2.put("key","value");
+        c1.put("key", "value");
+        c2.put("key", "value");
         cacheManager.close();
         assertTrueAllTheTime(new AssertTask() {
             @Override
@@ -369,13 +355,11 @@ public class BasicCacheTest
         config.setTypes(Integer.class, Long.class);
 
         final Cache<Integer, Long> cache = cacheManager.createCache(cacheName, config);
-        Cache<Integer, Long> cache2 = cacheManager.getCache(cacheName, config.getKeyType(),
-                config.getValueType());
+        Cache<Integer, Long> cache2 = cacheManager.getCache(cacheName, config.getKeyType(), config.getValueType());
 
         assertNotNull(cache);
         assertNotNull(cache2);
     }
-
 
     public static class SimpleEntryListener<K, V>
             implements CacheEntryListener<K, V>, CacheEntryCreatedListener<K, V>, CacheEntryUpdatedListener<K, V>,
