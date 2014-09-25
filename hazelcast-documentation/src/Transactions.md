@@ -51,5 +51,5 @@ Isolation is always `REPEATABLE_READ`. If you are in a transaction, you can read
 
 Implementation is different for queue/set/list and map/multimap. For queue operations (offer, poll), offered and/or polled objects are copied to the owner member in order to safely commit/rollback. For map/multimap, Hazelcast first acquires the locks for the write operations (put, remove) and holds the differences (what is added/removed/updated) locally for each transaction. When transaction is set to commit, Hazelcast will release the locks and apply the differences. When rolling back, Hazelcast will simply release the locks and discard the differences.
 
-`MapStore` and `QueueStore` does not participate in transactions. Hazelcast will suppress exceptions thrown by store in a transaction. Please refer to [XA Transactions](#xa-transaction) section for further information.
+`MapStore` and `QueueStore` does not participate in transactions. Hazelcast will suppress exceptions thrown by store in a transaction. Please refer to [XA Transactions](#xa-transactions) section for further information.
 

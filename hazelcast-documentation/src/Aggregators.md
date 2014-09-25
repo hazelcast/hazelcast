@@ -13,7 +13,8 @@ achieved using pure map-reduce calls but using the Aggregation feature is more c
 This short section will quickly guide you through the basics of the Aggregations framework and some of the available classes.
 We also will implement a first base example.
 
-Aggregations are available on both types of map interfaces, `com.hazelcast.core.IMap` and `com.hazelcast.core.MultiMap`, using
+Aggregations are available on both types of map interfaces, `com.hazelcast.core.IMap` and `com.hazelcast
+.core.MultiMap`, using
 the `aggregate` methods. Two overloaded methods are available to customize resource management of the
 underlying MapReduce framework by supplying a custom configured `com.hazelcast.mapreduce.JobTracker` instance. To find out how to
 configure the MapReduce framework please see [JobTracker Configuration](#jobtracker-configuration) section. We will

@@ -44,7 +44,8 @@ void submitToKey( K key, EntryProcessor entryProcessor, ExecutionCallback callba
 Map<K, Object> executeOnEntries( EntryProcessor entryProcessor );
 	   
 /**
- * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
+ * Applies the user defined EntryProcessor to the entries in the map which satisfies 
+ provided predicate.
  * Returns the results mapped by each key in the map.
  */
 Map<K, Object> executeOnEntries( EntryProcessor entryProcessor, Predicate predicate );
@@ -67,7 +68,7 @@ When using `executeOnEntries` method, if the number of entries is high and you d
 
 If your code is modifying the data, then you should also provide a processor for backup entries:
 
-***NOTE***: You should explicitly call `setValue` method of `Map.Entry` when modifying data in Entry Processor. Otherwise, Entry Processpr will be accepted as read-only.
+***NOTE***: You should explicitly call `setValue` method of `Map.Entry` when modifying data in Entry Processor. Otherwise, Entry Processor will be accepted as read-only.
 
 ```java
 public interface EntryBackupProcessor<K, V> extends Serializable {

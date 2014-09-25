@@ -54,7 +54,7 @@ Toolbar has the following buttons:
 -	**Documentation**: It is used to open the documentation of Management Center in a window inside the tool. Please see [Documentation](#documentation).
 -	**Administration**: It is used by the admin users to manage users in the system. Please see [Administration](#administration).
 -	**Time Travel**: It is used to see the cluster's situation at a time in the past. Please see [Time Travel](#time-travel).
--	**Cluster Selector**: It is used to switch between clusters. When the mouse is moved onto this item, a dropdown list of clusters appears.
+-	**Cluster Selector**: It is used to switch between clusters. When the mouse is moved onto this item, a drop down list of clusters appears.
 
   ![](images/4ChangeCluster.jpg)
 

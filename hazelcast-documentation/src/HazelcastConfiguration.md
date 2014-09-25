@@ -314,7 +314,7 @@ It has below elements and attributes.
 	- `required-member`: IP address of the required member. Cluster will only formed if the member with this IP address is found.
 	- `member`: IP address(es) of one or more well known members. Once members are connected to these well known ones, all member addresses will be communicated with each other. You can also give comma separated IP addresses using the `members` tag.
 
-- `aws`: It includes parameteres to allow the nodes form a cluster on Amazon EC2 environment.
+- `aws`: It includes parameters to allow the nodes form a cluster on Amazon EC2 environment.
 	- `enabled`: Specifies whether the EC2 discovery is enabled or not. Values can be `true` or `false`.
 	- `access-key`, `secret-key`: Access and secret keys of your account on EC2.
 	- `region`: The region where your nodes are running. Default value is `us-east-1`. Needs to be specified if the region is other than the default one.
