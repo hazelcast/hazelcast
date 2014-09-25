@@ -245,6 +245,22 @@ public class CacheConfig<K, V>
     }
 
     @Override
+    public MutableConfiguration<K, V> addCacheEntryListenerConfiguration(
+            CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        synchronized (listenerConfigurations) {
+            return super.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+        }
+    }
+
+    @Override
+    public MutableConfiguration<K, V> removeCacheEntryListenerConfiguration(
+            CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        synchronized (listenerConfigurations) {
+            return super.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+        }
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
         out.writeUTF(name);
