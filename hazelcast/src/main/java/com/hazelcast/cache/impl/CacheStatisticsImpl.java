@@ -46,53 +46,86 @@ public class CacheStatisticsImpl
     public CacheStatisticsImpl() {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long getCacheRemovals() {
         return removals.get();
     }
 
+    /**
+     * todo What does this do?
+     */
     public long getCacheExpiries() {
         return expiries.get();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long getCacheGets() {
         return getCacheHits() + getCacheMisses();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long getCachePuts() {
         return puts.get();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long getCacheHits() {
         return hits.get();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long getCacheMisses() {
         return misses.get();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long getCacheEvictions() {
         return evictions.get();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public long getCachePutTimeTakenNanos() {
         return putTimeTakenNanos.get();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public long getCacheGetTimeTakenNanos() {
         return getCacheTimeTakenNanos.get();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public long getCacheRemoveTimeTakenNanos() {
         return removeTimeTakenNanos.get();
     }
 
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public float getCacheHitPercentage() {
         final long cacheHits = getCacheHits();
@@ -103,7 +136,9 @@ public class CacheStatisticsImpl
         return (float) cacheHits / cacheGets * FLOAT_HUNDRED;
     }
 
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public float getCacheMissPercentage() {
         final long cacheMisses = getCacheMisses();
@@ -114,7 +149,9 @@ public class CacheStatisticsImpl
         return (float) cacheMisses / cacheGets * FLOAT_HUNDRED;
     }
 
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public float getAverageGetTime() {
         final long cacheGetTimeTakenNanos = getCacheGetTimeTakenNanos();
@@ -125,6 +162,9 @@ public class CacheStatisticsImpl
         return ((1f * cacheGetTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public float getAveragePutTime() {
         final long cachePutTimeTakenNanos = getCachePutTimeTakenNanos();
@@ -135,6 +175,9 @@ public class CacheStatisticsImpl
         return ((1f * cachePutTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public float getAverageRemoveTime() {
         final long cacheRemoveTimeTakenNanos = getCacheRemoveTimeTakenNanos();
@@ -145,6 +188,10 @@ public class CacheStatisticsImpl
         return ((1f * cacheRemoveTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
+    /**
+     *
+     * todo What does this do?
+     */
     public void clear() {
         puts.set(0);
         misses.set(0);
@@ -256,7 +303,14 @@ public class CacheStatisticsImpl
         }
     }
 
-    public CacheStatisticsImpl acumulate(CacheStatisticsImpl other) {
+    /**
+     *
+     * todo What does this do?
+     * todo: Typo. Rename this method to accumulate
+     * @param other
+     * @return
+     */
+    public CacheStatisticsImpl accumulate(CacheStatisticsImpl other) {
         puts.addAndGet(other.getCachePuts());
         removals.addAndGet(other.getCacheRemovals());
         expiries.addAndGet(other.getCacheExpiries());
@@ -269,6 +323,12 @@ public class CacheStatisticsImpl
         return this;
     }
 
+    /**
+     *
+     *
+     * @param out output
+     * @throws IOException
+     */
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
@@ -285,6 +345,11 @@ public class CacheStatisticsImpl
         out.writeLong(removeTimeTakenNanos.get());
     }
 
+    /**
+     * {@inheritDoc}
+     * @param in input
+     * @throws IOException
+     */
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
