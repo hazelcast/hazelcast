@@ -45,10 +45,6 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
@@ -56,6 +52,9 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -769,7 +768,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final IMap map = h1.getMap("default");
-        map.put("1","1");
+        map.put("1", "1");
 
         boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
@@ -1253,6 +1252,33 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 txMap.remove(1);
                 Collection<Object> coll = txMap.values(new SqlPredicate("age > 70 "));
                 assertEquals(0, coll.size());
+                return true;
+            }
+        });
+        node.shutdown();
+    }
+
+    @Test
+    public void testValues_resultSetContainsUpdatedEntry() throws TransactionException {
+        final int nodeCount = 1;
+        final String mapName = randomMapName();
+        final Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance node = factory.newHazelcastInstance(config);
+        final IMap map = node.getMap(mapName);
+
+        final SampleObjects.Employee emp = new SampleObjects.Employee("name", 77, true, 10D);
+        map.put(1, emp);
+
+        node.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                final TransactionalMap<Integer, SampleObjects.Employee> txMap = context.getMap(mapName);
+                emp.setAge(30);
+                txMap.put(1, emp);
+                Collection<SampleObjects.Employee> coll = txMap.values();
+                assertEquals(1, coll.size());
+                SampleObjects.Employee employee = coll.iterator().next();
+                assertEquals(30, employee.getAge());
                 return true;
             }
         });
