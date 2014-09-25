@@ -225,37 +225,47 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (checkAlreadyConnected(connection, remoteEndPoint)) {
             return false;
         }
-        if (registerConnectionEndpoint(connection, remoteEndPoint, thisAddress)) {
-            return true;
+        if (!registerConnection(remoteEndPoint, connection)) {
+            return false;
         }
-        return false;
+        return true;
     }
 
-    private boolean registerConnectionEndpoint(final TcpIpConnection connection,
-            final Address remoteEndPoint, Address thisAddress) {
-
-        if (!remoteEndPoint.equals(thisAddress)) {
-            if (!connection.isClient()) {
-                connection.setMonitor(getConnectionMonitor(remoteEndPoint, true));
-            }
-            connectionsMap.put(remoteEndPoint, connection);
-            connectionsInProgress.remove(remoteEndPoint);
-            ioService.getEventService().executeEventCallback(new StripedRunnable() {
-                @Override
-                public void run() {
-                    for (ConnectionListener listener : connectionListeners) {
-                        listener.connectionAdded(connection);
-                    }
-                }
-
-                @Override
-                public int getKey() {
-                    return remoteEndPoint.hashCode();
-                }
-            });
-            return true;
+    public boolean registerConnection(final Address remoteEndPoint, final Connection connection) {
+        if (remoteEndPoint.equals(ioService.getThisAddress())) {
+            return false;
         }
-        return false;
+
+        if (connection instanceof TcpIpConnection) {
+            TcpIpConnection tcpConnection = (TcpIpConnection) connection;
+            Address currentEndPoint = tcpConnection.getEndPoint();
+            if (currentEndPoint != null && !currentEndPoint.equals(remoteEndPoint)) {
+                throw new IllegalArgumentException(connection + " has already a different endpoint than: "
+                        + remoteEndPoint);
+            }
+            tcpConnection.setEndPoint(remoteEndPoint);
+
+            if (!connection.isClient()) {
+                TcpIpConnectionMonitor connectionMonitor = getConnectionMonitor(remoteEndPoint, true);
+                tcpConnection.setMonitor(connectionMonitor);
+            }
+        }
+        connectionsMap.put(remoteEndPoint, connection);
+        connectionsInProgress.remove(remoteEndPoint);
+        ioService.getEventService().executeEventCallback(new StripedRunnable() {
+            @Override
+            public void run() {
+                for (ConnectionListener listener : connectionListeners) {
+                    listener.connectionAdded(connection);
+                }
+            }
+
+            @Override
+            public int getKey() {
+                return remoteEndPoint.hashCode();
+            }
+        });
+        return true;
     }
 
     private boolean checkAlreadyConnected(TcpIpConnection connection, Address remoteEndPoint) {
