@@ -37,6 +37,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,6 +59,40 @@ public class MapReduceTest
         extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
+
+    @Test(timeout = 60000)
+    public void test_collide_user_provided_combiner_list_result_github_3614() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker tracker = h1.getJobTracker("default");
+        KeyValueSource<Integer, Integer> kvs = KeyValueSource.fromMap(m1);
+        KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
+        Job<Integer, Integer> job = tracker.newJob(wrapper);
+        ICompletableFuture<Map<String, List<Integer>>> future =
+                job.mapper(new TestMapper())
+                   .combiner(new ListResultingCombinerFactory())
+                   .reducer(new ListBasedReducerFactory()).submit();
+
+        Map<String, List<Integer>> result = future.get();
+
+        assertEquals(100, result.size());
+        for (List<Integer> value : result.values()) {
+            assertEquals(1, value.size());
+        }
+    }
 
     @Test(timeout = 60000)
     public void testPartitionPostpone()
@@ -1365,4 +1400,54 @@ public class MapReduceTest
         }
     }
 
+    public static class ListResultingCombinerFactory implements CombinerFactory<String, Integer, List<Integer>> {
+
+        @Override
+        public Combiner<Integer, List<Integer>> newCombiner(String key) {
+            return new ListResultingCombiner();
+        }
+
+        private class ListResultingCombiner extends Combiner<Integer,List<Integer>> {
+
+            private final List<Integer> result = new ArrayList<Integer>();
+
+            @Override
+            public void combine(Integer value) {
+                result.add(value);
+            }
+
+            @Override
+            public List<Integer> finalizeChunk() {
+                return new ArrayList<Integer>(result);
+            }
+
+            @Override
+            public void reset() {
+                result.clear();
+            }
+        }
+    }
+
+    public static class ListBasedReducerFactory implements ReducerFactory<String, List<Integer>, List<Integer>> {
+
+        @Override
+        public Reducer<List<Integer>, List<Integer>> newReducer(String key) {
+            return new ListBasedReducer();
+        }
+
+        private class ListBasedReducer extends Reducer<List<Integer>, List<Integer>> {
+
+            private final List<Integer> result = new ArrayList<Integer>();
+
+            @Override
+            public void reduce(List<Integer> value) {
+                result.addAll(value);
+            }
+
+            @Override
+            public List<Integer> finalizeReduce() {
+                return result;
+            }
+        }
+    }
 }

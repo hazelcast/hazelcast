@@ -57,7 +57,7 @@ public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implem
     }
 
     public final MultiMapWrapper getCollectionWrapper() {
-        return getOrCreateContainer().getMultiMapWrapper(dataKey);
+        return getOrCreateContainer().getMultiMapWrapperOrNull(dataKey);
     }
 
     public final Collection<MultiMapRecord> remove(boolean copyOf) {

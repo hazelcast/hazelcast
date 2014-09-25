@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.proxy;
+package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
 
 public class ClientCacheDistributedObject
         extends ClientProxy {
@@ -33,34 +30,4 @@ public class ClientCacheDistributedObject
         return getContext();
     }
 
-    @Override
-    public <T> T toObject(Object data) {
-        return super.toObject(data);
-    }
-
-    @Override
-    public Data toData(Object o) {
-        return super.toData(o);
-    }
-
-    @Override
-    public <T> T invoke(ClientRequest req, Address address) {
-        return super.invoke(req, address);
-    }
-
-    @Override
-    public <T> T invoke(ClientRequest req) {
-        return super.invoke(req);
-    }
-
-    @Override
-    public <T> T invokeInterruptibly(ClientRequest req, Object key)
-            throws InterruptedException {
-        return super.invokeInterruptibly(req, key);
-    }
-
-    @Override
-    public <T> T invoke(ClientRequest req, Object key) {
-        return super.invoke(req, key);
-    }
 }

@@ -51,7 +51,7 @@ public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements Bac
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapWrapper wrapper = container.getMultiMapWrapper(dataKey);
+        MultiMapWrapper wrapper = container.getMultiMapWrapperOrNull(dataKey);
         response = true;
         if (wrapper == null || !wrapper.containsRecordId(recordId)) {
             response = false;

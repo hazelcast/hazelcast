@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -232,22 +233,28 @@ class ClusterListenerThread extends Thread {
 
     private ClientConnection connectToOne() throws Exception {
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
-        final int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
+        final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+
+        final int connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
+
         int attempt = 0;
         Throwable lastError = null;
+        Set<Address> triedAddresses = new HashSet<Address>();
         while (true) {
             final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
             final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
             for (InetSocketAddress isa : socketAddresses) {
                 Address address = new Address(isa);
+                triedAddresses.add(address);
+                LOGGER.finest("Trying to connect to " + address);
                 try {
                     final ClientConnection connection = connectionManager.ownerConnection(address);
                     clusterService.fireConnectionEvent(false);
                     return connection;
                 } catch (IOException e) {
                     lastError = e;
-                    LOGGER.finest("IO error during initial connection...", e);
+                    LOGGER.finest("IO error during initial connection to " + address, e);
                 } catch (AuthenticationException e) {
                     lastError = e;
                     LOGGER.warning("Authentication error on " + address, e);
@@ -259,7 +266,7 @@ class ClusterListenerThread extends Thread {
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             LOGGER.warning(
                     String.format("Unable to get alive cluster connection,"
-                            + " try in %d ms later, attempt %d of %d.",
+                                    + " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
             if (remainingTime > 0) {
@@ -270,7 +277,8 @@ class ClusterListenerThread extends Thread {
                 }
             }
         }
-        throw new IllegalStateException("Unable to connect to any address in the config!", lastError);
+        throw new IllegalStateException("Unable to connect to any address in the config! The following addresses were tried:"
+                + triedAddresses, lastError);
     }
 }
 

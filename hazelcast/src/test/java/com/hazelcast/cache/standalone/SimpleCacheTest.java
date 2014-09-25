@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.standalone;
 
+import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -26,7 +27,6 @@ import com.hazelcast.logging.ILogger;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
-import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -145,13 +145,15 @@ public final class SimpleCacheTest {
 //
 //        HazelcastCacheManager cacheManager = new HazelcastCacheManager(hcp,instance,hcp.getDefaultURI(),hcp.getDefaultClassLoader(),null);
 
-        final CachingProvider cachingProvider = Caching.getCachingProvider();
+        final CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance);
+//        final CachingProvider cachingProvider = Caching.getCachingProvider();
 
         final CacheManager cacheManager = cachingProvider.getCacheManager();
 
 
         CacheConfig<String, Object> config = new CacheConfig<String, Object>();
         config.setTypes(String.class, Object.class);
+        config.setStatisticsEnabled(true);
 
         cacheManager.createCache(NAMESPACE, config);
 

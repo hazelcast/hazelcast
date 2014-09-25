@@ -70,7 +70,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.multimap.impl.MultiMapContainerSupport.createCollection;
+import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
 import static com.hazelcast.util.ValidationUtil.checkNotNull;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;

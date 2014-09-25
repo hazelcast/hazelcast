@@ -28,9 +28,18 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-import java.io.*;
-import java.lang.reflect.Constructor;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UTFDataFormatException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,10 +47,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
+import static com.hazelcast.nio.UTFEncoderDecoder.ReflectionBasedCharArrayUtfWriter;
+import static com.hazelcast.nio.UTFEncoderDecoder.UnsafeBasedCharArrayUtfWriter;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -71,29 +78,42 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testEmptyText_Default() throws Exception {
-        byte[] buffer = new byte[1024];
-
-        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(false);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
-        DataOutputStream dos = new DataOutputStream(baos);
-
-        utfEncoderDecoder.writeUTF0(dos, "", buffer);
-        utfEncoderDecoder.writeUTF0(dos, "some other value", buffer);
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        DataInputStream dis = new DataInputStream(bais);
-        String result1 = utfEncoderDecoder.readUTF0(dis, buffer);
-        String result2 = utfEncoderDecoder.readUTF0(dis, buffer);
-
-        assertEquals("", result1);
-        assertEquals("some other value", result2);
+       testEmptyText(false, UtfWriterType.DEFAULT);
     }
 
     @Test
-    public void testEmptyText_Fast() throws Exception {
-        byte[] buffer = new byte[1024];
+    public void testEmptyText_Unsafe() throws Exception {
+        testEmptyText(false, UtfWriterType.UNSAFE);
+    }
 
-        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(true);
+    @Test
+    public void testEmptyText_Reflection() throws Exception {
+        testEmptyText(false, UtfWriterType.REFLECTION);
+    }
+
+    @Test
+    public void testEmptyText_Fast_Default() throws Exception {
+        testEmptyText(true, UtfWriterType.DEFAULT);
+    }
+
+    @Test
+    public void testEmptyText_Fast_Unsafe() throws Exception {
+        testEmptyText(true, UtfWriterType.UNSAFE);
+    }
+
+    @Test
+    public void testEmptyText_Fast_Reflection() throws Exception {
+        testEmptyText(true, UtfWriterType.REFLECTION);
+    }
+
+    private void testEmptyText(boolean fastStringEnabled, UtfWriterType utfWriterType) throws Exception {
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(fastStringEnabled, utfWriterType);
+        if (utfEncoderDecoder == null) {
+            System.err.println("Ignoring test... " + utfWriterType + " is not available!");
+            return;
+        }
+
+        byte[] buffer = new byte[1024];
         ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
         DataOutputStream dos = new DataOutputStream(baos);
 
@@ -111,36 +131,42 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testMultipleTextsInARow_Default() throws Exception {
-        byte[] buffer = new byte[1024];
-
-        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(false);
-
-        for (int i = 0; i < 100; i++) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
-            DataOutputStream dos = new DataOutputStream(baos);
-
-            String[] values = new String[10];
-            for (int o = 0; o < 10; o++) {
-                values[o] = random(i);
-                utfEncoderDecoder.writeUTF0(dos, values[o], buffer);
-            }
-
-            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-            DataInputStream dis = new DataInputStream(bais);
-
-            for (int o = 0; o < 10; o++) {
-                String result = utfEncoderDecoder.readUTF0(dis, buffer);
-                assertEquals(values[o], result);
-            }
-        }
+        testMultipleTextsInARow(false, UtfWriterType.DEFAULT);
     }
 
     @Test
-    public void testMultipleTextsInARow_fast() throws Exception {
+    public void testMultipleTextsInARow_Unsafe() throws Exception {
+        testMultipleTextsInARow(false, UtfWriterType.UNSAFE);
+    }
+
+    @Test
+    public void testMultipleTextsInARow_Reflection() throws Exception {
+        testMultipleTextsInARow(false, UtfWriterType.REFLECTION);
+    }
+
+    @Test
+    public void testMultipleTextsInARow_Fast_Default() throws Exception {
+       testMultipleTextsInARow(true, UtfWriterType.DEFAULT);
+    }
+
+    @Test
+    public void testMultipleTextsInARow_Fast_Unsafe() throws Exception {
+        testMultipleTextsInARow(true, UtfWriterType.UNSAFE);
+    }
+
+    @Test
+    public void testMultipleTextsInARow_Fast_Reflection() throws Exception {
+        testMultipleTextsInARow(true, UtfWriterType.REFLECTION);
+    }
+
+    private void testMultipleTextsInARow(boolean fastStringEnabled, UtfWriterType utfWriterType) throws Exception {
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(fastStringEnabled, utfWriterType);
+        if (utfEncoderDecoder == null) {
+            System.err.println("Ignoring test... " + utfWriterType + " is not available!");
+            return;
+        }
+
         byte[] buffer = new byte[1024];
-
-        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(true);
-
         for (int i = 0; i < 100; i++) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
             DataOutputStream dos = new DataOutputStream(baos);
@@ -184,33 +210,42 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testShortSizedText_1Chunk_Default() throws Exception {
-        byte[] buffer = new byte[1024];
-
-        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(false);
-        for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
-            for (int i = 2; i < 100; i += 2) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
-                DataOutputStream dos = new DataOutputStream(baos);
-
-                String randomString = random(i * 100);
-                utfEncoderDecoder.writeUTF0(dos, randomString, buffer);
-
-                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-                DataInputStream dis = new DataInputStream(bais);
-                String result = utfEncoderDecoder.readUTF0(dis, buffer);
-
-                assertEquals(randomString, result);
-            }
-        }
+        testShortSizedText_1Chunk(false, UtfWriterType.DEFAULT);
     }
 
     @Test
-    public void testShortSizedText_1Chunk_Fast() throws Exception {
+    public void testShortSizedText_1Chunk_Unsafe() throws Exception {
+        testShortSizedText_1Chunk(false, UtfWriterType.UNSAFE);
+    }
+
+    @Test
+    public void testShortSizedText_1Chunk_Reflection() throws Exception {
+        testShortSizedText_1Chunk(false, UtfWriterType.REFLECTION);
+    }
+
+    @Test
+    public void testShortSizedText_1Chunk_Fast_Default() throws Exception {
+        testShortSizedText_1Chunk(true, UtfWriterType.DEFAULT);
+    }
+
+    @Test
+    public void testShortSizedText_1Chunk_Fast_Unsafe() throws Exception {
+        testShortSizedText_1Chunk(true, UtfWriterType.UNSAFE);
+    }
+
+    @Test
+    public void testShortSizedText_1Chunk_Fast_Reflection() throws Exception {
+        testShortSizedText_1Chunk(true, UtfWriterType.REFLECTION);
+    }
+
+    private void testShortSizedText_1Chunk(boolean fastStringEnabled, UtfWriterType utfWriterType) throws Exception {
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(fastStringEnabled, utfWriterType);
+        if (utfEncoderDecoder == null) {
+            System.err.println("Ignoring test... " + utfWriterType + " is not available!");
+            return;
+        }
+
         byte[] buffer = new byte[1024];
-
-        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(true);
-        assertContains(utfEncoderDecoder.getStringCreator().getClass().toString(), "FastStringCreator");
-
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 2; i < 100; i += 2) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
@@ -230,33 +265,42 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testMiddleSizedText_2Chunks_Default() throws Exception {
-        byte[] buffer = new byte[1024];
-
-        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(false);
-        for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
-            for (int i = 170; i < 300; i += 2) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
-                DataOutputStream dos = new DataOutputStream(baos);
-
-                String randomString = random(i * 100);
-                utfEncoderDecoder.writeUTF0(dos, randomString, buffer);
-
-                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-                DataInputStream dis = new DataInputStream(bais);
-                String result = utfEncoderDecoder.readUTF0(dis, buffer);
-
-                assertEquals(randomString, result);
-            }
-        }
+        testMiddleSizedText_2Chunks(false, UtfWriterType.DEFAULT);
     }
 
     @Test
-    public void testMiddleSizedText_2Chunks_Fast() throws Exception {
+    public void testMiddleSizedText_2Chunks_Unsafe() throws Exception {
+        testMiddleSizedText_2Chunks(false, UtfWriterType.UNSAFE);
+    }
+
+    @Test
+    public void testMiddleSizedText_2Chunks_Reflection() throws Exception {
+        testMiddleSizedText_2Chunks(false, UtfWriterType.REFLECTION);
+    }
+
+    @Test
+    public void testMiddleSizedText_2Chunks_Fast_Default() throws Exception {
+        testMiddleSizedText_2Chunks(true, UtfWriterType.DEFAULT);
+    }
+
+    @Test
+    public void testMiddleSizedText_2Chunks_Fast_Unsafe() throws Exception {
+        testMiddleSizedText_2Chunks(true, UtfWriterType.UNSAFE);
+    }
+
+    @Test
+    public void testMiddleSizedText_2Chunks_Fast_Reflection() throws Exception {
+        testMiddleSizedText_2Chunks(true, UtfWriterType.REFLECTION);
+    }
+
+    private void testMiddleSizedText_2Chunks(boolean fastStringEnabled, UtfWriterType utfWriterType) throws Exception {
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(fastStringEnabled, utfWriterType);
+        if (utfEncoderDecoder == null) {
+            System.err.println("Ignoring test... " + utfWriterType + " is not available!");
+            return;
+        }
+
         byte[] buffer = new byte[1024];
-
-        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(true);
-        assertContains(utfEncoderDecoder.getStringCreator().getClass().toString(), "FastStringCreator");
-
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 170; i < 300; i += 2) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
@@ -276,33 +320,42 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testLongSizedText_min3Chunks_Default() throws Exception {
-        byte[] buffer = new byte[1024];
-
-        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(false);
-        for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
-            for (int i = 330; i < 900; i += 5) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
-                DataOutputStream dos = new DataOutputStream(baos);
-
-                String randomString = random(i * 100);
-                utfEncoderDecoder.writeUTF0(dos, randomString, buffer);
-
-                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-                DataInputStream dis = new DataInputStream(bais);
-                String result = utfEncoderDecoder.readUTF0(dis, buffer);
-
-                assertEquals(randomString, result);
-            }
-        }
+        testLongSizedText_min3Chunks(false, UtfWriterType.DEFAULT);
     }
 
     @Test
-    public void testLongSizedText_min3Chunks_Fast() throws Exception {
+    public void testLongSizedText_min3Chunks_Unsafe() throws Exception {
+        testLongSizedText_min3Chunks(false, UtfWriterType.UNSAFE);
+    }
+
+    @Test
+    public void testLongSizedText_min3Chunks_Reflection() throws Exception {
+        testLongSizedText_min3Chunks(false, UtfWriterType.REFLECTION);
+    }
+
+    @Test
+    public void testLongSizedText_min3Chunks_Fast_Default() throws Exception {
+        testLongSizedText_min3Chunks(true, UtfWriterType.DEFAULT);
+    }
+
+    @Test
+    public void testLongSizedText_min3Chunks_Fast_Unsafe() throws Exception {
+        testLongSizedText_min3Chunks(true, UtfWriterType.UNSAFE);
+    }
+
+    @Test
+    public void testLongSizedText_min3Chunks_Fast_Reflection() throws Exception {
+        testLongSizedText_min3Chunks(true, UtfWriterType.REFLECTION);
+    }
+
+    private void testLongSizedText_min3Chunks(boolean fastStringEnabled, UtfWriterType utfWriterType) throws Exception {
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(fastStringEnabled, utfWriterType);
+        if (utfEncoderDecoder == null) {
+            System.err.println("Ignoring test... " + utfWriterType + " is not available!");
+            return;
+        }
+
         byte[] buffer = new byte[1024];
-
-        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(true);
-        assertContains(utfEncoderDecoder.getStringCreator().getClass().toString(), "FastStringCreator");
-
         for (int o = 0; o < BENCHMARK_ROUNDS; o++) {
             for (int i = 330; i < 900; i += 5) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(500);
@@ -374,6 +427,59 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         fail("HazelcastSerializationException is expected");
     }
 
+    @Test
+    public void testSubstring_Default() throws IOException {
+        testSubstring(false, UtfWriterType.DEFAULT);
+    }
+
+    @Test
+    public void testSubstring_Unsafe() throws IOException {
+        testSubstring(false, UtfWriterType.UNSAFE);
+    }
+
+    @Test
+    public void testSubstring_Reflection() throws IOException {
+        testSubstring(false, UtfWriterType.REFLECTION);
+    }
+
+    @Test
+    public void testSubstring_Fast_Default() throws IOException {
+        testSubstring(true, UtfWriterType.DEFAULT);
+    }
+
+    @Test
+    public void testSubstring_Fast_Unsafe() throws IOException {
+        testSubstring(true, UtfWriterType.UNSAFE);
+    }
+
+    @Test
+    public void testSubstring_Fast_Reflection() throws IOException {
+        testSubstring(true, UtfWriterType.REFLECTION);
+    }
+
+    private void testSubstring(boolean fastStringEnabled, UtfWriterType utfWriterType) throws IOException {
+        UTFEncoderDecoder utfEncoderDecoder = newUTFEncoderDecoder(fastStringEnabled, utfWriterType);
+        if (utfEncoderDecoder == null) {
+            System.err.println("Ignoring test... " + utfWriterType + " is not available!");
+            return;
+        }
+
+        byte[] buffer = new byte[64];
+        String original = "1234abcd";
+        String str = original.substring(4);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        utfEncoderDecoder.writeUTF0(dos, str, buffer);
+
+        byte[] bytes = baos.toByteArray();
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        DataInputStream dis = new DataInputStream(bais);
+        String result = utfEncoderDecoder.readUTF0(dis, buffer);
+
+        assertEquals(str, result);
+    }
+
     private String createString(int length) {
         char[] c = new char[length];
         for (int i = 0; i < c.length; i++) {
@@ -394,14 +500,35 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         return random(count, 0, 0, true, true, null, RANDOM);
     }
 
-    private static UTFEncoderDecoder newUTFEncoderDecoder(boolean fastStringCreator) {
-        try {
-            Constructor<UTFEncoderDecoder> constructor = UTFEncoderDecoder.class.getDeclaredConstructor(boolean.class);
-            constructor.setAccessible(true);
-            return constructor.newInstance(fastStringCreator);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    private static UTFEncoderDecoder newUTFEncoderDecoder(boolean fastStringEnabled, UtfWriterType utfWriterType) {
+        UTFEncoderDecoder.UtfWriter utfWriter;
+        switch (utfWriterType) {
+            case UNSAFE:
+                UnsafeBasedCharArrayUtfWriter unsafeBasedWriter = new UnsafeBasedCharArrayUtfWriter();
+                if (!unsafeBasedWriter.isAvailable()) {
+                    return null;
+                }
+                utfWriter = unsafeBasedWriter;
+                break;
+
+            case REFLECTION:
+                ReflectionBasedCharArrayUtfWriter reflectionBasedWriter = new ReflectionBasedCharArrayUtfWriter();
+                if (!reflectionBasedWriter.isAvailable()) {
+                    return null;
+                }
+                utfWriter = reflectionBasedWriter;
+                break;
+
+            default:
+                utfWriter = new UTFEncoderDecoder.StringBasedUtfWriter();
         }
+
+        UTFEncoderDecoder.StringCreator stringCreator = UTFEncoderDecoder.createStringCreator(fastStringEnabled);
+        if (fastStringEnabled) {
+            assertContains(stringCreator.getClass().toString(), "FastStringCreator");
+        }
+
+        return new UTFEncoderDecoder(stringCreator, utfWriter);
     }
 
     private static ComplexUtf8Object buildComplexUtf8Object() {
@@ -489,6 +616,12 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
             //}
         }
         return new String(buffer);
+    }
+
+    private enum UtfWriterType {
+        UNSAFE,
+        REFLECTION,
+        DEFAULT
     }
 
     public static class User implements DataSerializable {

@@ -21,8 +21,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.partition.InternalPartitionService;
 import org.junit.After;
 import org.junit.ComparisonFailure;
 
@@ -135,7 +137,6 @@ public abstract class HazelcastTestSupport {
             }
         }, timeoutSeconds);
     }
-
 
     public static void assertJoinable(long timeoutSeconds, Thread... threads) {
         try {
@@ -361,5 +362,53 @@ public abstract class HazelcastTestSupport {
         return className + "<" + valueString + ">";
     }
 
+    public static boolean isInstanceInSafeState(final HazelcastInstance instance) {
+        final Node node = TestUtil.getNode(instance);
+        if (node != null) {
+            final InternalPartitionService ps = node.getPartitionService();
+            return ps.isMemberStateSafe();
+        }
+        else {
+            return true;
+        }
+    }
+
+    public static void waitInstanceForSafeState(final HazelcastInstance instance) {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+              isInstanceInSafeState(instance);
+            }
+        });
+    }
+
+    public static boolean isClusterInSafeState(final HazelcastInstance instance) {
+        final PartitionService ps = instance.getPartitionService();
+        return ps.isClusterSafe();
+    }
+
+    public static void waitClusterForSafeState(final HazelcastInstance instance) {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertTrue(isClusterInSafeState(instance));
+            }
+        });
+    }
+
+    public static boolean isAllInSafeState() {
+        for (HazelcastInstance hz : HazelcastInstanceFactory.getAllHazelcastInstances()) {
+            if (!isInstanceInSafeState(hz)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static void waitAllForSafeState() {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertTrue(isAllInSafeState());
+            }
+        });
+    }
 
 }

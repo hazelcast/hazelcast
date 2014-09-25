@@ -26,10 +26,15 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.FutureUtil;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class HazelcastServerCacheManager
         extends HazelcastCacheManager {
@@ -85,13 +90,22 @@ public class HazelcastServerCacheManager
     private void enableStatisticManagementOnOtherNodes(String cacheName, boolean statOrMan, boolean enabled) {
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        final Collection<Future> futures = new ArrayList<Future>();
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 final CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan,
                         enabled);
-                nodeEngine.getOperationService().invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                final Future future = nodeEngine.getOperationService()
+                                                .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                futures.add(future);
             }
         }
+        try {
+            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            logger.warning(e);
+        }
+
     }
 
     @Override
@@ -102,7 +116,7 @@ public class HazelcastServerCacheManager
     @Override
     protected <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
         //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
-        final CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheConfig, true);
+        final CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheConfig);
         final OperationService operationService = nodeEngine.getOperationService();
 
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
@@ -113,14 +127,12 @@ public class HazelcastServerCacheManager
 
     @Override
     protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
-        cacheService.createCacheConfigIfAbsent(cacheConfig);
+        cacheService.createCacheConfigIfAbsent(cacheConfig, false);
     }
 
     @Override
     protected <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
-        final CacheDistributedObject cacheDistributedObject = hazelcastInstance
-                .getDistributedObject(CacheService.SERVICE_NAME, cacheConfig.getNameWithPrefix());
-        return new CacheProxy<K, V>(cacheConfig, cacheDistributedObject, this);
+        return new CacheProxy<K, V>(cacheConfig, nodeEngine, cacheService, this);
     }
 
     @Override

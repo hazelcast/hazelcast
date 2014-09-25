@@ -40,7 +40,7 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements WaitSu
 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapWrapper wrapper = container.getMultiMapWrapper(dataKey);
+        MultiMapWrapper wrapper = container.getMultiMapWrapperOrNull(dataKey);
         Collection coll = null;
         if (wrapper != null) {
             wrapper.incrementHit();

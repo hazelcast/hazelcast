@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache;
+package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.HazelcastAbstractCachingProvider;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.HazelcastInstance;
 
-import javax.cache.CacheManager;
 import java.net.URI;
 import java.util.Properties;
 
-public final class HazelcastClientCachingProvider
-        extends HazelcastAbstractCachingProvider {
+public final class HazelcastClientCachingProvider extends HazelcastAbstractCachingProvider {
 
     public HazelcastClientCachingProvider() {
         super();
@@ -50,7 +48,8 @@ public final class HazelcastClientCachingProvider
     }
 
     @Override
-    protected CacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties managerProperties) {
+    protected HazelcastClientCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader,
+                                                                                         Properties managerProperties) {
         if (hazelcastInstance == null) {
             initHazelcast();
         }

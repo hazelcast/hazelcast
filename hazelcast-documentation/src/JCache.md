@@ -1,10 +1,13 @@
  
 # Hazelcast JCache Implementation
 
-***NOTE:*** *This feature will be included in the next Hazelcast release.* 
+## JCache Overview
 
+Starting with release 3.3.1, Hazelcast offers its JCache (Java Cache) implementation. JCache is the official caching API of Java and it provides a common caching specification for the Java platform. It makes it easy for Java developers to cache data, which in many cases improves the performance.  When it comes to handling huge and non-stop changing data, caching is especially important.
 
-Hazelcast provides JSR 107 implementation. In order to use Hazelcast as a JCache provider, just add `hazelcast-3.3-JCACHE.jar` and `cache-api` dependency.
+This chapter explains the usage of JCache with Hazelcast’s implementation. For the full details of JCache, please visit its website at Java Community Process (JCP):
+
+[https://www.jcp.org/en/jsr/detail?id=107](#https://www.jcp.org/en/jsr/detail?id=107)
 
 ## Setup
 
@@ -55,12 +58,12 @@ System.out.println(value);//prints 'Hello World'
 
 ## Code Samples
 
-Please see [Hazelcast Code Samples](https://github.com/hazelcast/hazelcast-code-samples) for more examples.
+Please see [Hazelcast JCache Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/jcache/src/main/java/com/hazelcast/examples) for more examples.
 
 
 ## Work In Progress
 
-Below features are still in progress:
+Below features are still in progress and will be implemented in Hazelcast 3.3.1 release:
 
 - Hazelcast Java client support for JCache
 - Statistics and MXBean support 

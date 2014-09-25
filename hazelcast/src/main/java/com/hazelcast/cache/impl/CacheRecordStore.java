@@ -53,6 +53,9 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 
 /**
  * Implementation of the {@link ICacheRecordStore}
+ *
+ *
+ * todo What does this do?
  */
 public class CacheRecordStore
         implements ICacheRecordStore {

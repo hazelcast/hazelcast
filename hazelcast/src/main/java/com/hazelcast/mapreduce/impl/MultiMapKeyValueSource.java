@@ -104,7 +104,7 @@ public class MultiMapKeyValueSource<K, V>
         if (keyIterator != null && keyIterator.hasNext()) {
             Data dataKey = keyIterator.next();
             key = (K) ss.toObject(dataKey);
-            MultiMapWrapper wrapper = multiMapContainer.getMultiMapWrapper(dataKey);
+            MultiMapWrapper wrapper = multiMapContainer.getMultiMapWrapperOrNull(dataKey);
             valueIterator = wrapper.getCollection(true).iterator();
             return hasNext();
         }

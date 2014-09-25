@@ -4,7 +4,6 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -193,11 +192,15 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size() == 0) {
             return;
         }
-        if (inEvictableTimeWindow(now) && isEvictable()) {
+        if (shouldEvict(now)) {
             removeEvictables(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
         }
+    }
+
+    protected boolean shouldEvict(long now) {
+        return evictionEnabled && inEvictableTimeWindow(now) && isEvictable();
     }
 
     private void removeEvictables(boolean backup) {

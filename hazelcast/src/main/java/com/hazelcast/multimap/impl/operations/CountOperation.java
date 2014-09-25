@@ -39,7 +39,7 @@ public class CountOperation extends MultiMapKeyBasedOperation implements WaitSup
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
-        MultiMapWrapper wrapper = container.getMultiMapWrapper(dataKey);
+        MultiMapWrapper wrapper = container.getMultiMapWrapperOrNull(dataKey);
         response = wrapper == null ? 0 : wrapper.getCollection(false).size();
     }
 

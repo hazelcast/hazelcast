@@ -83,8 +83,6 @@ import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
-
-    private static final int TIMEOUT_PLUS = 2000;
     private static final int RETRY_COUNT = 20;
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
@@ -132,7 +130,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         final ClientConfig config = client.getClientConfig();
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
 
-        connectionTimeout = networkConfig.getConnectionTimeout();
+        final int connTimeout = networkConfig.getConnectionTimeout();
+        connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
         final ClientProperties clientProperties = client.getClientProperties();
         int timeout = clientProperties.getHeartbeatTimeout().getInteger();
@@ -335,7 +334,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, false);
                     final ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
                     try {
-                        clientConnection = future.get(connectionTimeout + TIMEOUT_PLUS, TimeUnit.MILLISECONDS);
+                        clientConnection = future.get(connectionTimeout, TimeUnit.MILLISECONDS);
                     } catch (Exception e) {
                         future.cancel(true);
                         throw new RetryableIOException(e);
@@ -566,9 +565,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         private ClientConnection getOrWaitForCreation() throws IOException {
             ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
-            int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
-            int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
-            int waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
+            long connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
+            long connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+            long waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
+            if (waitTime < 0) {
+                waitTime = Long.MAX_VALUE;
+            }
+
             final ClientConnection currentOwnerConnection = ownerConnection;
             if (currentOwnerConnection != null) {
                 return currentOwnerConnection;
@@ -595,7 +598,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
             ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
             try {
-                ClientConnection conn = future.get(connectionTimeout + TIMEOUT_PLUS, TimeUnit.MILLISECONDS);
+                ClientConnection conn = future.get(connectionTimeout, TimeUnit.MILLISECONDS);
                 synchronized (ownerConnectionLock) {
                     ownerConnection = conn;
                     ownerConnectionLock.notifyAll();

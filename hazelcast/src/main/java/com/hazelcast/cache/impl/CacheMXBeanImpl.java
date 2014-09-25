@@ -22,6 +22,7 @@ import javax.cache.management.CacheMXBean;
 
 /**
  * Implementation of the CacheMXBean.
+ *
  */
 public class CacheMXBeanImpl
         implements CacheMXBean {
@@ -32,36 +33,57 @@ public class CacheMXBeanImpl
         this.cacheConfig = cacheConfig;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getKeyType() {
         return cacheConfig.getKeyType().getName();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getValueType() {
         return cacheConfig.getValueType().getName();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isReadThrough() {
         return cacheConfig.isReadThrough();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isWriteThrough() {
         return cacheConfig.isWriteThrough();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isStoreByValue() {
         return cacheConfig.isStoreByValue();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isStatisticsEnabled() {
         return cacheConfig.isStatisticsEnabled();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isManagementEnabled() {
         return cacheConfig.isManagementEnabled();

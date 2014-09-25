@@ -46,19 +46,14 @@
     <suppress checks="JavadocType" files="com.hazelcast.cache.impl[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.cache.impl[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.cache.impl[\\/]"/>
-
-    <suppress checks="NPathComplexity" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
-    <suppress checks="MethodCount" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
-    <suppress checks="NestedIfDepth" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
-    <suppress checks="IllegalType" files="com.hazelcast.client.proxy.ClientCacheProxy"/>
-
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.client.cache.impl.AbstractClientCacheProxyInternal"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheRecordStore"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CachePortableHook"/>
     <suppress checks="MethodLength" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CachePortableHook"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.cache.impl.CachePortableHook"/>
     <suppress checks="MethodLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
     <suppress checks="AnonInnerLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
 

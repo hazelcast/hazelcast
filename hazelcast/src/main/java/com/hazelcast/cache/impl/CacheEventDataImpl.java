@@ -91,4 +91,14 @@ public class CacheEventDataImpl
         dataOldValue = in.readData();
         isOldValueAvailable = in.readBoolean();
     }
+
+    @Override
+    public int getId() {
+        return CacheDataSerializerHook.CACHE_EVENT_DATA;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
+    }
 }

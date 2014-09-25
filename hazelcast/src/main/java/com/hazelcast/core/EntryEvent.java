@@ -35,7 +35,6 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
 
     protected V value;
 
-
     public EntryEvent(Object source, Member member, int eventType, K key, V value) {
         this(source, member, eventType, key, null, value);
     }
@@ -78,9 +77,9 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
     public String toString() {
         return "EntryEvent{"
                 + super.toString()
-                + ", key=" + key
-                + ", oldValue=" + oldValue
-                + ", value=" + value
+                + ", key=" + getKey()
+                + ", oldValue=" + getOldValue()
+                + ", value=" + getValue()
                 + '}';
     }
 }
