@@ -18,15 +18,15 @@ package com.hazelcast.map.tx;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.map.NearCache;
 import com.hazelcast.map.QueryResult;
 import com.hazelcast.map.operation.ContainsKeyOperation;
 import com.hazelcast.map.operation.GetOperation;
+import com.hazelcast.map.operation.MapEntrySetOperation;
 import com.hazelcast.map.operation.MapKeySetOperation;
-import com.hazelcast.map.operation.MapValuesOperation;
 import com.hazelcast.map.operation.QueryOperation;
 import com.hazelcast.map.operation.QueryPartitionOperation;
 import com.hazelcast.map.operation.SizeOperationFactory;
@@ -257,20 +257,20 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         }
     }
 
-    protected Collection<Data> valuesInternal() {
+    protected List<Map.Entry<Data, Data>> getEntries() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(
                             SERVICE_NAME,
-                            new BinaryOperationFactory(new MapValuesOperation(name), nodeEngine)
+                            new BinaryOperationFactory(new MapEntrySetOperation(name), nodeEngine)
                     );
-            List<Data> values = new ArrayList<Data>();
+            ArrayList<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>();
             for (Object result : results.values()) {
-                values.addAll(((MapValueCollection) getService()
-                        .getMapServiceContext().toObject(result)).getValues());
+                entries.addAll(((MapEntrySet) getService()
+                        .getMapServiceContext().toObject(result)).getEntrySet());
             }
-            return values;
+            return entries;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
