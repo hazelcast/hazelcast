@@ -14,7 +14,7 @@ This chapter explains the usage of Hazelcast’s JCache implementation. For the 
 ## Setup
 Very similar to Hazelcast's setup and usage, it is as easy as adding a dependency or dropping a jar file.
 
-Hazelcast has built-in JCache implementaion which will be enabled by just adding the `cache-api` dependency. When Hazelcast sees the `javax.cache.Caching` class on the classpath, it will just enable JCache.
+Hazelcast has built-in JCache implementation which will be enabled by just adding the `cache-api` dependency. When Hazelcast sees the `javax.cache.Caching` class on the classpath, it will just enable JCache.
 
 - Add the file `hazelcast-3.3.1.jar` to your classpath or add it as a dependency.
 - Download the `cache-api` from maven repo or add it as a dependency as shown below.
@@ -82,7 +82,7 @@ String value = cache.get("theKey");
 System.out.println(value);//prints 'Hello World'
 ```
 
-## Hazelcastcache Extension - ICache
+## Hazelcast Cache Extension - ICache
 
 Hazelcast provides extension methods to Cache API through the interface `com.hazelcast.cache.ICache`. 
 
