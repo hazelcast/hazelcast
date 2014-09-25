@@ -17,10 +17,10 @@
 |[Chapter 7 - User Defined Services](#user-defined-services)||Added as a new chapter explaining Hazelcast's Service Provider Interface (SPI).|
 |[Chapter 8 - Transactions](#transactions)|[XA Transactions](#xa-transactions)|Added as a new section.|
 ||[Sample JBoss AS 7 - EAP 6 Web Application Configuration](#sample-JBoss-AS-7-EAP-6-web-application-configuration)| Added as a new section.|
-|[Chapter 9 - Integrated Clustering](#integrated-clustering)|[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Added as a new section (Enterprise Only feature).|
+|[Chapter 9 - Hazelcast JCache Implementation](#hazelcast-jcache-implementation)||Added as a new chapter.|
+|[Chapter 10 - Integrated Clustering](#integrated-clustering)|[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Added as a new section (Enterprise Only feature).|
 ||[Filter Based Web Session Replication](#filter-based-web-session-replication)|Updated by adding SpringAwareWebFilter related information.
-|[Chapter 10 - Hazelcast JCache Implementation](#hazelcast-jcache-implementation)||Added as a new chapter.|
-|[Chapter 11 - Clients](#clients)|[Java Client](#java-client)|Client configuration related to AWS added and the whole section enhanced.|
+|[Chapter 12 - Clients](#clients)|[Java Client](#java-client)|Client configuration related to AWS added and the whole section enhanced.|
 |[Chapter 13 - Serialization](#serialization)||All sections under this chapter re-written and enhanced. Also added HazelcastInstanceAware, Stream & ByteArray Serializer, Serializable & Externalizable sections. Chapter introduction enhanced by adding an overview, a section explaining serialization interfaces and a comparison table for these interfaces.|
 ||[Null Portable Serialization](#null-portable-serialization)| Added as a new section.|
 |[Chapter 14 - Management](#management)|[Clustered JMX](#clustered-jmx)|Added as a new section explaining how to monitor the statistics of distributed objects from a JMX interface (Enterprise Only feature).|
