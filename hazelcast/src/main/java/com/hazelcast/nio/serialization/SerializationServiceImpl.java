@@ -669,10 +669,8 @@ public class SerializationServiceImpl implements SerializationService {
             if (out != null) {
                 out.clear();
                 Queue<BufferObjectDataOutput> outputQueue = map.get(Thread.currentThread());
-                if (outputQueue != null) {
-                    if (!outputQueue.offer(out)) {
-                        IOUtil.closeResource(out);
-                    }
+                if (outputQueue == null || !outputQueue.offer(out)) {
+                    IOUtil.closeResource(out);
                 }
             }
         }

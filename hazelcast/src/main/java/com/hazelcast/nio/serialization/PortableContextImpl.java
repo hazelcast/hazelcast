@@ -267,7 +267,7 @@ final class PortableContextImpl implements PortableContext {
         private byte[] toClassDefinitionBinary(ClassDefinition cd) throws IOException {
             BufferObjectDataOutput out = serializationService.pop();
             try {
-                writeDirect(cd, out);
+                writeClassDefinition(cd, out);
                 byte[] binary = out.toByteArray();
                 out.clear();
                 compress(binary, out);
@@ -292,7 +292,7 @@ final class PortableContextImpl implements PortableContext {
                 serializationService.push(out);
             }
 
-            ClassDefinitionImpl cd = (ClassDefinitionImpl) readDirect(serializationService.createObjectDataInput(binary));
+            ClassDefinitionImpl cd = readClassDefinition(serializationService.createObjectDataInput(binary));
             if (cd.getVersion() < 0) {
                 throw new IOException("ClassDefinition version cannot be negative! -> " + cd);
             }
@@ -307,7 +307,7 @@ final class PortableContextImpl implements PortableContext {
      * @param classDefinition ClassDefinition
      * @param out             stream to write ClassDefinition
      */
-    private static void writeDirect(ClassDefinition classDefinition, ObjectDataOutput out) throws IOException {
+    private static void writeClassDefinition(ClassDefinition classDefinition, ObjectDataOutput out) throws IOException {
         ClassDefinitionImpl cd = (ClassDefinitionImpl) classDefinition;
 
         out.writeInt(cd.getFactoryId());
@@ -318,7 +318,7 @@ final class PortableContextImpl implements PortableContext {
         out.writeShort(fieldDefinitions.size());
 
         for (FieldDefinition fieldDefinition : fieldDefinitions) {
-            writeFd(fieldDefinition, out);
+            writeFieldDefinition((FieldDefinitionImpl) fieldDefinition, out);
         }
     }
 
@@ -328,7 +328,7 @@ final class PortableContextImpl implements PortableContext {
      * @param in stream to write ClassDefinition
      * @return ClassDefinition
      */
-    private static ClassDefinition readDirect(ObjectDataInput in) throws IOException {
+    private static ClassDefinitionImpl readClassDefinition(ObjectDataInput in) throws IOException {
         int factoryId = in.readInt();
         int classId = in.readInt();
         int version = in.readInt();
@@ -341,7 +341,7 @@ final class PortableContextImpl implements PortableContext {
         int len = in.readShort();
 
         for (int i = 0; i < len; i++) {
-            FieldDefinitionImpl fd = readFd(in);
+            FieldDefinitionImpl fd = readFieldDefinition(in);
             cd.addFieldDef(fd);
         }
 
@@ -351,12 +351,10 @@ final class PortableContextImpl implements PortableContext {
     /**
      * Writes a FieldDefinition to a stream.
      *
-     * @param fieldDefinition FieldDefinition
+     * @param fd FieldDefinition
      * @param out             stream to write FieldDefinition
      */
-    private static void writeFd(FieldDefinition fieldDefinition, ObjectDataOutput out) throws IOException {
-        FieldDefinitionImpl fd = (FieldDefinitionImpl) fieldDefinition;
-
+    private static void writeFieldDefinition(FieldDefinitionImpl fd, ObjectDataOutput out) throws IOException {
         out.writeInt(fd.index);
         out.writeUTF(fd.fieldName);
         out.writeByte(fd.type.getId());
@@ -370,7 +368,7 @@ final class PortableContextImpl implements PortableContext {
      * @param in stream to write FieldDefinition
      * @return FieldDefinition
      */
-    private static FieldDefinitionImpl readFd(ObjectDataInput in) throws IOException {
+    private static FieldDefinitionImpl readFieldDefinition(ObjectDataInput in) throws IOException {
         int index = in.readInt();
         String name = in.readUTF();
         byte typeId = in.readByte();
