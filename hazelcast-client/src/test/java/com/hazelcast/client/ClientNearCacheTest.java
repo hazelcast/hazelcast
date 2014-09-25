@@ -494,4 +494,14 @@ public class ClientNearCacheTest {
             map.get(i);
         }
     }
+
+    @Test
+    public void testNearCache_shutdownClient() {
+        final String mapName = randomMapName(NEAR_CACHE_WITH_INVALIDATION);
+        final IMap<Integer, Integer> map = client.getMap(mapName);
+
+        map.get(1);
+        //test should finish without throwing any exception.
+        client.shutdown();
+    }
 }
