@@ -1,4 +1,4 @@
-w## Threading Model
+## Threading Model
 
 Your application server has its own threads. Hazelcast does not use these - it manages its own threads.
 
