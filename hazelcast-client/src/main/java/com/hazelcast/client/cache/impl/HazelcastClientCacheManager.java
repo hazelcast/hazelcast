@@ -43,8 +43,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public final class HazelcastClientCacheManager
-        extends HazelcastCacheManager {
+/**
+ *
+ * todo What does this do?
+ */
+public final class HazelcastClientCacheManager extends HazelcastCacheManager {
 
     private final ClientContext clientContext;
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();

@@ -14,17 +14,20 @@ import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 import java.lang.ref.WeakReference;
 import java.net.URI;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class HazelcastCacheManager
-        implements CacheManager {
+/**
+ * The Hazelcast CacheManager base class. Hazelcast supports two modes:
+ * <ul>
+ *     <li>Client -  HazelcastClientCacheManager</li>
+ *     <li>Server - HazelcastServerCacheManager</li>
+ * </ul>
+ * @see CacheManager
+ */
+public abstract class HazelcastCacheManager implements CacheManager {
 
     protected final ConcurrentMap<String, ICache<?, ?>> caches = new ConcurrentHashMap<String, ICache<?, ?>>();
     protected final URI uri;
@@ -59,6 +62,9 @@ public abstract class HazelcastCacheManager
         this.cacheNamePrefix = cacheNamePrefix();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration)
             throws IllegalArgumentException {
@@ -97,26 +103,41 @@ public abstract class HazelcastCacheManager
         throw new CacheException("A cache named " + cacheName + " already exists.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CachingProvider getCachingProvider() {
         return cachingProvider;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public URI getURI() {
         return this.uri;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ClassLoader getClassLoader() {
         return classLoaderReference.get();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Properties getProperties() {
         return properties;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <K, V> ICache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType) {
         if (isClosed()) {
@@ -148,6 +169,9 @@ public abstract class HazelcastCacheManager
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public <K, V> ICache<K, V> getCache(String cacheName) {
         if (isClosed()) {
             throw new IllegalStateException();
@@ -168,6 +192,9 @@ public abstract class HazelcastCacheManager
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     protected <K, V> ICache<?, ?> getCacheUnchecked(String cacheName) {
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
@@ -190,6 +217,9 @@ public abstract class HazelcastCacheManager
         return cache;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Iterable<String> getCacheNames() {
         Set<String> names;
@@ -205,6 +235,9 @@ public abstract class HazelcastCacheManager
         return Collections.unmodifiableCollection(names);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void destroyCache(String cacheName) {
         if (isClosed()) {
@@ -221,9 +254,16 @@ public abstract class HazelcastCacheManager
         removeCacheConfigFromLocal(cacheNameWithPrefix);
     }
 
+    /**
+     * todo Why is this empty?
+     * @param cacheName
+     */
     protected void removeCacheConfigFromLocal(String cacheName) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void close() {
         if (isDestroyed.get() || !isClosed.compareAndSet(false, true)) {
@@ -236,6 +276,9 @@ public abstract class HazelcastCacheManager
         //        caches.clear();
     }
 
+    /**
+     * todo what does this do?
+     */
     public void destroy() {
         if (!isDestroyed.compareAndSet(false, true)) {
             return;
@@ -247,11 +290,17 @@ public abstract class HazelcastCacheManager
         caches.clear();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isClosed() {
         return isClosed.get() || !hazelcastInstance.getLifecycleService().isRunning();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <T> T unwrap(Class<T> clazz) {
         if (clazz.isAssignableFrom(HazelcastCacheManager.class)) {
@@ -260,6 +309,9 @@ public abstract class HazelcastCacheManager
         throw new IllegalArgumentException();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("HazelcastCacheManager{");
@@ -316,7 +368,7 @@ public abstract class HazelcastCacheManager
     protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
         //REGISTER LISTENERS
         final Iterator<CacheEntryListenerConfiguration<K, V>> iterator = cacheConfig.getCacheEntryListenerConfigurations()
-                                                                                    .iterator();
+                .iterator();
         while (iterator.hasNext()) {
             final CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
             iterator.remove();
