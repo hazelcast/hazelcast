@@ -29,6 +29,8 @@ import java.util.Iterator;
 /**
  * Cluster-wide iterator for the {@link com.hazelcast.cache.ICache}
  *
+ * todo explain how this works. What is its performance in Big(O) Notation?
+ *
  * @param <K> key
  * @param <V> value
  */
