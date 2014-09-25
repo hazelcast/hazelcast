@@ -242,9 +242,11 @@ abstract class AbstractCacheProxyInternal<K, V>
 
     protected void countDownCompletionLatch(int id) {
         final CountDownLatch countDownLatch = syncLocks.get(id);
-        countDownLatch.countDown();
-        if (countDownLatch.getCount() == 0) {
-            deregisterCompletionLatch(id);
+        if (countDownLatch != null) {
+            countDownLatch.countDown();
+            if (countDownLatch.getCount() == 0) {
+                deregisterCompletionLatch(id);
+            }
         }
     }
 
