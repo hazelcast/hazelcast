@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements JoinOperation {
 
@@ -84,7 +85,14 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             }
 
             if (calls != null) {
-                FutureUtil.waitWithDeadline(calls, 1, TimeUnit.SECONDS, exceptionHandler);
+                try {
+                    FutureUtil.waitWithDeadline(calls, 1, TimeUnit.SECONDS, exceptionHandler);
+                } catch (TimeoutException e) {
+                    ILogger logger = getLogger();
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Timeout while waiting post-join operations: " + e.getMessage());
+                    }
+                }
             }
         }
     }

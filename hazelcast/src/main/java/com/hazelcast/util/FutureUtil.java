@@ -281,10 +281,10 @@ public final class FutureUtil {
                 executeWithDeadline(future, timeoutNanos, exceptionHandler);
             } catch (TimeoutException e) {
                 cancelAllFutures(futures);
-                throw (TimeoutException) e;
+                throw e;
             } catch (RuntimeException e) {
                 cancelAllFutures(futures);
-                throw (RuntimeException) e;
+                throw e;
 
             } catch (Exception e) {
                 cancelAllFutures(futures);
