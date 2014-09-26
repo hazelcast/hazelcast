@@ -18,13 +18,10 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
-import javax.cache.configuration.MutableConfiguration;
 import java.io.IOException;
-import java.util.HashSet;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
@@ -34,30 +31,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * @param <K>
  * @param <V>
  */
-public class CacheConfig<K, V>
-        extends MutableConfiguration<K, V>
-        implements DataSerializable {
-
-    /**
-     * The number of minimum backup counter
-     */
-    public static final int MIN_BACKUP_COUNT = 0;
-    /**
-     * The number of maximum backup counter
-     */
-    public static final int MAX_BACKUP_COUNT = 6;
-    /**
-     * The number of default backup counter
-     */
-    public static final int DEFAULT_BACKUP_COUNT = 1;
-    /**
-     * Default InMemory Format.
-     */
-    public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
-    /**
-     * Default Eviction Policy.
-     */
-    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
+public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int backupCount = DEFAULT_BACKUP_COUNT;
@@ -68,35 +42,28 @@ public class CacheConfig<K, V>
     private String uriString;
     private NearCacheConfig nearCacheConfig;
 
-    private CacheConfigReadOnly<K, V> readOnly;
-
     public CacheConfig() {
         super();
     }
 
-    public CacheConfig(CompleteConfiguration<K, V> completeConfiguration) {
-        super(completeConfiguration);
-        if (completeConfiguration instanceof CacheConfig) {
-            final CacheConfig config = (CacheConfig) completeConfiguration;
-            //        this.name = config.name;
+    public CacheConfig(CompleteConfiguration<K, V> configuration) {
+        super(configuration);
+        if (configuration instanceof CacheConfig) {
+            final CacheConfig config = (CacheConfig) configuration;
             this.backupCount = config.backupCount;
             this.asyncBackupCount = config.asyncBackupCount;
-            //        this.evictionPercentage = config.evictionPercentage;
-            //        this.evictionThresholdPercentage = config.evictionThresholdPercentage;
-            //        this.timeToLiveSeconds = config.timeToLiveSeconds;
             this.evictionPolicy = config.evictionPolicy;
-            this.isStatisticsEnabled = config.isStatisticsEnabled;
             if (config.nearCacheConfig != null) {
                 this.nearCacheConfig = new NearCacheConfig(config.nearCacheConfig);
             }
         }
     }
 
+    /**
+     * Immutable CacheConfig instance
+     */
     public CacheConfigReadOnly<K, V> getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CacheConfigReadOnly<K, V>(this);
-        }
-        return readOnly;
+        return new CacheConfigReadOnly<K, V>(this);
     }
 
     /**
@@ -315,7 +282,7 @@ public class CacheConfig<K, V>
         final boolean listNotEmpty = in.readBoolean();
         if (listNotEmpty) {
             final int size = in.readInt();
-            listenerConfigurations = new HashSet<CacheEntryListenerConfiguration<K, V>>(size);
+            listenerConfigurations = createConcurrentSet();
             for (int i = 0; i < size; i++) {
                 listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
             }
@@ -328,26 +295,34 @@ public class CacheConfig<K, V>
         int result = super.hashCode();
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (managerPrefix != null ? managerPrefix.hashCode() : 0);
+        result = 31 * result + (uriString != null ? uriString.hashCode() : 0);
         return result;
     }
 
+
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
+    public boolean equals(final Object o) {
+        if (this == o) {
             return true;
         }
-        if (!(obj instanceof CacheConfig)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        if (!super.equals(obj)) {
+
+        final CacheConfig that = (CacheConfig) o;
+
+
+        if (managerPrefix != null ? !managerPrefix.equals(that.managerPrefix) : that.managerPrefix != null) {
             return false;
         }
-        return equalsInternal((CacheConfig) obj);
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (uriString != null ? !uriString.equals(that.uriString) : that.uriString != null) {
+            return false;
+        }
+
+        return super.equals(o);
     }
 
-    private boolean equalsInternal(CacheConfig other) {
-        return (this.name != null ? this.name.equals(other.name) : other.name == null) && (
-                this.managerPrefix != null ? this.managerPrefix.equals(other.managerPrefix) : other.managerPrefix == null) && (
-                this.uriString != null ? this.uriString.equals(other.uriString) : other.uriString == null);
-    }
 }
