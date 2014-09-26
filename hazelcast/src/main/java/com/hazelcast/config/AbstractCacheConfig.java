@@ -155,16 +155,11 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
-        synchronized (listenerConfigurationsMutex) {
-            for (CacheEntryListenerConfiguration<? super K, ? super V> c : listenerConfigurations) {
-                if (c.equals(cacheEntryListenerConfiguration)) {
-                    throw new IllegalArgumentException("A CacheEntryListenerConfiguration can "
-                            + "be registered only once");
-                }
-            }
-            this.listenerConfigurations.add(cacheEntryListenerConfiguration);
-            return this;
+        if (!listenerConfigurations.add(cacheEntryListenerConfiguration)) {
+            throw new IllegalArgumentException("A CacheEntryListenerConfiguration can "
+                    + "be registered only once");
         }
+        return this;
     }
 
     /**
@@ -178,10 +173,8 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
-        synchronized (listenerConfigurationsMutex) {
-            listenerConfigurations.remove(cacheEntryListenerConfiguration);
-            return this;
-        }
+        listenerConfigurations.remove(cacheEntryListenerConfiguration);
+        return this;
     }
 
     @Override
@@ -329,7 +322,14 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
 
     @Override
     public boolean equals(final Object o) {
-        final AbstractCacheConfig that = (CacheConfig) o;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AbstractCacheConfig that = (AbstractCacheConfig) o;
+
         if (isManagementEnabled != that.isManagementEnabled) {
             return false;
         }
