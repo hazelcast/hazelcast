@@ -93,7 +93,9 @@ Hazelcast supports read-through, write-through and write-behind persistence mode
 
 #### Read-Through
 
-If a loader implementation is provided and the requested key does not exist in-memory, `get(key)` calls your loader implementation to load the entry from the data store.
+If an entry does not exist in the memory when an application asks, Hazelcast asks your loader implementation to load that entry from the data store.  If the entry exists there, the loader implementation gets it, hands it to Hazelcast, and Hazelcast puts it into the memory. This is read-through persistence mode.
+
+
 
 #### Write-Through
 
