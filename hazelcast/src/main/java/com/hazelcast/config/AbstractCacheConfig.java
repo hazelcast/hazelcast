@@ -318,7 +318,7 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
         result = 31 * result + keyType.hashCode();
         result = 31 * result + valueType.hashCode();
         result = 31 * result + (cacheWriterFactory != null ? cacheWriterFactory.hashCode() : 0);
-        result = 31 * result + expiryPolicyFactory.hashCode();
+        result = 31 * result + (expiryPolicyFactory != null ? expiryPolicyFactory.hashCode() : 0);
         result = 31 * result + (isReadThrough ? 1 : 0);
         result = 31 * result + (isWriteThrough ? 1 : 0);
         result = 31 * result + (isStatisticsEnabled ? 1 : 0);
@@ -345,13 +345,14 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
         if (isWriteThrough != that.isWriteThrough) {
             return false;
         }
-        if (!cacheLoaderFactory.equals(that.cacheLoaderFactory)) {
+        if (cacheLoaderFactory != null ? !cacheLoaderFactory.equals(that.cacheLoaderFactory) : that.cacheLoaderFactory != null) {
             return false;
         }
-        if (!cacheWriterFactory.equals(that.cacheWriterFactory)) {
+        if (cacheWriterFactory != null ? !cacheWriterFactory.equals(that.cacheWriterFactory) : that.cacheWriterFactory != null) {
             return false;
         }
-        if (!expiryPolicyFactory.equals(that.expiryPolicyFactory)) {
+        if (expiryPolicyFactory != null
+                ? !expiryPolicyFactory.equals(that.expiryPolicyFactory) : that.expiryPolicyFactory != null) {
             return false;
         }
         if (!keyType.equals(that.keyType)) {
