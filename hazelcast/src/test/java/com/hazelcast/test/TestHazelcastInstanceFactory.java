@@ -104,6 +104,15 @@ public final class TestHazelcastInstanceFactory {
         }
     }
 
+    public void terminateAll() {
+        if (mockNetwork) {
+            nodeIndex.set(Integer.MAX_VALUE);
+            registry.terminate();
+        } else {
+            HazelcastInstanceFactory.terminateAll();
+        }
+    }
+
     private static HazelcastInstance newHazelcastClient() {
         Class clazz = null;
         try {

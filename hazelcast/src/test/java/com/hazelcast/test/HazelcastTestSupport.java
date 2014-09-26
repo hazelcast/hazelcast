@@ -285,7 +285,7 @@ public abstract class HazelcastTestSupport {
         final TestHazelcastInstanceFactory f = factory;
         if (f != null) {
             factory = null;
-            f.shutdownAll();
+            f.terminateAll();
         }
     }
 

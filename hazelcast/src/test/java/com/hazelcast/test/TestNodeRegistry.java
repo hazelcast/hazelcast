@@ -83,6 +83,15 @@ final class TestNodeRegistry {
         }
     }
 
+    void terminate() {
+        final Collection<NodeEngineImpl> values = new ArrayList<NodeEngineImpl>(nodes.values());
+        nodes.clear();
+        for (NodeEngineImpl value : values) {
+            HazelcastInstance hz = value.getHazelcastInstance();
+            hz.getLifecycleService().terminate();
+        }
+    }
+
     private static class MockNodeContext implements NodeContext {
 
         final Address[] addresses;
