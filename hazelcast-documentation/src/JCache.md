@@ -11,7 +11,8 @@ This chapter explains the usage of Hazelcast’s JCache implementation. For the 
 
 [https://www.jcp.org/en/jsr/detail?id=107](#https://www.jcp.org/en/jsr/detail?id=107)
 
-## Setup
+## Setup and Usage
+
 Very similar to Hazelcast's setup and usage, it is as easy as adding a dependency or dropping a jar file.
 
 Hazelcast has built-in JCache implementation which will be enabled by just adding the `cache-api` dependency. When Hazelcast sees the `javax.cache.Caching` class on the classpath, it will just enable JCache.
@@ -26,6 +27,9 @@ Hazelcast has built-in JCache implementation which will be enabled by just addin
   <version>1.0.0</version>
 </dependency>
 ```
+After setting dependencies, you can start using JCache as described by the specification JSR 107. Please note that Hazelcast specific configurations still can be performed as described by this document.
+
+
 ## Provider Types
 
 Hazelcast has two types of providers that you can use. You can think of these two types as Hazelcast client and server in terms of their usage purposes.
@@ -40,22 +44,19 @@ If you want to embed JCache server into your application, you can use the server
 
 ## Provider Setup
 
-After adding the `cache-api` dependency, there are three options to use Hazelcast. You will add one of these with the related default provider as
+After adding the `cache-api` dependency, there are below options to use Hazelcast. Depending on the Hazelcast jar file you add, Hazelcast can be used as a server or client provider:
 
-1. hazelcast-VERSION.jar ==> default provider: Server 
-2. hazelcast-client-VERSION.jar ==> default provider: Client
-3. hazelcast-all-VERSION.jar ==> default provider: Client
+1. If `hazelcast-<version>.jar` is added to the classpath, Hazelcast can only be used as a server provider. 
+2. If `hazelcast-client-<version>.jar` is added to the classpath, default provider is the client one.
+3. If `hazelcast-all-<version>.jar` is added to the classpath, default provider is again the client one.
 
-Which ever you add as dependency will enable its default cache provider. If you add hazelcast-client or hazelcast-all jar, but want to force using the server caching provider mode then you can use
+Adding one of these dependencies enables its default cache provider. 
+
+If you add `hazelcast-client-<version>.jar` or `hazelcast-all-<version>.jar`, but want to force using the server caching provider mode, then you can use the below system property to setup the provider type:
 
 `-Dhazelcast.jcache.provider.type=[client|server]`
 
-system parameter to setup the provider type.
 
-
-## Usage
-
-After setting dependencies, you can start using JCache as described by the specification JSR 107. Please note that Hazelcast specific configurations still can be performed as described by this document.
 
 ## Sample JCache Code
 
