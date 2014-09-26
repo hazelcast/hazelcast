@@ -150,6 +150,12 @@ final class TestNodeRegistry {
                 }
             }
 
+            @Override
+            public boolean registerConnection(Address address, Connection connection) {
+                mapConnections.put(address, connection);
+                return true;
+            }
+
             public void start() {
             }
 

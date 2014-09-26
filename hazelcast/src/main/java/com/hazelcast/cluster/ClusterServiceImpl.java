@@ -50,6 +50,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.ExecutorType;
 
@@ -526,7 +527,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    void handleJoinRequest(JoinRequest joinRequest) {
+    void handleJoinRequest(JoinRequest joinRequest, Connection connection) {
         if (!node.joined() || !node.isActive()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Node is not ready to process join request...");
@@ -535,6 +536,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
 
         if (!ensureValidConfiguration(joinRequest)) {
+            return;
+        }
+
+        if (isJoinRequestFromAnExistingMember(joinRequest, connection)) {
             return;
         }
 
@@ -558,10 +563,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 String msg = "Handling join from " + joinRequest.getAddress() + ", inProgress: " + joinInProgress
                         + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
                 logger.finest(msg);
-            }
-
-            if (isJoinRequestFromAnExistingMember(joinRequest)) {
-                return;
             }
 
             MemberInfo memberInfo = new MemberInfo(joinRequest.getAddress(), joinRequest.getUuid(),
@@ -642,10 +643,15 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    private boolean isJoinRequestFromAnExistingMember(JoinRequest joinRequest) {
+    private boolean isJoinRequestFromAnExistingMember(JoinRequest joinRequest, Connection connection) {
         MemberImpl member = getMember(joinRequest.getAddress());
-        if (member != null) {
-            if (joinRequest.getUuid().equals(member.getUuid())) {
+        if (member == null) {
+            return false;
+        }
+
+        Address target = member.getAddress();
+        if (joinRequest.getUuid().equals(member.getUuid())) {
+            if (node.isMaster()) {
                 if (logger.isFinestEnabled()) {
                     String message = "Ignoring join request, member already exists.. => " + joinRequest;
                     logger.finest(message);
@@ -653,20 +659,35 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 // send members update back to node trying to join again...
                 Operation op = new MemberInfoUpdateOperation(createMemberInfos(getMemberList(), true),
                         getClusterTime(), false);
-                nodeEngine.getOperationService().send(op, member.getAddress());
-                return true;
+                nodeEngine.getOperationService().send(op, target);
+            } else {
+                sendMasterAnswer(target);
             }
+            return true;
+        }
+
+        lock.lock();
+        try {
             // If this node is master then remove old member and process join request.
             // If requesting address is equal to master node's address, that means master node
             // somehow disconnected and wants to join back.
             // So drop old member and process join request if this node becomes master.
-            if (node.isMaster() || member.getAddress().equals(node.getMasterAddress())) {
+            if (node.isMaster() || target.equals(node.getMasterAddress())) {
                 logger.warning("New join request has been received from an existing endpoint! => " + member
                         + " Removing old member and processing join request...");
-                doRemoveAddress(member.getAddress(), false);
+
+                doRemoveAddress(target, false);
+                Connection existing = node.connectionManager.getConnection(target);
+                if (existing != connection) {
+                    node.connectionManager.destroyConnection(existing);
+                    node.connectionManager.registerConnection(target, connection);
+                }
+                return false;
             }
+        } finally {
+            lock.unlock();
         }
-        return false;
+        return true;
     }
 
     private void sendMasterAnswer(Address target) {
@@ -679,30 +700,55 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         nodeEngine.getOperationService().send(op, target);
     }
 
-    void handleMaster(Address masterAddress) {
+    void handleMaster(Address masterAddress, Address callerAddress) {
+        if (node.joined()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Ignoring master response: " + masterAddress + " from: " + callerAddress
+                    + ". This node is already joined...");
+            }
+            return;
+        }
+
+        if (node.getThisAddress().equals(masterAddress)) {
+            logger.finest("Ignoring master response: " + masterAddress + " from: " + callerAddress
+                    + ". This node is already master...");
+        }
+
         lock.lock();
         try {
-            if (!node.joined() && !node.getThisAddress().equals(masterAddress)) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Handling master response: " + this);
-                }
-                final Address currentMaster = node.getMasterAddress();
-                if (currentMaster != null && !currentMaster.equals(masterAddress)) {
-                    final Connection conn = node.connectionManager.getConnection(currentMaster);
-                    if (conn != null && conn.live()) {
-                        logger.warning("Ignoring master response from " + masterAddress +
-                                ", since this node has an active master: " + currentMaster);
-                        return;
-                    }
-                }
-                node.setMasterAddress(masterAddress);
-                node.connectionManager.getOrConnect(masterAddress);
-                if (!sendJoinRequest(masterAddress, true)) {
-                    logger.warning("Could not create connection to possible master " + masterAddress);
+            if (logger.isFinestEnabled()) {
+                logger.finest("Handling master response: " + masterAddress + " from: " + callerAddress);
+            }
+            final Address currentMaster = node.getMasterAddress();
+            if (currentMaster == null || currentMaster.equals(masterAddress)) {
+                setMasterAndJoin(masterAddress);
+            } else if (currentMaster.equals(callerAddress)) {
+                    logger.info("Setting master to: " + masterAddress + ", since "
+                            + currentMaster + " says it's not master anymore.");
+                    setMasterAndJoin(masterAddress);
+            } else {
+                final Connection conn = node.connectionManager.getConnection(currentMaster);
+                if (conn != null && conn.live()) {
+                    logger.info("Ignoring master response: " + masterAddress + " from: " + callerAddress
+                            + ", since this node has an active master: " + currentMaster);
+                    sendJoinRequest(currentMaster, true);
+                } else {
+                    logger.warning("Ambiguous master response, this node has a master: " + currentMaster
+                        + ", but doesn't have a connection to. " + callerAddress + " sent master response as: "
+                        + masterAddress + ". Master field will be unset now...");
+                    node.setMasterAddress(null);
                 }
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void setMasterAndJoin(Address masterAddress) {
+        node.setMasterAddress(masterAddress);
+        node.connectionManager.getOrConnect(masterAddress);
+        if (!sendJoinRequest(masterAddress, true)) {
+            logger.warning("Could not create connection to possible master " + masterAddress);
         }
     }
 
@@ -757,11 +803,15 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     for (Future f : futures) {
                         try {
                             waitOnFutureInterruptible(f, callTimeout, TimeUnit.MILLISECONDS);
+                        } catch (HazelcastInstanceNotActiveException e) {
+                            EmptyStatement.ignore(e);
                         } catch (Exception e) {
                             logger.severe("While merging...", e);
                         }
                     }
-                    lifecycleService.fireLifecycleEvent(MERGED);
+                    if (node.isActive() && node.joined()) {
+                        lifecycleService.fireLifecycleEvent(MERGED);
+                    }
                 }
             });
         }
