@@ -97,12 +97,6 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
      */
     protected boolean isManagementEnabled;
 
-    /**
-     * Mutex for synchronizing {@link AbstractCacheConfig#listenerConfigurations}
-     */
-    private final Object listenerConfigurationsMutex = new Object();
-
-
     public AbstractCacheConfig() {
         this.keyType = (Class<K>) Object.class;
         this.valueType = (Class<V>) Object.class;
