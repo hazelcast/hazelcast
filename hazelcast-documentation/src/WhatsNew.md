@@ -13,5 +13,6 @@ This section provides the new features introduced with Hazelcast 3.3 release.
 - WAN Replication improved: Added configurable replication queue size [WAN Replication Queue Size](#wan-replication-queue-size).
 - Data Aggregation implemented: Added common data aggregations, please find [Aggregators](#aggregators) documentation.
 - EvictAll and LoadAll features for IMap: `evictAll` and `loadAll` methods have been introduced to be able to evict all entries except the locked ones and that loads all or a set of keys from a configured map store, respectively.
+- Hazelcast JCache implementation introduced: Starting with release 3.3.1, Hazelcast offers its JCache implementation. Please see [Hazelcast JCache Implementation](#hazelcast-jcache-implementation) for details.
 
 
