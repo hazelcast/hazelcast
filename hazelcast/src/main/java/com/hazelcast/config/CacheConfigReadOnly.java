@@ -107,6 +107,10 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     @Override
     public NearCacheConfig getNearCacheConfig() {
-        return super.getNearCacheConfig().getAsReadOnly();
+        final NearCacheConfig nearCacheConfig = super.getNearCacheConfig();
+        if (nearCacheConfig == null) {
+            return null;
+        }
+        return nearCacheConfig.getAsReadOnly();
     }
 }
