@@ -16,6 +16,10 @@
 
 package com.hazelcast.config;
 
+import javax.cache.configuration.CacheEntryListenerConfiguration;
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.cache.ICache} (read-only).
  *
@@ -28,31 +32,81 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
         super(config);
     }
 
-//    public CacheConfig setName(String name) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setBackupCount(int backupCount) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setAsyncBackupCount(int asyncBackupCount) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setEvictionPercentage(int evictionPercentage) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
-//
-//    public CacheConfig setStatisticsEnabled(boolean statisticsEnabled) {
-//        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-//    }
+    @Override
+    public CacheConfig<K, V> addCacheEntryListenerConfiguration(
+            CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig<K, V> removeCacheEntryListenerConfiguration(
+            CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public Iterable<CacheEntryListenerConfiguration<K, V>> getCacheEntryListenerConfigurations() {
+        Iterable<CacheEntryListenerConfiguration<K, V>> listenerConfigurations = super.getCacheEntryListenerConfigurations();
+        return Collections.unmodifiableSet((Set<CacheEntryListenerConfiguration<K, V>>) listenerConfigurations);
+    }
+
+    @Override
+    public CacheConfig<K, V> setName(final String name) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig<K, V> setManagerPrefix(final String managerPrefix) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig<K, V> setUriString(final String uriString) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig<K, V> setBackupCount(final int backupCount) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig<K, V> setAsyncBackupCount(final int asyncBackupCount) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig<K, V> setEvictionPolicy(final EvictionPolicy evictionPolicy) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig setNearCacheConfig(final NearCacheConfig nearCacheConfig) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig<K, V> setInMemoryFormat(final InMemoryFormat inMemoryFormat) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig<K, V> setManagementEnabled(final boolean enabled) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig<K, V> setTypes(final Class<K> keyType, final Class<V> valueType) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig<K, V> setStoreByValue(final boolean storeByValue) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public NearCacheConfig getNearCacheConfig() {
+        return super.getNearCacheConfig().getAsReadOnly();
+    }
 }

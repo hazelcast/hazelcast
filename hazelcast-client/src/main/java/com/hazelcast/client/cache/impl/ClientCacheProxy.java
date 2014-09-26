@@ -217,7 +217,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
         if (clazz.isInstance(cacheConfig)) {
-            return clazz.cast(cacheConfig);
+            return clazz.cast(cacheConfig.getAsReadOnly());
         }
         throw new IllegalArgumentException("The configuration class " + clazz + " is not supported by this implementation");
     }
