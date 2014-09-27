@@ -148,4 +148,9 @@ public final class HazelcastClientCacheManager extends HazelcastCacheManager {
         }
     }
 
+    protected void postClose() {
+        if (!isDefaultURI) {
+            hazelcastInstance.shutdown();
+        }
+    }
 }

@@ -276,9 +276,12 @@ public abstract class HazelcastCacheManager implements CacheManager {
         for (ICache cache : caches.values()) {
             cache.close();
         }
+        postClose();
         //TODO do we need to clear it
         //        caches.clear();
     }
+
+    protected abstract void postClose();
 
     /**
      * todo what does this do?
