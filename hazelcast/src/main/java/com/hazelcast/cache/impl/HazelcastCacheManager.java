@@ -232,9 +232,12 @@ public abstract class HazelcastCacheManager
         for (ICache cache : caches.values()) {
             cache.close();
         }
+        postClose();
         //TODO do we need to clear it
         //        caches.clear();
     }
+
+    protected abstract void postClose();
 
     public void destroy() {
         if (!isDestroyed.compareAndSet(false, true)) {
