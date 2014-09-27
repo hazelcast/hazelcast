@@ -29,8 +29,6 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Cache Partition Segment
  *
- * todo What does this do?
- *
  */
 public final class CachePartitionSegment {
 

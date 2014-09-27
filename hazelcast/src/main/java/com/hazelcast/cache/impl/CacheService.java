@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentMap;
  * Cache Service
  *
  *
- * todo What does this do?
+ *
  */
 public class CacheService
         implements ManagedService, RemoteService, MigrationAwareService, EventPublishingService<Object, CacheEventListener> {

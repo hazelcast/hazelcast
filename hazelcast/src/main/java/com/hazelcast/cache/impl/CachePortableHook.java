@@ -48,9 +48,6 @@ import java.util.Collection;
 
 /**
  * Cache Portable factory hook
- *
- *
- * todo What does this do?
  */
 public class CachePortableHook
         implements PortableHook {

@@ -55,9 +55,6 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 /**
  * javax.cache.Cache implementation
  *
- *
- * todo What does this do?
- *
  * @param <K> key
  * @param <V> value
  */

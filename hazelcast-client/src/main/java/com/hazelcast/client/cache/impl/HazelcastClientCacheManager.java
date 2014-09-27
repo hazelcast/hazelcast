@@ -45,7 +45,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  *
- * todo What does this do?
+ *
  */
 public final class HazelcastClientCacheManager extends HazelcastCacheManager {
 

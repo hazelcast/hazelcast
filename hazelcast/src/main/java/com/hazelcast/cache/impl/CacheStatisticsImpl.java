@@ -55,7 +55,7 @@ public class CacheStatisticsImpl
     }
 
     /**
-     * todo What does this do?
+     *
      */
     public long getCacheExpiries() {
         return expiries.get();
@@ -190,7 +190,7 @@ public class CacheStatisticsImpl
 
     /**
      *
-     * todo What does this do?
+     *
      */
     public void clear() {
         puts.set(0);
@@ -305,8 +305,7 @@ public class CacheStatisticsImpl
 
     /**
      *
-     * todo What does this do?
-     * todo: Typo. Rename this method to accumulate
+     *
      * @param other
      * @return
      */
