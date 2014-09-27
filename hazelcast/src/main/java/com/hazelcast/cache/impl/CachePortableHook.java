@@ -47,10 +47,7 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collection;
 
 /**
- * Cache Portable factory hook
- *
- *
- * todo What does this do?
+ * This class contains all the ID hooks for Portable classes used inside the JCache framework.
  */
 public class CachePortableHook
         implements PortableHook {

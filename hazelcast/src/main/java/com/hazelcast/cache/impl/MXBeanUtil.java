@@ -26,7 +26,7 @@ import java.util.Set;
 /**
  * Provides utility functionality for the MXBean.
  */
-//FIXME Move this into ManagementService
+//TODO Move this into ManagementService
 public final class MXBeanUtil {
 
     //ensure everything gets put in one MBeanServer

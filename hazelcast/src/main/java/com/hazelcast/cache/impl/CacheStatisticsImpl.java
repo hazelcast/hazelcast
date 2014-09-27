@@ -26,6 +26,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Some statistics of a {@link com.hazelcast.cache.ICache}
+ *
+ * Statistics accumulated in this data object is published through MxBean
+ *
+ * @see com.hazelcast.cache.impl.CacheMXBeanImpl
  */
 public class CacheStatisticsImpl
         implements DataSerializable, CacheStatistics {
@@ -55,7 +59,11 @@ public class CacheStatisticsImpl
     }
 
     /**
-     * todo What does this do?
+     * The total number of expiries from the cache. An expiry may or may not be evicted.
+     * This number represent the entries that fail evaluation and may not include the entries which are not yet
+     * evaluated for expiry or not accessed.
+     *
+     * @return the number of expiries
      */
     public long getCacheExpiries() {
         return expiries.get();
@@ -189,8 +197,8 @@ public class CacheStatisticsImpl
     }
 
     /**
-     *
-     * todo What does this do?
+     * implementation of {@link javax.cache.management.CacheStatisticsMXBean#clear()}
+     * @see javax.cache.management.CacheStatisticsMXBean#clear()
      */
     public void clear() {
         puts.set(0);
@@ -305,10 +313,10 @@ public class CacheStatisticsImpl
 
     /**
      *
-     * todo What does this do?
-     * todo: Typo. Rename this method to accumulate
-     * @param other
-     * @return
+     * Simple CacheStatistics adder. Can be used to merge two statistics data,
+     * such as the ones collected from multiple nodes.
+     * @param other CacheStatisticsImpl to be merged
+     * @return CacheStatisticsImpl with merged data
      */
     public CacheStatisticsImpl accumulate(CacheStatisticsImpl other) {
         puts.addAndGet(other.getCachePuts());

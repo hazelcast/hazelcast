@@ -29,7 +29,14 @@ import java.util.Iterator;
 /**
  * Cluster-wide iterator for the {@link com.hazelcast.cache.ICache}
  *
- * todo explain how this works. What is its performance in Big(O) Notation?
+ * This cluster key iterator, uses to indexes to iterate the cluster which ar PartitionId and tableIndex.
+ *
+ * Starting from the largest PartitionId it accesses related partition with a tableIndex. Each partition has
+ * a concurrentMap with single segment. So each partition data is basically a concurrent hashMap to iterate on.
+ *
+ * With a configurable batch size of keys are fetch from partition data, i.e CacheRecordStore.
+ *
+ * Although keys fetch in batches the {@link #next()} returns the entry one by one due to uncertainty of data.
  *
  * @param <K> key
  * @param <V> value

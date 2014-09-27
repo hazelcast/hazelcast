@@ -24,6 +24,11 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import java.net.URI;
 import java.util.Properties;
 
+/**
+ * Provides server cachingProvider implementation.
+ *
+ * @see javax.cache.spi.CachingProvider
+ */
 public final class HazelcastServerCachingProvider
         extends HazelcastAbstractCachingProvider {
 
