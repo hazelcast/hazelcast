@@ -1,6 +1,6 @@
 ## Java Client
 
-### Java Cient Overview
+### Java Client Overview
 
 Java client is the most full featured client. It is offered both with Hazelcast and Hazelcast Enterprise. Main idea behind the Java client is to provide the same Hazelcast functionality by proxying each operation through a Hazelcast node. 
 It can be used to access and change distributed data or listen distributed events of an already established Hazelcast cluster from another Java application. 
@@ -443,11 +443,11 @@ clientConfig.getNetworkConfig().setAwsConfig( clientAwsConfig );
 HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 ```
 
-***Note:*** *If *`inside-aws`* parameter is not set, private addresses of nodes will always be converted to public addresses. And, client will use public addresses to connect to nodes. In order to use private adresses, you should set it to *`true`*. Also note that, when connecting outside from AWS, setting *`inside-aws`* parameter to *`true`* will cause the client not to be able to reach to the nodes.*
+***Note:*** *If *`inside-aws`* parameter is not set, private addresses of nodes will always be converted to public addresses. And, client will use public addresses to connect to nodes. In order to use private addresses, you should set it to *`true`*. Also note that, when connecting outside from AWS, setting *`inside-aws`* parameter to *`true`* will cause the client not to be able to reach to the nodes.*
 
 #### Load Balancer
 
-`LoadBalancer` allows you to send operations to one of a number of endpoints(Members). Its main purpose is to determine the next `Member` if queried.  It is up to the implementation to use different load balancing policies. The interface `com.hazelcast.client.LoadBalancer` sould be implemented for that purpose.
+`LoadBalancer` allows you to send operations to one of a number of endpoints(Members). Its main purpose is to determine the next `Member` if queried.  It is up to the implementation to use different load balancing policies. The interface `com.hazelcast.client.LoadBalancer` should be implemented for that purpose.
 
 If the client is configured as a smart one, only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer. If it is not a smart client, `LoadBalancer` will be ignored.
 
@@ -577,7 +577,7 @@ In the cases where the security established with `GroupConfig` is not enough and
 
 ##### SerializationConfig
 
-For the client side serialization, Hazelcast configuration is used. Please refer to [Serialiazation](#serialization) chapter.
+For the client side serialization, Hazelcast configuration is used. Please refer to [Serialization](#serialization) chapter.
 
 
 ##### ListenerConfig

@@ -28,8 +28,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Custom Expiry Policy helper class for general usage
  */
-public class HazelcastExpiryPolicy
-        implements ExpiryPolicy, IdentifiedDataSerializable {
+public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable {
 
     private Duration create;
     private Duration access;

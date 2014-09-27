@@ -16,7 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientProperties;
@@ -24,9 +23,11 @@ import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.impl.client.DistributedObjectInfo;
+import com.hazelcast.client.impl.client.GetDistributedObjectsRequest;
+import com.hazelcast.client.impl.client.txn.ClientTransactionManager;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
-import com.hazelcast.client.impl.client.GetDistributedObjectsRequest;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
@@ -40,7 +41,6 @@ import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
-import com.hazelcast.client.impl.client.txn.ClientTransactionManager;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
@@ -509,6 +509,7 @@ public final class HazelcastClient implements HazelcastInstance {
 
     void doShutdown() {
         CLIENTS.remove(id);
+        proxyManager.destroy();
         executionService.shutdown();
         partitionService.stop();
         clusterService.stop();
@@ -516,7 +517,6 @@ public final class HazelcastClient implements HazelcastInstance {
         connectionManager.shutdown();
         invocationService.shutdown();
         listenerService.shutdown();
-        proxyManager.destroy();
         serializationService.destroy();
     }
 }

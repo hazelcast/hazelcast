@@ -17,10 +17,8 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
-import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.map.impl.MapEntrySet;
@@ -28,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -45,14 +44,13 @@ import java.util.concurrent.Future;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * Abstract ICache implementation
+ * Abstract ICache implementation excluding javax.cache.Cache
  */
-abstract class AbstractCacheProxy<K, V>
-        extends AbstractBaseCacheProxy<K, V>
-        implements ICache<K, V> {
+abstract class AbstractCacheProxyExtension<K, V>
+        extends AbstractCacheProxyInternal<K, V> {
 
-    protected AbstractCacheProxy(CacheConfig cacheConfig, CacheDistributedObject delegate) {
-        super(cacheConfig, delegate);
+    protected AbstractCacheProxyExtension(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService) {
+        super(cacheConfig, nodeEngine, cacheService);
     }
 
     //region ICACHE: JCACHE EXTENSION
@@ -77,18 +75,12 @@ abstract class AbstractCacheProxy<K, V>
 
     @Override
     public InternalCompletableFuture<Void> putAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        return putAsyncInternal(key, value, expiryPolicy, false, true);
+        return putAsyncInternal(key, value, expiryPolicy, false, false);
     }
 
     @Override
     public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
-        ensureOpen();
-        validateNotNull(key, value);
-        validateConfiguredTypes(true, key, value);
-        final Data keyData = serializationService.toData(key);
-        final Data valueData = serializationService.toData(value);
-        final Operation op = new CachePutIfAbsentOperation(getDistributedObjectName(), keyData, valueData, expiryPolicy);
-        return invoke(op, keyData, false);
+        return putIfAbsentAsyncInternal(key, value, expiryPolicy, false);
     }
 
     @Override
@@ -173,8 +165,8 @@ abstract class AbstractCacheProxy<K, V>
         try {
             final CacheGetAllOperationFactory factory = new CacheGetAllOperationFactory(getDistributedObjectName(), ks,
                     expiryPolicy);
-            final Map<Integer, Object> responses = nodeEngine.getOperationService()
-                                                             .invokeOnPartitions(getServiceName(), factory, partitions);
+            final Map<Integer, Object> responses = getNodeEngine().getOperationService()
+                                                                  .invokeOnPartitions(getServiceName(), factory, partitions);
             for (Object response : responses.values()) {
                 final Object responseObject = serializationService.toObject(response);
                 final Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) responseObject).getEntrySet();
@@ -264,10 +256,10 @@ abstract class AbstractCacheProxy<K, V>
     public int size() {
         ensureOpen();
         try {
-            final SerializationService serializationService = nodeEngine.getSerializationService();
+            final SerializationService serializationService = getNodeEngine().getSerializationService();
             final CacheSizeOperationFactory operationFactory = new CacheSizeOperationFactory(getDistributedObjectName());
-            final Map<Integer, Object> results = nodeEngine.getOperationService()
-                                                           .invokeOnAllPartitions(getServiceName(), operationFactory);
+            final Map<Integer, Object> results = getNodeEngine().getOperationService()
+                                                                .invokeOnAllPartitions(getServiceName(), operationFactory);
             int total = 0;
             for (Object result : results.values()) {
                 Integer size;
@@ -293,8 +285,8 @@ abstract class AbstractCacheProxy<K, V>
 
     //endregion
 
-    protected Set<Integer> getPartitionsForKeys(Set<Data> keys) {
-        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+    private Set<Integer> getPartitionsForKeys(Set<Data> keys) {
+        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         final int partitions = partitionService.getPartitionCount();
         //todo: is there better way to estimate size?
         final int capacity = Math.min(partitions, keys.size());

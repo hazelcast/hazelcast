@@ -316,6 +316,13 @@ public interface ICache<K, V>
     int size();
 
     /**
+     * close the cache, clear the internal content and release any resource
+     *
+     * @see javax.cache.CacheManager#destroyCache(String)
+     */
+    void destroy();
+
+    /**
      * Directly access to local Cache Statistics
      * @return CacheStatistics
      */

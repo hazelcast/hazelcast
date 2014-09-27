@@ -1,5 +1,9 @@
 package com.hazelcast.management;
 
+import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.cache.impl.CacheDistributedObject;
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
@@ -18,6 +22,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.TimedMemberState;
+import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
@@ -32,6 +37,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.util.executor.ManagedExecutorService;
+
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
@@ -57,10 +63,12 @@ public class TimedMemberStateFactory {
     private static final ILogger LOGGER = Logger.getLogger(TimedMemberStateFactory.class);
     private final HazelcastInstanceImpl instance;
     private final int maxVisibleInstanceCount;
+    private final boolean cacheServiceEnabled;
 
     public TimedMemberStateFactory(HazelcastInstanceImpl instance) {
         this.instance = instance;
         maxVisibleInstanceCount = instance.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
+        cacheServiceEnabled = instance.node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
     }
 
     public TimedMemberState createTimedMemberState() {
@@ -240,6 +248,15 @@ public class TimedMemberStateFactory {
             }
         }
 
+        if (cacheServiceEnabled) {
+            final CacheService cacheService = getCacheService();
+            for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
+                if (cacheConfig.isStatisticsEnabled()) {
+                    CacheStatistics statistics = cacheService.getStatistics(cacheConfig.getNameWithPrefix());
+                    count = handleCache(memberState, count, cacheConfig, statistics);
+                }
+            }
+        }
     }
 
     private int handleExecutorService(MemberStateImpl memberState, int count, Config config, IExecutorService executorService) {
@@ -286,6 +303,11 @@ public class TimedMemberStateFactory {
         return count;
     }
 
+    private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, CacheStatistics cacheStatistics) {
+        memberState.putLocalCacheStats(config.getNameWithPrefix(), new LocalCacheStatsImpl(cacheStatistics));
+        return count + 1;
+    }
+
     private Set<String> getLongInstanceNames() {
         Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
         Collection<DistributedObject> proxyObjects = new ArrayList<DistributedObject>(instance.getDistributedObjects());
@@ -314,6 +336,15 @@ public class TimedMemberStateFactory {
                 }
             }
         }
+
+        if (cacheServiceEnabled) {
+            for (CacheConfig cacheConfig : getCacheService().getCacheConfigs()) {
+                if (cacheConfig.isStatisticsEnabled()) {
+                    count = collectCacheName(setLongInstanceNames, count, cacheConfig);
+                }
+            }
+        }
+
     }
 
     private int collectExecutorServiceName(Set<String> setLongInstanceNames, int count, Config config,
@@ -350,11 +381,24 @@ public class TimedMemberStateFactory {
         return count;
     }
 
+    private int collectCacheName(Set<String> setLongInstanceNames, int count, CacheConfig config) {
+        if (config.isStatisticsEnabled()) {
+            setLongInstanceNames.add("j:" + config.getNameWithPrefix());
+            return count + 1;
+        }
+        return count;
+    }
+
     private int collectMultiMapName(Set<String> setLongInstanceNames, int count, Config config, MultiMap multiMap) {
         if (config.findMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
             setLongInstanceNames.add("m:" + multiMap.getName());
             return count + 1;
         }
         return count;
+    }
+
+    private CacheService getCacheService() {
+        final CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
+        return setupRef.getService();
     }
 }

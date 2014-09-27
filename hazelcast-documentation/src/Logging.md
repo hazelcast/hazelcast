@@ -67,7 +67,7 @@ HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 LoggingService loggingService = instance.getLoggingService();
 loggingService.addLogListener( Level.INFO, listener );
 ```
-Through the `LoggingService`, you can get the current used ILogger implementation and log your own messages, too.
+Through the `LoggingService`, you can get the currently used ILogger implementation and log your own messages, too.
 
 ***NOTE:*** *If you are not using command line for configuring logging, you should be careful about Hazelcast classes. They may be defaulted to `jdk` logging before newly configured logging is read. When logging mechanism is selected, it will not change.*
 

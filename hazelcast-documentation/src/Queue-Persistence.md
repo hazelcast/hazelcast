@@ -36,7 +36,7 @@ public class TheQueueStore implements QueueStore<Item> {
 
     @Override
     public Map<Long, Item> loadAll(Collection<Long> keys) {
-        System.out.println("loadALl");
+        System.out.println("loadAll");
         return null;
     }
 

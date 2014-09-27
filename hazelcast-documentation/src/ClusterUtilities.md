@@ -13,12 +13,12 @@ import com.hazelcast.core.*;
 HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
 Cluster cluster = hazelcastInstance.getCluster();
 cluster.addMembershipListener( new MembershipListener() {
-  public void memberAdded( MembershipEvent membersipEvent ) {
-    System.out.println( "MemberAdded " + membersipEvent );
+  public void memberAdded( MembershipEvent membershipEvent ) {
+    System.out.println( "MemberAdded " + membershipEvent );
   }
 
-  public void memberRemoved( MembershipEvent membersipEvent ) {
-    System.out.println( "MemberRemoved " + membersipEvent );
+  public void memberRemoved( MembershipEvent membershipEvent ) {
+    System.out.println( "MemberRemoved " + membershipEvent );
   }
 } );
 
