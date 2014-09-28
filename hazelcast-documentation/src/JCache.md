@@ -3,11 +3,16 @@
 
 ## JCache Overview
 
-Starting with release 3.3.1, Hazelcast offers its JCache (Java Cache) implementation. JCache is the official caching API of Java and it provides a common caching specification for the Java platform. It makes it easy for Java developers to cache data, which in many cases improves the performance.  When it comes to handling huge and non-stop changing data, caching is especially important.
+Starting with release 3.3.1, Hazelcast offers its JCache (Java Cache) implementation. JCache is the official caching API of 
+Java and it provides a common caching specification for the Java platform. It makes it easy for Java developers to cache
+data, which in many cases improves the performance.  When it comes to handling huge and non-stop changing data, 
+caching is especially important.
 
-Hazelcast provides a built-in distributed implementation of JSR-107 using Hazelcast infrastructure. It is 100% TCK (Technology Compatibility Kit) compliant. 
+Hazelcast provides a built-in distributed implementation of JSR-107 using Hazelcast infrastructure. 
+It is 100% TCK (Technology Compatibility Kit) compliant. 
 
-This chapter explains the usage of Hazelcast’s JCache implementation. For the full details of JCache, please visit its website at Java Community Process (JCP):
+This chapter explains the usage of Hazelcast’s JCache implementation. For the full details of JCache, 
+please visit its website at the Java Community Process (JCP):
 
 [https://www.jcp.org/en/jsr/detail?id=107](#https://www.jcp.org/en/jsr/detail?id=107)
 
@@ -36,7 +41,8 @@ Hazelcast has two types of providers that you can use. You can think of these tw
 
 ### Client Provider
 
-In order to access the distributed cache cluster through light clients, client provider is the JCache provider to be used. This is like using a Hazelcast client.
+In order to access the distributed cache cluster through light clients, client provider is the JCache provider to be used. 
+This is like using a Hazelcast client.
 
 ### Server Provider
 
@@ -138,3 +144,47 @@ Now, your customized session will expire in ten minutes after being accessed.
 
 Please see [Hazelcast JCache Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/jcache/src/main/java/com/hazelcast/examples) for more examples.
 
+
+## Running the JCache TCK
+
+To run the JCache (JSR107) TCK against Hazekcast:
+
+* checkout the TCK from [https://github.com/jsr107/jsr107tck](https://github.com/jsr107/jsr107tck)
+* Change the properties to the following: 
+
+
+```java
+<properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <CacheInvocationContextImpl>
+        javax.cache.annotation.impl.cdi.CdiCacheKeyInvocationContextImpl
+    </CacheInvocationContextImpl>
+
+    <domain-lib-dir>${project.build.directory}/domainlib</domain-lib-dir>
+    <domain-jar>domain.jar</domain-jar>
+
+
+    <!--################################################################################################################-->
+    <!--Change the following properties on the command line to override with the coordinates for your implementation-->
+    <implementation-groupId>com.hazelcast</implementation-groupId>
+    <!--<implementation-artifactId>hazelcast</implementation-artifactId>-->
+    <implementation-artifactId>hazelcast</implementation-artifactId>
+    <implementation-version>3.3.1</implementation-version>
+
+    <!-- Change the following properties to your CacheManager and Cache implementation. Used by the unwrap tests. -->
+    <CacheManagerImpl>com.hazelcast.cache.impl.HazelcastCacheManager</CacheManagerImpl>
+    <CacheImpl>com.hazelcast.cache.ICache</CacheImpl>
+    <CacheEntryImpl>com.hazelcast.cache.impl.CacheEntry</CacheEntryImpl>
+
+    <!--Change the following to point to your MBeanServer, so that the TCK can resolve it. -->
+    <javax.management.builder.initial>com.hazelcast.cache.impl.TCKMBeanServerBuilder</javax.management.builder.initial>
+    <org.jsr107.tck.management.agentId>TCKMbeanServer</org.jsr107.tck.management.agentId>
+    <jsr107.api.version>1.0.0</jsr107.api.version>
+
+    <!--################################################################################################################-->
+</properties>
+```
+
+This will run the tests using an embedded Hazelcast Member.
