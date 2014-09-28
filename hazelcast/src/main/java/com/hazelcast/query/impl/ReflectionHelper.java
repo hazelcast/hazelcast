@@ -97,60 +97,8 @@ public final class ReflectionHelper {
         }
 
         try {
-            Getter parent = null;
-            List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
-            for (final String name : attribute.split("\\.")) {
-                Getter localGetter = null;
-                possibleMethodNames.clear();
-                possibleMethodNames.add(name);
-                final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
-                possibleMethodNames.add("get" + camelName);
-                possibleMethodNames.add("is" + camelName);
-                if (name.equals(THIS_ATTRIBUTE_NAME)) {
-                    localGetter = new ThisGetter(parent, obj);
-                } else {
-                    for (String methodName : possibleMethodNames) {
-                        try {
-                            final Method method = clazz.getMethod(methodName);
-                            method.setAccessible(true);
-                            localGetter = new MethodGetter(parent, method);
-                            clazz = method.getReturnType();
-                            break;
-                        } catch (NoSuchMethodException ignored) {
-                            EmptyStatement.ignore(ignored);
-                        }
-                    }
-                    if (localGetter == null) {
-                        try {
-                            final Field field = clazz.getField(name);
-                            localGetter = new FieldGetter(parent, field);
-                            clazz = field.getType();
-                        } catch (NoSuchFieldException ignored) {
-                            EmptyStatement.ignore(ignored);
-                        }
-                    }
-                    if (localGetter == null) {
-                        Class c = clazz;
-                        while (!Object.class.equals(c)) {
-                            try {
-                                final Field field = c.getDeclaredField(name);
-                                field.setAccessible(true);
-                                localGetter = new FieldGetter(parent, field);
-                                clazz = field.getType();
-                                break;
-                            } catch (NoSuchFieldException ignored) {
-                                c = c.getSuperclass();
-                            }
-                        }
-                    }
-                }
-                if (localGetter == null) {
-                    throw new IllegalArgumentException("There is no suitable accessor for '"
-                            + name + "' on class '" + clazz + "'");
-                }
-                parent = localGetter;
-            }
-            getter = parent;
+
+            getter = createReflectiveGetter(obj, attribute);
             if (getter.isCacheable()) {
                 Getter foundGetter = GETTER_CACHE.putIfAbsent(cacheKey, getter);
                 if (foundGetter != null) {
@@ -161,6 +109,72 @@ public final class ReflectionHelper {
         } catch (Throwable e) {
             throw new QueryException(e);
         }
+    }
+
+    /**
+     * Create getter via reflection. This method first tries to create the getter from accessors, then from fields.
+     * Also creates getters for contained objects.
+     *
+     * @param obj Object to analyze
+     * @param attribute Attribute of obj or attribute of child of obj (e.g. customer.address.street)
+     * @return Getter for the specified attribute
+     */
+    private static Getter createReflectiveGetter(Object obj, String attribute) {
+        Class<?> clazz = obj.getClass();
+        Getter parent = null;
+        List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
+        for (final String name : attribute.split("\\.")) {
+            Getter localGetter = null;
+            possibleMethodNames.clear();
+            possibleMethodNames.add(name);
+            final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+            possibleMethodNames.add("get" + camelName);
+            possibleMethodNames.add("is" + camelName);
+            if (name.equals(THIS_ATTRIBUTE_NAME)) {
+                localGetter = new ThisGetter(parent, obj);
+            } else {
+                for (String methodName : possibleMethodNames) {
+                    try {
+                        final Method method = clazz.getMethod(methodName);
+                        method.setAccessible(true);
+                        localGetter = new MethodGetter(parent, method);
+                        clazz = method.getReturnType();
+                        break;
+                    } catch (NoSuchMethodException ignored) {
+                        EmptyStatement.ignore(ignored);
+                    }
+                }
+                if (localGetter == null) {
+                    try {
+                        final Field field = clazz.getField(name);
+                        localGetter = new FieldGetter(parent, field);
+                        clazz = field.getType();
+                    } catch (NoSuchFieldException ignored) {
+                        EmptyStatement.ignore(ignored);
+                    }
+                }
+                if (localGetter == null) {
+                    Class c = clazz;
+                    while (!Object.class.equals(c)) {
+                        try {
+                            final Field field = c.getDeclaredField(name);
+                            field.setAccessible(true);
+                            localGetter = new FieldGetter(parent, field);
+                            clazz = field.getType();
+                            break;
+                        } catch (NoSuchFieldException ignored) {
+                            c = c.getSuperclass();
+                        }
+                    }
+                }
+            }
+            if (localGetter == null) {
+                throw new IllegalArgumentException("There is no suitable accessor for '"
+                        + name + "' on class '" + clazz + "'");
+            }
+            parent = localGetter;
+        }
+        return parent;
     }
 
     public static Comparable extractValue(Object object, String attributeName) throws Exception {
