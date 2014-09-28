@@ -14,6 +14,7 @@ import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
@@ -49,12 +50,13 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
 
     @Override
     public Collection<QueryableEntry> queryOnPartition(String mapName, Predicate predicate, int partitionId) {
+        final long now = getNow();
         final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
         final RecordStore recordStore = container.getRecordStore(mapName);
         final SerializationService serializationService = nodeEngine.getSerializationService();
         final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
-        List<QueryEntry> list = new LinkedList<QueryEntry>();
-        final Iterator<Record> iterator = recordStore.loadAwareIterator();
+        final List<QueryEntry> list = new LinkedList<QueryEntry>();
+        final Iterator<Record> iterator = recordStore.loadAwareIterator(now);
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             Data key = record.getKey();
@@ -381,6 +383,10 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             queryWithPagingPredicate(mapName, pagingPredicate, iterationType);
             pagingPredicate.nextPage();
         }
+    }
+
+    private long getNow() {
+        return Clock.currentTimeMillis();
     }
 
 }

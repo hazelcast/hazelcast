@@ -47,6 +47,7 @@ public final class EvictionHelper {
     private static final int ONE_HUNDRED_PERCENT = 100;
     private static final int EVICTION_START_THRESHOLD_PERCENTAGE = 95;
     private static final int ONE_KILOBYTE = 1024;
+    private static final int ONE_MEGABYTE = ONE_KILOBYTE * ONE_KILOBYTE;
 
     private EvictionHelper() {
     }
@@ -75,11 +76,11 @@ public final class EvictionHelper {
     }
 
     public static void removeEvictableRecords(final RecordStore recordStore, int evictableSize, final MapConfig mapConfig,
-                                              final MapServiceContext mapServiceContext, boolean backup) {
+                                              final MapServiceContext mapServiceContext, long now, boolean backup) {
         final MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
         // criteria is a long value, like last access times or hits,
         // used for calculating LFU or LRU.
-        long[] criterias = createAndPopulateEvictionCriteriaArray(recordStore, evictionPolicy);
+        long[] criterias = createAndPopulateEvictionCriteriaArray(recordStore, evictionPolicy, now);
         if (criterias == null) {
             return;
         }
@@ -88,7 +89,7 @@ public final class EvictionHelper {
         final int evictableBaseIndex = getEvictionStartIndex(criterias, evictableSize);
         final long criteriaValue = criterias[evictableBaseIndex];
         int evictedRecordCounter = 0;
-        final Iterator<Record> iterator = recordStore.iterator();
+        final Iterator<Record> iterator = recordStore.iterator(now);
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             final long value = getEvictionCriteriaValue(record, evictionPolicy);
@@ -111,11 +112,11 @@ public final class EvictionHelper {
     }
 
     private static long[] createAndPopulateEvictionCriteriaArray(RecordStore recordStore,
-                                                                 MapConfig.EvictionPolicy evictionPolicy) {
+                                                                 MapConfig.EvictionPolicy evictionPolicy, long now) {
         final int size = recordStore.size();
         long[] criterias = null;
         int index = 0;
-        final Iterator<Record> iterator = recordStore.iterator();
+        final Iterator<Record> iterator = recordStore.iterator(now);
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             if (criterias == null) {
@@ -288,10 +289,7 @@ public final class EvictionHelper {
             return false;
         }
         final int size = getRecordStoreSize(mapName, container);
-        if (size >= maxSize) {
-            return true;
-        }
-        return false;
+        return size >= maxSize;
     }
 
     private static boolean isEvictableHeapSize(final MapContainer mapContainer) {
@@ -301,7 +299,7 @@ public final class EvictionHelper {
         }
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
         final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
-        return maxSize < (usedHeapSize / ONE_KILOBYTE / ONE_KILOBYTE);
+        return maxSize < (usedHeapSize / ONE_MEGABYTE);
     }
 
     private static boolean isEvictableHeapPercentage(final MapContainer mapContainer) {
