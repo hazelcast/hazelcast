@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.AttributeAccessible;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.util.EmptyStatement;
 
@@ -97,14 +98,18 @@ public final class ReflectionHelper {
         }
 
         try {
-
-            getter = createReflectiveGetter(obj, attribute);
+            if (obj instanceof AttributeAccessible) {
+                getter = new AttributeAccessibleGetter(null, attribute);
+            } else {
+                getter = createReflectiveGetter(obj, attribute);
+            }
             if (getter.isCacheable()) {
                 Getter foundGetter = GETTER_CACHE.putIfAbsent(cacheKey, getter);
                 if (foundGetter != null) {
                     getter = foundGetter;
                 }
             }
+
             return getter;
         } catch (Throwable e) {
             throw new QueryException(e);
@@ -115,7 +120,7 @@ public final class ReflectionHelper {
      * Create getter via reflection. This method first tries to create the getter from accessors, then from fields.
      * Also creates getters for contained objects.
      *
-     * @param obj Object to analyze
+     * @param obj       Object to analyze
      * @param attribute Attribute of obj or attribute of child of obj (e.g. customer.address.street)
      * @return Getter for the specified attribute
      */
@@ -276,6 +281,37 @@ public final class ReflectionHelper {
         @Override
         boolean isCacheable() {
             return false;
+        }
+    }
+
+    static class AttributeAccessibleGetter extends Getter {
+        final String attribute;
+
+        public AttributeAccessibleGetter(final Getter parent, String attribute) {
+            super(parent);
+            this.attribute = attribute;
+        }
+
+        @Override
+        Object getValue(Object obj) throws Exception {
+            Object paramObj = obj;
+            paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
+            return paramObj != null ? ((AttributeAccessible) obj).getAttribute(attribute) : null;
+        }
+
+        @Override
+        Class getReturnType() {
+            return null;
+        }
+
+        @Override
+        boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return "AttributeAccessibleGetter [parent=" + parent + ", attribute=" + attribute + "]";
         }
     }
 }
