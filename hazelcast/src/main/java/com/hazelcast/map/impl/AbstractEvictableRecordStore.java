@@ -189,7 +189,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return;
         }
         if (shouldEvict(now)) {
-            removeEvictableRecords(now, backup);
+            removeEvictableRecords(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
         }
@@ -199,13 +199,13 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return evictionEnabled && inEvictableTimeWindow(now) && isEvictable();
     }
 
-    private void removeEvictableRecords(long now, boolean backup) {
+    private void removeEvictableRecords(boolean backup) {
         final int evictableSize = getEvictableSize();
         if (evictableSize < 1) {
             return;
         }
         final MapConfig mapConfig = mapContainer.getMapConfig();
-        EvictionHelper.removeEvictableRecords(this, evictableSize, mapConfig, mapServiceContext, now, backup);
+        EvictionHelper.removeEvictableRecords(this, evictableSize, mapConfig, mapServiceContext, backup);
     }
 
     private int getEvictableSize() {
@@ -427,14 +427,17 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
         private void advance() {
             final long now = this.now;
+            final boolean checkExpiration = this.checkExpiration;
+            final Iterator<Record> iterator = this.iterator;
+
             while (iterator.hasNext()) {
                 nextRecord = iterator.next();
                 if (nextRecord != null) {
-                    if (checkExpiration) {
-                        if (!isExpired(nextRecord, now)) {
-                            return;
-                        }
-                    } else {
+                    if (!checkExpiration) {
+                        return;
+                    }
+
+                    if (!isExpired(nextRecord, now)) {
                         return;
                     }
                 }
