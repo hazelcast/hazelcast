@@ -48,7 +48,7 @@ public interface AttributeAccessible {
      *
      * @param attributeName Name of the attribute as specified in the addIndex or query get(). Is usually dot delimited,
      *                      e.g. address.city
-     * @return Value of the attribute
+     * @return Value of the attribute. May only be primitive type as listed in ReflectionHelper#getAttributeType.
      */
     Object getAttribute(String attributeName);
 }
