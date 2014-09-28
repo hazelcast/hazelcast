@@ -86,7 +86,11 @@ public final class ReflectionHelper {
     }
 
     public static AttributeType getAttributeType(Object value, String attribute) {
-        return getAttributeType(createGetter(value, attribute).getReturnType());
+        try {
+            return getAttributeType(createGetter(value, attribute).getReturnType(value));
+        } catch (Throwable e) {
+            throw new QueryException(e);
+        }
     }
 
     private static Getter createGetter(Object obj, String attribute) {
@@ -136,7 +140,7 @@ public final class ReflectionHelper {
             possibleMethodNames.add("get" + camelName);
             possibleMethodNames.add("is" + camelName);
             if (name.equals(THIS_ATTRIBUTE_NAME)) {
-                localGetter = new ThisGetter(parent, obj);
+                localGetter = new ThisGetter(parent);
             } else {
                 for (String methodName : possibleMethodNames) {
                     try {
@@ -193,10 +197,26 @@ public final class ReflectionHelper {
             this.parent = parent;
         }
 
+        /**
+         * Use the getter information to read the desired attribute value from the object
+         *
+         * @param obj Object to analyze
+         * @return Value or null if the attribute or one of its parents is null
+         */
         abstract Object getValue(Object obj) throws Exception;
 
-        abstract Class getReturnType();
+        /**
+         * Read the type of the desired attribute on the input object
+         *
+         * @param obj Object to analyze. May be ignored if type is already known
+         * @return Type or null if obj is null
+         */
+        abstract Class getReturnType(Object obj)  throws Exception;
 
+        /**
+         * @return True if this getter may be reused. True if this class' classloader is the same as the returned
+         * objects class loader.
+         */
         abstract boolean isCacheable();
     }
 
@@ -214,7 +234,7 @@ public final class ReflectionHelper {
             return paramObj != null ? method.invoke(paramObj) : null;
         }
 
-        Class getReturnType() {
+        Class getReturnType(Object obj) {
             return this.method.getReturnType();
         }
 
@@ -245,7 +265,7 @@ public final class ReflectionHelper {
         }
 
         @Override
-        Class getReturnType() {
+        Class getReturnType(Object obj) {
             return this.field.getType();
         }
 
@@ -261,11 +281,8 @@ public final class ReflectionHelper {
     }
 
     static class ThisGetter extends Getter {
-        final Object object;
-
-        public ThisGetter(final Getter parent, Object object) {
+        public ThisGetter(final Getter parent) {
             super(parent);
-            this.object = object;
         }
 
         @Override
@@ -274,13 +291,13 @@ public final class ReflectionHelper {
         }
 
         @Override
-        Class getReturnType() {
-            return this.object.getClass();
+        Class getReturnType(Object obj) {
+            return obj.getClass();
         }
 
         @Override
         boolean isCacheable() {
-            return false;
+            return true;
         }
     }
 
@@ -300,8 +317,11 @@ public final class ReflectionHelper {
         }
 
         @Override
-        Class getReturnType() {
-            return null;
+        Class getReturnType(Object obj) throws Exception {
+            if(obj == null) {
+                return null;
+            }
+            return getValue(obj).getClass();
         }
 
         @Override
