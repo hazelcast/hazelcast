@@ -76,11 +76,11 @@ public final class EvictionHelper {
     }
 
     public static void removeEvictableRecords(final RecordStore recordStore, int evictableSize, final MapConfig mapConfig,
-                                              final MapServiceContext mapServiceContext, long now, boolean backup) {
+                                              final MapServiceContext mapServiceContext, boolean backup) {
         final MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
         // criteria is a long value, like last access times or hits,
         // used for calculating LFU or LRU.
-        long[] criterias = createAndPopulateEvictionCriteriaArray(recordStore, evictionPolicy, now);
+        long[] criterias = createAndPopulateEvictionCriteriaArray(recordStore, evictionPolicy);
         if (criterias == null) {
             return;
         }
@@ -89,7 +89,7 @@ public final class EvictionHelper {
         final int evictableBaseIndex = getEvictionStartIndex(criterias, evictableSize);
         final long criteriaValue = criterias[evictableBaseIndex];
         int evictedRecordCounter = 0;
-        final Iterator<Record> iterator = recordStore.iterator(now);
+        final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             final long value = getEvictionCriteriaValue(record, evictionPolicy);
@@ -112,11 +112,11 @@ public final class EvictionHelper {
     }
 
     private static long[] createAndPopulateEvictionCriteriaArray(RecordStore recordStore,
-                                                                 MapConfig.EvictionPolicy evictionPolicy, long now) {
+                                                                 MapConfig.EvictionPolicy evictionPolicy) {
         final int size = recordStore.size();
         long[] criterias = null;
         int index = 0;
-        final Iterator<Record> iterator = recordStore.iterator(now);
+        final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             if (criterias == null) {
