@@ -147,10 +147,10 @@ Please see [Hazelcast JCache Code Samples](https://github.com/hazelcast/hazelcas
 
 ## Running the JCache TCK
 
-To run the JCache (JSR107) TCK against Hazekcast:
+To run the JCache (JSR107) TCK against Hazelcast, perform the below instructions.
 
-* checkout the TCK from [https://github.com/jsr107/jsr107tck](https://github.com/jsr107/jsr107tck)
-* Change the properties to the following: 
+1. Checkout the TCK from [https://github.com/jsr107/jsr107tck](https://github.com/jsr107/jsr107tck).
+2. Change the properties as below.
 
 
 ```java
