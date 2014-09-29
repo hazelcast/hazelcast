@@ -37,6 +37,7 @@ public class ClientReadHandler extends AbstractClientSelectionHandler {
     public ClientReadHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
         super(connection, ioSelector);
         buffer = ByteBuffer.allocate(bufferSize);
+        lastHandle = Clock.currentTimeMillis();
     }
 
     @Override
