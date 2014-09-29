@@ -51,7 +51,7 @@ public final class HazelcastServerCachingProvider
     private HazelcastInstance initHazelcast() {
         Config config = new XmlConfigBuilder().build();
         if (config.getInstanceName() == null) {
-            config.setInstanceName("hz:cacheProvider");
+            config.setInstanceName("CacheProvider");
         }
         return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
     }
