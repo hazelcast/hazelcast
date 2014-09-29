@@ -34,6 +34,7 @@
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
         <atomikos-version>3.9.2</atomikos-version>
+        <git.commit.id.describe.skip>false</git.commit.id.describe.skip>
     </properties>
 
     <build>
@@ -55,7 +56,7 @@
                     <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     <abbrevLength>7</abbrevLength>
                     <gitDescribe>
-                        <skip>false</skip>
+                        <skip>${git.commit.id.describe.skip}</skip>
                         <always>false</always>
                         <abbrev>7</abbrev>
                         <dirty>-dirty</dirty>
