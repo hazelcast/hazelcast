@@ -53,6 +53,14 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 
 /**
  * Implementation of the {@link ICacheRecordStore}
+ *
+ * Represents a named ICache on-heap data for a single partition.
+ * Total data of an ICache object is the total CacheRecordStore on all partitions.
+ * This data structure is the actual cache operations implementation, data access, statistics, event firing etc.
+ *
+ * CacheRecordStore is managed by CachePartitionSegment.
+ *
+ * @see com.hazelcast.cache.impl.CachePartitionSegment
  */
 public class CacheRecordStore
         implements ICacheRecordStore {

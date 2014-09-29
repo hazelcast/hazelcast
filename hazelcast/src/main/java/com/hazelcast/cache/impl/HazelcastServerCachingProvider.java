@@ -24,6 +24,11 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import java.net.URI;
 import java.util.Properties;
 
+/**
+ * Provides server cachingProvider implementation.
+ *
+ * @see javax.cache.spi.CachingProvider
+ */
 public final class HazelcastServerCachingProvider
         extends HazelcastAbstractCachingProvider {
 
@@ -46,7 +51,7 @@ public final class HazelcastServerCachingProvider
     private HazelcastInstance initHazelcast() {
         Config config = new XmlConfigBuilder().build();
         if (config.getInstanceName() == null) {
-            config.setInstanceName("hz:cacheProvider");
+            config.setInstanceName("CacheProvider");
         }
         return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
     }

@@ -43,8 +43,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public final class HazelcastClientCacheManager
-        extends HazelcastCacheManager {
+/**
+ * CacheManager implementation for client side
+ *
+ * Provides client side cacheManager functionality
+ */
+public final class HazelcastClientCacheManager extends HazelcastCacheManager {
 
     private final ClientContext clientContext;
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
