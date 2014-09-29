@@ -29,6 +29,7 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -56,13 +57,18 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
         IndexService indexService = mapContainer.getIndexService();
         SerializationService ss = getNodeEngine().getSerializationService();
         Index index = indexService.addOrGetIndex(attributeName, ordered);
-        final Iterator<Record> iterator = recordStore.iterator();
+        final long now = getNow();
+        final Iterator<Record> iterator = recordStore.iterator(now);
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             Data key = record.getKey();
             Object value = record.getValue();
             index.saveEntryIndex(new QueryEntry(ss, key, key, value));
         }
+    }
+
+    private long getNow() {
+        return Clock.currentTimeMillis();
     }
 
     @Override

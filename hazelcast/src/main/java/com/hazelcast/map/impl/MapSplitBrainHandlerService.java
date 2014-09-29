@@ -1,13 +1,14 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
@@ -29,6 +30,8 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
     @Override
     public Runnable prepareMergeRunnable() {
+        final long now = getNow();
+
         final Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
         final Map<MapContainer, Collection<Record>> recordMap = new HashMap<MapContainer,
                 Collection<Record>>(mapContainers.size());
@@ -46,7 +49,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                         records = new ArrayList<Record>();
                         recordMap.put(mapContainer, records);
                     }
-                    final Iterator<Record> iterator = recordStore.iterator();
+                    final Iterator<Record> iterator = recordStore.iterator(now);
                     while (iterator.hasNext()) {
                         final Record record = iterator.next();
                         records.add(record);
@@ -57,6 +60,10 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
             }
         }
         return new Merger(recordMap);
+    }
+
+    private long getNow() {
+        return Clock.currentTimeMillis();
     }
 
     private class Merger implements Runnable {
