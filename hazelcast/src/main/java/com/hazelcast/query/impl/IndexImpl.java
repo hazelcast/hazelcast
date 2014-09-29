@@ -52,7 +52,7 @@ public class IndexImpl implements Index {
     // Number of reader (query maker) count on index store
     private final AtomicLong readerCount = new AtomicLong();
     // Flag to hold status of index store is locked or not
-    private volatile boolean indexLocked = false;
+    private volatile boolean indexLocked;
 
     public IndexImpl(String attribute, boolean ordered) {
         this.attribute = attribute;
