@@ -86,11 +86,7 @@ public final class ReflectionHelper {
     }
 
     public static AttributeType getAttributeType(Object value, String attribute) {
-        try {
-            return getAttributeType(createGetter(value, attribute).getReturnType(value));
-        } catch (Throwable e) {
-            throw new QueryException(e);
-        }
+        return getAttributeType(createGetter(value, attribute).getReturnType());
     }
 
     private static Getter createGetter(Object obj, String attribute) {
@@ -103,7 +99,7 @@ public final class ReflectionHelper {
 
         try {
             if (obj instanceof AttributeAccessible) {
-                getter = new AttributeAccessibleGetter(null, attribute);
+                getter = new AttributeAccessibleGetter(null, attribute, obj);
             } else {
                 getter = createReflectiveGetter(obj, attribute);
             }
@@ -140,7 +136,7 @@ public final class ReflectionHelper {
             possibleMethodNames.add("get" + camelName);
             possibleMethodNames.add("is" + camelName);
             if (name.equals(THIS_ATTRIBUTE_NAME)) {
-                localGetter = new ThisGetter(parent);
+                localGetter = new ThisGetter(parent, obj);
             } else {
                 for (String methodName : possibleMethodNames) {
                     try {
@@ -206,12 +202,11 @@ public final class ReflectionHelper {
         abstract Object getValue(Object obj) throws Exception;
 
         /**
-         * Read the type of the desired attribute on the input object
+         * Return the type of the desired attribute. The type has to be stored during construction of the getter.
          *
-         * @param obj Object to analyze. May be ignored if type is already known
          * @return Type or null if obj is null
          */
-        abstract Class getReturnType(Object obj)  throws Exception;
+        abstract Class getReturnType();
 
         /**
          * @return True if this getter may be reused. True if this class' classloader is the same as the returned
@@ -234,7 +229,7 @@ public final class ReflectionHelper {
             return paramObj != null ? method.invoke(paramObj) : null;
         }
 
-        Class getReturnType(Object obj) {
+        Class getReturnType() {
             return this.method.getReturnType();
         }
 
@@ -265,7 +260,7 @@ public final class ReflectionHelper {
         }
 
         @Override
-        Class getReturnType(Object obj) {
+        Class getReturnType() {
             return this.field.getType();
         }
 
@@ -281,8 +276,11 @@ public final class ReflectionHelper {
     }
 
     static class ThisGetter extends Getter {
-        public ThisGetter(final Getter parent) {
+        private final Class<?> clazz;
+
+        public ThisGetter(final Getter parent, final Object obj) {
             super(parent);
+            this.clazz = obj.getClass();
         }
 
         @Override
@@ -291,22 +289,24 @@ public final class ReflectionHelper {
         }
 
         @Override
-        Class getReturnType(Object obj) {
-            return obj.getClass();
+        Class getReturnType() {
+            return clazz;
         }
 
         @Override
         boolean isCacheable() {
-            return true;
+            return THIS_CL.equals(clazz.getClassLoader());
         }
     }
 
     static class AttributeAccessibleGetter extends Getter {
-        final String attribute;
+        private final String attribute;
+        private final Class<?> clazz;
 
-        public AttributeAccessibleGetter(final Getter parent, String attribute) {
+        public AttributeAccessibleGetter(final Getter parent, String attribute, Object obj) {
             super(parent);
             this.attribute = attribute;
+            this.clazz = obj.getClass();
         }
 
         @Override
@@ -317,21 +317,18 @@ public final class ReflectionHelper {
         }
 
         @Override
-        Class getReturnType(Object obj) throws Exception {
-            if(obj == null) {
-                return null;
-            }
-            return getValue(obj).getClass();
+        Class getReturnType() {
+            return clazz;
         }
 
         @Override
         boolean isCacheable() {
-            return true;
+            return THIS_CL.equals(clazz.getClassLoader());
         }
 
         @Override
         public String toString() {
-            return "AttributeAccessibleGetter [parent=" + parent + ", attribute=" + attribute + "]";
+            return "AttributeAccessibleGetter [parent=" + parent + ", attribute=" + attribute + ", clazz=" + clazz + "]";
         }
     }
 }
