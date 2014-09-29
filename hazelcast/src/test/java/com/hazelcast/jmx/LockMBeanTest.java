@@ -1,6 +1,7 @@
 package com.hazelcast.jmx;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
@@ -55,6 +56,6 @@ public class LockMBeanTest extends HazelcastTestSupport {
 
         holder.invokeMBeanOperation("ILock", lock.getName(), "forceUnlock", null, null);
 
-        assertTrue("Lock is locked", ! lock.isLocked() );
+        assertFalse("Lock is locked", lock.isLocked() );
     }
 }
