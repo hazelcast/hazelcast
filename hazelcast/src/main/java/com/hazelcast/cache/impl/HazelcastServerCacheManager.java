@@ -145,4 +145,6 @@ public class HazelcastServerCacheManager
         return f.getSafely();
     }
 
+    protected void postClose() {
+    }
 }

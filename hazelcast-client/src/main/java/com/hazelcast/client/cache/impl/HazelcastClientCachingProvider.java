@@ -18,7 +18,10 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.HazelcastAbstractCachingProvider;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.net.URI;
 import java.util.Properties;
@@ -55,10 +58,21 @@ public final class HazelcastClientCachingProvider extends HazelcastAbstractCachi
     @Override
     protected HazelcastClientCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader,
                                                                                          Properties managerProperties) {
-        if (hazelcastInstance == null) {
-            initHazelcast();
+        final HazelcastInstance instance;
+        if (getDefaultURI().equals(uri) || uri == null) {
+            if (hazelcastInstance == null) {
+                initHazelcast();
+            }
+            instance = hazelcastInstance;
+        } else {
+            try {
+                final ClientConfig clientConfig = new XmlClientConfigBuilder(uri.toURL()).build();
+                instance = HazelcastClient.newHazelcastClient(clientConfig);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
         }
-        return new HazelcastClientCacheManager(this, hazelcastInstance, uri, classLoader, managerProperties);
+        return new HazelcastClientCacheManager(this, instance, uri, classLoader, managerProperties);
     }
 
     @Override
