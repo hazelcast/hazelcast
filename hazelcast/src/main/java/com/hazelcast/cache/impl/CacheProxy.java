@@ -53,10 +53,15 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * javax.cache.Cache implementation
+ * ICache implementation:
  *
- * @param <K> key
- * @param <V> value
+ * This proxy is the implementation of ICache and javax.cache.Cache which is returned by
+ * HazelcastServerCacheManager. Represent a cache on server or embedded mode.
+ *
+ * Each cache operation is basically a simple cache operation send to related partition(s) or node(s)
+ *
+ * @param <K> key type
+ * @param <V> value type
  */
 public class CacheProxy<K, V>
         extends AbstractCacheProxyExtension<K, V> {

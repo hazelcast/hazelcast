@@ -44,8 +44,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
+ * CacheManager implementation for client side
  *
- *
+ * Provides client side cacheManager functionality
  */
 public final class HazelcastClientCacheManager extends HazelcastCacheManager {
 

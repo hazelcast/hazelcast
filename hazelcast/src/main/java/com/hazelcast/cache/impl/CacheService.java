@@ -42,9 +42,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Cache Service
+ * Cache Service is the base access point of jcache impl to manage
+ * cache data on a node.
+ * This service is an optionally registered service which is enable if the
+ * javax.cache.Caching class is found on classpath.
  *
- *
+ * If enable this service will provide all cache data operation for all partitions
+ * of the node which it is registered on.
  *
  */
 public class CacheService
