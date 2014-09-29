@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -22,8 +23,8 @@ public class LockMBeanTest extends HazelcastTestSupport {
     private JmxTestDataHolder holder = new JmxTestDataHolder();
     private ILock lock = holder.getHz().getLock("lock");
 
-    @Test
-    public void testMbeanExists_whenLockExists() throws Exception {
+    @Before
+    public void ensureMBeanCreated() throws Exception {
         // --- Check that mbean gets created at all
         holder.assertMBeanExistEventually("ILock", lock.getName());
     }
