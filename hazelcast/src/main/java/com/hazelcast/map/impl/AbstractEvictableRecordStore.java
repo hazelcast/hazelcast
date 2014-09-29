@@ -274,17 +274,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private boolean isExpired(Record record, long time) {
-        if (record == null) {
-            return true;
-        }
-
-        final Record idleExpired = isIdleExpired(record, time);
-        if (idleExpired == null) {
-            return true;
-        }
-
-        final Record ttlExpired = isTTLExpired(record, time);
-        return ttlExpired == null;
+        return record == null
+                || isIdleExpired(record, time) == null
+                || isTTLExpired(record, time) == null;
     }
 
     private Record isIdleExpired(Record record, long time) {
