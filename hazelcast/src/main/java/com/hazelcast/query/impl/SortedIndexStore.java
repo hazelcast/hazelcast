@@ -28,11 +28,42 @@ import java.util.concurrent.ConcurrentSkipListSet;
  * Store indexes rankly.
  */
 public class SortedIndexStore implements IndexStore {
+
     private static final float LOAD_FACTOR = 0.75f;
     private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords
             = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
     private final NavigableSet<Comparable> sortedSet = new ConcurrentSkipListSet<Comparable>();
 
+    @Override
+    public void newIndex(Comparable newValue, QueryableEntry record) {
+        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
+        if (records == null) {
+            records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
+            mapRecords.put(newValue, records);
+            if (!(newValue instanceof IndexImpl.NullObject)) {
+                sortedSet.add(newValue);
+            }
+        }
+        records.put(record.getIndexKey(), record);
+    }
+
+    @Override
+    public void removeIndex(Comparable oldValue, Data indexKey) {
+        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
+        if (records != null) {
+            records.remove(indexKey);
+            if (records.size() == 0) {
+                mapRecords.remove(oldValue);
+                sortedSet.remove(oldValue);
+            }
+        }
+    }
+
+    @Override
+    public void clear() {
+        mapRecords.clear();
+        sortedSet.clear();
+    }
 
     @Override
     public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
@@ -88,39 +119,8 @@ public class SortedIndexStore implements IndexStore {
     }
 
     @Override
-    public void newIndex(Comparable newValue, QueryableEntry record) {
-        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
-        if (records == null) {
-            records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
-            mapRecords.put(newValue, records);
-            if (!(newValue instanceof IndexImpl.NullObject)) {
-                sortedSet.add(newValue);
-            }
-        }
-        records.put(record.getIndexKey(), record);
-    }
-
-    @Override
     public ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
         return mapRecords.get(indexValue);
-    }
-
-    @Override
-    public void clear() {
-        mapRecords.clear();
-        sortedSet.clear();
-    }
-
-    @Override
-    public void removeIndex(Comparable oldValue, Data indexKey) {
-        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
-        if (records != null) {
-            records.remove(indexKey);
-            if (records.size() == 0) {
-                mapRecords.remove(oldValue);
-                sortedSet.remove(oldValue);
-            }
-        }
     }
 
     @Override
