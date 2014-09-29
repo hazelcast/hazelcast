@@ -10,6 +10,7 @@ import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.util.Clock;
 
 import java.util.Iterator;
 import java.util.List;
@@ -69,12 +70,14 @@ class MapMigrationAwareService implements MigrationAwareService {
     }
 
     private void migrateIndex(PartitionMigrationEvent event) {
+        final long now = getNow();
+
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
             final IndexService indexService = mapContainer.getIndexService();
             if (indexService.hasIndex()) {
-                final Iterator<Record> iterator = recordStore.iterator();
+                final Iterator<Record> iterator = recordStore.iterator(now);
                 while (iterator.hasNext()) {
                     final Record record = iterator.next();
                     if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
@@ -89,6 +92,10 @@ class MapMigrationAwareService implements MigrationAwareService {
                 }
             }
         }
+    }
+
+    private long getNow() {
+        return Clock.currentTimeMillis();
     }
 
 }
