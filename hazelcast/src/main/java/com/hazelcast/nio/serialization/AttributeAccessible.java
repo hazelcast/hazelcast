@@ -66,5 +66,15 @@ public interface AttributeAccessible {
      *                      e.g. address.city
      * @return Value of the attribute. May only be primitive type as listed in ReflectionHelper#getAttributeType.
      */
-    Object getAttribute(String attributeName);
+    Object getValue(String attributeName);
+
+    /**
+     * Reads the type of the specified attribute.
+     *
+     * @param attributeName Name of the attribute as specified in the addIndex or query get(). Is usually dot delimited,
+     *                      e.g. address.city
+     * @return Type of the attribute. May not be null. Multiple calls to this method with the same attribute name are
+     * required to return the same type.
+     */
+    Class<?> getType(String attributeName);
 }

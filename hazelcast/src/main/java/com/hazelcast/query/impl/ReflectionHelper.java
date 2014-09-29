@@ -280,7 +280,7 @@ public final class ReflectionHelper {
 
         public ThisGetter(final Getter parent, final Object obj) {
             super(parent);
-            this.clazz = obj.getClass();
+            this.clazz = (obj == null ? null : obj.getClass());
         }
 
         @Override
@@ -303,17 +303,22 @@ public final class ReflectionHelper {
         private final String attribute;
         private final Class<?> clazz;
 
-        public AttributeAccessibleGetter(final Getter parent, String attribute, Object obj) {
+        public AttributeAccessibleGetter(final Getter parent, String attribute, Object obj) throws Exception {
             super(parent);
             this.attribute = attribute;
-            this.clazz = obj.getClass();
+            if(obj!=null) {
+                final AttributeAccessible accessible = (AttributeAccessible) obj;
+                clazz = accessible.getType(attribute);
+            } else {
+                clazz = null;
+            }
         }
 
         @Override
         Object getValue(Object obj) throws Exception {
             Object paramObj = obj;
             paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
-            return paramObj != null ? ((AttributeAccessible) obj).getAttribute(attribute) : null;
+            return paramObj != null ? ((AttributeAccessible) obj).getValue(attribute) : null;
         }
 
         @Override
@@ -323,7 +328,7 @@ public final class ReflectionHelper {
 
         @Override
         boolean isCacheable() {
-            return THIS_CL.equals(clazz.getClassLoader());
+            return clazz != null && THIS_CL.equals(clazz.getClassLoader());
         }
 
         @Override
