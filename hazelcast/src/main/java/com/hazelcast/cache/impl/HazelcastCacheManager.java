@@ -14,7 +14,11 @@ import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 import java.lang.ref.WeakReference;
 import java.net.URI;
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,9 +26,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * The Hazelcast CacheManager base class. Hazelcast supports two modes:
  * <ul>
- *     <li>Client -  HazelcastClientCacheManager</li>
- *     <li>Server - HazelcastServerCacheManager</li>
+ * <li>Client -  HazelcastClientCacheManager</li>
+ * <li>Server - HazelcastServerCacheManager</li>
  * </ul>
+ *
  * @see CacheManager
  */
 public abstract class HazelcastCacheManager implements CacheManager {
@@ -256,6 +261,7 @@ public abstract class HazelcastCacheManager implements CacheManager {
 
     /**
      * todo Why is this empty?
+     *
      * @param cacheName
      */
     protected void removeCacheConfigFromLocal(String cacheName) {
