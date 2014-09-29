@@ -25,12 +25,14 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation
 
     @Override
     public void run() throws Exception {
+        final long now = getNow();
+
         final Set<Data> keys = this.keys;
         for (Data dataKey : keys) {
             if (keyNotOwnedByThisPartition(dataKey)) {
                 continue;
             }
-            final Object oldValue = getValueFor(dataKey);
+            final Object oldValue = getValueFor(dataKey, now);
 
             final Object key = toObject(dataKey);
             final Object value = toObject(oldValue);

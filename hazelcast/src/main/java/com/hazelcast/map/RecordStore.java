@@ -139,6 +139,14 @@ public interface RecordStore {
     Iterator<Record> iterator();
 
     /**
+     * Iterates over record store values by respecting expiration.
+     *
+     * @return read only iterator for map values.
+     */
+    Iterator<Record> iterator(long now);
+
+
+    /**
      * Iterates over record store values but first waits map store to load.
      * If an operation needs to wait a data source load like query operations
      * {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
@@ -146,7 +154,7 @@ public interface RecordStore {
      *
      * @return read only iterator for map values.
      */
-    Iterator<Record> loadAwareIterator();
+    Iterator<Record> loadAwareIterator(long now);
 
     /**
      * Returns records map.
@@ -189,7 +197,7 @@ public interface RecordStore {
 
     Set<Map.Entry<Data, Data>> entrySetData();
 
-    Map.Entry<Data, Object> getMapEntry(Data dataKey);
+    Map.Entry<Data, Object> getMapEntry(Data dataKey, long now);
 
     Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey);
 
