@@ -303,12 +303,15 @@ public final class ReflectionHelper {
         private final String attribute;
         private final Class<?> clazz;
 
-        public AttributeAccessibleGetter(final Getter parent, String attribute, Object obj) throws Exception {
+        public AttributeAccessibleGetter(final Getter parent, String attribute, Object obj) {
             super(parent);
             this.attribute = attribute;
-            if(obj!=null) {
+            if (obj != null) {
                 final AttributeAccessible accessible = (AttributeAccessible) obj;
                 clazz = accessible.getType(attribute);
+                if (clazz == null) {
+                    throw new IllegalArgumentException(String.format("Attribute type of attribute '%s' is null on object %s", attribute, obj.toString()));
+                }
             } else {
                 clazz = null;
             }
