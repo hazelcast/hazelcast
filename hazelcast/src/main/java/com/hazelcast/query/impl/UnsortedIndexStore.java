@@ -26,8 +26,39 @@ import java.util.concurrent.ConcurrentMap;
  * Store indexes out of turn.
  */
 public class UnsortedIndexStore implements IndexStore {
+
     private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords
             = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
+
+    @Override
+    public void newIndex(Comparable newValue, QueryableEntry record) {
+        Data indexKey = record.getIndexKey();
+        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
+        if (records == null) {
+            records = new ConcurrentHashMap<Data, QueryableEntry>();
+            ConcurrentMap<Data, QueryableEntry> existing = mapRecords.putIfAbsent(newValue, records);
+            if (existing != null) {
+                records = existing;
+            }
+        }
+        records.put(indexKey, record);
+    }
+
+    @Override
+    public void removeIndex(Comparable oldValue, Data indexKey) {
+        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
+        if (records != null) {
+            records.remove(indexKey);
+            if (records.size() == 0) {
+                mapRecords.remove(oldValue);
+            }
+        }
+    }
+
+    @Override
+    public void clear() {
+        mapRecords.clear();
+    }
 
     @Override
     public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
@@ -92,33 +123,8 @@ public class UnsortedIndexStore implements IndexStore {
     }
 
     @Override
-    public void newIndex(Comparable newValue, QueryableEntry record) {
-        Data indexKey = record.getIndexKey();
-        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
-        if (records == null) {
-            records = new ConcurrentHashMap<Data, QueryableEntry>();
-            ConcurrentMap<Data, QueryableEntry> existing = mapRecords.putIfAbsent(newValue, records);
-            if (existing != null) {
-                records = existing;
-            }
-        }
-        records.put(indexKey, record);
-    }
-
-    @Override
     public ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
         return mapRecords.get(indexValue);
-    }
-
-    @Override
-    public void removeIndex(Comparable oldValue, Data indexKey) {
-        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
-        if (records != null) {
-            records.remove(indexKey);
-            if (records.size() == 0) {
-                mapRecords.remove(oldValue);
-            }
-        }
     }
 
     @Override
@@ -134,11 +140,6 @@ public class UnsortedIndexStore implements IndexStore {
                 results.addResultSet(records);
             }
         }
-    }
-
-    @Override
-    public void clear() {
-        mapRecords.clear();
     }
 
     @Override
