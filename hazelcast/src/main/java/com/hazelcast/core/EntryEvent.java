@@ -35,6 +35,8 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
 
     protected V value;
 
+    protected V mergingValue;
+
     public EntryEvent(Object source, Member member, int eventType, K key, V value) {
         this(source, member, eventType, key, null, value);
     }
@@ -44,6 +46,14 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
         this.key = key;
         this.oldValue = oldValue;
         this.value = value;
+    }
+
+    public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value, V mergingValue) {
+        super(source, member, eventType);
+        this.key = key;
+        this.oldValue = oldValue;
+        this.value = value;
+        this.mergingValue = mergingValue;
     }
 
     /**
@@ -63,6 +73,13 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
     public V getOldValue() {
         return this.oldValue;
     }
+
+    /**
+     * Returns the incoming merging value of the entry event
+     *
+     * @return merge value.
+     */
+    public V getMergingValue() { return this.mergingValue; }
 
     /**
      * Returns the value of the entry event

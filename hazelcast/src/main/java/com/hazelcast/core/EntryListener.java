@@ -59,6 +59,13 @@ public interface EntryListener<K, V> extends EventListener {
     void entryEvicted(EntryEvent<K, V> event);
 
     /**
+     * Invoked when an entry is merged. This can be from either an incoming WAN Replication or a Split Brain Merge event.
+     *
+     * @param event entry event
+     */
+    void entryMerged(EntryEvent<K, V> event);
+
+    /**
      * Invoked when all entries evicted by {@link IMap#evictAll()}.
      *
      * @param event map event

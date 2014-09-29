@@ -1400,6 +1400,11 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
     }
 
     @Override
+    public void entryMerged(EntryEvent event) {
+        println(event);
+    }
+
+    @Override
     public void entryEvicted(EntryEvent event) {
         println(event);
     }

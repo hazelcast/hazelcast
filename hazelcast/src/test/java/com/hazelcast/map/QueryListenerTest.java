@@ -77,6 +77,12 @@ public class QueryListenerTest extends HazelcastTestSupport {
                 newValue[0] = event.getValue();
             }
 
+            public void entryMerged(EntryEvent<Object, Object> event) {
+                updatedKey[0] = event.getKey();
+                oldValue[0] = event.getOldValue();
+                newValue[0] = event.getValue();
+            }
+
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
 

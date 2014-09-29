@@ -38,6 +38,10 @@ public class DummyEntryListener implements EntryListener {
 //        System.err.println("Evicted: " + event);
     }
 
+    public void entryMerged(EntryEvent event) {
+//        System.err.println("Evicted: " + event);
+    }
+
     @Override
     public void mapEvicted(MapEvent event) {
 

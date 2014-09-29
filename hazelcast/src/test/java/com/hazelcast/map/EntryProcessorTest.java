@@ -733,6 +733,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             }
 
             @Override
+            public void entryMerged(EntryEvent<Integer, Integer> event) {
+                updateCount.incrementAndGet();
+                latch.countDown();
+            }
+
+            @Override
             public void entryEvicted(EntryEvent<Integer, Integer> event) {
             }
 
@@ -815,6 +821,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             public void entryUpdated(EntryEvent<Integer, Integer> event) {
                 updateCount.incrementAndGet();
                 latch.countDown();
+            }
+
+            @Override
+            public void entryMerged(EntryEvent<Integer, Integer> event) {
             }
 
             @Override

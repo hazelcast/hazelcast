@@ -104,6 +104,11 @@ public class ClientReplicatedMapAddEntryListenerRequest
         }
 
         @Override
+        public void entryMerged(EntryEvent<Object, Object> event) {
+            handleEvent(event);
+        }
+
+        @Override
         public void entryEvicted(EntryEvent<Object, Object> event) {
             handleEvent(event);
         }

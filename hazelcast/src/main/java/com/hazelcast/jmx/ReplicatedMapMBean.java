@@ -60,6 +60,11 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
             }
 
             @Override
+            public void entryMerged(EntryEvent event) {
+                totalUpdatedEntryCount.incrementAndGet();
+            }
+
+            @Override
             public void entryEvicted(EntryEvent event) {
             }
 

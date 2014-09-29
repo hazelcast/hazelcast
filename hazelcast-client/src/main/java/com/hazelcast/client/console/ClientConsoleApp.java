@@ -1377,9 +1377,10 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     @Override
-    public void entryUpdated(EntryEvent event) {
-        println(event);
-    }
+    public void entryUpdated(EntryEvent event) { println(event); }
+
+    @Override
+    public void entryMerged(EntryEvent event) { println(event); }
 
     @Override
     public void entryEvicted(EntryEvent event) {

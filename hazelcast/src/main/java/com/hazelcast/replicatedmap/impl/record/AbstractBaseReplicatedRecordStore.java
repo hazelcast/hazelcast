@@ -178,7 +178,7 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
     void fireEntryListenerEvent(Object key, Object oldValue, Object value) {
         EntryEventType eventType =
                 value == null ? EntryEventType.REMOVED : oldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-        EntryEvent event = new EntryEvent(getName(), localMember, eventType.getType(), key, oldValue, value);
+        EntryEvent event = new EntryEvent(getName(), localMember, eventType.getType(), key, oldValue, value, null);
 
         Collection<EventRegistration> registrations = eventService.getRegistrations(ReplicatedMapService.SERVICE_NAME, getName());
         if (registrations.size() > 0) {

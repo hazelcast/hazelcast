@@ -214,6 +214,11 @@ public class WebFilter implements Filter {
                 }
 
                 @Override
+                public void entryMerged(EntryEvent<String, Object> entryEvent) {
+                    // this method should be updated if we internally have a WAN Rep or Split Brain event.
+                }
+
+                @Override
                 public void mapEvicted(MapEvent event) {
                     // this method should be updated if we internally call evictAll in session replication logic
                 }
