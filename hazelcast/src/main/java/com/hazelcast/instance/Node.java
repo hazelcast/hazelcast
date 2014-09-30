@@ -150,7 +150,7 @@ public class Node {
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             nodeExtension = NodeExtensionFactory.create(configClassLoader);
-            nodeExtension.beforeInitialize(this);
+            nodeExtension.beforeStart(this);
 
             serializationService = nodeExtension.createSerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
@@ -344,7 +344,7 @@ public class Node {
         } catch (Exception e) {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
-        nodeExtension.afterInitialize(this);
+        nodeExtension.afterStart(this);
     }
 
     public void shutdown(final boolean terminate) {

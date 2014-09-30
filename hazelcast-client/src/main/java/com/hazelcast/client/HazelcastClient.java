@@ -141,19 +141,19 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
-    private final ClientExtension initializer;
+    private final ClientExtension clientExtension;
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
         instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
-        initializer = createClientInitializer(config.getClassLoader());
-        initializer.beforeInitialize(this);
+        clientExtension = createClientInitializer(config.getClassLoader());
+        clientExtension.beforeStart(this);
 
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         clientProperties = new ClientProperties(config);
-        serializationService = initializer.createSerializationService();
+        serializationService = clientExtension.createSerializationService();
         proxyManager = new ProxyManager(this);
         executionService = initExecutorService();
         transactionManager = new ClientTransactionManager(this);
@@ -169,7 +169,7 @@ public final class HazelcastClient implements HazelcastInstance {
         userContext = new ConcurrentHashMap<String, Object>();
         proxyManager.init(config);
         partitionService = new ClientPartitionServiceImpl(this);
-        initializer.afterInitialize(this);
+        clientExtension.afterStart(this);
     }
 
     private ClientExtension createClientInitializer(ClassLoader classLoader) {
@@ -183,8 +183,7 @@ public final class HazelcastClient implements HazelcastInstance {
                 }
             }
         } catch (Exception e) {
-            LOGGER.warning("ClientInitializer could not be instantiated! => "
-                    + e.getClass().getName() + ": " + e.getMessage());
+            throw ExceptionUtil.rethrow(e);
         }
         return new DefaultClientExtension();
     }
@@ -497,8 +496,8 @@ public final class HazelcastClient implements HazelcastInstance {
         return threadGroup;
     }
 
-    public ClientExtension getInitializer() {
-        return initializer;
+    public ClientExtension getClientExtension() {
+        return clientExtension;
     }
 
     @Override

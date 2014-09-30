@@ -48,7 +48,7 @@ public class DefaultNodeExtension implements NodeExtension {
     protected volatile ILogger systemLogger;
 
     @Override
-    public void beforeInitialize(Node node) {
+    public void beforeStart(Node node) {
         this.node = node;
         logger = node.getLogger(NodeExtension.class);
         systemLogger = node.getLogger("com.hazelcast.system");
@@ -69,7 +69,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void afterInitialize(Node node) {
+    public void afterStart(Node node) {
     }
 
     @Override

@@ -16,15 +16,13 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
 import java.util.Iterator;
 
 public final class NodeExtensionFactory {
 
-    private static final ILogger LOGGER = Logger.getLogger(NodeExtensionFactory.class);
     private static final String FACTORY_ID = "com.hazelcast.instance.NodeExtension";
 
     private NodeExtensionFactory() {
@@ -40,8 +38,7 @@ public final class NodeExtensionFactory {
                 }
             }
         } catch (Exception e) {
-            LOGGER.warning("NodeInitializer could not be instantiated! => "
-                    + e.getClass().getName() + ": " + e.getMessage());
+            throw ExceptionUtil.rethrow(e);
         }
         return new DefaultNodeExtension();
     }

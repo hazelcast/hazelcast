@@ -40,12 +40,12 @@ public class DefaultClientExtension implements ClientExtension {
     protected volatile HazelcastClient client;
 
     @Override
-    public void beforeInitialize(HazelcastClient client) {
+    public void beforeStart(HazelcastClient client) {
         this.client = client;
     }
 
     @Override
-    public void afterInitialize(HazelcastClient client) {
+    public void afterStart(HazelcastClient client) {
 
     }
 

@@ -20,15 +20,42 @@ import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 
+/**
+ * ClientExtension is a client extension mechanism to be able to plug different implementations of
+ * some modules, like; <tt>SerializationService</tt>, <tt>SocketChannelWrapperFactory</tt> etc.
+ *
+ */
 public interface ClientExtension {
 
-    void beforeInitialize(HazelcastClient client);
+    /**
+     * Called before client is started
+     */
+    void beforeStart(HazelcastClient client);
 
-    void afterInitialize(HazelcastClient client);
+    /**
+     * Called after node is started
+     */
+    void afterStart(HazelcastClient client);
 
+    /**
+     * Creates a <tt>SerializationService</tt> instance to be used by this client.
+     *
+     * @return a <tt>SerializationService</tt> instance
+     */
     SerializationService createSerializationService();
 
+    /**
+     * Returns <tt>SocketInterceptor</tt> for this client if available,
+     * otherwise returns null.
+     *
+     * @return SocketInterceptor
+     */
     SocketInterceptor getSocketInterceptor();
 
+    /**
+     * Returns <tt>SocketChannelWrapperFactory</tt> instance to be used by this client.
+     *
+     * @return SocketChannelWrapperFactory
+     */
     SocketChannelWrapperFactory getSocketChannelWrapperFactory();
 }

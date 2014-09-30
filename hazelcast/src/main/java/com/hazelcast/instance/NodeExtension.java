@@ -28,33 +28,108 @@ import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
 import com.hazelcast.wan.WanReplicationService;
 
+/**
+ * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
+ * some modules, like; <tt>SerializationService</tt>, <tt>SocketChannelWrapperFactory</tt> etc.
+ *
+ */
 public interface NodeExtension {
 
-    void beforeInitialize(Node node);
+    /**
+     * Called before node is started
+     */
+    void beforeStart(Node node);
 
+    /**
+     * Called to print node information during startup
+     */
     void printNodeInfo(Node node);
 
-    void afterInitialize(Node node);
+    /**
+     * Called after node is started
+     */
+    void afterStart(Node node);
 
+    /**
+     * Creates a <tt>SerializationService</tt> instance to be used by this <tt>Node</tt>.
+     *
+     * @return a <tt>SerializationService</tt> instance
+     */
     SerializationService createSerializationService();
 
+    /**
+     * Returns <tt>SecurityContext</tt> for this <tt>Node</tt> if available, otherwise returns null.
+     *
+     * @return security context
+     */
     SecurityContext getSecurityContext();
 
+    /**
+     * @deprecated
+     */
+    @Deprecated
     Storage<DataRef> getOffHeapStorage();
 
+    /**
+     * Returns a <tt>WanReplicationService</tt> instance to be used by this <tt>Node</tt>.
+     *
+     * @return WanReplicationService
+     */
     WanReplicationService geWanReplicationService();
 
+    /**
+     * Returns <tt>MemberSocketInterceptor</tt> for this <tt>Node</tt> if available,
+     * otherwise returns null.
+     *
+     * @return MemberSocketInterceptor
+     */
     MemberSocketInterceptor getMemberSocketInterceptor();
 
+    /**
+     * Returns <tt>SocketChannelWrapperFactory</tt> instance to be used by this <tt>Node</tt>.
+     *
+     * @return SocketChannelWrapperFactory
+     */
     SocketChannelWrapperFactory getSocketChannelWrapperFactory();
 
+    /**
+     * Creates a <tt>PacketReader</tt> for given <tt>Connection</tt> instance.
+     *
+     * @param connection tcp-ip connection
+     * @param ioService IOService
+     *
+     * @return packet reader
+     */
     PacketReader createPacketReader(TcpIpConnection connection, IOService ioService);
 
+    /**
+     * Creates a <tt>PacketWriter</tt> for given <tt>Connection</tt> instance.
+     *
+     * @param connection tcp-ip connection
+     * @param ioService IOService
+     *
+     * @return packet writer
+     */
     PacketWriter createPacketWriter(TcpIpConnection connection, IOService ioService);
 
-    void destroy();
-
+    /**
+     * Called on thread start to inject/intercept extension specific logic,
+     * like; registering thread in some service,
+     * executing a special method before thread starts to do its own task.
+     *
+     * @param thread thread starting
+     */
     void onThreadStart(Thread thread);
 
+    /**
+     * Called before a thread stops to clean/release injected by {@link #onThreadStart(Thread)}.
+     *
+     * @param thread thread stopping
+     */
     void onThreadStop(Thread thread);
+
+    /**
+     * Destroys <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
+     */
+    void destroy();
 }
