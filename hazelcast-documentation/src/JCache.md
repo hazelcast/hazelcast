@@ -39,14 +39,18 @@ After setting dependencies, you can start using JCache as described by the speci
 
 Hazelcast has two types of providers that you can use. You can think of these two types as Hazelcast client and server in terms of their usage purposes.
 
+
 ### Client Provider
 
 In order to access the distributed cache cluster through light clients, client provider is the JCache provider to be used. 
-This is like using a Hazelcast client.
+Its fully qualified class name is `com.hazelcast.client.cache.impl.HazelcastClientCachingProvider`
+This is luses the Hazelcast client.
 
 ### Server Provider
 
 If you want to embed JCache server into your application, you can use the server provider. This is actually like embedding a Hazelcast node into your application.
+
+Its fully qualified class name is `com.hazelcast.cache.imp.HazelcastServerCachingProvider`.
 
 ## Provider Setup
 
@@ -58,7 +62,9 @@ After adding the `cache-api` dependency, there are below options to use Hazelcas
 
 Adding one of these dependencies enables its default cache provider. 
 
-If you add `hazelcast-client-<version>.jar` or `hazelcast-all-<version>.jar`, but want to force using the server caching provider mode, then you can use the below system property to setup the provider type:
+If you add `hazelcast-client-<version>.jar` or `hazelcast-all-<version>.jar`, but want to override these defaults, specify the following system property:
+
+### Hazelcast Specific System Property
 
 `-Dhazelcast.jcache.provider.type=[client|server]`
 
@@ -88,6 +94,10 @@ cache.put("theKey", "Hello World");
 String value = cache.get("theKey");
 System.out.println(value);//prints 'Hello World'
 ```
+
+For more samples, see [Hazelcast JCache Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/jcache/src/main/java/com/hazelcast/examples) for more examples.
+                      
+ 
 
 ## Hazelcast Cache Extension - ICache
 
@@ -139,11 +149,6 @@ icache.put("session-key-2", SessionData,  AccessedExpiryPolicy.factoryOf(TEN_MIN
 ```
 
 Now, your customized session will expire in ten minutes after being accessed.
-
-## Code Samples
-
-Please see [Hazelcast JCache Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/jcache/src/main/java/com/hazelcast/examples) for more examples.
-
 
 ## Running the JCache TCK
 
