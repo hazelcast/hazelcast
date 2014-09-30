@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentMap;
  * Implementation for {@link com.hazelcast.query.impl.Index}
  */
 public class IndexImpl implements Index {
+
     /**
      * Creates instance from NullObject is a inner class.
      */
@@ -94,8 +95,9 @@ public class IndexImpl implements Index {
             indexStore.newIndex(newValue, e);
         } else {
             // update
-            indexStore.removeIndex(oldValue, key);
-            indexStore.newIndex(newValue, e);
+            indexStore.updateIndex(oldValue, newValue, e);
+            //indexStore.removeIndex(oldValue, key);
+            //indexStore.newIndex(newValue, e);
         }
     }
 
