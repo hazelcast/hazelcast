@@ -32,9 +32,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
 
     @Override
     public void newIndex(Comparable newValue, QueryableEntry record) {
-        ensureNotLocked();
-
-        takeLock();
+        takeWriteLock();
         try {
             Data indexKey = record.getIndexKey();
             ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
@@ -47,28 +45,24 @@ public class UnsortedIndexStore extends BaseIndexStore {
             }
             records.put(indexKey, record);
         } finally {
-            releaseLock();
+            releaseWriteLock();
         }
     }
 
     @Override
     public void updateIndex(Comparable oldValue, Comparable newValue, QueryableEntry entry) {
-        ensureNotLocked();
-
-        takeLock();
+        takeWriteLock();
         try {
             removeIndex(oldValue, entry.getIndexKey());
             newIndex(newValue, entry);
         } finally {
-            releaseLock();
+            releaseWriteLock();
         }
     }
 
     @Override
     public void removeIndex(Comparable oldValue, Data indexKey) {
-        ensureNotLocked();
-
-        takeLock();
+        takeWriteLock();
         try {
             ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
             if (records != null) {
@@ -78,27 +72,23 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 }
             }
         } finally {
-            releaseLock();
+            releaseWriteLock();
         }
     }
 
     @Override
     public void clear() {
-        ensureNotLocked();
-
-        takeLock();
+        takeWriteLock();
         try {
             mapRecords.clear();
         } finally {
-            releaseLock();
+            releaseWriteLock();
         }
     }
 
     @Override
     public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
-        ensureNotLocked();
-
-        readerCount.incrementAndGet();
+        takeReadLock();
         try {
             Comparable paramFrom = from;
             Comparable paramTo = to;
@@ -125,15 +115,13 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 }
             }
         } finally {
-            readerCount.decrementAndGet();
+            releaseReadLock();
         }
     }
 
     @Override
     public void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue) {
-        ensureNotLocked();
-
-        readerCount.incrementAndGet();
+        takeReadLock();
         try {
             Set<Comparable> values = mapRecords.keySet();
             for (Comparable value : values) {
@@ -166,39 +154,33 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 }
             }
         } finally {
-            readerCount.decrementAndGet();
+            releaseReadLock();
         }
     }
 
     @Override
     public ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
-        ensureNotLocked();
-
-        readerCount.incrementAndGet();
+        takeReadLock();
         try {
             return mapRecords.get(indexValue);
         } finally {
-            readerCount.decrementAndGet();
+            releaseReadLock();
         }
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
-        ensureNotLocked();
-
-        readerCount.incrementAndGet();
+        takeReadLock();
         try {
             return new SingleResultSet(mapRecords.get(value));
         } finally {
-            readerCount.decrementAndGet();
+            releaseReadLock();
         }
     }
 
     @Override
     public void getRecords(MultiResultSet results, Set<Comparable> values) {
-        ensureNotLocked();
-
-        readerCount.incrementAndGet();
+        takeReadLock();
         try {
             for (Comparable value : values) {
                 ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
@@ -207,7 +189,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 }
             }
         } finally {
-            readerCount.decrementAndGet();
+            releaseReadLock();
         }
     }
 

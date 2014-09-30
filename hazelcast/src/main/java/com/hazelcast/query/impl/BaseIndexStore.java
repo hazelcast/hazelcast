@@ -16,52 +16,30 @@
 
 package com.hazelcast.query.impl;
 
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Base class for concrete index store implementations
  */
 public abstract class BaseIndexStore implements IndexStore {
 
-    protected volatile boolean locked = false;
-    protected volatile long ownerId = -1;
-    protected AtomicLong readerCount = new AtomicLong();
-    protected Lock lock = new ReentrantLock();
-    protected Condition lockCondition = lock.newCondition();
+    protected ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    protected ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    protected ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
-    protected void takeLock() {
-        locked = true;
-        ownerId = Thread.currentThread().getId();
-        while (readerCount.get() > 0) {
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        lock.lock();
+    protected void takeWriteLock() {
+        writeLock.lock();
     }
 
-    protected void releaseLock() {
-        ownerId = -1;
-        locked = false;
-        try {
-            lockCondition.signalAll();
-        } finally {
-            lock.unlock();
-        }
+    protected void releaseWriteLock() {
+        writeLock.unlock();
     }
 
-    protected void ensureNotLocked() {
-        while (locked && ownerId != Thread.currentThread().getId()) {
-            try {
-                lockCondition.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+    protected void takeReadLock() {
+        readLock.lock();
+    }
+
+    protected void releaseReadLock() {
+        readLock.unlock();
     }
 }
