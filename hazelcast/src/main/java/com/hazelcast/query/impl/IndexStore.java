@@ -39,5 +39,7 @@ public interface IndexStore {
 
     void newIndex(Comparable newValue, QueryableEntry entry);
 
+    void updateIndex(Comparable oldValue, Comparable newValue, QueryableEntry entry);
+
     ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue);
 }

@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Implementation for {@link com.hazelcast.query.impl.Index}
@@ -42,17 +41,6 @@ public class IndexImpl implements Index {
     private final boolean ordered;
 
     private volatile AttributeType attributeType;
-
-    // "indexSyncLock" monitor is used for synchronizing method entrances of read and write operations
-    private final Object indexSyncLock = new Object();
-    // "indexReadLock" monitor is used for synchronizing read operations on index store
-    private final Object indexReadLock = new Object();
-    // "indexReadLock" monitor is used for synchronizing write operations on index store
-    private final Object indexWriteLock = new Object();
-    // Number of reader (query maker) count on index store
-    private final AtomicLong readerCount = new AtomicLong();
-    // Flag to hold status of index store is locked or not
-    private volatile boolean indexLocked;
 
     public IndexImpl(String attribute, boolean ordered) {
         this.attribute = attribute;
@@ -80,159 +68,85 @@ public class IndexImpl implements Index {
         return indexStore.getRecordMap(indexValue);
     }
 
-    private void beforeWrite() {
-        synchronized (indexSyncLock) {
-            // Make index store locked so no new readers (query makers) can work on index store.
-            indexLocked = true;
-            // If there is active readers (query makers), wait them to finish.
-            while (readerCount.get() > 0) {
-                try {
-                    indexReadLock.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    private void afterWrite() {
-        synchronized (indexWriteLock) {
-            // Unlock index store so new readers (query makers) can work on index store.
-            indexLocked = false;
-            // Write has finished so notify all waiters (readers) waiting for index store lock.
-            indexWriteLock.notifyAll();
-        }
-    }
-
-    private void beforeRead() {
-        synchronized (indexSyncLock) {
-            // Wait until index is locked.
-            // Index is locked by a writer so wait writer to finish its write operation on index store.
-            while (indexLocked) {
-                try {
-                    indexWriteLock.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            // Read has started so increase count of readers
-            readerCount.incrementAndGet();
-        }
-    }
-
-    private void afterRead() {
-        synchronized (indexReadLock) {
-            // Read has finished so decrease count of readers
-            readerCount.decrementAndGet();
-            // Read has finished so notify all waiters (writers)
-            // waiting for finishing active read operations
-            indexReadLock.notifyAll();
-        }
-    }
-
     @Override
-    public synchronized void saveEntryIndex(QueryableEntry e) throws QueryException {
-        beforeWrite();
-        try {
-            /*
-             * At first, check if attribute type is not initialized, initialize it before saving an entry index
-             * Because, if entity index is saved before,
-             * that thread can be blocked before executing attribute type setting code block,
-             * another thread can query over indexes without knowing attribute type and
-             * this causes to class cast exceptions.
-             */
-            if (attributeType == null) {
-                // Initialize attribute type by using entry index
-                attributeType = e.getAttributeType(attribute);
-            }
-            Data key = e.getIndexKey();
-            Comparable oldValue = recordValues.remove(key);
-            Comparable newValue = e.getAttribute(attribute);
-            if (newValue == null) {
-                newValue = NULL;
-            } else if (newValue.getClass().isEnum()) {
-                newValue = TypeConverters.ENUM_CONVERTER.convert(newValue);
-            }
-            recordValues.put(key, newValue);
-            if (oldValue == null) {
-                // new
-                indexStore.newIndex(newValue, e);
-            } else {
-                // update
-                indexStore.removeIndex(oldValue, key);
-                indexStore.newIndex(newValue, e);
-            }
-        } finally {
-            afterWrite();
+    public void saveEntryIndex(QueryableEntry e) throws QueryException {
+        /*
+         * At first, check if attribute type is not initialized, initialize it before saving an entry index
+         * Because, if entity index is saved before,
+         * that thread can be blocked before executing attribute type setting code block,
+         * another thread can query over indexes without knowing attribute type and
+         * this causes to class cast exceptions.
+         */
+        if (attributeType == null) {
+            // Initialize attribute type by using entry index
+            attributeType = e.getAttributeType(attribute);
+        }
+        Data key = e.getIndexKey();
+        Comparable oldValue = recordValues.remove(key);
+        Comparable newValue = e.getAttribute(attribute);
+        if (newValue == null) {
+            newValue = NULL;
+        } else if (newValue.getClass().isEnum()) {
+            newValue = TypeConverters.ENUM_CONVERTER.convert(newValue);
+        }
+        recordValues.put(key, newValue);
+        if (oldValue == null) {
+            // new
+            indexStore.newIndex(newValue, e);
+        } else {
+            // update
+            indexStore.updateIndex(oldValue, newValue, e);
+            //indexStore.removeIndex(oldValue, key);
+            //indexStore.newIndex(newValue, e);
         }
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable[] values) {
-        beforeRead();
-        try {
-            if (values.length == 1) {
-                if (attributeType != null) {
-                    return indexStore.getRecords(convert(values[0]));
-                } else {
-                    return new SingleResultSet(null);
-                }
+        if (values.length == 1) {
+            if (attributeType != null) {
+                return indexStore.getRecords(convert(values[0]));
             } else {
-                MultiResultSet results = new MultiResultSet();
-                if (attributeType != null) {
-                    Set<Comparable> convertedValues = new HashSet<Comparable>(values.length);
-                    for (Comparable value : values) {
-                        convertedValues.add(convert(value));
-                    }
-                    indexStore.getRecords(results, convertedValues);
-                }
-                return results;
+                return new SingleResultSet(null);
             }
-        } finally {
-            afterRead();
+        } else {
+            MultiResultSet results = new MultiResultSet();
+            if (attributeType != null) {
+                Set<Comparable> convertedValues = new HashSet<Comparable>(values.length);
+                for (Comparable value : values) {
+                    convertedValues.add(convert(value));
+                }
+                indexStore.getRecords(results, convertedValues);
+            }
+            return results;
         }
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
-        beforeRead();
-        try {
-            if (attributeType != null) {
-                return indexStore.getRecords(convert(value));
-            } else {
-                return new SingleResultSet(null);
-            }
-        } finally {
-            afterRead();
+        if (attributeType != null) {
+            return indexStore.getRecords(convert(value));
+        } else {
+            return new SingleResultSet(null);
         }
     }
 
     @Override
     public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
-        beforeRead();
-        try {
-            MultiResultSet results = new MultiResultSet();
-            if (attributeType != null) {
-                indexStore.getSubRecordsBetween(results, convert(from), convert(to));
-            }
-            return results;
-        } finally {
-            afterRead();
+        MultiResultSet results = new MultiResultSet();
+        if (attributeType != null) {
+            indexStore.getSubRecordsBetween(results, convert(from), convert(to));
         }
+        return results;
     }
 
     @Override
     public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
-        beforeRead();
-        try {
-            MultiResultSet results = new MultiResultSet();
-            if (attributeType != null) {
-                indexStore.getSubRecords(results, comparisonType, convert(searchedValue));
-            }
-            return results;
-        } finally {
-            afterRead();
+        MultiResultSet results = new MultiResultSet();
+        if (attributeType != null) {
+            indexStore.getSubRecords(results, comparisonType, convert(searchedValue));
         }
+        return results;
     }
 
     private Comparable convert(Comparable value) {

@@ -45,6 +45,17 @@ public class UnsortedIndexStore implements IndexStore {
     }
 
     @Override
+    public void updateIndex(Comparable oldValue, Comparable newValue, QueryableEntry entry) {
+        if (oldValue.equals(newValue)) {
+            return;
+        }
+
+        // Implement as atomic update like in "SortedIndexStore"
+        removeIndex(oldValue, entry.getIndexKey());
+        newIndex(newValue, entry);
+    }
+
+    @Override
     public void removeIndex(Comparable oldValue, Data indexKey) {
         ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
         if (records != null) {
