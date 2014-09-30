@@ -325,6 +325,9 @@ abstract class AbstractClientCacheProxyInternal<K, V>
 
     protected void countDownCompletionLatch(int id) {
         final CountDownLatch countDownLatch = syncLocks.get(id);
+        if (countDownLatch == null) {
+            return;
+        }
         countDownLatch.countDown();
         if (countDownLatch.getCount() == 0) {
             deregisterCompletionLatch(id);
@@ -390,7 +393,7 @@ abstract class AbstractClientCacheProxyInternal<K, V>
                     CacheRemoveEntryListenerRequest removeRequest = new CacheRemoveEntryListenerRequest(nameWithPrefix,
                             completionRegistrationId);
                     boolean isDeregistered = clientContext.getListenerService()
-                                                          .stopListening(removeRequest, completionRegistrationId);
+                            .stopListening(removeRequest, completionRegistrationId);
                     if (isDeregistered) {
                         completionRegistrationId = null;
                     }

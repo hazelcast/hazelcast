@@ -5,6 +5,10 @@
 
 This section lists issues solved for **Hazelcast 3.3.1** release.
 
+- MapReduce Combiner creation is not threadsafe, but certain operations on mapping phase might need a concurrent creation of the combiners [[#3625]](https://github.com/hazelcast/hazelcast/issues/3625).
+- When `connectionTimeout` property in ClientNetworkConfig is set to `Integer.MAX_VALUE`, the client could not connect to cluster since a default 2000 ms. extra value is added to `connectionTimeout` while connecting [[#3615]](https://github.com/hazelcast/hazelcast/issues/3615).
+- User provided list results from combiner is colliding with the internally used multi-result list [[#3614]](https://github.com/hazelcast/hazelcast/issues/3614).
+- While committing collection transactions, the collection item is being added to the collection container. However, this gives the warning "There is no suitable de-serializer for type" warning. Instead of collection item, transactional item should be added to the container [[#3603]](https://github.com/hazelcast/hazelcast/issues/3603).
 - `MaxSizeConfig` constructor should convert zero size to `Integer.MAX_VALUE` [[#3579]](https://github.com/hazelcast/hazelcast/issues/3579).
 - If deserialization of the client request fails, the exception is not propagated back to the client  [[#3557]](https://github.com/hazelcast/hazelcast/issues/3557).
 - "Lock is not owned by by the transaction" exception. This exception was received while testing how transactions are working with Map and MultiMap for some last Hazelcast releases [[#3545]](https://github.com/hazelcast/hazelcast/issues/3545).

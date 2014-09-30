@@ -507,6 +507,7 @@ public final class HazelcastClient implements HazelcastInstance {
 
     void doShutdown() {
         CLIENTS.remove(id);
+        proxyManager.destroy();
         executionService.shutdown();
         partitionService.stop();
         clusterService.stop();
@@ -514,7 +515,6 @@ public final class HazelcastClient implements HazelcastInstance {
         connectionManager.shutdown();
         invocationService.shutdown();
         listenerService.shutdown();
-        proxyManager.destroy();
         serializationService.destroy();
     }
 

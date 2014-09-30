@@ -48,6 +48,7 @@ public final class EvictionHelper {
     private static final int ONE_HUNDRED_PERCENT = 100;
     private static final int EVICTION_START_THRESHOLD_PERCENTAGE = 95;
     private static final int ONE_KILOBYTE = 1024;
+    private static final int ONE_MEGABYTE = ONE_KILOBYTE * ONE_KILOBYTE;
 
     private EvictionHelper() {
     }
@@ -289,10 +290,7 @@ public final class EvictionHelper {
             return false;
         }
         final int size = getRecordStoreSize(mapName, container);
-        if (size >= maxSize) {
-            return true;
-        }
-        return false;
+        return size >= maxSize;
     }
 
     private static boolean isEvictableHeapSize(final MapContainer mapContainer) {
@@ -302,7 +300,7 @@ public final class EvictionHelper {
         }
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
         final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
-        return maxSize < (usedHeapSize / ONE_KILOBYTE / ONE_KILOBYTE);
+        return maxSize < (usedHeapSize / ONE_MEGABYTE);
     }
 
     private static boolean isEvictableHeapPercentage(final MapContainer mapContainer) {

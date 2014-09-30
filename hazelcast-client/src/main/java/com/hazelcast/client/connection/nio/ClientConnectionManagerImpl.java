@@ -569,11 +569,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (currentOwnerConnection != null) {
                 return currentOwnerConnection;
             }
+
+            long remainingWait = waitTime;
             synchronized (ownerConnectionLock) {
-                long endTime = System.currentTimeMillis() + waitTime;
-                while (ownerConnection == null && endTime > System.currentTimeMillis()) {
+                long waitStart = System.currentTimeMillis();
+                while (ownerConnection == null && remainingWait > 0) {
                     try {
-                        ownerConnectionLock.wait(waitTime);
+                        ownerConnectionLock.wait(remainingWait);
+                        remainingWait = waitTime - (System.currentTimeMillis() - waitStart);
                     } catch (InterruptedException e) {
                         throw new IOException(e);
                     }

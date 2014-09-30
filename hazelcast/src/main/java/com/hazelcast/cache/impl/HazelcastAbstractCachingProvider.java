@@ -31,6 +31,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.WeakHashMap;
 
+/**
+ * Base CachingProvider implementations
+ */
 public abstract class HazelcastAbstractCachingProvider
         implements CachingProvider {
 

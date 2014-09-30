@@ -29,7 +29,12 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Cache Partition Segment
  *
- * todo What does this do?
+ * CachePartitionSegment is a data structure responsible from
+ * all cache data of a partition defined by partitionId
+ *
+ * This Data structure is managed by CacheService
+ *
+ * @see com.hazelcast.cache.impl.CacheService
  *
  */
 public final class CachePartitionSegment {

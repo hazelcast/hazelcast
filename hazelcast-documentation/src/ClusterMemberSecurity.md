@@ -58,4 +58,4 @@ public interface ICredentialsFactory {
 }
 ```
 
-Properties defined in configuration are passed to `ICredentialsFactory.configure()` method as java.util.Properties and to `LoginModule.initialize()` method asjava.util.Map.
+Properties defined in configuration are passed to `ICredentialsFactory.configure()` method as java.util.Properties and to `LoginModule.initialize()` method as java.util.Map.

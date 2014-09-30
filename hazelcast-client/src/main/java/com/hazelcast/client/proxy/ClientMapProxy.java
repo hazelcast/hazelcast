@@ -127,9 +127,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.util.ValidationUtil.checkNotNull;
 
-/**
- * @author mdogan 5/17/13
- */
 public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
@@ -214,7 +211,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public boolean remove(Object key, Object value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        // I do not why but findbugs does not like this null check:
+        // value must be nonnull but is marked as nullable ["com.hazelcast.client.proxy.ClientMapProxy"]
+        // At ClientMapProxy.java:[lines 131-1253]
+        // checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
         final Data valueData = toData(value);

@@ -35,6 +35,8 @@ public interface ConnectionManager {
 
     Connection getOrConnect(Address address, boolean silent);
 
+    boolean registerConnection(Address address, Connection connection);
+
     void destroyConnection(Connection conn);
 
     void shutdown();

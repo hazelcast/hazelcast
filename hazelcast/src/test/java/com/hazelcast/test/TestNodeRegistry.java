@@ -272,6 +272,12 @@ final class TestNodeRegistry {
             }
         }
 
+        @Override
+        public boolean registerConnection(Address address, Connection connection) {
+            mapConnections.put(address, (MockConnection) connection);
+            return true;
+        }
+
         public void start() {
         }
 
@@ -301,7 +307,6 @@ final class TestNodeRegistry {
         public int getAllTextConnections() {
             return 0;
         }
-
     }
 
     private static class MockConnection implements Connection {

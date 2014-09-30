@@ -699,4 +699,22 @@ public class ClientRegressionTest
             foo = in.readInt();
         }
     }
+
+    @Test
+    public void testNearCache_shutdownClient() {
+        final ClientConfig clientConfig = new ClientConfig();
+        NearCacheConfig invalidateConfig = new NearCacheConfig();
+        final String mapName = randomMapName();
+        invalidateConfig.setName(mapName);
+        invalidateConfig.setInvalidateOnChange(true);
+        clientConfig.addNearCacheConfig(invalidateConfig);
+        Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap<Integer, Integer> map = client.getMap(mapName);
+
+        map.get(1);
+        //test should finish without throwing any exception.
+        client.shutdown();
+    }
 }

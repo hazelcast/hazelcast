@@ -2,8 +2,10 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.map.impl.eviction.EvictionHelper;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -12,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.map.impl.eviction.EvictionHelper.checkEvictable;
 import static com.hazelcast.map.impl.eviction.EvictionHelper.evictableSize;
 import static com.hazelcast.map.impl.eviction.EvictionHelper.fireEvent;
-import static com.hazelcast.map.impl.eviction.EvictionHelper.removeEvictableRecords;
 
 /**
  * Contains eviction specific functionality.
@@ -23,52 +24,59 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * Number of reads before clean up.
      * A nice number such as 2^n - 1.
      */
-    protected static final int POST_READ_CHECK_POINT = 63;
+    private static final int POST_READ_CHECK_POINT = 63;
 
     /**
      * Flag for checking if this record store has at least one candidate entry
      * for expiration (idle or tll) or not.
      */
-    protected volatile boolean expirable;
+    private volatile boolean expirable;
 
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
      */
-    protected Iterator<Record> expirationIterator;
+    private Iterator<Record> expirationIterator;
 
     /**
      * If there is no clean-up caused by puts after some time,
      * count a number of gets and start eviction.
      */
-    protected int readCountBeforeCleanUp;
+    private int readCountBeforeCleanUp;
 
     /**
      * used in LRU eviction logic.
      */
-    protected long lruAccessSequenceNumber;
+    private long lruAccessSequenceNumber;
 
     /**
      * Last run time of cleanup operation.
      */
-    protected long lastEvictionTime;
+    private long lastEvictionTime;
 
     private final boolean evictionEnabled;
 
     private final long minEvictionCheckMillis;
 
+    private final long maxIdleTime;
+
+    private final EvictionPolicy evictionPolicy;
+
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
         final MapConfig mapConfig = mapContainer.getMapConfig();
         this.minEvictionCheckMillis = mapConfig.getMinEvictionCheckMillis();
+        this.evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
         this.evictionEnabled
-                = !EvictionPolicy.NONE.equals(mapConfig.getEvictionPolicy());
+                = !EvictionPolicy.NONE.equals(evictionPolicy);
         this.expirable = isRecordStoreExpirable();
+        this.maxIdleTime = calculateMaxIdleTime();
     }
 
     private boolean isRecordStoreExpirable() {
-        return mapContainer.getMapConfig().getMaxIdleSeconds() > 0
-                || mapContainer.getMapConfig().getTimeToLiveSeconds() > 0;
+        final MapConfig mapConfig = mapContainer.getMapConfig();
+        return mapConfig.getMaxIdleSeconds() > 0
+                || mapConfig.getTimeToLiveSeconds() > 0;
     }
 
     @Override
@@ -122,21 +130,10 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                 break;
             }
             checkedEntryCount++;
-            final Record record = expirationIterator.next();
-            final Data key = record.getKey();
-            if (isLocked(key)) {
-                continue;
-            }
-            if (isReachable(record, now)) {
-                continue;
-            }
-            //!!! get entry value here because evictInternal(key) nulls the record value.
-            final Object value = record.getValue();
-            evictInternal(key, backup);
-            evictedCount++;
-            // do post eviction operations if this partition is an owner partition.
-            if (!backup) {
-                doPostEvictionOperations(key, value, backup);
+            Record record = expirationIterator.next();
+            record = getOrNullIfExpired(record, now, backup);
+            if (record == null) {
+                evictedCount++;
             }
         }
         return evictedCount;
@@ -193,7 +190,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return;
         }
         if (shouldEvict(now)) {
-            removeEvictables(backup);
+            removeEvictableRecords(backup);
             lastEvictionTime = now;
             readCountBeforeCleanUp = 0;
         }
@@ -203,13 +200,13 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return evictionEnabled && inEvictableTimeWindow(now) && isEvictable();
     }
 
-    private void removeEvictables(boolean backup) {
+    private void removeEvictableRecords(boolean backup) {
         final int evictableSize = getEvictableSize();
         if (evictableSize < 1) {
             return;
         }
         final MapConfig mapConfig = mapContainer.getMapConfig();
-        removeEvictableRecords(this, evictableSize, mapConfig, mapServiceContext, backup);
+        EvictionHelper.removeEvictableRecords(this, evictableSize, mapConfig, mapServiceContext, backup);
     }
 
     private int getEvictableSize() {
@@ -248,7 +245,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     abstract Object evictInternal(Data key, boolean backup);
 
-
     /**
      * Check if record is reachable according to ttl or idle times.
      * If not reachable return null.
@@ -256,7 +252,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * @param record {@link com.hazelcast.map.impl.record.Record}
      * @return null if evictable.
      */
-    protected Record getOrNullIfExpired(Record record, boolean backup) {
+    protected Record getOrNullIfExpired(Record record, long now, boolean backup) {
         if (!expirable) {
             return record;
         }
@@ -267,33 +263,21 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (isLocked(key)) {
             return record;
         }
-        if (isReachable(record)) {
+        if (!isExpired(record, now)) {
             return record;
         }
         final Object value = record.getValue();
-        evict(key, backup);
+        evictInternal(key, backup);
         if (!backup) {
-            doPostEvictionOperations(key, value, backup);
+            doPostExpirationOperations(key, value);
         }
         return null;
     }
 
-    private boolean isReachable(Record record) {
-        final long now = getNow();
-        return isReachable(record, now);
-    }
-
-    private boolean isReachable(Record record, long time) {
-        if (record == null) {
-            return false;
-        }
-        final Record idleExpired = isIdleExpired(record, time);
-        if (idleExpired == null) {
-            return false;
-        }
-        final Record ttlExpired = isTTLExpired(record, time);
-
-        return ttlExpired != null;
+    private boolean isExpired(Record record, long time) {
+        return record == null
+                || isIdleExpired(record, time) == null
+                || isTTLExpired(record, time) == null;
     }
 
     private Record isIdleExpired(Record record, long time) {
@@ -308,15 +292,23 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         assert time > 0L;
         assert time >= lastAccessTime;
 
-        final long idleTime = getIdleTime();
-        result = time - lastAccessTime >= idleTime;
+        final long maxIdleTime = getMaxIdleTime();
+        result = time - lastAccessTime >= maxIdleTime;
 
         return result ? null : record;
     }
 
-    private long getIdleTime() {
-        final int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
-        return maxIdleSeconds == 0 ? Long.MAX_VALUE : mapServiceContext.convertTime(maxIdleSeconds, TimeUnit.SECONDS);
+    private long calculateMaxIdleTime() {
+        final MapConfig mapConfig = mapContainer.getMapConfig();
+        final int maxIdleSeconds = mapConfig.getMaxIdleSeconds();
+        if (maxIdleSeconds == 0) {
+            return Long.MAX_VALUE;
+        }
+        return mapServiceContext.convertTime(maxIdleSeconds, TimeUnit.SECONDS);
+    }
+
+    private long getMaxIdleTime() {
+        return maxIdleTime;
     }
 
     private Record isTTLExpired(Record record, long time) {
@@ -345,22 +337,20 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * - Sends eviction event.
      * - Invalidates near cache.
      *
-     * @param key    the key to be processed.
-     * @param value  the value to be processed.
-     * @param backup <code>true</code> if running on a backup partition, otherwise <code>false</code>
+     * @param key   the key to be processed.
+     * @param value the value to be processed.
      */
-    private void doPostEvictionOperations(Data key, Object value, boolean backup) {
-        if (backup) {
-            return;
-        }
+    private void doPostExpirationOperations(Data key, Object value) {
+        final String mapName = this.name;
+        final MapServiceContext mapServiceContext = this.mapServiceContext;
         final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        if (nearCacheProvider.isNearCacheAndInvalidationEnabled(name)) {
-            nearCacheProvider.invalidateAllNearCaches(name, key);
+        if (nearCacheProvider.isNearCacheAndInvalidationEnabled(mapName)) {
+            nearCacheProvider.invalidateAllNearCaches(mapName, key);
         }
-        fireEvent(key, value, name, mapServiceContext);
+        fireEvent(key, value, mapName, mapServiceContext);
     }
 
-    protected void increaseRecordEvictionCriteriaNumber(Record record, EvictionPolicy evictionPolicy) {
+    void increaseRecordEvictionCriteriaNumber(Record record, EvictionPolicy evictionPolicy) {
         switch (evictionPolicy) {
             case LRU:
                 ++lruAccessSequenceNumber;
@@ -379,7 +369,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     @Override
     protected void accessRecord(Record record, long now) {
         super.accessRecord(record, now);
-        increaseRecordEvictionCriteriaNumber(record, mapContainer.getMapConfig().getEvictionPolicy());
+        increaseRecordEvictionCriteriaNumber(record, evictionPolicy);
     }
 
 
@@ -388,13 +378,23 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      */
     protected final class ReadOnlyRecordIterator implements Iterator<Record> {
 
+        private final long now;
+        private final boolean checkExpiration;
         private final Iterator<Record> iterator;
         private Record nextRecord;
         private Record lastReturned;
 
+        protected ReadOnlyRecordIterator(Collection<Record> values, long now) {
+            this.iterator = values.iterator();
+            this.now = now;
+            this.checkExpiration = true;
+            advance();
+        }
+
         protected ReadOnlyRecordIterator(Collection<Record> values) {
             this.iterator = values.iterator();
-
+            this.now = -1L;
+            this.checkExpiration = false;
             advance();
         }
 
@@ -415,15 +415,24 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("remove not supported by this iterator");
+            throw new UnsupportedOperationException("remove() is not supported by this iterator");
         }
 
         private void advance() {
+            final long now = this.now;
+            final boolean checkExpiration = this.checkExpiration;
+            final Iterator<Record> iterator = this.iterator;
+
             while (iterator.hasNext()) {
                 nextRecord = iterator.next();
-                boolean reachable = isReachable(nextRecord);
-                if (reachable && nextRecord != null) {
-                    return;
+                if (nextRecord != null) {
+                    if (!checkExpiration) {
+                        return;
+                    }
+
+                    if (!isExpired(nextRecord, now)) {
+                        return;
+                    }
                 }
             }
             nextRecord = null;
