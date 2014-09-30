@@ -61,8 +61,13 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 /**
  * ICache implementation for client
  *
- * @param <K> key
- * @param <V> value
+ * This proxy is the implementation of ICache and javax.cache.Cache which is returned by
+ * HazelcastClientCacheManager. Represent a cache on client.
+ *
+ * This implementation is a thin proxy implementation using hazelcast client infrastructure
+ *
+ * @param <K> key type
+ * @param <V> value type
  */
 public class ClientCacheProxy<K, V>
         extends AbstractClientCacheProxyExtension<K, V> {
@@ -217,7 +222,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
         if (clazz.isInstance(cacheConfig)) {
-            return clazz.cast(cacheConfig);
+            return clazz.cast(cacheConfig.getAsReadOnly());
         }
         throw new IllegalArgumentException("The configuration class " + clazz + " is not supported by this implementation");
     }

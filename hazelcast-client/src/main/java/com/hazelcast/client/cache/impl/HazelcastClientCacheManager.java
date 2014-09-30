@@ -44,8 +44,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
+ * CacheManager implementation for client side
  *
- * todo What does this do?
+ * Provides client side cacheManager functionality
  */
 public final class HazelcastClientCacheManager extends HazelcastCacheManager {
 
@@ -147,4 +148,9 @@ public final class HazelcastClientCacheManager extends HazelcastCacheManager {
         }
     }
 
+    protected void postClose() {
+        if (!isDefaultURI) {
+            hazelcastInstance.shutdown();
+        }
+    }
 }

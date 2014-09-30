@@ -28,12 +28,12 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -317,19 +317,36 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     public Collection<Object> values() {
         checkTransactionState();
-        final Collection<Data> dataSet = valuesInternal();
-        final Collection<Object> values = new ArrayList<Object>(dataSet.size());
+        final List<Map.Entry<Data, Data>> entries = getEntries();
         final MapService service = getService();
         final MapServiceContext mapServiceContext = service.getMapServiceContext();
-        for (final Data data : dataSet) {
-            values.add(mapServiceContext.toObject(data));
-        }
-        for (TxnValueWrapper wrapper : txMap.values()) {
-            if (TxnValueWrapper.Type.NEW.equals(wrapper.type)) {
-                values.add(wrapper.value);
-            } else if (TxnValueWrapper.Type.REMOVED.equals(wrapper.type)) {
-                values.remove(wrapper.value);
+        final Collection<Object> values = new ArrayList<Object>(entries.size());
+        final Set<Object> keyWontBeIncluded = new HashSet<Object>();
+
+        for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
+            final boolean isRemoved = TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type);
+            final boolean isUpdated = TxnValueWrapper.Type.UPDATED.equals(entry.getValue().type);
+
+            Object objectKey = entry.getKey();
+            if (isRemoved) {
+                keyWontBeIncluded.add(objectKey);
+            } else {
+                if (isUpdated) {
+                    keyWontBeIncluded.add(objectKey);
+                }
+                Object entryValue = entry.getValue().value;
+                values.add(entryValue);
             }
+        }
+        Iterator<Map.Entry<Data, Data>> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry entry = iterator.next();
+            Object key = mapServiceContext.toObject(entry.getKey());
+            if (keyWontBeIncluded.contains(key)) {
+                continue;
+            }
+            Object value = mapServiceContext.toObject(entry.getValue());
+            values.add(value);
         }
         return values;
     }

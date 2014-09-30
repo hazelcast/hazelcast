@@ -166,7 +166,7 @@ Now, as the last step, you need to register `EmployeeDataSerializableFactory` de
     <data-serializable-factories>
       <data-serializable-factory
         factory-id="1">EmployeeDataSerializableFactory
-      </data- serializable -factory>
+      </data-serializable-factory>
     </data-serializable-factories>
   </serialization>
   ...

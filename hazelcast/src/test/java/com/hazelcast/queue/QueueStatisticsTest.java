@@ -122,8 +122,14 @@ public class QueueStatisticsTest extends AbstractQueueTest {
         queue.addAll(list);
         queue.removeAll(list);
 
-        LocalQueueStats stats = queue.getLocalQueueStats();
-        assertEquals(3, stats.getOtherOperationsCount());
+        final LocalQueueStats stats = queue.getLocalQueueStats();
+        AssertTask task = new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(3, stats.getOtherOperationsCount());
+            }
+        };
+        assertTrueEventually(task);
     }
 
     @Test

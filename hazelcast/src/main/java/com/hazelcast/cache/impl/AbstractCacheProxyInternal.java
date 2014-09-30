@@ -81,7 +81,7 @@ abstract class AbstractCacheProxyInternal<K, V>
         try {
             final int partitionId = getPartitionId(getNodeEngine(), keyData);
             final InternalCompletableFuture<T> f = getNodeEngine().getOperationService()
-                                                                  .invokeOnPartition(getServiceName(), op, partitionId);
+                    .invokeOnPartition(getServiceName(), op, partitionId);
             if (completionOperation) {
                 waitCompletionLatch(completionId);
             }
@@ -242,6 +242,9 @@ abstract class AbstractCacheProxyInternal<K, V>
 
     protected void countDownCompletionLatch(int id) {
         final CountDownLatch countDownLatch = syncLocks.get(id);
+        if (countDownLatch == null) {
+            return;
+        }
         countDownLatch.countDown();
         if (countDownLatch.getCount() == 0) {
             deregisterCompletionLatch(id);

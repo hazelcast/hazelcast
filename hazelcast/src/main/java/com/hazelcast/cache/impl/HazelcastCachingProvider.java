@@ -34,7 +34,6 @@ import java.util.Properties;
 public final class HazelcastCachingProvider
         implements CachingProvider {
 
-    // TODO: add a system property to select cache provider to use
     private static final String CLIENT_CACHING_PROVIDER_CLASS = "com.hazelcast.client.cache.impl.HazelcastClientCachingProvider";
     private static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
 

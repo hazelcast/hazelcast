@@ -26,12 +26,17 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.instance.DefaultNodeContext;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.NodeIOService;
+import com.hazelcast.nio.tcp.FirewallingTcpIpConnectionManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.util.Clock;
@@ -42,6 +47,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.nio.channels.ServerSocketChannel;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -54,6 +60,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -387,5 +394,188 @@ public class SplitBrainHandlerTest {
         Hazelcast.newHazelcastInstance(config2);
 
         assertFalse("Latch should not be countdown!", latch.await(3, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testMulticast_ClusterMerge_when_split_not_detected_by_master() throws InterruptedException {
+        testClusterMerge_when_split_not_detected_by_master(true);
+    }
+
+    @Test
+    public void testTcpIp_ClusterMerge_when_split_not_detected_by_master() throws InterruptedException {
+        testClusterMerge_when_split_not_detected_by_master(false);
+    }
+
+    private void testClusterMerge_when_split_not_detected_by_master(boolean multicastEnabled)
+            throws InterruptedException {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
+        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
+
+        config.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "10");
+        config.setProperty(GroupProperties.PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "10");
+
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.getJoin().getMulticastConfig().setEnabled(multicastEnabled);
+        networkConfig.getJoin().getTcpIpConfig()
+                .setEnabled(!multicastEnabled).addMember("127.0.0.1");
+
+        HazelcastInstance hz1 = newHazelcastInstance(config, "test-node1", new FirewallingNodeContext());
+        HazelcastInstance hz2 = newHazelcastInstance(config, "test-node2", new FirewallingNodeContext());
+        HazelcastInstance hz3 = newHazelcastInstance(config, "test-node3", new FirewallingNodeContext());
+
+        final Node n1 = TestUtil.getNode(hz1);
+        Node n2 = TestUtil.getNode(hz2);
+        Node n3 = TestUtil.getNode(hz3);
+
+        final CountDownLatch splitLatch = new CountDownLatch(2);
+        MembershipAdapter membershipAdapter = new MembershipAdapter() {
+            @Override
+            public void memberRemoved(MembershipEvent event) {
+                if (n1.getLocalMember().equals(event.getMember())) {
+                    splitLatch.countDown();
+                }
+            }
+        };
+
+        hz2.getCluster().addMembershipListener(membershipAdapter);
+        hz3.getCluster().addMembershipListener(membershipAdapter);
+
+        final CountDownLatch mergeLatch = new CountDownLatch(2);
+        LifecycleListener lifecycleListener = new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleState.MERGED) {
+                    mergeLatch.countDown();
+                }
+            }
+        };
+        hz2.getLifecycleService().addLifecycleListener(lifecycleListener);
+        hz3.getLifecycleService().addLifecycleListener(lifecycleListener);
+
+        FirewallingTcpIpConnectionManager cm1 = getConnectionManager(hz1);
+        FirewallingTcpIpConnectionManager cm2 = getConnectionManager(hz2);
+        FirewallingTcpIpConnectionManager cm3 = getConnectionManager(hz3);
+
+        // block n2 & n3 on n1
+        cm1.block(n2.address);
+        cm1.block(n3.address);
+
+        // remove and block n1 on n2 & n3
+        n2.clusterService.removeAddress(n1.address);
+        n3.clusterService.removeAddress(n1.address);
+        cm2.block(n1.address);
+        cm3.block(n1.address);
+
+        assertTrue(splitLatch.await(20, TimeUnit.SECONDS));
+        assertEquals(3, hz1.getCluster().getMembers().size());
+        assertEquals(2, hz2.getCluster().getMembers().size());
+        assertEquals(2, hz3.getCluster().getMembers().size());
+
+        // unblock n2 on n1 and n1 on n2 & n3
+        // n1 still blocks access to n3
+        cm1.unblock(n2.address);
+        cm2.unblock(n1.address);
+        cm3.unblock(n1.address);
+
+        assertTrue(mergeLatch.await(60, TimeUnit.SECONDS));
+        assertEquals(3, hz1.getCluster().getMembers().size());
+        assertEquals(3, hz2.getCluster().getMembers().size());
+        assertEquals(3, hz3.getCluster().getMembers().size());
+
+        assertEquals(n1.getThisAddress(), n1.getMasterAddress());
+        assertEquals(n1.getThisAddress(), n2.getMasterAddress());
+        assertEquals(n1.getThisAddress(), n3.getMasterAddress());
+    }
+
+    @Test
+    public void testClusterMerge_when_split_not_detected_by_slave() throws InterruptedException {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
+        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
+
+        config.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "10");
+        config.setProperty(GroupProperties.PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "10");
+
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.getJoin().getMulticastConfig().setEnabled(false);
+        networkConfig.getJoin().getTcpIpConfig()
+                .setEnabled(true).addMember("127.0.0.1");
+
+        HazelcastInstance hz1 = newHazelcastInstance(config, "test-node1", new FirewallingNodeContext());
+        HazelcastInstance hz2 = newHazelcastInstance(config, "test-node2", new FirewallingNodeContext());
+        HazelcastInstance hz3 = newHazelcastInstance(config, "test-node3", new FirewallingNodeContext());
+
+        Node n1 = TestUtil.getNode(hz1);
+        Node n2 = TestUtil.getNode(hz2);
+        final Node n3 = TestUtil.getNode(hz3);
+
+        final CountDownLatch splitLatch = new CountDownLatch(2);
+        MembershipAdapter membershipAdapter = new MembershipAdapter() {
+            @Override
+            public void memberRemoved(MembershipEvent event) {
+                if (n3.getLocalMember().equals(event.getMember())) {
+                    splitLatch.countDown();
+                }
+            }
+        };
+
+        hz1.getCluster().addMembershipListener(membershipAdapter);
+        hz2.getCluster().addMembershipListener(membershipAdapter);
+
+        final CountDownLatch mergeLatch = new CountDownLatch(2);
+        LifecycleListener lifecycleListener = new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleState.MERGED) {
+                    mergeLatch.countDown();
+                }
+            }
+        };
+        hz1.getLifecycleService().addLifecycleListener(lifecycleListener);
+        hz2.getLifecycleService().addLifecycleListener(lifecycleListener);
+
+        FirewallingTcpIpConnectionManager cm1 = getConnectionManager(hz1);
+        FirewallingTcpIpConnectionManager cm2 = getConnectionManager(hz2);
+        FirewallingTcpIpConnectionManager cm3 = getConnectionManager(hz3);
+
+        cm3.block(n1.address);
+        cm3.block(n2.address);
+
+        n1.clusterService.removeAddress(n3.address);
+        n2.clusterService.removeAddress(n3.address);
+        cm1.block(n3.address);
+        cm2.block(n3.address);
+
+        assertTrue(splitLatch.await(20, TimeUnit.SECONDS));
+        assertEquals(2, hz1.getCluster().getMembers().size());
+        assertEquals(2, hz2.getCluster().getMembers().size());
+        assertEquals(3, hz3.getCluster().getMembers().size());
+
+        cm3.unblock(n1.address);
+        cm1.unblock(n3.address);
+        cm2.unblock(n3.address);
+
+        assertTrue(mergeLatch.await(60, TimeUnit.SECONDS));
+        assertEquals(3, hz1.getCluster().getMembers().size());
+        assertEquals(3, hz2.getCluster().getMembers().size());
+        assertEquals(3, hz3.getCluster().getMembers().size());
+
+        assertEquals(n3.getThisAddress(), n1.getMasterAddress());
+        assertEquals(n3.getThisAddress(), n2.getMasterAddress());
+        assertEquals(n3.getThisAddress(), n3.getMasterAddress());
+    }
+
+    private static class FirewallingNodeContext extends DefaultNodeContext {
+        @Override
+        public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
+            NodeIOService ioService = new NodeIOService(node);
+            return new FirewallingTcpIpConnectionManager(ioService, serverSocketChannel, node);
+        }
+    }
+
+    private static FirewallingTcpIpConnectionManager getConnectionManager(HazelcastInstance hz) {
+        Node node = TestUtil.getNode(hz);
+        return (FirewallingTcpIpConnectionManager) node.getConnectionManager();
     }
 }
