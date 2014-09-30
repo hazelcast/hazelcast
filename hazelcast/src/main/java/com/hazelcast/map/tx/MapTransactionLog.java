@@ -120,4 +120,15 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     public Object getKey() {
         return new MapRecordKey(name, key);
     }
+
+    @Override
+    public String toString() {
+        return "MapTransactionLog{"
+                + "name='" + name + '\''
+                + ", key=" + key
+                + ", threadId=" + threadId
+                + ", ownerUuid='" + ownerUuid + '\''
+                + ", op=" + op +
+                '}';
+    }
 }
