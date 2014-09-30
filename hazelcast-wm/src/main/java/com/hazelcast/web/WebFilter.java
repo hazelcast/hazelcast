@@ -206,24 +206,20 @@ public class WebFilter implements Filter {
                     }
                 }
 
-                public void entryUpdated(EntryEvent<String, Object> entryEvent) {
-                }
+                public void entryUpdated(EntryEvent<String, Object> entryEvent) { }
 
                 public void entryEvicted(EntryEvent<String, Object> entryEvent) {
                     entryRemoved(entryEvent);
                 }
 
-                @Override
                 public void entryMerged(EntryEvent<String, Object> entryEvent) {
                     // this method should be updated if we internally have a WAN Rep or Split Brain event.
                 }
 
-                @Override
                 public void mapEvicted(MapEvent event) {
                     // this method should be updated if we internally call evictAll in session replication logic
                 }
 
-                @Override
                 public void mapCleared(MapEvent event) {
                     // this method should be updated if we internally call clearAll in session replication logic
                 }

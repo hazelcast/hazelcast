@@ -48,31 +48,24 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
             public void entryAdded(EntryEvent event) {
                 totalAddedEntryCount.incrementAndGet();
             }
-
             @Override
             public void entryRemoved(EntryEvent event) {
                 totalRemovedEntryCount.incrementAndGet();
             }
-
             @Override
             public void entryUpdated(EntryEvent event) {
                 totalUpdatedEntryCount.incrementAndGet();
             }
-
             @Override
             public void entryMerged(EntryEvent event) {
                 totalUpdatedEntryCount.incrementAndGet();
             }
-
             @Override
-            public void entryEvicted(EntryEvent event) {
-            }
-
+            public void entryEvicted(EntryEvent event) { }
             @Override
             public void mapEvicted(MapEvent event) {
                 //TODO should I add totalEvictedEntryCount
             }
-
             @Override
             public void mapCleared(MapEvent event) {
                 //TODO should I add totalClearedEntryCount

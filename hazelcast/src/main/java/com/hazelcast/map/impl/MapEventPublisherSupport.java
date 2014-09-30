@@ -12,7 +12,6 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.EventServiceImpl;
-import jnr.x86asm.REG;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -60,12 +59,14 @@ class MapEventPublisherSupport implements MapEventPublisher {
 
         Registrations registrations = getRegistrations(mapName, eventType, dataKey, dataOldValue, dataValue);
 
-        if (registrations.isEmpty()) return;
+        if (registrations.isEmpty()) {
+            return;
+        }
 
         final EntryEventData eventData = createEntryEventData(mapName, caller, dataKey, dataValue, dataOldValue, dataMergingValue,
                 eventType.getType());
 
-        publishToRegistras(dataKey, registrations, eventData);
+        publishToRegistrars(dataKey, registrations, eventData);
 
     }
 
@@ -74,15 +75,17 @@ class MapEventPublisherSupport implements MapEventPublisher {
 
         Registrations registrations = getRegistrations(mapName, eventType, dataKey, dataOldValue, dataValue);
 
-        if (registrations.isEmpty()) return;
+        if (registrations.isEmpty()) {
+            return;
+        }
 
         final EntryEventData eventData = createEntryEventData(mapName, caller, dataKey, dataValue, dataOldValue,
                 eventType.getType());
 
-        publishToRegistras(dataKey, registrations, eventData);
+        publishToRegistrars(dataKey, registrations, eventData);
     }
 
-    private void publishToRegistras(Data dataKey, Registrations registrations, EntryEventData eventData) {
+    private void publishToRegistrars(Data dataKey, Registrations registrations, EntryEventData eventData) {
         final int orderKey = pickOrderKey(dataKey);
         publishWithValue(registrations, eventData, orderKey);
         publishWithoutValue(registrations, eventData, orderKey);
@@ -95,9 +98,8 @@ class MapEventPublisherSupport implements MapEventPublisher {
             return new Registrations();
         }
 
-        Registrations registrations = generateRegistrations(eventType, dataKey, dataOldValue, dataValue, candidates);
+        return generateRegistrations(eventType, dataKey, dataOldValue, dataValue, candidates);
 
-        return registrations;
     }
 
     private Registrations generateRegistrations(EntryEventType eventType, Data dataKey, Data dataOldValue, Data dataValue,
@@ -221,7 +223,7 @@ class MapEventPublisherSupport implements MapEventPublisher {
             return registrationsWithoutValue;
         }
 
-        public void addRegistration(Result result, EventRegistration candidate){
+        public void addRegistration(Result result, EventRegistration candidate) {
             switch (result) {
                 case VALUE_INCLUDED:
                     registrationsWithValue.add(candidate);
@@ -236,7 +238,7 @@ class MapEventPublisherSupport implements MapEventPublisher {
             }
         }
 
-        public boolean isEmpty(){
+        public boolean isEmpty() {
             return (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty());
         }
 
