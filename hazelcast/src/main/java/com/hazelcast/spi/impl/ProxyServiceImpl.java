@@ -55,13 +55,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.DESTROYED;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public class ProxyServiceImpl
         implements ProxyService, PostJoinAwareService, EventPublishingService<DistributedObjectEventPacket, Object> {
@@ -155,11 +155,7 @@ public class ProxyServiceImpl
 
         destroyLocalDistributedObject(serviceName, name, true);
 
-        try {
-            FutureUtil.waitWithDeadline(calls, TIME, TimeUnit.SECONDS, DESTROY_PROXY_EXCEPTION_HANDLER);
-        } catch (TimeoutException e) {
-            logger.finest(e);
-        }
+        waitWithDeadline(calls, TIME, TimeUnit.SECONDS, DESTROY_PROXY_EXCEPTION_HANDLER);
     }
 
     private void destroyLocalDistributedObject(String serviceName, String name, boolean fireEvent) {

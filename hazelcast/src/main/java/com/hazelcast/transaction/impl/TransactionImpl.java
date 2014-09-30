@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
@@ -365,12 +364,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 }
             }
 
-            try {
-                waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, rollbackTxExceptionHandler);
-            } catch (TimeoutException e) {
-                ILogger logger = nodeEngine.getLogger(getClass());
-                logger.warning("Timeout during tx rollback backup!", e);
-            }
+            waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, rollbackTxExceptionHandler);
             futures.clear();
         }
     }

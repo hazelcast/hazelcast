@@ -555,11 +555,7 @@ public class ExecutorServiceProxy
             }
         }
 
-        try {
-            waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
-        } catch (TimeoutException e) {
-            logger.finest(e);
-        }
+        waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
     }
 
     private InternalCompletableFuture submitShutdownOperation(OperationService operationService, MemberImpl member) {

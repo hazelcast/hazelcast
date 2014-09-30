@@ -55,7 +55,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
@@ -224,12 +223,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                 futures.add(f);
             }
 
-            try {
-                long timeoutMillis = TransactionOptions.getDefault().getTimeoutMillis();
-                waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, finalizeExceptionHandler);
-            } catch (TimeoutException e) {
-                logger.warning("Timeout while rolling-back tx!", e);
-            }
+            long timeoutMillis = TransactionOptions.getDefault().getTimeoutMillis();
+            waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, finalizeExceptionHandler);
         } else {
             if (log.state == State.COMMITTING && log.xid != null) {
                 logger.warning("This log is XA Managed " + log);

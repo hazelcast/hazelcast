@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -44,9 +43,8 @@ import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public abstract class AbstractJoiner implements Joiner {
-    private static final ExceptionHandler WHILE_WAIT_MERGE_EXCEPTION_HANDLER =
-            logAllExceptions("While waiting merge response...", Level.FINEST);
 
+    private final ExceptionHandler whileWaitMergeExceptionHandler;
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
     private final AtomicInteger tryCount = new AtomicInteger(0);
     protected final Set<Address> blacklistedAddresses
@@ -61,6 +59,8 @@ public abstract class AbstractJoiner implements Joiner {
         this.node = node;
         this.logger = node.loggingService.getLogger(getClass());
         this.config = node.config;
+        whileWaitMergeExceptionHandler =
+                logAllExceptions(logger, "While waiting merge response...", Level.FINEST);
     }
 
     @Override
@@ -224,11 +224,7 @@ public abstract class AbstractJoiner implements Joiner {
             }
         }
 
-        try {
-            waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_WAIT_MERGE_EXCEPTION_HANDLER);
-        } catch (TimeoutException e) {
-            logger.warning("While waiting merge response...", e);
-        }
+        waitWithDeadline(calls, 3, TimeUnit.SECONDS, whileWaitMergeExceptionHandler);
 
         final PrepareMergeOperation prepareMergeOperation = new PrepareMergeOperation(targetAddress);
         prepareMergeOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
