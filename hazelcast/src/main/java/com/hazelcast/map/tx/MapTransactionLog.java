@@ -27,6 +27,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
+
 import java.io.IOException;
 import java.util.concurrent.Future;
 
@@ -128,7 +129,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
                 + ", key=" + key
                 + ", threadId=" + threadId
                 + ", ownerUuid='" + ownerUuid + '\''
-                + ", op=" + op +
-                '}';
+                + ", op=" + op
+                + '}';
     }
 }
