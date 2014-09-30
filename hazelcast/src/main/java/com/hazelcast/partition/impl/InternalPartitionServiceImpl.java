@@ -38,7 +38,6 @@ import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
 import com.hazelcast.spi.Callback;
-import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -51,6 +50,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
@@ -76,7 +76,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -94,8 +93,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         EventPublishingService<MigrationEvent, MigrationListener> {
 
     private static final String EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT = "Partition state sync invocation timed out";
-    private static final ExceptionHandler PARTITION_STATE_SYNC_TIMEOUT_HANDLER =
-            logAllExceptions(EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT, Level.INFO);
 
     private static final int DEFAULT_PAUSE_MILLIS = 1000;
     private static final int DEFAULT_SLEEP_MILLIS = 10;
@@ -123,6 +120,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final CoalescingDelayedTrigger delayedResumeMigrationTrigger;
 
+    private final ExceptionHandler partitionStateSyncTimeoutHandler;
+
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
@@ -141,6 +140,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.logger = node.getLogger(InternalPartitionService.class);
+        partitionStateSyncTimeoutHandler =
+                logAllExceptions(logger, EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT, Level.FINEST);
         this.partitions = new InternalPartitionImpl[partitionCount];
         PartitionListener partitionListener = new LocalPartitionListener(this, node.getThisAddress());
         for (int i = 0; i < partitionCount; i++) {
@@ -497,12 +498,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             OperationService operationService = nodeEngine.getOperationService();
 
             List<Future> calls = firePartitionStateOperation(members, partitionState, operationService);
-
-            try {
-                waitWithDeadline(calls, 3, TimeUnit.SECONDS, PARTITION_STATE_SYNC_TIMEOUT_HANDLER);
-            } catch (TimeoutException e) {
-                logger.finest(e);
-            }
+            waitWithDeadline(calls, 3, TimeUnit.SECONDS, partitionStateSyncTimeoutHandler);
         } finally {
             lock.unlock();
         }
@@ -975,7 +971,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         Operation operation = new HasOngoingMigration();
         Address masterAddress = node.getMasterAddress();
         OperationService operationService = nodeEngine.getOperationService();
-        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(SERVICE_NAME, operation, masterAddress);
+        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(SERVICE_NAME, operation,
+                masterAddress);
         Future future = invocationBuilder.setTryCount(100).setTryPauseMillis(100).invoke();
         try {
             return (Boolean) future.get(1, TimeUnit.MINUTES);

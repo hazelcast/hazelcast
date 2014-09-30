@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
 
@@ -54,7 +55,7 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
     @Override
     public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
         Collection<Future> futures = sendUnlockOperations(entries);
-        awaitCompletion(futures);
+        waitWithDeadline(futures, AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS, exceptionHandler);
     }
 
     private Collection<Future> sendUnlockOperations(Collection<ScheduledEntry<Data, Object>> entries) {
@@ -75,15 +76,6 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         } catch (Throwable t) {
             ILogger logger = nodeEngine.getLogger(getClass());
             logger.warning(t);
-        }
-    }
-
-    private void awaitCompletion(Collection<Future> futures) {
-        try {
-            FutureUtil.waitWithDeadline(futures, AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS, exceptionHandler);
-        } catch (TimeoutException e) {
-            ILogger logger = nodeEngine.getLogger(getClass());
-            logger.finest(e);
         }
     }
 
