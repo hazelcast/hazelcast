@@ -125,6 +125,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
+
 /**
  * @author mdogan 5/17/13
  */
@@ -144,9 +146,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean containsKey(Object key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
         initNearCache();
         final Data keyData = toData(key);
         if (nearCache != null) {
@@ -165,9 +166,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean containsValue(Object value) {
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
         Data valueData = toData(value);
         MapContainsValueRequest request = new MapContainsValueRequest(name, valueData);
         Boolean result = invoke(request);
@@ -176,9 +176,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V get(Object key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         initNearCache();
 
         final Data keyData = toData(key);
@@ -206,9 +204,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V remove(Object key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
         MapRemoveRequest request = new MapRemoveRequest(name, keyData, ThreadUtil.getThreadId());
@@ -217,15 +213,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean remove(Object key, Object value) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        // I do not why but findbugs does not like this null check:
-        // value must be nonnull but is marked as nullable ["com.hazelcast.client.proxy.ClientMapProxy"]
-        // At ClientMapProxy.java:[lines 131-1253]
-//        if (value == null) {
-//            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-//        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -236,9 +226,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void delete(Object key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
         MapDeleteRequest request = new MapDeleteRequest(name, keyData, ThreadUtil.getThreadId());
@@ -253,9 +241,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Future<V> getAsync(final K key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         initNearCache();
         final Data keyData = toData(key);
         if (nearCache != null) {
@@ -297,12 +283,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Future<V> putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -319,9 +302,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Future<V> removeAsync(final K key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
         MapRemoveRequest request = new MapRemoveRequest(name, keyData, ThreadUtil.getThreadId());
@@ -336,9 +317,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
         MapTryRemoveRequest request = new MapTryRemoveRequest(name, keyData,
@@ -349,12 +328,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean tryPut(K key, V value, long timeout, TimeUnit timeunit) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -366,12 +341,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -382,12 +353,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -403,12 +370,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -419,15 +382,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean replace(K key, V oldValue, V newValue) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (oldValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
-        if (newValue == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(oldValue, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(newValue, NULL_VALUE_IS_NOT_ALLOWED);
+
         final Data keyData = toData(key);
         final Data oldValueData = toData(oldValue);
         final Data newValueData = toData(newValue);
@@ -440,12 +398,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V replace(K key, V value) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -456,12 +410,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void set(K key, V value, long ttl, TimeUnit timeunit) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -472,9 +422,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void lock(K key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapLockRequest request = new MapLockRequest(name, keyData, ThreadUtil.getThreadId());
         invoke(request, keyData);
@@ -482,9 +430,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapLockRequest request = new MapLockRequest(name, keyData,
                 ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit), -1);
@@ -493,9 +439,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean isLocked(K key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapIsLockedRequest request = new MapIsLockedRequest(name, keyData);
         Boolean result = invoke(request, keyData);
@@ -513,9 +457,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapLockRequest request = new MapLockRequest(name, keyData,
                 ThreadUtil.getThreadId(), Long.MAX_VALUE, getTimeInMillis(time, timeunit));
@@ -525,9 +467,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void unlock(K key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapUnlockRequest request = new MapUnlockRequest(name, keyData, ThreadUtil.getThreadId(), false);
         invoke(request, keyData);
@@ -535,9 +475,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void forceUnlock(K key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapUnlockRequest request = new MapUnlockRequest(name, keyData, ThreadUtil.getThreadId(), true);
         invoke(request, keyData);
@@ -609,9 +547,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public EntryView<K, V> getEntryView(K key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapGetEntryViewRequest request = new MapGetEntryViewRequest(name, keyData, ThreadUtil.getThreadId());
         SimpleEntryView entryView = invoke(request, keyData);
@@ -627,9 +563,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean evict(K key) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapEvictRequest request = new MapEvictRequest(name, keyData, ThreadUtil.getThreadId());
         Boolean result = invoke(request);
@@ -654,9 +588,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void loadAll(Set<K> keys, boolean replaceExistingValues) {
-        if (keys == null) {
-            throw new NullPointerException("Parameter keys should not be null.");
-        }
+        checkNotNull(keys, "Parameter keys should not be null.");
         if (keys.isEmpty()) {
             return;
         }
@@ -675,9 +607,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
         final List<Data> dataKeys = new ArrayList<Data>(keys.size());
         for (K key : keys) {
-            if (key == null) {
-                throw new NullPointerException("Null key is not allowed");
-            }
+            checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
             final Data dataKey = toData(key);
             dataKeys.add(dataKey);
         }
@@ -919,18 +850,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
         return invoke(request, keyData);
     }
 
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
         request.setAsSubmitToKey();
@@ -944,9 +871,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
         request.setAsSubmitToKey();

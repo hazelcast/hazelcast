@@ -27,7 +27,6 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -188,12 +187,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(getTextContent(child)));
             } else if ("local-update-policy".equals(nodeName)) {
                 String value = getTextContent(child);
-                NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
-                try {
-                    policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
-                } catch (IllegalArgumentException ignored) {
-                    EmptyStatement.ignore(ignored);
-                }
+                NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
                 nearCacheConfig.setLocalUpdatePolicy(policy);
             }
         }

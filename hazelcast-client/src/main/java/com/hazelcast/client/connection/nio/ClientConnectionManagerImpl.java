@@ -157,8 +157,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 OUT_OF_MEMORY_HANDLER);
 
         socketOptions = networkConfig.getSocketOptions();
-        ClientExtension initializer = client.getInitializer();
-        socketChannelWrapperFactory = initializer.getSocketChannelWrapperFactory();
+        ClientExtension clientExtension = client.getClientExtension();
+        socketChannelWrapperFactory = clientExtension.getSocketChannelWrapperFactory();
         socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
     }
 
@@ -184,8 +184,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
         if (sic != null && sic.isEnabled()) {
-            ClientExtension initializer = client.getInitializer();
-            return initializer.getSocketInterceptor();
+            ClientExtension clientExtension = client.getClientExtension();
+            return clientExtension.getSocketInterceptor();
         }
         return null;
     }
@@ -241,6 +241,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return ownerConnectionFuture.createNew(translatedAddress);
     }
 
+    @Override
     public ClientConnection connectToAddress(Address target) throws Exception {
         Authenticator authenticator = new ClusterAuthenticator();
         int count = 0;
@@ -252,16 +253,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 lastError = e;
             }
             count++;
-            sleep();
         }
         throw lastError;
-    }
-
-    private void sleep(){
-        try {
-            Thread.sleep(250);
-        } catch (InterruptedException ignored) {
-        }
     }
 
     @Override
