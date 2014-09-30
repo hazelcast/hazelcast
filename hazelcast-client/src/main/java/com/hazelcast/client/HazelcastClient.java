@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientDiscoveryConfig;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressTranslator;
@@ -32,6 +33,7 @@ import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
+import com.hazelcast.client.spi.ClientMulticastService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
@@ -39,6 +41,7 @@ import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.ClientMulticastServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.util.RoundRobinLB;
@@ -103,6 +106,10 @@ import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
@@ -142,6 +149,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
     private final ClientTransactionManager transactionManager;
+    private final ClientMulticastServiceImpl multicastService;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
@@ -167,6 +175,7 @@ public final class HazelcastClient implements HazelcastInstance {
         clusterService = new ClientClusterServiceImpl(this);
         invocationService = new ClientInvocationServiceImpl(this);
         listenerService = initListenerService();
+        multicastService = createClientMulticastService();
         userContext = new ConcurrentHashMap<String, Object>();
         proxyManager.init(config);
         partitionService = new ClientPartitionServiceImpl(this);
@@ -248,6 +257,11 @@ public final class HazelcastClient implements HazelcastInstance {
     private void start() {
         lifecycleService.setStarted();
         connectionManager.start();
+        if(multicastService != null)
+        {
+            multicastService.start();
+        }
+
         try {
             clusterService.start();
         } catch (IllegalStateException e) {
@@ -274,6 +288,50 @@ public final class HazelcastClient implements HazelcastInstance {
             addressTranslator = new DefaultAddressTranslator();
         }
         return new ClientConnectionManagerImpl(this, loadBalancer, addressTranslator);
+    }
+
+    ClientMulticastServiceImpl createClientMulticastService()
+    {
+        ClientMulticastServiceImpl mcService = null;
+        try
+        {
+            final ClientDiscoveryConfig discoveryConfig = config.getNetworkConfig().getDiscoveryConfig();
+            if(discoveryConfig != null && discoveryConfig.isEnabled())
+            {
+                MulticastSocket multicastSocket = new MulticastSocket(null);
+                multicastSocket.setReuseAddress(true);
+                // bind to receive interface
+                multicastSocket.bind(new InetSocketAddress(discoveryConfig.getMulticastPort()));
+                multicastSocket.setTimeToLive(discoveryConfig.getMulticastTimeToLive());
+    /*
+                try {
+                    // set the send interface
+                    final Address bindAddress = addressPicker.getBindAddress();
+                    // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
+                    // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
+                    if (!bindAddress.getInetAddress().isLoopbackAddress()) {
+                        multicastSocket.setInterface(bindAddress.getInetAddress());
+                    }
+                } catch (Exception e) {
+                    logger.warning(e);
+                }
+    */
+                multicastSocket.setReceiveBufferSize(64 * 1024);
+                multicastSocket.setSendBufferSize(64 * 1024);
+                String multicastGroup = System.getProperty("hazelcast.multicast.group");
+                if (multicastGroup == null) {
+                    multicastGroup = discoveryConfig.getMulticastGroup();
+                }
+                discoveryConfig.setMulticastGroup(multicastGroup);
+                multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
+                multicastSocket.setSoTimeout(1000);
+
+                mcService = new ClientMulticastServiceImpl(this, multicastSocket);
+            }
+        } catch (Exception e) {
+            LOGGER.severe(e);
+        }
+        return mcService;
     }
 
     public Config getConfig() {
@@ -498,6 +556,10 @@ public final class HazelcastClient implements HazelcastInstance {
         return listenerService;
     }
 
+    public ClientMulticastService getClientMulticastService() {
+        return multicastService;
+    }
+
     public ThreadGroup getThreadGroup() {
         return threadGroup;
     }
@@ -512,6 +574,10 @@ public final class HazelcastClient implements HazelcastInstance {
         proxyManager.destroy();
         executionService.shutdown();
         partitionService.stop();
+        if(multicastService != null)
+        {
+            multicastService.stop();
+        }
         clusterService.stop();
         transactionManager.shutdown();
         connectionManager.shutdown();

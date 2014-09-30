@@ -242,6 +242,20 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return valid;
     }
 
+    public boolean validateDiscoveryMessage(DiscoveryMessage discoveryMessage) throws Exception {
+        boolean valid = Packet.VERSION == discoveryMessage.getPacketVersion();
+        if (valid) {
+            try {
+                valid = node.createClientConfigCheck().isCompatible(discoveryMessage.getConfigCheck());
+            } catch (Exception e) {
+                final String message = "Invalid discovery request from: " + discoveryMessage.getAddress() + ", reason:" + e.getMessage();
+                logger.warning(message);
+                throw e;
+            }
+        }
+        return valid;
+    }
+
     private boolean isValidJoinMessage(JoinMessage joinMessage) {
         boolean validJoinRequest;
         try {

@@ -528,6 +528,7 @@
             </xs:element>
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="clientDiscoveryEnabled" type="xs:boolean" use="optional" default="false"/>
     </xs:complexType>
     <xs:complexType name="aws">
         <xs:sequence>

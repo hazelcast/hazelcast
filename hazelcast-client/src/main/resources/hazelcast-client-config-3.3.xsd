@@ -66,6 +66,7 @@
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
             <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
+            <cs:element name="discovery" type="multicast" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
     </xs:complexType>
 
@@ -154,6 +155,23 @@
             </xs:sequence>
         </xs:complexType>
     </xs:element>
+    <xs:complexType name="multicast">
+        <xs:sequence>
+            <xs:element name="multicast-group" type="xs:string" minOccurs="0" maxOccurs="1" default="224.2.2.3"/>
+            <xs:element name="multicast-port" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="54327"/>
+            <xs:element name="multicast-timeout-seconds" type="xs:int" minOccurs="0" maxOccurs="1" default="2"/>
+            <xs:element name="multicast-time-to-live" type="xs:int" minOccurs="0" maxOccurs="1" default="32"/>
+            <xs:element name="trusted-interfaces" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="interface" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+    </xs:complexType>
+
     <!--NETWORK END-->
     <xs:simpleType name="executor-pool-size">
         <xs:restriction base="xs:int">

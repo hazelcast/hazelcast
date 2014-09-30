@@ -568,6 +568,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
                 multicastConfig.setEnabled(checkTrue(value));
             }
+            if ("clientDiscoveryEnabled".equalsIgnoreCase(att.getNodeName())) {
+                multicastConfig.setClientDiscoveryEnabled(checkTrue(value));
+            }
         }
         for (Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();

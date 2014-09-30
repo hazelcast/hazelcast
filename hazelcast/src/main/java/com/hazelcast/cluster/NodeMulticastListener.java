@@ -41,6 +41,11 @@ public class NodeMulticastListener implements MulticastListener {
 
     @Override
     public void onMessage(Object msg) {
+        // Do not log the type check as the Multicast Service handles multiple message types.
+        if (!isJoinMessage(msg)) {
+            return;
+        }
+
         if (!isValidJoinMessage(msg)) {
             logDroppedMessage(msg);
             return;

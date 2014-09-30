@@ -19,8 +19,10 @@ package com.hazelcast.instance;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.cluster.ClientConfigCheck;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.cluster.ConfigCheck;
+import com.hazelcast.cluster.DiscoveryMulticastListener;
 import com.hazelcast.cluster.JoinRequest;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.MulticastJoiner;
@@ -28,6 +30,7 @@ import com.hazelcast.cluster.MulticastService;
 import com.hazelcast.cluster.NodeMulticastListener;
 import com.hazelcast.cluster.TcpIpJoiner;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -236,6 +239,10 @@ public class Node {
                 multicastSocket.setSoTimeout(1000);
                 mcService = new MulticastService(this, multicastSocket);
                 mcService.addMulticastListener(new NodeMulticastListener(this));
+                if(multicastConfig.isClientDiscoveryEnabled())
+                {
+                    mcService.addMulticastListener(new DiscoveryMulticastListener(this));
+                }
             }
         } catch (Exception e) {
             logger.severe(e);
@@ -522,6 +529,14 @@ public class Node {
     public ConfigCheck createConfigCheck() {
         String joinerType = joiner == null ? "" : joiner.getType();
         return new ConfigCheck(config, joinerType);
+    }
+
+    public ClientConfigCheck createClientConfigCheck() {
+        final ClientConfigCheck configCheck = new ClientConfigCheck();
+        final GroupConfig groupConfig = config.getGroupConfig();
+
+        configCheck.setGroupName(groupConfig.getName()).setGroupPassword(groupConfig.getPassword());
+        return configCheck;
     }
 
     public void rejoin() {

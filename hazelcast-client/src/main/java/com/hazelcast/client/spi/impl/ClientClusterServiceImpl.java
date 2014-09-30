@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.ClientImpl;
+import com.hazelcast.client.config.ClientDiscoveryConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LifecycleServiceImpl;
 import com.hazelcast.client.config.ClientAwsConfig;
@@ -97,6 +98,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     ClusterListenerThread createListenerThread() {
         final ClientAwsConfig awsConfig = client.getClientConfig().getNetworkConfig().getAwsConfig();
+        final ClientDiscoveryConfig discoveryConfig = client.getClientConfig().getNetworkConfig().getDiscoveryConfig();
         final Collection<AddressProvider> addressProvider = new LinkedList<AddressProvider>();
 
         addressProvider.add(new DefaultAddressProvider(getClientConfig().getNetworkConfig()));
@@ -106,6 +108,15 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 addressProvider.add(new AwsAddressProvider(awsConfig));
             } catch (NoClassDefFoundError e) {
                 LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
+                throw e;
+            }
+        }
+
+        if (discoveryConfig != null && discoveryConfig.isEnabled()) {
+            try {
+                addressProvider.add(new DiscoveryAddressProvider(client,  client.getClientConfig()));
+            } catch (NoClassDefFoundError e) {
+                LOGGER.log(Level.WARNING, "unable to obtain addresses via multicast!");
                 throw e;
             }
         }
