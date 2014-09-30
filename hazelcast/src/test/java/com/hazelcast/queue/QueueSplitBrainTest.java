@@ -1,8 +1,6 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
@@ -26,7 +24,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -43,17 +40,8 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueueSplitBrain_Multicast() throws InterruptedException {
-        testQueueSplitBrain(true);
-    }
-
-    @Test
-    public void testQueueSplitBrain_TcpIp() throws InterruptedException {
-        testQueueSplitBrain(false);
-    }
-
-    private void testQueueSplitBrain(boolean multicast) throws InterruptedException {
-        Config config = getConfig(multicast);
+    public void testQueueSplitBrain() throws InterruptedException {
+        Config config = newConfig();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
@@ -69,33 +57,29 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
             queue.add("item" + i);
         }
 
-        assertEquals(100, queue.size());
-
         waitAllForSafeState();
 
         closeConnectionBetween(h1, h3);
         closeConnectionBetween(h2, h3);
 
-        assertTrue(memberShipListener.splitLatch.await(10, TimeUnit.SECONDS));
-        assertEquals(2, h1.getCluster().getMembers().size());
-        assertEquals(2, h2.getCluster().getMembers().size());
-        assertEquals(1, h3.getCluster().getMembers().size());
+        assertOpenEventually(memberShipListener.latch);
+        assertClusterSizeEventually(2,h1);
+        assertClusterSizeEventually(2, h2);
+        assertClusterSizeEventually(1, h3);
 
         for (int i = 100; i < 200; i++) {
             queue.add("item" + i);
         }
-
-        assertEquals(200, queue.size());
 
         IQueue<Object> queue3 = h3.getQueue(name);
         for (int i = 0; i < 50; i++) {
             queue3.add("lostQueueItem" + i);
         }
 
-        assertTrue(lifeCycleListener.mergeLatch.await(60, TimeUnit.SECONDS));
-        assertEquals(3, h1.getCluster().getMembers().size());
-        assertEquals(3, h2.getCluster().getMembers().size());
-        assertEquals(3, h3.getCluster().getMembers().size());
+        assertOpenEventually(lifeCycleListener.latch);
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
 
         IQueue<Object> testQueue = h1.getQueue(name);
         assertFalse(testQueue.contains("lostQueueItem0"));
@@ -114,42 +98,35 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
         n2.clusterService.removeAddress(n1.address);
     }
 
-    private Config getConfig(boolean multicast) {
+    private Config newConfig() {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "30");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
-
-        NetworkConfig networkConfig = config.getNetworkConfig();
-        JoinConfig join = networkConfig.getJoin();
-        join.getMulticastConfig().setEnabled(multicast);
-        join.getTcpIpConfig().setEnabled(!multicast);
-        join.getTcpIpConfig().addMember("127.0.0.1");
-
         return config;
     }
 
     private class TestLifeCycleListener implements LifecycleListener {
 
-        CountDownLatch mergeLatch;
+        CountDownLatch latch;
 
-        TestLifeCycleListener(int latch) {
-            mergeLatch = new CountDownLatch(latch);
+        TestLifeCycleListener(int countdown) {
+            this.latch = new CountDownLatch(countdown);
         }
 
         @Override
         public void stateChanged(LifecycleEvent event) {
             if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
-                mergeLatch.countDown();
+                latch.countDown();
             }
         }
     }
 
     private class TestMemberShipListener implements MembershipListener {
 
-        final CountDownLatch splitLatch;
+        final CountDownLatch latch;
 
-        TestMemberShipListener(int latch) {
-            splitLatch = new CountDownLatch(latch);
+        TestMemberShipListener(int countdown) {
+            this.latch = new CountDownLatch(countdown);
         }
 
         @Override
@@ -159,7 +136,7 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
 
         @Override
         public void memberRemoved(MembershipEvent membershipEvent) {
-            splitLatch.countDown();
+            latch.countDown();
         }
 
         @Override
