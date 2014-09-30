@@ -1002,6 +1002,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                     case CLEAR_ALL:
                         listener.mapCleared(createMapEvent(event, member));
                         break;
+                    case MERGED:
+                        listener.entryMerged(createEntryEvent(event, member));
+                        break;
                     default:
                         throw new IllegalArgumentException("Not a known event type " + event.getEventType());
                 }
@@ -1014,13 +1017,15 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
                 V value = null;
                 V oldValue = null;
+                V mergingValue = null;
                 if (includeValue) {
                     value = toObject(event.getValue());
                     oldValue = toObject(event.getOldValue());
+                    mergingValue = toObject(event.getMergingValue());
                 }
                 K key = toObject(event.getKey());
                 return new EntryEvent<K, V>(name, member,
-                        event.getEventType().getType(), key, oldValue, value);
+                        event.getEventType().getType(), key, oldValue, value, mergingValue);
             }
 
             @Override

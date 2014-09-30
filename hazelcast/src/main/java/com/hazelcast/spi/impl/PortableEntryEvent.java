@@ -32,6 +32,7 @@ public class PortableEntryEvent implements Portable {
     private Data key;
     private Data value;
     private Data oldValue;
+    private Data mergingValue;
     private EntryEventType eventType;
     private String uuid;
     private int numberOfAffectedEntries = 1;
@@ -39,10 +40,11 @@ public class PortableEntryEvent implements Portable {
     public PortableEntryEvent() {
     }
 
-    public PortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, String uuid) {
+    public PortableEntryEvent(Data key, Data value, Data oldValue, Data mergingValue, EntryEventType eventType, String uuid) {
         this.key = key;
         this.value = value;
         this.oldValue = oldValue;
+        this.mergingValue = mergingValue;
         this.eventType = eventType;
         this.uuid = uuid;
     }
@@ -64,6 +66,10 @@ public class PortableEntryEvent implements Portable {
 
     public Data getOldValue() {
         return oldValue;
+    }
+
+    public Data getMergingValue() {
+        return mergingValue;
     }
 
     public EntryEventType getEventType() {
@@ -100,6 +106,7 @@ public class PortableEntryEvent implements Portable {
         IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
         IOUtil.writeNullableData(out, oldValue);
+        IOUtil.writeNullableData(out, mergingValue);
     }
 
     @Override
@@ -111,5 +118,6 @@ public class PortableEntryEvent implements Portable {
         key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);
         oldValue = IOUtil.readNullableData(in);
+        mergingValue = IOUtil.readNullableData(in);
     }
 }

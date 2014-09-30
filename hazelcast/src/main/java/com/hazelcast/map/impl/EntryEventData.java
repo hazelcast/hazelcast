@@ -50,7 +50,7 @@ public class EntryEventData extends AbstractEventData {
         this.dataKey = dataKey;
         this.dataNewValue = dataNewValue;
         this.dataOldValue = dataOldValue;
-        this.dataMergingValue = null;
+        this.dataMergingValue = dataMergingValue;
     }
 
     public Data getDataKey() {
@@ -65,9 +65,7 @@ public class EntryEventData extends AbstractEventData {
         return dataOldValue;
     }
 
-    public Data getDataMergingValue() {
-        return dataOldValue;
-    }
+    public Data getDataMergingValue() { return dataMergingValue; }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {

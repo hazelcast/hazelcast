@@ -90,10 +90,10 @@ public class DataAwareEntryEvent extends EntryEvent {
     }
 
     public Object getMergingValue() {
-        if (value == null && dataMergingValue != null) {
-            value = serializationService.toObject(dataMergingValue);
+        if (mergingValue == null && dataMergingValue != null) {
+            mergingValue = serializationService.toObject(dataMergingValue);
         }
-        return value;
+        return mergingValue;
     }
 
     private void writeObject(ObjectOutputStream out) throws IOException {
