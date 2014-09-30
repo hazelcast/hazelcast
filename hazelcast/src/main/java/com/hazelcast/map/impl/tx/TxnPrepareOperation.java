@@ -46,9 +46,9 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     public void run() throws Exception {
         if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), LOCK_TTL_MILLIS)) {
             ILogger logger = getLogger();
-            logger.severe(recordStore.isLocked(getKey()) + ":" + getKey());
-            throw new TransactionException("Lock is not owned by the transaction! Owner: "
-                    + recordStore.getLockOwnerInfo(getKey()));
+            logger.severe("Locked: [" + recordStore.isLocked(getKey()) + "], key: [" + getKey() + ']');
+            throw new TransactionException("Lock is not owned by the transaction! ["
+                    + recordStore.getLockOwnerInfo(getKey()) + ']');
         }
     }
 
@@ -82,5 +82,12 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ownerUuid = in.readUTF();
+    }
+
+    @Override
+    public String toString() {
+        return "TxnPrepareOperation{"
+                + "ownerUuid='" + ownerUuid + '\''
+                + '}';
     }
 }

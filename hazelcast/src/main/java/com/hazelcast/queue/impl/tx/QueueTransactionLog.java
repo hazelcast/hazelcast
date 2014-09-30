@@ -110,4 +110,15 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
     public Object getKey() {
         return new TransactionLogKey(itemId, name);
     }
+
+    @Override
+    public String toString() {
+        return "QueueTransactionLog{"
+                + "itemId=" + itemId
+                + ", name='" + name + '\''
+                + ", op=" + op
+                + ", partitionId=" + partitionId
+                + ", transactionId='" + transactionId + '\''
+                + '}';
+    }
 }
