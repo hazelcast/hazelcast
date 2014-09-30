@@ -99,7 +99,6 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
         if (expirationTime < Long.MAX_VALUE) {
             setExpirationTime(expirationTime - Clock.currentTimeMillis() + leaseTime);
-            lockStore.scheduleEviction(key, leaseTime);
         }
         return true;
     }
@@ -107,10 +106,12 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     private void setExpirationTime(long leaseTime) {
         if (leaseTime < 0) {
             expirationTime = Long.MAX_VALUE;
+            lockStore.cancelEviction(key);
         } else {
             expirationTime = Clock.currentTimeMillis() + leaseTime;
             if (expirationTime < 0) {
                 expirationTime = Long.MAX_VALUE;
+                lockStore.cancelEviction(key);
             } else {
                 lockStore.scheduleEviction(key, leaseTime);
             }
@@ -280,6 +281,9 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     @Override
     public long getRemainingLeaseTime() {
+        if (expirationTime == Long.MAX_VALUE && expirationTime < 0) {
+            return Long.MAX_VALUE;
+        }
         long now = Clock.currentTimeMillis();
         if (now >= expirationTime) {
             return 0;

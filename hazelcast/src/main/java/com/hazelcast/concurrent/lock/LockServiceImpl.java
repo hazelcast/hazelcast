@@ -147,13 +147,13 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         container.clearLockStore(namespace);
     }
 
-    void scheduleEviction(ObjectNamespace namespace, Data key, long delay) {
+    public void scheduleEviction(ObjectNamespace namespace, Data key, long delay) {
         EntryTaskScheduler scheduler = getOrPutSynchronized(
                 evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
         scheduler.schedule(delay, key, null);
     }
 
-    void cancelEviction(ObjectNamespace namespace, Data key) {
+    public void cancelEviction(ObjectNamespace namespace, Data key) {
         EntryTaskScheduler scheduler = getOrPutSynchronized(
                 evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
         scheduler.cancel(key);
