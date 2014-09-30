@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.cluster.BindOperation;
+import com.hazelcast.cluster.impl.operations.BindOperation;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.instance.NodeInitializer;
 import com.hazelcast.logging.ILogger;

@@ -23,6 +23,9 @@ import com.hazelcast.spi.CoreService;
 
 import java.util.Collection;
 
+/**
+ * A service responsible for member related functionality. So members joining, leaving etc.
+ */
 public interface ClusterService extends CoreService {
 
     MemberImpl getMember(Address address);
@@ -31,15 +34,47 @@ public interface ClusterService extends CoreService {
 
     Collection<MemberImpl> getMemberList();
 
+    /**
+     * Returns a collection of all members part of the cluster.
+     *
+     * @return all members that are part of the cluster.
+     */
     Collection<Member> getMembers();
 
+    /**
+     * Returns the address of the master member.
+     *
+     * @return the address of the master member. Could be null if the master is not yet known.
+     */
     Address getMasterAddress();
 
+    /**
+     * Checks if this member is the master.
+     *
+     * @return true if master, false otherwise.
+     */
     boolean isMaster();
 
+    /**
+     * Gets the address of this member.
+     *
+     * @return the address of this member. The returned value will never be null.
+     */
     Address getThisAddress();
 
+    /**
+     * Gets the current number of members.
+     *
+     * @return the current number of members.
+     */
     int getSize();
 
+    /**
+     * Returns the cluster-time.
+     *
+     * TODO: Needs to be improved.
+     *
+     * @return the cluster-time.
+     */
     long getClusterTime();
 }

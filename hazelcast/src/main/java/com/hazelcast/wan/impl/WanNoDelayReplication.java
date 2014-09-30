@@ -16,7 +16,7 @@
 
 package com.hazelcast.wan.impl;
 
-import com.hazelcast.cluster.AuthorizationOperation;
+import com.hazelcast.cluster.impl.operations.AuthorizationOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;

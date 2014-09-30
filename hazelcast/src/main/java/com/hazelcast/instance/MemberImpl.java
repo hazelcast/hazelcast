@@ -16,8 +16,8 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.cluster.ClusterDataSerializerHook;
-import com.hazelcast.cluster.MemberAttributeChangedOperation;
+import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.cluster.impl.operations.MemberAttributeChangedOperation;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;

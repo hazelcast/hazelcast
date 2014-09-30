@@ -20,7 +20,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.ClientPortableHook;
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -43,35 +43,7 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         final ClusterServiceImpl service = getService();
         final ClientEndpoint endpoint = getEndpoint();
 
-        final String registrationId = service.addMembershipListener(new MembershipListener() {
-            @Override
-            public void memberAdded(MembershipEvent membershipEvent) {
-                if (endpoint.live()) {
-                    final MemberImpl member = (MemberImpl) membershipEvent.getMember();
-                    endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED), getCallId());
-                }
-            }
-
-            @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                if (endpoint.live()) {
-                    final MemberImpl member = (MemberImpl) membershipEvent.getMember();
-                    endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED), getCallId());
-                }
-            }
-
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-                if (endpoint.live()) {
-                    final MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();
-                    final String uuid = member.getUuid();
-                    final MemberAttributeOperationType op = memberAttributeEvent.getOperationType();
-                    final String key = memberAttributeEvent.getKey();
-                    final Object value = memberAttributeEvent.getValue();
-                    final MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
-                    endpoint.sendEvent(new ClientMembershipEvent(member, memberAttributeChange), getCallId());
-                }
-            }
-        });
+        final String registrationId = service.addMembershipListener(new MembershipListenerImpl(endpoint));
 
         final String name = ClusterServiceImpl.SERVICE_NAME;
         endpoint.setListenerRegistration(name, name, registrationId);
@@ -99,5 +71,41 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
     @Override
     public Permission getRequiredPermission() {
         return null;
+    }
+
+    private class MembershipListenerImpl implements MembershipListener {
+        private final ClientEndpoint endpoint;
+
+        public MembershipListenerImpl(ClientEndpoint endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        @Override
+        public void memberAdded(MembershipEvent membershipEvent) {
+            if (endpoint.live()) {
+                final MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED), getCallId());
+            }
+        }
+
+        @Override
+        public void memberRemoved(MembershipEvent membershipEvent) {
+            if (endpoint.live()) {
+                final MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED), getCallId());
+            }
+        }
+
+        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+            if (endpoint.live()) {
+                final MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();
+                final String uuid = member.getUuid();
+                final MemberAttributeOperationType op = memberAttributeEvent.getOperationType();
+                final String key = memberAttributeEvent.getKey();
+                final Object value = memberAttributeEvent.getValue();
+                final MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
+                endpoint.sendEvent(new ClientMembershipEvent(member, memberAttributeChange), getCallId());
+            }
+        }
     }
 }

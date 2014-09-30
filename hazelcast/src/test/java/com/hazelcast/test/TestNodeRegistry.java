@@ -16,8 +16,8 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.cluster.AbstractJoiner;
-import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.AbstractJoiner;
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.AddressPicker;
