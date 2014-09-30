@@ -23,26 +23,16 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Store indexes rankly.
  */
-public class SortedIndexStore implements IndexStore {
+public class SortedIndexStore extends BaseIndexStore {
 
     private static final float LOAD_FACTOR = 0.75f;
     private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords
             = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
     private final NavigableSet<Comparable> sortedSet = new ConcurrentSkipListSet<Comparable>();
-
-    private volatile boolean locked = false;
-    private volatile long ownerId = -1;
-    private AtomicLong readerCount = new AtomicLong();
-    private Lock lock = new ReentrantLock();
-    private Condition lockCondition = lock.newCondition();
 
     @Override
     public void newIndex(Comparable newValue, QueryableEntry record) {
@@ -66,10 +56,6 @@ public class SortedIndexStore implements IndexStore {
 
     @Override
     public void updateIndex(Comparable oldValue, Comparable newValue, QueryableEntry entry) {
-        if (oldValue.equals(newValue)) {
-            return;
-        }
-
         ensureNotLocked();
 
         takeLock();
@@ -97,39 +83,6 @@ public class SortedIndexStore implements IndexStore {
             }
         } finally {
             releaseLock();
-        }
-    }
-
-    private void takeLock() {
-        locked = true;
-        ownerId = Thread.currentThread().getId();
-        while (readerCount.get() > 0) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        lock.lock();
-    }
-
-    private void releaseLock() {
-        ownerId = -1;
-        locked = false;
-        try {
-            lockCondition.signalAll();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    private void ensureNotLocked() {
-        while (locked && ownerId != Thread.currentThread().getId()) {
-            try {
-                lockCondition.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
     }
 
