@@ -58,7 +58,7 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
         }
     }
 
-    private void unlock() {
+    protected final void unlock() {
         LockStoreImpl lockStore = getLockStore();
         boolean unlocked = lockStore.unlock(key, getCallerUuid(), threadId);
         response = unlocked;
@@ -72,7 +72,7 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
         }
     }
 
-    private void forceUnlock() {
+    protected final void forceUnlock() {
         LockStoreImpl lockStore = getLockStore();
         response = lockStore.forceUnlock(key);
     }
