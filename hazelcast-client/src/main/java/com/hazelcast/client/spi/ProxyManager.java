@@ -199,6 +199,7 @@ public final class ProxyManager {
         ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
         client.getInvocationService().invokeOnRandomTarget(request).get();
         clientProxy.setContext(new ClientContext(client, this));
+        clientProxy.onInitialize();
     }
 
     public Collection<? extends DistributedObject> getDistributedObjects() {
