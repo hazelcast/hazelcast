@@ -24,6 +24,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
@@ -31,28 +33,32 @@ import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 import java.util.Collection;
 
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
-import static com.hazelcast.spi.impl.ResponseHandlerFactory.createErrorLoggingResponseHandler;
 
-public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
+public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Integer> {
 
     private final NodeEngine nodeEngine;
     private final ObjectNamespace namespace;
+    private final ILogger logger;
+    private final ResponseHandler unlockResponseHandler;
 
     public LockEvictionProcessor(NodeEngine nodeEngine, ObjectNamespace namespace) {
         this.nodeEngine = nodeEngine;
         this.namespace = namespace;
+        logger = nodeEngine.getLogger(getClass());
+        unlockResponseHandler = new UnlockResponseHandler();
     }
 
     @Override
-    public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
-        for (ScheduledEntry<Data, Object> entry : entries) {
+    public void process(EntryTaskScheduler<Data, Integer> scheduler, Collection<ScheduledEntry<Data, Integer>> entries) {
+        for (ScheduledEntry<Data, Integer> entry : entries) {
             Data key = entry.getKey();
-            sendUnlockOperation(scheduler, key);
+            int version = entry.getValue();
+            sendUnlockOperation(key, version);
         }
     }
 
-    private void sendUnlockOperation(EntryTaskScheduler<Data, Object> scheduler, Data key) {
-        UnlockOperation operation = new UnlockIfLeaseExpiredOperation(namespace, key, scheduler);
+    private void sendUnlockOperation(Data key, int version) {
+        UnlockOperation operation = new UnlockIfLeaseExpiredOperation(namespace, key, version);
         try {
             submit(operation, key);
         } catch (Throwable t) {
@@ -62,17 +68,35 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
     }
 
     private void submit(UnlockOperation operation, Data key) {
-        OperationService operationService = nodeEngine.getOperationService();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        OperationService operationService = nodeEngine.getOperationService();
         operation.setNodeEngine(nodeEngine);
         operation.setServiceName(SERVICE_NAME);
         operation.setPartitionId(partitionId);
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
         operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-        operation.setResponseHandler(createErrorLoggingResponseHandler(nodeEngine.getLogger(operation.getClass())));
+        operation.setResponseHandler(unlockResponseHandler);
         operation.setAsyncBackup(true);
 
         operationService.executeOperation(operation);
     }
 
+    private class UnlockResponseHandler implements ResponseHandler {
+        @Override
+        public void sendResponse(Object obj) {
+            if (obj instanceof Throwable) {
+                Throwable t = (Throwable) obj;
+                if (t instanceof RetryableException) {
+                    logger.finest("While unlocking... " + t.getMessage());
+                } else {
+                    logger.warning(t);
+                }
+            }
+        }
+
+        @Override
+        public boolean isLocal() {
+            return true;
+        }
+    }
 }

@@ -17,43 +17,45 @@
 package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.concurrent.lock.LockStoreImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
 
 import java.io.IOException;
 
-public class UnlockIfLeaseExpiredOperation extends UnlockOperation {
+public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
 
-    private final EntryTaskScheduler<Data, Object> scheduler;
+    private final int version;
 
-    public UnlockIfLeaseExpiredOperation(ObjectNamespace namespace, Data key,
-            EntryTaskScheduler<Data, Object> scheduler) {
+    public UnlockIfLeaseExpiredOperation(ObjectNamespace namespace, Data key, int version) {
         super(namespace, key, -1, true);
-        this.scheduler = scheduler;
+        this.version = version;
     }
 
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        long remainingLeaseTime = lockStore.getRemainingLeaseTime(key);
-        if (remainingLeaseTime <= 0) {
+        int lockVersion = lockStore.getVersion(key);
+        if (version == lockVersion) {
             forceUnlock();
         } else {
-            // reschedule lock eviction to be on safe side
-            scheduler.schedule(remainingLeaseTime, key, null);
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("Won't unlock since lock version is not matching expiration version: "
+                        + lockVersion + " vs " + version);
+            }
         }
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("This operation is intended to be executed on local member only!");
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("This operation is intended to be executed on local member only!");
     }
 }

@@ -36,6 +36,7 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
@@ -147,10 +148,10 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         container.clearLockStore(namespace);
     }
 
-    public void scheduleEviction(ObjectNamespace namespace, Data key, long delay) {
+    public void scheduleEviction(ObjectNamespace namespace, Data key, int version, long delay) {
         EntryTaskScheduler scheduler = getOrPutSynchronized(
                 evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
-        scheduler.schedule(delay, key, null);
+        scheduler.schedule(delay, key, version);
     }
 
     public void cancelEviction(ObjectNamespace namespace, Data key) {
@@ -244,6 +245,25 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             clearPartition(event.getPartitionId());
+        } else {
+            int partitionId = event.getPartitionId();
+            scheduleEvictions(partitionId);
+        }
+    }
+
+    private void scheduleEvictions(int partitionId) {
+        long now = Clock.currentTimeMillis();
+        LockStoreContainer container = containers[partitionId];
+        for (LockStoreImpl ls : container.getLockStores()) {
+            for (LockResource lock : ls.getLocks()) {
+                long expirationTime = lock.getExpirationTime();
+                if (expirationTime == Long.MAX_VALUE || expirationTime < 0) {
+                    continue;
+                }
+
+                long leaseTime = expirationTime - now;
+                scheduleEviction(ls.getNamespace(), lock.getKey(), 0, leaseTime);
+            }
         }
     }
 
