@@ -79,7 +79,10 @@ class ClusterListenerThread extends Thread {
                     try {
                         conn = connectToOne();
                     } catch (Exception e) {
-                        LOGGER.severe("Error while connecting to cluster!", e);
+                        if (client.getLifecycleService().isRunning()) {
+                            LOGGER.severe("Error while connecting to cluster!", e);
+                        }
+
                         client.getLifecycleService().shutdown();
                         latch.countDown();
                         return;
@@ -91,7 +94,7 @@ class ClusterListenerThread extends Thread {
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {
                     if (LOGGER.isFinestEnabled()) {
-                        LOGGER.warning("Error while listening cluster events! -> " + conn, e);
+                        LOGGER.finest("Error while listening cluster events! -> " + conn, e);
                     } else {
                         LOGGER.warning("Error while listening cluster events! -> " + conn + ", Error: " + e.toString());
                     }
@@ -266,7 +269,7 @@ class ClusterListenerThread extends Thread {
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             LOGGER.warning(
                     String.format("Unable to get alive cluster connection,"
-                                    + " try in %d ms later, attempt %d of %d.",
+                            + " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
             if (remainingTime > 0) {
