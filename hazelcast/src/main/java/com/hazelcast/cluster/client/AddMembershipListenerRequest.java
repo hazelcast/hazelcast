@@ -56,14 +56,17 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         return new SerializableCollection(response);
     }
 
+    @Override
     public String getServiceName() {
         return ClusterServiceImpl.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientPortableHook.ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientPortableHook.MEMBERSHIP_LISTENER;
     }
@@ -96,6 +99,7 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             }
         }
 
+        @Override
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
             if (endpoint.live()) {
                 final MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();

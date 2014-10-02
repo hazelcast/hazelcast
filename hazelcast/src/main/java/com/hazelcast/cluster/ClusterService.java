@@ -20,19 +20,43 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.CoreService;
+import com.sun.xml.internal.bind.v2.TODO;
 
 import java.util.Collection;
 
 /**
  * A service responsible for member related functionality. So members joining, leaving etc.
+ *
+ * This API is an internal API; the end user will use the {@link com.hazelcast.core.Cluster} interface.
  */
 public interface ClusterService extends CoreService {
 
+    /**
+     * Gets the member for the given address.
+     *
+     * @param address the address of the member to lookup.
+     * @return the found member, or null if not found. If address is null, null is returned.
+     */
     MemberImpl getMember(Address address);
 
+    /**
+     * Gets the member with the given uuid.
+     *
+     * @param uuid the uuid of the member
+     * @return the found member, or null if not found. If uuid is null, null is returned.
+     */
     MemberImpl getMember(String uuid);
 
-    Collection<MemberImpl> getMemberList();
+    /**
+     * Gets the collection of members.
+     *
+     * TODO: The name of this method is confusing since it says that a list is returned, but a collection is returned.
+     * TODO: This method also is a bit of a duplicate since there already is getMembers. So I think this method can be dropped
+     * if we take care of the generics.
+     *
+     * @return the collection of member. Null will never be returned.
+     */
+      Collection<MemberImpl> getMemberList();
 
     /**
      * Returns a collection of all members part of the cluster.
@@ -72,7 +96,7 @@ public interface ClusterService extends CoreService {
     /**
      * Returns the cluster-time.
      *
-     * TODO: Needs to be improved.
+     * TODO: We need to document what cluster time really means and what is can be used for.
      *
      * @return the cluster-time.
      */
