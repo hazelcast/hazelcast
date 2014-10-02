@@ -375,7 +375,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @PrivateApi
     boolean isOperationExecuting(Address callerAddress, String callerUuid, long operationCallId) {
-        return executingCalls.containsKey(new RemoteCallKey(callerAddress, callerUuid, operationCallId));
+        return executingCalls.containsKey(new RemoteCallKey(callerAddress, operationCallId));
     }
 
     @PrivateApi
@@ -618,6 +618,7 @@ final class BasicOperationService implements InternalOperationService {
                 op.setNodeEngine(nodeEngine);
                 setCallerAddress(op, caller);
                 setConnection(op, conn);
+                setCallerUuidIfNotSet(caller, op);
                 setRemoteResponseHandler(nodeEngine, op);
                 return op;
             } catch (Throwable throwable) {
@@ -630,6 +631,17 @@ final class BasicOperationService implements InternalOperationService {
                 ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, exceptionHandler);
                 operationHandler.handleOperationError(exceptionHandler, throwable);
                 throw ExceptionUtil.rethrow(throwable);
+            }
+        }
+
+        private void setCallerUuidIfNotSet(Address caller, Operation op) {
+            if (op.getCallerUuid() != null) {
+                return;
+
+            }
+            MemberImpl callerMember = node.clusterService.getMember(caller);
+            if (callerMember != null) {
+                op.setCallerUuid(callerMember.getUuid());
             }
         }
 
@@ -954,28 +966,18 @@ final class BasicOperationService implements InternalOperationService {
 
     private static final class RemoteCallKey {
         private final long time = Clock.currentTimeMillis();
-        // human readable caller
         private final Address callerAddress;
-        private final String callerUuid;
         private final long callId;
 
-        private RemoteCallKey(Address callerAddress, String callerUuid, long callId) {
-            if (callerUuid == null) {
-                throw new IllegalArgumentException("Caller UUID is required!");
-            }
-            this.callerAddress = callerAddress;
+        private RemoteCallKey(Address callerAddress, long callId) {
             if (callerAddress == null) {
                 throw new IllegalArgumentException("Caller address is required!");
             }
-            this.callerUuid = callerUuid;
+            this.callerAddress = callerAddress;
             this.callId = callId;
         }
 
         private RemoteCallKey(final Operation op) {
-            callerUuid = op.getCallerUuid();
-            if (callerUuid == null) {
-                throw new IllegalArgumentException("Caller UUID is required! -> " + op);
-            }
             callerAddress = op.getCallerAddress();
             if (callerAddress == null) {
                 throw new IllegalArgumentException("Caller address is required! -> " + op);
@@ -995,7 +997,7 @@ final class BasicOperationService implements InternalOperationService {
             if (callId != callKey.callId) {
                 return false;
             }
-            if (!callerUuid.equals(callKey.callerUuid)) {
+            if (!callerAddress.equals(callKey.callerAddress)) {
                 return false;
             }
             return true;
@@ -1003,7 +1005,7 @@ final class BasicOperationService implements InternalOperationService {
 
         @Override
         public int hashCode() {
-            int result = callerUuid.hashCode();
+            int result = callerAddress.hashCode();
             result = 31 * result + (int) (callId ^ (callId >>> 32));
             return result;
         }
@@ -1013,7 +1015,6 @@ final class BasicOperationService implements InternalOperationService {
             final StringBuilder sb = new StringBuilder();
             sb.append("RemoteCallKey");
             sb.append("{callerAddress=").append(callerAddress);
-            sb.append(", callerUuid=").append(callerUuid);
             sb.append(", callId=").append(callId);
             sb.append(", time=").append(time);
             sb.append('}');

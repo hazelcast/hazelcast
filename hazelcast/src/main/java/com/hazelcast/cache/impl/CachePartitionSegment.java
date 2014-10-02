@@ -28,21 +28,27 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Cache Partition Segment
+ *
+ * CachePartitionSegment is a data structure responsible from
+ * all cache data of a partition defined by partitionId
+ *
+ * This Data structure is managed by CacheService
+ *
+ * @see com.hazelcast.cache.impl.CacheService
+ *
  */
 public final class CachePartitionSegment {
 
     private final NodeEngine nodeEngine;
     private final CacheService cacheService;
     private final int partitionId;
-    private final ConcurrentMap<String, ICacheRecordStore> caches = new ConcurrentHashMap<String, ICacheRecordStore>();
-    private final Object mutex = new Object();
-
     private final ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction =
             new ConstructorFunction<String, ICacheRecordStore>() {
         public ICacheRecordStore createNew(String name) {
             return new CacheRecordStore(name, partitionId, nodeEngine, cacheService);
         }
     };
+    private final ConcurrentMap<String, ICacheRecordStore> caches = new ConcurrentHashMap<String, ICacheRecordStore>();
 
     CachePartitionSegment(NodeEngine nodeEngine, CacheService cacheService, int partitionId) {
         this.nodeEngine = nodeEngine;
@@ -63,7 +69,7 @@ public final class CachePartitionSegment {
     }
 
     ICacheRecordStore getOrCreateCache(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(caches, name, mutex, cacheConstructorFunction);
+        return ConcurrencyUtil.getOrPutIfAbsent(caches, name, cacheConstructorFunction);
     }
 
     ICacheRecordStore getCache(String name) {
@@ -71,19 +77,15 @@ public final class CachePartitionSegment {
     }
 
     void deleteCache(String name) {
-        synchronized (mutex) {
-            ICacheRecordStore cache = caches.remove(name);
-            if (cache != null) {
-                cache.destroy();
-            }
+        ICacheRecordStore cache = caches.remove(name);
+        if (cache != null) {
+            cache.destroy();
         }
     }
 
     void clear() {
-        synchronized (mutex) {
-            for (String name : caches.keySet()) {
-                deleteCache(name);
-            }
+        for (String name : caches.keySet()) {
+            deleteCache(name);
         }
         caches.clear();
     }

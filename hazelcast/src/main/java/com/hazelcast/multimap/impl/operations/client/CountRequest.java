@@ -20,19 +20,27 @@ import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.operations.CountOperation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
+import java.io.IOException;
 
 public class CountRequest extends MultiMapKeyBasedRequest implements RetryableRequest {
+
+    private long threadId;
 
     public CountRequest() {
     }
 
-    public CountRequest(String name, Data key) {
+    public CountRequest(String name, Data key, long threadId) {
         super(name, key);
+        this.threadId = threadId;
     }
 
     protected Operation prepareOperation() {
-        return new CountOperation(name, key);
+        CountOperation operation = new CountOperation(name, key);
+        operation.setThreadId(threadId);
+        return operation;
     }
 
     public int getClassId() {
@@ -48,4 +56,18 @@ public class CountRequest extends MultiMapKeyBasedRequest implements RetryableRe
     public Object[] getParameters() {
         return new Object[]{key};
     }
+
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeLong("threadId", threadId);
+        super.write(writer);
+
+    }
+
+    @Override
+    public void read(PortableReader reader) throws IOException {
+        threadId = reader.readLong("threadId");
+        super.read(reader);
+    }
+
 }

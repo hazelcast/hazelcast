@@ -37,7 +37,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -232,7 +231,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
             service.submitToKeyOwner(new ScriptRunnable(script, map), key, callback);
         }
-        latch.await(10, TimeUnit.SECONDS);
+        assertOpenEventually(latch);
         assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
         assertEquals(k, count.get());
     }
@@ -264,7 +263,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             map.put("member", instance.getCluster().getLocalMember());
             service.submitToMember(new ScriptRunnable(script, map), instance.getCluster().getLocalMember(), callback);
         }
-        latch.await(10, TimeUnit.SECONDS);
+        assertOpenEventually(latch);
         assertEquals(0, instances[0].getAtomicLong("testSubmitToMemberRunnable").get());
         assertEquals(k, count.get());
     }
@@ -347,7 +346,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testSubmitToKeyOwnerCallable() throws Exception {
         final int k = simpleTestNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
@@ -385,7 +383,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testSubmitToMemberCallable() throws ExecutionException, InterruptedException, TimeoutException {
         final int k = simpleTestNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
@@ -1387,6 +1384,34 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             this.hazelcastInstance = hazelcastInstance;
+        }
+    }
+
+
+    @Test
+    public void testSubmitFailingCallableException_withExecutionCallback() throws ExecutionException, InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        IExecutorService service = instance.getExecutorService(randomString());
+        final CountDownLatch latch = new CountDownLatch(1);
+        service.submit(new FailingTestTask(), new ExecutionCallback<String>() {
+            @Override
+            public void onResponse(String response) {
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                latch.countDown();
+            }
+        });
+        assertTrue(latch.await(10,TimeUnit.SECONDS));
+    }
+
+
+    public static class FailingTestTask implements Callable<String>, Serializable {
+
+        public String call() throws Exception {
+            throw  new IllegalStateException();
         }
     }
 

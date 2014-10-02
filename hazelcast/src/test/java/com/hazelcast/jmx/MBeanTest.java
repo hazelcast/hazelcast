@@ -1,167 +1,116 @@
 package com.hazelcast.jmx;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanServer;
-import javax.management.ObjectInstance;
-import javax.management.ObjectName;
 import java.io.Serializable;
-import java.lang.management.ManagementFactory;
-import java.util.Hashtable;
 
-import static org.junit.Assert.fail;
-
+/**
+ * This is the test that just tests if the mbeans get created. Tests in this class only exist for types that don't have
+ * a specific test in this package. See LockMBeanTest for a specific test.
+ */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class MBeanTest extends HazelcastTestSupport {
-
-    private static HazelcastInstance hz;
-    private static MBeanServer mbs;
+    private static JmxTestDataHolder holder;
 
     @BeforeClass
     public static void setUp() throws Exception {
-        Config config = new Config();
-        config.setProperty(GroupProperties.PROP_ENABLE_JMX, "true");
-        hz = new TestHazelcastInstanceFactory(1).newHazelcastInstance(config);
-        mbs = ManagementFactory.getPlatformMBeanServer();
-    }
-
-    public void assertMBeanExistEventually(final String type, final String name) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Hashtable table = new Hashtable();
-                table.put("type", type);
-                table.put("name", name);
-                table.put("instance", hz.getName());
-                ObjectName name = new ObjectName("com.hazelcast", table);
-                try {
-                    ObjectInstance mbean = mbs.getObjectInstance(name);
-                } catch (InstanceNotFoundException e) {
-                    fail(e.getMessage());
-                }
-            }
-        });
+        holder = new JmxTestDataHolder();
     }
 
     @Test
     public void testAtomicLong() throws Exception {
-        IAtomicLong atomicLong = hz.getAtomicLong("atomiclong");
+        IAtomicLong atomicLong = holder.getHz().getAtomicLong("atomiclong");
         atomicLong.incrementAndGet();
 
-        assertMBeanExistEventually("IAtomicLong", atomicLong.getName());
+        holder.assertMBeanExistEventually("IAtomicLong", atomicLong.getName());
     }
 
     @Test
     public void testAtomicReference() throws Exception {
-        IAtomicReference atomicReference = hz.getAtomicReference("atomicreference");
+        IAtomicReference<String> atomicReference = holder.getHz().getAtomicReference("atomicreference");
         atomicReference.set(null);
 
-        assertMBeanExistEventually("IAtomicReference", atomicReference.getName());
-    }
-
-    @Test
-    public void testLock() throws Exception {
-        ILock lock = hz.getLock("lock");
-        lock.tryLock();
-
-        assertMBeanExistEventually("ILock", lock.getName());
+        holder.assertMBeanExistEventually("IAtomicReference", atomicReference.getName());
     }
 
     @Test
     public void testSemaphore() throws Exception {
-        ISemaphore semaphore = hz.getSemaphore("semaphore");
+        ISemaphore semaphore = holder.getHz().getSemaphore("semaphore");
         semaphore.availablePermits();
 
-        assertMBeanExistEventually("ISemaphore", semaphore.getName());
+        holder.assertMBeanExistEventually("ISemaphore", semaphore.getName());
     }
 
     @Test
     public void testCountDownLatch() throws Exception {
-        ICountDownLatch countDownLatch = hz.getCountDownLatch("semaphore");
+        ICountDownLatch countDownLatch = holder.getHz().getCountDownLatch("semaphore");
         countDownLatch.getCount();
 
-        assertMBeanExistEventually("ICountDownLatch", countDownLatch.getName());
+        holder.assertMBeanExistEventually("ICountDownLatch", countDownLatch.getName());
     }
 
     @Test
     public void testMap() throws Exception {
-        IMap map = hz.getMap("map");
+        IMap map = holder.getHz().getMap("map");
         map.size();
 
-        assertMBeanExistEventually("IMap", map.getName());
+        holder.assertMBeanExistEventually("IMap", map.getName());
     }
 
     @Test
     public void testMultiMap() throws Exception {
-        MultiMap map = hz.getMultiMap("multimap");
+        MultiMap map = holder.getHz().getMultiMap("multimap");
         map.size();
 
-        assertMBeanExistEventually("MultiMap", map.getName());
+        holder.assertMBeanExistEventually("MultiMap", map.getName());
     }
 
     @Test
     public void testTopic() throws Exception {
-        ITopic topic = hz.getTopic("topic");
+        ITopic<String> topic = holder.getHz().getTopic("topic");
         topic.publish("foo");
 
-        assertMBeanExistEventually("ITopic", topic.getName());
+        holder.assertMBeanExistEventually("ITopic", topic.getName());
     }
 
     @Test
     public void testList() throws Exception {
-        IList list = hz.getList("list");
+        IList list = holder.getHz().getList("list");
         list.size();
 
-        assertMBeanExistEventually("IList", list.getName());
+        holder.assertMBeanExistEventually("IList", list.getName());
     }
 
     @Test
     public void testSet() throws Exception {
-        ISet set = hz.getSet("set");
+        ISet set = holder.getHz().getSet("set");
         set.size();
 
-        assertMBeanExistEventually("ISet", set.getName());
+        holder.assertMBeanExistEventually("ISet", set.getName());
     }
 
     @Test
     public void testQueue() throws Exception {
-        IQueue queue = hz.getQueue("queue");
+        IQueue queue = holder.getHz().getQueue("queue");
         queue.size();
 
-        assertMBeanExistEventually("IQueue", queue.getName());
+        holder.assertMBeanExistEventually("IQueue", queue.getName());
     }
 
     @Test
     public void testExecutor() throws Exception {
-        IExecutorService executor = hz.getExecutorService("executor");
+        IExecutorService executor = holder.getHz().getExecutorService("executor");
         executor.submit(new DummyRunnable()).get();
 
-        assertMBeanExistEventually("IExecutorService", executor.getName());
+        holder.assertMBeanExistEventually("IExecutorService", executor.getName());
     }
 
     private static class DummyRunnable implements Runnable, Serializable {

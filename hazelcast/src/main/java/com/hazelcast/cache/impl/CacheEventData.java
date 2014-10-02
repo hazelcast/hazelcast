@@ -17,13 +17,13 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
  * Cache event data object used in publish - dispatch
  */
 public interface CacheEventData
-        extends DataSerializable {
+        extends IdentifiedDataSerializable {
 
     CacheEventType getCacheEventType();
 

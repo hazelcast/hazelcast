@@ -26,26 +26,42 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Custom Expiry Policy helper class for general usa
+ * Custom Expiry Policy helper class for general usage
  */
-public class HazelcastExpiryPolicy
-        implements ExpiryPolicy, IdentifiedDataSerializable {
+public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable {
 
     private Duration create;
     private Duration access;
     private Duration update;
 
+    /**
+     * Constructs an expiry policy with provided values in Milliseconds
+     * @param createMillis
+     * @param accessMillis
+     * @param updateMillis
+     */
     public HazelcastExpiryPolicy(long createMillis, long accessMillis, long updateMillis) {
         this(new Duration(TimeUnit.MILLISECONDS, createMillis), new Duration(TimeUnit.MILLISECONDS, accessMillis),
                 new Duration(TimeUnit.MILLISECONDS, updateMillis));
     }
 
+    /**
+     * Constructs an expiry policy with provided values and TimeUnit
+     * @param createDurationAmount
+     * @param accessDurationAmount
+     * @param updateDurationAmount
+     * @param timeUnit
+     */
     public HazelcastExpiryPolicy(long createDurationAmount, long accessDurationAmount, long updateDurationAmount,
                                  TimeUnit timeUnit) {
         this(new Duration(timeUnit, createDurationAmount), new Duration(timeUnit, accessDurationAmount),
                 new Duration(timeUnit, updateDurationAmount));
     }
 
+    /**
+     * Expiry policy wrapper
+     * @param expiryPolicy
+     */
     public HazelcastExpiryPolicy(ExpiryPolicy expiryPolicy) {
         if (expiryPolicy != null) {
             this.create = expiryPolicy.getExpiryForCreation();
@@ -54,6 +70,12 @@ public class HazelcastExpiryPolicy
         }
     }
 
+    /**
+     * Constructs an expiry policy with provided values in Duration
+     * @param create
+     * @param access
+     * @param update
+     */
     public HazelcastExpiryPolicy(Duration create, Duration access, Duration update) {
         this.create = create;
         this.access = access;
@@ -101,7 +123,7 @@ public class HazelcastExpiryPolicy
         update = readDuration(in);
     }
 
-    public static void writeDuration(ObjectDataOutput out, Duration duration)
+    private void writeDuration(ObjectDataOutput out, Duration duration)
             throws IOException {
         if (duration != null) {
             out.writeLong(duration.getDurationAmount());
@@ -109,7 +131,7 @@ public class HazelcastExpiryPolicy
         }
     }
 
-    public static Duration readDuration(ObjectDataInput in)
+    private Duration readDuration(ObjectDataInput in)
             throws IOException {
         long da = in.readLong();
         if (da > -1) {

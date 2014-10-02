@@ -2,11 +2,106 @@
 
 ### Map Persistence
 
-Hazelcast allows you to load and store the distributed map entries from/to a persistent data-store such as relational database. Note that this DataStore needs to be a centralized system that is
-accessible from all Hazelcast Nodes. Persisting to local file system is not supported.
-If a loader implementation is provided, when `get(key)` is called, if the map entry does not exist in-memory, then Hazelcast will call your loader implementation to load the entry from a datastore. If a store implementation is provided, when `put(key,value)` is called, Hazelcast will call your store implementation to store the entry into a datastore. Hazelcast can call your implementation to store the entries synchronously (write-through) with no-delay or asynchronously (write-behind) with delay and it is defined by the `write-delay-seconds` value in the configuration.
+Hazelcast allows you to load and store the distributed map entries from/to a persistent data store such as a relational database. For these, you can use Hazelcast's `MapStore` and `MapLoader` interfaces.
 
-If it is write-through, when the `map.put(key,value)` call returns, you can be sure that
+When you provide a `MapLoader` implementation and request an entry (`IMap.get()`) that does not exist in the memory, `MapLoader`'s `load` or `loadAll` methods will load that entry from the data store. This loaded entry is placed into the map and will stay there until it is removed or evicted.
+
+When a `MapStore` implementation is provided, an entry is put also into a user defined data store. 
+
+***ATTENTION:*** *Data store needs to be a centralized system that is
+accessible from all Hazelcast Nodes. Persisting to local file system is not supported.*
+
+Please see the below example.
+
+```java
+public class PersonMapStore implements MapStore<Long, Person> {
+    private final Connection con;
+
+    public PersonMapStore() {
+        try {
+            con = DriverManager.getConnection("jdbc:hsqldb:mydatabase", "SA", "");
+            con.createStatement().executeUpdate(
+                    "create table if not exists person (id bigint, name varchar(45))");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized void delete(Long key) {
+        System.out.println("Delete:" + key);
+        try {
+            con.createStatement().executeUpdate(
+                    format("delete from person where id = %s", key));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized void store(Long key, Person value) {
+        try {
+            con.createStatement().executeUpdate(
+                    format("insert into person values(%s,'%s')", key, value.name));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized void storeAll(Map<Long, Person> map) {
+        for (Map.Entry<Long, Person> entry : map.entrySet())
+            store(entry.getKey(), entry.getValue());
+    }
+
+    public synchronized void deleteAll(Collection<Long> keys) {
+        for (Long key : keys) delete(key);
+    }
+
+    public synchronized Person load(Long key) {
+        try {
+            ResultSet resultSet = con.createStatement().executeQuery(
+                    format("select name from person where id =%s", key));
+            try {
+                if (!resultSet.next()) return null;
+                String name = resultSet.getString(1);
+                return new Person(name);
+            } finally {
+                resultSet.close();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized Map<Long, Person> loadAll(Collection<Long> keys) {
+        Map<Long, Person> result = new HashMap<Long, Person>();
+        for (Long key : keys) result.put(key, load(key));
+        return result;
+    }
+
+    public Set<Long> loadAllKeys() {
+        return null;
+    }
+}
+```
+
+<br></br>
+***RELATED INFORMATION***
+
+*For more MapStore/MapLoader code samples please see [here](https://github.com/hazelcast/hazelcast-code-samples/tree/master/distributed-map/mapstore/src/main/java).*
+<br></br>
+
+Hazelcast supports read-through, write-through and write-behind persistence modes which are explained in below subsections.
+
+#### Read-Through
+
+If an entry does not exist in the memory when an application asks, Hazelcast asks your loader implementation to load that entry from the data store.  If the entry exists there, the loader implementation gets it, hands it to Hazelcast, and Hazelcast puts it into the memory. This is read-through persistence mode.
+
+
+
+#### Write-Through
+
+`MapStore` can be configured as write-through by setting the `write-delay-seconds` property to **0**. This means the entries will be put to the data store synchronously.
+
+In this mode, when the `map.put(key,value)` call returns, you can be sure that
 
 -   `MapStore.store(key,value)` is successfully called so the entry is persisted.
 
@@ -14,18 +109,36 @@ If it is write-through, when the `map.put(key,value)` call returns, you can be s
 
 -   In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0)
 
-If it is write-behind, when the `map.put(key,value)` call returns, you can be sure that
+Same behavior goes for the `map.remove(key)`, only difference is that  `MapStore.delete(key)` is called when it will be deleted.
+
+If `MapStore` throws an exception, then the exception will be propagated back to the original `put` or `remove` call in the form of `RuntimeException`. 
+
+#### Write-Behind
+
+`MapStore` can be configured as write-behind by setting the `write-delay-seconds` property to a value bigger than **0**. This means the modified entries will be put to the data store asynchronously after a configured delay. 
+
+***NOTE:*** *In write-behind mode, Hazelcast coalesces updates on a specific key, i.e. applies only the last update on it.* 
+
+In this mode, when the `map.put(key,value)` call returns, you can be sure that
 
 -   In-Memory entry is updated
 
 -   In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0)
 
--   The entry is marked as dirty so that after `write-delay-seconds`, it can be persisted.
+-   The entry is marked as dirty so that after `write-delay-seconds`, it can be persisted with `MapStore.store(key,value)` call.
 
-***ATTENTION:*** *If a map entry is marked as dirty, i.e. it is waiting to be persisted to the `MapStore` in a write-behind scenario, it will not be eligible for eviction.*
+Same behavior goes for the `map.remove(key)`, only difference is that  `MapStore.delete(key)` is called when it will be deleted.
+
+If `MapStore` throws an exception, then Hazelcast retries to store the entry. If it still cannot be stored, a log message is printed and the entry is re-queued. 
+
+For batch write operations, which are only allowed in write-behind mode, Hazelcast will call `MapStore.storeAll(map)`, and `MapStore.deleteAll(collection)` to do all writes in a single call.
 <br></br>
 
-Same behavior goes for the `remove(key)` and `MapStore.delete(key)` methods. If `MapStore` throws an exception, then the exception will be propagated back to the original `put` or `remove` call in the form of `RuntimeException`. When write-through is used, Hazelcast will call `MapStore.store(key,value)` and `MapStore.delete(key)` for each entry update. When write-behind is used, Hazelcast will call`MapStore.store(map)`, and `MapStore.delete(collection)` to do all writes in a single call. Also, note that your MapStore or MapLoader implementation should not use Hazelcast Map/Queue/MultiMap/List/Set operations. Your implementation should only work with your data store. Otherwise, you may get into deadlock situations.
+***ATTENTION:*** *If a map entry is marked as dirty, i.e. it is waiting to be persisted to the `MapStore` in a write-behind scenario, the eviction process forces the entry to be stored. By this way, you will have control on the number of entries waiting to be stored, so that a possible OutOfMemory exception can be prevented.*
+<br></br>
+
+
+***ATTENTION:*** *MapStore or MapLoader implementations should not use Hazelcast Map/Queue/MultiMap/List/Set operations. Your implementation should only work with your data store. Otherwise, you may get into deadlock situations.*
 
 Here is a sample configuration:
 
@@ -48,11 +161,20 @@ Here is a sample configuration:
         Otherwise it is write-behind so updates will be stored after write-delay-seconds
         value by calling Hazelcast.storeAll(map). Default value is 0.
       -->
-      <write-delay-seconds>0</write-delay-seconds>
+      <write-delay-seconds>60</write-delay-seconds>
+      <!--
+        Used to create batch chunks when writing map store.
+        In default mode all entries will be tried to persist in one go.
+        To create batch chunks, minimum meaningful value for write-batch-size
+        is 2. For values smaller than 2, it works as in default mode.
+      -->
+      <write-batch-size>1000</write-batch-size>
     </map-store>
   </map>
 </hazelcast>
 ```
+
+#### MapStoreFactory and MapLoaderLifecycleSupport Interfaces
 
 As you know, a configuration can be applied to more than one map using wildcards (Please see [Using Wildcard](#using-wildcard)), meaning the configuration is shared among the maps. But, `MapStore` does not know which entries to be stored when there is one configuration applied to multiple maps. To overcome this, Hazelcast provides `MapStoreFactory` interface.
 
@@ -112,7 +234,35 @@ Here is MapLoader initialization flow:
 
 ***ATTENTION:*** *If the load mode is LAZY and when `clear()` method is called (which triggers `MapStore.deleteAll()`), Hazelcast will remove **ONLY** the loaded entries from your map and datastore. Since the whole data is not loaded for this case (LAZY mode), please note that there may be still entries in your datastore.*
 
-#### Post Processing Map Store: ####
+#### Forcing All Keys To Be Loaded
+
+The method `loadAll` is developed to load some or all keys into a data store in order to optimize the multiple load operations. The method has two signatures (i.e. same method can take two different parameter lists). One loads the given keys and the other loads all keys. Please see the sample code below.
+
+
+```java
+public class LoadAll {
+
+    public static void main(String[] args) {
+        final int numberOfEntriesToAdd = 1000;
+        final String mapName = LoadAll.class.getCanonicalName();
+        final Config config = createNewConfig(mapName);
+        final HazelcastInstance node = Hazelcast.newHazelcastInstance(config);
+        final IMap<Integer, Integer> map = node.getMap(mapName);
+       
+        populateMap(map, numberOfEntriesToAdd);
+        System.out.printf("# Map store has %d elements\n", numberOfEntriesToAdd);
+   
+        map.evictAll();
+        System.out.printf("# After evictAll map size\t: %d\n", map.size());
+        
+        map.loadAll(true);
+        System.out.printf("# After loadAll map size\t: %d\n", map.size());
+    }
+}
+```
+
+
+#### Post Processing Map Store
 
 In some scenarios, you may need to modify the object after storing it into the map store.
 For example, you can get ID or version auto generated by your database and you need to modify your object stored in distributed map, not to break the sync between database and data grid. You can do that by implementing `PostProcessingMapStore` interface;

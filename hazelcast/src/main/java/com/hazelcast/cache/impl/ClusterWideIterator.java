@@ -20,14 +20,23 @@ import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 
 import javax.cache.Cache;
 import java.util.Iterator;
 
 /**
  * Cluster-wide iterator for the {@link com.hazelcast.cache.ICache}
+ *
+ * This cluster key iterator, uses to indexes to iterate the cluster which ar PartitionId and tableIndex.
+ *
+ * Starting from the largest PartitionId it accesses related partition with a tableIndex. Each partition has
+ * a concurrentMap with single segment. So each partition data is basically a concurrent hashMap to iterate on.
+ *
+ * With a configurable batch size of keys are fetch from partition data, i.e CacheRecordStore.
+ *
+ * Although keys fetch in batches the {@link #next()} returns the entry one by one due to uncertainty of data.
  *
  * @param <K> key
  * @param <V> value
@@ -36,21 +45,21 @@ public class ClusterWideIterator<K, V>
         extends AbstractClusterWideIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
-    final SerializationService serializationService;
+    private final SerializationService serializationService;
+    private final CacheProxy<K, V> cacheProxy;
 
-    public ClusterWideIterator(CacheProxy<K, V> cacheProxy) {
-        super(cacheProxy, cacheProxy.getNodeEngine().getPartitionService().getPartitionCount());
-        final NodeEngine engine = cacheProxy.getNodeEngine();
-        this.serializationService = engine.getSerializationService();
+    public ClusterWideIterator(CacheProxy<K, V> cache) {
+        super(cache, cache.getNodeEngine().getPartitionService().getPartitionCount());
+        this.cacheProxy = cache;
+        this.serializationService = cache.getNodeEngine().getSerializationService();
         advance();
     }
 
     protected CacheKeyIteratorResult fetch() {
-        final NodeEngine nodeEngine = getCacheProxy().getNodeEngine();
-        final Operation op = new CacheKeyIteratorOperation(getCacheProxy().getDistributedObjectName(), lastTableIndex, fetchSize);
-        final InternalCompletableFuture<CacheKeyIteratorResult> f = nodeEngine.getOperationService()
-                                                                              .invokeOnPartition(CacheService.SERVICE_NAME, op,
-                                                                                      partitionIndex);
+        final Operation op = new CacheKeyIteratorOperation(cacheProxy.nameWithPrefix, lastTableIndex, fetchSize);
+        final OperationService operationService = cacheProxy.getNodeEngine().getOperationService();
+        final InternalCompletableFuture<CacheKeyIteratorResult> f = operationService
+                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionIndex);
         return f.getSafely();
     }
 
@@ -64,7 +73,4 @@ public class ClusterWideIterator<K, V>
         return serializationService.toObject(data);
     }
 
-    private CacheProxy<K, V> getCacheProxy() {
-        return (CacheProxy) cache;
-    }
 }

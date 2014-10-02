@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
 import com.hazelcast.cache.impl.client.CacheContainsKeyRequest;
 import com.hazelcast.cache.impl.client.CacheCreateConfigRequest;
+import com.hazelcast.cache.impl.client.CacheDestroyRequest;
 import com.hazelcast.cache.impl.client.CacheEntryProcessorRequest;
 import com.hazelcast.cache.impl.client.CacheGetAllRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndRemoveRequest;
@@ -46,7 +47,7 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collection;
 
 /**
- * Cache Portble factory hook
+ * This class contains all the ID hooks for Portable classes used inside the JCache framework.
  */
 public class CachePortableHook
         implements PortableHook {
@@ -76,8 +77,9 @@ public class CachePortableHook
     public static final int ADD_ENTRY_LISTENER = 22;
     public static final int REMOVE_ENTRY_LISTENER = 23;
     public static final int LISTENER_REGISTRATION = 24;
+    public static final int DESTROY_CACHE = 25;
 
-    public static final int LEN = 25;
+    public static final int LEN = 26;
 
     public int getFactoryId() {
         return F_ID;
@@ -143,6 +145,7 @@ public class CachePortableHook
                         return new CacheIterateRequest();
                     }
                 };
+                //TODO near cache impl related
                 //                constructors[ADD_INVALIDATION_LISTENER] = new ConstructorFunction<Integer, Portable>() {
                 //                    public Portable createNew(Integer arg) {
                 //                        return new CacheAddInvalidationListenerRequest();
@@ -206,6 +209,11 @@ public class CachePortableHook
                 constructors[LISTENER_REGISTRATION] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new CacheListenerRegistrationRequest();
+                    }
+                };
+                constructors[DESTROY_CACHE] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new CacheDestroyRequest();
                     }
                 };
             }

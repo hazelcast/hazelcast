@@ -44,7 +44,7 @@ public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation {
 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapWrapper wrapper = container.getMultiMapWrapper(dataKey);
+        MultiMapWrapper wrapper = container.getMultiMapWrapperOrNull(dataKey);
         response = true;
         if (wrapper == null || !wrapper.containsRecordId(recordId)) {
             response = false;

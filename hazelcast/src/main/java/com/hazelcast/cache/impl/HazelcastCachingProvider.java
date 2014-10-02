@@ -16,10 +16,12 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 
+import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.OptionalFeature;
 import javax.cache.spi.CachingProvider;
@@ -32,23 +34,40 @@ import java.util.Properties;
 public final class HazelcastCachingProvider
         implements CachingProvider {
 
-    // TODO: add a system property to select cache provider to use
-    private static final String CLIENT_CACHING_PROVIDER_CLASS = "com.hazelcast.client.cache.HazelcastClientCachingProvider";
+    private static final String CLIENT_CACHING_PROVIDER_CLASS = "com.hazelcast.client.cache.impl.HazelcastClientCachingProvider";
     private static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
 
     private final CachingProvider delegate;
 
     public HazelcastCachingProvider() {
         CachingProvider cp = null;
+        String providerType = System.getProperty(GroupProperties.PROP_JCACHE_PROVIDER_TYPE);
+        if (providerType != null) {
+            if ("client".equals(providerType)) {
+                cp = createClientProvider();
+            }
+            if ("server".equals(providerType)) {
+                cp = new HazelcastServerCachingProvider();
+            }
+            if (cp == null) {
+                throw new CacheException("CacheProvider cannot created with the provided type:" + providerType);
+            }
+        } else {
+            cp = createClientProvider();
+            if (cp == null) {
+                cp = new HazelcastServerCachingProvider();
+            }
+        }
+        delegate = cp;
+    }
+
+    private CachingProvider createClientProvider() {
         try {
-            cp = ClassLoaderUtil.newInstance(getClass().getClassLoader(), CLIENT_CACHING_PROVIDER_CLASS);
+            return ClassLoaderUtil.newInstance(getClass().getClassLoader(), CLIENT_CACHING_PROVIDER_CLASS);
         } catch (Exception e) {
             LOGGER.warning("Could not load client CachingProvider! Fallback to server one... " + e.toString());
         }
-        if (cp == null) {
-            cp = new HazelcastServerCachingProvider();
-        }
-        delegate = cp;
+        return null;
     }
 
     @Override

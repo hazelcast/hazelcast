@@ -4,7 +4,7 @@
 
 Hazelcast provides distributed second level cache for your Hibernate entities, collections and queries. 
 
-### Sample Code
+### Sample Code for Hibernate
 
 Please see our sample application for [Hibernate Second Level Cache](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/hibernate-2ndlevel-cache).
 

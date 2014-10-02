@@ -40,6 +40,7 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
     private Data key;
     private boolean async;
     private transient long startTime;
+    private long threadId;
 
     public MapGetRequest() {
     }
@@ -49,13 +50,21 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
         this.key = key;
     }
 
+    public MapGetRequest(String name, Data key, long threadId) {
+        this.name = name;
+        this.key = key;
+        this.threadId = threadId;
+    }
+
     protected Object getKey() {
         return key;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new GetOperation(name, key);
+        GetOperation operation = new GetOperation(name, key);
+        operation.setThreadId(threadId);
+        return operation;
     }
 
     @Override
@@ -94,6 +103,7 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeBoolean("a", async);
+        writer.writeLong("threadId", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
@@ -101,6 +111,7 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         async = reader.readBoolean("a");
+        threadId = reader.readLong("threadId");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

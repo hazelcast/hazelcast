@@ -16,13 +16,19 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.WaitSupport;
 
 public final class GetOperation extends KeyBasedMapOperation
-        implements IdentifiedDataSerializable, ReadonlyOperation {
+        implements IdentifiedDataSerializable, ReadonlyOperation, WaitSupport {
 
     private Data result;
 
@@ -34,13 +40,29 @@ public final class GetOperation extends KeyBasedMapOperation
     }
 
     public void run() {
-        result = mapService.getMapServiceContext().toData(recordStore.get(dataKey));
+        result = mapService.getMapServiceContext().toData(recordStore.get(dataKey, false));
     }
 
     public void afterRun() {
         mapService.getMapServiceContext().interceptAfterGet(name, result);
     }
 
+    @Override
+    public WaitNotifyKey getWaitKey() {
+        return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
+    }
+
+    public boolean shouldWait() {
+        if (recordStore.isTransactionallyLocked(dataKey)) {
+            return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
+        }
+        return false;
+    }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+    }
     @Override
     public Object getResponse() {
         return result;

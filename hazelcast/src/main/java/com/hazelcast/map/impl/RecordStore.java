@@ -18,8 +18,8 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -61,15 +61,34 @@ public interface RecordStore {
      */
     void removeBackup(Data dataKey);
 
-    Object get(Data dataKey);
+    /**
+     * Gets record from {@link com.hazelcast.map.impl.RecordStore}
+     *
+     * @param dataKey key.
+     * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @return value of an entry in {@link com.hazelcast.map.impl.RecordStore}
+     */
+    Object get(Data dataKey, boolean backup);
 
     MapEntrySet getAll(Set<Data> keySet);
 
     boolean containsKey(Data dataKey);
 
-    Object replace(Data dataKey, Object value);
+    Object replace(Data dataKey, Object update);
 
-    boolean replace(Data dataKey, Object oldValue, Object newValue);
+
+    /**
+     * Sets the value to the given updated value
+     * if {@link com.hazelcast.map.impl.record.RecordFactory#isEquals} comparison
+     * of current value and expected value is {@code true}.
+     *
+     * @param dataKey key which's value is requested to be replaced.
+     * @param expect  the expected value
+     * @param update  the new value
+     * @return {@code true} if successful. False return indicates that
+     * the actual value was not equal to the expected value.
+     */
+    boolean replace(Data dataKey, Object expect, Object update);
 
     void putTransient(Data dataKey, Object value, long ttl);
 
@@ -120,6 +139,14 @@ public interface RecordStore {
     Iterator<Record> iterator();
 
     /**
+     * Iterates over record store values by respecting expiration.
+     *
+     * @return read only iterator for map values.
+     */
+    Iterator<Record> iterator(long now);
+
+
+    /**
      * Iterates over record store values but first waits map store to load.
      * If an operation needs to wait a data source load like query operations
      * {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
@@ -127,7 +154,7 @@ public interface RecordStore {
      *
      * @return read only iterator for map values.
      */
-    Iterator<Record> loadAwareIterator();
+    Iterator<Record> loadAwareIterator(long now);
 
     /**
      * Returns records map.
@@ -147,6 +174,8 @@ public interface RecordStore {
     boolean unlock(Data key, String caller, long threadId);
 
     boolean isLocked(Data key);
+
+    boolean isTransactionallyLocked(Data key);
 
     boolean canAcquireLock(Data key, String caller, long threadId);
 
@@ -170,7 +199,7 @@ public interface RecordStore {
 
     Set<Map.Entry<Data, Data>> entrySetData();
 
-    Map.Entry<Data, Object> getMapEntry(Data dataKey);
+    Map.Entry<Data, Object> getMapEntry(Data dataKey, long now);
 
     Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey);
 

@@ -40,7 +40,7 @@
                         <index>true</index>
                         <compress>true</compress>
                         <manifest>
-                            <mainClass>com.hazelcast.console.ConsoleApp</mainClass>
+                            <mainClass>com.hazelcast.core.server.StartServer</mainClass>
                             <addClasspath>false</addClasspath>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
@@ -86,6 +86,8 @@
                                             javax.security.*;resolution:=optional,
                                             org.slf4j.*;resolution:=optional,
                                             org.apache.log4j.*;resolution:=optional,
+                                            org.apache.logging.log4j;resolution:=optional,
+                                            org.apache.logging.log4j.*;resolution:=optional,
                                             javax.script.*;resolution:=optional
                                         </Import-Package>
                                     </overrideInstructions>

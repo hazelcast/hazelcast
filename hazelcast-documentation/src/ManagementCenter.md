@@ -54,10 +54,10 @@ Toolbar has the following buttons:
 -	**Documentation**: It is used to open the documentation of Management Center in a window inside the tool. Please see [Documentation](#documentation).
 -	**Administration**: It is used by the admin users to manage users in the system. Please see [Administration](#administration).
 -	**Time Travel**: It is used to see the cluster's situation at a time in the past. Please see [Time Travel](#time-travel).
--	**Cluster Selector**: It is used to switch between clusters. When the mouse is moved onto this item, a dropdown list of clusters appears.
+-	**Cluster Selector**: It is used to switch between clusters. When the mouse is moved onto this item, a drop down list of clusters appears.
 
   ![](images/4ChangeCluster.jpg)
-  
+
   The user can select any cluster and once selected, the page immediately loads with the selected cluster's information.
 -	**Logout**: It is used to close the current user's session.
 
@@ -66,7 +66,7 @@ Toolbar has the following buttons:
 
 
 #### Menu
-Home page includes a menu on the left which lists the distributed data structures in the cluster and also all cluster members (nodes), as shown below. 
+Home page includes a menu on the left which lists the distributed data structures in the cluster and also all cluster members (nodes), as shown below.
 
 ![](images/LeftMenu.jpg)
 
@@ -74,7 +74,7 @@ Home page includes a menu on the left which lists the distributed data structure
 
 
 Menu items can be expanded/collapsed by clicking on them. Below is the list of menu items with the links to their explanations.
-     
+
 -	[Maps](#maps)
 -	[Queues](#queues)
 -	[Topics](#topics)
@@ -174,7 +174,7 @@ Change any attribute as required and click **Update** button to save changes.
 
 #### Map Monitoring
 
-Besides Map Browser and Map Config tools, this page has many  monitoring options explained below. All of these perform real-time monitoring. 
+Besides Map Browser and Map Config tools, this page has many  monitoring options explained below. All of these perform real-time monitoring.
 
 On top of the page, there are small charts to monitor the size, throughput, memory usage, backup size, etc. of the selected map in real-time. All charts' X-axis shows the current system time. Other small monitoring charts can be selected using ![](images/ChangeWindowIcon.jpg) button placed at top right of each chart. When it is clicked, the whole list of monitoring options are listed, as shown below.
 
@@ -201,9 +201,9 @@ Map Throughput data table provides information about the operations (get, put, r
 
 ![](images/Map-MapThroughputDataTable.jpg)
 
-From left to right, this table lists the IP address and port of each node, put, get and remove operations on each node, average put, get, remove latencies and maximum put, get, remove latencies on each node. 
+From left to right, this table lists the IP address and port of each node, put, get and remove operations on each node, average put, get, remove latencies and maximum put, get, remove latencies on each node.
 
-You can select the period in the combo box placed at top right corner of the window, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**. 
+You can select the period in the combo box placed at top right corner of the window, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**.
 
 You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
@@ -231,9 +231,9 @@ Queue Operations Statistics table provides information about the operations (off
 
 ![](images/QueueOperationStatistics.jpg)
 
-From left to right, this table lists the IP address and port of each node, and counts of offers, rejected offers, polls, poll misses and events. 
+From left to right, this table lists the IP address and port of each node, and counts of offers, rejected offers, polls, poll misses and events.
 
-You can select the period in the combo box placed at top right corner of the window, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**. 
+You can select the period in the combo box placed at top right corner of the window, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**.
 
 You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
@@ -245,7 +245,7 @@ You can monitor your topics' metrics by clicking the topic name listed on the le
 
 On top of the page, there are two charts to monitor the **Publishes** and **Receives** in real-time. They show the published and received message counts of the cluster, nodes of which are subscribed to the selected topic. Both charts' X-axis shows the current system time. and a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart.
 
-Under these charts, there is Topic Operation Statistics table. From left to right, this table lists the IP addresses and ports of each node, and counts of message published and receives per second in real-time. You can select the period in the combo box placed at top right corner of the table, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**. 
+Under these charts, there is Topic Operation Statistics table. From left to right, this table lists the IP addresses and ports of each node, and counts of message published and receives per second in real-time. You can select the period in the combo box placed at top right corner of the table, for which the table data will be shown. Available values are **Since Beginning**, **Last Minute**, **Last 10 Minutes** and **Last 1 Hour**.
 
 You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
@@ -305,15 +305,25 @@ Scripting feature of this tool is used to execute codes on the cluster. You can 
 
 ![](images/scripting.jpg)
 
-In this window, **Scripting** part is the actual coding editor. You can select the members on which the code will be executed from the **Members** list shown at the right side of the window. Below the members list there is a combo box enabling you to select a scripting language. Currently, Javascript, Ruby, Groovy and Python languages are supported. After you write your script and press **Execute** button, you can see the execution result in the **Result** part of the window. 
+In this window, **Scripting** part is the actual coding editor. You can select the members on which the code will be executed from the **Members** list shown at the right side of the window. Below the members list there is a combo box enabling you to select a scripting language. Currently, Javascript, Ruby, Groovy and Python languages are supported. After you write your script and press **Execute** button, you can see the execution result in the **Result** part of the window.
 
 There are also **Save** and **Delete** buttons on top right of the scripting editor. You can save your scripts by pressing the **Save** button after you type a name for the script into the field next to this button. The scripts you saved are listed in the **Saved Scripts** part of the window, located at the bottom right of the page. You can simply click on a saved script from this list to execute or edit it. And, if you want to remove a script that you wrote and save before, just select it from this list and press **Delete** button.
 
+In the scripting engine you have a `HazelcastInstance` bonded to a variable named `hazelcast`. You can invoke any method that `HazelcastInstance` has via the `hazelcast` variable. You can see sample usage for JavaScript below.
+
+
+```javascript
+var name = hazelcast.getName();
+var node = hazelcast.getCluster().getLocalMember();
+var employees = hazelcast.getMap("employees");
+employees.put("1","John Doe");
+employees.get("1"); // will return "John Doe"
+```
 
 
 ### Console
 
-Management Center has also a console feature that enables you to execute commands on the cluster. For example, you can perform "put"s and "get"s on a map, after you set the namespace with the command `ns <name of your map>`. Same is valid for queues, topics, etc. To execute your command, just type it into the field below the console and press **Enter**. You can type `help` to see all commands that can be used. 
+Management Center has also a console feature that enables you to execute commands on the cluster. For example, you can perform "put"s and "get"s on a map, after you set the namespace with the command `ns <name of your map>`. Same is valid for queues, topics, etc. To execute your command, just type it into the field below the console and press **Enter**. You can type `help` to see all commands that can be used.
 
 Console window can be opened by clicking on the **Console** button located at the toolbar. A sample view with some commands executed can ben seen below.
 
@@ -323,9 +333,9 @@ Console window can be opened by clicking on the **Console** button located at th
 
 ### Alerts
 
-Alerts feature of this tool is used to receive alerts by creating filters. In these filters, criteria can be specified for cluster, nodes or data structures. When the specified criteria are met for a filter, related alert is shown as a pop-up message on top right of the page. 
+Alerts feature of this tool is used to receive alerts by creating filters. In these filters, criteria can be specified for cluster, nodes or data structures. When the specified criteria are met for a filter, related alert is shown as a pop-up message on top right of the page.
 
-Once the **Alerts** button located at the toolbar is clicked, the page shown below appears. 
+Once the **Alerts** button located at the toolbar is clicked, the page shown below appears.
 
 ![](images/Alerts-Home.jpg)
 
@@ -347,7 +357,7 @@ You can edit the filter by clicking on the ![](images/EditIcon.jpg) icon and del
 
 **Creating Filters for Cluster Members**
 
-Select **Member Alerts** check box to create filters for some or all members in the cluster. Once selected, next screen asks for which members the alert will be created. Select as desired and click on the **Next** button. On the next page shown below, specify the criteria. 
+Select **Member Alerts** check box to create filters for some or all members in the cluster. Once selected, next screen asks for which members the alert will be created. Select as desired and click on the **Next** button. On the next page shown below, specify the criteria.
 
 ![](images/MemberAlert1.jpg)
 
@@ -366,7 +376,7 @@ Click on the **Save** button; your filter will be saved and put into the **Filte
 
 **Creating Filters for Data Types**
 
-Select **Data Type Alerts** check box to create filters for data structures. Next screen asks for which data structure (maps, queues, multimaps, executors) the alert will be created. Once a structure is selected, next screen immediately loads and wants you to select the data structure instances (i.e. if you selected *Maps*, it will list all the maps defined in the cluster, you can select only one map or more). Select as desired, click on the **Next** button and select the members on which the selected data structure instances run. 
+Select **Data Type Alerts** check box to create filters for data structures. Next screen asks for which data structure (maps, queues, multimaps, executors) the alert will be created. Once a structure is selected, next screen immediately loads and wants you to select the data structure instances (i.e. if you selected *Maps*, it will list all the maps defined in the cluster, you can select only one map or more). Select as desired, click on the **Next** button and select the members on which the selected data structure instances run.
 
 Next screen, as shown below, is the one where the criteria for the selected data structure are specified.
 
@@ -408,15 +418,14 @@ Time Travel is used to check the status of the cluster at a time in the past. On
 
 To see the cluster status in a past time, Time Travel should be enabled first. Click on the area where it says **OFF** (on the right of Time Travel window). It will turn to **ON** after it asks whether to enable the Time Travel with a dialog (just click on **Enable**).
 
-Once it is **ON**, it means that the status of your cluster is started to be stored on your disk, as long as your web server is alive. 
+Once it is **ON**, it means that the status of your cluster is started to be stored on your disk, as long as your web server is alive.
 
 You can go back in time using the slider and/or calendar and check your cluster's situation at the selected time. All data structures and members can be monitored as if you are using the management center normally (charts and data tables for each data structure and members). Using the arrow buttons placed at both sides of the slider, you can go back or further with steps of 5 seconds. Naturally, it will show the status if Time Travel has been **ON** at the selected time in past. Otherwise, all charts and tables will be shown as empty.
 
-
+The historical data collected with Time Travel feature are stored in a file database on the disk. These files can be found on the directory specified by `hazelcast.mancenter.home` (by default `mancenter3` directory in user home folder.)
 
 ### Documentation
 
 To see the documentation, click on the **Documentation** button located at the toolbar. Management Center manual will appear as a tab.
 
 <br> </br>
-

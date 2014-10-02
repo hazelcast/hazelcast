@@ -21,17 +21,18 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.SerializableClientEndPoint;
 import com.hazelcast.management.SerializableMXBeans;
+import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.MemberState;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -50,6 +51,7 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     private Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     private Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
+    private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
     private List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
     private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
     private SerializableMXBeans beans = new SerializableMXBeans();
@@ -86,6 +88,11 @@ public class MemberStateImpl implements MemberState {
             executorStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("executorStats", executorStatsObject);
+        JsonObject cacheStatsObject = new JsonObject();
+        for (Map.Entry<String, LocalCacheStats> entry : cacheStats.entrySet()) {
+            cacheStatsObject.add(entry.getKey(), entry.getValue().toJson());
+        }
+        root.add("cacheStats", cacheStatsObject);
         JsonObject runtimePropsObject = new JsonObject();
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
             runtimePropsObject.add(entry.getKey(), entry.getValue());
@@ -108,44 +115,37 @@ public class MemberStateImpl implements MemberState {
     @Override
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
-        final Iterator<JsonObject.Member> mapStatsIterator = getObject(json, "mapStats").iterator();
-        while (mapStatsIterator.hasNext()) {
-            final JsonObject.Member next = mapStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "mapStats")) {
             LocalMapStatsImpl stats = new LocalMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
             mapStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> multiMapStatsIterator = getObject(json, "multiMapStats").iterator();
-        while (multiMapStatsIterator.hasNext()) {
-            final JsonObject.Member next = multiMapStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "multiMapStats")) {
             LocalMultiMapStatsImpl stats = new LocalMultiMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
             multiMapStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> queueStatsIterator = getObject(json, "queueStats").iterator();
-        while (queueStatsIterator.hasNext()) {
-            final JsonObject.Member next = queueStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "queueStats")) {
             LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
             stats.fromJson(next.getValue().asObject());
             queueStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> topicStatsIterator = getObject(json, "topicStats").iterator();
-        while (topicStatsIterator.hasNext()) {
-            final JsonObject.Member next = topicStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "topicStats")) {
             LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
             stats.fromJson(next.getValue().asObject());
             topicStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> executorStatsIterator = getObject(json, "executorStats").iterator();
-        while (executorStatsIterator.hasNext()) {
-            final JsonObject.Member next = executorStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "executorStats")) {
             LocalExecutorStatsImpl stats = new LocalExecutorStatsImpl();
             stats.fromJson(next.getValue().asObject());
             executorStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> propsIterator = getObject(json, "runtimeProps").iterator();
-        while (propsIterator.hasNext()) {
-            final JsonObject.Member next = propsIterator.next();
+        for (JsonObject.Member next : getObject(json, "cacheStats", new JsonObject())) {
+            LocalCacheStats stats = new LocalCacheStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            cacheStats.put(next.getName(), stats);
+        }
+        for (JsonObject.Member next : getObject(json, "runtimeProps")) {
             runtimeProps.put(next.getName(), next.getValue().asLong());
         }
         final JsonArray jsonPartitions = getArray(json, "partitions");
@@ -212,6 +212,11 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public LocalCacheStats getLocalCacheStats(String cacheName) {
+        return cacheStats.get(cacheName);
+    }
+
+    @Override
     public String getAddress() {
         return address;
     }
@@ -240,6 +245,10 @@ public class MemberStateImpl implements MemberState {
         executorStats.put(name, localExecutorStats);
     }
 
+    public void putLocalCacheStats(String name, LocalCacheStats localCacheStats) {
+        cacheStats.put(name, localCacheStats);
+    }
+
     public Collection<SerializableClientEndPoint> getClients() {
         return clients;
     }
@@ -265,6 +274,7 @@ public class MemberStateImpl implements MemberState {
         result = 31 * result + (queueStats != null ? queueStats.hashCode() : 0);
         result = 31 * result + (topicStats != null ? topicStats.hashCode() : 0);
         result = 31 * result + (executorStats != null ? executorStats.hashCode() : 0);
+        result = 31 * result + (cacheStats != null ? cacheStats.hashCode() : 0);
         result = 31 * result + (partitions != null ? partitions.hashCode() : 0);
         return result;
     }
@@ -304,6 +314,9 @@ public class MemberStateImpl implements MemberState {
         if (topicStats != null ? !topicStats.equals(that.topicStats) : that.topicStats != null) {
             return false;
         }
+        if (cacheStats != null ? !cacheStats.equals(that.cacheStats) : that.cacheStats != null) {
+            return false;
+        }
 
         return true;
     }
@@ -319,6 +332,7 @@ public class MemberStateImpl implements MemberState {
                 + ", queueStats=" + queueStats
                 + ", topicStats=" + topicStats
                 + ", executorStats=" + executorStats
+                + ", cacheStats=" + cacheStats
                 + ", partitions=" + partitions
                 + '}';
     }

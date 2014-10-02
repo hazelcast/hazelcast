@@ -1,6 +1,6 @@
 ## Java Client
 
-### Java Cient Overview
+### Java Client Overview
 
 Java client is the most full featured client. It is offered both with Hazelcast and Hazelcast Enterprise. Main idea behind the Java client is to provide the same Hazelcast functionality by proxying each operation through a Hazelcast node. 
 It can be used to access and change distributed data or listen distributed events of an already established Hazelcast cluster from another Java application. 
@@ -99,7 +99,7 @@ While sending the requests to related nodes, it is possible that operation fails
 And, the number of retries is given with the property  `hazelcast.client.request.retry.count` in `ClientProperties`. It will resend the request as many as RETRY-COUNT then it will throw an exception. Please see [Client Properties](#client-properties).
 
 
-### Distributed Data Structures
+### Supported Distributed Data Structures
 
 Most of the Distributed Data Structures are supported by the client. Please check for the exceptions for the clients in other languages.
 
@@ -244,11 +244,11 @@ lifecycleService.shutdown();
 
 ```
 
-### Listeners
+### Client Listeners
 
 Listeners can be configured to listen to various event types on the client side. Global events not relating to any distributed object can be configured through [ListenerConfig](#listenerconfig). Whereas, distributed object listeners like map entry listeners or list item listeners should be configured through their proxies. You can refer to the related sections under each distributed data structure in this reference manual.
 
-### Transactions
+### Client Transactions
 
 Transactional distributed objects are supported on the client side. Please see [Transactions](#transactions) chapter on how to use them.
 
@@ -443,23 +443,21 @@ clientConfig.getNetworkConfig().setAwsConfig( clientAwsConfig );
 HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 ```
 
-***Note:*** *If *`inside-aws`* parameter is not set, private addresses of nodes will always be converted to public addresses. And, client will use public addresses to connect to nodes. In order to use private adresses, you should set it to *`true`*. Also note that, when connecting outside from AWS, setting *`inside-aws`* parameter to *`true`* will cause the client not to be able to reach to the nodes.*
+***Note:*** *If *`inside-aws`* parameter is not set, private addresses of nodes will always be converted to public addresses. And, client will use public addresses to connect to nodes. In order to use private addresses, you should set it to *`true`*. Also note that, when connecting outside from AWS, setting *`inside-aws`* parameter to *`true`* will cause the client not to be able to reach to the nodes.*
 
 #### Load Balancer
 
-`LoadBalancer` allows you to send operations to one of a number of endpoints(Members). Its main purpose is to determine the next `Member` if queried.  It is up to the implementation to use different load balancing policies. The interface `com.hazelcast.client.LoadBalancer` sould be implemented for that purpose.
+`LoadBalancer` allows you to send operations to one of a number of endpoints(Members). Its main purpose is to determine the next `Member` if queried.  It is up to the implementation to use different load balancing policies. The interface `com.hazelcast.client.LoadBalancer` should be implemented for that purpose.
 
 If the client is configured as a smart one, only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer. If it is not a smart client, `LoadBalancer` will be ignored.
 
-### Security
-TODO
 
 
-### Near Cache
+### Client Near Cache
 Hazelcast distributed map has a Near Cache feature to reduce network latencies. As the client always requests data from the cluster nodes, it can be helpful for some use cases to configure a near cache on the client side.
 The client supports the exact same near cache used in Hazelcast distributed map. 
 
-### SSLConfig
+### Client SSLConfig
 
 If SSL is desired to be enabled for the client-cluster connection, this parameter should be set. Once set, the connection (socket) is established out of an SSL factory defined either by a factory class name or factory implementation. Please see SSLConfig class in `com.hazelcast.config` package at the JavaDocs page of [Hazelcast Documentation](http://www.hazelcast.org/documentation/) web page.
 
@@ -579,7 +577,7 @@ In the cases where the security established with `GroupConfig` is not enough and
 
 ##### SerializationConfig
 
-For the client side serialization, Hazelcast configuration is used. Please refer to [Serialiazation](#serialization) chapter.
+For the client side serialization, Hazelcast configuration is used. Please refer to [Serialization](#serialization) chapter.
 
 
 ##### ListenerConfig
@@ -653,7 +651,7 @@ Property Name | Default Value | Type | Description
 `hazelcast.client.event.queue.capacity`|1000000|string|Default value of the capacity of executor that handles incoming event packets.
 
 
-### Examples
+### Sample Codes for Client
 
 Please refer to [Client Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/clients).
 

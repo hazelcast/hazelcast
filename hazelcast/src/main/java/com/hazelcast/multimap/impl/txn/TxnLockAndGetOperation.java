@@ -19,6 +19,7 @@ package com.hazelcast.multimap.impl.txn;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapWrapper;
 import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
@@ -31,11 +32,11 @@ import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
+import java.util.Collection;
 
 public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements WaitSupport {
 
     long ttl;
-    long threadId;
 
     public TxnLockAndGetOperation() {
     }
@@ -52,12 +53,11 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
         if (!container.txnLock(dataKey, getCallerUuid(), threadId, ttl)) {
             throw new TransactionException("Transaction couldn't obtain lock!");
         }
-        MultiMapWrapper wrapper = getOrCreateCollectionWrapper();
-
+        MultiMapWrapper wrapper = getCollectionWrapper();
         final boolean isLocal = getResponseHandler().isLocal();
-        final MultiMapResponse multiMapResponse = new MultiMapResponse(wrapper.getCollection(isLocal));
+        Collection<MultiMapRecord> collection = wrapper == null ? null : wrapper.getCollection(isLocal);
+        final MultiMapResponse multiMapResponse = new MultiMapResponse(collection, getValueCollectionType(container));
         multiMapResponse.setNextRecordId(container.nextId());
-        multiMapResponse.setTxVersion(wrapper.incrementAndGetVersion());
         response = multiMapResponse;
     }
 
@@ -76,13 +76,11 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(ttl);
-        out.writeLong(threadId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ttl = in.readLong();
-        threadId = in.readLong();
     }
 
     public int getId() {

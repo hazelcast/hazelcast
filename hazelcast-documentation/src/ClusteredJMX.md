@@ -222,13 +222,9 @@ Below is the list of attributes that are exposed from the Clustered JMX interfac
   * ReceiveOperationCount
 
 
-### Enterprise Integration
+### New Relic Integration
 
-You can use Clustered JMX interface to integrate Hazelcast Management Center with your own monitoring tool or enterprise solutions like *New Relic* or *AppDynamics*.
-
-#### New Relic Integration
-
-In order to integrate Clustered JMX with New Relic, you need to attach New Relic Java agent and provide an extension file that describes which metrics will be sent to New Relic.
+Clustered JMX interface can be used to integrate Hazelcast Management Center with *New Relic*. In order to perform this, you need to attach New Relic Java agent and provide an extension file that describes which metrics will be sent to New Relic.
 
 Please see [Custom JMX instrumentation by YAML](http://docs.newrelic.com/docs/java/custom-jmx-instrumentation-by-yml) on New Relic webpage.
 
@@ -296,9 +292,9 @@ Then, you can navigate to your New Relic account and create Custom Dashboards. P
 
 While you are creating the dashboard, you should see the metrics that you are sending to New Relic from Management Center in the **Metrics** section under the JMX folder.
 
-#### AppDynamics Integration
+### AppDynamics Integration
 
-In order to integrate Clustered JMX with the AppDynamics, you need to attach AppDynamics Java agent to the Management Center.
+Clustered JMX interface can be used to integrate Hazelcast Management Center with *AppDynamics*. In order to perform this, you need to attach AppDynamics Java agent to the Management Center.
 
 For agent installation, you can refer to [Install the App Agent for Java](http://docs.appdynamics.com/display/PRO14S/Install+the+App+Agent+for+Java) page.
 

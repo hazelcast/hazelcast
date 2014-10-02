@@ -136,6 +136,12 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
+    public boolean isTransactionallyLocked(Data key) {
+        LockResourceImpl lock = locks.get(key);
+        return lock != null && lock.isTransactional() && lock.isLocked();
+    }
+
+    @Override
     public boolean unlock(Data key, String caller, long threadId) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {
@@ -169,6 +175,14 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         }
     }
 
+    public int getVersion(Data key) {
+        LockResourceImpl lock = locks.get(key);
+        if (lock != null) {
+            return lock.getVersion();
+        }
+        return -1;
+    }
+
     public Collection<LockResource> getLocks() {
         return Collections.<LockResource>unmodifiableCollection(locks.values());
     }
@@ -186,8 +200,8 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         return keySet;
     }
 
-    void scheduleEviction(Data key, long leaseTime) {
-        lockService.scheduleEviction(namespace, key, leaseTime);
+    void scheduleEviction(Data key, int version, long leaseTime) {
+        lockService.scheduleEviction(namespace, key, version, leaseTime);
     }
 
     void cancelEviction(Data key) {

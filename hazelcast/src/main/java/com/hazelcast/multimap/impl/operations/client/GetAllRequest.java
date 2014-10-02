@@ -22,12 +22,19 @@ import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.operations.GetAllOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
-import java.util.ArrayList;
+
+import java.io.IOException;
 import java.util.Collection;
 
+import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
+
 public class GetAllRequest extends MultiMapKeyBasedRequest implements RetryableRequest {
+
+    private long threadId;
 
     public GetAllRequest() {
     }
@@ -36,8 +43,15 @@ public class GetAllRequest extends MultiMapKeyBasedRequest implements RetryableR
         super(name, key);
     }
 
+    public GetAllRequest(String name, Data key, long threadId) {
+        super(name, key);
+        this.threadId = threadId;
+    }
+
     protected Operation prepareOperation() {
-        return new GetAllOperation(name, key);
+        GetAllOperation operation = new GetAllOperation(name, key);
+        operation.setThreadId(threadId);
+        return operation;
     }
 
     public int getClassId() {
@@ -46,12 +60,12 @@ public class GetAllRequest extends MultiMapKeyBasedRequest implements RetryableR
 
     protected Object filter(Object response) {
         if (response instanceof MultiMapResponse) {
-            Collection<MultiMapRecord> coll = ((MultiMapResponse) response).getCollection();
-            if (coll == null) {
+            Collection<MultiMapRecord> responseCollection = ((MultiMapResponse) response).getCollection();
+            if (responseCollection == null) {
                 return new PortableCollection();
             }
-            Collection<Data> collection = new ArrayList<Data>(coll.size());
-            for (MultiMapRecord record : coll) {
+            Collection<Data> collection = createCollection(responseCollection);
+            for (MultiMapRecord record : responseCollection) {
                 collection.add(serializationService.toData(record.getObject()));
             }
             return new PortableCollection(collection);
@@ -67,5 +81,17 @@ public class GetAllRequest extends MultiMapKeyBasedRequest implements RetryableR
     @Override
     public Object[] getParameters() {
         return new Object[]{key};
+    }
+
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeLong("threadId", threadId);
+        super.write(writer);
+    }
+
+    @Override
+    public void read(PortableReader reader) throws IOException {
+        threadId = reader.readLong("threadId");
+        super.read(reader);
     }
 }

@@ -64,13 +64,14 @@ import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
@@ -90,8 +91,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public boolean put(K key, V value) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        ValidationUtil.checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
         Data valueData = toData(value);
@@ -101,17 +102,17 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public Collection<V> get(K key) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        GetAllRequest request = new GetAllRequest(name, keyData);
+        GetAllRequest request = new GetAllRequest(name, keyData, ThreadUtil.getThreadId());
         PortableCollection result = invoke(request, keyData);
-        return toObjectCollection(result, true);
+        return toObjectCollection(result);
     }
 
     public boolean remove(Object key, Object value) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        ValidationUtil.checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
         Data valueData = toData(value);
@@ -121,12 +122,12 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public Collection<V> remove(Object key) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
         RemoveAllRequest request = new RemoveAllRequest(name, keyData, ThreadUtil.getThreadId());
         PortableCollection result = invoke(request, keyData);
-        return toObjectCollection(result, true);
+        return toObjectCollection(result);
     }
 
     public Set<K> localKeySet() {
@@ -136,13 +137,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     public Set<K> keySet() {
         KeySetRequest request = new KeySetRequest(name);
         PortableCollection result = invoke(request);
-        return (Set) toObjectCollection(result, false);
+        return (Set) toObjectCollection(result);
     }
 
     public Collection<V> values() {
         ValuesRequest request = new ValuesRequest(name);
         PortableCollection result = invoke(request);
-        return toObjectCollection(result, true);
+        return toObjectCollection(result);
     }
 
     public Set<Map.Entry<K, V>> entrySet() {
@@ -159,16 +160,16 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public boolean containsKey(K key) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        ClientRequest request = new KeyBasedContainsRequest(name, keyData, null);
+        ClientRequest request = new KeyBasedContainsRequest(name, keyData, null, ThreadUtil.getThreadId());
         Boolean result = invoke(request, keyData);
         return result;
     }
 
     public boolean containsValue(Object value) {
-        ValidationUtil.checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
         ClientRequest request = new ContainsRequest(name, valueData);
@@ -177,12 +178,12 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public boolean containsEntry(K key, V value) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        ValidationUtil.checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
         Data valueData = toData(value);
-        ClientRequest request = new KeyBasedContainsRequest(name, keyData, valueData);
+        ClientRequest request = new KeyBasedContainsRequest(name, keyData, valueData, ThreadUtil.getThreadId());
         Boolean result = invoke(request, keyData);
         return result;
     }
@@ -199,10 +200,10 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public int valueCount(K key) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        CountRequest request = new CountRequest(name, keyData);
+        CountRequest request = new CountRequest(name, keyData, ThreadUtil.getThreadId());
         Integer result = invoke(request, keyData);
         return result;
     }
@@ -231,7 +232,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public void lock(K key) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
         MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(), name);
@@ -239,7 +240,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         shouldBePositive(leaseTime, "leaseTime");
         final Data keyData = toData(key);
@@ -249,7 +250,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public boolean isLocked(K key) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
         final MultiMapIsLockedRequest request = new MultiMapIsLockedRequest(keyData, name);
@@ -258,7 +259,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public boolean tryLock(K key) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         try {
             return tryLock(key, 0, null);
@@ -268,7 +269,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
         MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
@@ -278,7 +279,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public void unlock(K key) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
         MultiMapUnlockRequest request = new MultiMapUnlockRequest(keyData, ThreadUtil.getThreadId(), name);
@@ -286,7 +287,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public void forceUnlock(K key) {
-        ValidationUtil.checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
         MultiMapUnlockRequest request = new MultiMapUnlockRequest(keyData, ThreadUtil.getThreadId(), true, name);
@@ -338,21 +339,14 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     protected void onDestroy() {
     }
 
-    private Collection toObjectCollection(PortableCollection result, boolean list) {
-        Collection<Data> coll = result.getCollection();
-        Collection collection;
-        if (list) {
-            collection = new ArrayList(coll == null ? 0 : coll.size());
-        } else {
-            collection = new HashSet(coll == null ? 0 : coll.size());
+    private Collection toObjectCollection(PortableCollection result) {
+        final Collection<Data> resultCollection = result.getCollection();
+        // create a fresh instance of same collection type.
+        final Collection newCollection = createCollection(resultCollection);
+        for (Data data : resultCollection) {
+            newCollection.add(toObject(data));
         }
-        if (coll == null) {
-            return collection;
-        }
-        for (Data data : coll) {
-            collection.add(toObject(data));
-        }
-        return collection;
+        return newCollection;
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
