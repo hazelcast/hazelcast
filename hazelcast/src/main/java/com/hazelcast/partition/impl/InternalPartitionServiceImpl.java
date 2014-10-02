@@ -38,6 +38,7 @@ import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
 import com.hazelcast.spi.Callback;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
@@ -100,6 +101,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private static final int DEFAULT_PAUSE_MILLIS = 1000;
     private static final int DEFAULT_SLEEP_MILLIS = 10;
     private static final float DEFAULT_MIGRATION_TIMEOUT_MULTIPLICATOR = 1.5f;
+
+    private static final int RETRY_PARTITION_TABLE_MILLIS = 100;
+    private static final long PARTITION_READY_TIMEOUT = 10000;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -1343,6 +1347,25 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     public PartitionServiceProxy getPartitionServiceProxy() {
         return proxy;
+    }
+
+    @Override
+    public void warmupPartitionTable() throws TimeoutException {
+        int partitionCount = getPartitionCount();
+        long startTime = Clock.currentTimeMillis();
+        for (int p = 0; p < partitionCount; p++) {
+            while (getPartitionOwner(p) == null) {
+                try {
+                    Thread.sleep(RETRY_PARTITION_TABLE_MILLIS);
+                } catch (Exception ignore) {
+                    EmptyStatement.ignore(ignore);
+                }
+
+                if (Clock.currentTimeMillis() - startTime > PARTITION_READY_TIMEOUT) {
+                    throw new TimeoutException("Partition get ready timeout reached!");
+                }
+            }
+        }
     }
 
     private void sendMigrationEvent(final MigrationInfo migrationInfo, final MigrationStatus status) {
