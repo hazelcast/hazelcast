@@ -66,7 +66,7 @@ public class MapContainer extends MapContainerSupport {
     private final List<MapInterceptor> interceptors;
     private final Map<String, MapInterceptor> interceptorMap;
     private final IndexService indexService = new IndexService();
-    private final boolean nearCacheEnabled;
+    private volatile boolean nearCacheEnabled;
     private final SizeEstimator nearCacheSizeEstimator;
     private final PartitioningStrategy partitioningStrategy;
     private WanReplicationPublisher wanReplicationPublisher;
@@ -105,6 +105,12 @@ public class MapContainer extends MapContainerSupport {
 
     public MapStoreManager getMapStoreManager() {
         return mapStoreManager;
+    }
+
+    @Override
+    public void setMapConfig(MapConfig mapConfig) {
+        super.setMapConfig(mapConfig);
+        nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
     }
 
     private void initMapStoreOperations(NodeEngine nodeEngine) {
