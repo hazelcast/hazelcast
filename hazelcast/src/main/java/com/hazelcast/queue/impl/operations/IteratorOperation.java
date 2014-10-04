@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.impl.SerializableCollection;
 
 /**
@@ -38,8 +39,8 @@ public class IteratorOperation extends QueueOperation {
 
     @Override
     public void afterRun() throws Exception {
-        LocalQueueStatsImpl localQueueStatsImpl = getQueueService().getLocalQueueStatsImpl(name);
-        localQueueStatsImpl.incrementOtherOperations();
+        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
+        stats.incrementOtherOperations();
     }
 
     @Override

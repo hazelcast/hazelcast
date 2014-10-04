@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
+import com.hazelcast.queue.impl.QueueContainer;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.ProxyService;
 
 /**

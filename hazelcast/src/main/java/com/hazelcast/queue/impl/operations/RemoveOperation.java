@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.queue.impl.QueueContainer;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -52,7 +55,8 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
 
     @Override
     public void afterRun() throws Exception {
-        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
+        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
+        stats.incrementOtherOperations();
         if (itemId != -1) {
             publishEvent(ItemEventType.REMOVED, data);
         }

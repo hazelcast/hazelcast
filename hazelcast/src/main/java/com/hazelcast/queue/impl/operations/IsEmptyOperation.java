@@ -14,32 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
+
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 
 /**
- * Notify size of the queue.
+ * check if queue is empty
  */
-public class SizeOperation extends QueueOperation {
+public class IsEmptyOperation extends QueueOperation {
 
-    public SizeOperation() {
+    public IsEmptyOperation() {
     }
 
-    public SizeOperation(String name) {
+    public IsEmptyOperation(final String name) {
         super(name);
     }
 
     @Override
-    public void run() {
-        response = getOrCreateContainer().size();
+    public void run() throws Exception {
+        response = getOrCreateContainer().size() == 0;
     }
 
     @Override
     public void afterRun() throws Exception {
-        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
+        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
+        stats.incrementOtherOperations();
     }
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.SIZE;
+        return QueueDataSerializerHook.IS_EMPTY;
     }
 }

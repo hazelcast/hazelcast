@@ -14,32 +14,34 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
+
+import com.hazelcast.spi.BackupAwareOperation;
 
 /**
- * check if queue is empty
+ * This abstract class contains important methods for all Queue operations.
  */
-public class IsEmptyOperation extends QueueOperation {
 
-    public IsEmptyOperation() {
+public abstract class QueueBackupAwareOperation extends QueueOperation implements BackupAwareOperation {
+
+    protected QueueBackupAwareOperation() {
     }
 
-    public IsEmptyOperation(final String name) {
+    protected QueueBackupAwareOperation(String name) {
         super(name);
     }
 
-    @Override
-    public void run() throws Exception {
-        response = getOrCreateContainer().size() == 0;
+    protected QueueBackupAwareOperation(String name, long timeoutMillis) {
+        super(name, timeoutMillis);
     }
 
     @Override
-    public void afterRun() throws Exception {
-        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
+    public final int getSyncBackupCount() {
+        return getOrCreateContainer().getConfig().getBackupCount();
     }
 
     @Override
-    public int getId() {
-        return QueueDataSerializerHook.IS_EMPTY;
+    public final int getAsyncBackupCount() {
+        return getOrCreateContainer().getConfig().getAsyncBackupCount();
     }
 }

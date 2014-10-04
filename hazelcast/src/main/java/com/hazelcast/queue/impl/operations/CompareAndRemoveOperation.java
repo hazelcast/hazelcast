@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
@@ -22,6 +22,8 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.queue.impl.QueueContainer;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -34,7 +36,6 @@ import java.util.Map;
 /**
  * This class triggers iterator and if find same item in the Queue, remove this item.
  */
-
 public class CompareAndRemoveOperation extends QueueBackupAwareOperation implements Notifier {
 
     private Collection<Data> dataList;
@@ -59,8 +60,8 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
 
     @Override
     public void afterRun() throws Exception {
-        LocalQueueStatsImpl localQueueStatsImpl = getQueueService().getLocalQueueStatsImpl(name);
-        localQueueStatsImpl.incrementOtherOperations();
+        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
+        stats.incrementOtherOperations();
         if (hasListener()) {
             for (Data data : dataMap.values()) {
                 publishEvent(ItemEventType.REMOVED, data);

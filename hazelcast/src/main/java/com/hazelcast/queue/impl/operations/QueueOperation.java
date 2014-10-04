@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Address;
@@ -22,6 +22,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.queue.impl.QueueContainer;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
+import com.hazelcast.queue.impl.QueueEvent;
+import com.hazelcast.queue.impl.QueueEventFilter;
+import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -34,7 +39,7 @@ import java.util.Collection;
 
 /**
  * This class contains methods for Queue operations
- * such as {@link com.hazelcast.queue.impl.AddAllOperation}.
+ * such as {@link com.hazelcast.queue.impl.operations.AddAllOperation}.
  */
 public abstract class QueueOperation extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable {

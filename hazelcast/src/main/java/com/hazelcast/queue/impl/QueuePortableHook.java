@@ -45,6 +45,9 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
+/**
+ * Provides a Portable hook for the queue operations.
+ */
 public class QueuePortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.QUEUE_PORTABLE_FACTORY, -11);
@@ -69,7 +72,7 @@ public class QueuePortableHook implements PortableHook {
     public static final int REMOVE_LISTENER = 18;
     public static final int IS_EMPTY = 19;
 
-
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
