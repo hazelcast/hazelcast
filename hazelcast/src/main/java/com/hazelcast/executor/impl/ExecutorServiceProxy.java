@@ -24,6 +24,9 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
+import com.hazelcast.executor.impl.operations.CallableTaskOperation;
+import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
+import com.hazelcast.executor.impl.operations.ShutdownOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -64,20 +67,22 @@ public class ExecutorServiceProxy
         extends AbstractDistributedObject<DistributedExecutorService>
         implements IExecutorService {
 
+    public static final int SYNC_FREQUENCY = 100;
+    public static final int SYNC_DELAY_MS = 10;
+
     private static final AtomicIntegerFieldUpdater<ExecutorServiceProxy> CONSECUTIVE_SUBMITS_UPDATER = AtomicIntegerFieldUpdater
             .newUpdater(ExecutorServiceProxy.class, "consecutiveSubmits");
 
     private static final ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
             logAllExceptions("Exception while ExecutorService shutdown", Level.FINEST);
 
-    public static final int SYNC_FREQUENCY = 100;
     private final String name;
     private final Random random = new Random(-System.currentTimeMillis());
     private final int partitionCount;
     private final ILogger logger;
 
-    // This field is never accessed directly but by the UPDATER above
-    private volatile int consecutiveSubmits = 0;
+    // This field is never accessed directly but by the CONSECUTIVE_SUBMITS_UPDATER above
+    private volatile int consecutiveSubmits;
 
     private volatile long lastSubmitTime;
 
@@ -226,7 +231,7 @@ public class ExecutorServiceProxy
 
     private <T> Future<T> submitToPartitionOwner(Callable<T> task, int partitionId, boolean preventSync) {
         if (task == null) {
-            throw new NullPointerException();
+            throw new NullPointerException("task can't be null");
         }
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
@@ -258,7 +263,7 @@ public class ExecutorServiceProxy
         boolean sync = false;
         long last = lastSubmitTime;
         long now = Clock.currentTimeMillis();
-        if (last + 10 < now) {
+        if (last + SYNC_DELAY_MS < now) {
             CONSECUTIVE_SUBMITS_UPDATER.set(this, 0);
         } else if (CONSECUTIVE_SUBMITS_UPDATER.incrementAndGet(this) % SYNC_FREQUENCY == 0) {
             sync = true;
@@ -287,7 +292,7 @@ public class ExecutorServiceProxy
     @Override
     public <T> Future<T> submitToMember(Callable<T> task, Member member) {
         if (task == null) {
-            throw new NullPointerException();
+            throw new NullPointerException("task can't be null");
         }
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
@@ -463,35 +468,7 @@ public class ExecutorServiceProxy
                     return result;
                 }
             }
-            for (int i = 0, size = futures.size(); i < size; i++) {
-                long start = System.nanoTime();
-                Object value;
-                try {
-                    Future<T> future = futures.get(i);
-                    value = future.get(timeoutNanos, TimeUnit.NANOSECONDS);
-                } catch (ExecutionException e) {
-                    value = e;
-                } catch (TimeoutException e) {
-                    done = false;
-                    for (int l = i; l < size; l++) {
-                        Future<T> f = futures.get(i);
-                        if (!f.isDone()) {
-                            result.add(f);
-                        } else {
-                            Object v;
-                            try {
-                                v = f.get();
-                            } catch (ExecutionException ex) {
-                                v = ex;
-                            }
-                            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), v, getAsyncExecutor()));
-                        }
-                    }
-                    break;
-                }
-                result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
-                timeoutNanos -= System.nanoTime() - start;
-            }
+            done = wait(timeoutNanos, futures, result);
         } catch (Throwable t) {
             logger.severe(t);
         } finally {
@@ -500,6 +477,41 @@ public class ExecutorServiceProxy
             }
             return result;
         }
+    }
+
+    private <T> boolean wait(long timeoutNanos, List<Future<T>> futures, List<Future<T>> result) throws InterruptedException {
+        boolean done = true;
+        for (int i = 0, size = futures.size(); i < size; i++) {
+            long start = System.nanoTime();
+            Object value;
+            try {
+                Future<T> future = futures.get(i);
+                value = future.get(timeoutNanos, TimeUnit.NANOSECONDS);
+            } catch (ExecutionException e) {
+                value = e;
+            } catch (TimeoutException e) {
+                done = false;
+                for (int l = i; l < size; l++) {
+                    Future<T> f = futures.get(i);
+                    if (!f.isDone()) {
+                        result.add(f);
+                    } else {
+                        Object v;
+                        try {
+                            v = f.get();
+                        } catch (ExecutionException ex) {
+                            v = ex;
+                        }
+                        result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), v, getAsyncExecutor()));
+                    }
+                }
+                break;
+            }
+
+            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
+            timeoutNanos -= System.nanoTime() - start;
+        }
+        return done;
     }
 
     private static <T> void cancelAll(List<Future<T>> result) {

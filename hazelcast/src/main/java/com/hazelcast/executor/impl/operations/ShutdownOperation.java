@@ -14,28 +14,33 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor.impl;
+package com.hazelcast.executor.impl.operations;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public final class CallableTaskOperation extends BaseCallableTaskOperation
-        implements IdentifiedDataSerializable {
+public final class ShutdownOperation extends AbstractNamedOperation {
 
-    public CallableTaskOperation() {
+    public ShutdownOperation() {
     }
 
-    public CallableTaskOperation(String name, String uuid, Data callableData) {
-        super(name, uuid, callableData);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ExecutorDataSerializerHook.F_ID;
+    public ShutdownOperation(String name) {
+        super(name);
     }
 
     @Override
-    public int getId() {
-        return ExecutorDataSerializerHook.CALLABLE_TASK;
+    public void run() throws Exception {
+        DistributedExecutorService service = getService();
+        service.shutdownExecutor(getName());
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return Boolean.TRUE;
     }
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.executor.impl.client;
 
 import com.hazelcast.client.impl.client.PartitionClientRequest;
-import com.hazelcast.executor.impl.CallableTaskOperation;
+import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorPortableHook;
 import com.hazelcast.nio.ObjectDataInput;

@@ -366,10 +366,7 @@
     <suppress checks="JavadocType" files="com.hazelcast.executor.impl[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.executor.impl[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.executor.impl[\\/]"/>
-    <suppress checks="MethodCount" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
-    <!-- the invokeAll is so scary that Peter doesn't dare to touch it. Need get someone involved who write it-->
-    <suppress checks="" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
+    <suppress checks="ClassFanOutComplexity|MethodCount" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
     <suppress checks="ReturnCount" files="com.hazelcast.executor.impl.ExecutorPortableHook"/>
 
     <!-- Collections -->
