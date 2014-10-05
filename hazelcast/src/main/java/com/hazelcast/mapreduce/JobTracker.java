@@ -60,7 +60,7 @@ public interface JobTracker
      *
      * @param source data source the created Job should work on
      * @param <K> type of the key
-     * @param <V> type of the valeu
+     * @param <V> type of the value
      * @return instance of the Job bound to the given KeyValueSource
      */
     <K, V> Job<K, V> newJob(KeyValueSource<K, V> source);
