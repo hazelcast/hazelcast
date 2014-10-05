@@ -42,7 +42,7 @@ public interface ClientService {
      * When a ClientListener is added more than once, it will receive duplicate events.
      *
      * @param clientListener ClientListener
-     * @return returns registration id.
+     * @return registration id. This id can be used to remove the listener using the {@link #removeClientListener(String)} method.
      * @throws java.lang.NullPointerException if clientListener is null.
      */
     String addClientListener(ClientListener clientListener);
