@@ -46,20 +46,24 @@ public final class ClientServiceProxy implements ClientService {
 
     @Override
     public String addClientListener(ClientListener clientListener) {
-        // todo: should the clientListener not be checked for null?
+        if(clientListener == null){
+            throw new NullPointerException("clientListener should not be null");
+        }
 
         EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration = eventService
-                .registerLocalListener(ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, clientListener);
+        EventRegistration registration = eventService.registerLocalListener(
+                ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, clientListener);
         return registration.getId();
     }
 
     @Override
     public boolean removeClientListener(String registrationId) {
-        // todo: should the registrationId not be checked for null?
+        if(registrationId == null){
+            throw new NullPointerException("registrationId should not be null");
+        }
 
         EventService eventService = nodeEngine.getEventService();
-        return eventService.deregisterListener(ClientEngineImpl.SERVICE_NAME,
-                ClientEngineImpl.SERVICE_NAME, registrationId);
+        return eventService.deregisterListener(
+                ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, registrationId);
     }
 }
