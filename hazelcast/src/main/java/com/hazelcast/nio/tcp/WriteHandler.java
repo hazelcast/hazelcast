@@ -130,7 +130,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     @Override
     public void handle() {
         lastHandle = Clock.currentTimeMillis();
-        if (!connection.live()) {
+        if (!connection.isAlive()) {
             return;
         }
         if (socketWriter == null) {

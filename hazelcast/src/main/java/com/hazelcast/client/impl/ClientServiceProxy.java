@@ -26,6 +26,9 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 
+/**
+ * The default implementation of the {@link com.hazelcast.core.ClientService}.
+ */
 public final class ClientServiceProxy implements ClientService {
 
     private final ClientEngineImpl clientEngine;
@@ -43,6 +46,8 @@ public final class ClientServiceProxy implements ClientService {
 
     @Override
     public String addClientListener(ClientListener clientListener) {
+        // todo: should the clientListener not be checked for null?
+
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration = eventService
                 .registerLocalListener(ClientEngineImpl.SERVICE_NAME, ClientEngineImpl.SERVICE_NAME, clientListener);
@@ -51,7 +56,9 @@ public final class ClientServiceProxy implements ClientService {
 
     @Override
     public boolean removeClientListener(String registrationId) {
-        final EventService eventService = nodeEngine.getEventService();
+        // todo: should the registrationId not be checked for null?
+
+        EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(ClientEngineImpl.SERVICE_NAME,
                 ClientEngineImpl.SERVICE_NAME, registrationId);
     }

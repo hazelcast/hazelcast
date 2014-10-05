@@ -211,7 +211,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
-    public boolean live() {
+    public boolean isAlive() {
         return live;
     }
 
@@ -292,7 +292,7 @@ public class ClientConnection implements Connection, Closeable {
         if (socketChannelWrapper.isBlocking()) {
             return;
         }
-        if (connectionManager.isLive()) {
+        if (connectionManager.isAlive()) {
             try {
                 executionService.execute(new CleanResourcesTask());
             } catch (RejectedExecutionException e) {

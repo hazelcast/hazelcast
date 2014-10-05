@@ -45,7 +45,7 @@ public interface Connection {
      *
      * @return true if alive, false otherwise.
      */
-    boolean live();
+    boolean isAlive();
 
     /**
      * Returns the clock time of the most recent read using this connection.

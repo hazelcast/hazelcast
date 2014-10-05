@@ -36,7 +36,7 @@ public class ClientOutOfMemoryHandler extends OutOfMemoryHandler {
         }
     }
 
-    public static final class ClientHelper {
+    private static final class ClientHelper {
 
         private ClientHelper() {
         }

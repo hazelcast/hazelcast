@@ -72,7 +72,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
             @Override
             public void onEntryEvent(EntryEvent<Object, Object> event) {
-                if (endpoint.live()) {
+                if (endpoint.isAlive()) {
                     if (!(event instanceof DataAwareEntryEvent)) {
                         throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
                                 + event.getClass().getSimpleName());
@@ -89,7 +89,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
             @Override
             public void onMapEvent(MapEvent event) {
-                if (endpoint.live()) {
+                if (endpoint.isAlive()) {
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
                     PortableEntryEvent portableEntryEvent =

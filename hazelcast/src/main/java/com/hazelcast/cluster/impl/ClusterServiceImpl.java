@@ -272,7 +272,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void logIfConnectionToEndpointIsMissing(MemberImpl member) {
         Connection conn = node.connectionManager.getOrConnect(member.getAddress());
-        if (conn == null || !conn.live()) {
+        if (conn == null || !conn.isAlive()) {
             logger.warning("This node does not have a connection to " + member);
         }
     }
@@ -743,7 +743,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     setMasterAndJoin(masterAddress);
             } else {
                 final Connection conn = node.connectionManager.getConnection(currentMaster);
-                if (conn != null && conn.live()) {
+                if (conn != null && conn.isAlive()) {
                     logger.info("Ignoring master response: " + masterAddress + " from: " + callerAddress
                             + ", since this node has an active master: " + currentMaster);
                     sendJoinRequest(currentMaster, true);

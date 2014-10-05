@@ -150,26 +150,45 @@
 
 
     <!-- client -->
+    <!-- TODO: These javadoc issues need to be addressed -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.client.proxy[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.client.proxy[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.client.proxy[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.client.proxy[\\/]"/>
+
+    <suppress checks="JavadocMethod" files="com.hazelcast.client.connection.nio[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.client.connection.nio[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.client.connection.nio[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.client.connection.nio[\\/]"/>
+
+    <suppress checks="JavadocMethod" files="com.hazelcast.client.spi[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.client.spi[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.client.spi[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.client.spi[\\/]"/>
+
+
     <!-- TODO: We need to get these wildcard suppressions fixed -->
     <suppress checks="" files="com.hazelcast.client.proxy.ClientQueueProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMultiMapProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMapProxy"/>
     <suppress checks="" files="com.hazelcast.client.HazelcastClient"/>
+
+
+
+    <suppress checks="Javadoc" files="com.hazelcast.client.impl.operations[\\/]"/>
+    <suppress checks="Javadoc" files="com.hazelcast.client.impl.client[\\/]"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.proxy.ClientExecutorServiceProxy"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.HazelcastClientProxy"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.impl.client.ClientPortableFactory"/>
-    <!-- TODO: We need to get this wildcard suppressions fixed -->
-    <suppress checks="" files="com.hazelcast.client.impl.client.ClientPortableHook"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.client.impl.client.ClientPortableHook"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.config.ClientConfig"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.connection.nio.ClientConnection"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.impl.ClientEngineImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.impl.ClientEngineImpl"/>
     <!-- TODO: We need to get this wildcard suppressions fixed -->
-    <suppress checks="" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
-
-    <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.client[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
+    <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling"
+              files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
 
     <!-- Monitor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>

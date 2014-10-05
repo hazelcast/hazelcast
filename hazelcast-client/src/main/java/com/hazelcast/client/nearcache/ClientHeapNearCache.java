@@ -32,6 +32,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Implementation of the {@link com.hazelcast.client.nearcache.IClientNearCache}.
+ *
+ * todo: improve javadoc.
+ *
+ * @param <K>
+ */
 public class ClientHeapNearCache<K>
         implements IClientNearCache<K, Object> {
 

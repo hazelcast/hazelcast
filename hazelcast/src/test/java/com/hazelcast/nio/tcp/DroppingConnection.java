@@ -42,7 +42,7 @@ class DroppingConnection implements Connection {
     }
 
     @Override
-    public boolean live() {
+    public boolean isAlive() {
         return true;
     }
 

@@ -95,7 +95,7 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
 
         @Override
         public void onMessage(Message message) {
-            if (!endpoint.live()) {
+            if (!endpoint.isAlive()) {
                 return;
             }
 

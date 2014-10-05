@@ -95,7 +95,7 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
             }
 
             private void send(ItemEvent event) {
-                if (endpoint.live()) {
+                if (endpoint.isAlive()) {
 
                     if (!(event instanceof DataAwareItemEvent)) {
                         throw new IllegalArgumentException("Expecting: DataAwareItemEvent, Found: "

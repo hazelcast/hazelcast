@@ -321,13 +321,13 @@ public class ClientCacheProxy<K, V>
             CacheRemoveEntryListenerRequest removeReq = new CacheRemoveEntryListenerRequest(nameWithPrefix, regId);
             boolean isDeregistered = clientContext.getListenerService().stopListening(removeReq, regId);
 
-            if (!isDeregistered) {
-                addListenerLocally(regId, cacheEntryListenerConfiguration);
-            } else {
+            if (isDeregistered) {
                 cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
                 deregisterCompletionListener();
                 //REMOVE ON OTHERS TOO
                 updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
+            } else {
+                addListenerLocally(regId, cacheEntryListenerConfiguration);
             }
         }
     }
