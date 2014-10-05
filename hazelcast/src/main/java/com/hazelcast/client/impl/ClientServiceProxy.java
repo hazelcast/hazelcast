@@ -46,7 +46,7 @@ public final class ClientServiceProxy implements ClientService {
 
     @Override
     public String addClientListener(ClientListener clientListener) {
-        if(clientListener == null){
+        if (clientListener == null) {
             throw new NullPointerException("clientListener should not be null");
         }
 
@@ -58,7 +58,7 @@ public final class ClientServiceProxy implements ClientService {
 
     @Override
     public boolean removeClientListener(String registrationId) {
-        if(registrationId == null){
+        if (registrationId == null) {
             throw new NullPointerException("registrationId should not be null");
         }
 
