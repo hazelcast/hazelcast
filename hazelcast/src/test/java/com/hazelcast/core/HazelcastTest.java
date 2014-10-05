@@ -21,6 +21,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,6 +35,12 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class HazelcastTest extends HazelcastTestSupport {
+
+    @Before
+    @After
+    public void cleanup(){
+        Hazelcast.shutdownAll();
+    }
 
     @Test(expected = NullPointerException.class)
     public void getOrCreateHazelcastInstance_nullConfig() {
