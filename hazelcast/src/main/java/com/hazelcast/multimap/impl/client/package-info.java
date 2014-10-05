@@ -17,4 +17,4 @@
 /**
  * Contains client requests for Hazelcast MultiMap module.
  */
-package com.hazelcast.multimap.impl.operations.client;
+package com.hazelcast.multimap.impl.client;

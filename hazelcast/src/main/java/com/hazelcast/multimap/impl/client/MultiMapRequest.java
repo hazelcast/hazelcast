@@ -14,71 +14,53 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.impl.operations.client;
+package com.hazelcast.multimap.impl.client;
 
-import com.hazelcast.concurrent.lock.client.AbstractUnlockRequest;
+import com.hazelcast.client.impl.client.PartitionClientRequest;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
-import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.ObjectNamespace;
 import java.io.IOException;
 import java.security.Permission;
 
-public class MultiMapUnlockRequest extends AbstractUnlockRequest {
+public abstract class MultiMapRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     String name;
 
-    public MultiMapUnlockRequest() {
+    protected MultiMapRequest() {
     }
 
-    public MultiMapUnlockRequest(Data key, long threadId, String name) {
-        super(key, threadId);
+    protected MultiMapRequest(String name) {
         this.name = name;
     }
 
-    public MultiMapUnlockRequest(Data key, long threadId, boolean force, String name) {
-        super(key, threadId, force);
-        this.name = name;
-    }
-
-    protected ObjectNamespace getNamespace() {
-        return new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name);
-    }
-
-    public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
-        super.write(writer);
-    }
-
-    public void read(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
-        super.read(reader);
+    public String getServiceName() {
+        return MultiMapService.SERVICE_NAME;
     }
 
     public int getFactoryId() {
         return MultiMapPortableHook.F_ID;
     }
 
-    public int getClassId() {
-        return MultiMapPortableHook.UNLOCK;
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
+    }
+
+    public void read(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
     }
 
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(name, ActionConstants.ACTION_LOCK);
+        return new MultiMapPermission(name, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
         return name;
-    }
-
-    @Override
-    public String getDistributedObjectType() {
-        return MultiMapService.SERVICE_NAME;
     }
 }

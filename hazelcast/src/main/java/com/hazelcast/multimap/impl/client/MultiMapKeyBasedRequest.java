@@ -14,44 +14,42 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.impl.operations.client;
+package com.hazelcast.multimap.impl.client;
 
-import com.hazelcast.multimap.impl.MultiMapPortableHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.transaction.TransactionContext;
 import java.io.IOException;
 
-public class TxnMultiMapValueCountRequest extends TxnMultiMapRequest {
+public abstract class MultiMapKeyBasedRequest extends MultiMapRequest {
 
     Data key;
 
-    public TxnMultiMapValueCountRequest() {
+    protected MultiMapKeyBasedRequest() {
     }
 
-    public TxnMultiMapValueCountRequest(String name, Data key) {
+    protected MultiMapKeyBasedRequest(String name, Data key) {
         super(name);
         this.key = key;
     }
 
-    public Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(txnId);
-        return context.getMultiMap(name).valueCount(key);
-    }
-
-    public int getClassId() {
-        return MultiMapPortableHook.TXN_MM_VALUE_COUNT;
+    protected int getPartition() {
+        return getClientEngine().getPartitionService().getPartitionId(key);
     }
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        key.writeData(writer.getRawDataOutput());
+        final ObjectDataOutput out = writer.getRawDataOutput();
+        key.writeData(out);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
+        final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
-        key.readData(reader.getRawDataInput());
+        key.readData(in);
     }
 }

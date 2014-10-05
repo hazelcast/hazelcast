@@ -14,41 +14,54 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.impl.operations.client;
+package com.hazelcast.multimap.impl.client;
 
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
+import com.hazelcast.multimap.impl.operations.MultiMapResponse;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.PortableCollection;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
-public class SizeRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
+public class KeySetRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
-    public SizeRequest() {
+    public KeySetRequest() {
     }
 
-    public SizeRequest(String name) {
+    public KeySetRequest(String name) {
         super(name);
     }
 
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.SIZE);
+        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.KEY_SET);
     }
 
     protected Object reduce(Map<Integer, Object> map) {
-        int total = 0;
+        Set<Data> keySet = new HashSet<Data>();
         for (Object obj : map.values()) {
-            total += (Integer) obj;
+            if (obj == null) {
+                continue;
+            }
+            MultiMapResponse response = (MultiMapResponse) obj;
+            Collection<Data> coll = response.getCollection();
+            if (coll != null) {
+                keySet.addAll(coll);
+            }
         }
-        return total;
+        return new PortableCollection(keySet);
     }
 
     public int getClassId() {
-        return MultiMapPortableHook.SIZE;
+        return MultiMapPortableHook.KEY_SET;
     }
 
     @Override
     public String getMethodName() {
-        return "size";
+        return "keySet";
     }
 }

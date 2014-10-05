@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.impl.operations.client;
+package com.hazelcast.multimap.impl.client;
 
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
-import com.hazelcast.multimap.impl.operations.RemoveOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -25,59 +24,50 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.transaction.TransactionContext;
 import java.io.IOException;
 import java.security.Permission;
 
-public class RemoveRequest extends MultiMapKeyBasedRequest {
+public class TxnMultiMapPutRequest extends TxnMultiMapRequest {
 
+    Data key;
     Data value;
 
-    long threadId;
-
-    public RemoveRequest() {
+    public TxnMultiMapPutRequest() {
     }
 
-    public RemoveRequest(String name, Data key, Data value, long threadId) {
-        super(name, key);
+    public TxnMultiMapPutRequest(String name, Data key, Data value) {
+        super(name);
+        this.key = key;
         this.value = value;
-        this.threadId = threadId;
     }
 
-    protected Operation prepareOperation() {
-        return new RemoveOperation(name, key, threadId, value);
+    public Object innerCall() throws Exception {
+        final TransactionContext context = getEndpoint().getTransactionContext(txnId);
+        return context.getMultiMap(name).put(key, value);
     }
 
     public int getClassId() {
-        return MultiMapPortableHook.REMOVE;
+        return MultiMapPortableHook.TXN_MM_PUT;
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeLong("t", threadId);
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
+        key.writeData(out);
         value.writeData(out);
     }
 
     public void read(PortableReader reader) throws IOException {
-        threadId = reader.readLong("t");
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
+        key = new Data();
+        key.readData(in);
         value = new Data();
         value.readData(in);
     }
 
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
-    }
-
-    @Override
-    public String getMethodName() {
-        return "remove";
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{key, value};
+        return new MultiMapPermission(name, ActionConstants.ACTION_PUT);
     }
 }

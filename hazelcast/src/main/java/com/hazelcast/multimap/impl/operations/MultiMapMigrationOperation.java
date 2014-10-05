@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.impl;
+package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.multimap.impl.MultiMapRecord;
+import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.multimap.impl.MultiMapWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

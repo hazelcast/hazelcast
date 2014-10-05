@@ -14,54 +14,54 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.impl.operations.client;
+package com.hazelcast.multimap.impl.client;
 
 import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
-import com.hazelcast.multimap.impl.operations.MultiMapResponse;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.PortableCollection;
-import java.util.Collection;
-import java.util.HashSet;
+
+import java.security.Permission;
 import java.util.Map;
-import java.util.Set;
 
-public class KeySetRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
+public class ClearRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
-    public KeySetRequest() {
+    public ClearRequest() {
     }
 
-    public KeySetRequest(String name) {
+    public ClearRequest(String name) {
         super(name);
     }
 
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.KEY_SET);
+        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.CLEAR);
     }
 
+    @Override
     protected Object reduce(Map<Integer, Object> map) {
-        Set<Data> keySet = new HashSet<Data>();
-        for (Object obj : map.values()) {
-            if (obj == null) {
-                continue;
-            }
-            MultiMapResponse response = (MultiMapResponse) obj;
-            Collection<Data> coll = response.getCollection();
-            if (coll != null) {
-                keySet.addAll(coll);
-            }
+        int totalAffectedEntries = 0;
+        for (Object affectedEntries : map.values()) {
+            totalAffectedEntries += (Integer) affectedEntries;
         }
-        return new PortableCollection(keySet);
+        final MultiMapService service = getService();
+        service.publishMultiMapEvent(name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
+        return null;
     }
 
     public int getClassId() {
-        return MultiMapPortableHook.KEY_SET;
+        return MultiMapPortableHook.CLEAR;
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
     public String getMethodName() {
-        return "keySet";
+        return "clear";
     }
 }
