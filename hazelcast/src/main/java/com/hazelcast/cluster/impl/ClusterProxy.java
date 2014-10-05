@@ -51,7 +51,7 @@ public class ClusterProxy implements Cluster {
     }
 
     @Override
-    public boolean removeMembershipListener(final String registrationId) {
+    public boolean removeMembershipListener(String registrationId) {
         return clusterService.removeMembershipListener(registrationId);
     }
 }
