@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * <p>This package contains the cluster functionality.<br/>
- */
-package com.hazelcast.cluster;
+package com.hazelcast.cluster.impl.operations;
+
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.spi.AbstractOperation;
+
+abstract class AbstractClusterOperation extends AbstractOperation implements JoinOperation {
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
+    }
+
+    @Override
+    public final String getServiceName() {
+        return ClusterServiceImpl.SERVICE_NAME;
+    }
+}

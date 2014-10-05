@@ -34,21 +34,28 @@
     <!-- Exclude implementation packages from JavaDoc on public methods checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
 
-
     <!-- Cluster -->
     <suppress checks="JavadocMethod" files="com.hazelcast.cluster[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.cluster[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.cluster[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.cluster[\\/]"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.cluster.ClusterDataSerializerHook"/>
-    <suppress checks="" files="com.hazelcast.cluster.AbstractJoiner"/>
-    <suppress checks="" files="com.hazelcast.cluster.ClusterServiceImpl"/>
-    <suppress checks="" files="com.hazelcast.cluster.MulticastJoiner"/>
-    <suppress checks="" files="com.hazelcast.cluster.MulticastService"/>
-    <suppress checks="" files="com.hazelcast.cluster.TcpIpJoiner"/>
-    <suppress checks="" files="com.hazelcast.cluster.ConfigCheck"/>
-    <suppress checks="" files="com.hazelcast.cluster.FinalizeJoinOperation"/>
-    <suppress checks="" files="com.hazelcast.cluster.JoinCheckOperation"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.cluster.impl.ClusterDataSerializerHook"/>
+    <!-- TODO: Needs to be fixed -->
+    <suppress checks="" files="com.hazelcast.cluster.impl.ClusterServiceImpl"/>
+    <suppress checks="" files="com.hazelcast.cluster.impl.MulticastService"/>
+    <suppress checks="" files="com.hazelcast.cluster.impl.ConfigCheck"/>
+    <suppress checks="" files="com.hazelcast.cluster.impl.TcpIpJoiner"/>
+    <suppress checks="" files="com.hazelcast.cluster.impl.AbstractJoiner"/>
+    <suppress checks="" files="com.hazelcast.cluster.impl.MulticastJoiner"/>
+
+    <suppress checks="JavadocMethod" files="com.hazelcast.cluster.impl.operations[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.cluster.impl.operations[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.cluster.impl.operations[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.cluster.impl.operations[\\/]"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.cluster.impl.ClusterDataSerializerHook"/>
+    <!-- TODO: Needs to be fixed -->
+    <suppress checks="" files="com.hazelcast.cluster.impl.operations.FinalizeJoinOperation"/>
+    <suppress checks="" files="com.hazelcast.cluster.impl.operations.JoinCheckOperation"/>
 
     <!-- Cache-->
     <suppress checks="JavadocMethod" files="com.hazelcast.cache.impl[\\/]"/>
