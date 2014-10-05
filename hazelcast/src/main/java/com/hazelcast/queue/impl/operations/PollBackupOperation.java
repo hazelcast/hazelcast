@@ -14,58 +14,56 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
- * This class triggers backup method for items' id.
+ * Backup items during pool operation.
  */
-public class CompareAndRemoveBackupOperation extends QueueOperation implements BackupOperation {
+public final class PollBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
 
-    private Set<Long> keySet;
+    private long itemId;
 
-    public CompareAndRemoveBackupOperation() {
+    public PollBackupOperation() {
     }
 
-    public CompareAndRemoveBackupOperation(String name, Set<Long> keySet) {
+    public PollBackupOperation(String name, long itemId) {
         super(name);
-        this.keySet = keySet;
+        this.itemId = itemId;
     }
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().compareAndRemoveBackup(keySet);
-        response = true;
+        getOrCreateContainer().pollBackup(itemId);
+        response = Boolean.TRUE;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return QueueDataSerializerHook.POLL_BACKUP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(keySet.size());
-        for (Long key : keySet) {
-            out.writeLong(key);
-        }
+        out.writeLong(itemId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        keySet = new HashSet<Long>(size);
-        for (int i = 0; i < size; i++) {
-            keySet.add(in.readLong());
-        }
-    }
-
-    @Override
-    public int getId() {
-        return QueueDataSerializerHook.COMPARE_AND_REMOVE_BACKUP;
+        itemId = in.readLong();
     }
 }

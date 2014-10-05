@@ -14,65 +14,51 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
- * This class stores items' id when DrainOperation run.
+ * Remove backup of the Queue item.
  */
-public class DrainBackupOperation extends QueueOperation implements BackupOperation {
 
-    //can be null
-    private Set<Long> itemIdSet;
+public class RemoveBackupOperation extends QueueOperation implements BackupOperation {
 
-    public DrainBackupOperation() {
+    private long itemId;
+
+    public RemoveBackupOperation() {
     }
 
-    public DrainBackupOperation(String name, Set<Long> itemIdSet) {
+    public RemoveBackupOperation(String name, long itemId) {
         super(name);
-        this.itemIdSet = itemIdSet;
+        this.itemId = itemId;
     }
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().drainFromBackup(itemIdSet);
+        getOrCreateContainer().removeBackup(itemId);
+        response = true;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (itemIdSet == null) {
-            out.writeBoolean(false);
-        } else {
-            out.writeBoolean(true);
-            out.writeInt(itemIdSet.size());
-            for (Long itemId : itemIdSet) {
-                out.writeLong(itemId);
-            }
-        }
+        out.writeLong(itemId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        if (in.readBoolean()) {
-            int size = in.readInt();
-            itemIdSet = new HashSet<Long>(size);
-            for (int i = 0; i < size; i++) {
-                itemIdSet.add(in.readLong());
-            }
-        }
+        itemId = in.readLong();
     }
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.DRAIN_BACKUP;
+        return QueueDataSerializerHook.REMOVE_BACKUP;
     }
 }

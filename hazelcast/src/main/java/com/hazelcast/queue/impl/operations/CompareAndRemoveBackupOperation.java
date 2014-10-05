@@ -14,50 +14,59 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * Remove backup of the Queue item.
+ * This class triggers backup method for items' id.
  */
+public class CompareAndRemoveBackupOperation extends QueueOperation implements BackupOperation {
 
-public class RemoveBackupOperation extends QueueOperation implements BackupOperation {
+    private Set<Long> keySet;
 
-    private long itemId;
-
-    public RemoveBackupOperation() {
+    public CompareAndRemoveBackupOperation() {
     }
 
-    public RemoveBackupOperation(String name, long itemId) {
+    public CompareAndRemoveBackupOperation(String name, Set<Long> keySet) {
         super(name);
-        this.itemId = itemId;
+        this.keySet = keySet;
     }
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().removeBackup(itemId);
+        getOrCreateContainer().compareAndRemoveBackup(keySet);
         response = true;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(itemId);
+        out.writeInt(keySet.size());
+        for (Long key : keySet) {
+            out.writeLong(key);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemId = in.readLong();
+        int size = in.readInt();
+        keySet = new HashSet<Long>(size);
+        for (int i = 0; i < size; i++) {
+            keySet.add(in.readLong());
+        }
     }
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.REMOVE_BACKUP;
+        return QueueDataSerializerHook.COMPARE_AND_REMOVE_BACKUP;
     }
 }

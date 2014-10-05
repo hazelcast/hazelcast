@@ -91,21 +91,23 @@ public class QueueStoreWrapper implements QueueStore<Data> {
     }
 
     public void factoryImpl(String name) {
-        if (store == null) {
-            QueueStoreFactory factory = storeConfig.getFactoryImplementation();
-            if (factory == null) {
-                try {
-                    factory = ClassLoaderUtil.newInstance(serializationService.getClassLoader(),
-                            storeConfig.getFactoryClassName());
-                } catch (Exception ignored) {
-                    EmptyStatement.ignore(ignored);
-                }
-            }
-            if (factory == null) {
-                return;
-            }
-            store = factory.newQueueStore(name, storeConfig.getProperties());
+        if (store != null) {
+            return;
         }
+
+        QueueStoreFactory factory = storeConfig.getFactoryImplementation();
+        if (factory == null) {
+            try {
+                factory = ClassLoaderUtil.newInstance(serializationService.getClassLoader(),
+                        storeConfig.getFactoryClassName());
+            } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
+            }
+        }
+        if (factory == null) {
+            return;
+        }
+        store = factory.newQueueStore(name, storeConfig.getProperties());
     }
 
     public boolean isEnabled() {
@@ -216,33 +218,34 @@ public class QueueStoreWrapper implements QueueStore<Data> {
 
     @Override
     public Map<Long, Data> loadAll(Collection<Long> keys) {
-        if (enabled) {
-            final Map<Long, ?> map = store.loadAll(keys);
-            if (map == null) {
-                return Collections.emptyMap();
-            }
-            final Map<Long, Data> dataMap = new HashMap<Long, Data>(map.size());
-            if (binary) {
-                for (Map.Entry<Long, ?> entry : map.entrySet()) {
-                    byte[] dataBuffer = (byte[]) entry.getValue();
-                    ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
-                    Data data = new Data();
-                    try {
-                        data.readData(in);
-                    } catch (IOException e) {
-                        throw new HazelcastException(e);
-                    }
-                    dataMap.put(entry.getKey(), data);
-                }
-                return (Map<Long, Data>) map;
-            } else {
-                for (Map.Entry<Long, ?> entry : map.entrySet()) {
-                    dataMap.put(entry.getKey(), serializationService.toData(entry.getValue()));
-                }
-            }
-            return dataMap;
+        if (!enabled) {
+            return null;
         }
-        return null;
+
+        final Map<Long, ?> map = store.loadAll(keys);
+        if (map == null) {
+            return Collections.emptyMap();
+        }
+        final Map<Long, Data> dataMap = new HashMap<Long, Data>(map.size());
+        if (binary) {
+            for (Map.Entry<Long, ?> entry : map.entrySet()) {
+                byte[] dataBuffer = (byte[]) entry.getValue();
+                ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
+                Data data = new Data();
+                try {
+                    data.readData(in);
+                } catch (IOException e) {
+                    throw new HazelcastException(e);
+                }
+                dataMap.put(entry.getKey(), data);
+            }
+            return (Map<Long, Data>) map;
+        } else {
+            for (Map.Entry<Long, ?> entry : map.entrySet()) {
+                dataMap.put(entry.getKey(), serializationService.toData(entry.getValue()));
+            }
+        }
+        return dataMap;
     }
 
     @Override

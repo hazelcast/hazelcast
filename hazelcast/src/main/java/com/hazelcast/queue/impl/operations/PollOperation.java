@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
+import com.hazelcast.queue.impl.QueueItem;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -48,11 +51,12 @@ public final class PollOperation extends QueueBackupAwareOperation
 
     @Override
     public void afterRun() throws Exception {
+        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         if (response != null) {
-            getQueueService().getLocalQueueStatsImpl(name).incrementPolls();
+            stats.incrementPolls();
             publishEvent(ItemEventType.REMOVED, item.getData());
         } else {
-            getQueueService().getLocalQueueStatsImpl(name).incrementEmptyPolls();
+            stats.incrementEmptyPolls();
         }
     }
 

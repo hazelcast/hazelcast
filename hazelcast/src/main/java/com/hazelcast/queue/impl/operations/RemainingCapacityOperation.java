@@ -1,5 +1,9 @@
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
+
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.queue.impl.QueueContainer;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 
 /**
  * Returns the remaining capacity of the queue based on config max-size
@@ -21,7 +25,8 @@ public class RemainingCapacityOperation extends QueueOperation {
 
     @Override
     public void afterRun() throws Exception {
-        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
+        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
+        stats.incrementOtherOperations();
     }
 
 

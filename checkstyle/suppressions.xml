@@ -183,9 +183,11 @@
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
 
     <!-- Queue -->
-    <suppress checks="" files="com.hazelcast.queue.impl.QueuePortableHook"/>
-    <suppress checks="" files="com.hazelcast.queue.impl.QueueDataSerializerHook"/>
-    <suppress checks="" files="com.hazelcast.queue.DataAwareItemEvent"/>
+    <suppress checks="MethodLength|ClassFanOutComplexity|JavadocVariable|ClassDataAbstractionCoupling"
+              files="com.hazelcast.queue.impl.QueuePortableHook"/>
+    <suppress checks="MethodCount|MethodLength|ClassFanOutComplexity|JavadocVariable|ClassDataAbstractionCoupling"
+              files="com.hazelcast.queue.impl.QueueDataSerializerHook"/>
+    <!--<suppress checks="" files="com.hazelcast.queue.DataAwareItemEvent"/>-->
     <suppress checks="MethodCount" files="com.hazelcast.queue.impl.QueueContainer"/>
 
     <!-- jca -->

@@ -14,63 +14,63 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 
 /**
- * Checks whether contain or not item in the Queue.
+ * Backup items during offer operation.
  */
-public class ContainsOperation extends QueueOperation {
+public final class OfferBackupOperation extends QueueOperation
+        implements BackupOperation, IdentifiedDataSerializable {
 
-    private Collection<Data> dataList;
+    private Data data;
+    private long itemId;
 
-    public ContainsOperation() {
+    public OfferBackupOperation() {
     }
 
-    public ContainsOperation(String name, Collection<Data> dataList) {
+    public OfferBackupOperation(String name, Data data, long itemId) {
         super(name);
-        this.dataList = dataList;
+        this.data = data;
+        this.itemId = itemId;
     }
 
     @Override
     public void run() throws Exception {
-        response = getOrCreateContainer().contains(dataList);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
+        getOrCreateContainer().offerBackup(data, itemId);
+        response = true;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(dataList.size());
-        for (Data data : dataList) {
-            data.writeData(out);
-        }
+        data.writeData(out);
+        out.writeLong(itemId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        dataList = new ArrayList<Data>(size);
-        for (int i = 0; i < size; i++) {
-            dataList.add(IOUtil.readData(in));
-        }
+        data = IOUtil.readData(in);
+        itemId = in.readLong();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
     }
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.CONTAINS;
+        return QueueDataSerializerHook.OFFER_BACKUP;
     }
 }

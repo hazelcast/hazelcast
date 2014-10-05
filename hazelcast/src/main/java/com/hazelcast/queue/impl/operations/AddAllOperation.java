@@ -14,88 +14,104 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.queue.impl.QueueContainer;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 
 /**
- * This class drain items according to drain condition.
+ * Add collection items to the Queue.
  */
-public class DrainOperation extends QueueBackupAwareOperation implements Notifier {
+public class AddAllOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private int maxSize;
+    private Collection<Data> dataList;
     private Map<Long, Data> dataMap;
 
-    public DrainOperation() {
+    public AddAllOperation() {
     }
 
-    public DrainOperation(String name, int maxSize) {
+    public AddAllOperation(String name, Collection<Data> dataList) {
         super(name);
-        this.maxSize = maxSize;
+        this.dataList = dataList;
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         QueueContainer container = getOrCreateContainer();
-        dataMap = container.drain(maxSize);
-        response = new SerializableCollection(new ArrayList<Data>(dataMap.values()));
+        if (container.hasEnoughCapacity()) {
+            dataMap = container.addAll(dataList);
+            response = true;
+        } else {
+            response = false;
+        }
     }
 
     @Override
     public void afterRun() throws Exception {
-        LocalQueueStatsImpl localQueueStatsImpl = getQueueService().getLocalQueueStatsImpl(name);
-        localQueueStatsImpl.incrementOtherOperations();
-        for (Data data : dataMap.values()) {
-            publishEvent(ItemEventType.REMOVED, data);
+        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
+        stats.incrementOtherOperations();
+        if (Boolean.TRUE.equals(response)) {
+            for (Data data : dataList) {
+                publishEvent(ItemEventType.ADDED, data);
+            }
         }
     }
 
     @Override
     public boolean shouldBackup() {
-        return dataMap.size() > 0;
+        return Boolean.TRUE.equals(response);
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new DrainBackupOperation(name, dataMap.keySet());
+        return new AddAllBackupOperation(name, dataMap);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(maxSize);
+        out.writeInt(dataList.size());
+        for (Data data : dataList) {
+            data.writeData(out);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        maxSize = in.readInt();
+        int size = in.readInt();
+        dataList = new ArrayList<Data>(size);
+        for (int i = 0; i < size; i++) {
+            dataList.add(IOUtil.readData(in));
+        }
     }
 
     @Override
     public boolean shouldNotify() {
-        return dataMap.size() > 0;
+        return Boolean.TRUE.equals(response);
     }
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return getOrCreateContainer().getOfferWaitNotifyKey();
+        return getOrCreateContainer().getPollWaitNotifyKey();
     }
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.DRAIN;
+        return QueueDataSerializerHook.ADD_ALL;
     }
 }

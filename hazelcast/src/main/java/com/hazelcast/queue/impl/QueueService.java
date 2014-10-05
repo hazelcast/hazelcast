@@ -29,6 +29,7 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.queue.impl.operations.QueueReplicationOperation;
 import com.hazelcast.queue.impl.proxy.QueueProxyImpl;
 import com.hazelcast.queue.impl.tx.QueueTransactionRollbackOperation;
 import com.hazelcast.queue.impl.tx.TransactionalQueueProxy;
@@ -122,15 +123,16 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     public QueueContainer getOrCreateContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
-        if (container == null) {
-            container = new QueueContainer(name, nodeEngine.getConfig().findQueueConfig(name), nodeEngine, this);
+        if (container != null) {
+            return container;
+        }
 
-            QueueContainer existing = containerMap.putIfAbsent(name, container);
-            if (existing != null) {
-                container = existing;
-            } else {
-                container.init(fromBackup);
-            }
+        container = new QueueContainer(name, nodeEngine.getConfig().findQueueConfig(name), nodeEngine, this);
+        QueueContainer existing = containerMap.putIfAbsent(name, container);
+        if (existing != null) {
+            container = existing;
+        } else {
+            container.init(fromBackup);
         }
         return container;
     }
@@ -278,10 +280,12 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localQueueStatsConstructorFunction);
     }
 
+    @Override
     public TransactionalQueueProxy createTransactionalObject(String name, TransactionSupport transaction) {
         return new TransactionalQueueProxy(nodeEngine, this, name, transaction);
     }
 
+    @Override
     public void rollbackTransaction(String transactionId) {
         final Set<String> queueNames = containerMap.keySet();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();

@@ -14,43 +14,47 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Store items' id as set when ClearOperation run.
+ * Provides backup functionality for {@link AddAllOperation}
  */
-public class ClearBackupOperation extends QueueOperation implements BackupOperation {
+public class AddAllBackupOperation extends QueueOperation implements BackupOperation {
 
-    private Set<Long> itemIdSet;
+    private Map<Long, Data> dataMap;
 
-    public ClearBackupOperation() {
+    public AddAllBackupOperation() {
     }
 
-    public ClearBackupOperation(String name, Set<Long> itemIdSet) {
+    public AddAllBackupOperation(String name, Map<Long, Data> dataMap) {
         super(name);
-        this.itemIdSet = itemIdSet;
+        this.dataMap = dataMap;
     }
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().clearBackup(itemIdSet);
-        response = true;
+        getOrCreateContainer().addAllBackup(dataMap);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(itemIdSet.size());
-        for (Long itemId : itemIdSet) {
+        out.writeInt(dataMap.size());
+        for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
+            long itemId = entry.getKey();
+            Data value = entry.getValue();
             out.writeLong(itemId);
+            value.writeData(out);
         }
     }
 
@@ -58,14 +62,17 @@ public class ClearBackupOperation extends QueueOperation implements BackupOperat
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        itemIdSet = new HashSet<Long>(size);
+        dataMap = new HashMap<Long, Data>(size);
         for (int i = 0; i < size; i++) {
-            itemIdSet.add(in.readLong());
+            long itemId = in.readLong();
+            Data value = new Data();
+            value.readData(in);
+            dataMap.put(itemId, value);
         }
     }
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.CLEAR_BACKUP;
+        return QueueDataSerializerHook.ADD_ALL_BACKUP;
     }
 }

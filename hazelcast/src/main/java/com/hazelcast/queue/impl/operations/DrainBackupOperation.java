@@ -14,63 +14,66 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * Backup items during offer operation.
+ * This class stores items' id when DrainOperation run.
  */
-public final class OfferBackupOperation extends QueueOperation
-        implements BackupOperation, IdentifiedDataSerializable {
+public class DrainBackupOperation extends QueueOperation implements BackupOperation {
 
-    private Data data;
+    //can be null
+    private Set<Long> itemIdSet;
 
-    private long itemId;
-
-    public OfferBackupOperation() {
+    public DrainBackupOperation() {
     }
 
-    public OfferBackupOperation(String name, Data data, long itemId) {
+    public DrainBackupOperation(String name, Set<Long> itemIdSet) {
         super(name);
-        this.data = data;
-        this.itemId = itemId;
+        this.itemIdSet = itemIdSet;
     }
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().offerBackup(data, itemId);
-        response = true;
+        getOrCreateContainer().drainFromBackup(itemIdSet);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        data.writeData(out);
-        out.writeLong(itemId);
+        if (itemIdSet == null) {
+            out.writeBoolean(false);
+        } else {
+            out.writeBoolean(true);
+            out.writeInt(itemIdSet.size());
+            for (Long itemId : itemIdSet) {
+                out.writeLong(itemId);
+            }
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        data = IOUtil.readData(in);
-        itemId = in.readLong();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return QueueDataSerializerHook.F_ID;
+        if (in.readBoolean()) {
+            int size = in.readInt();
+            itemIdSet = new HashSet<Long>(size);
+            for (int i = 0; i < size; i++) {
+                itemIdSet.add(in.readLong());
+            }
+        }
     }
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.OFFER_BACKUP;
+        return QueueDataSerializerHook.DRAIN_BACKUP;
     }
 }

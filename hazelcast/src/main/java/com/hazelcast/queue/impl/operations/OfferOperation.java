@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.queue.impl.QueueContainer;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -59,11 +62,12 @@ public final class OfferOperation extends QueueBackupAwareOperation
 
     @Override
     public void afterRun() throws Exception {
+        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         if (Boolean.TRUE.equals(response)) {
-            getQueueService().getLocalQueueStatsImpl(name).incrementOffers();
+            stats.incrementOffers();
             publishEvent(ItemEventType.ADDED, data);
         } else {
-            getQueueService().getLocalQueueStatsImpl(name).incrementRejectedOffers();
+            stats.incrementRejectedOffers();
         }
     }
 

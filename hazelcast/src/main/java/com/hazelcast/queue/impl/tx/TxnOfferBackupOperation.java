@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.impl.QueueContainer;
 import com.hazelcast.queue.impl.QueueDataSerializerHook;
-import com.hazelcast.queue.impl.QueueOperation;
+import com.hazelcast.queue.impl.operations.QueueOperation;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;

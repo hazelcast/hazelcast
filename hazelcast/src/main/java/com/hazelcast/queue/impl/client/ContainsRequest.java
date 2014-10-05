@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.impl.ContainsOperation;
+import com.hazelcast.queue.impl.operations.ContainsOperation;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.spi.Operation;
 
@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Provides the request service for {@link com.hazelcast.queue.impl.ContainsOperation}
+ * Provides the request service for {@link com.hazelcast.queue.impl.operations.ContainsOperation}
  */
 public class ContainsRequest extends QueueRequest implements RetryableRequest {
 

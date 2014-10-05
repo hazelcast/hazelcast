@@ -14,46 +14,51 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
- * Provides backup functionality for {@link AddAllOperation}
+ * Checks whether contain or not item in the Queue.
  */
-public class AddAllBackupOperation extends QueueOperation implements BackupOperation {
+public class ContainsOperation extends QueueOperation {
 
-    private Map<Long, Data> dataMap;
+    private Collection<Data> dataList;
 
-    public AddAllBackupOperation() {
+    public ContainsOperation() {
     }
 
-    public AddAllBackupOperation(String name, Map<Long, Data> dataMap) {
+    public ContainsOperation(String name, Collection<Data> dataList) {
         super(name);
-        this.dataMap = dataMap;
+        this.dataList = dataList;
     }
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().addAllBackup(dataMap);
+        response = getOrCreateContainer().contains(dataList);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
+        stats.incrementOtherOperations();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(dataMap.size());
-        for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
-            long itemId = entry.getKey();
-            Data value = entry.getValue();
-            out.writeLong(itemId);
-            value.writeData(out);
+        out.writeInt(dataList.size());
+        for (Data data : dataList) {
+            data.writeData(out);
         }
     }
 
@@ -61,17 +66,14 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        dataMap = new HashMap<Long, Data>(size);
+        dataList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            long itemId = in.readLong();
-            Data value = new Data();
-            value.readData(in);
-            dataMap.put(itemId, value);
+            dataList.add(IOUtil.readData(in));
         }
     }
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.ADD_ALL_BACKUP;
+        return QueueDataSerializerHook.CONTAINS;
     }
 }

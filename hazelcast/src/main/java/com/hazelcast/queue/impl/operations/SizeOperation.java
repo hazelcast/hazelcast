@@ -14,42 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
 
 /**
- * Peek operation for Queue.
+ * Notify size of the queue.
  */
-public final class PeekOperation extends QueueOperation implements IdentifiedDataSerializable {
+public class SizeOperation extends QueueOperation {
 
-    public PeekOperation() {
+    public SizeOperation() {
     }
 
-    public PeekOperation(final String name) {
+    public SizeOperation(String name) {
         super(name);
     }
 
     @Override
     public void run() {
-        QueueItem item = getOrCreateContainer().peek();
-        response = item != null ? item.getData() : null;
+        response = getOrCreateContainer().size();
     }
 
     @Override
     public void afterRun() throws Exception {
-        LocalQueueStatsImpl localQueueStatsImpl = getQueueService().getLocalQueueStatsImpl(name);
-        localQueueStatsImpl.incrementOtherOperations();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return QueueDataSerializerHook.F_ID;
+        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
+        stats.incrementOtherOperations();
     }
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.PEEK;
+        return QueueDataSerializerHook.SIZE;
     }
 }

@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.impl;
+package com.hazelcast.queue.impl.operations;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.queue.impl.QueueContainer;
+import com.hazelcast.queue.impl.QueueDataSerializerHook;
+import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -45,11 +50,13 @@ public class QueueReplicationOperation extends AbstractOperation implements Iden
     @Override
     public void run() {
         QueueService service = getService();
+        NodeEngine nodeEngine = getNodeEngine();
+        Config config = nodeEngine.getConfig();
         for (Map.Entry<String, QueueContainer> entry : migrationData.entrySet()) {
             String name = entry.getKey();
             QueueContainer container = entry.getValue();
-            QueueConfig conf = getNodeEngine().getConfig().findQueueConfig(name);
-            container.setConfig(conf, getNodeEngine(), service);
+            QueueConfig conf = config.findQueueConfig(name);
+            container.setConfig(conf, nodeEngine, service);
             service.addContainer(name, container);
         }
     }
