@@ -207,13 +207,13 @@ public final class HazelcastClient implements HazelcastInstance {
 
     /**
      * Creates a new client HazelcastInstance.
-     *
+     * <p/>
      * For details about the selection of the client configuration, see the
      * {@link HazelcastClient#newHazelcastClient(ClientConfig)} method.
      *
      * @return the created client HazelcastInstance.
-     * @throws com.hazelcast.client.AuthenticationException when the client failed to authenticate to access the cluster.
-     * todo: we need to determine correct exception when it cant' connect to any members
+     * @throws AuthenticationException when the client failed to authenticate to access the cluster.
+     * @throws NoClusterFoundException if there are no members found it can connect to.
      */
     public static HazelcastInstance newHazelcastClient() {
         return newHazelcastClient(new XmlClientConfigBuilder().build());
@@ -229,21 +229,22 @@ public final class HazelcastClient implements HazelcastInstance {
      * You can also refer to a classpath resource using '-Dhazelcast.client.config=classpath:client.xml'.
      * </li>
      * <li>
-     *     check if there is a file called 'hazelcast-client.xml' in the working directory.
+     * check if there is a file called 'hazelcast-client.xml' in the working directory.
      * </li>
      * <li>
-     *     check if there is a file 'hazelcast-client.xml' on the classpath.
+     * check if there is a file 'hazelcast-client.xml' on the classpath.
      * </li>
      * <li>
-     *     default to 'hazelcast-client-default.xml' which is provided by Hazelcast. So if you don't configure anything,
-     *     the client will make use of the default configuration.
+     * default to 'hazelcast-client-default.xml' which is provided by Hazelcast. So if you don't configure anything,
+     * the client will make use of the default configuration.
      * </li>
      * </ol>
      *
      * @param config the ClientConfig to use.
      * @return the created client HazelcastInstance.
-     * @throws com.hazelcast.client.AuthenticationException when the client failed to authenticate to access the cluster.
-     * todo: we need to determine correct exception when it cant' connect to any members
+     * @throws AuthenticationException when the client failed to authenticate to access the cluster.
+     * @throws NoClusterFoundException if there are no members found it can connect to. This could be because there are no members
+     *                                 running, but it can also be caused the members are of a different group.
      */
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {
         if (config == null) {

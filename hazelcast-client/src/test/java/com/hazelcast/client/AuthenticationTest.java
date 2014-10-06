@@ -78,7 +78,7 @@ public class AuthenticationTest extends HazelcastTestSupport {
     }
 
     @Ignore
-    @Test//todo: we need to determine the right exception
+    @Test(expected = NoClusterFoundException.class)
     public void test_wrongGroupName() throws Throwable {
         Config config = new Config();
         config.getGroupConfig().setName("somegroup");
@@ -92,5 +92,4 @@ public class AuthenticationTest extends HazelcastTestSupport {
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
     }
-
 }
