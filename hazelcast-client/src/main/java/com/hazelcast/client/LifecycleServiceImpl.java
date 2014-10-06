@@ -86,10 +86,12 @@ public final class LifecycleServiceImpl implements LifecycleService {
         fireLifecycleEvent(STARTED);
     }
 
+    @Override
     public boolean isRunning() {
         return active.get();
     }
 
+    @Override
     public void shutdown() {
         if (!active.compareAndSet(true, false)) {
             return;
@@ -100,6 +102,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
         fireLifecycleEvent(SHUTDOWN);
     }
 
+    @Override
     public void terminate() {
         shutdown();
     }
