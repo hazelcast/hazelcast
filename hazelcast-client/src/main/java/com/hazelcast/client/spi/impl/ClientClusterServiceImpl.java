@@ -16,14 +16,14 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.ClientImpl;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.LifecycleServiceImpl;
+import com.hazelcast.client.impl.ClientImpl;
+import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.HazelcastClientInstance;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
@@ -58,21 +58,17 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 
-
-/**
- * @author mdogan 5/15/13
- */
 public class ClientClusterServiceImpl implements ClientClusterService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientClusterService.class);
 
-    private final HazelcastClient client;
+    private final HazelcastClientInstance client;
     private final ClientConnectionManager connectionManager;
     private final ClusterListenerThread clusterThread;
     private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
 
-    public ClientClusterServiceImpl(HazelcastClient client) {
+    public ClientClusterServiceImpl(HazelcastClientInstance client) {
         this.client = client;
         this.connectionManager = client.getConnectionManager();
         this.clusterThread = createListenerThread();

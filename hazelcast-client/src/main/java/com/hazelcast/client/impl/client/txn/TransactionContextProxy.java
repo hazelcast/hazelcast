@@ -16,9 +16,8 @@
 
 package com.hazelcast.client.impl.client.txn;
 
-
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.HazelcastClientInstance;
 import com.hazelcast.client.impl.client.txn.proxy.ClientTxnListProxy;
 import com.hazelcast.client.impl.client.txn.proxy.ClientTxnMapProxy;
 import com.hazelcast.client.impl.client.txn.proxy.ClientTxnMultiMapProxy;
@@ -47,19 +46,15 @@ import javax.transaction.xa.XAResource;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author ali 6/6/13
- */
 public class TransactionContextProxy implements TransactionContext {
 
     final ClientTransactionManager transactionManager;
-    final HazelcastClient client;
+    final HazelcastClientInstance client;
     final TransactionProxy transaction;
     final ClientConnection connection;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap =
             new HashMap<TransactionalObjectKey, TransactionalObject>(2);
     private XAResourceProxy xaResource;
-
 
     public TransactionContextProxy(ClientTransactionManager transactionManager, TransactionOptions options) {
         this.transactionManager = transactionManager;
@@ -72,42 +67,52 @@ public class TransactionContextProxy implements TransactionContext {
         this.transaction = new TransactionProxy(client, options, connection);
     }
 
+    @Override
     public String getTxnId() {
         return transaction.getTxnId();
     }
 
+    @Override
     public void beginTransaction() {
         transaction.begin();
     }
 
+    @Override
     public void commitTransaction() throws TransactionException {
         transaction.commit(true);
     }
 
+    @Override
     public void rollbackTransaction() {
         transaction.rollback();
     }
 
+    @Override
     public <K, V> TransactionalMap<K, V> getMap(String name) {
         return getTransactionalObject(MapService.SERVICE_NAME, name);
     }
 
+    @Override
     public <E> TransactionalQueue<E> getQueue(String name) {
         return getTransactionalObject(QueueService.SERVICE_NAME, name);
     }
 
+    @Override
     public <K, V> TransactionalMultiMap<K, V> getMultiMap(String name) {
         return getTransactionalObject(MultiMapService.SERVICE_NAME, name);
     }
 
+    @Override
     public <E> TransactionalList<E> getList(String name) {
         return getTransactionalObject(ListService.SERVICE_NAME, name);
     }
 
+    @Override
     public <E> TransactionalSet<E> getSet(String name) {
         return getTransactionalObject(SetService.SERVICE_NAME, name);
     }
 
+    @Override
     public <T extends TransactionalObject> T getTransactionalObject(String serviceName, String name) {
         if (transaction.getState() != Transaction.State.ACTIVE) {
             throw new TransactionNotActiveException("No transaction is found while accessing "
@@ -140,7 +145,7 @@ public class TransactionContextProxy implements TransactionContext {
         return connection;
     }
 
-    public HazelcastClient getClient() {
+    public HazelcastClientInstance getClient() {
         return client;
     }
 
@@ -148,6 +153,7 @@ public class TransactionContextProxy implements TransactionContext {
         return transactionManager;
     }
 
+    @Override
     public XAResource getXaResource() {
         if (xaResource == null) {
             xaResource = new XAResourceProxy(this);
@@ -155,6 +161,7 @@ public class TransactionContextProxy implements TransactionContext {
         return xaResource;
     }
 
+    @Override
     public boolean isXAManaged() {
         return transaction.getXid() != null;
     }
@@ -172,6 +179,7 @@ public class TransactionContextProxy implements TransactionContext {
             this.name = name;
         }
 
+        @Override
         public boolean equals(Object o) {
             if (this == o) {
                 return true;
@@ -192,6 +200,7 @@ public class TransactionContextProxy implements TransactionContext {
             return true;
         }
 
+        @Override
         public int hashCode() {
             int result = serviceName.hashCode();
             result = 31 * result + name.hashCode();

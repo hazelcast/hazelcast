@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.impl;
 
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.LifecycleEvent;
@@ -41,13 +41,13 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
  */
 public final class LifecycleServiceImpl implements LifecycleService {
 
-    private final HazelcastClient client;
+    private final HazelcastClientInstance client;
     private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
             = new ConcurrentHashMap<String, LifecycleListener>();
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final BuildInfo buildInfo;
 
-    public LifecycleServiceImpl(HazelcastClient client) {
+    public LifecycleServiceImpl(HazelcastClientInstance client) {
         this.client = client;
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
@@ -86,7 +86,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
         }
     }
 
-    void setStarted() {
+    public void setStarted() {
         active.set(true);
         fireLifecycleEvent(STARTED);
     }

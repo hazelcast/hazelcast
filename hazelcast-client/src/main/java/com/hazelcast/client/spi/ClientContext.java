@@ -16,33 +16,23 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.HazelcastClientInstance;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.SerializationService;
 
-/**
- * @author mdogan 5/20/13
- */
 public final class ClientContext {
 
     private final SerializationService serializationService;
-
     private final ClientClusterService clusterService;
-
     private final ClientPartitionService partitionService;
-
     private final ClientInvocationService invocationService;
-
     private final ClientExecutionService executionService;
-
     private final ClientListenerService listenerService;
-
     private final ProxyManager proxyManager;
-
     private final ClientConfig clientConfig;
 
-    ClientContext(HazelcastClient client, ProxyManager proxyManager) {
+    ClientContext(HazelcastClientInstance client, ProxyManager proxyManager) {
         this.serializationService = client.getSerializationService();
         this.clusterService = client.getClientClusterService();
         this.partitionService = client.getClientPartitionService();
@@ -83,10 +73,6 @@ public final class ClientContext {
 
     public void removeProxy(ClientProxy proxy) {
         proxyManager.removeProxy(proxy.getServiceName(), proxy.getName());
-    }
-
-    public void getOrCreateProxy(String serviceName, String objectName) {
-        proxyManager.getOrCreateProxy(serviceName, objectName);
     }
 
     public ClientConfig getClientConfig() {

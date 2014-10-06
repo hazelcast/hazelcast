@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.client.impl;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
@@ -53,12 +53,16 @@ import com.hazelcast.transaction.TransactionalTask;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
-public final class HazelcastClientProxy
-        implements HazelcastInstance {
+/**
+ * A client-side proxy {@link com.hazelcast.core.HazelcastInstance} instance.
+ *
+ * todo: what is the purpose of this proxy? Why not return the {@link com.hazelcast.client.impl.HazelcastClientInstance}.
+ */
+public final class HazelcastClientProxy implements HazelcastInstance {
 
-    volatile HazelcastClient client;
+    public volatile HazelcastClientInstance client;
 
-    HazelcastClientProxy(HazelcastClient client) {
+    public HazelcastClientProxy(HazelcastClientInstance client) {
         this.client = client;
     }
 
@@ -216,7 +220,7 @@ public final class HazelcastClientProxy
 
     @Override
     public LifecycleService getLifecycleService() {
-        final HazelcastClient hz = client;
+        final HazelcastClientInstance hz = client;
         return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
     }
 
@@ -248,8 +252,8 @@ public final class HazelcastClientProxy
         return getClient().getSerializationService();
     }
 
-    private HazelcastClient getClient() {
-        final HazelcastClient c = client;
+    private HazelcastClientInstance getClient() {
+        final HazelcastClientInstance c = client;
         if (c == null || !c.getLifecycleService().isRunning()) {
             throw new HazelcastInstanceNotActiveException();
         }
