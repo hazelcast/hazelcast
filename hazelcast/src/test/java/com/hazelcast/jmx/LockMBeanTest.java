@@ -41,15 +41,32 @@ public class LockMBeanTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMBeanHasLeaseTime_whenLockedWithLeaseTime() throws Exception {
+    public void testMBeanHasLeaseTime_whenLockedWithLeaseTime_remainingLeaseTimeCannotBeGreaterThanOriginal() throws Exception {
         lock.lock(1000, TimeUnit.MILLISECONDS);
 
-        // --- Check remaining lease time
-        Thread.sleep(20);
         long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        assertFalse(remainingLeaseTime > 1000);
+    }
 
-        // The remaining lease time has to be in the given range from the originally set value
-        assertTrue("Lease time: " + remainingLeaseTime, remainingLeaseTime > 0 && remainingLeaseTime < 1000);
+    @Test
+    public void testMBeanHasLeaseTime_whenLockedWithLeaseTime_mustBeLockedWhenHasRemainingLease() throws Exception {
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+
+        boolean isLocked = lock.isLockedByCurrentThread();
+        long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        boolean hasRemainingLease = remainingLeaseTime > 0;
+        assertTrue(isLocked || !hasRemainingLease);
+    }
+
+
+    @Test
+    public void testMBeanHasLeaseTime_whenLockedWithLeaseTime_eitherHasRemainingLeaseOrIsUnlocked() throws Exception {
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+
+        long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        boolean hasLeaseRemaining = remainingLeaseTime > 0;
+        boolean isLocked = lock.isLockedByCurrentThread();
+        assertTrue((isLocked && hasLeaseRemaining) || !isLocked);
     }
 
     @Test
@@ -58,6 +75,6 @@ public class LockMBeanTest extends HazelcastTestSupport {
 
         holder.invokeMBeanOperation("ILock", lock.getName(), "forceUnlock", null, null);
 
-        assertFalse("Lock is locked", lock.isLocked() );
+        assertFalse("Lock is locked", lock.isLocked());
     }
 }
