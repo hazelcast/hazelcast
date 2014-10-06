@@ -11,4 +11,8 @@ public class NoClusterFoundException extends HazelcastException {
     public NoClusterFoundException(String message) {
         super(message);
     }
+
+    public NoClusterFoundException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

@@ -10,7 +10,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -22,11 +21,11 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class AuthenticationTest extends HazelcastTestSupport {
+public class ClientConnectTest extends HazelcastTestSupport {
 
     @Before
     @After
-    public void cleanup(){
+    public void cleanup() {
         Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
     }
@@ -61,7 +60,6 @@ public class AuthenticationTest extends HazelcastTestSupport {
         assertEquals(expected, client.getCluster().getMembers());
     }
 
-    @Ignore
     @Test(expected = AuthenticationException.class)
     public void test_wrongPassword() throws Throwable {
         Config config = new Config();
@@ -77,19 +75,23 @@ public class AuthenticationTest extends HazelcastTestSupport {
         HazelcastClient.newHazelcastClient(clientConfig);
     }
 
-    @Ignore
-    @Test(expected = NoClusterFoundException.class)
-    public void test_wrongGroupName() throws Throwable {
+    @Test(expected = AuthenticationException.class)
+    public void test_wrongGroup() throws Throwable {
         Config config = new Config();
         config.getGroupConfig().setName("somegroup");
         config.getGroupConfig().setPassword("somepassword");
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig()
-                .setName("othergroupname")
-                .setPassword(config.getGroupConfig().getPassword());
+                .setName("othergroup")
+                .setPassword("somepassword");
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastClient.newHazelcastClient(clientConfig);
+    }
+
+    @Test(expected = NoClusterFoundException.class)
+    public void test_noCluster() throws Throwable {
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
     }
 }

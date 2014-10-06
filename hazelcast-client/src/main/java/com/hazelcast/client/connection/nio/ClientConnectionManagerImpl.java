@@ -76,7 +76,9 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
@@ -340,6 +342,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         clientConnection = future.get(connectionTimeout, TimeUnit.MILLISECONDS);
                     } catch (Exception e) {
                         future.cancel(true);
+
+                        if (e instanceof ExecutionException) {
+                            if (e.getCause() instanceof AuthenticationException) {
+                                throw (AuthenticationException) e.getCause();
+                            }
+                        }
+
                         throw new RetryableIOException(e);
                     }
                     ClientConnection current = connections.putIfAbsent(address, clientConnection);
@@ -475,7 +484,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         SerializableCollection collectionWrapper;
         try {
             collectionWrapper = (SerializableCollection) sendAndReceive(auth, connection);
+        } catch (AuthenticationException e) {
+            throw e;
         } catch (Exception e) {
+            //todo: this sucks since we are always going to interpret every exception as something to be retried.
             throw new RetryableIOException(e);
         }
         final Iterator<Data> iter = collectionWrapper.iterator();
@@ -501,6 +513,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (response instanceof Throwable) {
             Throwable t = (Throwable) response;
             ExceptionUtil.fixRemoteStackTrace(t, Thread.currentThread().getStackTrace());
+
+            if (response instanceof AuthenticationException) {
+                throw (AuthenticationException) response;
+            }
             throw new Exception(t);
         }
         return response;
@@ -643,17 +659,29 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             final ManagerAuthenticator authenticator = new ManagerAuthenticator();
             final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
             ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
+            ClientConnection conn;
             try {
-                ClientConnection conn = future.get(connectionTimeout, TimeUnit.MILLISECONDS);
-                synchronized (ownerConnectionLock) {
-                    ownerConnection = conn;
-                    ownerConnectionLock.notifyAll();
-                }
-                return conn;
-            } catch (Exception e) {
+                conn = future.get(connectionTimeout, TimeUnit.MILLISECONDS);
+            }catch (TimeoutException e) {
                 future.cancel(true);
                 throw new RetryableIOException(e);
+            }catch(InterruptedException e){
+                future.cancel(true);
+                throw new RetryableIOException(e);
+            } catch (ExecutionException e) {
+                future.cancel(true);
+                if (e.getCause() instanceof AuthenticationException) {
+                    throw (AuthenticationException) e.getCause();
+                }
+
+                throw new RetryableIOException(e);
             }
+
+            synchronized (ownerConnectionLock) {
+                ownerConnection = conn;
+                ownerConnectionLock.notifyAll();
+            }
+            return conn;
         }
 
         private void markAsClosed() {

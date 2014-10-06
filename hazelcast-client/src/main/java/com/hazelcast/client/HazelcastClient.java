@@ -242,7 +242,10 @@ public final class HazelcastClient implements HazelcastInstance {
      *
      * @param config the ClientConfig to use.
      * @return the created client HazelcastInstance.
-     * @throws AuthenticationException when the client failed to authenticate to access the cluster.
+     * @throws AuthenticationException when the client failed to authenticate to access the cluster. This exception is also thrown
+     *                                 when a client wants to join a cluster that is part of a different group. As soon as the
+     *                                 client runs into a single member that rejects it, it isn't going to try the other members
+     *                                 in the configuration.
      * @throws NoClusterFoundException if there are no members found it can connect to. This could be because there are no members
      *                                 running, but it can also be caused the members are of a different group.
      */
@@ -296,9 +299,8 @@ public final class HazelcastClient implements HazelcastInstance {
         connectionManager.start();
         try {
             clusterService.start();
-        } catch (IllegalStateException e) {
-            //there was an authentication failure (todo: perhaps use an AuthenticationException
-            // ??)
+        } catch (RuntimeException e) {
+            //if any exception is thrown during the cluster start, we are going to do a shutdown.
             lifecycleService.shutdown();
             throw e;
         }
