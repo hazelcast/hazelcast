@@ -53,7 +53,6 @@ import java.util.concurrent.ConcurrentMap;
  */
 public final class HazelcastClient {
 
-
     static {
         OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
     }
@@ -92,8 +91,9 @@ public final class HazelcastClient {
     /**
      * Gets an immutable collection of all client HazelcastInstances created in this JVM.
      * <p/>
-     * To be more precise it gets the HazelcastInstances loaded using the same classloader this HazelcastClient has been
-     * loaded with.
+     * n managed environments such as Java EE or OSGi Hazelcast can be loaded by multiple classloaders. Typically you will get
+     * at least one classloader per every application deployed. In these cases only the client HazelcastInstances created
+     * by the same application will be seen, and instances created by different applications are invisible.
      * <p/>
      * The returned collection is a snapshot of the client HazelcastInstances. So changes to the client HazelcastInstances
      * will not be visible in this collection.
@@ -110,6 +110,10 @@ public final class HazelcastClient {
      * <p/>
      * To be more precise it shuts down the HazelcastInstances loaded using the same classloader this HazelcastClient has been
      * loaded with.
+     *
+     * This method is mostly used for testing purposes.
+     *
+     * @see #getAllHazelcastClients()
      */
     public static void shutdownAll() {
         for (HazelcastClientProxy proxy : CLIENTS.values()) {
