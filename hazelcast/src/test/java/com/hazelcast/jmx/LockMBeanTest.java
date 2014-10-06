@@ -1,20 +1,18 @@
 package com.hazelcast.jmx;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.util.concurrent.TimeUnit;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
+import java.util.concurrent.TimeUnit;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -67,6 +65,18 @@ public class LockMBeanTest extends HazelcastTestSupport {
         boolean hasLeaseRemaining = remainingLeaseTime > 0;
         boolean isLocked = lock.isLockedByCurrentThread();
         assertTrue((isLocked && hasLeaseRemaining) || !isLocked);
+    }
+
+    @Test
+    public void testMBeanHasLeaseTime_whenLockedWithLeaseTime_mustHaveRemainingLeaseBeforeItExpires() throws Exception {
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+        long startTime = Clock.currentTimeMillis();
+
+        long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        long timePassed = Clock.currentTimeMillis() - startTime;
+        boolean hasLeaseRemaining = remainingLeaseTime > 0;
+
+        assertTrue(hasLeaseRemaining || timePassed >= 1000);
     }
 
     @Test
