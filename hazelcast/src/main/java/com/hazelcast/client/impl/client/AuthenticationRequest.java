@@ -120,8 +120,9 @@ public final class AuthenticationRequest extends CallableClientRequest {
 
         boolean usernameMatch = nodeGroupName.equals(credentials.getUsername());
         if (!usernameMatch) {
-            String msg = "Client want to join the wrong group. " +
-                    "Client has groupname: '" + credentials.getUsername() + "' but cluster has groupname: '" + nodeGroupName+"'.";
+            String msg = "Client want to join the wrong group. "
+                    + "Client has groupname: '" + credentials.getUsername()
+                    + "' but cluster has groupname: '" + nodeGroupName + "'.";
             logAuthenticationFailure(msg);
             throw new AuthenticationException(msg);
         }
