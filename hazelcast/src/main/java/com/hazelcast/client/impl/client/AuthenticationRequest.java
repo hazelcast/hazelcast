@@ -190,6 +190,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
         }
     }
 
+    @Override
     public String getServiceName() {
         return ClientEngineImpl.SERVICE_NAME;
     }
