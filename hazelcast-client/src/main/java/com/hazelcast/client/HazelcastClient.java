@@ -91,7 +91,7 @@ public final class HazelcastClient {
     /**
      * Gets an immutable collection of all client HazelcastInstances created in this JVM.
      * <p/>
-     * n managed environments such as Java EE or OSGi Hazelcast can be loaded by multiple classloaders. Typically you will get
+     * In managed environments such as Java EE or OSGi Hazelcast can be loaded by multiple classloaders. Typically you will get
      * at least one classloader per every application deployed. In these cases only the client HazelcastInstances created
      * by the same application will be seen, and instances created by different applications are invisible.
      * <p/>
