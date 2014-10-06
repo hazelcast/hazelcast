@@ -205,10 +205,46 @@ public final class HazelcastClient implements HazelcastInstance {
         return (SerializationServiceImpl) ss;
     }
 
+    /**
+     * Creates a new client HazelcastInstance.
+     *
+     * For details about the selection of the client configuration, see the
+     * {@link HazelcastClient#newHazelcastClient(ClientConfig)} method.
+     *
+     * @return the created client HazelcastInstance.
+     * @throws com.hazelcast.client.AuthenticationException when the client failed to authenticate to access the cluster.
+     * todo: we need to determine correct exception when it cant' connect to any members
+     */
     public static HazelcastInstance newHazelcastClient() {
         return newHazelcastClient(new XmlClientConfigBuilder().build());
     }
 
+    /**
+     * Creates a new client HazelcastInstance with the provided configuration.
+     * <p/>
+     * If the config is null, then a xml configuration is loaded using the following chain of alternatives:
+     * <ol>
+     * <li>check if there is a system property 'hazelcast.client.config'. If it exist, that is used. This means that
+     * you can configure the configuration to use from the commandline using '-Dhazelcast.client.config=/foo/bar/client.xml'.
+     * You can also refer to a classpath resource using '-Dhazelcast.client.config=classpath:client.xml'.
+     * </li>
+     * <li>
+     *     check if there is a file called 'hazelcast-client.xml' in the working directory.
+     * </li>
+     * <li>
+     *     check if there is a file 'hazelcast-client.xml' on the classpath.
+     * </li>
+     * <li>
+     *     default to 'hazelcast-client-default.xml' which is provided by Hazelcast. So if you don't configure anything,
+     *     the client will make use of the default configuration.
+     * </li>
+     * </ol>
+     *
+     * @param config the ClientConfig to use.
+     * @return the created client HazelcastInstance.
+     * @throws com.hazelcast.client.AuthenticationException when the client failed to authenticate to access the cluster.
+     * todo: we need to determine correct exception when it cant' connect to any members
+     */
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {
         if (config == null) {
             config = new XmlClientConfigBuilder().build();
@@ -229,10 +265,19 @@ public final class HazelcastClient implements HazelcastInstance {
         return proxy;
     }
 
+    /**
+     * Gets a collection containing all client HazelcastInstances.
+     *
+     * @return a collection containing all client instances.
+     */
     public static Collection<HazelcastInstance> getAllHazelcastClients() {
-        return Collections.<HazelcastInstance>unmodifiableCollection(CLIENTS.values());
+        Collection<HazelcastClientProxy> values = CLIENTS.values();
+        return Collections.<HazelcastInstance>unmodifiableCollection(values);
     }
 
+    /**
+     * Shuts down and clears all client HazelcastInstances on this particular JVM (or classloader).
+     */
     public static void shutdownAll() {
         for (HazelcastClientProxy proxy : CLIENTS.values()) {
             try {
