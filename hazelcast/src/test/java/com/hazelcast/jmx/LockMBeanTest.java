@@ -45,6 +45,7 @@ public class LockMBeanTest extends HazelcastTestSupport {
         lock.lock(1000, TimeUnit.MILLISECONDS);
 
         // --- Check remaining lease time
+        Thread.sleep(20);
         long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
 
         // The remaining lease time has to be in the given range from the originally set value
