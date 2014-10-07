@@ -17,20 +17,18 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -38,7 +36,7 @@ public class HazelcastTest extends HazelcastTestSupport {
 
     @Before
     @After
-    public void cleanup(){
+    public void cleanup() {
         Hazelcast.shutdownAll();
     }
 
@@ -82,9 +80,10 @@ public class HazelcastTest extends HazelcastTestSupport {
     @Test
     public void testNewInstanceByName() {
         Config config = new Config();
-        config.setInstanceName("test");
+        String name = randomString();
+        config.setInstanceName(name);
         HazelcastInstance hc1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance hc2 = Hazelcast.getHazelcastInstanceByName("test");
+        HazelcastInstance hc2 = Hazelcast.getHazelcastInstanceByName(name);
         HazelcastInstance hc3 = Hazelcast.getHazelcastInstanceByName(hc1.getName());
         assertTrue(hc1 == hc2);
         assertTrue(hc1 == hc3);
@@ -93,7 +92,7 @@ public class HazelcastTest extends HazelcastTestSupport {
     @Test(expected = DuplicateInstanceNameException.class)
     public void testNewInstanceByNameFail() {
         Config config = new Config();
-        config.setInstanceName("test");
+        config.setInstanceName(randomString());
         Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
     }
