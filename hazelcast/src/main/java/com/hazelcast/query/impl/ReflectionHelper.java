@@ -310,7 +310,10 @@ public final class ReflectionHelper {
                 final AttributeAccessible accessible = (AttributeAccessible) obj;
                 clazz = accessible.getType(attribute);
                 if (clazz == null) {
-                    throw new IllegalArgumentException(String.format("Attribute type of attribute '%s' is null on object %s", attribute, obj.toString()));
+                    final String err = String.format("Attribute type of attribute '%s' is null on object %s",
+                            attribute,
+                            obj.toString());
+                    throw new IllegalArgumentException(err);
                 }
             } else {
                 clazz = null;
