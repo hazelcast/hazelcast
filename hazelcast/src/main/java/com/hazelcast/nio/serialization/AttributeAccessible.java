@@ -60,11 +60,12 @@ public interface AttributeAccessible {
     /**
      * Reads the value of the specified attribute. If the method you use for deserialization allows partial
      * deserialization it might be a good idea to use this to improve performance. Since only the value of one attribute
-     * is queried we do not need to deserialize th whole object if we can avoid it.
+     * is queried we do not need to deserialize the whole object if we can avoid it.
      *
      * @param attributeName Name of the attribute as specified in the addIndex or query get(). Is usually dot delimited,
-     *                      e.g. address.city
-     * @return Value of the attribute. May only be primitive type as listed in ReflectionHelper#getAttributeType.
+     *                      e.g. address.city . Is never null.
+     * @return Value of the attribute. May only be primitive type as listed in ReflectionHelper#getAttributeType. May be
+     * null if the specified attribute does not exist on this object.
      */
     Object getValue(String attributeName);
 
@@ -72,9 +73,11 @@ public interface AttributeAccessible {
      * Reads the type of the specified attribute.
      *
      * @param attributeName Name of the attribute as specified in the addIndex or query get(). Is usually dot delimited,
-     *                      e.g. address.city
-     * @return Type of the attribute. May not be null. Multiple calls to this method with the same attribute name are
-     * required to return the same type.
+     *                      e.g. address.city . Is never null.
+     * @return Type of the attribute. Multiple calls to this method with the same attribute name are
+     * required to return the same type. If the specified attribute does not exist on the type of this object then
+     * null may be returned. But this means in turn that an index on this non-existent field may never have been created
+     * in the first place
      */
     Class<?> getType(String attributeName);
 }
