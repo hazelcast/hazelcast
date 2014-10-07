@@ -41,8 +41,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * This test creates a server that has a generic serializer and a client that has a specific serializer and checks
@@ -98,7 +97,7 @@ public class AttributeAccessibleTest {
         serializer.resetDeserialized();
         checkCustomerSearchOk(customers, customer1);
         // During the query nothing was deserialized since we only queried the field that is indexed
-        assertThat(serializer.getDeserialized().size(), is(0));
+        assertEquals(0, serializer.getDeserialized().size());
 
         customers.destroy();
     }
@@ -111,7 +110,7 @@ public class AttributeAccessibleTest {
         final TestCustomer customer1 = addTestCustomersAndReturnFirst(customers);
 
         // There is no indexing now so the deserialization is not called during insertion
-        assertThat(serializer.getDeserialized().size(), is(0));
+        assertEquals(0, serializer.getDeserialized().size());
         checkCustomerSearchOk(customers, customer1);
 
         // But deserialization is called when querying
@@ -145,14 +144,14 @@ public class AttributeAccessibleTest {
         EntryObject e = new PredicateBuilder().getEntryObject();
         final PredicateBuilder predicate = e.get("address.street").equal(customer1.getAddress().getStreet());
         final Collection<TestCustomer> customers1 = customers.values(predicate);
-        assertThat(customers1.size(), is(1));
-        assertThat(customers1.iterator().next(), is(customer1));
+        assertEquals(1, customers1.size());
+        assertEquals(customer1, customers1.iterator().next());
 
         // Check that if we are looking for a customer that we didn't put in we get an empty result
         EntryObject eEmpty = new PredicateBuilder().getEntryObject();
         final PredicateBuilder predicateEmpty = eEmpty.get("address.street").equal("StreetNonExistent");
         final Collection<TestCustomer> customersEmpty = customers.values(predicateEmpty);
-        assertThat(customersEmpty.size(), is(0));
+        assertEquals(0, customersEmpty.size());
     }
 
     /**
@@ -163,12 +162,12 @@ public class AttributeAccessibleTest {
      */
     private void checkDeserializationAccessPattern(int factor) {
         final List<PropertyAttributeAccessible> deserialized = serializer.getDeserialized();
-        assertThat(deserialized.size(), is(2 * factor));
+        assertEquals(2 * factor, deserialized.size());
         final Map<String, Integer> accessPatternExpected = new HashMap<String, Integer>();
         // The access pattern is the same for both customers. The street attribute was accessed once (for indexing)
         accessPatternExpected.put("Name1:address.street", factor);
         accessPatternExpected.put("Name2:address.street", factor);
-        assertThat(serializer.getAccessMap(), is(accessPatternExpected));
+        assertEquals(accessPatternExpected, serializer.getAccessMap());
     }
 
     /**
