@@ -53,6 +53,7 @@ import static org.junit.Assert.assertThat;
 public class AttributeAccessibleTest {
 
     private static HazelcastInstance client;
+    private static HazelcastInstance server;
     private static PropertySerializer serializer;
 
     private static final int CUSTOMER_TYPE_ID = 10000;
@@ -66,7 +67,7 @@ public class AttributeAccessibleTest {
                 new SerializerConfig()
                         .setTypeClass(PropertyAttributeAccessible.class)
                         .setImplementation(serializer));
-        Hazelcast.newHazelcastInstance(serverConf);
+        server = Hazelcast.newHazelcastInstance(serverConf);
 
         ClientConfig clientConf = new ClientConfig();
         // The client gets the specific serializer
@@ -79,8 +80,8 @@ public class AttributeAccessibleTest {
 
     @AfterClass
     public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        client.shutdown();
+        server.shutdown();
     }
 
     @Test
