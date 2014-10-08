@@ -18,7 +18,9 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -27,6 +29,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * Store indexes rankly.
  */
 public class SortedIndexStore extends BaseIndexStore {
+
+    private static final float LOAD_FACTOR = 0.75F;
 
     private final ConcurrentMap<Data, QueryableEntry> recordsWithNullValue
             = new ConcurrentHashMap<Data, QueryableEntry>();
@@ -43,7 +47,7 @@ public class SortedIndexStore extends BaseIndexStore {
             } else {
                 ConcurrentMap<Data, QueryableEntry> records = recordMap.get(newValue);
                 if (records == null) {
-                    records = new ConcurrentHashMap<Data, QueryableEntry>(1, 0.75f, 1);
+                    records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
                     recordMap.put(newValue, records);
                 }
                 records.put(record.getIndexKey(), record);
