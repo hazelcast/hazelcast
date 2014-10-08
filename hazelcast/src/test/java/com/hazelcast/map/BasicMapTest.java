@@ -603,6 +603,42 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertTrue(latch3.await(3, TimeUnit.SECONDS));
     }
 
+    @Test(timeout = 5000L)
+    public void testMapTryLockInterrupted() throws InterruptedException {
+        final IMap<Object, Object> map = getInstance().getMap("testMapTryLockInterrupted");
+        final CountDownLatch readyForLock = new CountDownLatch(1);
+        final AtomicBoolean interruptedExceptionThrown = new AtomicBoolean();
+        map.lock("key");
+
+        Thread thread1 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                long start = System.currentTimeMillis();
+                try {
+                    readyForLock.countDown();
+                    map.tryLock("key", 3, TimeUnit.SECONDS);
+                    fail("InterruptedException expected!");
+                } catch (InterruptedException e) {
+                    interruptedExceptionThrown.set(true);
+                } finally {
+                    System.out.println("tryLock blocked for " + (System.currentTimeMillis() - start) + " ms");
+                }
+            }
+        });
+
+        thread1.start();
+
+        // wait for thread1 to be blocked on acquiring the lock
+        readyForLock.await();
+        Thread.sleep(500L);
+
+        // interrupt the thread and wait for the thread to terminate
+        thread1.interrupt();
+        thread1.join();
+
+        assertTrue("InterruptedException was not thrown!", interruptedExceptionThrown.get());
+    }
+
     @Test
     public void testMapIsLocked() throws InterruptedException {
         final IMap<Object, Object> map = getInstance().getMap("testMapIsLocked");
