@@ -26,6 +26,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -90,6 +91,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/3683
     public void callWithBackups() throws InterruptedException {
         final ConcurrentMap<Integer, Integer> map = hz.getMap("map");
         final int itemCount = 10000;

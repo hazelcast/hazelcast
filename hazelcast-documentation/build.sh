@@ -265,7 +265,7 @@ function moveImages {
     if [ ! -d "./src/images" ]; then
         mkdir ./src/images
     fi
-    cp -aR ./images/ ./src/images/
+    cp -aR ./images/. ./src/images/.
     mkdir ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
     mkdir ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
     mkdir ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"

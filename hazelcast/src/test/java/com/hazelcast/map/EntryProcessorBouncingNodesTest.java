@@ -25,15 +25,17 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -57,6 +59,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/3683
     public void testEntryProcessorWhile2NodesAreBouncing() throws InterruptedException {
         CountDownLatch startLatch = new CountDownLatch(1);
         AtomicBoolean isRunning = new AtomicBoolean(true);

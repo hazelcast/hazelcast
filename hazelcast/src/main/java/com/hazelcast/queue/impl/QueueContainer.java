@@ -78,7 +78,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     private boolean isEvictionScheduled;
 
-
     public QueueContainer(String name) {
         this.name = name;
         pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
@@ -539,25 +538,27 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     public void mapIterateAndRemove(Map map) {
-        if (map.size() > 0) {
-            if (store.isEnabled()) {
-                try {
-                    store.deleteAll(map.keySet());
-                } catch (Exception e) {
-                    throw new HazelcastException(e);
-                }
-            }
-            Iterator<QueueItem> iter = getItemQueue().iterator();
-            while (iter.hasNext()) {
-                QueueItem item = iter.next();
-                if (map.containsKey(item.getItemId())) {
-                    iter.remove();
-                    //For Stats
-                    age(item, Clock.currentTimeMillis());
-                }
-            }
-            scheduleEvictionIfEmpty();
+        if (map.size() <= 0) {
+            return;
         }
+
+        if (store.isEnabled()) {
+            try {
+                store.deleteAll(map.keySet());
+            } catch (Exception e) {
+                throw new HazelcastException(e);
+            }
+        }
+        Iterator<QueueItem> iter = getItemQueue().iterator();
+        while (iter.hasNext()) {
+            QueueItem item = iter.next();
+            if (map.containsKey(item.getItemId())) {
+                iter.remove();
+                //For Stats
+                age(item, Clock.currentTimeMillis());
+            }
+        }
+        scheduleEvictionIfEmpty();
     }
 
     public void compareAndRemoveBackup(Set<Long> itemIdSet) {

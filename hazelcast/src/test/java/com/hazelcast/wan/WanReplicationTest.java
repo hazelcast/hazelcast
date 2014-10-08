@@ -454,53 +454,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertDataSizeEventually(clusterB, "map", 1000);
     }
 
-    @Test
-    public void linkTopo_ActiveActiveReplication_Threading_Test() throws InterruptedException, BrokenBarrierException {
-
-        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
-        setupReplicateFrom(configB, configA, clusterA.length, "btoa", PassThroughMergePolicy.class.getName());
-        initClusterA();
-        initClusterB();
-
-
-        CyclicBarrier gate = new CyclicBarrier(3);
-        startGatedThread(new GatedThread(gate) {
-            public void go() {
-                createDataIn(clusterA, "map", 0, 1000);
-            }
-        });
-        startGatedThread(new GatedThread(gate) {
-            public void go() {
-                createDataIn(clusterB, "map", 500, 1500);
-            }
-        });
-        gate.await();
-
-        assertDataInFrom(clusterB, "map", 0, 500, clusterA);
-        assertDataInFrom(clusterA, "map", 1000, 1500, clusterB);
-        assertKeysIn(clusterA, "map", 500, 1000);
-
-
-        gate = new CyclicBarrier(3);
-        startGatedThread(new GatedThread(gate) {
-            public void go() {
-                removeDataIn(clusterA, "map", 0, 1000);
-            }
-        });
-        startGatedThread(new GatedThread(gate) {
-            public void go() {
-                removeDataIn(clusterB, "map", 500, 1500);
-            }
-        });
-        gate.await();
-
-
-        assertKeysNotIn(clusterA, "map", 0, 1500);
-        assertKeysNotIn(clusterB, "map", 0, 1500);
-
-        assertDataSizeEventually(clusterA, "map", 0);
-        assertDataSizeEventually(clusterB, "map", 0);
-    }
 
 
     @Test

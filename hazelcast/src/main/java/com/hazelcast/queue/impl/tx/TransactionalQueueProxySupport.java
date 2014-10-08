@@ -20,7 +20,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.impl.QueueItem;
 import com.hazelcast.queue.impl.QueueService;
-import com.hazelcast.queue.impl.SizeOperation;
+import com.hazelcast.queue.impl.operations.SizeOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;

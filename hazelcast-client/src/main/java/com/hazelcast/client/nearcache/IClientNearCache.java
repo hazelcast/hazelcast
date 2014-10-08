@@ -18,6 +18,11 @@ package com.hazelcast.client.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
 
+/**
+ * provides the nearcache interface for a client.
+ * @param <K>
+ * @param <V>
+ */
 public interface IClientNearCache<K, V> {
 
     /**
@@ -47,6 +52,7 @@ public interface IClientNearCache<K, V> {
 
     void destroy();
 
+    //todo: unused, remove?
     boolean isInvalidateOnChange();
 
     InMemoryFormat getInMemoryFormat();
@@ -54,7 +60,4 @@ public interface IClientNearCache<K, V> {
     void setId(String id);
 
     String getId();
-
-//    NearCacheStats getNearCacheStats();
-
 }

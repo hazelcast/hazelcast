@@ -761,6 +761,7 @@ public interface IMap<K, V>
      * other nodes for load balancing and/or membership change.
      *
      * @param listener entry listener
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @see #localKeySet()
      */
     String addLocalEntryListener(EntryListener<K, V> listener);
@@ -774,7 +775,7 @@ public interface IMap<K, V>
      * @param predicate    predicate for filtering entries
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     * @return
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue);
 
@@ -788,7 +789,7 @@ public interface IMap<K, V>
      * @param key          key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     * @return
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
@@ -817,6 +818,7 @@ public interface IMap<K, V>
      * @param listener     entry listener
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     String addEntryListener(EntryListener<K, V> listener, boolean includeValue);
 
@@ -843,6 +845,7 @@ public interface IMap<K, V>
      * @param key          key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @throws NullPointerException if the specified key is null
      */
     String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
@@ -855,6 +858,7 @@ public interface IMap<K, V>
      * @param predicate    predicate for filtering entries
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue);
 
@@ -867,6 +871,7 @@ public interface IMap<K, V>
      * @param key          key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 

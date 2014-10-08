@@ -306,7 +306,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             }
             try {
                 final Connection conn = endpoint.getConnection();
-                if (conn.live()) {
+                if (conn.isAlive()) {
                     conn.close();
                 }
             } catch (Exception e) {
@@ -346,7 +346,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 if (request == null) {
                     handlePacketWithNullRequest();
                 } else if (request instanceof AuthenticationRequest) {
-                    if (conn.live()) {
+                    if (conn.isAlive()) {
                         endpoint = new ClientEndpointImpl(ClientEngineImpl.this, conn);
                         processRequest(endpoint, request);
                     } else {
@@ -379,7 +379,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         }
 
         private void handleMissingEndpoint(Connection conn) {
-            if (conn.live()) {
+            if (conn.isAlive()) {
                 logger.severe("Dropping: " + packet + " -> no endpoint found for live connection.");
             } else {
                 if (logger.isFinestEnabled()) {

@@ -179,6 +179,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         }
     }
 
+    @Override
     public void begin() throws IllegalStateException {
         if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
@@ -278,6 +279,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         futures.clear();
     }
 
+    @Override
     public void commit() throws TransactionException, IllegalStateException {
         try {
             if (transactionType.equals(TransactionType.TWO_PHASE) && state != PREPARED) {
@@ -295,13 +297,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                     futures.add(txLog.commit(nodeEngine));
                 }
                 waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, TimeUnit.MINUTES, commitExceptionHandler);
-                for (Future future : futures) {
-                    try {
-                        future.get(COMMIT_TIMEOUT_MINUTES, TimeUnit.MINUTES);
-                    } catch (Throwable e) {
-                        nodeEngine.getLogger(getClass()).warning("Error during commit!", e);
-                    }
-                }
+
                 state = COMMITTED;
 
                 // purge tx backup
@@ -321,6 +317,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         }
     }
 
+    @Override
     public void rollback() throws IllegalStateException {
         try {
             if (state == NO_TXN || state == ROLLED_BACK) {
@@ -332,9 +329,9 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 rollbackTxBackup();
 
                 final List<Future> futures = new ArrayList<Future>(txLogs.size());
-                final ListIterator<TransactionLog> iter = txLogs.listIterator(txLogs.size());
-                while (iter.hasPrevious()) {
-                    final TransactionLog txLog = iter.previous();
+                final ListIterator<TransactionLog> iterator = txLogs.listIterator(txLogs.size());
+                while (iterator.hasPrevious()) {
+                    final TransactionLog txLog = iterator.previous();
                     futures.add(txLog.rollback(nodeEngine));
                 }
                 waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES, rollbackExceptionHandler);
@@ -397,10 +394,12 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         return txOwnerUuid;
     }
 
+    @Override
     public State getState() {
         return state;
     }
 
+    @Override
     public long getTimeoutMillis() {
         return timeoutMillis;
     }

@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Test that the Hazelcast infrastructure can deal correctly with {@link com.hazelcast.cluster.ConfigCheck} violations.
+ * Test that the Hazelcast infrastructure can deal correctly with {@link com.hazelcast.cluster.impl.ConfigCheck} violations.
  * Most of the actual cases are tested in the {@link com.hazelcast.cluster.ConfigCheckTest}. In this class we run a bunch
  * of integration tests to make sure that it really works like it is supposed to work.
  */

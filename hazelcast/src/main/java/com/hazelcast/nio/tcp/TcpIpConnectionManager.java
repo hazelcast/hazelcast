@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.cluster.BindOperation;
+import com.hazelcast.cluster.impl.operations.BindOperation;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.instance.NodeInitializer;
 import com.hazelcast.logging.ILogger;
@@ -270,7 +270,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private boolean checkAlreadyConnected(TcpIpConnection connection, Address remoteEndPoint) {
         final Connection existingConnection = connectionsMap.get(remoteEndPoint);
-        if (existingConnection != null && existingConnection.live()) {
+        if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
                 if (logger.isFinestEnabled()) {
                     log(Level.FINEST, existingConnection + " is already bound to " + remoteEndPoint
@@ -386,7 +386,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 });
             }
         }
-        if (connection.live()) {
+        if (connection.isAlive()) {
             connection.close();
         }
     }
@@ -536,7 +536,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     public int getCurrentClientConnections() {
         int count = 0;
         for (TcpIpConnection conn : activeConnections) {
-            if (conn.live()) {
+            if (conn.isAlive()) {
                 if (conn.isClient()) {
                     count++;
                 }
