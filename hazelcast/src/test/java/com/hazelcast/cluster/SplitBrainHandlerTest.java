@@ -38,6 +38,7 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.tcp.FirewallingTcpIpConnectionManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.util.Clock;
 import org.junit.After;
@@ -124,6 +125,44 @@ public class SplitBrainHandlerTest {
         assertEquals(1, l.getCount(LifecycleState.MERGED));
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
+    }
+
+    @Test
+    public void testClusterShouldNotMergeDifferentGroupName() throws Exception {
+        Config config1 = new Config();
+        config1.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
+        config1.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config1.getGroupConfig().setName("differentGroup");
+
+        NetworkConfig networkConfig1 = config1.getNetworkConfig();
+        JoinConfig join1 = networkConfig1.getJoin();
+        join1.getMulticastConfig().setEnabled(true);
+        join1.getTcpIpConfig().addMember("127.0.0.1");
+
+        Config config2 = new Config();
+        config2.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
+        config2.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config2.getGroupConfig().setName("sameGroup");
+
+        NetworkConfig networkConfig2 = config2.getNetworkConfig();
+        JoinConfig join2 = networkConfig2.getJoin();
+        join2.getMulticastConfig().setEnabled(true);
+        join2.getTcpIpConfig().addMember("127.0.0.1");
+
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+        LifecycleCountingListener l = new LifecycleCountingListener();
+        h2.getLifecycleService().addLifecycleListener(l);
+
+        assertEquals(1, h1.getCluster().getMembers().size());
+        assertEquals(1, h2.getCluster().getMembers().size());
+
+        HazelcastTestSupport.sleepSeconds(10);
+
+        assertEquals(0, l.getCount(LifecycleState.MERGING));
+        assertEquals(0, l.getCount(LifecycleState.MERGED));
+        assertEquals(1, h1.getCluster().getMembers().size());
+        assertEquals(1, h2.getCluster().getMembers().size());
     }
 
     private static class LifecycleCountingListener implements LifecycleListener {
