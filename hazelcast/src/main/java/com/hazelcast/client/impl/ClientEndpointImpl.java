@@ -48,6 +48,9 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 
+/**
+ * The {@link com.hazelcast.client.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
+ */
 public final class ClientEndpointImpl implements Client, ClientEndpoint {
 
     private final ClientEngineImpl clientEngine;
@@ -74,6 +77,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         }
     }
 
+    @Override
     public Connection getConnection() {
         return conn;
     }
@@ -83,14 +87,17 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         return principal != null ? principal.getUuid() : null;
     }
 
-    public boolean live() {
-        return conn.live();
+    @Override
+    public boolean isAlive() {
+        return conn.isAlive();
     }
 
+    @Override
     public void setLoginContext(LoginContext loginContext) {
         this.loginContext = loginContext;
     }
 
+    @Override
     public Subject getSubject() {
         return loginContext != null ? loginContext.getSubject() : null;
     }
@@ -173,6 +180,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         transactionContextMap.put(transactionContext.getTxnId(), transactionContext);
     }
 
+    @Override
     public void removeTransactionContext(String txnId) {
         transactionContextMap.remove(txnId);
     }
@@ -188,6 +196,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         });
     }
 
+    @Override
     public void setDistributedObjectListener(final String id) {
         removeListenerActions.add(new Runnable() {
             @Override
@@ -197,6 +206,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         });
     }
 
+    @Override
     public void clearAllListeners() {
         for (Runnable removeAction : removeListenerActions) {
             try {

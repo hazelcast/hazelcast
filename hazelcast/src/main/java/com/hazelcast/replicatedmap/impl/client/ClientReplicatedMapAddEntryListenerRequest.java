@@ -77,7 +77,7 @@ public class ClientReplicatedMapAddEntryListenerRequest
     private class ClientReplicatedMapEntryListener implements EntryListener<Object, Object> {
 
         private void handleEvent(EntryEvent<Object, Object> event) {
-            if (endpoint.live()) {
+            if (endpoint.isAlive()) {
                 Object key = event.getKey();
                 Object value = event.getValue();
                 Object oldValue = event.getOldValue();

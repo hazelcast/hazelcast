@@ -65,7 +65,7 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
 
     final void registerOp(final int operation) {
         try {
-            if (!connection.live()) {
+            if (!connection.isAlive()) {
                 return;
             }
             if (sk == null) {
