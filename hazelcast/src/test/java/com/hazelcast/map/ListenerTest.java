@@ -29,7 +29,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -438,7 +437,6 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testEntryListenerEvent_withMapReplaceSuccess() throws Exception {
         final int instanceCount = 1;
         final HazelcastInstance instance = createHazelcastInstanceFactory(instanceCount).newInstances(new Config())[0];

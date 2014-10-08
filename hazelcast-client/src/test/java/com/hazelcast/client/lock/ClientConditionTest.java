@@ -5,7 +5,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;

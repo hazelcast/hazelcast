@@ -12,7 +12,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestThread;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -572,7 +571,7 @@ public class ConditionTest extends HazelcastTestSupport {
 
     // See #3262
     @Test(timeout = 60000)
-    @Ignore
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/2272
     public void testAwait_whenNegativeTimeout() throws InterruptedException {
         HazelcastInstance instance = createHazelcastInstance();
 
@@ -686,7 +685,7 @@ public class ConditionTest extends HazelcastTestSupport {
 
 
     @Test
-    @Category(ProblematicTest.class)
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/2272
     public void testLockConditionSignalAllShutDownKeyOwner() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final String name = randomString();
