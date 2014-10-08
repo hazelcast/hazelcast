@@ -18,35 +18,36 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.NavigableSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Store indexes rankly.
  */
 public class SortedIndexStore extends BaseIndexStore {
 
-    private static final float LOAD_FACTOR = 0.75f;
-    private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords
-            = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
-    private final NavigableSet<Comparable> sortedSet = new ConcurrentSkipListSet<Comparable>();
+    private final ConcurrentMap<Data, QueryableEntry> recordsWithNullValue
+            = new ConcurrentHashMap<Data, QueryableEntry>();
+
+    private final ConcurrentSkipListMap<Comparable, ConcurrentMap<Data, QueryableEntry>> recordMap
+            = new ConcurrentSkipListMap<Comparable, ConcurrentMap<Data, QueryableEntry>>();
 
     @Override
     public void newIndex(Comparable newValue, QueryableEntry record) {
         takeWriteLock();
         try {
-            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
-            if (records == null) {
-                records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
-                mapRecords.put(newValue, records);
-                if (!(newValue instanceof IndexImpl.NullObject)) {
-                    sortedSet.add(newValue);
+            if (newValue instanceof IndexImpl.NullObject) {
+                recordsWithNullValue.put(record.getIndexKey(), record);
+            } else {
+                ConcurrentMap<Data, QueryableEntry> records = recordMap.get(newValue);
+                if (records == null) {
+                    records = new ConcurrentHashMap<Data, QueryableEntry>(1, 0.75f, 1);
+                    recordMap.put(newValue, records);
                 }
+                records.put(record.getIndexKey(), record);
             }
-            records.put(record.getIndexKey(), record);
         } finally {
             releaseWriteLock();
         }
@@ -67,12 +68,15 @@ public class SortedIndexStore extends BaseIndexStore {
     public void removeIndex(Comparable oldValue, Data indexKey) {
         takeWriteLock();
         try {
-            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
-            if (records != null) {
-                records.remove(indexKey);
-                if (records.size() == 0) {
-                    mapRecords.remove(oldValue);
-                    sortedSet.remove(oldValue);
+            if (oldValue instanceof IndexImpl.NullObject) {
+                recordsWithNullValue.remove(indexKey);
+            } else {
+                ConcurrentMap<Data, QueryableEntry> records = recordMap.get(oldValue);
+                if (records != null) {
+                    records.remove(indexKey);
+                    if (records.size() == 0) {
+                        recordMap.remove(oldValue);
+                    }
                 }
             }
         } finally {
@@ -84,8 +88,8 @@ public class SortedIndexStore extends BaseIndexStore {
     public void clear() {
         takeWriteLock();
         try {
-            mapRecords.clear();
-            sortedSet.clear();
+            recordsWithNullValue.clear();
+            recordMap.clear();
         } finally {
             releaseWriteLock();
         }
@@ -95,17 +99,9 @@ public class SortedIndexStore extends BaseIndexStore {
     public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
         takeReadLock();
         try {
-            Set<Comparable> values = sortedSet.subSet(from, to);
-            for (Comparable value : values) {
-                ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
-                if (records != null) {
-                    results.addResultSet(records);
-                }
-            }
-            // to wasn't included so include now
-            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(to);
-            if (records != null) {
-                results.addResultSet(records);
+            SortedMap<Comparable, ConcurrentMap<Data, QueryableEntry>> subMap = recordMap.subMap(from, to);
+            for (ConcurrentMap<Data, QueryableEntry> value : subMap.values()) {
+                results.addResultSet(value);
             }
         } finally {
             releaseReadLock();
@@ -116,38 +112,35 @@ public class SortedIndexStore extends BaseIndexStore {
     public void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue) {
         takeReadLock();
         try {
-            Set<Comparable> values;
-            boolean notEqual = false;
+            SortedMap<Comparable, ConcurrentMap<Data, QueryableEntry>> subMap;
             switch (comparisonType) {
                 case LESSER:
-                    values = sortedSet.headSet(searchedValue, false);
+                    subMap = recordMap.headMap(searchedValue, false);
                     break;
                 case LESSER_EQUAL:
-                    values = sortedSet.headSet(searchedValue, true);
+                    subMap = recordMap.headMap(searchedValue, true);
                     break;
                 case GREATER:
-                    values = sortedSet.tailSet(searchedValue, false);
+                    subMap = recordMap.tailMap(searchedValue, false);
                     break;
                 case GREATER_EQUAL:
-                    values = sortedSet.tailSet(searchedValue, true);
+                    subMap = recordMap.tailMap(searchedValue, true);
                     break;
                 case NOT_EQUAL:
-                    values = sortedSet;
-                    notEqual = true;
-                    break;
+                    // TODO There maybe more efficient way such as
+                    // Make a copy of current record map and just remove searched value.
+                    // So remaining records are not equal to searched value
+                    for (Map.Entry<Comparable, ConcurrentMap<Data, QueryableEntry>> entry : recordMap.entrySet()) {
+                        if (!searchedValue.equals(entry.getKey())) {
+                            results.addResultSet(entry.getValue());
+                        }
+                    }
+                    return;
                 default:
                     throw new IllegalArgumentException("Unrecognized comparisonType:" + comparisonType);
             }
-
-            for (Comparable value : values) {
-                if (notEqual && searchedValue.equals(value)) {
-                    // skip this value if predicateType is NOT_EQUAL
-                    continue;
-                }
-                ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
-                if (records != null) {
-                    results.addResultSet(records);
-                }
+            for (ConcurrentMap<Data, QueryableEntry> value : subMap.values()) {
+                results.addResultSet(value);
             }
         } finally {
             releaseReadLock();
@@ -155,10 +148,14 @@ public class SortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
+    public ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable value) {
         takeReadLock();
         try {
-            return mapRecords.get(indexValue);
+            if (value instanceof IndexImpl.NullObject) {
+                return recordsWithNullValue;
+            } else {
+                return recordMap.get(value);
+            }
         } finally {
             releaseReadLock();
         }
@@ -168,7 +165,11 @@ public class SortedIndexStore extends BaseIndexStore {
     public Set<QueryableEntry> getRecords(Comparable value) {
         takeReadLock();
         try {
-            return new SingleResultSet(mapRecords.get(value));
+            if (value instanceof IndexImpl.NullObject) {
+                return new SingleResultSet(recordsWithNullValue);
+            } else {
+                return new SingleResultSet(recordMap.get(value));
+            }
         } finally {
             releaseReadLock();
         }
@@ -179,7 +180,12 @@ public class SortedIndexStore extends BaseIndexStore {
         takeReadLock();
         try {
             for (Comparable value : values) {
-                ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
+                ConcurrentMap<Data, QueryableEntry> records = null;
+                if (value instanceof IndexImpl.NullObject) {
+                    records = recordsWithNullValue;
+                } else {
+                    records = recordMap.get(value);
+                }
                 if (records != null) {
                     results.addResultSet(records);
                 }
@@ -192,7 +198,7 @@ public class SortedIndexStore extends BaseIndexStore {
     @Override
     public String toString() {
         return "SortedIndexStore{"
-                + "mapRecords=" + mapRecords.size()
+                + "recordMap=" + recordMap.size()
                 + '}';
     }
 }
