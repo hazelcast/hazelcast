@@ -39,6 +39,10 @@ import java.util.Properties;
 import java.util.Set;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -46,7 +50,32 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.*;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.EXECUTOR_SERVICE;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.GROUP;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.HAZELCAST;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.IMPORT;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.JOB_TRACKER;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.LICENSE_KEY;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.LIST;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.LISTENERS;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.MANAGEMENT_CENTER;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.MAP;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.MEMBER_ATTRIBUTES;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.MULTIMAP;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.NETWORK;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.PARTITION_GROUP;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.PROPERTIES;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.QUEUE;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.REPLICATED_MAP;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.SECURITY;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.SEMAPHORE;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.SERIALIZATION;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.SERVICES;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.SET;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.TOPIC;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.WAN_REPLICATION;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.OFF_HEAP_MEMORY;
+import static com.hazelcast.config.XmlConfigBuilder.Elements.canOccurMultipleTimes;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -65,6 +94,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private URL configurationUrl;
     private Properties properties = System.getProperties();
     private Set<String> occurrenceSet = new HashSet<String>();
+    private Set<String> currentlyImportedFiles = new HashSet<String>();
+    private Element root;
+    private XPathFactory xpathFactory = XPathFactory.newInstance();
+    private XPath xpath = xpathFactory.newXPath();
+
 
     /**
      * Constructs a XmlConfigBuilder that reads from the provided file.
@@ -133,19 +167,33 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         config.setConfigurationFile(configurationFile);
         config.setConfigurationUrl(configurationUrl);
         try {
-            parse(config);
+            parseAndBuildConfig(config);
         } catch (Exception e) {
             throw new HazelcastException(e.getMessage(), e);
         }
         return config;
     }
 
-    private void parse(final Config config) throws Exception {
+    private void parseAndBuildConfig(final Config config) throws Exception {
         this.config = config;
+        Document doc = parse(in);
+        root = doc.getDocumentElement();
+        try {
+            root.getTextContent();
+        } catch (final Throwable e) {
+            domLevel3 = false;
+        }
+
+        preprocess(root);
+        replaceImportStatementsWithActualFileContents(root);
+        handleConfig(root);
+    }
+
+    private Document parse(InputStream is) throws Exception {
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc;
         try {
-            doc = builder.parse(in);
+            doc = builder.parse(is);
         } catch (final Exception e) {
             if (configurationFile != null) {
                 String msg = "Failed to parse " + configurationFile
@@ -167,19 +215,49 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
             throw e;
         } finally {
-            IOUtil.closeResource(in);
+            IOUtil.closeResource(is);
         }
-        Element element = doc.getDocumentElement();
-        try {
-            element.getTextContent();
-        } catch (final Throwable e) {
-            domLevel3 = false;
-        }
-        preprocess(element);
-        handleConfig(element);
+        return doc;
     }
 
-    private void preprocess(Node root) {
+    private void replaceImportStatementsWithActualFileContents(Node root) throws Exception {
+        Document document = root.getOwnerDocument();
+        NodeList misplacedImports = (NodeList) xpath.evaluate("//" + IMPORT.name + "/parent::*[not(name()=\"" + HAZELCAST.name + "\")]", document,
+                XPathConstants.NODESET);
+        if (misplacedImports.getLength() > 0) {
+            throw new IllegalStateException("<import> element can appear only in the top level of the XML");
+        }
+        NodeList importTags = (NodeList) xpath.evaluate("/" + HAZELCAST.name + "/" + IMPORT.name, document,
+                XPathConstants.NODESET);
+        for (Node node : new IterableNodeList(importTags)) {
+            NamedNodeMap attributes = node.getAttributes();
+            Node resourceAtrribute = attributes.getNamedItem("resource");
+            String resource = resourceAtrribute.getTextContent();
+            URL url = ConfigLoader.locateConfig(resource);
+            if (url == null) {
+                throw new HazelcastException("Failed to load resource : " + resource);
+            }
+            if (!currentlyImportedFiles.add(url.getPath())) {
+                throw new HazelcastException("Cyclic loading of resource " + url.getPath() + " is detected !");
+            }
+            Document doc = parse(url.openStream());
+            Element importedRoot = doc.getDocumentElement();
+            preprocess(importedRoot);
+            replaceImportStatementsWithActualFileContents(importedRoot);
+            for (Node fromImportedDoc : new IterableNodeList(importedRoot.getChildNodes())) {
+                Node importedNode = root.getOwnerDocument().importNode(fromImportedDoc, true);
+                root.insertBefore(importedNode, node);
+            }
+            root.removeChild(node);
+        }
+    }
+
+    private void preprocess(Node root) throws XPathExpressionException {
+        NodeList misplacedHazelcastTag = (NodeList) xpath.evaluate("//" + HAZELCAST.name, root.getOwnerDocument(),
+                XPathConstants.NODESET);
+        if (misplacedHazelcastTag.getLength() > 1) {
+            throw new IllegalStateException("<hazelcast> element can appear only once in the XML");
+        }
         NamedNodeMap attributes = root.getAttributes();
         if (attributes != null) {
             for (int k = 0; k < attributes.getLength(); k++) {
@@ -229,10 +307,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node node : new IterableNodeList(docElement.getChildNodes())) {
             final String nodeName = cleanNodeName(node.getNodeName());
             if (occurrenceSet.contains(nodeName)) {
-                throw new IllegalStateException("Duplicate '" + nodeName +"' definition found in XML configuration. ");
+                throw new IllegalStateException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
             }
             if (NETWORK.isEqual(nodeName)) {
                 handleNetwork(node);
+            } else if (IMPORT.isEqual(nodeName)) {
+                throw new IllegalStateException("<import> element can appear only in the top level of the XML");
             } else if (GROUP.isEqual(nodeName)) {
                 handleGroup(node);
             } else if (PROPERTIES.isEqual(nodeName)) {
@@ -1369,6 +1449,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     enum Elements {
+        HAZELCAST("hazelcast", false),
         IMPORT("import", true),
         GROUP("group", false),
         LICENSE_KEY("license-key", false),
@@ -1402,16 +1483,16 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             this.multipleOccurance = multipleOccurance;
         }
 
-        public static boolean canOccurMultipleTimes(String name){
-            for(Elements element : values()){
-                if(name.equals(element.name)){
+        public static boolean canOccurMultipleTimes(String name) {
+            for (Elements element : values()) {
+                if (name.equals(element.name)) {
                     return element.multipleOccurance;
                 }
             }
             return false;
         }
 
-        public boolean isEqual(String name){
+        public boolean isEqual(String name) {
             return this.name.equals(name);
         }
 
