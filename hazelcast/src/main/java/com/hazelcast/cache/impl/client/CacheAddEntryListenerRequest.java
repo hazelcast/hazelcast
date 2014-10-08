@@ -49,7 +49,7 @@ public class CacheAddEntryListenerRequest
         CacheEventListener entryListener = new CacheEventListener() {
             @Override
             public void handleEvent(Object eventObject) {
-                if (endpoint.live()) {
+                if (endpoint.isAlive()) {
                     endpoint.sendEvent(eventObject, getCallId());
                 }
             }

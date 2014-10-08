@@ -133,7 +133,7 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
-    public boolean live() {
+    public boolean isAlive() {
         return live;
     }
 

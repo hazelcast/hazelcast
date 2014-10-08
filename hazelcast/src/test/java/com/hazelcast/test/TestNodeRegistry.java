@@ -199,7 +199,7 @@ final class TestNodeRegistry {
                     return endpoint;
                 }
 
-                public boolean live() {
+                public boolean isAlive() {
                     return true;
                 }
 

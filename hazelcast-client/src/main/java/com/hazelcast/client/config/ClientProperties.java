@@ -127,6 +127,9 @@ public class ClientProperties {
         return eventThreadCount;
     }
 
+    /**
+     * A single client property.
+     */
     public static class ClientProperty {
 
         private final String name;

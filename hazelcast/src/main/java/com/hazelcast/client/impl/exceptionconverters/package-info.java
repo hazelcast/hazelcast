@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 /**
- * <p>Contains logic to convert client exceptions</p>
+ * <p>Contains logic to convert client exceptions. When an Throwable is thrown in Java, it doesn't mean that a client
+ * can use it. e.g. c-sharp. This module contains functionality to convert Java Throwable to something a client can use.</p>
  */
 package com.hazelcast.client.impl.exceptionconverters;

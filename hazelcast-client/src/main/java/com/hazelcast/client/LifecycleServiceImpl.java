@@ -36,6 +36,9 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
+/**
+ * Default {@link com.hazelcast.core.LifecycleService} implementation for the client.
+ */
 public final class LifecycleServiceImpl implements LifecycleService {
 
     private final HazelcastClient client;
@@ -62,12 +65,14 @@ public final class LifecycleServiceImpl implements LifecycleService {
         return Logger.getLogger(LifecycleService.class);
     }
 
+    @Override
     public String addLifecycleListener(LifecycleListener lifecycleListener) {
         final String id = UuidUtil.buildRandomUuidString();
         lifecycleListeners.put(id, lifecycleListener);
         return id;
     }
 
+    @Override
     public boolean removeLifecycleListener(String registrationId) {
         return lifecycleListeners.remove(registrationId) != null;
     }

@@ -36,6 +36,10 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     @Override
     public Set<ClientEndpoint> getEndpoints(String clientUuid) {
+        if (clientUuid == null) {
+            throw new NullPointerException("clientUuid can't be null");
+        }
+
         Set<ClientEndpoint> endpointSet = new HashSet<ClientEndpoint>();
         for (ClientEndpoint endpoint : endpoints.values()) {
             if (clientUuid.equals(endpoint.getUuid())) {
@@ -46,12 +50,20 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     }
 
     @Override
-    public ClientEndpoint getEndpoint(Connection conn) {
-        return endpoints.get(conn);
+    public ClientEndpoint getEndpoint(Connection connection) {
+        if (connection == null) {
+            throw new NullPointerException("connection can't be null");
+        }
+
+        return endpoints.get(connection);
     }
 
     @Override
     public void registerEndpoint(ClientEndpoint endpoint) {
+        if (endpoint == null) {
+            throw new NullPointerException("endpoint can't be null");
+        }
+
         final Connection conn = endpoint.getConnection();
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
             logger.severe("An endpoint already exists for connection:" + conn);
@@ -59,11 +71,16 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     }
 
     @Override
-    public void removeEndpoint(final ClientEndpoint endpoint) {
+    public void removeEndpoint(ClientEndpoint endpoint) {
         removeEndpoint(endpoint, false);
     }
 
+    @Override
     public void removeEndpoint(final ClientEndpoint ce, boolean closeImmediately) {
+        if (ce == null) {
+            throw new NullPointerException("endpoint can't be null");
+        }
+
         ClientEndpointImpl endpoint = (ClientEndpointImpl) ce;
 
         endpoints.remove(endpoint.getConnection());
@@ -84,7 +101,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         } else {
             nodeEngine.getExecutionService().schedule(new Runnable() {
                 public void run() {
-                    if (connection.live()) {
+                    if (connection.isAlive()) {
                         try {
                             connection.close();
                         } catch (Throwable e) {
@@ -116,8 +133,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     @Override
     public Collection<ClientEndpoint> getEndpoints() {
-        Collection tmp = endpoints.values();
-        return tmp;
+        return endpoints.values();
     }
 
     @Override
