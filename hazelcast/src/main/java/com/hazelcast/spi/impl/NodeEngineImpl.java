@@ -199,7 +199,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public boolean send(Packet packet, Connection connection) {
-        if (connection == null || !connection.live()) {
+        if (connection == null || !connection.isAlive()) {
             return false;
         }
         final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());

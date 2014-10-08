@@ -27,6 +27,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
+
 import java.io.IOException;
 import java.util.concurrent.Future;
 
@@ -118,5 +119,16 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     @Override
     public Object getKey() {
         return new MapRecordKey(name, key);
+    }
+
+    @Override
+    public String toString() {
+        return "MapTransactionLog{"
+                + "name='" + name + '\''
+                + ", key=" + key
+                + ", threadId=" + threadId
+                + ", ownerUuid='" + ownerUuid + '\''
+                + ", op=" + op
+                + '}';
     }
 }

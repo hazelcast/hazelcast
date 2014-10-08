@@ -60,7 +60,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
         EntryListener listener = new EntryAdapter() {
             @Override
             public void onEntryEvent(EntryEvent event) {
-                if (endpoint.live()) {
+                if (endpoint.isAlive()) {
                     if (!(event instanceof DataAwareEntryEvent)) {
                         throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
                                 + event.getClass().getSimpleName());
@@ -77,7 +77,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
 
             @Override
             public void onMapEvent(MapEvent event) {
-                if (endpoint.live()) {
+                if (endpoint.isAlive()) {
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
                     PortableEntryEvent portableEntryEvent =

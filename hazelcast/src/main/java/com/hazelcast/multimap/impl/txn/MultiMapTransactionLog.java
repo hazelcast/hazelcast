@@ -158,5 +158,15 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         return size;
     }
 
+    @Override
+    public String toString() {
+        return "MultiMapTransactionLog{"
+                + "name='" + name + '\''
+                + ", opList=" + opList
+                + ", key=" + key
+                + ", ttl=" + ttl
+                + ", threadId=" + threadId
+                + '}';
+    }
 
 }

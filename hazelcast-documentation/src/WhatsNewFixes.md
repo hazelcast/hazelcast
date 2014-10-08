@@ -5,6 +5,7 @@
 
 This section lists issues solved for **Hazelcast 3.3.1** release.
 
+
 - MapReduce Combiner creation is not threadsafe, but certain operations on mapping phase might need a concurrent creation of the combiners [[#3625]](https://github.com/hazelcast/hazelcast/issues/3625).
 - When `connectionTimeout` property in ClientNetworkConfig is set to `Integer.MAX_VALUE`, the client could not connect to cluster since a default 2000 ms. extra value is added to `connectionTimeout` while connecting [[#3615]](https://github.com/hazelcast/hazelcast/issues/3615).
 - User provided list results from combiner is colliding with the internally used multi-result list [[#3614]](https://github.com/hazelcast/hazelcast/issues/3614).

@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,6 +47,7 @@ import static org.junit.Assert.assertTrue;
 public class EntryProcessorStressTest extends HazelcastTestSupport {
 
     @Test
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/3683
     public void dropedEntryProcessorTest_withKeyOwningNodeTermination() throws ExecutionException, InterruptedException {
         String mapName = randomString();
         Config cfg = new Config();

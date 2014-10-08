@@ -31,11 +31,8 @@ import java.io.IOException;
 public class QueueEvent implements IdentifiedDataSerializable {
 
     String name;
-
     Data data;
-
     ItemEventType eventType;
-
     Address caller;
 
     public QueueEvent() {

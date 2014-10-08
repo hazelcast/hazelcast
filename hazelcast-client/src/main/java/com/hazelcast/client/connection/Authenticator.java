@@ -21,7 +21,18 @@ import com.hazelcast.client.AuthenticationException;
 
 import java.io.IOException;
 
+/**
+ * The Authenticator is responsible for authenticating a {@link ClientConnection}.
+ */
 public interface Authenticator {
 
+    /**
+     * Authenticates a ClientConnection. If the call returns normally, the ClientConnection is authenticated
+     * successfully.
+     *
+     * @param connection the ClientConnection
+     * @throws AuthenticationException if the authentication failed
+     * @throws IOException if some kind of IO problem happeend.
+     */
     void auth(ClientConnection connection) throws AuthenticationException, IOException;
 }

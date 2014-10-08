@@ -27,20 +27,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MemberInfo implements DataSerializable {
-    Address address;
-    String uuid;
-    Map<String, Object> attributes;
+    private Address address;
+    private String uuid;
+    private Map<String, Object> attributes;
 
     public MemberInfo() {
     }
 
     public MemberInfo(Address address) {
-        super();
         this.address = address;
     }
 
     public MemberInfo(Address address, String uuid, Map<String, Object> attributes) {
-        super();
         this.address = address;
         this.uuid = uuid;
         this.attributes = new HashMap<String, Object>(attributes);
@@ -48,6 +46,18 @@ public class MemberInfo implements DataSerializable {
 
     public MemberInfo(MemberImpl member) {
         this(member.getAddress(), member.getUuid(), member.getAttributes());
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public Map<String, Object> getAttributes() {
+        return attributes;
     }
 
     @Override
@@ -83,10 +93,6 @@ public class MemberInfo implements DataSerializable {
                 out.writeObject(entry.getValue());
             }
         }
-    }
-
-    public Address getAddress() {
-        return address;
     }
 
     @Override

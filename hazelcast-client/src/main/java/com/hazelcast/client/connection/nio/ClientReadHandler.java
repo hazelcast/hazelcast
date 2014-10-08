@@ -48,7 +48,7 @@ public class ClientReadHandler extends AbstractClientSelectionHandler {
     @Override
     public void handle() {
         lastHandle = Clock.currentTimeMillis();
-        if (!connection.live()) {
+        if (!connection.isAlive()) {
             if (logger.isFinestEnabled()) {
                 String message = "We are being asked to read, but connection is not live so we won't";
                 logger.finest(message);

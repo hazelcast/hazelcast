@@ -17,12 +17,12 @@
 package com.hazelcast.queue.impl.client;
 
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.queue.impl.PeekOperation;
+import com.hazelcast.queue.impl.operations.PeekOperation;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.spi.Operation;
 
 /**
- * Provides the request service for {@link com.hazelcast.queue.impl.PeekOperation}
+ * Provides the request service for {@link com.hazelcast.queue.impl.operations.PeekOperation}
  */
 public class PeekRequest extends QueueRequest implements RetryableRequest {
 

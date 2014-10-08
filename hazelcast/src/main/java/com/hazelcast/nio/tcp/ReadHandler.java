@@ -50,7 +50,7 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
     @Override
     public void handle() {
         lastHandle = Clock.currentTimeMillis();
-        if (!connection.live()) {
+        if (!connection.isAlive()) {
             String message = "We are being asked to read, but connection is not live so we won't";
             logger.finest(message);
             return;

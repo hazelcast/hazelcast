@@ -72,6 +72,10 @@ import java.util.concurrent.locks.Lock;
 
 import static java.lang.String.format;
 
+
+/**
+ * A demo application to demonstrate a Hazelcast client. This is probably NOT something you want to use in production.
+ */
 public class ClientConsoleApp implements EntryListener, ItemListener, MessageListener {
 
     private static final int ONE_KB = 1024;

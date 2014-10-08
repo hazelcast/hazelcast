@@ -46,6 +46,10 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     private List<AwaitOperation> expiredAwaitOps;
     private LockStoreImpl lockStore;
 
+    // version is stored locally
+    // and incremented by 1 for each lock and extendLease operation
+    private transient int version;
+
     public LockResourceImpl() {
     }
 
@@ -99,20 +103,22 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
         if (expirationTime < Long.MAX_VALUE) {
             setExpirationTime(expirationTime - Clock.currentTimeMillis() + leaseTime);
-            lockStore.scheduleEviction(key, leaseTime);
         }
         return true;
     }
 
     private void setExpirationTime(long leaseTime) {
+        version++;
         if (leaseTime < 0) {
             expirationTime = Long.MAX_VALUE;
+            lockStore.cancelEviction(key);
         } else {
             expirationTime = Clock.currentTimeMillis() + leaseTime;
             if (expirationTime < 0) {
                 expirationTime = Long.MAX_VALUE;
+                lockStore.cancelEviction(key);
             } else {
-                lockStore.scheduleEviction(key, leaseTime);
+                lockStore.scheduleEviction(key, version, leaseTime);
             }
         }
     }
@@ -241,6 +247,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         expirationTime = 0;
         acquireTime = -1L;
         cancelEviction();
+        version = 0;
     }
 
     void cancelEviction() {
@@ -280,11 +287,23 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     @Override
     public long getRemainingLeaseTime() {
+        if (expirationTime == Long.MAX_VALUE || expirationTime < 0) {
+            return Long.MAX_VALUE;
+        }
         long now = Clock.currentTimeMillis();
         if (now >= expirationTime) {
             return 0;
         }
         return expirationTime - now;
+    }
+
+    @Override
+    public long getExpirationTime() {
+        return expirationTime;
+    }
+
+    int getVersion() {
+        return version;
     }
 
     void setLockStore(LockStoreImpl lockStore) {

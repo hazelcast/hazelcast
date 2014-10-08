@@ -48,7 +48,7 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
     @Override
     public void handle() {
         lastHandle = Clock.currentTimeMillis();
-        if (!connection.live()) {
+        if (!connection.isAlive()) {
             return;
         }
 

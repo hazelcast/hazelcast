@@ -86,7 +86,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private static final int RETRY_COUNT = 20;
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
-    private final static IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
+    private  static final IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
             LOGGER.severe(error);
@@ -120,7 +120,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
 
-    private volatile boolean live;
+    private volatile boolean alive;
 
     public ClientConnectionManagerImpl(HazelcastClient client,
                                        LoadBalancer loadBalancer,
@@ -191,8 +191,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public boolean isLive() {
-        return live;
+    public boolean isAlive() {
+        return alive;
     }
 
     private SerializationService getSerializationService() {
@@ -201,10 +201,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public synchronized void start() {
-        if (live) {
+        if (alive) {
             return;
         }
-        live = true;
+        alive = true;
         inSelector.start();
         outSelector.start();
         invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
@@ -214,10 +214,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public synchronized void shutdown() {
-        if (!live) {
+        if (!alive) {
             return;
         }
-        live = false;
+        alive = false;
         for (ClientConnection connection : connections.values()) {
             connection.close();
         }
@@ -357,7 +357,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         @Override
         public ClientConnection call() throws Exception {
-            if (!live) {
+            if (!alive) {
                 throw new HazelcastException("ConnectionManager is not active!!!");
             }
             SocketChannel socketChannel = null;
@@ -510,8 +510,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     class HeartBeat implements Runnable {
 
+        @Override
         public void run() {
-            if (!live) {
+            if (!alive) {
                 return;
             }
             final long now = Clock.currentTimeMillis();
@@ -612,7 +613,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         private void closeIfAddressMatches(Address address) {
             final ClientConnection currentOwnerConnection = ownerConnection;
-            if (currentOwnerConnection == null || !currentOwnerConnection.live()) {
+            if (currentOwnerConnection == null || !currentOwnerConnection.isAlive()) {
                 return;
             }
             if (address.equals(currentOwnerConnection.getRemoteEndpoint())) {

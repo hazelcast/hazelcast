@@ -43,8 +43,8 @@ Hazelcast has two types of providers that you can use. You can think of these tw
 ### Client Provider
 
 In order to access the distributed cache cluster through light clients, client provider is the JCache provider to be used. 
-Its fully qualified class name is `com.hazelcast.client.cache.impl.HazelcastClientCachingProvider`
-This is luses the Hazelcast client.
+Its fully qualified class name is `com.hazelcast.client.cache.impl.HazelcastClientCachingProvider`.
+This uses the Hazelcast client.
 
 ### Server Provider
 
@@ -95,7 +95,7 @@ String value = cache.get("theKey");
 System.out.println(value);//prints 'Hello World'
 ```
 
-For more samples, see [Hazelcast JCache Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/jcache/src/main/java/com/hazelcast/examples) for more examples.
+For more samples, please see [Hazelcast JCache Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/jcache/src/main/java/com/hazelcast/examples).
                       
  
 

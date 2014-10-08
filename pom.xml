@@ -208,7 +208,7 @@
                     </argLine>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
-                        com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.ProblematicTest
+                        com.hazelcast.test.annotation.SlowTest
                     </excludedGroups>
                 </configuration>
             </plugin>
@@ -302,7 +302,7 @@
                             <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest
                             </groups>
                             <excludedGroups>
-                                com.hazelcast.test.annotation.NightlyTest,com.hazelcast.test.annotation.ProblematicTest
+                                com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
                         </configuration>
                     </plugin>
@@ -390,7 +390,7 @@
                             <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest
                             </groups>
                             <excludedGroups>
-                                com.hazelcast.test.annotation.NightlyTest,com.hazelcast.test.annotation.ProblematicTest
+                                com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
                         </configuration>
                     </plugin>
@@ -417,8 +417,6 @@
                                 com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
                             </groups>
 
-                            <!--groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest</groups>
-                            <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups -->
                         </configuration>
                         <executions>
                             <execution>
@@ -723,7 +721,6 @@
                             </argLine>
                             <groups>com.hazelcast.test.annotation.NightlyTest,com.hazelcast.test.annotation.SlowTest
                             </groups>
-                            <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -750,31 +747,6 @@
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
                             </groups>
-                            <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>problematic-tests</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven.surefire.plugin.version}</version>
-                        <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                            <parallel>none</parallel>
-                            <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                -Dhazelcast.version.check.enabled=false
-                                -Dhazelcast.mancenter.enabled=false
-                                -Dhazelcast.logging.type=none
-                                -Dhazelcast.test.use.network=true
-                            </argLine>
-                            <groups>com.hazelcast.test.annotation.ProblematicTest</groups>
                         </configuration>
                     </plugin>
                 </plugins>

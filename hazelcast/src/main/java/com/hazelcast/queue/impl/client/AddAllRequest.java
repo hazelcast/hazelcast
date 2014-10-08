@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.impl.AddAllOperation;
+import com.hazelcast.queue.impl.operations.AddAllOperation;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Provides the request service for {@link com.hazelcast.queue.impl.AddAllOperation}
+ * Provides the request service for {@link com.hazelcast.queue.impl.operations.AddAllOperation}
  */
 public class AddAllRequest extends QueueRequest {
 

@@ -22,6 +22,8 @@ import java.util.Collection;
  * ClientService allows to query connected {@link Client}s and
  * attach/detach {@link ClientListener}s to listen connection events.
  *
+ * All the methods are thread-safe.
+ *
  * @see Client
  * @see ClientListener
  */
@@ -35,16 +37,24 @@ public interface ClientService {
     Collection<Client> getConnectedClients();
 
     /**
-     * @param clientListener ClientListener
+     * Adds a ClientListener
      *
-     * @return returns registration id.
+     * When a ClientListener is added more than once, it will receive duplicate events.
+     *
+     * @param clientListener ClientListener
+     * @return registration id. This id can be used to remove the listener using the {@link #removeClientListener(String)} method.
+     * @throws java.lang.NullPointerException if clientListener is null.
      */
     String addClientListener(ClientListener clientListener);
 
     /**
-     * @param registrationId Id of listener registration.
+     * Removes a ClientListener.
      *
+     * Can safely be called with a non existing id, or when the ClientListener already is removed.
+     *
+     * @param registrationId Id of listener registration.
      * @return true if registration is removed, false otherwise
+     * @throws java.lang.NullPointerException if registrationId is null.
      */
     boolean removeClientListener(String registrationId);
 }

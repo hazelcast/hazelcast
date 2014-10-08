@@ -420,5 +420,17 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             this.startTime = startTime;
             this.xid = xid;
         }
+
+        @Override
+        public String toString() {
+            return "TxBackupLog{"
+                    + "txLogs=" + txLogs
+                    + ", callerUuid='" + callerUuid + '\''
+                    + ", timeoutMillis=" + timeoutMillis
+                    + ", startTime=" + startTime
+                    + ", xid=" + xid
+                    + ", state=" + state
+                    + '}';
+        }
     }
 }

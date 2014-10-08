@@ -32,12 +32,12 @@ public interface ClientConnectionManager {
     void shutdown();
 
     /**
-     * Check if client connection manager is live.
-     * ClientConnectionManager is not live only when client is closing.
+     * Check if client connection manager is alive.
+     * ClientConnectionManager is not alive only when client is closing.
      *
-     * @return true if live, false otherwise.
+     * @return true if alive, false otherwise.
      */
-    boolean isLive();
+    boolean isAlive();
 
     /**
      * Start clientConnectionManager
