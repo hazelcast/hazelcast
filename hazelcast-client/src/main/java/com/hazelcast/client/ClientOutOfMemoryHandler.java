@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.HazelcastClientInstance;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.util.EmptyStatement;
@@ -31,8 +31,8 @@ public class ClientOutOfMemoryHandler extends OutOfMemoryHandler {
     public void onOutOfMemory(OutOfMemoryError oom, HazelcastInstance[] hazelcastInstances) {
         System.err.println(oom);
         for (HazelcastInstance instance : hazelcastInstances) {
-            if (instance instanceof HazelcastClientInstance) {
-                ClientHelper.cleanResources((HazelcastClientInstance) instance);
+            if (instance instanceof HazelcastClientInstanceImpl) {
+                ClientHelper.cleanResources((HazelcastClientInstanceImpl) instance);
             }
         }
     }
@@ -42,13 +42,13 @@ public class ClientOutOfMemoryHandler extends OutOfMemoryHandler {
         private ClientHelper() {
         }
 
-        public static void cleanResources(HazelcastClientInstance client) {
+        public static void cleanResources(HazelcastClientInstanceImpl client) {
             closeSockets(client);
             tryStopThreads(client);
             tryShutdown(client);
         }
 
-        private static void closeSockets(HazelcastClientInstance client) {
+        private static void closeSockets(HazelcastClientInstanceImpl client) {
             final ClientConnectionManager connectionManager = client.getConnectionManager();
             if (connectionManager != null) {
                 try {
@@ -59,7 +59,7 @@ public class ClientOutOfMemoryHandler extends OutOfMemoryHandler {
             }
         }
 
-        private static void tryShutdown(HazelcastClientInstance client) {
+        private static void tryShutdown(HazelcastClientInstanceImpl client) {
             if (client == null) {
                 return;
             }
@@ -70,7 +70,7 @@ public class ClientOutOfMemoryHandler extends OutOfMemoryHandler {
             }
         }
 
-        public static void tryStopThreads(HazelcastClientInstance client) {
+        public static void tryStopThreads(HazelcastClientInstanceImpl client) {
             if (client == null) {
                 return;
             }

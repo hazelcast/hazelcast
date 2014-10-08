@@ -19,7 +19,7 @@ package com.hazelcast.client.spi;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
-import com.hazelcast.client.impl.HazelcastClientInstance;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientCreateRequest;
 import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
@@ -82,12 +82,12 @@ public final class ProxyManager {
 
     private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
 
-    private final HazelcastClientInstance client;
+    private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
     private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies
             = new ConcurrentHashMap<ObjectNamespace, ClientProxyFuture>();
 
-    public ProxyManager(HazelcastClientInstance client) {
+    public ProxyManager(HazelcastClientInstanceImpl client) {
         this.client = client;
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {

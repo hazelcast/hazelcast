@@ -17,7 +17,7 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientInstance;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.SerializationService;
 
@@ -32,7 +32,7 @@ public final class ClientContext {
     private final ProxyManager proxyManager;
     private final ClientConfig clientConfig;
 
-    ClientContext(HazelcastClientInstance client, ProxyManager proxyManager) {
+    ClientContext(HazelcastClientInstanceImpl client, ProxyManager proxyManager) {
         this.serializationService = client.getSerializationService();
         this.clusterService = client.getClientClusterService();
         this.partitionService = client.getClientPartitionService();

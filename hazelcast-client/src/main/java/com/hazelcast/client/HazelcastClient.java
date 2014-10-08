@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.impl.HazelcastClientInstance;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -77,7 +77,7 @@ public final class HazelcastClient {
         HazelcastClientProxy proxy;
         try {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
-            final HazelcastClientInstance client = new HazelcastClientInstance(config);
+            final HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config);
             client.start();
             OutOfMemoryErrorDispatcher.register(client);
             proxy = new HazelcastClientProxy(client);

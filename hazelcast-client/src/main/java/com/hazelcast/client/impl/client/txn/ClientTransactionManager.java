@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.client.txn;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.HazelcastClientInstance;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.ICompletableFuture;
@@ -41,18 +41,18 @@ import java.util.concurrent.ConcurrentMap;
 
 public class ClientTransactionManager {
 
-    final HazelcastClientInstance client;
+    final HazelcastClientInstanceImpl client;
 
     final ConcurrentMap<SerializableXID, TransactionProxy> managedTransactions =
             new ConcurrentHashMap<SerializableXID, TransactionProxy>();
     final ConcurrentMap<SerializableXID, ClientConnection> recoveredTransactions =
             new ConcurrentHashMap<SerializableXID, ClientConnection>();
 
-    public ClientTransactionManager(HazelcastClientInstance client) {
+    public ClientTransactionManager(HazelcastClientInstanceImpl client) {
         this.client = client;
     }
 
-    public HazelcastClientInstance getClient() {
+    public HazelcastClientInstanceImpl getClient() {
         return client;
     }
 

@@ -95,7 +95,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-public class HazelcastClientInstance implements HazelcastInstance {
+public class HazelcastClientInstanceImpl implements HazelcastInstance {
 
     static {
         OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
@@ -124,7 +124,7 @@ public class HazelcastClientInstance implements HazelcastInstance {
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
 
-    public HazelcastClientInstance(ClientConfig config) {
+    public HazelcastClientInstanceImpl(ClientConfig config) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
         instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.impl.HazelcastClientInstance;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -44,7 +44,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private static final long PERIOD = 10;
     private static final long INITIAL_DELAY = 10;
 
-    private final HazelcastClientInstance client;
+    private final HazelcastClientInstanceImpl client;
 
     private final ConcurrentHashMap<Integer, Address> partitions = new ConcurrentHashMap<Integer, Address>(271, 0.75f, 1);
 
@@ -52,7 +52,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private volatile int partitionCount;
 
-    public ClientPartitionServiceImpl(HazelcastClientInstance client) {
+    public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
     }
 

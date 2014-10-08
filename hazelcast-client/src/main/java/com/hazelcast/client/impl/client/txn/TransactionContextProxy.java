@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.client.txn;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.HazelcastClientInstance;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.txn.proxy.ClientTxnListProxy;
 import com.hazelcast.client.impl.client.txn.proxy.ClientTxnMapProxy;
 import com.hazelcast.client.impl.client.txn.proxy.ClientTxnMultiMapProxy;
@@ -49,7 +49,7 @@ import java.util.Map;
 public class TransactionContextProxy implements TransactionContext {
 
     final ClientTransactionManager transactionManager;
-    final HazelcastClientInstance client;
+    final HazelcastClientInstanceImpl client;
     final TransactionProxy transaction;
     final ClientConnection connection;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap =
@@ -145,7 +145,7 @@ public class TransactionContextProxy implements TransactionContext {
         return connection;
     }
 
-    public HazelcastClientInstance getClient() {
+    public HazelcastClientInstanceImpl getClient() {
         return client;
     }
 

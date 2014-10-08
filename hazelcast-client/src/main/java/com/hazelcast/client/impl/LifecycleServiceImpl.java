@@ -41,13 +41,13 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
  */
 public final class LifecycleServiceImpl implements LifecycleService {
 
-    private final HazelcastClientInstance client;
+    private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
             = new ConcurrentHashMap<String, LifecycleListener>();
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final BuildInfo buildInfo;
 
-    public LifecycleServiceImpl(HazelcastClientInstance client) {
+    public LifecycleServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {

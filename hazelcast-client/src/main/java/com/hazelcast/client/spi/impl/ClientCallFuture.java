@@ -18,7 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.HazelcastClientInstance;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.spi.EventHandler;
@@ -76,7 +76,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
 
-    public ClientCallFuture(HazelcastClientInstance client, ClientRequest request, EventHandler handler) {
+    public ClientCallFuture(HazelcastClientInstanceImpl client, ClientRequest request, EventHandler handler) {
         final ClientProperties clientProperties = client.getClientProperties();
         int interval = clientProperties.getHeartbeatInterval().getInteger();
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);

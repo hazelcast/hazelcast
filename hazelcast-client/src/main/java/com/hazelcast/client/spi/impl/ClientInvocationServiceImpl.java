@@ -18,7 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.HazelcastClientInstance;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.spi.ClientInvocationService;
@@ -42,13 +42,13 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 public final class ClientInvocationServiceImpl implements ClientInvocationService {
 
     private final ILogger logger = Logger.getLogger(ClientInvocationService.class);
-    private final HazelcastClientInstance client;
+    private final HazelcastClientInstanceImpl client;
     private final ClientConnectionManager connectionManager;
 
     private final ResponseThread responseThread;
     private volatile boolean isShutdown;
 
-    public ClientInvocationServiceImpl(HazelcastClientInstance client) {
+    public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.connectionManager = client.getConnectionManager();
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",

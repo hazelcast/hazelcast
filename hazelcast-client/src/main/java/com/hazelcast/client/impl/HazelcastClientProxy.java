@@ -56,13 +56,13 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * A client-side proxy {@link com.hazelcast.core.HazelcastInstance} instance.
  *
- * todo: what is the purpose of this proxy? Why not return the {@link com.hazelcast.client.impl.HazelcastClientInstance}.
+ * todo: what is the purpose of this proxy? Why not return the {@link HazelcastClientInstanceImpl}.
  */
 public final class HazelcastClientProxy implements HazelcastInstance {
 
-    public volatile HazelcastClientInstance client;
+    public volatile HazelcastClientInstanceImpl client;
 
-    public HazelcastClientProxy(HazelcastClientInstance client) {
+    public HazelcastClientProxy(HazelcastClientInstanceImpl client) {
         this.client = client;
     }
 
@@ -220,7 +220,7 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     @Override
     public LifecycleService getLifecycleService() {
-        final HazelcastClientInstance hz = client;
+        final HazelcastClientInstanceImpl hz = client;
         return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
     }
 
@@ -252,8 +252,8 @@ public final class HazelcastClientProxy implements HazelcastInstance {
         return getClient().getSerializationService();
     }
 
-    private HazelcastClientInstance getClient() {
-        final HazelcastClientInstance c = client;
+    private HazelcastClientInstanceImpl getClient() {
+        final HazelcastClientInstanceImpl c = client;
         if (c == null || !c.getLifecycleService().isRunning()) {
             throw new HazelcastInstanceNotActiveException();
         }
