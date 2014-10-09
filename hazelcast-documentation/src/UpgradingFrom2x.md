@@ -103,7 +103,7 @@ The lifecycle has been simplified. `pause()`, `resume()`, `restart()` methods ha
 `await()` operation has been removed. We expect users to use `await()` method with timeout parameters.
 - **ISemaphore API:**
 The `ISemaphore` has been substantially changed. `attach()`, `detach()` methods have been removed.
-- In 2.x releases, the default value for *max-size* eviction policy was **cluster_wide_map_size**. In 3.x releases, default is **PER_NODE**. After upgrading, the *max-size* should be set according to this new default, if it is not changed. Otherwise, it is likely that OutOfMemory exception may be thrown.
+- In 2.x releases, the default value for `max-size` eviction policy was **cluster_wide_map_size**. In 3.x releases, default is **PER_NODE**. After upgrading, the `max-size` should be set according to this new default, if it is not changed. Otherwise, it is likely that OutOfMemory exception may be thrown.
 
 
 

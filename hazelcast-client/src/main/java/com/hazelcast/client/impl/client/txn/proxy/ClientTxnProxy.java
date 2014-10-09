@@ -29,9 +29,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 
-/**
- * @author ali 6/10/13
- */
 abstract class ClientTxnProxy implements TransactionalObject {
 
     final String objectName;
@@ -60,16 +57,19 @@ abstract class ClientTxnProxy implements TransactionalObject {
 
     abstract void onDestroy();
 
+    @Override
     public final void destroy() {
         onDestroy();
         ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
         invoke(request);
     }
 
+    @Override
     public Object getId() {
         return objectName;
     }
 
+    @Override
     public String getPartitionKey() {
         return StringPartitioningStrategy.getPartitionKey(getName());
     }

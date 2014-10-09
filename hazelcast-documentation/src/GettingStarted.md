@@ -4,11 +4,11 @@
 
 It is more than simple to start enjoying Hazelcast:
 
--   Download `hazelcast-<version>.zip` from [www.hazelcast.org](http://www.hazelcast.org/download/).
+-   Download `hazelcast-<`*version*`>.zip` from [www.hazelcast.org](http://www.hazelcast.org/download/).
 
--   Unzip `hazelcast-<version>.zip` file.
+-   Unzip `hazelcast-<`*version*`>.zip` file.
 
--   Add `hazelcast-<version>.jar` file into your classpath.
+-   Add `hazelcast-<`*version*`>.jar` file into your classpath.
 
 That is all.
 
