@@ -188,15 +188,16 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     public boolean isOwnedKey(Data key) {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         Integer paritionId = partitionService.getPartitionId(key);
-        return getOwnedPartitions().contains( paritionId );
+        return getOwnedPartitions().contains(paritionId);
     }
 
     @Override
     public Set<Integer> getMemberPartitions() {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         List<Integer> partitions = partitionService.getMemberPartitionsMap().get(nodeEngine.getThisAddress());
-        if(partitions == null)
+        if(partitions == null) {
             return Collections.emptySet();
+        }
         return new LinkedHashSet<Integer>(partitions);
     }
 

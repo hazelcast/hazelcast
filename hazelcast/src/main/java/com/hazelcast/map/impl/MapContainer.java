@@ -212,11 +212,11 @@ public class MapContainer extends MapContainerSupport {
             Data dataKey = mapServiceContext.toData(key, partitioningStrategy);
 
             // this node will load only owned keys
-            if( mapServiceContext.isOwnedKey(dataKey) ) {
+            if (mapServiceContext.isOwnedKey(dataKey)) {
 
                 initialKeys.put(dataKey, key);
 
-                if( initialKeys.size() == maxSizePerNode ) {
+                if (initialKeys.size() == maxSizePerNode) {
                     break;
                 }
             }

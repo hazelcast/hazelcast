@@ -42,7 +42,7 @@ public abstract class MapContainerSupport {
         MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
         int maxSize = -1;
 
-        if( maxSizeConfig.getMaxSizePolicy() == PER_NODE) {
+        if (maxSizeConfig.getMaxSizePolicy() == PER_NODE) {
             maxSize = maxSizeConfig.getSize();
         }
 
