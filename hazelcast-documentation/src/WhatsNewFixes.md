@@ -95,7 +95,7 @@ This section lists issues solved for **Hazelcast 3.3-RC2** release.
 -   Heartbeat check of clients from nodes [[#2936]](https://github.com/hazelcast/hazelcast/issues/2936).
 -	WebFilter does not clean up timed-	out sessions [[#2930]](https://github.com/hazelcast/hazelcast/issues/2930).
 -	Fix leaking empty concurrent hashmaps [[#2929]](https://github.com/hazelcast/hazelcast/issues/2929).
--	Data loss fix in *hazelcast-wm* module [[#2927]](https://github.com/hazelcast/hazelcast/issues/2927).
+-	Data loss fix in `hazelcast-wm` module [[#2927]](https://github.com/hazelcast/hazelcast/issues/2927).
 -	Configured event queue capacity [[#2924]](https://github.com/hazelcast/hazelcast/issues/2924).
 -	Client closes owner connection when a connection to the same address is closed [[#2921]](https://github.com/hazelcast/hazelcast/issues/2921).
 -	Close the owner connection if heartbeat timeout when client is smart [[#2916]](https://github.com/hazelcast/hazelcast/issues/2916).
@@ -114,7 +114,7 @@ This section lists issues solved for **Hazelcast 3.3-RC2** release.
 
 This section lists issues solved for **Hazelcast 3.3-RC1** release.
 
--	It is not possible to copy the link from *http://hazelcast.org/download/* and run `wget` on it [[#2814]](https://github.com/hazelcast/hazelcast/issues/2814).
+-	It is not possible to copy the link from [http://hazelcast.org/download/](http://hazelcast.org/download/) and run `wget` on it [[#2814]](https://github.com/hazelcast/hazelcast/issues/2814).
 -	`mapCleared` method for EntryListener is needed [[#2789]](https://github.com/hazelcast/hazelcast/issues/2789).
 -	The method `keySet` with predicate should trigger loading of MapStore [[#2692]](https://github.com/hazelcast/hazelcast/issues/2692).
 -	MapStore with write-behind: The method `IMap.remove()` followed by `IMap.putIfAbsent(key,value)` still returns the old value [[#2685]](https://github.com/hazelcast/hazelcast/issues/2685).

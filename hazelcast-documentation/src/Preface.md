@@ -30,6 +30,13 @@ For information on support for Hazelcast Enterprise, please see [hazelcast.com/s
 
 ##### Typographical Conventions
 
+Convention|Description
+-|-
+**bold**|Property valuesUsed to help the words or word groups requiring reader's specific attention stand out from the text. 
+*italic*|placeholder, related information, attention, note
+`monospace`|folder, file and library names, code snippets, code words in a paragraph.
+
+
 
 
 
