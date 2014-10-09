@@ -111,11 +111,6 @@ public final class HeapData implements MutableData {
     }
 
     @Override
-    public long readLongHeader(int offset, ByteOrder order) {
-        return Bits.readLong(header, offset, order == ByteOrder.BIG_ENDIAN);
-    }
-
-    @Override
     public int getHeapCost() {
         final int integerSizeInBytes = 4;
         final int arrayHeaderSizeInBytes = 16;
