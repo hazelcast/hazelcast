@@ -195,7 +195,7 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     public Set<Integer> getMemberPartitions() {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         List<Integer> partitions = partitionService.getMemberPartitionsMap().get(nodeEngine.getThisAddress());
-        if(partitions == null) {
+        if (partitions == null) {
             return Collections.emptySet();
         }
         return new LinkedHashSet<Integer>(partitions);
