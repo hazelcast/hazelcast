@@ -6,21 +6,33 @@ Welcome to Hazelcast Reference Manual. This manual includes concepts, instructio
 
 As the reader of this manual, you must be familiar with Java programming language and should have your preferred IDE.
 
-### Product Naming
+##### Product Naming
 
-Throuhgout this manual;
+Throughout this manual;
 
-- **Hazelcast** refers to the open source edition of the software, it is also the name of company providing this software,
-- **Hazelcast Enterprise** refers to the commercial edition of the software.
+- **Hazelcast** refers to the open source edition of Hazelcast in-memory data grid middleware. It is also the name of company providing it.
+- **Hazelcast Enterprise** refers to the commercial edition of Hazelcast.
 
-### Copyright Information
+##### Licensing
 
-Hazelcast is provided under Apache 2 license.
+Hazelcast is free provided under Apache 2 license. Hazelcast Enterprise is commercially licensed by Hazelcast, Inc.
 
-### Trademarks
+##### Trademarks
+
+Hazelcast is a registered trademark of Hazelcast, Inc. All other trademarks in this manual are held by their respective owners. 
 
 
-### Customer Support
+##### Customer Support
+
+Support for Hazelcast is provided via [GitHub](https://github.com/hazelcast/hazelcast/issues), [Mail Group](https://groups.google.com/forum/#!forum/hazelcast) and [StackOverflow](http://www.stackoverflow.com). 
+
+For information on support for Hazelcast Enterprise, please see [hazelcast.com/support/commercial](http://hazelcast.com/support/commercial/).
+
+##### Typographical Conventions
+
+
+
+
 
 
 

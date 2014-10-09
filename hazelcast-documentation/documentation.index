@@ -1,4 +1,10 @@
 # You can now add comments using a hash-sign upfront the line :)
+src/Preface.md
+src/WhatsNew.md
+#	src/WhatsNewImprovements.md
+	src/WhatsNewFixes.md
+	src/UpgradingFrom2x.md
+	src/DocumentRevisionHistory.md
 src/Introduction.md
 	src/WhyHazelcast.md
 	src/GettingStarted.md
@@ -7,11 +13,6 @@ src/Introduction.md
 		src/ConfiguringHazelcast.md
 	src/UseCases.md
 	src/Resources.md
-src/WhatsNew.md
-#	src/WhatsNewImprovements.md
-	src/WhatsNewFixes.md
-	src/UpgradingFrom2x.md
-	src/DocumentRevisionHistory.md
 src/Distributed_Data_Structures.md
 	src/Map.md
 		src/Map-Backups.md
