@@ -33,7 +33,7 @@ import static org.junit.Assert.assertSame;
 @Category(QuickTest.class)
 public class EnumTest {
 
-    final SerializationService ss = new SerializationServiceBuilder().build();
+    final SerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void test1() throws IOException {

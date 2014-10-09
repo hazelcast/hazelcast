@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache;
+package com.hazelcast.cache.standalone;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;

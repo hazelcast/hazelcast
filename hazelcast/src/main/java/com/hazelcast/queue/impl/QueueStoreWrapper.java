@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.QuickMath;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -42,10 +43,9 @@ import java.util.Set;
 public class QueueStoreWrapper implements QueueStore<Data> {
 
     private static final int DEFAULT_MEMORY_LIMIT = 1000;
-
     private static final int DEFAULT_BULK_LOAD = 250;
-
     private static final int OUTPUT_SIZE = 1024;
+    private static final int BUFFER_SIZE_FACTOR = 8;
 
     private QueueStore store;
 
@@ -134,11 +134,11 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         final Object actualValue;
         if (binary) {
             // WARNING: we can't pass original Data to the user
-            BufferObjectDataOutput out = serializationService.createObjectDataOutput(value.totalSize());
+            int size = QuickMath.normalize(value.dataSize(), BUFFER_SIZE_FACTOR);
+            BufferObjectDataOutput out = serializationService.createObjectDataOutput(size);
             try {
-                value.writeData(out);
-                // buffer size is exactly equal to binary size, no need to copy array.
-                actualValue = out.getBuffer();
+                out.writeData(value);
+                actualValue = out.toByteArray();
             } catch (IOException e) {
                 throw new HazelcastException(e);
             } finally {
@@ -164,7 +164,7 @@ public class QueueStoreWrapper implements QueueStore<Data> {
             BufferObjectDataOutput out = serializationService.createObjectDataOutput(OUTPUT_SIZE);
             try {
                 for (Map.Entry<Long, Data> entry : map.entrySet()) {
-                    entry.getValue().writeData(out);
+                    out.writeData(entry.getValue());
                     objectMap.put(entry.getKey(), out.toByteArray());
                     out.clear();
                 }
@@ -205,9 +205,9 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         if (binary) {
             byte[] dataBuffer = (byte[]) val;
             ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
-            Data data = new Data();
+            Data data;
             try {
-                data.readData(in);
+                data = in.readData();
             } catch (IOException e) {
                 throw new HazelcastException(e);
             }
@@ -231,9 +231,9 @@ public class QueueStoreWrapper implements QueueStore<Data> {
             for (Map.Entry<Long, ?> entry : map.entrySet()) {
                 byte[] dataBuffer = (byte[]) entry.getValue();
                 ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
-                Data data = new Data();
+                Data data;
                 try {
-                    data.readData(in);
+                    data = in.readData();
                 } catch (IOException e) {
                     throw new HazelcastException(e);
                 }

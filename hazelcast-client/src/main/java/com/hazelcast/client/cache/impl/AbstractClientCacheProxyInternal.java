@@ -34,7 +34,7 @@ import com.hazelcast.cache.impl.client.CacheReplaceRequest;
 import com.hazelcast.cache.impl.operation.AbstractMutatingCacheOperation;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
-import com.hazelcast.client.nearcache.IClientNearCache;
+import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.CacheConfig;
@@ -67,7 +67,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 abstract class AbstractClientCacheProxyInternal<K, V>
         extends AbstractClientCacheProxyBase<K, V> {
 
-    protected final IClientNearCache<Data, Object> nearCache;
+    protected final ClientNearCache<Data, Object> nearCache;
 
     private final boolean cacheOnUpdate;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;

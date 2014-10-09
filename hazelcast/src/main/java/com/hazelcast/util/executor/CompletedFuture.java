@@ -43,7 +43,7 @@ public final class CompletedFuture<V> implements ICompletableFuture<V> {
     public V get() throws InterruptedException, ExecutionException {
         Object object = value;
         if (object instanceof Data) {
-            object = serializationService.toObject((Data) object);
+            object = serializationService.toObject(object);
         }
         if (object instanceof Throwable) {
             if (object instanceof ExecutionException) {

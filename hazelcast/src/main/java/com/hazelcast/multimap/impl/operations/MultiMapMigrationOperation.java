@@ -58,7 +58,7 @@ public class MultiMapMigrationOperation extends AbstractOperation {
             out.writeInt(collections.size());
             for (Map.Entry<Data, MultiMapWrapper> collectionEntry : collections.entrySet()) {
                 Data key = collectionEntry.getKey();
-                key.writeData(out);
+                out.writeData(key);
                 MultiMapWrapper wrapper = collectionEntry.getValue();
                 Collection<MultiMapRecord> coll = wrapper.getCollection(false);
                 out.writeInt(coll.size());
@@ -82,8 +82,7 @@ public class MultiMapMigrationOperation extends AbstractOperation {
             int collectionSize = in.readInt();
             Map<Data, MultiMapWrapper> collections = new HashMap<Data, MultiMapWrapper>();
             for (int j = 0; j < collectionSize; j++) {
-                Data key = new Data();
-                key.readData(in);
+                Data key = in.readData();
                 int collSize = in.readInt();
                 String collectionType = in.readUTF();
                 Collection<MultiMapRecord> coll;

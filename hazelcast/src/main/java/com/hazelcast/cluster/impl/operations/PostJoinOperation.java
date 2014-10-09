@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster.impl.operations;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -24,8 +25,8 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -58,7 +59,27 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
             for (int i = 0; i < len; i++) {
                 final Operation op = operations[i];
                 op.setNodeEngine(nodeEngine)
-                        .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                        .setResponseHandler(new ResponseHandler() {
+                            @Override
+                            public void sendResponse(Object obj) {
+                                if (obj instanceof Throwable) {
+                                    Throwable t = (Throwable) obj;
+                                    ILogger logger = nodeEngine.getLogger(op.getClass());
+                                    logger.warning("Error while running post-join operation: "
+                                            + t.getClass().getSimpleName() + ": " + t.getMessage());
+
+                                    if (logger.isFinestEnabled()) {
+                                        logger.finest(t);
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public boolean isLocal() {
+                                return true;
+                            }
+                        });
+
                 OperationAccessor.setCallerAddress(op, getCallerAddress());
                 OperationAccessor.setConnection(op, getConnection());
                 operations[i] = op;

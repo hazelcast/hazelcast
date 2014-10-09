@@ -52,23 +52,19 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         assertEquals(expectedPerEntryHeapCost, testMapBuilder.totalHeapCost());
     }
 
-
     @Test
     public void testExactHeapCostAfterUpdateWithMultipleBackupNodes() throws InterruptedException {
-        final long expectedPerEntryHeapCost = 176L;
-        final long putCount = 1000L;
-        final int nodeCount = 3, expectedReplicaCount = nodeCount;
-        final SizeEstimatorTestMapBuilder<Long, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Long, Long>();
-        final IMap<Long, Long> map = testMapBuilder.withNodeCount(nodeCount).withBackupCount(nodeCount - 1).build();
-        for (long i = 0; i < putCount; i++) {
-            map.put(i, i);
-        }
-        for (long i = 0; i < putCount; i++) {
-            map.put(i, i);
+        final long expectedPerEntryHeapCost = 172L;
+        final int putCount = 1;
+        final int nodeCount = 1;
+        final SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Integer, Long>();
+        final IMap<Integer, Long> map = testMapBuilder.withNodeCount(nodeCount).withBackupCount(nodeCount - 1).build();
+        for (int i = 0; i < putCount; i++) {
+            map.put(i, System.currentTimeMillis());
         }
         final long heapCost = testMapBuilder.totalHeapCost();
         assertEquals("Heap cost calculation is wrong!",
-                expectedPerEntryHeapCost * putCount * expectedReplicaCount, heapCost);
+                expectedPerEntryHeapCost * putCount * nodeCount, heapCost);
     }
 
 

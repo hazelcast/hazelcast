@@ -13,7 +13,7 @@ class InvalidRawDataPortable extends RawDataPortable {
     InvalidRawDataPortable() {
     }
 
-    InvalidRawDataPortable(long l, char[] c, NamedPortable p, int k, String s, SimpleDataSerializable sds) {
+    InvalidRawDataPortable(long l, char[] c, NamedPortable p, int k, String s, ByteArrayDataSerializable sds) {
         super(l, c, p, k, s, sds);
     }
 

@@ -16,11 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,7 +29,6 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
     private final Map<String, FieldDefinition> fieldDefinitionsMap = new HashMap<String,
             FieldDefinition>();
-    private final Set<ClassDefinition> nestedClassDefinitions = new HashSet<ClassDefinition>();
 
     public ClassDefinitionImpl() {
     }
@@ -43,13 +39,9 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         this.version = version;
     }
 
-    public void addFieldDef(FieldDefinition fd) {
+    void addFieldDef(FieldDefinitionImpl fd) {
         fieldDefinitions.add(fd);
         fieldDefinitionsMap.put(fd.getName(), fd);
-    }
-
-    public void addClassDef(ClassDefinition cd) {
-        nestedClassDefinitions.add(cd);
     }
 
     public FieldDefinition getField(String name) {
@@ -58,10 +50,6 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
 
     public FieldDefinition getField(int fieldIndex) {
         return fieldDefinitions.get(fieldIndex);
-    }
-
-    public Set<ClassDefinition> getNestedClassDefinitions() {
-        return nestedClassDefinitions;
     }
 
     public boolean hasField(String fieldName) {
@@ -88,44 +76,8 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         throw new IllegalArgumentException("Unknown field: " + fieldName);
     }
 
-    public int getFieldVersion(String fieldName) {
-        final FieldDefinition fd = getField(fieldName);
-        if (fd != null) {
-            return fd.getVersion();
-        }
-        throw new IllegalArgumentException("Unknown field: " + fieldName);
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(factoryId);
-        out.writeInt(classId);
-        out.writeInt(version);
-        out.writeInt(fieldDefinitions.size());
-        for (FieldDefinition fieldDefinition : fieldDefinitions) {
-            fieldDefinition.writeData(out);
-        }
-        out.writeInt(nestedClassDefinitions.size());
-        for (ClassDefinition classDefinition : nestedClassDefinitions) {
-            classDefinition.writeData(out);
-        }
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        factoryId = in.readInt();
-        classId = in.readInt();
-        version = in.readInt();
-        int size = in.readInt();
-        for (int i = 0; i < size; i++) {
-            FieldDefinitionImpl fieldDefinition = new FieldDefinitionImpl();
-            fieldDefinition.readData(in);
-            addFieldDef(fieldDefinition);
-        }
-        size = in.readInt();
-        for (int i = 0; i < size; i++) {
-            ClassDefinitionImpl classDefinition = new ClassDefinitionImpl();
-            classDefinition.readData(in);
-            addClassDef(classDefinition);
-        }
+    Collection<FieldDefinition> getFieldDefinitions() {
+        return fieldDefinitions;
     }
 
     @Override
@@ -136,9 +88,6 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     void setVersionIfNotSet(int version) {
         if (getVersion() < 0) {
             this.version = version;
-            for (FieldDefinition fd : fieldDefinitions) {
-                ((FieldDefinitionImpl) fd).setVersionIfNotSet(version);
-            }
         }
     }
 

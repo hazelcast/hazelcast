@@ -87,7 +87,7 @@ final class PortableExtractor {
     }
 
     private static FieldDefinition getFieldDefinition(Data data, String fieldName, PortableContext portableContext) {
-        ClassDefinition classDefinition = data.getClassDefinition();
+        ClassDefinition classDefinition = portableContext.lookupClassDefinition(data);
         FieldDefinition fieldDefinition = portableContext.getFieldDefinition(classDefinition, fieldName);
         if (fieldDefinition == null) {
             throw new QueryException("Unknown Portable field: " + fieldName);

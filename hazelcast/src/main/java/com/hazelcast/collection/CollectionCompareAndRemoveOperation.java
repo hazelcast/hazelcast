@@ -79,7 +79,7 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
         out.writeBoolean(retain);
         out.writeInt(valueSet.size());
         for (Data value : valueSet) {
-            value.writeData(out);
+            out.writeData(value);
         }
     }
 
@@ -90,8 +90,7 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
         final int size = in.readInt();
         valueSet = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {
-            final Data value = new Data();
-            value.readData(in);
+            Data value = in.readData();
             valueSet.add(value);
         }
     }

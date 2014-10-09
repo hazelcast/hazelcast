@@ -54,6 +54,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.executor.ExecutorType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -104,13 +105,11 @@ final class BasicOperationService implements InternalOperationService {
 
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
-    private static final long SLEEP_TIME = 100;
-    private static final int TRY_COUNT = 10;
-    private static final long TRY_PAUSE_MILLIS = 300;
     private static final long SCHEDULE_DELAY = 1111;
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
     private static final int CONCURRENCY_LEVEL = 16;
+    private static final int ASYNC_QUEUE_CAPACITY = 100000;
 
     final ConcurrentMap<Long, BasicInvocation> invocations;
     final BasicOperationScheduler scheduler;
@@ -148,6 +147,9 @@ final class BasicOperationService implements InternalOperationService {
         this.operationBackupHandler = new OperationBackupHandler();
         this.operationPacketHandler = new OperationPacketHandler();
         this.responsePacketHandler = new ResponsePacketHandler();
+
+        executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
+                ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
     }
 
     @Override
@@ -310,15 +312,22 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
-    public boolean send(final Operation op, final Address target) {
+    public boolean send(Operation op, Address target) {
         if (target == null) {
             throw new IllegalArgumentException("Target is required!");
         }
         if (nodeEngine.getThisAddress().equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
-
-        return send(op, node.getConnectionManager().getOrConnect(target));
+        Data data = nodeEngine.toData(op);
+        int partitionId = scheduler.getPartitionIdForExecution(op);
+        Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
+        packet.setHeader(Packet.HEADER_OP);
+        if (op instanceof UrgentSystemOperation) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        Connection connection = node.getConnectionManager().getOrConnect(target);
+        return nodeEngine.send(packet, connection);
     }
 
     @Override
@@ -336,20 +345,7 @@ final class BasicOperationService implements InternalOperationService {
         if (response.isUrgent()) {
             packet.setHeader(Packet.HEADER_URGENT);
         }
-        return nodeEngine.send(packet, node.getConnectionManager().getOrConnect(target));
-    }
-
-    private boolean send(Operation op, Connection connection) {
-        Data data = nodeEngine.toData(op);
-
-        //enable this line to get some logging of sizes of operations.
-        //System.out.println(op.getClass()+" "+data.bufferSize());
-        int partitionId = scheduler.getPartitionIdForExecution(op);
-        Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
-        packet.setHeader(Packet.HEADER_OP);
-        if (op instanceof UrgentSystemOperation) {
-            packet.setHeader(Packet.HEADER_URGENT);
-        }
+        Connection connection = node.getConnectionManager().getOrConnect(target);
         return nodeEngine.send(packet, connection);
     }
 
@@ -556,8 +552,8 @@ final class BasicOperationService implements InternalOperationService {
     private final class ResponsePacketHandler {
         private void handle(Packet packet) {
             try {
-                final Data data = packet.getData();
-                final Response response = (Response) nodeEngine.toObject(data);
+                Data data = packet.getData();
+                Response response = (Response) nodeEngine.toObject(data);
 
                 if (response instanceof NormalResponse) {
                     notifyRemoteCall((NormalResponse) response);
@@ -611,7 +607,6 @@ final class BasicOperationService implements InternalOperationService {
             Connection conn = packet.getConn();
             Address caller = conn.getEndPoint();
             Data data = packet.getData();
-
             try {
                 Object object = nodeEngine.toObject(data);
                 Operation op = (Operation) object;

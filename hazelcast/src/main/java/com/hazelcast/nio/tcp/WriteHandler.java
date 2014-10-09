@@ -196,8 +196,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void shutdown() {
-        while (poll() != null) {
-        }
+        writeQueue.clear();
+        urgencyWriteQueue.clear();
 
         final CountDownLatch latch = new CountDownLatch(1);
         ioSelector.addTask(new Runnable() {

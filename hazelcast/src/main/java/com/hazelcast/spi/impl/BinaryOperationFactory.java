@@ -52,13 +52,12 @@ public final class BinaryOperationFactory implements OperationFactory, NodeAware
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        operationData.writeData(out);
+        out.writeData(operationData);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        operationData = new Data();
-        operationData.readData(in);
+        operationData = in.readData();
     }
 
     @Override

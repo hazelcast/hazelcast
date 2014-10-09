@@ -71,7 +71,7 @@ public class PutFromLoadAllBackupOperation extends AbstractMapOperation implemen
         final int size = keyValueSequence.size();
         out.writeInt(size);
         for (Data data : keyValueSequence) {
-            data.writeData(out);
+            out.writeData(data);
         }
     }
 
@@ -84,8 +84,7 @@ public class PutFromLoadAllBackupOperation extends AbstractMapOperation implemen
         } else {
             final List<Data> tmpKeyValueSequence = new ArrayList<Data>(size);
             for (int i = 0; i < size; i++) {
-                final Data data = new Data();
-                data.readData(in);
+                Data data = in.readData();
                 tmpKeyValueSequence.add(data);
             }
             keyValueSequence = tmpKeyValueSequence;

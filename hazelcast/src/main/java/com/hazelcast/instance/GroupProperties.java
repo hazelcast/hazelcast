@@ -48,6 +48,7 @@ public class GroupProperties {
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
+    public static final String PROP_IO_QUEUE_CAPACITY = "hazelcast.io.queue.capacity";
     /**
      * The number of partition threads per Member. If this is less than the number of partitions on a Member, then
      * partition operations will queue behind other operations of different partitions. The default is 4.
@@ -112,9 +113,13 @@ public class GroupProperties {
     public static final String PROP_PARTITION_MIGRATION_ZIP_ENABLED = "hazelcast.partition.migration.zip.enabled";
     public static final String PROP_PARTITION_TABLE_SEND_INTERVAL = "hazelcast.partition.table.send.interval";
     public static final String PROP_PARTITION_BACKUP_SYNC_INTERVAL = "hazelcast.partition.backup.sync.interval";
+    public static final String PROP_PARTITION_MAX_PARALLEL_REPLICATIONS
+            = "hazelcast.partition.max.parallel.replications";
     public static final String PROP_PARTITIONING_STRATEGY_CLASS = "hazelcast.partitioning.strategy.class";
     public static final String PROP_GRACEFUL_SHUTDOWN_MAX_WAIT = "hazelcast.graceful.shutdown.max.wait";
     public static final String PROP_SYSTEM_LOG_ENABLED = "hazelcast.system.log.enabled";
+
+    // OLD ELASTIC MEMORY PROPS
     public static final String PROP_ELASTIC_MEMORY_ENABLED = "hazelcast.elastic.memory.enabled";
     public static final String PROP_ELASTIC_MEMORY_TOTAL_SIZE = "hazelcast.elastic.memory.total.size";
     public static final String PROP_ELASTIC_MEMORY_CHUNK_SIZE = "hazelcast.elastic.memory.chunk.size";
@@ -146,6 +151,8 @@ public class GroupProperties {
     public final GroupProperty HEALTH_MONITORING_DELAY_SECONDS;
 
     public final GroupProperty IO_THREAD_COUNT;
+
+    public final GroupProperty IO_QUEUE_CAPACITY;
 
     public final GroupProperty EVENT_QUEUE_CAPACITY;
 
@@ -245,6 +252,8 @@ public class GroupProperties {
 
     public final GroupProperty PARTITION_BACKUP_SYNC_INTERVAL;
 
+    public final GroupProperty PARTITION_MAX_PARALLEL_REPLICATIONS;
+
     public final GroupProperty PARTITIONING_STRATEGY_CLASS;
 
     public final GroupProperty GRACEFUL_SHUTDOWN_MAX_WAIT;
@@ -281,11 +290,13 @@ public class GroupProperties {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
+        IO_QUEUE_CAPACITY = new GroupProperty(config, PROP_IO_QUEUE_CAPACITY, "10000");
+
         //-1 means that the value is worked out dynamically.
         PARTITION_OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_PARTITION_OPERATION_THREAD_COUNT, "-1");
         GENERIC_OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_GENERIC_OPERATION_THREAD_COUNT, "-1");
-        EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "5");
-        EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EVENT_QUEUE_CAPACITY, "1000000");
+        EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "3");
+        EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EVENT_QUEUE_CAPACITY, "10000");
         EVENT_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_EVENT_QUEUE_TIMEOUT_MILLIS, "250");
         CLIENT_ENGINE_THREAD_COUNT = new GroupProperty(config, PROP_CLIENT_ENGINE_THREAD_COUNT, "-1");
 
@@ -337,6 +348,7 @@ public class GroupProperties {
         PARTITION_MIGRATION_ZIP_ENABLED = new GroupProperty(config, PROP_PARTITION_MIGRATION_ZIP_ENABLED, "true");
         PARTITION_TABLE_SEND_INTERVAL = new GroupProperty(config, PROP_PARTITION_TABLE_SEND_INTERVAL, "15");
         PARTITION_BACKUP_SYNC_INTERVAL = new GroupProperty(config, PROP_PARTITION_BACKUP_SYNC_INTERVAL, "30");
+        PARTITION_MAX_PARALLEL_REPLICATIONS = new GroupProperty(config, PROP_PARTITION_MAX_PARALLEL_REPLICATIONS, "5");
         PARTITIONING_STRATEGY_CLASS = new GroupProperty(config, PROP_PARTITIONING_STRATEGY_CLASS, "");
         GRACEFUL_SHUTDOWN_MAX_WAIT = new GroupProperty(config, PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "600");
         SYSTEM_LOG_ENABLED = new GroupProperty(config, PROP_SYSTEM_LOG_ENABLED, "true");

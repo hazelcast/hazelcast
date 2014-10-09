@@ -92,7 +92,7 @@ public class LifecycleServiceImpl implements LifecycleService {
         }
     }
 
-    private int getShutdownTimeoutSeconds(Node node) {
+    private static int getShutdownTimeoutSeconds(Node node) {
         int gracefulShutdownMaxWaitSeconds = node.groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
         return Math.min(DEFAULT_GRACEFUL_SHUTDOWN_WAIT, gracefulShutdownMaxWaitSeconds);
     }

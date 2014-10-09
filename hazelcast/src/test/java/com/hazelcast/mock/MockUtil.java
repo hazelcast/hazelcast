@@ -1,10 +1,10 @@
 package com.hazelcast.mock;
 
-import java.lang.reflect.Method;
-
 import org.mockito.AdditionalAnswers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import java.lang.reflect.Method;
 
 public class MockUtil {
 

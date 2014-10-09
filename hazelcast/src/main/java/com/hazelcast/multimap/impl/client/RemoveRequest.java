@@ -56,15 +56,14 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
         writer.writeLong("t", threadId);
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        value.writeData(out);
+        out.writeData(value);
     }
 
     public void read(PortableReader reader) throws IOException {
         threadId = reader.readLong("t");
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
     }
 
     public Permission getRequiredPermission() {

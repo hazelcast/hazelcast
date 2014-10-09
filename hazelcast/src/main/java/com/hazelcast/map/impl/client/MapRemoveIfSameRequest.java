@@ -76,18 +76,16 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest implements Por
         writer.writeUTF("n", name);
         writer.writeLong("t", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
-        value.writeData(out);
+        out.writeData(key);
+        out.writeData(value);
     }
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         threadId = reader.readLong("t");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
-        value = new Data();
-        value.readData(in);
+        key = in.readData();
+        value = in.readData();
     }
 
     public Permission getRequiredPermission() {
@@ -106,6 +104,6 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest implements Por
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{key, value};
+        return new Object[] {key, value};
     }
 }

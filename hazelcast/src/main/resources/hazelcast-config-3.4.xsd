@@ -36,6 +36,7 @@
                 <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="multimap" type="multimap" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="replicatedmap" type="replicatedmap" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="cache" type="cache" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="list" type="list" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
@@ -43,6 +44,7 @@
                 <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="off-heap-memory" type="off-heap-memory" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="member-attributes" minOccurs="0" maxOccurs="1"/>
@@ -187,6 +189,85 @@
             </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="cache">
+        <xs:sequence>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of sync backups. If 1 is set as the backup-count for example,
+                        then all entries of the map will be copied to another JVM for
+                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of async backups. If 1 is set as the backup-count for example,
+                        then all entries of the map will be copied to another JVM for
+                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum number of seconds for each entry to stay in the cache. Entries that are
+                        older than &lt;time-to-live-seconds&gt; and not updated for &lt;time-to-live-seconds&gt;
+                        will get automatically evicted from the map.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="eviction-percentage" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        When max. size is reached, specified percentage of the cache will be evicted. Any integer between
+                        0 and 100.
+                        If 25 is set for example, 25% of the entries will get evicted.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:byte">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="eviction-threshold-percentage" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        When size reaches threshold percentage, eviction will be fired. Any integer between
+                        0 and 100.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:byte">
+                        <xs:minInclusive value="0"/>
+                        <xs:maxInclusive value="100"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="eviction-policy" type="cache-eviction-policy" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Valid values are:
+                        NONE (no eviction),
+                        RANDOM,
+                        LRU (Least Recently Used),
+                        LFU (Least Frequently Used).
+                        NONE is the default.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -914,6 +995,15 @@
         </xs:restriction>
     </xs:simpleType>
 
+    <xs:simpleType name="cache-eviction-policy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="NONE"/>
+            <xs:enumeration value="RANDOM"/>
+            <xs:enumeration value="LRU"/>
+            <xs:enumeration value="LFU"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:simpleType name="in-memory-format">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="BINARY"/>
@@ -988,6 +1078,47 @@
         </xs:sequence>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
     </xs:complexType>
+
+    <xs:complexType name="off-heap-memory">
+        <xs:sequence>
+            <xs:element name="size" type="memory-size" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="min-block-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="page-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="metadata-space-percentage" minOccurs="0" maxOccurs="1">
+                <xs:simpleType>
+                    <xs:restriction base="xs:decimal">
+                        <xs:totalDigits value="3" />
+                        <xs:fractionDigits value="1"/>
+                        <xs:minInclusive value="5" />
+                        <xs:maxInclusive value="95"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type" />
+        <xs:attribute name="enabled" default="false" type="xs:boolean"/>
+    </xs:complexType>
+
+    <xs:complexType name="memory-size">
+            <xs:attribute name="value" type="xs:int" default="128"/>
+            <xs:attribute name="unit" type="memory-unit" default="MEGABYTES" />
+    </xs:complexType>
+
+    <xs:simpleType name="memory-unit">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="BYTES" />
+            <xs:enumeration value="KILOBYTES"/>
+            <xs:enumeration value="MEGABYTES"/>
+            <xs:enumeration value="GIGABYTES"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="memory-allocator-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="STANDARD" />
+            <xs:enumeration value="POOLED"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="property">
         <xs:simpleContent>

@@ -71,7 +71,7 @@ class AbstractCacheRecord<V>
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        key.writeData(out);
+        out.writeData(key);
         out.writeLong(expirationTime);
         out.writeObject(value);
     }
@@ -79,8 +79,7 @@ class AbstractCacheRecord<V>
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
         expirationTime = in.readLong();
         value = in.readObject();
 

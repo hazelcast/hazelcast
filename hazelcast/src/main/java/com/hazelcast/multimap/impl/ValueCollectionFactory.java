@@ -82,7 +82,7 @@ public final class ValueCollectionFactory {
      */
     public static <T> Collection<T> createCollection(Collection collection) {
         final MultiMapConfig.ValueCollectionType collectionType = findCollectionType(collection);
-        if (collection == null || collection.isEmpty()) {
+        if (collection.isEmpty()) {
             return emptyCollection(collectionType);
         }
         return createCollection(collectionType, collection.size());

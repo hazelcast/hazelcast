@@ -64,8 +64,8 @@ public class CachePutIfAbsentRequest
         writer.writeUTF("n", name);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
-        value.writeData(out);
+        out.writeData(key);
+        out.writeData(value);
         out.writeObject(expiryPolicy);
     }
 
@@ -74,10 +74,8 @@ public class CachePutIfAbsentRequest
         name = reader.readUTF("n");
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
-        value = new Data();
-        value.readData(in);
+        key = in.readData();
+        value = in.readData();
         expiryPolicy = in.readObject();
     }
 

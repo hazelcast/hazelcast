@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.eviction;
 
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryEventType;
@@ -77,7 +78,7 @@ public final class EvictionHelper {
 
     public static void removeEvictableRecords(final RecordStore recordStore, int evictableSize, final MapConfig mapConfig,
                                               final MapServiceContext mapServiceContext, boolean backup) {
-        final MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
+        final EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
         // criteria is a long value, like last access times or hits,
         // used for calculating LFU or LRU.
         final long[] criterias = createAndPopulateEvictionCriteriaArray(recordStore, evictionPolicy);
@@ -112,7 +113,7 @@ public final class EvictionHelper {
     }
 
     private static long[] createAndPopulateEvictionCriteriaArray(RecordStore recordStore,
-                                                                 MapConfig.EvictionPolicy evictionPolicy) {
+                                                                 EvictionPolicy evictionPolicy) {
         final int size = recordStore.size();
         long[] criterias = null;
         int index = 0;
@@ -220,7 +221,7 @@ public final class EvictionHelper {
         return evictableSize;
     }
 
-    private static long getEvictionCriteriaValue(Record record, MapConfig.EvictionPolicy evictionPolicy) {
+    private static long getEvictionCriteriaValue(Record record, EvictionPolicy evictionPolicy) {
         long value;
         switch (evictionPolicy) {
             case LRU:

@@ -71,7 +71,7 @@ public class CacheLoadAllOperationFactory
         if (keys != null) {
             out.writeInt(keys.size());
             for (Data key : keys) {
-                key.writeData(out);
+                out.writeData(key);
             }
         }
     }
@@ -86,8 +86,7 @@ public class CacheLoadAllOperationFactory
             int size = in.readInt();
             keys = new HashSet<Data>(size);
             for (int i = 0; i < size; i++) {
-                Data key = new Data();
-                key.readData(in);
+                Data key = in.readData();
                 keys.add(key);
             }
         }

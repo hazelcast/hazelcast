@@ -299,9 +299,14 @@ public class XMLConfigBuilderTest {
     }
 
     private void testConfig2Xml2Config(String fileName) {
+        String pass = "password";
         final Config config = new ClasspathXmlConfig(fileName);
+        config.getGroupConfig().setPassword(pass);
+
         final String xml = new ConfigXmlGenerator(true).generate(config);
         final Config config2 = new InMemoryXmlConfig(xml);
+        config2.getGroupConfig().setPassword(pass);
+
         assertTrue(config.isCompatible(config2));
         assertTrue(config2.isCompatible(config));
     }
@@ -335,7 +340,7 @@ public class XMLConfigBuilderTest {
         final Config config = buildConfig(xml);
         final MapConfig mapConfig = config.getMapConfig("testCaseInsensitivity");
         assertTrue(mapConfig.getInMemoryFormat().equals(InMemoryFormat.BINARY));
-        assertTrue(mapConfig.getEvictionPolicy().equals(MapConfig.EvictionPolicy.NONE));
+        assertTrue(mapConfig.getEvictionPolicy().equals(EvictionPolicy.NONE));
         assertTrue(mapConfig.getMaxSizeConfig().getMaxSizePolicy().equals(MaxSizeConfig.MaxSizePolicy.PER_PARTITION));
     }
 
@@ -567,7 +572,7 @@ public class XMLConfigBuilderTest {
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.3.xsd");
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.4.xsd");
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);

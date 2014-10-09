@@ -80,7 +80,7 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
         writer.writeLong("t", threadId);
         writer.writeLong("timeout", timeout);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -88,8 +88,7 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
         threadId = reader.readLong("t");
         timeout = reader.readLong("timeout");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     public Permission getRequiredPermission() {
@@ -108,6 +107,6 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{key, timeout, TimeUnit.MILLISECONDS};
+        return new Object[] {key, timeout, TimeUnit.MILLISECONDS};
     }
 }

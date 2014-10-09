@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -74,9 +73,9 @@ public class CacheReplaceRequest
         writer.writeUTF("n", name);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
-        value.writeData(out);
-        IOUtil.writeNullableData(out, currentValue);
+        out.writeData(key);
+        out.writeData(value);
+        out.writeData(currentValue);
         out.writeObject(expiryPolicy);
     }
 
@@ -85,11 +84,9 @@ public class CacheReplaceRequest
         name = reader.readUTF("n");
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
-        value = new Data();
-        value.readData(in);
-        currentValue = IOUtil.readNullableData(in);
+        key = in.readData();
+        value = in.readData();
+        currentValue = in.readData();
         expiryPolicy = in.readObject();
     }
 

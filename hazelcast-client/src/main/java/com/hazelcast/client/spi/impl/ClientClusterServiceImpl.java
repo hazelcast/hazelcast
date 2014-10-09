@@ -153,10 +153,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public String addMembershipListener(MembershipListener listener) {
-        return addMembershipListenerWithInit(listener);
-    }
-
-    public String addMembershipListenerWithInit(MembershipListener listener) {
         final String id = UuidUtil.buildRandomUuidString();
         listeners.put(id, listener);
         if (listener instanceof InitialMembershipListener) {
@@ -167,7 +163,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return id;
     }
 
-    public String addMembershipListenerWithoutInit(MembershipListener listener) {
+    private String addMembershipListenerWithoutInit(MembershipListener listener) {
         final String id = UUID.randomUUID().toString();
         listeners.put(id, listener);
         return id;

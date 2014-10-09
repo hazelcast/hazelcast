@@ -71,7 +71,7 @@ public class CachePutIfAbsentOperation
             throws IOException {
         super.writeInternal(out);
         out.writeObject(expiryPolicy);
-        value.writeData(out);
+        out.writeData(value);
     }
 
     @Override
@@ -79,8 +79,7 @@ public class CachePutIfAbsentOperation
             throws IOException {
         super.readInternal(in);
         expiryPolicy = in.readObject();
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
     }
 
     @Override

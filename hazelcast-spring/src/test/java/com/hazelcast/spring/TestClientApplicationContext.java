@@ -204,8 +204,6 @@ public class TestClientApplicationContext {
         assertEquals("LRU", nearCacheConfig.getEvictionPolicy());
         assertEquals(4000, nearCacheConfig.getMaxSize());
         assertEquals(true, nearCacheConfig.isInvalidateOnChange());
-
-
     }
 
     @Test

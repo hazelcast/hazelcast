@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
@@ -56,7 +57,6 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * A client-side proxy {@link com.hazelcast.core.HazelcastInstance} instance.
  *
- * todo: what is the purpose of this proxy? Why not return the {@link HazelcastClientInstanceImpl}.
  */
 public final class HazelcastClientProxy implements HazelcastInstance {
 
@@ -258,5 +258,13 @@ public final class HazelcastClientProxy implements HazelcastInstance {
             throw new HazelcastInstanceNotActiveException();
         }
         return c;
+    }
+
+    public String toString() {
+        final HazelcastClientInstanceImpl hazelcastInstance = client;
+        if (hazelcastInstance != null) {
+            return hazelcastInstance.toString();
+        }
+        return "HazelcastClientInstance {NOT ACTIVE}";
     }
 }

@@ -58,8 +58,8 @@ public class PortableEntrySetResponse implements Portable {
         for (Map.Entry<Data, Data> entry : entrySet) {
             Data key = entry.getKey();
             Data value = entry.getValue();
-            key.writeData(out);
-            value.writeData(out);
+            out.writeData(key);
+            out.writeData(value);
         }
     }
 
@@ -68,10 +68,8 @@ public class PortableEntrySetResponse implements Portable {
         final ObjectDataInput in = reader.getRawDataInput();
         entrySet = new HashSet<Map.Entry>(size);
         for (int i = 0; i < size; i++) {
-            Data key = new Data();
-            Data value = new Data();
-            key.readData(in);
-            value.readData(in);
+            Data key = in.readData();
+            Data value = in.readData();
             entrySet.add(new AbstractMap.SimpleEntry(key, value));
         }
     }

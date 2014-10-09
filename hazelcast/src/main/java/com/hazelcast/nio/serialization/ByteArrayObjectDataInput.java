@@ -16,19 +16,28 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.UTFEncoderDecoder;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-class ByteArrayObjectDataInput extends PortableContextAwareInputStream
-        implements BufferObjectDataInput, PortableContextAware {
+import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
-    private static final int UTF_BUFFER_SIZE = 1024;
+class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataInput, PortableDataInput {
 
-    byte[] buffer;
+    private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
+
+    ByteBuffer header;
+
+    byte[] data;
 
     final int size;
 
@@ -40,28 +49,34 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
 
     private byte[] utfBuffer;
 
-    ByteArrayObjectDataInput(Data data, SerializationService service) {
-        this(data.buffer, service);
-        final ClassDefinition cd = data.classDefinition;
-        setClassDefinition(cd);
+    private final boolean bigEndian;
+
+    ByteArrayObjectDataInput(Data data, SerializationService service, ByteOrder byteOrder) {
+        this(data.getData(), data.getHeader(), service, byteOrder);
     }
 
-    ByteArrayObjectDataInput(byte[] buffer, SerializationService service) {
+    ByteArrayObjectDataInput(byte[] data, SerializationService service, ByteOrder byteOrder) {
+        this(data, null, service, byteOrder);
+    }
+
+    private ByteArrayObjectDataInput(byte[] data, byte[] header, SerializationService service, ByteOrder byteOrder) {
         super();
-        this.buffer = buffer;
-        this.size = buffer != null ? buffer.length : 0;
+        this.data = data;
+        this.size = data != null ? data.length : 0;
         this.service = service;
+        bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
+        this.header = header != null ? ByteBuffer.wrap(header).asReadOnlyBuffer().order(byteOrder) : null;
     }
 
     public int read() throws IOException {
-        return (pos < size) ? (buffer[pos++] & 0xff) : -1;
+        return (pos < size) ? (data[pos++] & 0xff) : -1;
     }
 
     public int read(int position) throws IOException {
-        return (position < size) ? (buffer[position] & 0xff) : -1;
+        return (position < size) ? (data[position] & 0xff) : -1;
     }
 
-    public int read(byte[] b, int off, int len) throws IOException {
+    public final int read(byte[] b, int off, int len) throws IOException {
         if (b == null) {
             throw new NullPointerException();
         } else if ((off < 0) || (off > b.length) || (len < 0)
@@ -78,12 +93,12 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
         if (pos + len > size) {
             len = size - pos;
         }
-        System.arraycopy(buffer, pos, b, off, len);
+        System.arraycopy(data, pos, b, off, len);
         pos += len;
         return len;
     }
 
-    public boolean readBoolean() throws IOException {
+    public final boolean readBoolean() throws IOException {
         final int ch = read();
         if (ch < 0) {
             throw new EOFException();
@@ -91,7 +106,7 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
         return (ch != 0);
     }
 
-    public boolean readBoolean(int position) throws IOException {
+    public final boolean readBoolean(int position) throws IOException {
         final int ch = read(position);
         if (ch < 0) {
             throw new EOFException();
@@ -111,7 +126,7 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public byte readByte() throws IOException {
+    public final byte readByte() throws IOException {
         final int ch = read();
         if (ch < 0) {
             throw new EOFException();
@@ -119,7 +134,7 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
         return (byte) (ch);
     }
 
-    public byte readByte(int position) throws IOException {
+    public final byte readByte(int position) throws IOException {
         final int ch = read(position);
         if (ch < 0) {
             throw new EOFException();
@@ -139,19 +154,15 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public char readChar() throws IOException {
+    public final char readChar() throws IOException {
         final char c = readChar(pos);
-        pos += 2;
+        pos += CHAR_SIZE_IN_BYTES;
         return c;
     }
 
     public char readChar(int position) throws IOException {
-        final int ch1 = read(position);
-        final int ch2 = read(position + 1);
-        if ((ch1 | ch2) < 0) {
-            throw new EOFException();
-        }
-        return (char) ((ch1 << 8) + (ch2 << 0));
+        checkAvailable(position, CHAR_SIZE_IN_BYTES);
+        return Bits.readChar(data, position, bigEndian);
     }
 
     /**
@@ -223,42 +234,19 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public int readInt() throws IOException {
+    public final int readInt() throws IOException {
         final int i = readInt(pos);
-        pos += 4;
+        pos += INT_SIZE_IN_BYTES;
         return i;
     }
 
     public int readInt(int position) throws IOException {
-        final int ch1 = read(position);
-        final int ch2 = read(position + 1);
-        final int ch3 = read(position + 2);
-        final int ch4 = read(position + 3);
-        if ((ch1 | ch2 | ch3 | ch4) < 0) {
-            throw new EOFException();
-        }
-        return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+        checkAvailable(position, INT_SIZE_IN_BYTES);
+        return Bits.readInt(data, position, bigEndian);
     }
 
-    /**
-     * See the general contract of the <code>readLine</code> method of
-     * <code>DataInput</code>.
-     * <p/>
-     * Bytes for this operation are read from the contained input stream.
-     *
-     * @return the next line of text from this input stream.
-     * @throws java.io.IOException if an I/O error occurs.
-     * @see java.io.BufferedReader#readLine()
-     * @see java.io.FilterInputStream#in
-     * @deprecated This method does not properly convert bytes to characters. As
-     * of JDK&nbsp;1.1, the preferred way to read lines of text is
-     * via the <code>BufferedReader.readLine()</code> method.
-     * Programs that use the <code>DataInputStream</code> class to
-     * read lines can be converted to use the
-     * <code>BufferedReader</code> class.
-     */
     @Deprecated
-    public String readLine() throws IOException {
+    public final String readLine() throws IOException {
         throw new UnsupportedOperationException();
     }
 
@@ -275,22 +263,15 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public long readLong() throws IOException {
+    public final long readLong() throws IOException {
         final long l = readLong(pos);
-        pos += 8;
+        pos += LONG_SIZE_IN_BYTES;
         return l;
     }
 
     public long readLong(int position) throws IOException {
-        long byte7 = (long) buffer[position] << 56;
-        long byte6 = (long) (buffer[position + 1] & 0xFF) << 48;
-        long byte5 = (long) (buffer[position + 2] & 0xFF) << 40;
-        long byte4 = (long) (buffer[position + 3] & 0xFF) << 32;
-        long byte3 = (long) (buffer[position + 4] & 0xFF) << 24;
-        long byte2 = (long) (buffer[position + 5] & 0xFF) << 16;
-        long byte1 = (long) (buffer[position + 6] & 0xFF) << 8;
-        long byte0 = (long) (buffer[position + 7] & 0xFF);
-        return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
+        checkAvailable(position, LONG_SIZE_IN_BYTES);
+        return Bits.readLong(data, position, bigEndian);
     }
 
     /**
@@ -306,22 +287,25 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
-    public short readShort() throws IOException {
-        final int ch1 = read();
-        final int ch2 = read();
-        if ((ch1 | ch2) < 0) {
-            throw new EOFException();
-        }
-        return (short) ((ch1 << 8) + (ch2 << 0));
+    public final short readShort() throws IOException {
+        short s = readShort(pos);
+        pos += SHORT_SIZE_IN_BYTES;
+        return s;
     }
 
     public short readShort(int position) throws IOException {
-        final int ch1 = read(position);
-        final int ch2 = read(position + 1);
-        if ((ch1 | ch2) < 0) {
-            throw new EOFException();
+        checkAvailable(position, SHORT_SIZE_IN_BYTES);
+        return Bits.readShort(data, position, bigEndian);
+    }
+
+    public byte[] readByteArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            byte[] b = new byte[len];
+            readFully(b);
+            return b;
         }
-        return (short) ((ch1 << 8) + (ch2 << 0));
+        return new byte[0];
     }
 
     public char[] readCharArray() throws IOException {
@@ -443,26 +427,33 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
      *                                        encoding of a string.
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
-    public String readUTF() throws IOException {
+    public final String readUTF() throws IOException {
         if (utfBuffer == null) {
             utfBuffer = new byte[UTF_BUFFER_SIZE];
         }
         return UTFEncoderDecoder.readUTF(this, utfBuffer);
     }
 
-    public Object readObject() throws IOException {
+    @Override
+    public final Object readObject() throws IOException {
         return service.readObject(this);
     }
 
     @Override
-    public long skip(long n) {
+    public final Data readData() throws IOException {
+        return service.readData(this);
+    }
+
+    @Override
+    public final long skip(long n) {
         if (n <= 0 || n >= Integer.MAX_VALUE) {
             return 0L;
         }
         return skipBytes((int) n);
     }
 
-    public int skipBytes(final int n) {
+    @Override
+    public final int skipBytes(final int n) {
         if (n <= 0) {
             return 0;
         }
@@ -478,11 +469,13 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
     /**
      * Returns this buffer's position.
      */
-    public int position() {
+    @Override
+    public final int position() {
         return pos;
     }
 
-    public void position(int newPos) {
+    @Override
+    public final void position(int newPos) {
         if ((newPos > size) || (newPos < 0)) {
             throw new IllegalArgumentException();
         }
@@ -492,8 +485,13 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
         }
     }
 
-    public byte[] getBuffer() {
-        return buffer;
+    final void checkAvailable(int pos, int k) throws IOException {
+        if (pos < 0) {
+            throw new IllegalArgumentException("Negative pos! -> " + pos);
+        }
+        if ((size - pos) < k) {
+            throw new EOFException("Cannot read " + k + " bytes!");
+        }
     }
 
     @Override
@@ -502,36 +500,39 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream
     }
 
     @Override
-    public boolean markSupported() {
+    public final boolean markSupported() {
         return true;
     }
 
     @Override
-    public void mark(int readlimit) {
+    public final void mark(int readlimit) {
         mark = pos;
     }
 
     @Override
-    public void reset() {
+    public final void reset() {
         pos = mark;
     }
 
     @Override
-    public void close() {
-        buffer = null;
-    }
-
-    public PortableContext getPortableContext() {
-        return service.getPortableContext();
+    public final void close() {
+        header = null;
+        data = null;
+        utfBuffer = null;
     }
 
     @Override
-    public ClassLoader getClassLoader() {
+    public final ClassLoader getClassLoader() {
         return service.getClassLoader();
     }
 
     public ByteOrder getByteOrder() {
-        return ByteOrder.BIG_ENDIAN;
+        return bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+    }
+
+    @Override
+    public ByteBuffer getHeaderBuffer() {
+        return header != null ? header : EMPTY_BUFFER;
     }
 
     @Override

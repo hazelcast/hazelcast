@@ -20,8 +20,8 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
@@ -67,7 +67,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     static int pageSize = 5;
     static int size = 50;
 
-    final private SerializationService ss = new SerializationServiceBuilder().build();
+    final private SerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @BeforeClass
     public static void createInstances(){

@@ -54,7 +54,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
             long itemId = entry.getKey();
             Data value = entry.getValue();
             out.writeLong(itemId);
-            value.writeData(out);
+            out.writeData(value);
         }
     }
 
@@ -65,8 +65,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
         dataMap = new HashMap<Long, Data>(size);
         for (int i = 0; i < size; i++) {
             long itemId = in.readLong();
-            Data value = new Data();
-            value.readData(in);
+            Data value = in.readData();
             dataMap.put(itemId, value);
         }
     }

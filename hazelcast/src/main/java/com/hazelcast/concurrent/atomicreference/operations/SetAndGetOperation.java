@@ -58,13 +58,13 @@ public class SetAndGetOperation extends AtomicReferenceBackupAwareOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(newValue);
+        out.writeData(newValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        newValue = in.readObject();
+        newValue = in.readData();
     }
 
     @Override

@@ -67,7 +67,7 @@ public class BeforeAwaitRequest extends KeyBasedClientRequest implements Portabl
         writer.writeUTF("cid", conditionId);
         ObjectDataOutput out = writer.getRawDataOutput();
         namespace.writeData(out);
-        key.writeData(out);
+        out.writeData(key);
     }
 
     @Override
@@ -77,8 +77,7 @@ public class BeforeAwaitRequest extends KeyBasedClientRequest implements Portabl
         ObjectDataInput in = reader.getRawDataInput();
         namespace = new InternalLockNamespace();
         namespace.readData(in);
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     @Override

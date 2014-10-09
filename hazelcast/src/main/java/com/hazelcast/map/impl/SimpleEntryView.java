@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -149,8 +150,8 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(key);
-        out.writeObject(value);
+        IOUtil.writeObject(out, key);
+        IOUtil.writeObject(out, value);
         out.writeLong(cost);
         out.writeLong(creationTime);
         out.writeLong(expirationTime);
@@ -165,8 +166,8 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = in.readObject();
-        value = in.readObject();
+        key = IOUtil.readObject(in);
+        value = IOUtil.readObject(in);
         cost = in.readLong();
         creationTime = in.readLong();
         expirationTime = in.readLong();

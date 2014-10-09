@@ -54,14 +54,13 @@ public class ListIndexOfRequest extends CollectionRequest {
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeBoolean("l", last);
-        value.writeData(writer.getRawDataOutput());
+        writer.getRawDataOutput().writeData(value);
     }
 
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         last = reader.readBoolean("l");
-        value = new Data();
-        value.readData(reader.getRawDataInput());
+        value = reader.getRawDataInput().readData();
     }
 
     @Override

@@ -24,6 +24,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.tcp.PacketReader;
+import com.hazelcast.nio.tcp.PacketWriter;
+import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 
 import java.util.Collection;
@@ -105,4 +109,12 @@ public interface IOService {
     SerializationService getSerializationService();
 
     PortableContext getPortableContext();
+
+    SocketChannelWrapperFactory getSocketChannelWrapperFactory();
+
+    MemberSocketInterceptor getMemberSocketInterceptor();
+
+    PacketReader createPacketReader(TcpIpConnection connection);
+
+    PacketWriter createPacketWriter(TcpIpConnection connection);
 }
