@@ -22,7 +22,12 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -98,6 +103,18 @@ public class EvictionTest extends HazelcastTestSupport {
         map.put(1, "value1", 2, TimeUnit.SECONDS);
 
         assertFalse(map.containsKey(1));
+    }
+
+    @Test
+    public void testGetEntryView_withTTL() throws Exception {
+        IMap<Integer, String> map = createSimpleMap();
+
+        map.put(1, "value", 1, TimeUnit.SECONDS);
+        sleepSeconds(2);
+
+        EntryView<Integer, String> entryView = map.getEntryView(1);
+
+        assertNull(entryView);
     }
 
     /*

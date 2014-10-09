@@ -42,7 +42,7 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements WaitS
     public void run() {
         MapService mapService = getService();
         RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
-        Record record = recordStore.getRecord(dataKey);
+        Record record = recordStore.getRecordOrNull(dataKey);
         if (record != null) {
             result = EntryViews.createSimpleEntryView(record.getKey(),
                     mapService.getMapServiceContext().toData(record.getValue()), record);
@@ -55,10 +55,8 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements WaitS
     }
 
     public boolean shouldWait() {
-        if (recordStore.isTransactionallyLocked(dataKey)) {
-            return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
-        }
-        return false;
+        return recordStore.isTransactionallyLocked(dataKey)
+                && !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
     }
 
     @Override

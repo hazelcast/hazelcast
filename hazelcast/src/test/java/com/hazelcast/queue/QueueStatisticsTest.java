@@ -45,8 +45,14 @@ public class QueueStatisticsTest extends AbstractQueueTest {
             queue.put("item" + i);
         }
 
-        LocalQueueStats stats = queue.getLocalQueueStats();
-        assertEquals(30, stats.getOfferOperationCount());
+        final LocalQueueStats stats = queue.getLocalQueueStats();
+        AssertTask task = new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(30, stats.getOfferOperationCount());
+            }
+        };
+        assertTrueEventually(task);
     }
 
     @Test
@@ -60,8 +66,15 @@ public class QueueStatisticsTest extends AbstractQueueTest {
             queue.offer("item" + i);
         }
 
-        LocalQueueStats stats = queue.getLocalQueueStats();
-        assertEquals(10, stats.getRejectedOfferOperationCount());
+        final LocalQueueStats stats = queue.getLocalQueueStats();
+        AssertTask task = new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(10, stats.getRejectedOfferOperationCount());
+            }
+        };
+        assertTrueEventually(task);
+
     }
 
 

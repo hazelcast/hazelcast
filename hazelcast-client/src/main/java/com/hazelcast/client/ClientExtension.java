@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
@@ -30,12 +31,12 @@ public interface ClientExtension {
     /**
      * Called before client is started
      */
-    void beforeStart(HazelcastClient client);
+    void beforeStart(HazelcastClientInstanceImpl client);
 
     /**
      * Called after node is started
      */
-    void afterStart(HazelcastClient client);
+    void afterStart(HazelcastClientInstanceImpl client);
 
     /**
      * Creates a <tt>SerializationService</tt> instance to be used by this client.
