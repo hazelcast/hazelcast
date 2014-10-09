@@ -62,7 +62,8 @@ public interface RecordStore {
     void removeBackup(Data dataKey);
 
     /**
-     * Gets record from {@link com.hazelcast.map.RecordStore}
+     * Gets record from {@link com.hazelcast.map.RecordStore}.
+     * Loads missing keys from map store.
      *
      * @param dataKey key.
      * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
@@ -128,8 +129,6 @@ public interface RecordStore {
      * @see {@link com.hazelcast.map.operation.MapReplicationOperation}
      */
     void putRecord(Data key, Record record);
-
-    void deleteRecord(Data key);
 
     /**
      * Iterates over record store values.
@@ -199,8 +198,6 @@ public interface RecordStore {
 
     Map.Entry<Data, Object> getMapEntry(Data dataKey, long now);
 
-    Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey);
-
     void flush();
 
     void clearPartition();
@@ -246,5 +243,14 @@ public interface RecordStore {
     MapDataStore<Data, Object> getMapDataStore();
 
     int getPartitionId();
+
+    /**
+     * Returns live record or null if record is already expired. Does not load missing keys from a map store.
+     *
+     * @param key key to be accessed
+     * @return live record or null
+     * @see #get
+     */
+    Record getRecordOrNull(Data key);
 
 }
