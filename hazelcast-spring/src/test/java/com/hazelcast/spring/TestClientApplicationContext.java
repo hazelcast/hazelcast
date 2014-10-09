@@ -17,18 +17,16 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.HazelcastClientProxy;
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;

@@ -17,7 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.HazelcastClientProxy;
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
