@@ -19,6 +19,7 @@ package com.hazelcast.collection.list;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -97,6 +98,37 @@ public class TransactionListTest extends HazelcastTestSupport {
             context.rollbackTransaction();
         }
         assertEquals(1, list.size());
+    }
+
+    @Test
+    public void testMigrationSerializationNotFails_whenTransactionsAreUsed() throws Exception {
+        Config config = new Config();
+        config.setProperty("hazelcast.partition.count", "2");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        String listName = randomString();
+        TransactionContext tr = instance1.newTransactionContext();
+        tr.beginTransaction();
+        TransactionalList<Object> list = tr.getList(listName);
+        for (int i = 0; i < 10; i++) {
+            list.add(i);
+        }
+        tr.commitTransaction();
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        Member owner = instance1.getPartitionService().getPartition(listName).getOwner();
+        HazelcastInstance aliveInstance;
+        if (instance1.getCluster().getLocalMember().equals(owner)) {
+            instance1.shutdown();
+            aliveInstance = instance2;
+        } else {
+            instance2.shutdown();
+            aliveInstance = instance1;
+        }
+        IList<Object> l = aliveInstance.getList(listName);
+
+        for (int i = 0; i < 10; i++) {
+            assertEquals(i,l.get(i));
+        }
     }
 
 }
