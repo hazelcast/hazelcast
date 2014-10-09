@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.tx;
 
+import static com.hazelcast.map.MapService.SERVICE_NAME;
+
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapEntrySet;
@@ -45,6 +47,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -54,8 +57,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 /**
  * Base class contains proxy helper methods for {@link com.hazelcast.map.tx.TransactionalMapProxy}
@@ -341,7 +342,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
             if (queryResult != null) {
-                final List<Integer> partitionIds = queryResult.getPartitionIds();
+                final Collection<Integer> partitionIds = queryResult.getPartitionIds();
                 if (partitionIds != null) {
                     plist.addAll(partitionIds);
                     result.addAll(queryResult.getResult());

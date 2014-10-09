@@ -296,7 +296,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             if (queryResult == null) {
                 continue;
             }
-            List<Integer> tmpPartitionIds = queryResult.getPartitionIds();
+            Collection<Integer> tmpPartitionIds = queryResult.getPartitionIds();
             if (tmpPartitionIds != null) {
                 partitionIds.removeAll(tmpPartitionIds);
                 for (QueryResultEntry queryResultEntry : queryResult.getResult()) {
@@ -319,7 +319,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             if (queryResult == null) {
                 continue;
             }
-            final List<Integer> queriedPartitionIds = queryResult.getPartitionIds();
+            final Collection<Integer> queriedPartitionIds = queryResult.getPartitionIds();
             if (queriedPartitionIds != null) {
                 partitionIds.removeAll(queriedPartitionIds);
                 result.addAll(queryResult.getResult());

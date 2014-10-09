@@ -16,6 +16,10 @@
 
 package com.hazelcast.map;
 
+import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteBehindManager;
+import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteThroughManager;
+import static com.hazelcast.map.mapstore.MapStoreManagers.emptyMapStoreManager;
+
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
@@ -46,10 +50,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteBehindManager;
-import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteThroughManager;
-import static com.hazelcast.map.mapstore.MapStoreManagers.emptyMapStoreManager;
 
 /**
  * Map container.
@@ -165,6 +165,7 @@ public class MapContainer extends MapContainerSupport {
             ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(),
                     mapStoreConfig.getProperties(), name);
         }
+
         loadInitialKeys();
     }
 
@@ -203,10 +204,23 @@ public class MapContainer extends MapContainerSupport {
         if (keys == null || keys.isEmpty()) {
             return;
         }
+
+        int maxSizePerNode = getMaxSizePerNode();
+
         for (Object key : keys) {
             Data dataKey = mapServiceContext.toData(key, partitioningStrategy);
-            initialKeys.put(dataKey, key);
+
+            // this node will load only owned keys
+            if (mapServiceContext.isOwnedKey(dataKey)) {
+
+                initialKeys.put(dataKey, key);
+
+                if (initialKeys.size() == maxSizePerNode) {
+                    break;
+                }
+            }
         }
+
         // remove the keys remains more than 20 minutes.
         mapServiceContext.getNodeEngine().getExecutionService().schedule(new Runnable() {
             @Override

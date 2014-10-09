@@ -66,7 +66,7 @@ public class QueryOperation extends AbstractMapOperation {
     }
 
     public void run() throws Exception {
-        List<Integer> initialPartitions = mapService.getMapServiceContext().getOwnedPartitions();
+        Collection<Integer> initialPartitions = mapService.getMapServiceContext().getOwnedPartitions();
         IndexService indexService = mapService.getMapServiceContext().getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
         // TODO: fix
@@ -86,7 +86,7 @@ public class QueryOperation extends AbstractMapOperation {
                 runParallel(initialPartitions);
             }
         }
-        List<Integer> finalPartitions = mapService.getMapServiceContext().getOwnedPartitions();
+        Collection<Integer> finalPartitions = mapService.getMapServiceContext().getOwnedPartitions();
         if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }
@@ -98,7 +98,7 @@ public class QueryOperation extends AbstractMapOperation {
         }
     }
 
-    protected void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
+    protected void runParallel(final Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final NodeEngine nodeEngine = getNodeEngine();
         final ExecutorService executor
                 = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
@@ -118,7 +118,7 @@ public class QueryOperation extends AbstractMapOperation {
         }
     }
 
-    protected void runParallelForPaging(List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
+    protected void runParallelForPaging(Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final NodeEngine nodeEngine = getNodeEngine();
         final ExecutorService executor
                 = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
