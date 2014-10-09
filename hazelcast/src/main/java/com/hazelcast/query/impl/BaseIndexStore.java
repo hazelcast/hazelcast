@@ -23,6 +23,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public abstract class BaseIndexStore implements IndexStore {
 
+    protected static final float LOAD_FACTOR = 0.75F;
+
     protected ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     protected ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     protected ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();

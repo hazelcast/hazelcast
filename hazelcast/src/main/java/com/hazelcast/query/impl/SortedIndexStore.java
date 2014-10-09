@@ -30,8 +30,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class SortedIndexStore extends BaseIndexStore {
 
-    private static final float LOAD_FACTOR = 0.75F;
-
     private final ConcurrentMap<Data, QueryableEntry> recordsWithNullValue
             = new ConcurrentHashMap<Data, QueryableEntry>();
 
@@ -103,7 +101,8 @@ public class SortedIndexStore extends BaseIndexStore {
     public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
         takeReadLock();
         try {
-            SortedMap<Comparable, ConcurrentMap<Data, QueryableEntry>> subMap = recordMap.subMap(from, to);
+            SortedMap<Comparable, ConcurrentMap<Data, QueryableEntry>> subMap =
+                    recordMap.subMap(from, true, to, true);
             for (ConcurrentMap<Data, QueryableEntry> value : subMap.values()) {
                 results.addResultSet(value);
             }
@@ -141,7 +140,7 @@ public class SortedIndexStore extends BaseIndexStore {
                     }
                     return;
                 default:
-                    throw new IllegalArgumentException("Unrecognized comparisonType:" + comparisonType);
+                    throw new IllegalArgumentException("Unrecognized comparisonType: " + comparisonType);
             }
             for (ConcurrentMap<Data, QueryableEntry> value : subMap.values()) {
                 results.addResultSet(value);
@@ -184,7 +183,7 @@ public class SortedIndexStore extends BaseIndexStore {
         takeReadLock();
         try {
             for (Comparable value : values) {
-                ConcurrentMap<Data, QueryableEntry> records = null;
+                ConcurrentMap<Data, QueryableEntry> records;
                 if (value instanceof IndexImpl.NullObject) {
                     records = recordsWithNullValue;
                 } else {
