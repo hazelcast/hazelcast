@@ -57,21 +57,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public class EventServiceImpl implements EventService {
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
-    private static final int REGISTRATION_TIMEOUT_SECONDS = 5;
-    private static final int DEREGISTER_TIMEOUT_SECONDS = 5;
     private static final int EVENT_SYNC_FREQUENCY = 100000;
     private static final int SEND_RETRY_COUNT = 50;
-    private static final int SEND_EVENT_TIMEOUT_SECONDS = 3;
+    private static final int SEND_EVENT_TIMEOUT_SECONDS = 5;
+    private static final int REGISTRATION_TIMEOUT_SECONDS = 5;
+    private static final int DEREGISTER_TIMEOUT_SECONDS = 5;
     private static final int WARNING_LOG_FREQUENCY = 1000;
 
     private static final String LOG_MSG_MEM_LEFT_DEREGISTER = "Member left while de-registering listener...";
@@ -205,12 +205,7 @@ public class EventServiceImpl implements EventService {
             }
         }
 
-        try {
-            FutureUtil.waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, TimeUnit.SECONDS,
-                    registrationExceptionHandler);
-        } catch (TimeoutException e) {
-            logger.finest(e);
-        }
+        waitWithDeadline(calls, REGISTRATION_TIMEOUT_SECONDS, TimeUnit.SECONDS, registrationExceptionHandler);
     }
 
     private void invokeDeregistrationOnOtherNodes(String serviceName, String topic, String id) {
@@ -225,12 +220,7 @@ public class EventServiceImpl implements EventService {
             }
         }
 
-        try {
-            FutureUtil.waitWithDeadline(calls, DEREGISTER_TIMEOUT_SECONDS, TimeUnit.SECONDS,
-                    deregistrationExceptionHandler);
-        } catch (TimeoutException e) {
-            logger.finest(e);
-        }
+        waitWithDeadline(calls, DEREGISTER_TIMEOUT_SECONDS, TimeUnit.SECONDS, deregistrationExceptionHandler);
     }
 
     @Override

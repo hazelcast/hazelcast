@@ -110,9 +110,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
 
-    private static final ExceptionHandler WHILE_FINALIZE_JOINS_EXCEPTION_HANDLER =
-            logAllExceptions("While waiting finalize join calls...", Level.WARNING);
-
     private static final String EXECUTOR_NAME = "hz:cluster";
     private static final int HEARTBEAT_INTERVAL = 500;
     private static final int PING_INTERVAL = 5000;
@@ -160,12 +157,16 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final ConcurrentMap<MemberImpl, Long> masterConfirmationTimes = new ConcurrentHashMap<MemberImpl, Long>();
 
+    private final ExceptionHandler whileFinalizeJoinsExceptionHandler;
+
     private volatile long clusterTimeDiff = Long.MAX_VALUE;
 
     public ClusterServiceImpl(final Node node) {
         this.node = node;
         nodeEngine = node.nodeEngine;
         logger = node.getLogger(ClusterService.class.getName());
+        whileFinalizeJoinsExceptionHandler =
+                logAllExceptions(logger, "While waiting finalize join calls...", Level.WARNING);
         thisAddress = node.getThisAddress();
         thisMember = node.getLocalMember();
         setMembers(thisMember);
@@ -910,12 +911,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     }
                 }
                 updateMembers(memberInfos);
-
-                try {
-                    waitWithDeadline(calls, 10, TimeUnit.SECONDS, WHILE_FINALIZE_JOINS_EXCEPTION_HANDLER);
-                } catch (TimeoutException e) {
-                    logger.warning("While waiting finalize join calls...", e);
-                }
+                waitWithDeadline(calls, Math.min(calls.size(), FinalizeJoinOperation.FINALIZE_JOIN_MAX_TIMEOUT),
+                        TimeUnit.SECONDS, whileFinalizeJoinsExceptionHandler);
             } finally {
                 node.getPartitionService().resumeMigration();
             }
