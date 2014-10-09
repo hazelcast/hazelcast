@@ -21,7 +21,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-
 import java.util.Set;
 
 import static com.hazelcast.util.AddressUtil.matchAnyInterface;
@@ -32,12 +31,14 @@ public class NodeMulticastListener implements MulticastListener {
     private final Node node;
     private final Set<String> trustedInterfaces;
     private final ILogger logger;
+    private ConfigCheck ourConfig;
 
     public NodeMulticastListener(Node node) {
         this.node = node;
         this.trustedInterfaces = node.getConfig().getNetworkConfig()
                 .getJoin().getMulticastConfig().getTrustedInterfaces();
         this.logger = node.getLogger("NodeMulticastListener");
+        this.ourConfig = node.createConfigCheck();
     }
 
     @Override
@@ -67,7 +68,7 @@ public class NodeMulticastListener implements MulticastListener {
             return;
         }
 
-       if (node.isMaster()) {
+        if (node.isMaster()) {
             JoinRequest request = (JoinRequest) joinMessage;
             JoinMessage response = new JoinMessage(request.getPacketVersion(), request.getBuildNumber(),
                     node.getThisAddress(), request.getUuid(), request.getConfigCheck(),
@@ -134,6 +135,11 @@ public class NodeMulticastListener implements MulticastListener {
         JoinMessage joinMessage = (JoinMessage) msg;
 
         if (isMessageToSelf(joinMessage)) {
+            return false;
+        }
+
+        ConfigCheck theirConfig = joinMessage.getConfigCheck();
+        if (!ourConfig.isSameGroup(theirConfig)) {
             return false;
         }
         return true;

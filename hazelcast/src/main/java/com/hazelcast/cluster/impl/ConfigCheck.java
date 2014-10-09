@@ -105,6 +105,13 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         return true;
     }
 
+    public boolean isSameGroup(ConfigCheck found){
+        if (!equals(groupName, found.groupName)) {
+            return false;
+        }
+        return true;
+    }
+
     private void verifyGroupPassword(ConfigCheck found) {
         if (!equals(groupPassword, found.groupPassword)) {
             throw new ConfigMismatchException("Incompatible group password!");
