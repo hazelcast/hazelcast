@@ -142,7 +142,7 @@ public interface RecordStore {
      *
      * @return read only iterator for map values.
      */
-    Iterator<Record> iterator(long now);
+    Iterator<Record> iterator(long now, boolean backup);
 
 
     /**
@@ -151,9 +151,11 @@ public interface RecordStore {
      * {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
      * this method can be used to return a read-only iterator.
      *
+     * @param now  current time in millis
+     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return read only iterator for map values.
      */
-    Iterator<Record> loadAwareIterator(long now);
+    Iterator<Record> loadAwareIterator(long now, boolean backup);
 
     /**
      * Returns records map.

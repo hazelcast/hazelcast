@@ -80,7 +80,7 @@ public final class EvictionHelper {
         final MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
         // criteria is a long value, like last access times or hits,
         // used for calculating LFU or LRU.
-        long[] criterias = createAndPopulateEvictionCriteriaArray(recordStore, evictionPolicy);
+        final long[] criterias = createAndPopulateEvictionCriteriaArray(recordStore, evictionPolicy);
         if (criterias == null) {
             return;
         }
