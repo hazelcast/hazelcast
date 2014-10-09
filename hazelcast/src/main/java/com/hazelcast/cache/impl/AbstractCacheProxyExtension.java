@@ -49,7 +49,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 abstract class AbstractCacheProxyExtension<K, V>
         extends AbstractCacheProxyInternal<K, V> {
 
-    protected AbstractCacheProxyExtension(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService) {
+    protected AbstractCacheProxyExtension(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
     }
 
@@ -278,7 +278,7 @@ abstract class AbstractCacheProxyExtension<K, V>
 
     @Override
     public CacheStatistics getLocalCacheStatistics() {
-        final CacheService service = getService();
+        final ICacheService service = getService();
         final CacheStatisticsImpl statistics = service.createCacheStatIfAbsent(name);
         return statistics;
     }

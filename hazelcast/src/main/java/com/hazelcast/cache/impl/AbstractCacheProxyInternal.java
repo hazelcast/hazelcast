@@ -63,7 +63,7 @@ abstract class AbstractCacheProxyInternal<K, V>
     private final Object completionRegistrationMutex = new Object();
     private volatile String completionRegistrationId;
 
-    protected AbstractCacheProxyInternal(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService) {
+    protected AbstractCacheProxyInternal(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
@@ -223,7 +223,7 @@ abstract class AbstractCacheProxyInternal<K, V>
     }
 
     public void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
-        final CacheService service = getService();
+        final ICacheService service = getService();
         for (String regId : listenerRegistrations) {
             service.deregisterListener(nameWithPrefix, regId);
         }
@@ -295,7 +295,7 @@ abstract class AbstractCacheProxyInternal<K, V>
         if (!syncListenerRegistrations.isEmpty() && completionRegistrationId == null) {
             synchronized (completionRegistrationMutex) {
                 if (completionRegistrationId == null) {
-                    final CacheService service = getService();
+                    final ICacheService service = getService();
                     CacheEventListener entryListener = new CacheCompletionEventListener();
                     completionRegistrationId = service.registerListener(getDistributedObjectName(), entryListener);
                 }
@@ -307,7 +307,7 @@ abstract class AbstractCacheProxyInternal<K, V>
         if (syncListenerRegistrations.isEmpty() && completionRegistrationId != null) {
             synchronized (completionRegistrationMutex) {
                 if (completionRegistrationId != null) {
-                    final CacheService service = getService();
+                    final ICacheService service = getService();
                     final boolean isDeregistered = service
                             .deregisterListener(getDistributedObjectName(), completionRegistrationId);
                     if (isDeregistered) {

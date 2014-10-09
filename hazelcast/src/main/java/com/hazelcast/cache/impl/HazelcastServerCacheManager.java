@@ -40,7 +40,7 @@ public class HazelcastServerCacheManager
         extends HazelcastCacheManager {
 
     private NodeEngine nodeEngine;
-    private CacheService cacheService;
+    private ICacheService cacheService;
 
     public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {

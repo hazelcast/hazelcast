@@ -70,7 +70,7 @@ public class CacheProxy<K, V>
 
     private HazelcastCacheManager cacheManager;
 
-    protected CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService,
+    protected CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService,
                          HazelcastServerCacheManager cacheManager) {
         super(cacheConfig, nodeEngine, cacheService);
         this.cacheManager = cacheManager;
@@ -291,7 +291,7 @@ public class CacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
         }
-        final CacheService service = getService();
+        final ICacheService service = getService();
         final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration, getNodeEngine().getSerializationService());
         final String regId = service.registerListener(getDistributedObjectName(), entryListener);
@@ -308,7 +308,7 @@ public class CacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
         }
-        final CacheService service = getService();
+        final ICacheService service = getService();
         final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
         if (regId != null) {
             if (!service.deregisterListener(getDistributedObjectName(), regId)) {

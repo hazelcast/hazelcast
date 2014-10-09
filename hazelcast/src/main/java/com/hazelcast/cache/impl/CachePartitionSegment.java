@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -39,19 +38,15 @@ import java.util.concurrent.ConcurrentMap;
  */
 public final class CachePartitionSegment {
 
-    private final NodeEngine nodeEngine;
-    private final CacheService cacheService;
+    private final ICacheService cacheService;
     private final int partitionId;
-    private final ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction =
-            new ConstructorFunction<String, ICacheRecordStore>() {
-        public ICacheRecordStore createNew(String name) {
-            return new CacheRecordStore(name, partitionId, nodeEngine, cacheService);
-        }
-    };
+    private final ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction;
     private final ConcurrentMap<String, ICacheRecordStore> caches = new ConcurrentHashMap<String, ICacheRecordStore>();
+    private final Object mutex = new Object();
 
-    CachePartitionSegment(NodeEngine nodeEngine, CacheService cacheService, int partitionId) {
-        this.nodeEngine = nodeEngine;
+    CachePartitionSegment(ICacheService cacheService,
+            ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction, int partitionId) {
+        this.cacheConstructorFunction = cacheConstructorFunction;
         this.cacheService = cacheService;
         this.partitionId = partitionId;
     }
@@ -64,37 +59,43 @@ public final class CachePartitionSegment {
         return cacheService.getCacheConfigs();
     }
 
-    int getPartitionId() {
+    public int getPartitionId() {
         return partitionId;
     }
 
-    ICacheRecordStore getOrCreateCache(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(caches, name, cacheConstructorFunction);
+    public ICacheRecordStore getOrCreateCache(String name) {
+        return ConcurrencyUtil.getOrPutSynchronized(caches, name, mutex, cacheConstructorFunction);
     }
 
-    ICacheRecordStore getCache(String name) {
+    public ICacheRecordStore getCache(String name) {
         return caches.get(name);
     }
 
-    void deleteCache(String name) {
+    public void deleteCache(String name) {
         ICacheRecordStore cache = caches.remove(name);
         if (cache != null) {
             cache.destroy();
         }
     }
 
-    void clear() {
-        for (String name : caches.keySet()) {
-            deleteCache(name);
+    public void clear() {
+        synchronized (mutex) {
+            for (ICacheRecordStore cache : caches.values()) {
+                cache.destroy();
+            }
         }
         caches.clear();
     }
 
-    void destroy() {
+    public void destroy() {
         clear();
     }
 
-    boolean hasCache() {
+    public boolean hasAnyCache() {
         return !caches.isEmpty();
+    }
+
+    public boolean hasCache(String name) {
+        return caches.containsKey(name);
     }
 }

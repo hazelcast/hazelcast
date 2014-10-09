@@ -52,7 +52,7 @@ abstract class AbstractCacheProxyBase<K, V> {
     //this will represent the name from the user perspective
     protected final String name;
     protected final String nameWithPrefix;
-    protected final CacheService cacheService;
+    protected final ICacheService cacheService;
     protected final SerializationService serializationService;
 
     private final NodeEngine nodeEngine;
@@ -62,7 +62,7 @@ abstract class AbstractCacheProxyBase<K, V> {
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
-    protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService) {
+    protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
@@ -132,7 +132,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         return CacheService.SERVICE_NAME;
     }
 
-    protected CacheService getService() {
+    protected ICacheService getService() {
         return cacheService;
     }
 

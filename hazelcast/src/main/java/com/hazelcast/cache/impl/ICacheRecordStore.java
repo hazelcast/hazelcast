@@ -57,7 +57,9 @@ public interface ICacheRecordStore {
 
     int size();
 
-    void clear(Set<Data> keys, boolean isRemoveAll);
+    void clear();
+
+    void removeAll(Set<Data> keys);
 
     void destroy();
 

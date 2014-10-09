@@ -17,7 +17,6 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

@@ -16,6 +16,8 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
@@ -118,8 +120,13 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public WanReplicationService geWanReplicationService() {
-        return new WanReplicationServiceImpl(node);
+    public <T> T createService(Class<T> clazz) {
+        if (WanReplicationService.class.isAssignableFrom(clazz)) {
+            return (T) new WanReplicationServiceImpl(node);
+        } else if (ICacheService.class.isAssignableFrom(clazz)) {
+            return (T) new CacheService();
+        }
+        throw new IllegalArgumentException("Unknown service class: " + clazz);
     }
 
     @Override

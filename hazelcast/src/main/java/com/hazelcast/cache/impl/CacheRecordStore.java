@@ -455,11 +455,12 @@ public class CacheRecordStore
     }
 
     @Override
-    public void clear(Set<Data> keys, boolean isRemoveAll) {
-        if (!isRemoveAll) {
-            records.clear();
-            return;
-        }
+    public void clear() {
+        records.clear();
+    }
+
+    @Override
+    public void removeAll(Set<Data> keys) {
         final long now = Clock.currentTimeMillis();
         final Set<Data> localKeys = new HashSet<Data>(keys.isEmpty() ? records.keySet() : keys);
         try {
@@ -489,7 +490,7 @@ public class CacheRecordStore
 
     @Override
     public void destroy() {
-        clear(null, false);
+        clear();
         onDestroy();
         closeResources();
         //close the configured CacheEntryListeners
