@@ -35,7 +35,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ProblematicTest;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Assert;
@@ -58,11 +58,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.query.QueryBasicTest.doFunctionalQueryTest;
 import static com.hazelcast.map.query.QueryBasicTest.doFunctionalSQLQueryTest;
-import static com.hazelcast.query.SampleObjects.*;
-import static org.junit.Assert.*;
+import static com.hazelcast.query.SampleObjects.Employee;
+import static com.hazelcast.query.SampleObjects.Value;
+import static com.hazelcast.query.SampleObjects.ValueType;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(ProblematicTest.class)
+@Category(QuickTest.class)
 public class QueryAdvancedTest extends HazelcastTestSupport {
 
     @Test(timeout=1000*60)
@@ -420,7 +424,6 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown2() {
        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -444,7 +447,6 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout=1000*60)
-    @Category(ProblematicTest.class)
     public void testTwoMembersWithIndexesAndShutdown3() {
          TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
