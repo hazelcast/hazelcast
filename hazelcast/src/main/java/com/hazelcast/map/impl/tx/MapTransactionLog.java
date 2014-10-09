@@ -97,7 +97,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         boolean isNullKey = key == null;
         out.writeBoolean(isNullKey);
         if (!isNullKey) {
-            key.writeData(out);
+            out.writeData(key);
         }
         out.writeLong(threadId);
         out.writeUTF(ownerUuid);
@@ -109,8 +109,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         name = in.readUTF();
         boolean isNullKey = in.readBoolean();
         if (!isNullKey) {
-            key = new Data();
-            key.readData(in);
+            key = in.readData();
         }
         threadId = in.readLong();
         ownerUuid = in.readUTF();

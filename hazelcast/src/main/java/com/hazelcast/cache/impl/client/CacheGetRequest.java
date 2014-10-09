@@ -65,7 +65,7 @@ public class CacheGetRequest
             throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
         out.writeObject(expiryPolicy);
 
     }
@@ -74,8 +74,7 @@ public class CacheGetRequest
             throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
         this.expiryPolicy = in.readObject();
     }
 

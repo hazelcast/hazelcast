@@ -173,6 +173,7 @@ public class HealthMonitor extends Thread {
         private final int proxyCount;
         private final int clientEndpointCount;
         private final int activeConnectionCount;
+        private final int currentClientConnectionCount;
         private final int connectionCount;
         private final int ioExecutorQueueSize;
         private final GcMetrics gcMetrics;
@@ -209,6 +210,7 @@ public class HealthMonitor extends Thread {
             proxyCount = proxyService.getProxyCount();
             clientEndpointCount = clientEngine.getClientEndpointCount();
             activeConnectionCount = connectionManager.getActiveConnectionCount();
+            currentClientConnectionCount = connectionManager.getCurrentClientConnections();
             connectionCount = connectionManager.getConnectionCount();
             gcMetrics = new GcMetrics();
         }
@@ -272,6 +274,7 @@ public class HealthMonitor extends Thread {
             sb.append("proxy.count=").append(proxyCount).append(", ");
             sb.append("clientEndpoint.count=").append(clientEndpointCount).append(", ");
             sb.append("connection.active.count=").append(activeConnectionCount).append(", ");
+            sb.append("client.connection.count=").append(currentClientConnectionCount).append(", ");
             sb.append("connection.count=").append(connectionCount);
             return sb.toString();
         }

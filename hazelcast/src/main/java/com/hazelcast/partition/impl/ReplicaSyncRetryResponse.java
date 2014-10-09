@@ -28,9 +28,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
-public class ReplicaSyncRetryResponse extends Operation implements PartitionAwareOperation, BackupOperation,
-        UrgentSystemOperation {
-
+public class ReplicaSyncRetryResponse extends Operation
+        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation {
 
     public ReplicaSyncRetryResponse() {
     }
@@ -43,7 +42,9 @@ public class ReplicaSyncRetryResponse extends Operation implements PartitionAwar
         final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
-        partitionService.schedulePartitionReplicaSync(partitionId, replicaIndex,
+
+        partitionService.clearReplicaSync(partitionId, replicaIndex);
+        partitionService.triggerPartitionReplicaSync(partitionId, replicaIndex,
                 InternalPartitionService.REPLICA_SYNC_RETRY_DELAY);
     }
 

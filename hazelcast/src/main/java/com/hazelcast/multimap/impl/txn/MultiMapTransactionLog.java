@@ -89,7 +89,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         for (Operation op : opList) {
             out.writeObject(op);
         }
-        key.writeData(out);
+        out.writeData(key);
         out.writeLong(ttl);
         out.writeLong(threadId);
     }
@@ -100,8 +100,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         for (int i = 0; i < size; i++) {
             opList.add((Operation) in.readObject());
         }
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
         ttl = in.readLong();
         threadId = in.readLong();
     }

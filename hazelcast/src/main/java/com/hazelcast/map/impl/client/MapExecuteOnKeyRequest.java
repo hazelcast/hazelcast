@@ -81,7 +81,7 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
         writer.writeUTF("n", name);
         writer.writeBoolean("s", submitToKey);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
         out.writeObject(processor);
     }
 
@@ -89,8 +89,7 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
         name = reader.readUTF("n");
         submitToKey = reader.readBoolean("s");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
         processor = in.readObject();
     }
 
@@ -113,6 +112,6 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{key, processor};
+        return new Object[] {key, processor};
     }
 }

@@ -17,11 +17,8 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
@@ -31,26 +28,24 @@ import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
-
-import static com.hazelcast.nio.IOUtil.closeResource;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public class ReplicaSyncResponse extends Operation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation {
 
-    private byte[] data;
+    private List<Operation> tasks;
     private long[] replicaVersions;
-    private boolean compressed;
 
     public ReplicaSyncResponse() {
     }
 
-    public ReplicaSyncResponse(byte[] data, long[] replicaVersions, boolean compressed) {
-        this.data = data;
+    public ReplicaSyncResponse(List<Operation> data, long[] replicaVersions) {
+        this.tasks = data;
         this.replicaVersions = replicaVersions;
-        this.compressed = compressed;
     }
 
     @Override
@@ -61,18 +56,12 @@ public class ReplicaSyncResponse extends Operation
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
-        SerializationService serializationService = nodeEngine.getSerializationService();
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
-        BufferObjectDataInput in = null;
         try {
-            if (data != null && data.length > 0) {
+            if (tasks != null && tasks.size() > 0) {
                 logApplyReplicaSync(partitionId, replicaIndex);
-                byte[] taskData = compressed ? IOUtil.decompress(data) : data;
-                in = serializationService.createObjectDataInput(taskData);
-                int size = in.readInt();
-                for (int i = 0; i < size; i++) {
-                    Operation op = (Operation) serializationService.readObject(in);
+                for (Operation op : tasks) {
                     try {
                         ErrorLoggingResponseHandler responseHandler
                                 = new ErrorLoggingResponseHandler(nodeEngine.getLogger(op.getClass()));
@@ -87,10 +76,10 @@ public class ReplicaSyncResponse extends Operation
                         logException(op, e);
                     }
                 }
+                tasks.clear();
             }
         } finally {
-            closeResource(in);
-            partitionService.finalizeReplicaSync(partitionId, replicaVersions);
+            partitionService.finalizeReplicaSync(partitionId, replicaIndex, replicaVersions);
         }
     }
 
@@ -138,16 +127,27 @@ public class ReplicaSyncResponse extends Operation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        IOUtil.writeByteArray(out, data);
         out.writeLongArray(replicaVersions);
-        out.writeBoolean(compressed);
+        int size = tasks != null ? tasks.size() : 0;
+        out.writeInt(size);
+        if (size > 0) {
+            for (Operation task : tasks) {
+                out.writeObject(task);
+            }
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        data = IOUtil.readByteArray(in);
         replicaVersions = in.readLongArray();
-        compressed = in.readBoolean();
+        int size = in.readInt();
+        if (size > 0) {
+            tasks = new ArrayList<Operation>(size);
+            for (int i = 0; i < size; i++) {
+                Operation op = in.readObject();
+                tasks.add(op);
+            }
+        }
     }
 
     @Override

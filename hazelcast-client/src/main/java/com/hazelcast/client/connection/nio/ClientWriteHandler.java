@@ -40,8 +40,6 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
 
     private volatile long lastHandle;
 
-//    private boolean initialized = false;
-
     public ClientWriteHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
         super(connection, ioSelector);
         buffer = ByteBuffer.allocate(bufferSize);
@@ -53,12 +51,6 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
         if (!connection.isAlive()) {
             return;
         }
-//        if (!initialized) {
-//            initialized = true;
-//            buffer.put(Protocols.CLIENT_BINARY.getBytes());
-//            buffer.put(ClientTypes.JAVA.getBytes());
-//            registerWrite();
-//        }
 
         if (lastWritable == null) {
             lastWritable = poll();

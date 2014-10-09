@@ -65,14 +65,22 @@ public class ClientResponse implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(callId);
         out.writeBoolean(isError);
-        response.writeData(out);
+        out.writeData(response);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         callId = in.readInt();
         isError = in.readBoolean();
-        response = new Data();
-        response.readData(in);
+        response = in.readData();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ClientResponse{");
+        sb.append("callId=").append(callId);
+        sb.append(", isError=").append(isError);
+        sb.append('}');
+        return sb.toString();
     }
 }

@@ -10,19 +10,19 @@ import java.util.Arrays;
 * @author mdogan 22/05/14
 */
 class RawDataPortable implements Portable {
-    static final int CLASS_ID = 4;
+    static final short CLASS_ID = 4;
 
     long l;
     char[] c;
     NamedPortable p;
     int k;
     String s;
-    SimpleDataSerializable sds;
+    ByteArrayDataSerializable sds;
 
     RawDataPortable() {
     }
 
-    RawDataPortable(long l, char[] c, NamedPortable p, int k, String s, SimpleDataSerializable sds) {
+    RawDataPortable(long l, char[] c, NamedPortable p, int k, String s, ByteArrayDataSerializable sds) {
         this.l = l;
         this.c = c;
         this.p = p;

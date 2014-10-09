@@ -27,7 +27,6 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -108,14 +107,14 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
         writer.writeBoolean("i", includeValue);
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        IOUtil.writeNullableData(out, key);
+        out.writeData(key);
     }
 
     public void read(PortableReader reader) throws IOException {
         includeValue = reader.readBoolean("i");
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = IOUtil.readNullableData(in);
+        key = in.readData();
     }
 
     public Permission getRequiredPermission() {

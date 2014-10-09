@@ -35,7 +35,7 @@ public abstract class InstancePermission extends ClusterPermission {
     public InstancePermission(String name, String... actions) {
         super(name);
         if (name == null || "".equals(name)) {
-            throw new IllegalArgumentException("Permission name is mamdatory!");
+            throw new IllegalArgumentException("Permission name is mandatory!");
         }
         mask = initMask(actions);
 

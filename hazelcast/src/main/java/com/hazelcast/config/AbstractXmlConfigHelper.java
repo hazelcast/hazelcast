@@ -18,14 +18,20 @@ package com.hazelcast.config;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.MemoryUnit;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.nio.ByteOrder;
+import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Properties;
+
+import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
  * Contains Hazelcast Xml Configuration helper methods and variables.
@@ -336,6 +342,46 @@ public abstract class AbstractXmlConfigHelper {
                 GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
                 globalSerializerConfig.setClassName(value);
                 serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
+            }
+        }
+    }
+
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_BOXED_PRIMITIVE_FOR_PARSING")
+    protected void fillOffHeapMemoryConfig(Node node, OffHeapMemoryConfig offHeapMemoryConfig) {
+        final NamedNodeMap atts = node.getAttributes();
+        final Node enabledNode = atts.getNamedItem("enabled");
+        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
+        offHeapMemoryConfig.setEnabled(enabled);
+
+        final Node allocTypeNode = atts.getNamedItem("allocator-type");
+        final String allocType = getTextContent(allocTypeNode);
+        if (allocType != null && !"".equals("")) {
+            offHeapMemoryConfig.setAllocatorType(OffHeapMemoryConfig.MemoryAllocatorType.valueOf(upperCaseInternal(allocType)));
+        }
+
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("size".equals(nodeName)) {
+                final NamedNodeMap attrs = n.getAttributes();
+                final String value = getTextContent(attrs.getNamedItem("value"));
+                final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(attrs.getNamedItem("unit")));
+                MemorySize memorySize = new MemorySize(Long.valueOf(value), unit);
+                offHeapMemoryConfig.setSize(memorySize);
+            } else if ("min-block-size".equals(nodeName)) {
+                String value = getTextContent(n);
+                offHeapMemoryConfig.setMinBlockSize(Integer.parseInt(value));
+            } else if ("page-size".equals(nodeName)) {
+                String value = getTextContent(n);
+                offHeapMemoryConfig.setPageSize(Integer.parseInt(value));
+            } else if ("metadata-space-percentage".equals(nodeName)) {
+                String value = getTextContent(n);
+                try {
+                    Number percentage = new DecimalFormat("##.#").parse(value);
+                    offHeapMemoryConfig.setMetadataSpacePercentage(percentage.floatValue());
+                } catch (ParseException e) {
+                    LOGGER.info("Metadata space percentage, [" + value
+                            + "], is not a proper value. Default value will be used!");
+                }
             }
         }
     }

@@ -55,14 +55,14 @@ public class InvalidateNearCacheOperation extends AbstractOperation {
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mapName = in.readUTF();
-        key = in.readObject();
+        key = in.readData();
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(mapName);
-        out.writeObject(key);
+        out.writeData(key);
     }
 
     @Override

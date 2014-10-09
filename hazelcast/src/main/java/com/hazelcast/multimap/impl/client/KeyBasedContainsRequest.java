@@ -2,8 +2,8 @@ package com.hazelcast.multimap.impl.client;
 
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.operations.ContainsEntryOperation;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -53,15 +53,16 @@ public class KeyBasedContainsRequest extends MultiMapKeyBasedRequest {
     public void write(PortableWriter writer) throws IOException {
         writer.writeLong("threadId", threadId);
         super.write(writer);
-        IOUtil.writeNullableData(writer.getRawDataOutput(), value);
+        ObjectDataOutput out = writer.getRawDataOutput();
+        out.writeData(value);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         threadId = reader.readLong("threadId");
         super.read(reader);
-        final ObjectDataInput in = reader.getRawDataInput();
-        value = IOUtil.readNullableData(in);
+        ObjectDataInput in = reader.getRawDataInput();
+        value = in.readData();
     }
 
     @Override

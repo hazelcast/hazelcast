@@ -63,7 +63,7 @@ public class AddAllRequest extends QueueRequest {
         writer.writeInt("s", dataList.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
         for (Data data : dataList) {
-            data.writeData(out);
+            out.writeData(data);
         }
     }
 
@@ -74,8 +74,7 @@ public class AddAllRequest extends QueueRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         dataList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             dataList.add(data);
         }
     }
@@ -92,6 +91,6 @@ public class AddAllRequest extends QueueRequest {
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{dataList};
+        return new Object[] {dataList};
     }
 }

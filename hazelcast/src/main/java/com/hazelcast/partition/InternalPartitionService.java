@@ -32,9 +32,8 @@ public interface InternalPartitionService extends CoreService {
 
     String SERVICE_NAME = "hz:core:partitionService";
 
-    int MAX_PARALLEL_REPLICATIONS = 4;
-    long DEFAULT_REPLICA_SYNC_DELAY = 15000L;
-    long REPLICA_SYNC_RETRY_DELAY = 1000L;
+    long DEFAULT_REPLICA_SYNC_DELAY = 5000L;
+    long REPLICA_SYNC_RETRY_DELAY = 500L;
 
     /**
      * Gets the owner of the partition if it's set.

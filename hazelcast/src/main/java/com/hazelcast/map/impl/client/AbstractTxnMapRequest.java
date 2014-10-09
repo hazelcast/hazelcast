@@ -22,7 +22,6 @@ import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapValueCollection;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -71,8 +70,8 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
         this(name, requestType, key, value);
         this.newValue = newValue;
     }
-
-    public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, long ttl, TimeUnit timeUnit) {
+    public AbstractTxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value,
+            long ttl, TimeUnit timeUnit) {
         this(name, requestType, key, value);
         this.ttl = timeUnit == null ? ttl : timeUnit.toMillis(ttl);
     }
@@ -176,9 +175,9 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
         writer.writeUTF("n", name);
         writer.writeInt("t", requestType.type);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        IOUtil.writeNullableData(out, key);
-        IOUtil.writeNullableData(out, value);
-        IOUtil.writeNullableData(out, newValue);
+        out.writeData(key);
+        out.writeData(value);
+        out.writeData(newValue);
         writeDataInner(out);
         out.writeLong(ttl);
     }
@@ -188,9 +187,9 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
         name = reader.readUTF("n");
         requestType = TxnMapRequestType.getByType(reader.readInt("t"));
         final ObjectDataInput in = reader.getRawDataInput();
-        key = IOUtil.readNullableData(in);
-        value = IOUtil.readNullableData(in);
-        newValue = IOUtil.readNullableData(in);
+        key = in.readData();
+        value = in.readData();
+        newValue = in.readData();
         readDataInner(in);
         ttl = in.readLong();
     }

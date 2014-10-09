@@ -83,7 +83,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
-        wanReplicationService = node.initializer.geWanReplicationService();
+        wanReplicationService = node.getNodeExtension().geWanReplicationService();
     }
 
     @PrivateApi
@@ -183,7 +183,7 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public Object toObject(final Object object) {
         if (object instanceof Data) {
-            return node.getSerializationService().toObject((Data) object);
+            return node.getSerializationService().toObject(object);
         }
         return object;
     }
@@ -377,7 +377,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     @Override
     public Storage<DataRef> getOffHeapStorage() {
-        return node.initializer.getOffHeapStorage();
+        return node.getNodeExtension().getOffHeapStorage();
     }
 
     @PrivateApi

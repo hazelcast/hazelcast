@@ -72,15 +72,14 @@ abstract class AbstractCacheOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        key.writeData(out);
+        out.writeData(key);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     @Override

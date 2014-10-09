@@ -6,10 +6,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.nio.ByteOrder;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -25,7 +27,8 @@ public class ByteArrayObjectDataOutputTest {
     @Test
     public void testWriteShort_explicitPosition() throws IOException {
         for (short s : new short[]{Short.MIN_VALUE, 0, Short.MAX_VALUE}) {
-            ByteArrayObjectDataOutput dataOutput = new ByteArrayObjectDataOutput(2, mockSerializationService);
+            ByteArrayObjectDataOutput dataOutput = new ByteArrayObjectDataOutput(2, mockSerializationService,
+                    ByteOrder.BIG_ENDIAN);
             dataOutput.writeShort(0);
             dataOutput.writeShort(0, s);
 
@@ -38,10 +41,12 @@ public class ByteArrayObjectDataOutputTest {
     public void testWriteChars() throws IOException {
         String s = "fooo";
 
-        ByteArrayObjectDataOutput dataOutput = new ByteArrayObjectDataOutput(2, mockSerializationService);
+        ByteArrayObjectDataOutput dataOutput = new ByteArrayObjectDataOutput(2, mockSerializationService,
+                ByteOrder.BIG_ENDIAN);
         dataOutput.writeChars(s);
 
-        ByteArrayObjectDataInput dataInput = new ByteArrayObjectDataInput(dataOutput.toByteArray(), mockSerializationService);
+        ByteArrayObjectDataInput dataInput = new ByteArrayObjectDataInput(dataOutput.toByteArray(),
+                mockSerializationService, ByteOrder.BIG_ENDIAN);
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
             sb.append(dataInput.readChar());

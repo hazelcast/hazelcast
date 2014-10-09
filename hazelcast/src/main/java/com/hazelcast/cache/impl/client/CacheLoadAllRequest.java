@@ -91,7 +91,7 @@ public class CacheLoadAllRequest
         if (!keys.isEmpty()) {
             ObjectDataOutput output = writer.getRawDataOutput();
             for (Data key : keys) {
-                key.writeData(output);
+                output.writeData(key);
             }
         }
     }
@@ -104,8 +104,7 @@ public class CacheLoadAllRequest
         if (size > 0) {
             ObjectDataInput input = reader.getRawDataInput();
             for (int i = 0; i < size; i++) {
-                Data key = new Data();
-                key.readData(input);
+                Data key = input.readData();
                 keys.add(key);
             }
         }

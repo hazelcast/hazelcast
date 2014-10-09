@@ -28,9 +28,9 @@ interface SerializerAdapter {
 
     Object read(ObjectDataInput in) throws IOException;
 
-    byte[] write(Object object) throws IOException;
+    Data toData(Object object, int partitionHash) throws IOException;
 
-    Object read(Data data) throws IOException;
+    Object toObject(Data data) throws IOException;
 
     int getTypeId();
 

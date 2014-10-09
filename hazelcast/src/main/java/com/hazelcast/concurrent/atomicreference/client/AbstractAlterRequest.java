@@ -19,7 +19,6 @@ package com.hazelcast.concurrent.atomicreference.client;
 import com.hazelcast.client.impl.client.PartitionClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -65,14 +64,14 @@ public abstract class AbstractAlterRequest extends PartitionClientRequest implem
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        IOUtil.writeNullableData(out, function);
+        out.writeData(function);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         ObjectDataInput in = reader.getRawDataInput();
-        function = IOUtil.readNullableData(in);
+        function = in.readData();
     }
 
     @Override

@@ -67,7 +67,7 @@ public class CacheKeyIteratorResult
         int size = keys.size();
         out.writeInt(size);
         for (Data o : keys) {
-            o.writeData(out);
+            out.writeData(o);
         }
 
     }
@@ -79,8 +79,7 @@ public class CacheKeyIteratorResult
         int size = in.readInt();
         keys = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             keys.add(data);
         }
     }

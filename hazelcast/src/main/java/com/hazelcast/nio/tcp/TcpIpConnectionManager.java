@@ -18,7 +18,6 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.cluster.impl.operations.BindOperation;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.instance.NodeInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -117,10 +116,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
-    private final NodeInitializer initializer;
-
-    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel, NodeInitializer initializer) {
-        this.initializer = initializer;
+    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(TcpIpConnectionManager.class.getName());
@@ -137,7 +133,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (ports != null) {
             outboundPorts.addAll(ports);
         }
-        socketChannelWrapperFactory = initializer.getSocketChannelWrapperFactory();
+        socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
         portableContext = ioService.getPortableContext();
     }
 
@@ -145,7 +141,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (!isSocketInterceptorEnabled()) {
             return;
         }
-        final MemberSocketInterceptor memberSocketInterceptor = initializer.getMemberSocketInterceptor();
+        final MemberSocketInterceptor memberSocketInterceptor = ioService.getMemberSocketInterceptor();
         if (memberSocketInterceptor == null) {
             return;
         }
@@ -165,11 +161,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     public PacketReader createPacketReader(TcpIpConnection connection) {
-        return initializer.createPacketReader(connection, ioService);
+        return ioService.createPacketReader(connection);
     }
 
     public PacketWriter createPacketWriter(TcpIpConnection connection) {
-        return initializer.createPacketWriter(connection, ioService);
+        return ioService.createPacketWriter(connection);
     }
 
     @Override

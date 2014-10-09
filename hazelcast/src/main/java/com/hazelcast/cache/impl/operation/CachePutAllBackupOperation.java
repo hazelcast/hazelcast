@@ -76,7 +76,7 @@ public class CachePutAllBackupOperation
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
                 final Data key = entry.getKey();
                 final CacheRecord record = entry.getValue();
-                key.writeData(out);
+                out.writeData(key);
                 out.writeObject(record);
             }
         }
@@ -91,8 +91,7 @@ public class CachePutAllBackupOperation
             int size = in.readInt();
             cacheRecords = new HashMap<Data, CacheRecord>(size);
             for (int i = 0; i < size; i++) {
-                final Data key = new Data();
-                key.readData(in);
+                final Data key = in.readData();
                 final CacheRecord record = in.readObject();
                 cacheRecords.put(key, record);
             }

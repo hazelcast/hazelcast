@@ -18,11 +18,8 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationCycleOperation;
@@ -41,13 +38,14 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
-
 public final class ReplicaSyncRequest extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
 
-    private static final int DEFAULT_DATA_OUTPUT_BUFFER_SIZE = 1024 * 32;
-
     public ReplicaSyncRequest() {
+    }
+
+    public ReplicaSyncRequest(int partitionId, int replicaIndex) {
+        setPartitionId(partitionId);
+        setReplicaIndex(replicaIndex);
     }
 
     @Override
@@ -66,6 +64,15 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
 
+        if (!partitionService.isMigrationActive()) {
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("Migration is paused! Cannot run replica sync -> " + toString());
+            }
+            sendRetryResponse();
+            return;
+        }
+
         if (!preCheckReplicaSync(nodeEngine, partitionId, replicaIndex)) {
             return;
         }
@@ -76,11 +83,10 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
                 logNoReplicaDataFound(partitionId, replicaIndex);
                 sendEmptyResponse();
             } else {
-                byte[] data = createReplicationData(tasks);
-                sendResponse(data);
+                sendResponse(tasks);
             }
         } finally {
-            partitionService.decrementReplicaSyncProcessCount();
+            partitionService.finishReplicaSyncProcess();
         }
     }
 
@@ -105,7 +111,7 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
             return false;
         }
 
-        if (!partitionService.incrementReplicaSyncProcessCount()) {
+        if (!partitionService.startReplicaSyncProcess()) {
             if (logger.isFinestEnabled()) {
                 logger.finest(
                         "Max parallel replication process limit exceeded! Could not run replica sync -> " + toString());
@@ -128,23 +134,6 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         operationService.send(response, target);
     }
 
-    private byte[] createReplicationData(List<Operation> tasks) throws IOException {
-        byte[] data;
-        NodeEngine nodeEngine = getNodeEngine();
-        SerializationService serializationService = nodeEngine.getSerializationService();
-        BufferObjectDataOutput out = serializationService.createObjectDataOutput(DEFAULT_DATA_OUTPUT_BUFFER_SIZE);
-        try {
-            out.writeInt(tasks.size());
-            for (Operation task : tasks) {
-                serializationService.writeObject(out, task);
-            }
-            data = out.toByteArray();
-        } finally {
-            closeResource(out);
-        }
-        return data;
-    }
-
     private List<Operation> createReplicationOperations() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
@@ -165,7 +154,7 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         sendResponse(null);
     }
 
-    private void sendResponse(byte[] data) throws IOException {
+    private void sendResponse(List<Operation> data) throws IOException {
         NodeEngine nodeEngine = getNodeEngine();
 
         ReplicaSyncResponse syncResponse = createResponse(data);
@@ -179,18 +168,13 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         operationService.send(syncResponse, target);
     }
 
-    private ReplicaSyncResponse createResponse(byte[] data) throws IOException {
+    private ReplicaSyncResponse createResponse(List<Operation> data) throws IOException {
         int partitionId = getPartitionId();
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
 
-        boolean compress = nodeEngine.getGroupProperties().PARTITION_MIGRATION_ZIP_ENABLED.getBoolean();
-        if (data != null && data.length > 0 && compress) {
-            data = IOUtil.compress(data);
-        }
-
-        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions, compress);
+        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions);
         syncResponse.setPartitionId(partitionId).setReplicaIndex(getReplicaIndex());
         return syncResponse;
     }

@@ -18,7 +18,6 @@ package com.hazelcast.multimap.impl.client;
 
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -61,16 +60,15 @@ public class TxnMultiMapRemoveRequest extends TxnMultiMapRequest {
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
-        IOUtil.writeNullableData(out, value);
+        out.writeData(key);
+        out.writeData(value);
     }
 
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
-        value = IOUtil.readNullableData(in);
+        key = in.readData();
+        value = in.readData();
     }
 
     public Permission getRequiredPermission() {

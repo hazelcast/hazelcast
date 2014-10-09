@@ -57,7 +57,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
@@ -71,12 +72,15 @@ public class EventServiceImpl implements EventService {
     private static final int SEND_EVENT_TIMEOUT_SECONDS = 5;
     private static final int REGISTRATION_TIMEOUT_SECONDS = 5;
     private static final int DEREGISTER_TIMEOUT_SECONDS = 5;
+    private static final int WARNING_LOG_FREQUENCY = 1000;
 
     private static final String LOG_MSG_MEM_LEFT_DEREGISTER = "Member left while de-registering listener...";
     private static final String LOG_MSG_MEM_LEFT_REGISTER = "Member left while registering listener...";
 
-    private final ExceptionHandler registrationExceptionHandler = new FutureUtilExceptionHandler(LOG_MSG_MEM_LEFT_REGISTER);
-    private final ExceptionHandler deregistrationExceptionHandler = new FutureUtilExceptionHandler(LOG_MSG_MEM_LEFT_DEREGISTER);
+    private final ExceptionHandler registrationExceptionHandler
+            = new FutureUtilExceptionHandler(LOG_MSG_MEM_LEFT_REGISTER);
+    private final ExceptionHandler deregistrationExceptionHandler
+            = new FutureUtilExceptionHandler(LOG_MSG_MEM_LEFT_DEREGISTER);
 
     private final ILogger logger;
     private final NodeEngineImpl nodeEngine;
@@ -85,6 +89,7 @@ public class EventServiceImpl implements EventService {
     private final int eventQueueTimeoutMs;
     private final int eventThreadCount;
     private final int eventQueueCapacity;
+    private final AtomicLong totalFailures = new AtomicLong();
 
     EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -185,13 +190,6 @@ public class EventServiceImpl implements EventService {
         final EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             segment.removeRegistrations(topic);
-        }
-    }
-
-    private void deregisterSubscriber(String serviceName, String topic, String id) {
-        final EventServiceSegment segment = getSegment(serviceName, false);
-        if (segment != null) {
-            segment.removeRegistration(topic, id);
         }
     }
 
@@ -316,8 +314,8 @@ public class EventServiceImpl implements EventService {
                 }
             } catch (RejectedExecutionException e) {
                 if (eventExecutor.isLive()) {
-                    logger.warning("EventQueue overloaded! " + event
-                            + " failed to publish to " + reg.serviceName + ":" + reg.topic);
+                    logFailure("EventQueue overloaded! %s failed to publish to %s:%s",
+                            event, reg.serviceName, reg.topic);
                 }
             }
         }
@@ -341,7 +339,11 @@ public class EventServiceImpl implements EventService {
         } else {
             final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey, nodeEngine.getPortableContext());
             packet.setHeader(Packet.HEADER_EVENT);
-            nodeEngine.send(packet, subscriber);
+            if (!nodeEngine.send(packet, subscriber)) {
+                if (nodeEngine.isActive()) {
+                    logFailure("IO Queue overloaded! Failed to send event packet to: %s", subscriber);
+                }
+            }
         }
     }
 
@@ -371,7 +373,7 @@ public class EventServiceImpl implements EventService {
                 eventExecutor.execute(callback);
             } catch (RejectedExecutionException e) {
                 if (eventExecutor.isLive()) {
-                    logger.warning("EventQueue overloaded! Failed to execute event callback: " + callback);
+                    logFailure("EventQueue overloaded! Failed to execute event callback: %s", callback);
                 }
             }
         }
@@ -383,9 +385,9 @@ public class EventServiceImpl implements EventService {
             eventExecutor.execute(new RemoteEventPacketProcessor(packet));
         } catch (RejectedExecutionException e) {
             if (eventExecutor.isLive()) {
-                final Connection conn = packet.getConn();
+                Connection conn = packet.getConn();
                 String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
-                logger.warning("EventQueue overloaded! Failed to process event packet sent from: " + endpoint);
+                logFailure("EventQueue overloaded! Failed to process event packet sent from: %s",  endpoint);
             }
         }
     }
@@ -418,14 +420,24 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    private void logFailure(String message, Object... args) {
+        Level level = totalFailures.getAndIncrement() % WARNING_LOG_FREQUENCY == 0
+                ? Level.WARNING : Level.FINEST;
+
+        if (logger.isLoggable(level)) {
+            logger.log(level, String.format(message, args));
+        }
+    }
+
     private static class EventServiceSegment {
         final String serviceName;
+
         final ConcurrentMap<String, Collection<Registration>> registrations
                 = new ConcurrentHashMap<String, Collection<Registration>>();
 
         final ConcurrentMap<String, Registration> registrationIdMap = new ConcurrentHashMap<String, Registration>();
 
-        final AtomicInteger totalPublishes = new AtomicInteger();
+        final AtomicLong totalPublishes = new AtomicLong();
 
         EventServiceSegment(String serviceName) {
             this.serviceName = serviceName;
@@ -494,7 +506,7 @@ public class EventServiceImpl implements EventService {
             }
         }
 
-        int incrementPublish() {
+        long incrementPublish() {
             return totalPublishes.incrementAndGet();
         }
 
@@ -612,9 +624,13 @@ public class EventServiceImpl implements EventService {
 
         @Override
         public void run() {
-            Data data = packet.getData();
-            EventPacket eventPacket = (EventPacket) nodeEngine.toObject(data);
-            process(eventPacket);
+            try {
+                Data data = packet.getData();
+                EventPacket eventPacket = (EventPacket) nodeEngine.toObject(data);
+                process(eventPacket);
+            } catch (Exception e) {
+                logger.warning("Error while logging processing event", e);
+            }
         }
     }
 
@@ -803,14 +819,25 @@ public class EventServiceImpl implements EventService {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeUTF(id);
             out.writeUTF(serviceName);
-            out.writeObject(event);
+            boolean isBinary = event instanceof Data;
+            out.writeBoolean(isBinary);
+            if (isBinary) {
+                out.writeData((Data) event);
+            } else {
+                out.writeObject(event);
+            }
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             id = in.readUTF();
             serviceName = in.readUTF();
-            event = in.readObject();
+            boolean isBinary = in.readBoolean();
+            if (isBinary) {
+                event = in.readData();
+            } else {
+                event = in.readObject();
+            }
         }
 
         @Override
@@ -858,6 +885,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    // keeping this for backward compatibility
     public static class SendEventOperation extends AbstractOperation {
         private EventPacket eventPacket;
         private int orderKey;
@@ -953,7 +981,10 @@ public class EventServiceImpl implements EventService {
         @Override
         public void run() throws Exception {
             EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
-            eventService.deregisterSubscriber(getServiceName(), topic, id);
+            EventServiceSegment segment = eventService.getSegment(getServiceName(), false);
+            if (segment != null) {
+                segment.removeRegistration(topic, id);
+            }
         }
 
         @Override

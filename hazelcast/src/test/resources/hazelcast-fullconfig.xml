@@ -33,7 +33,7 @@
     4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
        ’hazelcast-default.xml’, which is included in the the Hazelcast jar
 -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.3.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.4.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -347,6 +347,11 @@
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>
+
+    <off-heap-memory allocator-type="POOLED" enabled="true">
+        <size unit="MEGABYTES" value="256" />
+        <metadata-space-percentage>12.5</metadata-space-percentage>
+    </off-heap-memory>
 
     <services enable-defaults="false">
         <service enabled="true">

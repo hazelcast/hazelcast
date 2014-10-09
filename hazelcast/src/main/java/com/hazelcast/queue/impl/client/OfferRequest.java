@@ -65,15 +65,14 @@ public class OfferRequest extends QueueRequest {
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        data.writeData(out);
+        out.writeData(data);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
-        data = new Data();
-        data.readData(in);
+        data = in.readData();
     }
 
     @Override

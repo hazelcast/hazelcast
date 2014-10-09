@@ -25,23 +25,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
 
-public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable, PortableContextAware {
+public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable {
 
     private static final int UTF_BUFFER_SIZE = 1024;
     private final SerializationService serializationService;
     private final DataInputStream dataInput;
     private final ByteOrder byteOrder;
 
-    private final byte[] utfBuffer = new byte[UTF_BUFFER_SIZE];
+    private byte[] utfBuffer;
 
     public ObjectDataInputStream(InputStream in, SerializationService serializationService) {
-        this(in, serializationService, ByteOrder.BIG_ENDIAN);
-    }
-
-    public ObjectDataInputStream(InputStream in, SerializationService serializationService, ByteOrder order) {
         this.serializationService = serializationService;
         this.dataInput = new DataInputStream(in);
-        this.byteOrder = order;
+        this.byteOrder = serializationService.getByteOrder();
     }
 
     public int read() throws IOException {
@@ -130,6 +126,16 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         }
     }
 
+    public byte[] readByteArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            byte[] b = new byte[len];
+            readFully(b);
+            return b;
+        }
+        return new byte[0];
+    }
+
     public char[] readCharArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -208,6 +214,9 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     }
 
     public String readUTF() throws IOException {
+        if (utfBuffer == null) {
+            utfBuffer = new byte[UTF_BUFFER_SIZE];
+        }
         return UTFEncoderDecoder.readUTF(this, utfBuffer);
     }
 
@@ -231,8 +240,9 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return serializationService.readObject(this);
     }
 
-    public PortableContext getPortableContext() {
-        return serializationService.getPortableContext();
+    @Override
+    public Data readData() throws IOException {
+        return serializationService.readData(this);
     }
 
     public ClassLoader getClassLoader() {

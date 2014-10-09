@@ -74,8 +74,8 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
         final MapService mapService = getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getMapServiceContext().getLocalMapStatsProvider()
-                    .getLocalMapStatsImpl(name).incrementRemoves(latency);
+            mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name)
+                    .incrementRemoves(latency);
         }
     }
 
@@ -98,7 +98,7 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
         writer.writeLong("t", threadId);
         writer.writeBoolean("a", async);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -106,8 +106,7 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
         threadId = reader.readLong("t");
         async = reader.readBoolean("a");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     public Permission getRequiredPermission() {
@@ -129,6 +128,6 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{key};
+        return new Object[] {key};
     }
 }

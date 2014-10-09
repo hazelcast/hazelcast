@@ -20,16 +20,15 @@ import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.ByteUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.PREPEND;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.SET;
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ADD;
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.APPEND;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.PREPEND;
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.REPLACE;
+import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.SET;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
@@ -136,17 +135,17 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
             if (oldValue instanceof MemcacheEntry) {
                 final MemcacheEntry oldEntry = (MemcacheEntry) oldValue;
                 entry = new MemcacheEntry(setCommand.getKey(),
-                        ByteUtil.concatenate(setCommand.getValue(), oldEntry.getValue()), oldEntry.getFlag());
+                        concatenate(setCommand.getValue(), oldEntry.getValue()), oldEntry.getFlag());
             } else if (oldValue instanceof byte[]) {
                 entry = new MemcacheEntry(setCommand.getKey(),
-                        ByteUtil.concatenate(setCommand.getValue(), ((byte[]) oldValue)), 0);
+                        concatenate(setCommand.getValue(), ((byte[]) oldValue)), 0);
             } else if (oldValue instanceof String) {
                 entry = new MemcacheEntry(setCommand.getKey(),
-                        ByteUtil.concatenate(setCommand.getValue(), stringToBytes((String) oldValue)), 0);
+                        concatenate(setCommand.getValue(), stringToBytes((String) oldValue)), 0);
             } else {
                 try {
                     entry = new MemcacheEntry(setCommand.getKey(),
-                            ByteUtil.concatenate(setCommand.getValue(), textCommandService.toByteArray(oldValue)), 0);
+                            concatenate(setCommand.getValue(), textCommandService.toByteArray(oldValue)), 0);
                 } catch (Exception e) {
                     logger.warning(e);
                 }
@@ -175,17 +174,17 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
             if (oldValue instanceof MemcacheEntry) {
                 final MemcacheEntry oldEntry = (MemcacheEntry) oldValue;
                 entry = new MemcacheEntry(setCommand.getKey(),
-                        ByteUtil.concatenate(oldEntry.getValue(), setCommand.getValue()), 0);
+                        concatenate(oldEntry.getValue(), setCommand.getValue()), 0);
             } else if (oldValue instanceof byte[]) {
                 entry = new MemcacheEntry(setCommand.getKey(),
-                        ByteUtil.concatenate(((byte[]) oldValue), setCommand.getValue()), 0);
+                        concatenate(((byte[]) oldValue), setCommand.getValue()), 0);
             } else if (oldValue instanceof String) {
                 entry = new MemcacheEntry(setCommand.getKey(),
-                        ByteUtil.concatenate(stringToBytes((String) oldValue), setCommand.getValue()), 0);
+                        concatenate(stringToBytes((String) oldValue), setCommand.getValue()), 0);
             } else {
                 try {
                     entry = new MemcacheEntry(setCommand.getKey(),
-                            ByteUtil.concatenate(textCommandService.toByteArray(oldValue), setCommand.getValue()), 0);
+                            concatenate(textCommandService.toByteArray(oldValue), setCommand.getValue()), 0);
                 } catch (Exception e) {
                     logger.warning(e);
                 }

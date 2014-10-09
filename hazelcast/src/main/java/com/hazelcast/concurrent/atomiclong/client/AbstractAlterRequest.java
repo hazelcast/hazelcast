@@ -32,9 +32,6 @@ import com.hazelcast.security.permission.AtomicLongPermission;
 import java.io.IOException;
 import java.security.Permission;
 
-import static com.hazelcast.nio.IOUtil.readNullableData;
-import static com.hazelcast.nio.IOUtil.writeNullableData;
-
 public abstract class AbstractAlterRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     protected String name;
@@ -68,14 +65,14 @@ public abstract class AbstractAlterRequest extends PartitionClientRequest implem
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         ObjectDataOutput out = writer.getRawDataOutput();
-        writeNullableData(out, function);
+        out.writeData(function);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         ObjectDataInput in = reader.getRawDataInput();
-        function = readNullableData(in);
+        function = in.readData();
     }
 
     protected IFunction<Long, Long> getFunction() {

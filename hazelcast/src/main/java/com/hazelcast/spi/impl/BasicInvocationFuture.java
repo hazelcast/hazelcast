@@ -95,8 +95,8 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                     }
                 }
             });
-        } catch (RejectedExecutionException ignore) {
-            basicInvocation.logger.finest(ignore);
+        } catch (RejectedExecutionException e) {
+            basicInvocation.logger.warning("Execution of callback: " + callback + " is rejected!", e);
         }
     }
 

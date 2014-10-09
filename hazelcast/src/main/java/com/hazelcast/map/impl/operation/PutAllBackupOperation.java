@@ -20,7 +20,6 @@ import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -66,8 +65,7 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
 
     @Override
     public String toString() {
-        return "PutAllBackupOperation{"
-                + '}';
+        return "PutAllBackupOperation{" + '}';
 
     }
 
@@ -78,8 +76,8 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
         out.writeInt(size);
         for (int i = 0; i < size; i++) {
             final Map.Entry<Data, Data> entry = entries.get(i);
-            entry.getKey().writeData(out);
-            entry.getValue().writeData(out);
+            out.writeData(entry.getKey());
+            out.writeData(entry.getValue());
             recordInfos.get(i).writeData(out);
         }
     }
@@ -91,7 +89,9 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
         entries = new ArrayList<Map.Entry<Data, Data>>(size);
         recordInfos = new ArrayList<RecordInfo>(size);
         for (int i = 0; i < size; i++) {
-            Map.Entry entry = new AbstractMap.SimpleImmutableEntry<Data, Data>(IOUtil.readData(in), IOUtil.readData(in));
+            Data key = in.readData();
+            Data value = in.readData();
+            Map.Entry entry = new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value);
             entries.add(entry);
             final RecordInfo recordInfo = new RecordInfo();
             recordInfo.readData(in);

@@ -312,7 +312,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        key.writeData(out);
+        out.writeData(key);
         out.writeUTF(owner);
         out.writeLong(threadId);
         out.writeInt(lockCount);
@@ -358,8 +358,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
         owner = in.readUTF();
         threadId = in.readLong();
         lockCount = in.readInt();

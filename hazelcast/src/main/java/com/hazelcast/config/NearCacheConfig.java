@@ -85,8 +85,12 @@ public class NearCacheConfig implements DataSerializable , Serializable {
     public NearCacheConfig() {
     }
 
-    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy
-            , int maxIdleSeconds, boolean invalidateOnChange, InMemoryFormat inMemoryFormat) {
+    public NearCacheConfig(String name) {
+        this.name = name;
+    }
+
+    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds,
+            boolean invalidateOnChange, InMemoryFormat inMemoryFormat) {
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxSize = maxSize;
         this.evictionPolicy = evictionPolicy;

@@ -253,6 +253,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleSet(node);
             } else if ("topic".equals(nodeName)) {
                 handleTopic(node);
+            } else if ("off-heap-memory".equals(nodeName)) {
+                fillOffHeapMemoryConfig(node, config.getOffHeapMemoryConfig());
             } else if ("jobtracker".equals(nodeName)) {
                 handleJobTracker(node);
             } else if ("semaphore".equals(nodeName)) {
@@ -827,7 +829,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, MapConfig.MIN_BACKUP_COUNT));
             } else if ("eviction-policy".equals(nodeName)) {
-                mapConfig.setEvictionPolicy(MapConfig.EvictionPolicy.valueOf(upperCaseInternal(value)));
+                mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
             } else if ("max-size".equals(nodeName)) {
                 final MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
                 final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");

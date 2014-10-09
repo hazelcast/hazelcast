@@ -70,7 +70,7 @@ public class CacheGetAllOperationFactory
         out.writeObject(expiryPolicy);
         out.writeInt(keys.size());
         for (Data key : keys) {
-            key.writeData(out);
+            out.writeData(key);
         }
     }
 
@@ -81,8 +81,7 @@ public class CacheGetAllOperationFactory
         expiryPolicy = in.readObject();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             keys.add(data);
         }
     }

@@ -44,6 +44,8 @@ public interface ClientConnectionManager {
      */
     void start();
 
+    ClientConnection connectToAddress(Address target) throws Exception;
+
     /**
      * Tries to connect to an address in member list.
      * Gets an address a hint first tries that if not successful, tries connections from LoadBalancer

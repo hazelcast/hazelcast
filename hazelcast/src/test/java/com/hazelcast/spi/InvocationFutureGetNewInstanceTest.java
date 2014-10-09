@@ -5,6 +5,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -48,7 +49,7 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
     public void invocationToLocalMember() throws ExecutionException, InterruptedException {
         Node localNode = getNode(local);
 
-        Object response = localNode.nodeEngine.toData(new DummyObject());
+        Data response = localNode.nodeEngine.toData(new DummyObject());
         Operation op = new OperationWithResponse(response);
 
         OperationService service = localNode.nodeEngine.getOperationService();
@@ -69,7 +70,7 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
     public void invocationToRemoteMember() throws ExecutionException, InterruptedException {
         Node localNode = getNode(local);
 
-        Object response = localNode.nodeEngine.toData(new DummyObject());
+        Data response = localNode.nodeEngine.toData(new DummyObject());
         Operation op = new OperationWithResponse(response);
 
         Address remoteAddress = getNode(remote).address;
@@ -92,12 +93,12 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
     }
 
     public static class OperationWithResponse extends AbstractOperation {
-        private Object response;
+        private Data response;
 
         public OperationWithResponse() {
         }
 
-        public OperationWithResponse(Object response) {
+        public OperationWithResponse(Data response) {
             this.response = response;
         }
 
@@ -119,13 +120,13 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
         @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {
             super.writeInternal(out);
-            out.writeObject(response);
+            out.writeData(response);
         }
 
         @Override
         protected void readInternal(ObjectDataInput in) throws IOException {
             super.readInternal(in);
-            response = in.readObject();
+            response = in.readData();
         }
     }
 
