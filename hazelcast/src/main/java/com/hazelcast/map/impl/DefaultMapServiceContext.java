@@ -9,6 +9,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -193,7 +194,9 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     @Override
     public Set<Integer> getMemberPartitions() {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        List<Integer> partitions = partitionService.getMemberPartitionsMap().get( nodeEngine.getThisAddress()  );
+        List<Integer> partitions = partitionService.getMemberPartitionsMap().get(nodeEngine.getThisAddress());
+        if(partitions == null)
+            return Collections.emptySet();
         return new LinkedHashSet<Integer>(partitions);
     }
 
