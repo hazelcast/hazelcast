@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.impl.operations.client;
+package com.hazelcast.multimap.impl.client;
 
-import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.concurrent.lock.client.AbstractIsLockedRequest;
+import com.hazelcast.concurrent.lock.client.AbstractLockRequest;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
@@ -27,18 +26,24 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
+
 import java.io.IOException;
 import java.security.Permission;
 
-public class MultiMapIsLockedRequest extends AbstractIsLockedRequest implements RetryableRequest {
+public class MultiMapLockRequest extends AbstractLockRequest {
 
     String name;
 
-    public MultiMapIsLockedRequest() {
+    public MultiMapLockRequest() {
     }
 
-    public MultiMapIsLockedRequest(Data key, String name) {
-        super(key);
+    public MultiMapLockRequest(Data key, long threadId, String name) {
+        super(key, threadId);
+        this.name = name;
+    }
+
+    public MultiMapLockRequest(Data key, long threadId, long ttl, long timeout, String name) {
+        super(key, threadId, ttl, timeout);
         this.name = name;
     }
 
@@ -56,13 +61,12 @@ public class MultiMapIsLockedRequest extends AbstractIsLockedRequest implements 
         super.read(reader);
     }
 
-
     public int getFactoryId() {
         return MultiMapPortableHook.F_ID;
     }
 
     public int getClassId() {
-        return MultiMapPortableHook.IS_LOCKED;
+        return MultiMapPortableHook.LOCK;
     }
 
     public Permission getRequiredPermission() {
@@ -70,12 +74,12 @@ public class MultiMapIsLockedRequest extends AbstractIsLockedRequest implements 
     }
 
     @Override
-    public String getDistributedObjectName() {
-        return name;
+    public String getDistributedObjectType() {
+        return MultiMapService.SERVICE_NAME;
     }
 
     @Override
-    public String getDistributedObjectType() {
-        return MultiMapService.SERVICE_NAME;
+    public String getDistributedObjectName() {
+        return name;
     }
 }

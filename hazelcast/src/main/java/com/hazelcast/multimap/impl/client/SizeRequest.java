@@ -14,54 +14,41 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.impl.operations.client;
+package com.hazelcast.multimap.impl.client;
 
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
-import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
-
-import java.security.Permission;
 import java.util.Map;
 
-public class ClearRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
+public class SizeRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
-    public ClearRequest() {
+    public SizeRequest() {
     }
 
-    public ClearRequest(String name) {
+    public SizeRequest(String name) {
         super(name);
     }
 
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.CLEAR);
+        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.SIZE);
     }
 
-    @Override
     protected Object reduce(Map<Integer, Object> map) {
-        int totalAffectedEntries = 0;
-        for (Object affectedEntries : map.values()) {
-            totalAffectedEntries += (Integer) affectedEntries;
+        int total = 0;
+        for (Object obj : map.values()) {
+            total += (Integer) obj;
         }
-        final MultiMapService service = getService();
-        service.publishMultiMapEvent(name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
-        return null;
+        return total;
     }
 
     public int getClassId() {
-        return MultiMapPortableHook.CLEAR;
-    }
-
-    public Permission getRequiredPermission() {
-        return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
+        return MultiMapPortableHook.SIZE;
     }
 
     @Override
     public String getMethodName() {
-        return "clear";
+        return "size";
     }
 }

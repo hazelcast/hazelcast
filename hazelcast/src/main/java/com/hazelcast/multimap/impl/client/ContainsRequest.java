@@ -14,75 +14,74 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.impl.operations.client;
+package com.hazelcast.multimap.impl.client;
 
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
-import com.hazelcast.multimap.impl.operations.PutOperation;
+import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MultiMapPermission;
-import com.hazelcast.spi.Operation;
-import java.io.IOException;
-import java.security.Permission;
+import com.hazelcast.spi.OperationFactory;
 
-public class PutRequest extends MultiMapKeyBasedRequest {
+import java.io.IOException;
+import java.util.Map;
+
+/**
+ * The contains requests checks if a value is stored in the multimap. This is a distributed call; meaning that all member in the
+ * cluster are going to process. So it is an expensive calld.
+ */
+public class ContainsRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     Data value;
 
-    int index = -1;
-
-    long threadId;
-
-    public PutRequest() {
+    public ContainsRequest() {
     }
 
-    public PutRequest(String name, Data key, Data value, int index, long threadId) {
-        super(name, key);
+    public ContainsRequest(String name, Data value) {
+        super(name);
         this.value = value;
-        this.index = index;
-        this.threadId = threadId;
     }
 
-    protected Operation prepareOperation() {
-        return new PutOperation(name, key, threadId, value, index);
+    protected OperationFactory createOperationFactory() {
+        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.CONTAINS, null, value);
+    }
+
+    protected Object reduce(Map<Integer, Object> map) {
+        for (Object obj : map.values()) {
+            if (Boolean.TRUE.equals(obj)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public int getClassId() {
-        return MultiMapPortableHook.PUT;
+        return MultiMapPortableHook.CONTAINS_ENTRY;
     }
 
     public void write(PortableWriter writer) throws IOException {
-        writer.writeInt("i", index);
-        writer.writeLong("t", threadId);
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        value.writeData(out);
+        IOUtil.writeNullableData(out, value);
     }
 
     public void read(PortableReader reader) throws IOException {
-        index = reader.readInt("i");
-        threadId = reader.readLong("t");
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
-        value = new Data();
-        value.readData(in);
-    }
-
-    public Permission getRequiredPermission() {
-        return new MultiMapPermission(name, ActionConstants.ACTION_PUT);
+        value = IOUtil.readNullableData(in);
     }
 
     @Override
     public String getMethodName() {
-        return "put";
+        return "containsValue";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{key, value};
+        return new Object[]{value};
     }
 }

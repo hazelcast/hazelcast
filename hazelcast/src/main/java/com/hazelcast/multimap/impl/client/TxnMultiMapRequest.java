@@ -14,60 +14,54 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.impl.operations.client;
+package com.hazelcast.multimap.impl.client;
 
+import com.hazelcast.client.impl.client.SecureRequest;
+import com.hazelcast.transaction.client.BaseTransactionRequest;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
-import com.hazelcast.transaction.TransactionContext;
 import java.io.IOException;
 import java.security.Permission;
 
-public class TxnMultiMapPutRequest extends TxnMultiMapRequest {
+public abstract class TxnMultiMapRequest extends BaseTransactionRequest implements SecureRequest {
 
-    Data key;
-    Data value;
+    String name;
 
-    public TxnMultiMapPutRequest() {
+    protected TxnMultiMapRequest() {
     }
 
-    public TxnMultiMapPutRequest(String name, Data key, Data value) {
-        super(name);
-        this.key = key;
-        this.value = value;
+    protected TxnMultiMapRequest(String name) {
+        this.name = name;
     }
 
-    public Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(txnId);
-        return context.getMultiMap(name).put(key, value);
+    public String getServiceName() {
+        return MultiMapService.SERVICE_NAME;
     }
 
-    public int getClassId() {
-        return MultiMapPortableHook.TXN_MM_PUT;
+    public int getFactoryId() {
+        return MultiMapPortableHook.F_ID;
     }
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
-        value.writeData(out);
+        writer.writeUTF("n", name);
     }
 
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
-        final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
-        value = new Data();
-        value.readData(in);
+        name = reader.readUTF("n");
+    }
+
+    public Data toData(Object obj) {
+        return serializationService.toData(obj);
     }
 
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(name, ActionConstants.ACTION_PUT);
+        return new MultiMapPermission(name, ActionConstants.ACTION_READ);
     }
 }

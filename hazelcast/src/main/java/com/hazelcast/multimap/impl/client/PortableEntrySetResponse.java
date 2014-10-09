@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.impl.operations.client;
+package com.hazelcast.multimap.impl.client;
 
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.nio.ObjectDataInput;
