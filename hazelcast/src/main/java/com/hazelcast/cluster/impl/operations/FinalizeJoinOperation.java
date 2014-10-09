@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements JoinOperation {
 
-    private FutureUtil.ExceptionHandler exceptionHandler = new PostJoinFutureUtilExceptionHandler();
+    public static final int FINALIZE_JOIN_MAX_TIMEOUT = 30;
 
     private PostJoinOperation postJoinOp;
 
@@ -89,7 +89,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         }
 
         if (calls != null) {
-            FutureUtil.waitWithDeadline(calls, 1, TimeUnit.SECONDS, exceptionHandler);
+            FutureUtil.waitWithDeadline(calls, Math.min(calls.size(), FINALIZE_JOIN_MAX_TIMEOUT), TimeUnit.SECONDS,
+                    new FinalizeJoinExceptionHandler());
         }
     }
 
@@ -113,20 +114,15 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         }
     }
 
-    private class PostJoinFutureUtilExceptionHandler implements FutureUtil.ExceptionHandler {
-
+    private class FinalizeJoinExceptionHandler implements FutureUtil.ExceptionHandler {
         @Override
         public void handleException(Throwable throwable) {
-            if (!(throwable instanceof ExecutionException)) {
-                return;
-            }
-
-            final ClusterServiceImpl clusterService = getService();
-            final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
-            final ILogger logger = nodeEngine.getLogger(FinalizeJoinOperation.class);
-            if (logger.isFinestEnabled()) {
-                logger.finest("Error while executing post-join operations -> "
-                        + throwable.getClass().getSimpleName() + "[" + throwable.getMessage() + "]", throwable);
+            if (throwable instanceof ExecutionException) {
+                ILogger logger = getLogger();
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Error while executing post-join operations -> "
+                            + throwable.getClass().getSimpleName() + "[" + throwable.getMessage() + "]", throwable);
+                }
             }
         }
     }
