@@ -26,7 +26,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.FutureUtil;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -34,7 +33,8 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public class HazelcastServerCacheManager
         extends HazelcastCacheManager {
@@ -100,11 +100,7 @@ public class HazelcastServerCacheManager
                 futures.add(future);
             }
         }
-        try {
-            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            logger.warning(e);
-        }
+        waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     }
 
