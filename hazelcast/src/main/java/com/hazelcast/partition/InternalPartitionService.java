@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public interface InternalPartitionService extends CoreService {
 
@@ -158,5 +159,14 @@ public interface InternalPartitionService extends CoreService {
     void clearPartitionReplicaVersions(int partitionId);
 
     com.hazelcast.core.PartitionService getPartitionServiceProxy();
+
+    /**
+     * Enforces the internal partition table to be setup and synced with other cluster
+     * nodes before returning or throwing a {@link java.util.concurrent.TimeoutException}
+     * if partition table cannot be prepared in a reasonable time.
+     *
+     * @throws TimeoutException if partition table cannot be prepared in a reasonable time
+     */
+    void warmupPartitionTable() throws TimeoutException;
 
 }
