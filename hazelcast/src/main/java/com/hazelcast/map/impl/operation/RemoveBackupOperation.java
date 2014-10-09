@@ -18,8 +18,8 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -45,12 +45,10 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
 
     public void run() {
         MapService mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
-        Record record = recordStore.getRecord(dataKey);
-        if (record != null) {
-            recordStore.removeBackup(dataKey);
-        }
+        RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
+        recordStore.removeBackup(dataKey);
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
         }

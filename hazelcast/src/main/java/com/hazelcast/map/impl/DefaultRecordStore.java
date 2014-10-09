@@ -144,14 +144,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public void deleteRecord(Data key) {
-        Record record = records.remove(key);
-        if (record != null) {
-            record.invalidate();
-        }
-    }
-
-    @Override
     public Iterator<Record> iterator() {
         return new ReadOnlyRecordIterator(records.values());
     }
@@ -309,23 +301,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         }
         final Object value = record != null ? record.getValue() : null;
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(key, value);
-    }
-
-
-    // TODO Does it need to load from store on backup?
-    @Override
-    public Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey) {
-        checkIfLoaded();
-        final long now = getNow();
-
-        Record record = getRecordOrNull(dataKey, now, true);
-        if (record == null) {
-            record = loadRecordOrNull(dataKey, true);
-        } else {
-            accessRecord(record);
-        }
-        final Object data = record != null ? record.getValue() : null;
-        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
     }
 
     private Record loadRecordOrNull(Data key, boolean backup) {
@@ -600,7 +575,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public Object get(Data key, boolean backup) {
         checkIfLoaded();
-        long now = getNow();
+        final long now = getNow();
 
         Record record = getRecordOrNull(key, now, backup);
         if (record == null) {
@@ -778,6 +753,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     public boolean merge(Data key, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         checkIfLoaded();
         final long now = getNow();
+
         Record record = getRecordOrNull(key, now, false);
         Object newValue;
         if (record == null) {
@@ -1016,6 +992,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return oldValue;
     }
 
+    @Override
+    public Record getRecordOrNull(Data key) {
+        final long now = getNow();
+
+        return getRecordOrNull(key, now, false);
+    }
+
     private Record getRecordOrNull(Data key, long now, boolean backup) {
         Record record = records.get(key);
         if (record == null) {
@@ -1024,4 +1007,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return getOrNullIfExpired(record, now, backup);
     }
 
+    private void deleteRecord(Data key) {
+        Record record = records.remove(key);
+        if (record != null) {
+            record.invalidate();
+        }
+    }
 }
