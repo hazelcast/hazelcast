@@ -77,7 +77,7 @@ class MapMigrationAwareService implements MigrationAwareService {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
             final IndexService indexService = mapContainer.getIndexService();
             if (indexService.hasIndex()) {
-                final Iterator<Record> iterator = recordStore.iterator(now);
+                final Iterator<Record> iterator = recordStore.iterator(now, false);
                 while (iterator.hasNext()) {
                     final Record record = iterator.next();
                     if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
