@@ -2,6 +2,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.NoClusterFoundException;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
@@ -23,6 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -50,7 +52,7 @@ class ClusterListenerThread extends Thread {
     private HazelcastClient client;
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
-
+    private Exception exception;
 
     public ClusterListenerThread(ThreadGroup group, String name, Collection<AddressProvider> addressProviders) {
         super(group, name);
@@ -64,8 +66,19 @@ class ClusterListenerThread extends Thread {
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
     }
 
+    /**
+     * Waits for the thread to complete.
+     *
+     * @throws InterruptedException
+     * @throws java.lang.RuntimeException if an exception was thrown during the connect.
+     */
     public void await() throws InterruptedException {
         latch.await();
+
+        if (exception != null) {
+            ExceptionUtil.fixRemoteStackTrace(exception, Thread.currentThread().getStackTrace());
+            throw ExceptionUtil.rethrow(exception);
+        }
     }
 
     ClientConnection getConnection() {
@@ -79,6 +92,8 @@ class ClusterListenerThread extends Thread {
                     try {
                         conn = connectToOne();
                     } catch (Exception e) {
+                        this.exception = e;
+
                         if (client.getLifecycleService().isRunning()) {
                             LOGGER.severe("Error while connecting to cluster!", e);
                         }
@@ -244,6 +259,7 @@ class ClusterListenerThread extends Thread {
         int attempt = 0;
         Throwable lastError = null;
         Set<Address> triedAddresses = new HashSet<Address>();
+
         while (true) {
             final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
             final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
@@ -259,8 +275,7 @@ class ClusterListenerThread extends Thread {
                     lastError = e;
                     LOGGER.finest("IO error during initial connection to " + address, e);
                 } catch (AuthenticationException e) {
-                    lastError = e;
-                    LOGGER.warning("Authentication error on " + address, e);
+                    throw e;
                 }
             }
             if (attempt++ >= connectionAttemptLimit) {
@@ -269,7 +284,7 @@ class ClusterListenerThread extends Thread {
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             LOGGER.warning(
                     String.format("Unable to get alive cluster connection,"
-                            + " try in %d ms later, attempt %d of %d.",
+                                    + " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
             if (remainingTime > 0) {
@@ -280,7 +295,8 @@ class ClusterListenerThread extends Thread {
                 }
             }
         }
-        throw new IllegalStateException("Unable to connect to any address in the config! The following addresses were tried:"
+
+        throw new NoClusterFoundException("Unable to connect to any address in the config! The following addresses were tried:"
                 + triedAddresses, lastError);
     }
 }

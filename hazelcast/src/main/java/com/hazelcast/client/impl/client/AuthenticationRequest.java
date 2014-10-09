@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Set;
-import java.util.logging.Level;
 
 /**
  * Client Authentication Request that holds credentials
@@ -65,68 +64,91 @@ public final class AuthenticationRequest extends CallableClientRequest {
 
     @Override
     public Object call() throws Exception {
-        boolean authenticated = authenticate();
+        authenticate();
+        return handleAuthenticated();
+    }
 
-        if (authenticated) {
-            return handleAuthenticated();
+    /**
+     * Authenticates the client. An exception is thrown in case of failure.
+     */
+    private void authenticate() {
+        ClientEngineImpl clientEngine = getService();
+        if (credentials == null) {
+            logAuthenticationFailure("Could not retrieve Credentials object!");
+        } else if (clientEngine.getSecurityContext() != null) {
+            authenticate(clientEngine.getSecurityContext());
+        } else if (credentials instanceof UsernamePasswordCredentials) {
+            UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
+            authenticate(usernamePasswordCredentials);
         } else {
-            return handleUnauthenticated();
+            String msg = "Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster "
+                    + "group-name and group-password should be used for authentication!\n"
+                    + "Current credentials type is: " + credentials.getClass().getName();
+            logAuthenticationFailure(msg);
         }
     }
 
-    private boolean authenticate() {
+    private void logAuthenticationSuccess() {
         ClientEngineImpl clientEngine = getService();
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
-        boolean authenticated;
-        if (credentials == null) {
-            authenticated = false;
-            logger.severe("Could not retrieve Credentials object!");
-        } else if (clientEngine.getSecurityContext() != null) {
-            authenticated = authenticate(clientEngine.getSecurityContext());
-        } else if (credentials instanceof UsernamePasswordCredentials) {
-            UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
-            authenticated = authenticate(usernamePasswordCredentials);
-        } else {
-            authenticated = false;
-            logger.severe("Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster "
-                    + "group-name and group-password should be used for authentication!\n"
-                    + "Current credentials type is: " + credentials.getClass().getName());
-        }
-
-
-        logger.log((authenticated ? Level.INFO : Level.WARNING), "Received auth from " + connection
-                + ", " + (authenticated ? "successfully authenticated" : "authentication failed"));
-        return authenticated;
+        logger.info("Received auth from " + connection + ", successfully authenticated");
     }
 
-    private boolean authenticate(UsernamePasswordCredentials credentials) {
+    private void logAuthenticationFailure(Object error) {
+        ClientEngineImpl clientEngine = getService();
+        Connection connection = endpoint.getConnection();
+        ILogger logger = clientEngine.getLogger(getClass());
+
+        StringBuilder message = new StringBuilder("Received auth from ").append(connection).append(", authentication failed");
+        if (error instanceof String) {
+            message.append(", message: ").append(message);
+        }
+
+        if (error instanceof Throwable) {
+            logger.severe(message.toString(), (Throwable) error);
+        } else {
+            logger.warning(message.toString());
+        }
+    }
+
+    private void authenticate(UsernamePasswordCredentials credentials) {
         ClientEngineImpl clientEngine = getService();
         GroupConfig groupConfig = clientEngine.getConfig().getGroupConfig();
         String nodeGroupName = groupConfig.getName();
         String nodeGroupPassword = groupConfig.getPassword();
+
         boolean usernameMatch = nodeGroupName.equals(credentials.getUsername());
+        if (!usernameMatch) {
+            String msg = "Client want to join the wrong group. "
+                    + "Client has groupname: '" + credentials.getUsername()
+                    + "' but cluster has groupname: '" + nodeGroupName + "'.";
+            logAuthenticationFailure(msg);
+            throw new AuthenticationException(msg);
+        }
+
         boolean passwordMatch = nodeGroupPassword.equals(credentials.getPassword());
-        return usernameMatch && passwordMatch;
+        if (!passwordMatch) {
+            String msg = "Client wants to join group '" + nodeGroupName + "', but is not using the correct password.";
+            logAuthenticationFailure(msg);
+            throw new AuthenticationException(msg);
+        }
+
+        logAuthenticationSuccess();
     }
 
-    private boolean authenticate(SecurityContext securityContext) {
+    private void authenticate(SecurityContext securityContext) {
         Connection connection = endpoint.getConnection();
         credentials.setEndpoint(connection.getInetAddress().getHostAddress());
         try {
             LoginContext lc = securityContext.createClientLoginContext(credentials);
             lc.login();
             endpoint.setLoginContext(lc);
-            return true;
+            logAuthenticationSuccess();
         } catch (LoginException e) {
-            ILogger logger = clientEngine.getLogger(getClass());
-            logger.warning(e);
-            return false;
+            logAuthenticationFailure(e);
+            throw new AuthenticationException("");
         }
-    }
-
-    private Object handleUnauthenticated() {
-        return new AuthenticationException("Invalid credentials!");
     }
 
     private Object handleAuthenticated() {

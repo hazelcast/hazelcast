@@ -208,7 +208,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         clusterThread.shutdown();
     }
 
-
     void fireConnectionEvent(boolean disconnected) {
         final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
         final LifecycleState state = disconnected ? LifecycleState.CLIENT_DISCONNECTED : LifecycleState.CLIENT_CONNECTED;
