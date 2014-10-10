@@ -292,7 +292,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return NearCache.NULL_OBJECT.equals(cached);
     }
 
-    private Object readBackupDataOrNull(Data key) {
+    private Data readBackupDataOrNull(Data key) {
         final MapService mapService = getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -308,20 +308,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (recordStore == null) {
             return null;
         }
-        final boolean owner = isOwner(partitionId);
-        final Object val = recordStore.get(key, !owner);
-        if (val != null) {
-            mapServiceContext.interceptAfterGet(name, val);
-            // this serialization step is needed not to expose the object, see issue 1292
-            return mapServiceContext.toData(val);
-        }
-        return null;
-    }
-
-    private boolean isOwner(int partitionId) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Address owner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-        return nodeEngine.getThisAddress().equals(owner);
+        return recordStore.readBackupData(key);
     }
 
     protected ICompletableFuture<Data> getAsyncInternal(final Data key) {

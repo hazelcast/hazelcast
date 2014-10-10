@@ -585,6 +585,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return value;
     }
 
+    @Override
+    public Data readBackupData(Data key) {
+        final long now = getNow();
+
+        final Record record = getRecord(key);
+        // expiration has delay on backups, but reading backup data should not be affected by this delay.
+        // this is the reason why we are passing `false` to isExpired() method.
+        final boolean expired = isExpired(record, now, false);
+        if (expired) {
+            return null;
+        }
+        final MapServiceContext mapServiceContext = this.mapServiceContext;
+        final Object value = record.getValue();
+        mapServiceContext.interceptAfterGet(name, value);
+        // this serialization step is needed not to expose the object, see issue 1292
+        return mapServiceContext.toData(value);
+    }
 
     @Override
     public MapEntrySet getAll(Set<Data> keys) {
