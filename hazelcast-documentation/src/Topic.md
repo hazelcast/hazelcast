@@ -2,7 +2,7 @@
 
 Hazelcast provides distribution mechanism for publishing messages that are delivered to multiple subscribers which is also known as publish/subscribe (pub/sub) messaging model. Publishing and subscribing operations are cluster wide. When a member subscribes for a topic, it is actually registering for messages published by any member in the cluster, including the new members joined after you add the listener.
 
-***ATTENTION:*** *Publish operation is async. It does not wait for operations to run in remote nodes, it works as fire and forget.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Publish operation is async. It does not wait for operations to run in remote nodes, it works as fire and forget.*
 
 ### Sample Topic Code
 
