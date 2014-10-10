@@ -17,11 +17,10 @@
 package com.hazelcast.executor.impl;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-
-import java.util.concurrent.Callable;
 
 public final class MemberCallableTaskOperation extends BaseCallableTaskOperation
         implements IdentifiedDataSerializable {
@@ -29,8 +28,8 @@ public final class MemberCallableTaskOperation extends BaseCallableTaskOperation
     public MemberCallableTaskOperation() {
     }
 
-    public MemberCallableTaskOperation(String name, String uuid, Callable callable) {
-        super(name, uuid, callable);
+    public MemberCallableTaskOperation(String name, String uuid, Data callableData) {
+        super(name, uuid, callableData);
     }
 
     @Override

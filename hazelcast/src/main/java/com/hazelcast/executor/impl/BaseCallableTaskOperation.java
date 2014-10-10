@@ -20,6 +20,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.TraceableOperation;
@@ -31,19 +32,21 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
 
     protected String name;
     protected String uuid;
-    protected Callable callable;
+    protected transient Callable callable;
+    private Data callableData;
 
     public BaseCallableTaskOperation() {
     }
 
-    public BaseCallableTaskOperation(String name, String uuid, Callable callable) {
+    public BaseCallableTaskOperation(String name, String uuid, Data callableData) {
         this.name = name;
         this.uuid = uuid;
-        this.callable = callable;
+        this.callableData = callableData;
     }
 
     @Override
     public final void beforeRun() throws Exception {
+        callable = getNodeEngine().toObject(callableData);
         ManagedContext managedContext = getManagedContext();
 
         if (callable instanceof RunnableAdapter) {
@@ -91,13 +94,13 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(uuid);
-        out.writeObject(callable);
+        out.writeData(callableData);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         uuid = in.readUTF();
-        callable = in.readObject();
+        callableData = in.readData();
     }
 }
