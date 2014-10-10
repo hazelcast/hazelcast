@@ -83,6 +83,8 @@ public class PersonMapStore implements MapStore<Long, Person> {
 }
 ```
 
+![image](images/NoteSmall.jpg) ***NOTE:*** *Loading process is performed on a thread different than the partition threads using ExecutorService.*
+
 <br></br>
 ***RELATED INFORMATION***
 
