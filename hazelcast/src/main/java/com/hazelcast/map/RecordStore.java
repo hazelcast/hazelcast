@@ -71,6 +71,19 @@ public interface RecordStore {
      */
     Object get(Data dataKey, boolean backup);
 
+    /**
+     * Called when {@link com.hazelcast.config.MapConfig#isReadBackupData} is <code>true</code> from
+     * {@link com.hazelcast.map.proxy.MapProxySupport#getInternal}
+     * <p/>
+     * Returns corresponding value for key as {@link com.hazelcast.nio.serialization.Data}.
+     * This adds an extra serialization step. For the reason of this behaviour please see issue 1292 on github.
+     *
+     * @param key key to be accessed
+     * @return value as {@link com.hazelcast.nio.serialization.Data}
+     * independent of {@link com.hazelcast.config.InMemoryFormat}
+     */
+    Data readBackupData(Data key);
+
     MapEntrySet getAll(Set<Data> keySet);
 
     boolean containsKey(Data dataKey);
@@ -151,7 +164,7 @@ public interface RecordStore {
      * {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
      * this method can be used to return a read-only iterator.
      *
-     * @param now  current time in millis
+     * @param now    current time in millis
      * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return read only iterator for map values.
      */
