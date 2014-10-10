@@ -21,9 +21,11 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.TraceableOperation;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -46,7 +48,7 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
 
     @Override
     public final void beforeRun() throws Exception {
-        callable = getNodeEngine().toObject(callableData);
+        callable = getCallable();
         ManagedContext managedContext = getManagedContext();
 
         if (callable instanceof RunnableAdapter) {
@@ -55,6 +57,19 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
             adapter.setRunnable(runnable);
         } else {
             callable = (Callable) managedContext.initialize(callable);
+        }
+    }
+
+    /**
+     * since this operation handles responses in an async way, we need to handle serialization exceptions too
+     * @return
+     */
+    private Callable getCallable() {
+        try {
+            return getNodeEngine().toObject(callableData);
+        } catch (HazelcastSerializationException e) {
+            getResponseHandler().sendResponse(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
