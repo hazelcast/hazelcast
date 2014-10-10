@@ -149,14 +149,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public Iterator<Record> iterator(long now) {
-        return new ReadOnlyRecordIterator(records.values(), now);
+    public Iterator<Record> iterator(long now, boolean backup) {
+        return new ReadOnlyRecordIterator(records.values(), now, backup);
     }
 
     @Override
-    public Iterator<Record> loadAwareIterator(long now) {
+    public Iterator<Record> loadAwareIterator(long now, boolean backup) {
         checkIfLoaded();
-        return iterator(now);
+        return iterator(now, backup);
     }
 
     @Override

@@ -29,6 +29,16 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.map.impl.DefaultRecordStore;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.nio.Address;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -46,6 +56,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -851,6 +862,15 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
 
+    private static Config newConfigWithExpiration(String mapName, int maxIdleSeconds) {
+        final Config config = new Config();
+        final MapConfig mapConfig = new MapConfig(mapName + "*");
+        mapConfig.setMaxIdleSeconds(maxIdleSeconds);
+        config.addMapConfig(mapConfig);
+        return config;
+    }
+
+
     /**
      * Test for the issue 2659.
      * Eviction event is fired for an object already removed
@@ -979,6 +999,89 @@ public class EvictionTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
         return hazelcastInstance.getMap(randomMapName());
+    }
+
+    @Test
+    public void testBackupExpirationDelay_notAffectExpiration_onOwnerPartitions() throws Exception {
+        final int numberOfItemsToBeAdded = 1000;
+        final int expectedEntryCountAfterExpirationOnOwnerPartitions = 0;
+
+        testExpirationDelay(expectedEntryCountAfterExpirationOnOwnerPartitions, numberOfItemsToBeAdded, false);
+    }
+
+    @Test
+    public void testBackupExpirationDelay_preventsSweepOfEntries_onBackupPartitions() throws Exception {
+        final int numberOfItemsToBeAdded = 1000;
+        final int expectedEntryCountAfterExpirationOnBackupPartitions = numberOfItemsToBeAdded;
+
+        testExpirationDelay(expectedEntryCountAfterExpirationOnBackupPartitions, numberOfItemsToBeAdded, true);
+    }
+
+    private void testExpirationDelay(final int expectedEntryCountAfterExpiration, final int numberOfItemsToBeAdded, final boolean backup) {
+        // node count should be at least 2 since we are testing a scenario on backups.
+        final int nodeCount = 2;
+        final int maxIdleSeconds = 1;
+        final String mapName = randomMapName();
+
+        final Config config = newConfigWithExpiration(mapName, maxIdleSeconds);
+
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+
+        final IMap<Integer, Integer> map1 = instances[0].getMap(mapName);
+        final IMap<Integer, Integer> map2 = instances[1].getMap(mapName);
+
+        for (int i = 0; i < numberOfItemsToBeAdded; i++) {
+            map1.put(i, i);
+        }
+        // 1. Wait for idle expiration.
+        sleepSeconds(1);
+
+        assertTrueEventually(new AssertTask() {
+
+            @Override
+            public void run() throws Exception {
+                // 2. On backups expiration has 10 seconds delay. So entries on backups should be there.
+                // but on owners they should be expired.
+                final long now = Clock.currentTimeMillis();
+
+                final int notExpiredEntryCountOnNode1 = getNotExpiredEntryCount(map1, now, backup);
+                final int notExpiredEntryCountOnNode2 = getNotExpiredEntryCount(map2, now, backup);
+
+                assertEquals(expectedEntryCountAfterExpiration,
+                        notExpiredEntryCountOnNode1 + notExpiredEntryCountOnNode2);
+            }
+        });
+
+
+    }
+
+
+    private int getNotExpiredEntryCount(IMap map, long now, boolean backup) {
+        int count = 0;
+        final MapProxyImpl mapProxy = (MapProxyImpl) map;
+        final MapService mapService = (MapService) mapProxy.getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        for (int i = 0; i < partitionService.getPartitionCount(); i++) {
+            final Address owner = partitionService.getPartitionOwner(i);
+            if (!nodeEngine.getThisAddress().equals(owner) && backup
+                    || nodeEngine.getThisAddress().equals(owner) && !backup) {
+                final PartitionContainer container = mapServiceContext.getPartitionContainer(i);
+                if (container == null) {
+                    continue;
+                }
+                final RecordStore recordStore = container.getRecordStore(map.getName());
+                final DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
+                final Iterator<Record> iterator = defaultRecordStore.iterator(now, true);
+                while (iterator.hasNext()) {
+                    iterator.next();
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
 }

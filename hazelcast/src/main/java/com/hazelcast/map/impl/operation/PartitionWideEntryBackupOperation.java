@@ -43,7 +43,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
     public void run() {
         final long now = getNow();
 
-        final Iterator<Record> iterator = recordStore.iterator(now);
+        final Iterator<Record> iterator = recordStore.iterator(now, true);
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             final Data dataKey = record.getKey();
