@@ -30,6 +30,8 @@ For information on support for Hazelcast Enterprise, please see [hazelcast.com/s
 
 ##### Typographical Conventions
 
+Below table shows the conventions used in this manual.
+
 |Convention|Description|
 |:-|:-|
 |**bold font**| - Indicates words in a sentence requiring reader's specific attention. <br> - Also indicates property/parameter values.|
