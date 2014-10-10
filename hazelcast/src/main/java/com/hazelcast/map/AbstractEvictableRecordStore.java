@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.map.eviction.EvictionHelper.checkEvictable;
 import static com.hazelcast.map.eviction.EvictionHelper.evictableSize;
 import static com.hazelcast.map.eviction.EvictionHelper.fireEvent;
+import static com.hazelcast.util.ValidationUtil.isNotNegative;
 
 /**
  * Contains eviction specific functionality.
@@ -262,7 +263,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (isLocked(key)) {
             return record;
         }
-        if (!isExpired(record, now)) {
+        if (!isExpired(record, now, backup)) {
             return record;
         }
         final Object value = record.getValue();
@@ -273,13 +274,13 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return null;
     }
 
-    private boolean isExpired(Record record, long time) {
+    public boolean isExpired(Record record, long time, boolean backup) {
         return record == null
-                || isIdleExpired(record, time) == null
-                || isTTLExpired(record, time) == null;
+                || isIdleExpired(record, time, backup) == null
+                || isTTLExpired(record, time, backup) == null;
     }
 
-    private Record isIdleExpired(Record record, long time) {
+    private Record isIdleExpired(Record record, long time, boolean backup) {
         if (record == null) {
             return null;
         }
@@ -291,8 +292,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         assert time > 0L;
         assert time >= lastAccessTime;
 
-        final long maxIdleTime = getMaxIdleTime();
-        result = time - lastAccessTime >= maxIdleTime;
+        result = time - lastAccessTime >= calculateExpirationWithDelay(maxIdleTime, backup);
 
         return result ? null : record;
     }
@@ -306,11 +306,26 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return mapServiceContext.convertTime(maxIdleSeconds, TimeUnit.SECONDS);
     }
 
-    private long getMaxIdleTime() {
-        return maxIdleTime;
+    /**
+     * On backup partitions, this method delays key`s expiration.
+     */
+    private long calculateExpirationWithDelay(long value, boolean backup) {
+        isNotNegative(value, "value");
+        // todo Inherited 10 seconds default delay from previous versions, instead a new GroupProperty may be introduced.
+        final long delayMillis = TimeUnit.SECONDS.toMillis(10);
+        if (backup) {
+            final long sum = value + delayMillis;
+            // check for a potential long overflow.
+            if (sum < 0L) {
+                return Long.MAX_VALUE;
+            } else {
+                return sum;
+            }
+        }
+        return value;
     }
 
-    private Record isTTLExpired(Record record, long time) {
+    private Record isTTLExpired(Record record, long time, boolean backup) {
         if (record == null) {
             return null;
         }
@@ -328,7 +343,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         assert time >= creationTime : String.format("time >= lastUpdateTime (%d >= %d)",
                 time, creationTime);
 
-        result = time - creationTime >= ttl;
+        result = time - creationTime >= calculateExpirationWithDelay(ttl, backup);
         return result ? null : record;
     }
 
@@ -379,21 +394,24 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
         private final long now;
         private final boolean checkExpiration;
+        private final boolean backup;
         private final Iterator<Record> iterator;
         private Record nextRecord;
         private Record lastReturned;
 
-        protected ReadOnlyRecordIterator(Collection<Record> values, long now) {
-            this.iterator = values.iterator();
-            this.now = now;
-            this.checkExpiration = true;
-            advance();
+        protected ReadOnlyRecordIterator(Collection<Record> values, long now, boolean backup) {
+            this(values, now, true, backup);
         }
 
         protected ReadOnlyRecordIterator(Collection<Record> values) {
+            this(values, -1L, false, false);
+        }
+
+        private ReadOnlyRecordIterator(Collection<Record> values, long now, boolean checkExpiration, boolean backup) {
             this.iterator = values.iterator();
-            this.now = -1L;
-            this.checkExpiration = false;
+            this.now = now;
+            this.checkExpiration = checkExpiration;
+            this.backup = backup;
             advance();
         }
 
@@ -429,7 +447,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                         return;
                     }
 
-                    if (!isExpired(nextRecord, now)) {
+                    if (!isExpired(nextRecord, now, backup)) {
                         return;
                     }
                 }
