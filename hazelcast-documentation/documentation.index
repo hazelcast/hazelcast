@@ -5,12 +5,12 @@ src/WhatsNew.md
 	src/WhatsNewFixes.md
 	src/UpgradingFrom2x.md
 	src/DocumentRevisionHistory.md
-src/Introduction.md
+src/GettingStarted.md
 	src/WhyHazelcast.md
-	src/GettingStarted.md
+	src/Installation.md
 		src/InstallingHZEnterprise.md
-		src/StartingClusterClient.md
-		src/ConfiguringHazelcast.md
+	src/StartingClusterClient.md
+	src/ConfiguringHazelcast.md
 	src/UseCases.md
 	src/Resources.md
 src/Distributed_Data_Structures.md

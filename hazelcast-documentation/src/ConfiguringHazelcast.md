@@ -1,5 +1,5 @@
 
-### Configuring Hazelcast
+## Configuring Hazelcast
 
 While Hazelcast is starting up, it checks for the configuration as follows:
 
