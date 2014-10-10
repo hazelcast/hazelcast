@@ -98,7 +98,7 @@ public class CounterMigrationOperation extends AbstractOperation {
 
 
 <br></br>
-***NOTE:*** *During a partition migration, no other operations are executed on the related partition.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *During a partition migration, no other operations are executed on the related partition.*
 <br></br>
 
 Now, we need to make our CounterService class to also implement  `MigrationAwareService` interface. By this way, Hazelcast knows that the CounterService will be able to perform partition migration. See the below code.

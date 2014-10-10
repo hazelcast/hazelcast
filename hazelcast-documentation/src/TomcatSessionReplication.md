@@ -1,7 +1,7 @@
 
 ### Tomcat Based Web Session Replication
 
-***NOTE:*** *This feature is supported for Hazelcast Enterprise 3.3 or higher.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *This feature is supported for Hazelcast Enterprise 3.3 or higher.*
 
 
 ![](images/enterprise-onlycopy.jpg)
@@ -195,7 +195,7 @@ Each HTTP Request is redirected to the same Tomcat instance if sticky sessions a
 
 When Tomcat Failure happens and Load Balancer cannot redirect the request to the owning instance, it sends request to one of the available Tomcat instances. As `jvmRoute` parameter of session ID is different than that of target Tomcat instance, Hazelcast Session Replication Module updates the session ID of the session with the new `jvmRoute` parameter. That actually means that, Session is moved to another Tomcat instance and Load Balancer will redirect all subsequent HTTP Requests to the new Tomcat Instance.
 
-***NOTE:*** *If stickySession is enabled, `jvmRoute` parameter must be set in `$CATALINA_HOME$/conf/server.xml` and unique among Tomcat instances in the cluster.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If stickySession is enabled, `jvmRoute` parameter must be set in `$CATALINA_HOME$/conf/server.xml` and unique among Tomcat instances in the cluster.*
 
 ```xml
  <Engine name="Catalina" defaultHost="localhost" jvmRoute="tomcat-8080">

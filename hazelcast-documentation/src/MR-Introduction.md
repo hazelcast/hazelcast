@@ -297,7 +297,7 @@ for ( JobPartitionState partitionState : partitionStates ) {
 ```
 
 
-***NOTE:*** *Caching of the JobProcessInformation does not work on Java native clients since current values are retrieved while retrieving the instance to minimize traffic between executing node and client.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Caching of the JobProcessInformation does not work on Java native clients since current values are retrieved while retrieving the instance to minimize traffic between executing node and client.*
 
 
 #### JobTracker Configuration
