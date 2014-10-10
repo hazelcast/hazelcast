@@ -948,6 +948,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testNumberOfEventsFired_withMaxIdleSeconds_whenReadBackupDataEnabled() throws Exception {
         final int maxIdleSeconds = 1;
         final int numberOfEntriesToBeAdded = 1000;
@@ -976,7 +977,7 @@ public class EvictionTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        assertOpenEventually(evictedEntryLatch);
+        assertOpenEventually(evictedEntryLatch, 600);
         // sleep some seconds to be sure that
         // we did not receive more than expected number of events.
         sleepSeconds(10);
