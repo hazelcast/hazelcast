@@ -1,6 +1,6 @@
 
 
-### Installing Hazelcast Enterprise
+### Hazelcast Enterprise
 
 There are two Maven repositories defined for Hazelcast Enterprise:
 
