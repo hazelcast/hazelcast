@@ -315,8 +315,6 @@ public final class EvictionHelper {
     	final long availableMemory = getAvailableMemory();
     	final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
     	final int minSize = getApproximateMaxSize(maxSizeConfig.getSize());
-    	System.out.println(minSize);
-    	System.out.println(availableMemory / ONE_MEGABYTE);
     	return minSize < (availableMemory / ONE_MEGABYTE);
     }
     
