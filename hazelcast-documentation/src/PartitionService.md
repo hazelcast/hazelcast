@@ -28,7 +28,7 @@ The method `isClusterSafe` checks whether the cluster is in a safe state. It ret
 
 The method `isMemberSafe` checks whether a specific node is in a safe state. This check controls if first backups of partitions of the given node are synched with the primary ones. Once it returns `true` it means the given node is safe and it can be shutdown without data loss. Similarly, the method `isLocalMemberSafe` does the same check for the local member. And, the method `forceLocalMemberToBeSafe` forces the owned and backup partitions to be synchronized to make the local member safe.
 
-***NOTE:*** *These methods are available from Hazelcast 3.3.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *These methods are available from Hazelcast 3.3.*
 
 
 #### Sample Codes

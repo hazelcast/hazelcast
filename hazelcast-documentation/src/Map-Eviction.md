@@ -27,19 +27,19 @@ Let's describe each property.
 	- LFU: Least Frequently Used.	
 
 -	`max-size`: Maximum size of the map. When maximum size is reached, map is evicted based on the policy defined. Valid values are integers between 0 and `Integer.MAX VALUE`. Default value is 0. If you want `max-size` to work, `eviction-policy` property must be set to a value other than NONE. Its attributes are described below.
-	- **`PER_NODE`**: Maximum number of map entries in each JVM. This is the default policy.	
+	- `PER_NODE`: Maximum number of map entries in each JVM. This is the default policy.	
 	
 		`<max-size policy="PER_NODE">5000</max-size>`
 		
-	- **`PER_PARTITION`**: Maximum number of map entries within each partition. Storage size depends on the partition count in a JVM. So, this attribute may not be used often. If the cluster is small it will be hosting more partitions and therefore map entries, than that of a larger cluster.
+	- `PER_PARTITION`: Maximum number of map entries within each partition. Storage size depends on the partition count in a JVM. So, this attribute may not be used often. If the cluster is small it will be hosting more partitions and therefore map entries, than that of a larger cluster.
 	
 		`<max-size policy="PER_PARTITION">27100</max-size>`
 
-	- **`USED_HEAP_SIZE`**: Maximum used heap size in megabytes for each JVM.
+	- `USED_HEAP_SIZE`: Maximum used heap size in megabytes for each JVM.
 	
 		`<max-size policy="USED_HEAP_SIZE">4096</max-size>`
 
-	- **`USED_HEAP_PERCENTAGE`**: Maximum used heap size percentage for each JVM. If, for example, JVM is configured to have 1000 MB and this value is 10, then the map entries will be evicted when used heap size exceeds 100 MB.
+	- `USED_HEAP_PERCENTAGE`: Maximum used heap size percentage for each JVM. If, for example, JVM is configured to have 1000 MB and this value is 10, then the map entries will be evicted when used heap size exceeds 100 MB.
 	
 		`<max-size policy="USED_HEAP_PERCENTAGE">10</max-size>`
 
@@ -110,7 +110,7 @@ public class EvictAll {
 ```
 
 
-***NOTE:*** *Only EVICT_ALL event is fired for any registered listeners.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Only EVICT_ALL event is fired for any registered listeners.*
      
 
   

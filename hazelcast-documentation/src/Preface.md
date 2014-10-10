@@ -34,7 +34,10 @@ Convention|Description
 -|-
 **bold**|Property valuesUsed to help the words or word groups requiring reader's specific attention stand out from the text. 
 *italic*|placeholder, related information, attention, note
-`monospace`|folder, file and library names, code snippets, code words in a paragraph.
+`monospace`|folder, file, class and library names, code snippets, code words in a paragraph.
+***RELATED INFORMATION***|
+![image](images/NoteSmall.jpg) <br> ***NOTE***|
+![image](images/AttentionSmall.jpg) ***ATTENTION***|
 
 
 

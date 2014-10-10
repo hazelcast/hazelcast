@@ -79,7 +79,7 @@ public class IncBackupOperation
 }
 ```
 <br></br>
-***NOTE:*** *Hazelcast will also make sure that a new IncOperation for that particular key will not be executed before the (synchronous) backup operation has completed.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Hazelcast will also make sure that a new IncOperation for that particular key will not be executed before the (synchronous) backup operation has completed.*
 <br></br>
 
 Let's see the backup functionality in action with the below code.

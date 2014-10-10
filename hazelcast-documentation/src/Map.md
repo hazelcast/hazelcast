@@ -39,7 +39,7 @@ When you run this code, a node is created with a map whose entries are distribut
 
 ![](images/1Node.jpg)
 
-***ATTENTION:*** *Please note that some of the partitions will not contain any data entries since we only have 120 objects and the partition count is 271 by default. This count is configurable and can be changed using the system property `hazelcast.partition.count`. Please see [Advanced Configuration Properties](#advanced-configuration-properties).*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Please note that some of the partitions will not contain any data entries since we only have 120 objects and the partition count is 271 by default. This count is configurable and can be changed using the system property `hazelcast.partition.count`. Please see [Advanced Configuration Properties](#advanced-configuration-properties).*
 
 Now, let's create a second node which will result in a cluster with 2 nodes. This is where backups of entries are created, too. Please remember the backup partitions mentioned in [Hazelcast Overview](#hazelcast-overview) section. So, run the above code again to create the second node. Below illustration shows two nodes and how the data and its backup is distributed.
 

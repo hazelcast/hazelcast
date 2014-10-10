@@ -8,7 +8,7 @@ When you provide a `MapLoader` implementation and request an entry (`IMap.get()`
 
 When a `MapStore` implementation is provided, an entry is put also into a user defined data store. 
 
-***ATTENTION:*** *Data store needs to be a centralized system that is
+![image](images/NoteSmall.jpg) ***NOTE:*** *Data store needs to be a centralized system that is
 accessible from all Hazelcast Nodes. Persisting to local file system is not supported.*
 
 Please see the below example.
@@ -117,7 +117,7 @@ If `MapStore` throws an exception, then the exception will be propagated back to
 
 `MapStore` can be configured as write-behind by setting the `write-delay-seconds` property to a value bigger than **0**. This means the modified entries will be put to the data store asynchronously after a configured delay. 
 
-***NOTE:*** *In write-behind mode, Hazelcast coalesces updates on a specific key, i.e. applies only the last update on it.* 
+![image](images/NoteSmall.jpg) ***NOTE:*** *In write-behind mode, Hazelcast coalesces updates on a specific key, i.e. applies only the last update on it.* 
 
 In this mode, when the `map.put(key,value)` call returns, you can be sure that
 
@@ -134,11 +134,11 @@ If `MapStore` throws an exception, then Hazelcast retries to store the entry. If
 For batch write operations, which are only allowed in write-behind mode, Hazelcast will call `MapStore.storeAll(map)`, and `MapStore.deleteAll(collection)` to do all writes in a single call.
 <br></br>
 
-***ATTENTION:*** *If a map entry is marked as dirty, i.e. it is waiting to be persisted to the `MapStore` in a write-behind scenario, the eviction process forces the entry to be stored. By this way, you will have control on the number of entries waiting to be stored, so that a possible OutOfMemory exception can be prevented.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If a map entry is marked as dirty, i.e. it is waiting to be persisted to the `MapStore` in a write-behind scenario, the eviction process forces the entry to be stored. By this way, you will have control on the number of entries waiting to be stored, so that a possible OutOfMemory exception can be prevented.*
 <br></br>
 
 
-***ATTENTION:*** *MapStore or MapLoader implementations should not use Hazelcast Map/Queue/MultiMap/List/Set operations. Your implementation should only work with your data store. Otherwise, you may get into deadlock situations.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *MapStore or MapLoader implementations should not use Hazelcast Map/Queue/MultiMap/List/Set operations. Your implementation should only work with your data store. Otherwise, you may get into deadlock situations.*
 
 Here is a sample configuration:
 
@@ -232,7 +232,7 @@ Here is MapLoader initialization flow:
 4. Each node will load all its owned keys by calling `MapLoader.loadAll(keys)`
 5. Each node puts its owned entries into the map by calling `IMap.putTransient(key,value)`
 
-***ATTENTION:*** *If the load mode is LAZY and when `clear()` method is called (which triggers `MapStore.deleteAll()`), Hazelcast will remove **ONLY** the loaded entries from your map and datastore. Since the whole data is not loaded for this case (LAZY mode), please note that there may be still entries in your datastore.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If the load mode is LAZY and when `clear()` method is called (which triggers `MapStore.deleteAll()`), Hazelcast will remove **ONLY** the loaded entries from your map and datastore. Since the whole data is not loaded for this case (LAZY mode), please note that there may be still entries in your datastore.*
 
 #### Forcing All Keys To Be Loaded
 

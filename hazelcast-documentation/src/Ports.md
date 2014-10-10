@@ -67,5 +67,5 @@ networkConfig.addOutboundPort(37001);
 ...
 ```
 
-***Note:*** *You can use port ranges and/or comma separated ports.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *You can use port ranges and/or comma separated ports.*
 <br></br>
