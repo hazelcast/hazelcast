@@ -6,7 +6,34 @@
 ![](images/enterprise-onlycopy.jpg)
 
 
-You can use native .NET client to connect to Hazelcast nodes. All you need is to add `HazelcastClient3x.dll` into your .NET project references. The API is very similar to Java native client. Sample code is shown below.
+You can use native .NET client to connect to Hazelcast nodes. All you need is to add `HazelcastClient3x.dll` into your .NET project references. The API is very similar to Java native client. 
+
+.NET Client has following distributed objects:
+
+* `IMap<K,V>`
+* `IMultiMap<K,V>`
+* `IQueue<E>`
+* `ITopic<E>`
+* `IHList<E>`
+* `IHSet<E>`
+* `IIdGenerator`
+* `ILock`
+* `ISemaphore`
+* `ICountDownLatch`
+* `IAtomicLong`
+* `ITransactionContext`
+	
+ITransactionContext can be used to obtain;
+
+* `ITransactionalMap<K,V>`
+* `ITransactionalMultiMap<K,V>`
+* `ITransactionalList<E>`
+* `ITransactionalSet<E>`
+
+
+
+
+Sample code is shown below.
 
 ```csharp
 using Hazelcast.Config;
@@ -132,29 +159,6 @@ var map = client.GetMap<int,string>("mapName");
 
 var lock= client.GetLock("thelock");
 ```
-
-.NET Client has following distributed objects:
-
-* `IMap<K,V>`
-* `IMultiMap<K,V>`
-* `IQueue<E>`
-* `ITopic<E>`
-* `IHList<E>`
-* `IHSet<E>`
-* `IIdGenerator`
-* `ILock`
-* `ISemaphore`
-* `ICountDownLatch`
-* `IAtomicLong`
-* `ITransactionContext`
-	
-	ITransactionContext can be used to obtain;
-
-	* `ITransactionalMap<K,V>`
-	* `ITransactionalMultiMap<K,V>`
-	* `ITransactionalList<E>`
-	* `ITransactionalSet<E>`
-
 
 
 
