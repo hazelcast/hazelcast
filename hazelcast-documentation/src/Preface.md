@@ -30,14 +30,14 @@ For information on support for Hazelcast Enterprise, please see [hazelcast.com/s
 
 ##### Typographical Conventions
 
-Convention|Description
--|-
-**bold**|Property valuesUsed to help the words or word groups requiring reader's specific attention stand out from the text. 
-*italic*|placeholder, related information, attention, note
-`monospace`|folder, file, class and library names, code snippets, code words in a paragraph.
-***RELATED INFORMATION***|
-![image](images/NoteSmall.jpg) <br> ***NOTE***|
-![image](images/AttentionSmall.jpg) ***ATTENTION***|
+|Convention|Description|
+|:-|:-|
+|**bold font**| - Indicates words in a sentence requiring reader's specific attention. <br> - Also indicates property/parameter values.|
+|*italic font*|- When used with "<" and ">" before and after it, indicates a variable in a command or code syntax that you must replace, e.g. `hazelcast-<`*version*`>.jar`. <br> - Also, Note and Related Information texts are in italic fonts.|
+|`monospace`|- Indicates file, folder, class and library names, code snippets, and inline code words in a sentence.|
+|***RELATED INFORMATION***|- Indicates a resource that is relevant to the topic, usually with a link or cross-reference.|
+|![image](images/NoteSmall.jpg) ***NOTE***| Indicates information that is of special interest or importance, e.g. an additional action required only in certain circumstances.|
+
 
 
 
