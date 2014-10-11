@@ -469,6 +469,7 @@
 
                             <sourceFileIncludes>
                                 <include>com/hazelcast/core/**</include>
+                                <include>com/hazelcast/cache/**</include>
                                 <include>com/hazelcast/config/**</include>
                                 <include>com/hazelcast/jmx/**</include>
                                 <include>com/hazelcast/monitor/*</include>
@@ -567,6 +568,7 @@
 
                             <sourceFileIncludes>
                                 <include>com/hazelcast/core/**</include>
+                                <include>com/hazelcast/cache/**</include>
                                 <include>com/hazelcast/config/**</include>
                                 <include>com/hazelcast/jmx/**</include>
                                 <include>com/hazelcast/monitor/*</include>
