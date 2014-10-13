@@ -31,7 +31,7 @@ import java.util.concurrent.Future;
  *     <ul>
  *         <li>asynchronous version of all cache operations</li>
  *         <li>cache operations with custom ExpiryPolicy parameter to apply on that specific operation.</li>
- *         <li>non-categorized like {@link #size()}</li>
+ *         <li>uncategorized like {@link #size()}</li>
  *     </ul>
  *</p>
  *<p>
