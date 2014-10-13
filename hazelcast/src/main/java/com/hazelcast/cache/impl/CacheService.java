@@ -42,14 +42,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Cache Service is the base access point of jcache impl to manage
- * cache data on a node.
- * This service is an optionally registered service which is enable if the
- * javax.cache.Caching class is found on classpath.
- *
- * If enable this service will provide all cache data operation for all partitions
- * of the node which it is registered on.
- *
+ * Cache Service is the main access point of JCache implementation.
+ * <p>
+ * This service is responsible of
+ *<ul>
+ *     <li>Creating and/or accessing the named {@link com.hazelcast.cache.impl.CacheRecordStore}</li>
+ *     <li>Creating/Deleting the cache configuration of the named {@link com.hazelcast.cache.ICache}</li>
+ *     <li>Registering/Deregistering of cache listeners</li>
+ *     <li>publish/dispatch cache events</li>
+ *     <li>Enabling/Disabling statistic and management</li>
+ *     <li>Data migration commit/rollback through {@link MigrationAwareService}</li>
+ *</ul>
+ * </p>
+ * <p><b>WARNING:</b>This service is an optionally registered service which is enable if the {@link javax.cache.Caching} class is
+ *  found on the classpath.</p>
+ * <p>
+ * If registered, it will provide all above cache operation for all partitions of the node which it is registered on.
+ * </p>
  */
 public class CacheService
         implements ManagedService, RemoteService, MigrationAwareService, EventPublishingService<Object, CacheEventListener> {
@@ -107,7 +116,7 @@ public class CacheService
         return new CacheDistributedObject(objectName, nodeEngine, this);
     }
 
-    //    @Override
+    @Override
     public void destroyDistributedObject(String objectName) {
     }
     //endregion
