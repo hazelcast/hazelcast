@@ -2,10 +2,12 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.merge.MergePolicyProvider;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -57,11 +59,18 @@ public interface MapServiceContext extends MapServiceContextSupport,
 
     RecordStore getExistingRecordStore(int partitionId, String mapName);
 
-    List<Integer> getOwnedPartitions();
+    Collection<Integer> getOwnedPartitions();
 
-    AtomicReference<List<Integer>> ownedPartitions();
+    AtomicReference<Collection<Integer>> ownedPartitions();
 
-    List<Integer> getMemberPartitions();
+    /**
+     * Check if key belongs on partitions of the this node
+     * @param key
+     * @return true if this node owns the key
+     */
+    boolean isOwnedKey(Data key);
+
+    Set<Integer> getMemberPartitions();
 
     AtomicInteger getWriteBehindQueueItemCounter();
 

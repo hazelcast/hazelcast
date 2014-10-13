@@ -31,12 +31,13 @@ import java.util.concurrent.Future;
  *     <ul>
  *         <li>asynchronous version of all cache operations</li>
  *         <li>cache operations with custom ExpiryPolicy parameter to apply on that specific operation.</li>
- *         <li>non-categorized like {@link #size()}</li>
+ *         <li>uncategorized like {@link #size()}</li>
  *     </ul>
  *</p>
  *<p>
- *     A method ending with Async is the asynchronous version of that method (for example {@link #getAsync(K)} , {@link #replaceAsync(K,V)} ).<br/>
- *     These methods return a Future where you can get the result or wait the operation to be completed.
+ *     A method ending with Async is the asynchronous version of that method (for example {@link #getAsync(K)} ,
+ *     {@link #replaceAsync(K,V)} ).<br/>
+ *     These methods return a Future where you can get the result or wait for the operation to be completed.
  *
  *     <pre>
  *         <code>ICache&lt;String , SessionData&gt; icache =  cache.unwrap( ICache.class );
