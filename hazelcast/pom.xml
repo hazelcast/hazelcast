@@ -132,6 +132,7 @@
                                 </Export-Package>
                                 <Import-Package>
                                     !org.junit,
+                                    !com.eclipsesource.json,
                                     sun.misc;resolution:=optional,
                                     org.apache.log4j;resolution:=optional,
                                     org.apache.logging.log4j;resolution:=optional,
