@@ -19,11 +19,11 @@ package com.hazelcast.cache;
 /**
  * Cache statistics
  * <p>
- *     Cache statistics are accumulated from the time a cache is created. <br/>
+ *     Cache statistics are accumulated since the time a cache is created. <br/>
  *     Each CacheStatistics represents a named cache's per node statistics data.
  * </p>
  * <p>
- *     Sample access code to node local cache statistics:
+ *     Sample code for accessing to node's local cache statistics:
  *     <pre>
  *         <code>ICache&lt;String , SessionData&gt; iCache =  cache.unwrap( ICache.class );
  *         CacheStatistics nodeLocalCacheStatistics = iCache.getLocalCacheStatistics();
