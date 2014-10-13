@@ -26,7 +26,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Result of the {@link com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation }
+ * <p>Response data object for {@link com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation }.</p>
+ * This result wrapper is used by {@link AbstractClusterWideIterator}'s subclasses to return a collection of keys batched and the
+ * last tableIndex processed.
+ *
+ * @see AbstractClusterWideIterator
+ * @see com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation
  */
 public class CacheKeyIteratorResult
         implements IdentifiedDataSerializable {

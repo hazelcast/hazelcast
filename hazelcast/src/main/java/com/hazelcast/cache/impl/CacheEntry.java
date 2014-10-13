@@ -19,10 +19,13 @@ package com.hazelcast.cache.impl;
 import javax.cache.Cache;
 
 /**
- * Entry for {@link javax.cache.Cache}.
+ * Basic "key,value" pair entry implementation.
+ * This implementation is used by {@link javax.cache.integration.CacheWriter}s and {@link javax.cache.Cache#iterator()}.
  *
- * @param <K>
- * @param <V>
+ * @param <K> the type of key
+ * @param <V> the type of value
+ * @see javax.cache.integration.CacheWriter
+ * @see javax.cache.Cache#iterator()
  */
 public class CacheEntry<K, V>
         implements Cache.Entry<K, V> {

@@ -19,7 +19,7 @@ package com.hazelcast.cache.impl;
 import javax.cache.event.EventType;
 
 /**
- * cache events
+ * Hazelcast Cache impl Events, internal Event type to represent more event not defined in {@link EventType}.
  */
 public enum CacheEventType {
 
@@ -65,6 +65,9 @@ public enum CacheEventType {
         this.type = type;
     }
 
+    /**
+     * @return unique id of the event type
+     */
     public int getType() {
         return type;
     }
@@ -78,6 +81,13 @@ public enum CacheEventType {
         return null;
     }
 
+    /**
+     * Converts an {@link CacheEventType} into {@link EventType}.
+     * Just an Enum type conversion take place
+     *
+     * @param cacheEventType a {@link CacheEventType}
+     * @return same event of {@link EventType} enum
+     */
     public static EventType convertToEventType(CacheEventType cacheEventType) {
         return EventType.valueOf(cacheEventType.name());
     }

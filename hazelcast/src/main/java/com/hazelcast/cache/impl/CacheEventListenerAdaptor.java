@@ -33,10 +33,16 @@ import javax.cache.event.EventType;
 import java.util.HashSet;
 
 /**
- * Adapter for EventListener.
+ * Adapter for wrapping all {@link CacheEventListener} subtypes.
  *
- * @param <K>
- * @param <V>
+ * @param <K> the type of key
+ * @param <V> the type of value
+ *
+ * @see javax.cache.event.CacheEntryCreatedListener
+ * @see javax.cache.event.CacheEntryUpdatedListener
+ * @see javax.cache.event.CacheEntryRemovedListener
+ * @see javax.cache.event.CacheEntryExpiredListener
+ *
  */
 public class CacheEventListenerAdaptor<K, V>
         implements CacheEventListener {

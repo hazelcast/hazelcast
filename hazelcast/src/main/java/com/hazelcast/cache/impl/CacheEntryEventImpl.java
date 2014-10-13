@@ -21,6 +21,18 @@ import com.hazelcast.cache.ICache;
 import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.EventType;
 
+/**
+ * Cache entry event implementation is the actual event object received by subtypes of
+ * {@link javax.cache.event.CacheEntryListener}
+ *
+ * @param <K> the type of key
+ * @param <V> the type of value
+ *
+ * @see javax.cache.event.CacheEntryCreatedListener#onCreated(Iterable)
+ * @see javax.cache.event.CacheEntryUpdatedListener#onUpdated(Iterable)
+ * @see javax.cache.event.CacheEntryRemovedListener#onRemoved(Iterable)
+ * @see javax.cache.event.CacheEntryExpiredListener#onExpired(Iterable)
+ */
 public class CacheEntryEventImpl<K, V>
         extends CacheEntryEvent<K, V> {
 

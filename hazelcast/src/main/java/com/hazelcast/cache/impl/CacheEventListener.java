@@ -17,10 +17,21 @@
 package com.hazelcast.cache.impl;
 
 /**
- * Cache Event Listener
+ * Cache Event Listener interface
+ * see implementation classes for details
+ *
+ * @see com.hazelcast.cache.impl.CacheEventListenerAdaptor
+ * @see com.hazelcast.cache.impl.AbstractCacheProxyInternal.CacheCompletionEventListener
+ *
  */
 public interface CacheEventListener {
 
+    /**
+     * Cache Event handling function
+     *
+     * @param eventObject Event data object, can be one of {@link CacheEventSet} {@link CacheEventData} class
+     * @see com.hazelcast.cache.impl.CacheEventType Event Types that can be handled
+     */
     void handleEvent(Object eventObject);
 
 }

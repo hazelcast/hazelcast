@@ -24,7 +24,8 @@ import java.io.IOException;
 import java.io.Serializable;
 
 /**
- * Provides the response service for {@link com.hazelcast.cache.impl.operation.CacheClearOperation}
+ * {@link com.hazelcast.cache.impl.operation.CacheClearOperation} wraps the response and thrown exceptions into this class
+ *
  */
 public class CacheClearResponse
         implements IdentifiedDataSerializable, Serializable {

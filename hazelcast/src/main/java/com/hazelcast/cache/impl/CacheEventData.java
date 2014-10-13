@@ -20,7 +20,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
- * Cache event data object used in publish - dispatch
+ * Internal event data object used in publish - dispatch
+ * All key value and oldValue are represented in {@link Data}
+ *
+ * @see com.hazelcast.cache.impl.CacheService#publishEvent(String, CacheEventSet, int)
+ * @see com.hazelcast.cache.impl.CacheService#dispatchEvent(Object, CacheEventListener)
  */
 public interface CacheEventData
         extends IdentifiedDataSerializable {
