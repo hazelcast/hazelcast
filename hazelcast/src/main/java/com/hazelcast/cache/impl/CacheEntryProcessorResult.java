@@ -20,11 +20,12 @@ import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 
 /**
- * Result of the {@link CacheEntryProcessorEntry}
+ * Implementation of {@link EntryProcessorResult} wrapping the result or exception which serves a response wrapper return from
+ * {@link CacheEntryProcessorEntry}
  *
- * @param <T>
+ * @param <T> the type of the return value
+ * @see CacheEntryProcessorEntry
  */
-
 public class CacheEntryProcessorResult<T>
         implements EntryProcessorResult<T> {
 

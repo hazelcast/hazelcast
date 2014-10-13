@@ -24,10 +24,24 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * Base cluster-wide iterator
+ * Abstract cluster-wide iterator is an {@link java.util.Iterator} implementing shared functionality<br/>
+ * of {@link com.hazelcast.cache.impl.ClusterWideIterator} and ClientClusterWideIterator
  *
- * @param <K>
- * @param <V>
+ * <p>
+ *     AbstractClusterWideIterator is the base iterator implementation returned by {@link javax.cache.Cache#iterator()}.
+ *     Iteration functionality is basically has two parameters, partition and internal table of partition.
+ *     Iterator start from highest partitionId and loop until all partition are swapped.
+ *     For each partitionId there is a second parameter to iterate on, the internal hash table index.
+ * </p>
+ * <p>
+ *     Iteration takes place with a fix sized batch of keys. Keys are fetched and iterator uses this collection for an
+ *     internal iteration until all keys used. There is always a possibility of an entry be changed, so iterator always return
+ *     each entry when it is actually requested with a pre-fetched key which means although {@link #hasNext()} check returns
+ *     <code>true</code> , {@link #next()} may return a <code>null</code> {@link javax.cache.Cache.Entry} value.
+ * </p>
+ *
+ * @param <K> the type of key
+ * @param <V> the type of value
  */
 public abstract class AbstractClusterWideIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {

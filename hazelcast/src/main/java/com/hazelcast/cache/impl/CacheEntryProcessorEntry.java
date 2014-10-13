@@ -24,11 +24,15 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
 /**
- * Entry of Entry Processor for {@link CacheEntry}.
- *
- * @param <K>
- * @param <V>
- * @see com.hazelcast.map.EntryProcessor
+ * MutableEntry implementation passed into
+ * {@link javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)}
+ * <p>
+ *     Implementation handles multiple operations executed on an Entry and persists the resultant state to be saved when process
+ *     completes.
+ *</p>
+ * @param <K> the type of key
+ * @param <V> the type of value
+ * @see javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)
  */
 public class CacheEntryProcessorEntry<K, V>
         implements MutableEntry<K, V> {
@@ -129,6 +133,10 @@ public class CacheEntryProcessorEntry<K, V>
         return (V) objValue;
     }
 
+    /**
+     * Provides a similar functionality to committing a transaction. So at the end of the process method, applyChanges will be
+     * called to apply latest data into {@link CacheRecordStore}
+     */
     public void applyChanges() {
         final boolean isStatisticsEnabled = cacheRecordStore.cacheConfig.isStatisticsEnabled();
         final CacheStatisticsImpl statistics = cacheRecordStore.statistics;
