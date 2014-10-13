@@ -37,7 +37,7 @@ import java.util.concurrent.Future;
  *<p>
  *     A method ending with Async is the asynchronous version of that method (for example {@link #getAsync(K)} ,
  *     {@link #replaceAsync(K,V)} ).<br/>
- *     These methods return a Future where you can get the result or wait the operation to be completed.
+ *     These methods return a Future where you can get the result or wait for the operation to be completed.
  *
  *     <pre>
  *         <code>ICache&lt;String , SessionData&gt; icache =  cache.unwrap( ICache.class );
