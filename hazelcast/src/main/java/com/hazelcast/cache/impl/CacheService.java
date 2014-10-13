@@ -76,7 +76,7 @@ public class CacheService
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     private final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
     private NodeEngine nodeEngine;
-    private CachePartitionSegment[] segments;
+    private CachePartitionSegment[] segments; // visibility guarantee?
 
     //region ManagedService
     @Override
@@ -91,8 +91,7 @@ public class CacheService
 
     @Override
     public void reset() {
-        final ConcurrentMap<String, CacheConfig> cacheConfigs = configs;
-        for (String objectName : cacheConfigs.keySet()) {
+        for (String objectName : configs.keySet()) {
             destroyCache(objectName, true, null);
         }
         final CachePartitionSegment[] partitionSegments = segments;
@@ -204,7 +203,7 @@ public class CacheService
         if (!isLocal) {
             deregisterAllListener(objectName);
         }
-        enableStatistics(objectName, false);
+        enableStatistics(objectName, false); // weird naming
         enableManagement(objectName, false);
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
@@ -213,12 +212,13 @@ public class CacheService
         }
     }
 
-    protected void destroyCacheOnAllMembers(String objectName, String callerUuid) {
+    private void destroyCacheOnAllMembers(String objectName, String callerUuid) {
         final OperationService operationService = nodeEngine.getOperationService();
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             if (!member.localMember() && !member.getUuid().equals(callerUuid)) {
                 final CacheDestroyOperation op = new CacheDestroyOperation(objectName, true);
+                // exception handling?
                 operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
             }
         }
@@ -247,12 +247,13 @@ public class CacheService
         return created;
     }
 
-    protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
+    private <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
         final OperationService operationService = nodeEngine.getOperationService();
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true);
+                // exception handling?
                 operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
             }
         }
@@ -273,6 +274,7 @@ public class CacheService
      */
     public CacheStatisticsImpl createCacheStatIfAbsent(String name) {
         if (!statistics.containsKey(name)) {
+            // wrong usage of putIfAbsent
             statistics.putIfAbsent(name, new CacheStatisticsImpl());
         }
         return statistics.get(name);
@@ -344,7 +346,7 @@ public class CacheService
         }
     }
 
-    public void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue, Data dataOldValue,
+    void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue, Data dataOldValue,
                              boolean isOldValueAvailable, int orderKey) {
         final EventService eventService = getNodeEngine().getEventService();
         final Collection<EventRegistration> candidates = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
@@ -380,7 +382,7 @@ public class CacheService
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventData, orderKey);
     }
 
-    public void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
+    void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
         final EventService eventService = getNodeEngine().getEventService();
         final Collection<EventRegistration> candidates = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
 
@@ -390,7 +392,7 @@ public class CacheService
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventSet, orderKey);
     }
 
-    public NodeEngine getNodeEngine() {
+    NodeEngine getNodeEngine() {
         return nodeEngine;
     }
 

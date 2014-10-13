@@ -37,6 +37,7 @@ public class CacheStatisticsImpl
     private static final float FLOAT_HUNDRED = 100.0f;
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
 
+    // Would be better to use static AtomicFieldUpdaters to save memory
     private final AtomicLong removals = new AtomicLong();
     private final AtomicLong expiries = new AtomicLong();
     private final AtomicLong puts = new AtomicLong();
