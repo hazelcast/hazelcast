@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.client;
 
+import static com.hazelcast.map.MapService.SERVICE_NAME;
+
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
@@ -44,8 +46,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
-
-import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable,
         RetryableRequest, SecureRequest {
@@ -126,7 +126,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         for (Future future : flist) {
             QueryResult queryResult = (QueryResult) future.get();
             if (queryResult != null) {
-                final List<Integer> partitionIds = queryResult.getPartitionIds();
+                final Collection<Integer> partitionIds = queryResult.getPartitionIds();
                 if (partitionIds != null) {
                     plist.addAll(partitionIds);
                     result.addAll(queryResult.getResult());
