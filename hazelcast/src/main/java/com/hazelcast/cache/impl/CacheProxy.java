@@ -59,9 +59,13 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * HazelcastServerCacheManager. Represent a cache on server or embedded mode.
  *</p>
  *<p>
- *Each cache method actually an operation which is send to related partition(s) or node(s). <br/>
+ *Each cache method actually an operation which is send to related partition(s) or node(s).
  * Operations are executed on partition's or node's executor pools and the results are delivered to user.
  *</p>
+ * <p>
+ *     In order to access a {@linkplain CacheProxy} by name, a cacheManager should be used. It's advised to use
+ *     {@link com.hazelcast.cache.ICache} instead.
+ * </p>
  *
  * @param <K> key type
  * @param <V> value type

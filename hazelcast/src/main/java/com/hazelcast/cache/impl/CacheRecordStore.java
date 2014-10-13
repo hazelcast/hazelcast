@@ -52,12 +52,16 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 
 /**
- * Implementation of the {@link ICacheRecordStore}
+ * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
  *
- * Represents a named ICache on-heap data for a single partition.
+ * <p>Represents a named ICache on-heap data store for a single partition.
  * Total data of an ICache object is the total CacheRecordStore on all partitions.
- * This data structure is the actual cache operations implementation, data access, statistics, event firing etc.
- *
+ * This data structure is the actual cache operation's implementation, data access, statistics, event firing etc.
+ * </p>
+ * <p>CacheRecordStore represent the cache from the partition point of view. Hazelcast splits the cluster data homogeneously to
+ * partitions using keys. So the CacheRecordStore is the actual keeps the data of the partition slice.
+ * </p>
+ * <p>CacheRecordStore is accessed through {@linkplain com.hazelcast.cache.impl.CachePartitionSegment} </p>
  * CacheRecordStore is managed by CachePartitionSegment.
  *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
