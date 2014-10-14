@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
@@ -49,11 +50,14 @@ public abstract class AbstractCacheService implements ICacheService {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         segments = new CachePartitionSegment[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
-            segments[i] = new CachePartitionSegment(this, createCacheConstructorFunction(i), i);
+            segments[i] =
+                    new CachePartitionSegment(this,
+                                              createCacheConstructorFunction(i),
+                                              i);
         }
     }
 
-    protected abstract ConstructorFunction<String,ICacheRecordStore> createCacheConstructorFunction(int partitionId);
+    protected abstract ConstructorFunction<CacheInfo, ICacheRecordStore> createCacheConstructorFunction(int partitionId);
 
     //endregion
 
@@ -95,6 +99,13 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public ICacheRecordStore getOrCreateCache(String name, int partitionId) {
         return segments[partitionId].getOrCreateCache(name);
+    }
+
+    @Override
+    public ICacheRecordStore getOrCreateCache(String name,
+                                              CacheStorageType cacheStorageType,
+                                              int partitionId) {
+        return segments[partitionId].getOrCreateCache(name, cacheStorageType);
     }
 
     @Override
@@ -219,6 +230,13 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public CacheConfig getCacheConfig(String name) {
         return configs.get(name);
+    }
+
+    @Override
+    public CacheConfig getCacheConfig(String name, CacheStorageType cacheStorageType) {
+        CacheConfig cacheConfig = getCacheConfig(name);
+        cacheConfig.setCacheStorageType(cacheStorageType);
+        return cacheConfig;
     }
 
     @Override

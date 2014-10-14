@@ -38,12 +38,13 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CacheService extends AbstractCacheService implements ICacheService {
 
-    protected ConstructorFunction<String, ICacheRecordStore> createCacheConstructorFunction(final int partitionId) {
-        ConstructorFunction<String, ICacheRecordStore> function = new ConstructorFunction<String, ICacheRecordStore>() {
-            public ICacheRecordStore createNew(String name) {
-                return new CacheRecordStore(name, partitionId, nodeEngine, CacheService.this);
-            }
-        };
+    protected ConstructorFunction<CacheInfo, ICacheRecordStore> createCacheConstructorFunction(final int partitionId) {
+        ConstructorFunction<CacheInfo, ICacheRecordStore> function =
+                new ConstructorFunction<CacheInfo, ICacheRecordStore>() {
+                    public ICacheRecordStore createNew(CacheInfo ci) {
+                        return new CacheRecordStore(ci.getName(), partitionId, nodeEngine, CacheService.this);
+                    }
+                };
         return function;
     }
 

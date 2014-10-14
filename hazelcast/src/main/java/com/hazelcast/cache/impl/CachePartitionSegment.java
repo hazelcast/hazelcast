@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -40,12 +41,17 @@ public final class CachePartitionSegment {
 
     private final ICacheService cacheService;
     private final int partitionId;
-    private final ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction;
-    private final ConcurrentMap<String, ICacheRecordStore> caches = new ConcurrentHashMap<String, ICacheRecordStore>();
+    // *** NOTE ***
+    //      CacheInfo is implemented by considering comparison with String in hash-map.
+    private final ConstructorFunction<CacheInfo, ICacheRecordStore> cacheConstructorFunction;
+    private final ConcurrentMap<CacheInfo, ICacheRecordStore> caches =
+            new ConcurrentHashMap<CacheInfo, ICacheRecordStore>();
     private final Object mutex = new Object();
 
     CachePartitionSegment(ICacheService cacheService,
-            ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction, int partitionId) {
+                          ConstructorFunction<CacheInfo,
+                          ICacheRecordStore> cacheConstructorFunction,
+                          int partitionId) {
         this.cacheConstructorFunction = cacheConstructorFunction;
         this.cacheService = cacheService;
         this.partitionId = partitionId;
@@ -64,7 +70,19 @@ public final class CachePartitionSegment {
     }
 
     public ICacheRecordStore getOrCreateCache(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(caches, name, mutex, cacheConstructorFunction);
+        return
+            ConcurrencyUtil.getOrPutSynchronized(caches,
+                                                 new CacheInfo(name),
+                                                 mutex,
+                                                 cacheConstructorFunction);
+    }
+
+    public ICacheRecordStore getOrCreateCache(String name, CacheStorageType cacheStorageType) {
+        return
+             ConcurrencyUtil.getOrPutSynchronized(caches,
+                                                  new CacheInfo(name, cacheStorageType),
+                                                  mutex,
+                                                  cacheConstructorFunction);
     }
 
     public ICacheRecordStore getCache(String name) {
