@@ -22,21 +22,19 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
-class AbstractCacheRecord<V>
-        implements CacheRecord<V> {
+public class AbstractCacheRecord<V> implements CacheRecord<V> {
 
-    private Data key;
-    private V value;
+    protected Data key;
+    protected V value;
+    protected long expirationTime = -1;
 
-    private long expirationTime = -1;
+    public AbstractCacheRecord() {
+    }
 
-    AbstractCacheRecord(Data key, V value, long expirationTime) {
+    public AbstractCacheRecord(Data key, V value, long expirationTime) {
         this.key = key;
         this.value = value;
         this.expirationTime = expirationTime;
-    }
-
-    public AbstractCacheRecord() {
     }
 
     @Override
@@ -69,19 +67,16 @@ class AbstractCacheRecord<V>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeData(key);
         out.writeLong(expirationTime);
         out.writeObject(value);
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         key = in.readData();
         expirationTime = in.readLong();
         value = in.readObject();
-
     }
 }

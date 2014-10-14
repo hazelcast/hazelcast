@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventPublishingService;
@@ -38,6 +39,8 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     ICacheRecordStore getCache(String name, int partitionId);
 
+    ICacheRecordStore getOrCreateCache(String name, CacheStorageType cacheStorageType, int partitionId);
+
     CachePartitionSegment getSegment(int partitionId);
 
     void destroyCache(String objectName, boolean isLocal, String callerUuid);
@@ -55,6 +58,8 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
     void enableManagement(String cacheNameWithPrefix, boolean enabled);
 
     CacheConfig getCacheConfig(String name);
+
+    CacheConfig getCacheConfig(String name, CacheStorageType cacheStorageType);
 
     Collection<CacheConfig> getCacheConfigs();
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -41,6 +42,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     private String managerPrefix;
     private String uriString;
     private NearCacheConfig nearCacheConfig;
+    private CacheStorageType cacheStorageType = CacheStorageType.DEFAULT_STORAGE_TYPE;
 
     public CacheConfig() {
         super();
@@ -55,6 +57,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             this.evictionPolicy = config.evictionPolicy;
             if (config.nearCacheConfig != null) {
                 this.nearCacheConfig = new NearCacheConfig(config.nearCacheConfig);
+            }
+            if (config.cacheStorageType != null) {
+                this.cacheStorageType = config.cacheStorageType;
             }
         }
     }
@@ -211,6 +216,23 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         return this;
     }
 
+    /**
+     * @return cache storage type for how cache data will be stored
+     */
+    public CacheStorageType getCacheStorageType() {
+        return cacheStorageType;
+    }
+
+    /**
+     * Sets the cache storage type for how cache data will be stored.
+     *
+     * @param cacheStorageType type of cache storage for how cache data will be stored
+     * @throws IllegalArgumentException if cacheStorageType is null.
+     */
+    public void setCacheStorageType(CacheStorageType cacheStorageType) {
+        this.cacheStorageType = isNotNull(cacheStorageType, "cacheStorageType");
+    }
+
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
@@ -224,6 +246,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeInt(evictionPolicy.ordinal());
 
         out.writeObject(nearCacheConfig);
+
+        out.writeInt(cacheStorageType.ordinal());
 
         //SUPER
         out.writeObject(keyType);
@@ -246,7 +270,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 out.writeObject(cc);
             }
         }
-
     }
 
     @Override
@@ -265,6 +288,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         evictionPolicy = EvictionPolicy.values()[resultEvictionPolicy];
 
         nearCacheConfig = in.readObject();
+
+        final int resultCacheStorageType = in.readInt();
+        cacheStorageType = CacheStorageType.values()[resultCacheStorageType];
 
         //SUPER
         keyType = in.readObject();
@@ -287,7 +313,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
             }
         }
-
     }
 
     @Override
