@@ -78,7 +78,7 @@ public class QueueStoreWrapper implements QueueStore<Data> {
             }
         }
 
-        factoryImpl(name);
+        factoryImpl(name, storeConfig);
 
         this.storeConfig = storeConfig;
         enabled = storeConfig.isEnabled();
@@ -90,7 +90,7 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         }
     }
 
-    public void factoryImpl(String name) {
+    public void factoryImpl(String name, QueueStoreConfig storeConfig) {
         if (store == null) {
             QueueStoreFactory factory = storeConfig.getFactoryImplementation();
             if (factory == null) {
