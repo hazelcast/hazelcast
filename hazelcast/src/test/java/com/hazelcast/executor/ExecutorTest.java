@@ -26,7 +26,7 @@ import static org.junit.Assert.assertFalse;
 public class ExecutorTest extends HazelcastTestSupport {
 
     @Test
-    public void submit() throws Exception {
+    public void submitToAllMembers_WithStatefulCallable() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         factory.newHazelcastInstance();
@@ -35,6 +35,8 @@ public class ExecutorTest extends HazelcastTestSupport {
         MyTask myTask = new MyTask();
         final CountDownLatch completedLatch = new CountDownLatch(1);
         final AtomicBoolean failed = new AtomicBoolean();
+        // Local execution of callable may change the state of callable before sent to other members
+        // we avoid this by copying(serialize/de-serialize) for local executions
         executorService.submitToAllMembers(myTask, new MultiExecutionCallback() {
             @Override
             public void onResponse(Member member, Object value) {
