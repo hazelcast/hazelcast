@@ -16,6 +16,11 @@
 
 package com.hazelcast.cluster;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapIndexConfig;
@@ -24,6 +29,7 @@ import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperties;
@@ -31,6 +37,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EventObject;
@@ -43,17 +50,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClusterMembershipTest extends HazelcastTestSupport {
+
+    private ExecutorService ex;
 
     @Test
     public void testMembershipListener() {
@@ -86,7 +93,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
         final String mapName = randomMapName();
         // index config is added since it was blocking post join operations.
         config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
-        ExecutorService ex = Executors.newFixedThreadPool(instanceCount);
+        this.ex = Executors.newFixedThreadPool(instanceCount);
         final CountDownLatch latch = new CountDownLatch(instanceCount);
         for (int i = 0; i < instanceCount; i++) {
             ex.execute(new Runnable() {
@@ -101,53 +108,48 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMembershipListenerSequentialInvocation() throws InterruptedException {
-        final Config config = new Config();
+    public void testMembershipListenerSequentialInvocation() throws Exception {
+
         final int nodeCount = 10;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
 
         final CountDownLatch eventLatch = new CountDownLatch(nodeCount - 1);
-        final CountDownLatch nodeLatch = new CountDownLatch(nodeCount);
-        config.addListenerConfig(new ListenerConfig().setImplementation(new MembershipListener() {
+        final CountDownLatch nodeLatch = new CountDownLatch(nodeCount - 1);
 
-            final AtomicBoolean flag = new AtomicBoolean(false);
+        Config config = new Config()
+                    .addListenerConfig(new ListenerConfig().setImplementation(newAddMemberListener(eventLatch)));
 
-            public void memberAdded(MembershipEvent membershipEvent) {
-                if (flag.compareAndSet(false, true)) {
-                    try {
-                        Thread.sleep((long) (Math.random() * 500) + 50);
-                        eventLatch.countDown();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } finally {
-                        flag.set(false);
-                    }
-                }
-            }
+        ex = Executors.newFixedThreadPool(nodeCount / 2);
+        // first node has listener
+        factory.newHazelcastInstance(config);
 
-            public void memberRemoved(MembershipEvent membershipEvent) {
-            }
-
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-            }
-        }));
-
-        final ExecutorService ex = Executors.newFixedThreadPool(nodeCount / 2);
-        for (int i = 0; i < nodeCount; i++) {
+        for (int i = 1; i < nodeCount; i++) {
             ex.execute(new Runnable() {
                 public void run() {
-                    factory.newHazelcastInstance(config);
+                    factory.newHazelcastInstance(new Config());
                     nodeLatch.countDown();
                 }
             });
         }
 
-        try {
-            assertTrue(nodeLatch.await(30, TimeUnit.SECONDS));
-            assertTrue(eventLatch.await(30, TimeUnit.SECONDS));
-        } finally {
-            ex.shutdownNow();
-        }
+        assertTrue("Remaining count: " + nodeLatch.getCount(), nodeLatch.await(30, SECONDS));
+        assertTrue("Remaining count: " + eventLatch.getCount(), eventLatch.await(30, SECONDS));
+    }
+
+    private static MembershipAdapter newAddMemberListener(final CountDownLatch eventLatch) {
+        return new MembershipAdapter() {
+
+            // flag to check listener is not called concurrently
+            final AtomicBoolean flag = new AtomicBoolean(false);
+
+            public void memberAdded(MembershipEvent membershipEvent) {
+                if (flag.compareAndSet(false, true)) {
+                    sleepMillis( (int) (Math.random() * 500) + 50);
+                    eventLatch.countDown();
+                    flag.set(false);
+                }
+            }
+        };
     }
 
     @Test
@@ -229,6 +231,13 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
             if (System.currentTimeMillis() - startTimeMs > TimeUnit.SECONDS.toMillis(10)) {
                 fail("Timeout, size of the list didn't reach size: " + expectedSize + " in time");
             }
+        }
+    }
+
+    @After
+    public void shutdownExecutor() {
+        if( ex != null ) {
+            ex.shutdownNow();
         }
     }
 
