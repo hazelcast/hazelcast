@@ -1,8 +1,9 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.UrgentSystemOperation;
 
-public class AssignPartitions extends AbstractOperation {
+public class AssignPartitions extends AbstractOperation implements UrgentSystemOperation {
 
     @Override
     public void run() {

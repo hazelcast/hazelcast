@@ -81,6 +81,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Before
     public void init() {
+        System.setProperty("hazelcast.test.use.network", "true");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
         Config config = new Config();
         instances = factory.newInstances(config);

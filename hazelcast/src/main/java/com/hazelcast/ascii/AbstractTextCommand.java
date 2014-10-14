@@ -63,6 +63,11 @@ public abstract class AbstractTextCommand implements TextCommand {
     }
 
     @Override
+    public boolean isBackpressureAllowed() {
+        return false;
+    }
+
+    @Override
     public boolean shouldReply() {
         return true;
     }
