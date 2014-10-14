@@ -286,6 +286,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         final Data bindData = ioService.toData(bind);
         final Packet packet = new Packet(bindData, portableContext);
         packet.setHeader(Packet.HEADER_OP);
+        packet.setHeader(Packet.HEADER_URGENT);
         connection.write(packet);
         //now you can send anything...
     }

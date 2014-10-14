@@ -282,6 +282,18 @@ public class NodeEngineImpl implements NodeEngine {
             eventService.handleEvent(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
             wanReplicationService.handleEvent(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_CLAIM_RES)) {
+            Connection connection = packet.getConn();
+            Data claimResponseData = packet.getData();
+            Integer claimResponse = (Integer) toObject(claimResponseData);
+            System.out.println("Slot Claim Response received from "+connection.getEndPoint()+", Setting available slot to "+claimResponse);
+            connection.setAvailableSlots(claimResponse);
+        } else if (packet.isHeaderSet(Packet.HEADER_CLAIM_REQ)) {
+            System.out.println("Slot Claim Request receving from "+packet.getConn().getEndPoint());
+            Data claimResponseData = toData(1000); //TODO: Calculate size properly
+            Packet responsePacket = new Packet(claimResponseData, getSerializationService().getPortableContext());
+            responsePacket.setHeader(Packet.HEADER_CLAIM_RES);
+            send(responsePacket, packet.getConn());
         } else {
             logger.severe("Unknown packet type! Header: " + packet.getHeader());
         }

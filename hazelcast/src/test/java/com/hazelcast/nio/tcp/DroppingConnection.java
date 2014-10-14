@@ -97,4 +97,9 @@ class DroppingConnection implements Connection {
     public int getPort() {
         return endpoint.getPort();
     }
+
+    @Override
+    public void setAvailableSlots(Integer claimResponse) {
+
+    }
 }

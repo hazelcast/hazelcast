@@ -58,6 +58,11 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
         this.partitionId = partitionId;
     }
 
+    @Override
+    public boolean isBackpressureAllowed() {
+        return isHeaderSet(HEADER_OP) && !isHeaderSet(HEADER_RESPONSE) && !isUrgent();
+    }
+
     /**
      * Gets the Connection this Packet was send with.
      *

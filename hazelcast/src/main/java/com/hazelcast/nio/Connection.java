@@ -118,4 +118,6 @@ public interface Connection {
      * 0 if the socket is not connected yet.
      */
     int getPort();
+
+    void setAvailableSlots(Integer claimResponse);
 }

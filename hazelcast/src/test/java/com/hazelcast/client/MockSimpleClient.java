@@ -157,6 +157,11 @@ public class MockSimpleClient implements SimpleClient {
         }
 
         @Override
+        public void setAvailableSlots(Integer claimResponse) {
+
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof MockConnection)) return false;

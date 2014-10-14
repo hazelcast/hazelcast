@@ -403,6 +403,11 @@ final class TestNodeRegistry {
         }
 
         @Override
+        public void setAvailableSlots(Integer claimResponse) {
+
+        }
+
+        @Override
         public boolean isAlive() {
             return true;
         }
