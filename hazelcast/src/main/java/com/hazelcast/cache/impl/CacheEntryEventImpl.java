@@ -22,7 +22,7 @@ import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.EventType;
 
 /**
- * Cache entry event implementation is the actual event object received by subtypes of
+ * CacheEntryEvent implementation is the actual event object received by sub-interfaces of
  * {@link javax.cache.event.CacheEntryListener}
  *
  * @param <K> the type of key

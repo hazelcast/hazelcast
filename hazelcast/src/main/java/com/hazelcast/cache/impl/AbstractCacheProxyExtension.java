@@ -44,10 +44,10 @@ import java.util.concurrent.Future;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * Abstract {@link com.hazelcast.cache.ICache} implementation which provides extension methods of {@link javax.cache.Cache}
- *
- * <p>partial implementation of {@link com.hazelcast.cache.ICache} of server or embedded mode</p>
- *
+ * <p>Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
+ * {@link com.hazelcast.cache.ICache} is the designated interface.</p>
+ * <p>AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.</p>
+ * <p>Note: this partial implementation is used by server or embedded mode cache</p>
  * @param <K> the type of key
  * @param <V> the type of value
  * @see com.hazelcast.cache.impl.CacheProxy
