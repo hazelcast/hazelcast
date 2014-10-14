@@ -53,6 +53,11 @@ public class DataAdapter implements SocketWritable, SocketReadable {
         return false;
     }
 
+    @Override
+    public boolean isBackpressureAllowed() {
+        return false;
+    }
+
     public boolean writeTo(ByteBuffer destination) {
         if (!isStatusSet(ST_TYPE)) {
             if (destination.remaining() < INT_SIZE_IN_BYTES + 1) {

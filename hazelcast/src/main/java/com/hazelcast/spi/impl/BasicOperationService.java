@@ -350,7 +350,22 @@ final class BasicOperationService implements InternalOperationService {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.send(packet, connection);
+        boolean sent;
+        int attempts = 10;
+        do {
+            sent = nodeEngine.send(packet, connection);
+            if (sent) {
+                return true;
+            }
+            System.out.println("Packet Send for operation "+op+" has not been successful. Is back-pressure being applied? Still have "+attempts+" attempt to try.");
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        } while (--attempts > 0);
+        System.out.println("Failed to send an operation");
+        return false;
     }
 
     @Override
