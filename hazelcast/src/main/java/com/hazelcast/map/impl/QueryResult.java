@@ -60,8 +60,10 @@ public class QueryResult implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         int psize = (partitionIds == null) ? 0 : partitionIds.size();
         out.writeInt(psize);
-        for (Integer partitionId : partitionIds) {
-            out.writeInt(partitionId);
+        if (psize > 0) {
+            for (Integer partitionId : partitionIds) {
+                out.writeInt(partitionId);
+            }
         }
         int rsize = result.size();
         out.writeInt(rsize);
