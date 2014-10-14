@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
 /**
- * Support methods to implementation of {@link com.hazelcast.cache.ICache} of server or embedded mode.
+ * Support methods for implementation of {@link com.hazelcast.cache.ICache} in server or embedded mode.
  *
  * @param <K> the type of key
  * @param <V> the type of value
