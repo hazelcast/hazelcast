@@ -26,9 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <p>Response data object for {@link com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation }.</p>
- * This result wrapper is used by {@link AbstractClusterWideIterator}'s subclasses to return a collection of keys batched and the
- * last tableIndex processed.
+ * <p>Response data object returned by {@link com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation }.</p>
+ * This result wrapper is used in {@link AbstractClusterWideIterator}'s subclasses to return a collection of keys and the last
+ * tableIndex processed.
  *
  * @see AbstractClusterWideIterator
  * @see com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation

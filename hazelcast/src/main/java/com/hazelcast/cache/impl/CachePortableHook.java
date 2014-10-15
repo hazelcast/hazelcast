@@ -47,8 +47,10 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collection;
 
 /**
- * This class contains all the ID hooks for Portable classes used inside the JCache framework.
- * Cache client requests are defined in here. This factory class is used by internal portable serialization.
+ * {@link CachePortableHook} contains all the ID hooks for classes used inside the JCache framework which implement
+ * {@link Portable}.
+ * JCache client request implementations are mapped in here.
+ * <p>This factory class is used by internal portable serialization.</p>
  */
 public class CachePortableHook
         implements PortableHook {

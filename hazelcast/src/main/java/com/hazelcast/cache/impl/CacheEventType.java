@@ -19,7 +19,8 @@ package com.hazelcast.cache.impl;
 import javax.cache.event.EventType;
 
 /**
- * Hazelcast Cache impl Events, internal Event type to represent more event not defined in {@link EventType}.
+ * Hazelcast JCache implementation's internal event types. This enum type is an extension to {@link EventType} to define more
+ * event types
  */
 public enum CacheEventType {
 
