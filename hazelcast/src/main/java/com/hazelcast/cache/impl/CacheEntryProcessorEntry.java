@@ -24,7 +24,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
 /**
- * {@link MutableEntry} implementation passed into
+ * This class is an implementation of {@link MutableEntry} which is provided into
  * {@link javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)}
  * <p>CacheEntryProcessorEntry may face multiple mutating operations like setValue, remove or CacheLoading etc.</p>
  * <p>This implementation may handles multiple operations executed on this entry and persists the resultant state into

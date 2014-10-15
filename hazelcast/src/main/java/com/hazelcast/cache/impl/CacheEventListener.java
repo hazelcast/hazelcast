@@ -17,8 +17,10 @@
 package com.hazelcast.cache.impl;
 
 /**
- * Cache Event Listener interface
- * see implementation classes for details
+ * Cache Event Listener interface is designated for handling Cache events internally such as delegating events to cache event
+ * listener.
+ *
+ * <p>Note: This interface is for internal usage and shouldn't used in user code.</p>
  *
  * @see com.hazelcast.cache.impl.CacheEventListenerAdaptor
  * @see com.hazelcast.cache.impl.AbstractCacheProxyInternal.CacheCompletionEventListener
