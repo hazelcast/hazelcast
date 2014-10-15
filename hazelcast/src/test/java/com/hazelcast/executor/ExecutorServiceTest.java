@@ -1201,7 +1201,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         });
 
-        latch1.await(30, TimeUnit.SECONDS);
+        assertOpenEventually(latch1);
 
         final AtomicReference reference = new AtomicReference();
         final ICompletableFuture completableFuture = es.asCompletableFuture(future);
@@ -1219,7 +1219,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         });
 
-        latch2.await(30, TimeUnit.SECONDS);
+        assertOpenEventually(latch2);
         assertEquals("success", reference.get());
     }
 
@@ -1404,14 +1404,14 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         });
-        assertTrue(latch.await(10,TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
 
     public static class FailingTestTask implements Callable<String>, Serializable {
 
         public String call() throws Exception {
-            throw  new IllegalStateException();
+            throw new IllegalStateException();
         }
     }
 
