@@ -57,8 +57,8 @@ import java.util.NoSuchElementException;
  * <li>Fetched keys are cached in the iterator to be used in each iteration step</li>
  * <li>{@link #hasNext()} may return true for a key already removed.</li>
  * <li>{@link #hasNext()} only return false when all known keys are fetched and iterated.</li>
- * <li>{@link #next()} may return null although cache never has null value. This may happen when, for example, someone removes the entry
- * after the current thread has checked with {@link #hasNext()}</li>
+ * <li>{@link #next()} may return null although cache never has null value. This may happen when, for example,
+ * someone removes the entry after the current thread has checked with {@link #hasNext()}</li>
  * <li>This implementation does not affected by value updates as each value is got from the cluster when {@link #next()} called.
  * </li>
  * </ul>
