@@ -27,10 +27,10 @@ import java.util.NoSuchElementException;
  * {@link AbstractClusterWideIterator} provides the core iterator functionality shared by its descendants.
  *
  *<p>Hazelcast cluster is made of partitions which holds a slice of all clusters data. Partition count never increase or decrease
- *in a cluster. In order to implement an iterator over in a partitioned data we use following parameters.
+ *in a cluster. In order to implement an iterator over a partitioned data, we use following parameters.
  *<ul>
- *<li>To iterate over partitioned data we use partitionId as the first parameter of this iterator.</li>
- *<li>Each partition may have a lot of lot of entries so we use a second parameter to track the iteration of the partition</li>
+ *<li>To iterate over partitioned data, we use partitionId as the first parameter of this iterator.</li>
+ *<li>Each partition may have a lot of entries, so we use a second parameter to track the iteration of the partition</li>
  *</ul>
  *</p>
  * <p>
@@ -47,19 +47,19 @@ import java.util.NoSuchElementException;
  * <p>
  * <h2>Fetching data from cluster:</h2>
  * Fetching is getting a fixed size of keys from the internal table of records of a partition defined by partitionId.
- * Table index is also provided as an table index locator. Fetch response is the keys and last table index. The last table index
+ * Table index is also provided as a table index locator. Fetch response is the keys and last table index. The last table index
  * is included in the result to be used in the next fetch.
  * </p>
  * <p>
  * <h2>Notes:</h2>
  * <ul>
- * <li>Iterator fetches keys in batch of fixed size that can be configured.</li>
+ * <li>Iterator fetches keys in batch with a fixed size that is configurable.</li>
  * <li>Fetched keys are cached in the iterator to be used in each iteration step</li>
  * <li>{@link #hasNext()} may return true for a key already removed.</li>
  * <li>{@link #hasNext()} only return false when all known keys are fetched and iterated.</li>
- * <li>{@link #next()} may return null although cache never has null value. This may happen due to someone may remove the entry
+ * <li>{@link #next()} may return null although cache never has null value. This may happen when, for example, someone removes the entry
  * after the current thread has checked with {@link #hasNext()}</li>
- * <li>This implementation does not effected by value updates as each value is got from the cluster when {@link #next()} called.
+ * <li>This implementation does not affected by value updates as each value is got from the cluster when {@link #next()} called.
  * </li>
  * </ul>
  * </p>
