@@ -36,6 +36,13 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
+/**
+ * Hazelcast {@link javax.cache.CacheManager} for server implementation. This subclass of {@link HazelcastCacheManager} is managed
+ * by {@link HazelcastServerCachingProvider}.
+ * <p>As it live on a node jvm, it has reference to {@link CacheService} and {@link NodeEngine} where this manager make calls</p>
+ * <p>When JCache server implementation is configured, An instance of this class will be returned when
+ * {@link javax.cache.spi.CachingProvider#getCacheManager()} called.</p>
+ */
 public class HazelcastServerCacheManager
         extends HazelcastCacheManager {
 
