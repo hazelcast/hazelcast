@@ -35,6 +35,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
@@ -80,6 +81,7 @@ public final class BasicOperationScheduler {
     private final ConcurrentLinkedQueue genericPriorityWorkQueue = new ConcurrentLinkedQueue();
 
     private final ResponseThread responseThread;
+    private final AtomicInteger noOfScheduledOperations = new AtomicInteger();
 
     private volatile boolean shutdown;
 
@@ -250,6 +252,10 @@ public final class BasicOperationScheduler {
         }
     }
 
+    public int getNoOfScheduledOperations() {
+        return noOfScheduledOperations.get();
+    }
+
     public void execute(Runnable task, int partitionId) {
         execute(task, partitionId, false);
     }
@@ -267,7 +273,12 @@ public final class BasicOperationScheduler {
             throw new IllegalStateException("UrgentSystemOperation " + op + " can't be executed on a custom "
                     + "executor with name: " + executorName);
         }
-        executor.execute(new LocalOperationProcessor(op));
+        noOfScheduledOperations.incrementAndGet();
+        try {
+            executor.execute(new LocalOperationProcessor(op));
+        } catch (RejectedExecutionException e) {
+            noOfScheduledOperations.decrementAndGet();
+        }
     }
 
     public void execute(Packet packet) {
@@ -313,10 +324,7 @@ public final class BasicOperationScheduler {
     }
 
     private void offerWork(Queue queue, Object task) {
-        //in 3.3 we are going to apply backpressure on overload and then we are going to do something
-        //with the return values of the offer methods.
-        //Currently the queues are all unbound, so this can't happen anyway.
-
+        noOfScheduledOperations.incrementAndGet();
         boolean offer = queue.offer(task);
         if (!offer) {
             logger.severe("Failed to offer " + task + " to BasicOperationScheduler due to overload");
@@ -459,6 +467,8 @@ public final class BasicOperationScheduler {
                 dispatcher.dispatch(task);
             } catch (Exception e) {
                 logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
+            } finally {
+                noOfScheduledOperations.decrementAndGet();
             }
         }
 
@@ -537,7 +547,11 @@ public final class BasicOperationScheduler {
 
         @Override
         public void run() {
-            dispatcher.dispatch(op);
+            try {
+                dispatcher.dispatch(op);
+            } finally {
+                noOfScheduledOperations.decrementAndGet();
+            }
         }
     }
 }

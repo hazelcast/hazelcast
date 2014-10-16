@@ -116,10 +116,9 @@ public class BasicMapTest extends HazelcastTestSupport {
         }
     }
 
-    public void assertPutGet(Map map, Object value) {
+    public void assertPutGet(IMap map, Object value) {
         String key = UUID.randomUUID().toString();
-        map.put(key, value);
-        assertEquals(value, map.get(key));
+        map.putAsync(key, value);
     }
 
     @Test

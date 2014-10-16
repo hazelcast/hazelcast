@@ -289,6 +289,8 @@ public class NodeEngineImpl implements NodeEngine {
             Integer claimResponse = (Integer) toObject(claimResponseData);
             connection.setAvailableSlots(claimResponse);
         } else if (packet.isHeaderSet(Packet.HEADER_CLAIM_REQ)) {
+            int operations = operationService.getNoOfScheduledOperations();
+            System.out.println("There is currently "+operations+" operations scheduled.");
             Data claimResponseData = toData(1000); //TODO: Calculate size properly
             Packet responsePacket = new Packet(claimResponseData, getSerializationService().getPortableContext());
             responsePacket.setHeader(Packet.HEADER_CLAIM_RES);
