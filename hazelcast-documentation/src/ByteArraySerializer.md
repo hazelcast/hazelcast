@@ -1,7 +1,7 @@
 
 
 
-## ByteArraySerializer
+### ByteArraySerializer
 
 `ByteArraySerializer` exposes the raw ByteArray used internally by Hazelcast. It is a good option if the serialization library you are using deals with ByteArrays instead of streams.
 

@@ -3,7 +3,7 @@
 
 ## Executor Service
 
-### Overview
+### Executor Overview
 
 One of the coolest features of Java 1.5 is the Executor framework, which allows you to asynchronously execute your tasks, logical units of works, such as database query, complex calculation, image rendering, etc.
 
@@ -57,7 +57,7 @@ String result = future.get();
 
 Please note that Echo callable in the very above sample also implements Serializable interface, since it may be sent to another JVM to be processed.
 
-***ATTENTION:*** *When a task is deserialized, HazelcastInstance needs to be accessed. To do this, the task should implement `HazelcastInstanceAware` interface. Please see [HazelcastInstanceAware Interface](#hazelcastinstanceaware-interface) for more information.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *When a task is deserialized, HazelcastInstance needs to be accessed. To do this, the task should implement `HazelcastInstanceAware` interface. Please see [HazelcastInstanceAware Interface](#hazelcastinstanceaware-interface) for more information.*
 <br></br>
 
 

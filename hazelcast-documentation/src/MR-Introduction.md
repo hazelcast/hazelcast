@@ -17,7 +17,7 @@ The full example is available [here](http://github.com/noctarius/hz-map-reduce) 
 
 The JobTracker is used to create Job instances whereas every instance of `com.hazelcast.mapreduce.Job` defines a single MapReduce configuration. The same Job can be submitted multiple times, no matter if executed in parallel or after the previous execution is finished.
 
-***ATTENTION:*** *After retrieving the JobTracker, be aware of the fact that it should only be used with data structures derived from the same HazelcastInstance. Otherwise you can get unexpected behavior*
+![image](images/NoteSmall.jpg) ***NOTE:*** *After retrieving the JobTracker, be aware of the fact that it should only be used with data structures derived from the same HazelcastInstance. Otherwise you can get unexpected behavior*
 
 To retrieve a JobTracker from Hazelcast, we will start by using the "default" configuration for convenience reasons to show the basic way.
 
@@ -43,7 +43,7 @@ Below example code is a direct follow up of the example of the JobTracker sectio
 
 We start by retrieving an instance of our data map and create the Job instance afterwards. Implementations used to configure the Job will be discussed while walking further through the API documentation, they are not yet discussed.
 
-***ATTENTION:*** *Since the Job class is highly depending on generics to support type safety, the generics change over time and may not be assignment compatible to old variable types. To make use of the full potential of the fluent API, we recommend to use fluent method chaining as shown in this example to prevent the need of too much variables.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Since the Job class is highly depending on generics to support type safety, the generics change over time and may not be assignment compatible to old variable types. To make use of the full potential of the fluent API, we recommend to use fluent method chaining as shown in this example to prevent the need of too much variables.*
 
 ```java
 IMap<String, String> map = hazelcastInstance.getMap( "articles" );
@@ -297,7 +297,7 @@ for ( JobPartitionState partitionState : partitionStates ) {
 ```
 
 
-***NOTE:*** *Caching of the JobProcessInformation does not work on Java native clients since current values are retrieved while retrieving the instance to minimize traffic between executing node and client.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Caching of the JobProcessInformation does not work on Java native clients since current values are retrieved while retrieving the instance to minimize traffic between executing node and client.*
 
 
 #### JobTracker Configuration

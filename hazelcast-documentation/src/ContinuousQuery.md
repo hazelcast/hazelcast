@@ -99,7 +99,8 @@ public class Modify {
 When you first run the class `ContinuousQuery` and then `Modify`, you will see the output similar to the one below.
 
 ```
-entryAdded:EntryEvent {Address[192.168.178.10]:5702} key=1,oldValue=null, value=Person{name= smith }, event=ADDED, by Member [192.168.178.10]:5702
+entryAdded:EntryEvent {Address[192.168.178.10]:5702} key=1,oldValue=null,
+value=Person{name= smith }, event=ADDED, by Member [192.168.178.10]:5702
 ```
 
 <br> </br>
