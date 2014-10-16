@@ -462,6 +462,11 @@ final class BasicOperationService implements InternalOperationService {
         scheduler.shutdown();
     }
 
+    @Override
+    public int getNoOfScheduledOperations() {
+        return scheduler.getNoOfScheduledOperations();
+    }
+
     /**
      * Executes an operation on a set of partitions.
      */

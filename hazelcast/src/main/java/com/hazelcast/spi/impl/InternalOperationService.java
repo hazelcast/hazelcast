@@ -62,4 +62,6 @@ public interface InternalOperationService extends OperationService {
      * Shuts down this InternalOperationService.
      */
     void shutdown();
+
+    int getNoOfScheduledOperations();
 }
