@@ -33,7 +33,7 @@ while ( iterator.hasNext() ) {
 }
 ```
 
-### Event Registration and Configuration
+### Event Registration and Configuration for List
 
 Hazelcast List uses `ItemListener` to listen to events which occur when items are added and removed.
 
@@ -71,6 +71,6 @@ public class Sample implements ItemListener{
        
 ```
 
-**Note:** *To learn more about the configuration of listeners please refer to [Listener Configurations](#listener-configurations).*
+![image](images/NoteSmall.jpg) ***NOTE:*** *To learn more about the configuration of listeners please refer to [Listener Configurations](#listener-configurations).*
 
 

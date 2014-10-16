@@ -3,11 +3,12 @@
 
 If you are using Tomcat as your web container, please see our [Tomcat based Web Session Replication](#tomcat-based-web-session-replication).
 
-### Sample Code
-
-Please see our sample application for [Filter Based Web Session Replication](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/filter-based-session-replication).
 
 ### Filter Based Web Session Replication
+
+
+***Sample Code**: Please see our sample application for [Filter Based Web Session Replication](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/filter-based-session-replication).*
+
 
 Assume that you have more than one web servers (A, B, C) with a load balancer in front of them. If server A goes down, your users on that server will be directed to one of the live servers (B or C), but their sessions will be lost.
 
@@ -15,7 +16,7 @@ So we have to have all these sessions backed up somewhere if we do not want to l
 
 -   Target application or web server should support Java 1.6 or higher
 
--   Target application or web server should support Servlet 2.4 or higher spec
+-   Target application or web server should support Servlet 3.0 or higher spec
 
 -   Session objects that need to be clustered have to be Serializable
 
@@ -172,7 +173,7 @@ It is that easy. All HTTP requests will go through Hazelcast `WebFilter` and it 
 
 ### Spring Security Support
 
-Please see our sample application for [Spring Security Support](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-security).
+***Sample Code**: Please see our sample application for [Spring Security Support](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-security).*
 
 If Spring based security is used for application, you should use `com.hazelcast.web.spring.SpringAwareWebFilter` instead of `com.hazelcast.web.WebFilter` in your filter definition.
 
@@ -203,9 +204,9 @@ Hazelcast Session Replication works as P2P by default. You need to set `use-clie
 
 If the value for `deferred-write` is set as **true**, Hazelcast will cache the session locally and will update the local session on set or deletion of an attribute. Only at the end of request, it will update the distributed map with all the updates. So, it will not be updating the distributed map on each attribute update. It will only call it once at the end of request. It will be also caching it, i.e. whenever there is a read for the attribute, it will read it from the cache. 
 
-**Important note about `deferred-write=false` setting**
+**Important note about `deferred-write=false` setting**:
 
-If `deferred-write` is **false**, you will not have local attribute cache as mentioned above. In this case, any update (i.e. `setAttribute`) on the session will directly be available in the cluster. One exception to this behavior is the changes to the session attribute objects. To update an attribute clusterwide, `setAttribute` has to be called after making changes to the attribute object.
+If `deferred-write` is **false**, you will not have local attribute cache as mentioned above. In this case, any update (i.e. `setAttribute`) on the session will directly be available in the cluster. One exception to this behavior is the changes to the session attribute objects. To update an attribute cluster wide, `setAttribute` has to be called after making changes to the attribute object.
 
 Following example explains how to update an attribute in the case of `deferred-write=false` setting: 
 

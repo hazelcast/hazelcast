@@ -10,29 +10,17 @@ Hazelcast Management Center enables you to monitor and manage your nodes running
 
 #### Installation
 
-There are two options for installing Hazelcast Management Center. You can either deploy `mancenter`-*version*`.war` application into your Java application server/container or start Hazelcast Management Center directly from the command line
-and then have the Hazelcast nodes communicate with that web application. That means, your Hazelcast nodes should know the URL of `mancenter` application before they start.
-
-
+Basically you will deploy `mancenter`-*version*`.war` application into your Java web server and then tell Hazelcast nodes to talk to that web application. That means, your Hazelcast nodes should know the URL of `mancenter` application before they start.
 
 Here are the steps:
 
 -   Download the latest Hazelcast ZIP from [hazelcast.org](http://www.hazelcast.org/download/).
 
--   ZIP contains `mancenter`-*version*`.war` file.
-    - You can directly start `mancenter`-*version*`.war` file from the command line:
-    
-        ```
-        java -jar mancenter-*version*.war 8080 mancenter
-        ```
-        
-      The above command will start Hazelcast Management Center on port 8080 with context root 'mancenter' (`http://localhost:8080/mancenter`).
-      
-    - Or, you can deploy it to your web server (Tomcat, Jetty, etc.). Let us say it is running at `http://localhost:8080/mancenter`.
+-   ZIP contains `mancenter`-*version*`.war` file. Deploy it to your web server (Tomcat, Jetty, etc.). Let us say it is running at `http://localhost:8080/mancenter`.
 
--   After above steps are performed, make sure that `http://localhost:8080/mancenter` is up.
+-   Start your web server and make sure `http://localhost:8080/mancenter` is up.
 
--   Configure your Hazelcast nodes by adding the URL of your web application to your `hazelcast.xml`. Hazelcast nodes will send their states to this URL.
+-   Configure your Hazelcast nodes by adding the URL of your web app to your `hazelcast.xml`. Hazelcast nodes will send their states to this URL.
 
 ```xml
 <management-center enabled="true">http://localhost:8080/mancenter</management-center>
@@ -66,7 +54,7 @@ Toolbar has the following buttons:
 -	**Documentation**: It is used to open the documentation of Management Center in a window inside the tool. Please see [Documentation](#documentation).
 -	**Administration**: It is used by the admin users to manage users in the system. Please see [Administration](#administration).
 -	**Time Travel**: It is used to see the cluster's situation at a time in the past. Please see [Time Travel](#time-travel).
--	**Cluster Selector**: It is used to switch between clusters. When the mouse is moved onto this item, a dropdown list of clusters appears.
+-	**Cluster Selector**: It is used to switch between clusters. When the mouse is moved onto this item, a drop down list of clusters appears.
 
   ![](images/4ChangeCluster.jpg)
 
@@ -74,7 +62,7 @@ Toolbar has the following buttons:
 -	**Logout**: It is used to close the current user's session.
 
 
-***NOTE:*** *Not all of the above listed toolbar items are visible to the users who are not admin or have **read-only** permission. Also, some of the operations explained in the later sections cannot be performed by users with read-only permission. Please see [Administration](#administration) for details.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Not all of the above listed toolbar items are visible to the users who are not admin or have **read-only** permission. Also, some of the operations explained in the later sections cannot be performed by users with read-only permission. Please see [Administration](#administration) for details.*
 
 
 #### Menu
@@ -82,12 +70,11 @@ Home page includes a menu on the left which lists the distributed data structure
 
 ![](images/LeftMenu.jpg)
 
-***NOTE:*** *Distributed data structures will be shown there when the proxies created for them.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Distributed data structures will be shown there when the proxies created for them.*
 
 
 Menu items can be expanded/collapsed by clicking on them. Below is the list of menu items with the links to their explanations.
 
--   [Caches](#caches)
 -	[Maps](#maps)
 -	[Queues](#queues)
 -	[Topics](#topics)
@@ -138,6 +125,13 @@ This part is actually the breakdown of the blue area shown in **Memory Distribut
 
 In the above example, you can see 49.55% of the total map memory is used by **map1** and 49.55% is used by **map2**.
 
+#### Health Check
+This part is useful to check how the cluster in general behaves. It lists the nodes (cluster members), locks and partition mismatches along with the information related to migrations and node interconnections. To see these, just click on **Check Cluster Health** button. A sample is shown below.
+
+![](images/Home-HealthCheckbuttonpressed.jpg)
+
+You can see each node's IP address and port by clicking on the plus sign at the **Members**.
+
 #### Partition Distribution
 This pie chart shows what percentage of partitions each node has, as shown below.
 
@@ -145,23 +139,18 @@ This pie chart shows what percentage of partitions each node has, as shown below
 
 You can see each node's partition percentages by moving the mouse cursor on the chart. In the above example, you can see the node "127.0.0.1:5708" has 5.64% of the total partition count (which is 271 by default and configurable, please see [Advanced Configuration Properties](http://hazelcast.org/docs/latest/manual/html-single/hazelcast-documentation.html#advanced-configuration-properties)).
 
+#### System Warnings
+This part of the page shows informative warnings in situations like shutting down a node, as shown below.
+
+![](images/SystemWarnings.jpg)
+
+Warnings can be cleared by clicking on the **Clear** link placed at top right of the window.
+
 ---
-
-### Caches
-
-You can monitor your caches' metrics by clicking the cache name listed on the left panel under **Caches** menu item. Once clicked, a new tab for monitoring that cache instance opens on the right, as shown below.
-
-![](images/ManCenter-Caches.jpg)
-
-On top of the page, there are four charts to monitor the **Gets**, **Puts**, **Removals** and **Evictions** in real-time. For all charts' X-axis shows the current system time and a chart can be opened as a separate dialog by clicking on the ![](images/MaximizeChart.jpg) button placed at top right of each chart.
-
-Under these charts, there is Cache Statistics Data Table. From left to right, this table lists the IP addresses and ports of each node, get, put, removal, eviction, hit and miss count per second in real-time.
-
-You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). The order of the listings in each column can be ascended or descended by clicking on column headings.
 
 ### Maps
 
-Map instances are listed under the **Maps** menu item on the left. When you click on a map, a new tab for monitoring that map instance opens on the right, as shown below. In this tab, you can monitor metrics and also re-configure the selected map.
+Map instances are listed under the **Maps** menu item on the left. When you click on a map, a new tab for monitoring that map instance is opened on the right, as shown below. In this tab, you can monitor metrics and also re-configure the selected map.
 
 ![](images/MapsHome.jpg)
 
@@ -220,7 +209,7 @@ You can navigate through the pages using the buttons placed at the bottom right 
 
 ### Queues
 
-Using the menu item **Queues**, you can monitor your queues data structure. When you expand this menu item and click on a queue, a new tab for monitoring that queue instance opens on the right, as shown below.
+Using the menu item **Queues**, you can monitor your queues data structure. When you expand this menu item and click on a queue, a new tab for monitoring that queue instance is opened on the right, as shown below.
 
 ![](images/Queues-Home.jpg)
 
@@ -267,7 +256,7 @@ As you know, MultiMap is a specialized map where you can associate a key with mu
 
 
 ### Executors
-Executor instances are listed under the **Executors** menu item on the left. When you click on a executor, a new tab for monitoring that executor instance opens on the right, as shown below.
+Executor instances are listed under the **Executors** menu item on the left. When you click on a executor, a new tab for monitoring that executor instance is opened on the right, as shown below.
 
 ![](images/ExecutorsHome.jpg)
 
@@ -292,7 +281,7 @@ From left to right, this table lists the IP address and port of nodes, counts of
 
 ### Members
 
-This menu item is used to monitor each cluster member (node) and also perform operations like running garbage collection (GC) and taking a thread dump. Once a member is selected from the menu, a new tab for monitoring that member opens on the right, as shown below.
+This menu item is used to monitor each cluster member (node) and also perform operations like running garbage collection (GC) and taking a thread dump. Once a member is selected from the menu, a new tab for monitoring that member is opened on the right, as shown below.
 
 ![](images/MembersHome.jpg)
 
@@ -312,7 +301,7 @@ Besides the aforementioned monitoring charts and windows, there are also operati
 ### Scripting
 
 
-Scripting feature of this tool is used to execute codes on the cluster. You can open this feature as a tab by selecting **Scripting** located at the toolbar on top. Once selected, it opens as shown below.
+Scripting feature of this tool is used to execute codes on the cluster. You can open this feature as a tab by selecting **Scripting** located at the toolbar on top. Once selected, it is opened as shown below.
 
 ![](images/scripting.jpg)
 
@@ -403,7 +392,7 @@ Click on the **Save** button; your filter will be saved and put into the **Filte
 
 ### Administration
 
-***NOTE:*** *This toolbar item is available only to admin users, i.e. the users who initially have ***admin*** as their both usernames and passwords.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *This toolbar item is available only to admin users, i.e. the users who initially have ***admin*** as their both usernames and passwords.*
 
 **Admin** user can add, edit, remove users and specify the permissions for the users of Management Center. To perform these operations, click on **Administration** button located at the toolbar. The page shown below appears.
 

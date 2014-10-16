@@ -1,25 +1,29 @@
 # You can now add comments using a hash-sign upfront the line :)
-src/Introduction.md
-	src/WhyHazelcast.md
-	src/GettingStarted.md
-		src/StartingClusterClient.md
-		src/ConfiguringHazelcast.md
-	src/UseCases.md
-	src/Resources.md
-src/Whats_new_3.3.md
+src/Preface.md
+src/WhatsNew.md
+#	src/WhatsNewImprovements.md
+	src/WhatsNewFixes.md
 	src/UpgradingFrom2x.md
 	src/DocumentRevisionHistory.md
+src/GettingStarted.md
+	src/WhyHazelcast.md
+	src/Installation.md
+		src/InstallingHZEnterprise.md
+	src/StartingClusterClient.md
+	src/ConfiguringHazelcast.md
+	src/UseCases.md
+	src/Resources.md
 src/Distributed_Data_Structures.md
 	src/Map.md
 		src/Map-Backups.md
 		src/Map-Eviction.md
 		src/Map-InMemoryFormat.md
 		src/Map-Persistence.md
-		src/Map-Interceptors.md
 		src/Map-NearCache.md
 		src/Map-Locks.md
 		src/Map-EntryStatistics.md
 		src/Map-EntryListener.md
+		src/Map-Interceptors.md
 	src/Queue.md
 		src/SampleQueueCode.md
 		src/BoundedQueue.md
@@ -28,7 +32,11 @@ src/Distributed_Data_Structures.md
 	src/Set.md
 	src/List.md
 	src/Topic.md
+		src/TopicStatistics.md
+		src/TopicInternals.md
+		src/TopicConfiguration.md
 	src/Lock.md
+		src/LockICondition.md
 	src/IAtomicLong.md
 	src/ISemaphore.md
 	src/IAtomicReference.md
@@ -41,27 +49,46 @@ src/Distributed_Data_Structures.md
         src/replicatedmap/InMemoryFormat.md
         src/replicatedmap/EntryListener.md
 src/DistributedEvents.md
+	src/GlobalEventConfiguration.md
 src/DistributedComputing.md
 		src/Execution.md
 		src/ExecutionCancellation.md
 		src/ExecutionCallback.md
 	src/EntryProcessor.md
-	src/UserDefinedServices.md
+		src/EntryProcessorSampleCode.md
+		src/EntryProcessorAbstract.md
 src/DistributedQuery.md
-	src/Query.md
+	src/QueryCriteriaAPI.md
+		src/QuerySQL.md
+		src/QueryPagingPredicate.md
+		src/QueryIndexing.md
+		src/QueryThreadConfiguration.md
 	src/MapReduce.md
 		src/MR-Essentials.md
 		src/MR-Introduction.md
 		src/MR-Architecture.md
 	src/Aggregators.md
+		src/AggregatorsIntroduction.md
+		src/AggregatorsExample.md
+		src/AggregatorsImplementation.md
 	src/ContinuousQuery.md
+src/UserDefinedServices.md
+		src/SPICreateClass.md
+		src/SPIEnableClass.md
+		src/SPIAddProperties.md
+		src/SPIStartService.md
+		src/SPIProxy.md
+		src/SPICreateContainer.md
+		src/SPIPartitionMigration.md
+		src/SPICreateBackups.md
+	src/SPIWaitNotifyService.md
 src/Transactions.md
+	src/XATransactions.md
 	src/J2EEIntegration.md
 		src/ResourceAdapterConfiguration.md
 		src/SampleGlassfishConfiguration.md
 		src/SampleJBossConfiguration.md
 		src/SampleJBoss7Configuration.md
-	src/XATransactions.md
 src/JCache.md
 src/IntegratedClustering.md
 	src/WebSessionReplication.md
@@ -76,16 +103,20 @@ src/Clients.md
 	src/RestClient.md
 	src/MemcacheClient.md
 src/Serialization.md
+	src/SerializationInterfaces.md
+	src/SerializationComparisonTable.md
 	src/Serializable.md
 	src/DataSerialization.md
 	src/PortableSerialization.md
-	src/StreamSerializer.md
-	src/ByteArraySerializer.md
+	src/CustomSerialization.md
+		src/ByteArraySerializer.md
 	src/HazelcastInstanceAware.md
 src/Management.md
 	src/JMXAPIPerNode.md
 	src/MonitoringWithJMX.md
 	src/ClusterUtilities.md
+		src/MemberAttributes.md
+		src/PartitionService.md
 	src/ManagementCenter.md
 	src/ClusteredJMX.md
 	src/ClusteredREST.md
@@ -103,7 +134,10 @@ src/Security.md
 	src/ClusterMemberSecurity.md
 	src/NativeClientSecurity.md
 src/Performance.md
-    src/ThreadingModel.md
+	src/ThreadingModel.md
+		src/ThreadingEvent.md
+		src/ThreadingExecutor.md
+		src/ThreadingOperation.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
 src/Config.md
@@ -117,5 +151,4 @@ src/Config.md
 	src/Logging.md
 	src/ConfigurationProperties.md
 src/NetworkPartitioning.md
-
 src/FAQ.md

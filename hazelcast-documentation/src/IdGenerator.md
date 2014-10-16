@@ -47,8 +47,8 @@ Id: 1000003
 You can see that the generated IDs are unique and counting upwards. If you see duplicated identifiers, it means your instances could not form a cluster. 
 
 
-***ATTENTION:*** *Generated IDs are unique during the life cycle of the cluster. If the entire cluster is restarted, IDs start from 0 again or you can initialize to a value using the `init()` method of IdGenerator.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Generated IDs are unique during the life cycle of the cluster. If the entire cluster is restarted, IDs start from 0 again or you can initialize to a value using the `init()` method of IdGenerator.*
 
-***ATTENTION:*** *IdGenerator has 1 synchronous backup and no asynchronous backups. Its backup count is not configurable.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *IdGenerator has 1 synchronous backup and no asynchronous backups. Its backup count is not configurable.*
 
 

@@ -74,5 +74,5 @@ public class Member {
 
 The reason for using a function instead of a simple code line like `atomicLong.set(atomicLong.get() + 2));` is that, read and write operations of IAtomicLong are not atomic. Since it is a distributed implementation, those operations can be remote ones, which may lead to race problems. By using functions, the data is not pulled into the code, but the code is sent to the data. And this makes it more scalable.
 
-***ATTENTION:*** *IAtomicLong has 1 synchronous backup and no asynchronous backups. Its backup count is not configurable.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *IAtomicLong has 1 synchronous backup and no asynchronous backups. Its backup count is not configurable.*
 

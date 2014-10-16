@@ -4,9 +4,9 @@
 
 Hazelcast ISemaphore is the distributed implementation of `java.util.concurrent.Semaphore`. As you may know, semaphores offer **permit**s to control the thread counts in the case of performing concurrent activities. To execute a concurrent activity, a thread grants a permit or waits until a permit becomes available. When the execution is completed, permit is released.
 
-***ATTENTION:*** *Semaphore with a single permit may be considered as a lock. But, unlike the locks, when semaphores are used any thread can release the permit and also semaphores can have multiple permits.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Semaphore with a single permit may be considered as a lock. But, unlike the locks, when semaphores are used any thread can release the permit and also semaphores can have multiple permits.*
 
-***ATTENTION:*** *Hazelcast Semaphore does not support fairness.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Hazelcast Semaphore does not support fairness.*
 
 When a permit is acquired on ISemaphore:
 
@@ -46,7 +46,7 @@ Let's limit the concurrent access to this resource by allowing at most 3 threads
 </semaphore>
 ```
 
-***NOTE:*** *If there is a shortage of permits while the semaphore is being created, value of this property can be set to a negative number.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If there is a shortage of permits while the semaphore is being created, value of this property can be set to a negative number.*
 
 If you execute the above `SemaphoreMember` class 5 times, output will be similar to the following:
 
@@ -73,5 +73,5 @@ A sample configuration is shown below.
 </semaphore>
 ```
 
-***ATTENTION:*** *If high performance is more important (than not losing the permit information), you can disable the backups by setting `backup-count` to 0.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If high performance is more important (than not losing the permit information), you can disable the backups by setting `backup-count` to 0.*
 
