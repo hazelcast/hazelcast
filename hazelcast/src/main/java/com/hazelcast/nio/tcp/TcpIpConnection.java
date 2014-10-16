@@ -24,6 +24,7 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -48,7 +50,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class TcpIpConnection implements Connection {
 
-    private static final long MINIMUM_SLOT_REQUEST_INTERVAL = 1000;
     private final SocketChannelWrapper socketChannel;
 
     private final ReadHandler readHandler;
@@ -70,7 +71,7 @@ public final class TcpIpConnection implements Connection {
     private TcpIpConnectionMonitor monitor;
 
     private final AtomicInteger availableSlots = new AtomicInteger();
-    private final AtomicLong lastSlotRequest = new AtomicLong();
+    private final AtomicBoolean waitingForSlotResponse = new AtomicBoolean();
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
                            int connectionId, SocketChannelWrapper socketChannel) {
@@ -92,41 +93,50 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
-    public boolean write(SocketWritable packet) {
+    public WriteResult write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
             }
-            return false;
+            return WriteResult.FAILURE;
         }
         if (packet.isBackpressureAllowed()) {
-            int availSlotsNow = availableSlots.decrementAndGet();
-            if (availSlotsNow >= 0) {
-                System.out.println("I have enough slot, enqueuing on connection "+this);
-                writeHandler.enqueueSocketWritable(packet);
-                return true;
-            } else {
-                System.out.println("Not enough slots on connection "+this+", I have just "+availSlotsNow+" slots");
-                long now = Clock.currentTimeMillis();
-                long lastSlotRequestAt = lastSlotRequest.get();
-                long lastSlotRequestedBefore = now - lastSlotRequestAt;
-                if (lastSlotRequestedBefore > MINIMUM_SLOT_REQUEST_INTERVAL) {
-                    if (lastSlotRequest.compareAndSet(lastSlotRequestAt, now)) {
-                        System.out.println("Asking for a new slot on connection "+this);
-                        IOService ioService = connectionManager.ioService;
-                        Data dummyData = ioService.toData(0);
-                        Packet slotRequestPacket = new Packet(dummyData, ioService.getPortableContext());
-                        slotRequestPacket.setHeader(Packet.HEADER_CLAIM_REQ);
-                        writeHandler.enqueueSocketWritable(slotRequestPacket);
-                    }
-                }
-                return false;
-            }
+            return writeWithBackpressureApplied(packet);
         } else {
-//            System.out.println("Backpressure can't be applied");
             writeHandler.enqueueSocketWritable(packet);
-            return true;
+            return WriteResult.SUCCESS;
         }
+    }
+
+    private WriteResult writeWithBackpressureApplied(SocketWritable packet) {
+        WriteResult result = writeIfSlotAvailable(packet);
+        if (result != WriteResult.FULL) {
+            return result;
+        }
+        if (waitingForSlotResponse.compareAndSet(false, true)) {
+            requestNewSlots();
+            return WriteResult.FULL;
+        } else {
+            return writeIfSlotAvailable(packet);
+        }
+    }
+
+    private WriteResult writeIfSlotAvailable(SocketWritable packet) {
+        int availSlotsNow = availableSlots.decrementAndGet();
+        if (availSlotsNow >= 0) {
+            writeHandler.enqueueSocketWritable(packet);
+            return WriteResult.SUCCESS;
+        }
+        return WriteResult.FULL;
+    }
+
+    private void requestNewSlots() {
+        IOService ioService = connectionManager.ioService;
+        Data dummyData = ioService.toData(0);
+        Packet slotRequestPacket = new Packet(dummyData, ioService.getPortableContext());
+        slotRequestPacket.setHeader(Packet.HEADER_CLAIM_REQ);
+        slotRequestPacket.setHeader(Packet.HEADER_URGENT);
+        writeHandler.enqueueSocketWritable(slotRequestPacket);
     }
 
     @Override
@@ -157,8 +167,8 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public void setAvailableSlots(Integer claimResponse) {
-        System.out.println("Setting no. of available slot on "+this+" to "+claimResponse);
         availableSlots.set(claimResponse);
+        waitingForSlotResponse.set(false);
     }
 
     @Override

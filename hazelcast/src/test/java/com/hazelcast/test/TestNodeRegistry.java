@@ -32,6 +32,7 @@ import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -333,7 +334,7 @@ final class TestNodeRegistry {
             return 0;
         }
 
-        public boolean write(SocketWritable socketWritable) {
+        public WriteResult write(SocketWritable socketWritable) {
             final Packet packet = (Packet) socketWritable;
             if (nodeEngine.getNode().isActive()) {
 
@@ -361,9 +362,9 @@ final class TestNodeRegistry {
                     member.didRead();
                 }
                 nodeEngine.handlePacket(newPacket);
-                return true;
+                return WriteResult.SUCCESS;
             }
-            return false;
+            return WriteResult.FAILURE;
         }
 
         public long lastReadTime() {

@@ -46,6 +46,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -327,11 +328,14 @@ final class BasicOperationService implements InternalOperationService {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        boolean sent;
+        WriteResult sent;
         int attempts = 10;
         do {
             sent = nodeEngine.send(packet, connection);
-            if (sent) {
+            if (sent == WriteResult.SUCCESS) {
+                return true;
+            }
+            if (sent == WriteResult.FAILURE) {
                 return true;
             }
             System.out.println("Packet Send for operation "+op+" has not been successful. Is back-pressure being applied? Still have "+attempts+" attempt to try.");
@@ -361,7 +365,7 @@ final class BasicOperationService implements InternalOperationService {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.send(packet, connection);
+        return nodeEngine.send(packet, connection) == WriteResult.SUCCESS;
     }
 
     public void registerInvocation(BasicInvocation invocation) {

@@ -28,6 +28,7 @@ import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.WriteResult;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -102,8 +103,8 @@ public class MockSimpleClient implements SimpleClient {
 
         BlockingQueue<SocketWritable> q = new LinkedBlockingQueue<SocketWritable>();
 
-        public boolean write(SocketWritable packet) {
-            return q.offer(packet);
+        public WriteResult write(SocketWritable packet) {
+            return q.offer(packet) ? WriteResult.SUCCESS : WriteResult.FAILURE;
         }
 
         @Override
