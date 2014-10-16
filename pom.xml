@@ -104,6 +104,15 @@
             <email>fuad@hazelcast.com</email>
         </developer>
     </developers>
+
+    <contributors>
+        <contributor>
+            <name>Marvin Froeder</name>
+            <email>velo dot br at gmail dot com</email>
+            <url>about.me/velo</url>
+        </contributor>
+    </contributors>
+
     <issueManagement>
         <system>Github</system>
         <url>https://github.com/hazelcast/hazelcast/issues</url>
