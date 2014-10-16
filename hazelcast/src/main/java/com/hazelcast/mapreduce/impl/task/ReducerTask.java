@@ -113,14 +113,20 @@ public class ReducerTask<Key, Chunk>
         for (Map.Entry<Key, Chunk> entry : chunk.entrySet()) {
             Reducer reducer = supervisor.getReducerByKey(entry.getKey());
             if (reducer != null) {
-                Chunk chunkValue = entry.getValue();
-                if (chunkValue instanceof CombinerResultList) {
-                    for (Object value : (List) chunkValue) {
-                        reducer.reduce(value);
+                // Wakeup reducer to guarantee memory visibility
+                if (reducer.wakeup()) {
+                    Chunk chunkValue = entry.getValue();
+                    if (chunkValue instanceof CombinerResultList) {
+                        for (Object value : (List) chunkValue) {
+                            reducer.reduce(value);
+                        }
+                    } else {
+                        reducer.reduce(chunkValue);
                     }
-                } else {
-                    reducer.reduce(chunkValue);
                 }
+
+                // Suspend the reducer again
+                reducer.suspend();
             }
         }
     }

@@ -139,8 +139,8 @@ public class BigIntegerAvgAggregation<Key, Value>
     private static final class BigIntegerAvgReducer
             extends Reducer<AvgTuple<Long, BigInteger>, AvgTuple<Long, BigInteger>> {
 
-        private volatile long count;
-        private volatile BigInteger amount = BigInteger.ZERO;
+        private long count;
+        private BigInteger amount = BigInteger.ZERO;
 
         @Override
         public void reduce(AvgTuple<Long, BigInteger> value) {
