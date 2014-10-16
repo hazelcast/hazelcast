@@ -37,6 +37,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -143,15 +144,15 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
-    public boolean write(SocketWritable packet) {
+    public WriteResult write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
             }
-            return false;
+            return WriteResult.FAILURE;
         }
         writeHandler.enqueueSocketWritable(packet);
-        return true;
+        return WriteResult.SUCCESS;
     }
 
     public void init() throws IOException {
@@ -253,6 +254,11 @@ public class ClientConnection implements Connection, Closeable {
     @Override
     public int getPort() {
         return socketChannelWrapper.socket().getPort();
+    }
+
+    @Override
+    public void setAvailableSlots(Integer claimResponse) {
+        //noop
     }
 
     public SocketChannelWrapper getSocketChannelWrapper() {

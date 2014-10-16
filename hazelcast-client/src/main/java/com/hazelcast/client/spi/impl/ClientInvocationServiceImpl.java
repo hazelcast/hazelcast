@@ -31,6 +31,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.util.concurrent.BlockingQueue;
@@ -152,7 +153,7 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         final ClientRequest request = future.getRequest();
         final Data data = ss.toData(request);
         Packet packet = new Packet(data, partitionId, ss.getPortableContext());
-        if (!isAllowedToSendRequest(connection, request) || !connection.write(packet)) {
+        if (!isAllowedToSendRequest(connection, request) || (WriteResult.FAILURE == connection.write(packet))) {
             final int callId = request.getCallId();
             connection.deRegisterCallId(callId);
             connection.deRegisterEventHandler(callId);

@@ -44,6 +44,7 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.WaitNotifyService;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
@@ -198,9 +199,9 @@ public class NodeEngineImpl implements NodeEngine {
         return node.hazelcastInstance;
     }
 
-    public boolean send(Packet packet, Connection connection) {
+    public WriteResult send(Packet packet, Connection connection) {
         if (connection == null || !connection.isAlive()) {
-            return false;
+            return WriteResult.FAILURE;
         }
         final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
         if (memberImpl != null) {
@@ -220,7 +221,7 @@ public class NodeEngineImpl implements NodeEngine {
         ConnectionManager connectionManager = node.getConnectionManager();
         Connection connection = connectionManager.getConnection(target);
         if (connection != null) {
-            return send(packet, connection);
+            return send(packet, connection) == WriteResult.SUCCESS;
         }
 
         if (sendTask == null) {
@@ -286,13 +287,12 @@ public class NodeEngineImpl implements NodeEngine {
             Connection connection = packet.getConn();
             Data claimResponseData = packet.getData();
             Integer claimResponse = (Integer) toObject(claimResponseData);
-            System.out.println("Slot Claim Response received from "+connection.getEndPoint()+", Setting available slot to "+claimResponse);
             connection.setAvailableSlots(claimResponse);
         } else if (packet.isHeaderSet(Packet.HEADER_CLAIM_REQ)) {
-            System.out.println("Slot Claim Request receving from "+packet.getConn().getEndPoint());
             Data claimResponseData = toData(1000); //TODO: Calculate size properly
             Packet responsePacket = new Packet(claimResponseData, getSerializationService().getPortableContext());
             responsePacket.setHeader(Packet.HEADER_CLAIM_RES);
+            responsePacket.setHeader(Packet.HEADER_URGENT);
             send(responsePacket, packet.getConn());
         } else {
             logger.severe("Unknown packet type! Header: " + packet.getHeader());
