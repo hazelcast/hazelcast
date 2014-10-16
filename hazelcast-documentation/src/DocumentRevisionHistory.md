@@ -33,6 +33,8 @@
 ||[System Property](#system-property)|Updated by adding the descriptions of missing system properties.|
 |[Chapter 20 - Network Partitioning](#network-partitioning-split-brain-syndrome)||Added as a new chapter.|
 |[Chapter 21 - FAQ](#frequently-asked-questions)||Updated with new questions.|
+|[Chapter 22 - Glossary](#glossary)||Added as a new chapter.|
+
 
 
 
