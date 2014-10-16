@@ -106,9 +106,12 @@ public abstract class Reducer<ValueIn, ValueOut> {
      * guarantees the memory visibility of the reducers internal state by enforcing a read fence
      * to refresh the object from main memory.<br/>
      * The method never needs to be called by a user!
-     * @return
+     *
+     * @return true if wakeup succeed
      */
     public final boolean wakeup() {
-        return (visibility = true);
+        boolean visibility = this.visibility;
+        this.visibility = !visibility;
+        return this.visibility;
     }
 }
