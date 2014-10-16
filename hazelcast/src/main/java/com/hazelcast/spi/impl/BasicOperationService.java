@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
+import com.hazelcast.spi.BackoffPolicy;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ExecutionTracingService;
@@ -130,6 +131,8 @@ final class BasicOperationService implements InternalOperationService {
     private final OperationPacketHandler operationPacketHandler;
     private final ResponsePacketHandler responsePacketHandler;
 
+    private final BackoffPolicy backoffPolicy;
+
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
@@ -148,6 +151,8 @@ final class BasicOperationService implements InternalOperationService {
         this.operationBackupHandler = new OperationBackupHandler();
         this.operationPacketHandler = new OperationPacketHandler();
         this.responsePacketHandler = new ResponsePacketHandler();
+
+        this.backoffPolicy = new ExponentialBackoffPolicy();
 
         executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
@@ -328,24 +333,21 @@ final class BasicOperationService implements InternalOperationService {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        WriteResult sent;
-        int attempts = 10;
-        do {
+
+        WriteResult sent = nodeEngine.send(packet, connection);
+        if (sent != WriteResult.FULL) {
+            return sent == WriteResult.SUCCESS;
+        }
+
+        int maxAttempts = 15;
+        int state = BackoffPolicy.EMPTY_STATE;
+        for (int i = 0; i < maxAttempts; i++) {
+            state = backoffPolicy.apply(state, i);
             sent = nodeEngine.send(packet, connection);
-            if (sent == WriteResult.SUCCESS) {
-                return true;
+            if (sent != WriteResult.FULL) {
+                return sent == WriteResult.SUCCESS;
             }
-            if (sent == WriteResult.FAILURE) {
-                return true;
-            }
-            System.out.println("Packet Send for operation "+op+" has not been successful. Is back-pressure being applied? Still have "+attempts+" attempt to try.");
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } while (--attempts > 0);
-        System.out.println("Failed to send an operation");
+        }
         return false;
     }
 
