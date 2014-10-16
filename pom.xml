@@ -293,6 +293,28 @@
             <build>
                 <plugins>
                     <plugin>
+                        <plugin>
+                            <groupId>org.jacoco</groupId>
+                            <artifactId>jacoco-maven-plugin</artifactId>
+                            <version>0.7.1.201405082137</version>
+                            <configuration>
+                                <excludes>
+                                    <exclude>**DummyProperty**</exclude>
+                                    <exclude>**DummyEntity**</exclude>
+                                    <exclude>**test-hibernate**</exclude>
+                                    <exclude>**HibernateStatisticsTestSupport**</exclude>
+                                    <exclude>**HibernateTestSupport**</exclude>
+                                    <exclude>**RegionFactoryDefaultTest**</exclude>
+                                </excludes>
+                            </configuration>
+                            <executions>
+                                <execution>
+                                    <goals>
+                                        <goal>prepare-agent</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
@@ -466,7 +488,7 @@
                                     <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
                                 </property>
                             </javaApiLinks>
-                       </configuration>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
