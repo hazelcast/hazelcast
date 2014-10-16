@@ -136,8 +136,8 @@ public class IntegerAvgAggregation<Key, Value>
     private static final class IntegerAvgReducer
             extends Reducer<AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> {
 
-        private volatile int count;
-        private volatile int amount;
+        private int count;
+        private int amount;
 
         @Override
         public void reduce(AvgTuple<Integer, Integer> value) {

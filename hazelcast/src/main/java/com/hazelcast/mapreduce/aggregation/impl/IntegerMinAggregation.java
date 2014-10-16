@@ -134,7 +134,7 @@ public class IntegerMinAggregation<Key, Value>
     private static final class IntegerMinReducer
             extends Reducer<Integer, Integer> {
 
-        private volatile int min = Integer.MAX_VALUE;
+        private int min = Integer.MAX_VALUE;
 
         @Override
         public void reduce(Integer value) {

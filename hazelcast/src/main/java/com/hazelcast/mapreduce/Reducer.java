@@ -24,9 +24,10 @@ import com.hazelcast.spi.annotation.Beta;
  * Reducers may be distributed inside of the cluster but there is always only one Reducer
  * per key.
  * <p/>
- * Reducers are always called in a thread-safe way however they may be moved from one thread to another
- * in the internal thread pool. For this reason internal state should be made visible to other threads by for
- * example using the volatile key word.
+ * Reducers are always called in a thread-safe way however they may be moved from one thread to
+ * another in the internal thread pool. As of version 3.3.3 the internal state is automatically
+ * ensured to be visible according to the Java memory model by the framework. The previous
+ * requirement for making fields volatile is dropped.
  * </p>
  * <p>
  * Due to the fact that there is only one Reducer per key mapped values needs to be
@@ -39,7 +40,7 @@ import com.hazelcast.spi.annotation.Beta;
  * <pre>
  * public class SumReducer implements Reducer&lt;Integer, Integer>
  * {
- *   private volatile int sum = 0;
+ *   private int sum = 0;
  *
  *   public void reduce( Integer value )
  *   {
@@ -60,6 +61,10 @@ import com.hazelcast.spi.annotation.Beta;
  */
 @Beta
 public abstract class Reducer<ValueIn, ValueOut> {
+
+    // This variable is used for piggybacking the internal state before
+    // suspension and continuation of the reducer
+    private volatile boolean visibility;
 
     /**
      * This method is called before the first value is submitted to this Reducer instance.
@@ -86,4 +91,24 @@ public abstract class Reducer<ValueIn, ValueOut> {
      */
     public abstract ValueOut finalizeReduce();
 
+    /**
+     * This method is called internally whenever the reducer is send to suspend mode. It guarantees
+     * the memory visibility of the reducers internal state by enforcing a write fence to flush the
+     * object to main memory.<br/>
+     * This method never needs to be called by a user!
+     */
+    public final void suspend() {
+        visibility = false;
+    }
+
+    /**
+     * This method is called internally whenever the reducer is continued from suspend mode. It
+     * guarantees the memory visibility of the reducers internal state by enforcing a read fence
+     * to refresh the object from main memory.<br/>
+     * The method never needs to be called by a user!
+     * @return
+     */
+    public final boolean wakeup() {
+        return (visibility = true);
+    }
 }

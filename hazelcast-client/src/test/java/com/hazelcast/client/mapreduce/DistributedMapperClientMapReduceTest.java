@@ -286,7 +286,7 @@ public class DistributedMapperClientMapReduceTest
     public static class TestReducer
             extends Reducer<Integer, Integer> {
 
-        private volatile int sum;
+        private int sum;
 
         @Override
         public void reduce(Integer value) {

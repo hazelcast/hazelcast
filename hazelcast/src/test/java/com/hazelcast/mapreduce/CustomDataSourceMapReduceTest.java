@@ -187,7 +187,7 @@ public class CustomDataSourceMapReduceTest
     public static class CustomReducer
             extends Reducer<Integer, Integer> {
 
-        private volatile int value;
+        private int value;
 
         @Override
         public void reduce(Integer value) {

@@ -235,7 +235,7 @@ public class MapReduceManagedContextTest
         private class InjectedReducer
                 extends Reducer<Integer, Integer> {
 
-            private volatile int count;
+            private int count;
 
             @Override
             public void reduce(Integer value) {

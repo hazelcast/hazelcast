@@ -941,7 +941,7 @@ public class MapReduceTest
     public static class ObjectReducer
             extends Reducer<BigInteger, BigInteger> {
 
-        private volatile BigInteger count;
+        private BigInteger count;
 
         @Override
         public void reduce(BigInteger value) {

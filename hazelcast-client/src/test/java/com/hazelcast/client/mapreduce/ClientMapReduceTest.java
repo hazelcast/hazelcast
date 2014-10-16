@@ -622,7 +622,7 @@ public class ClientMapReduceTest
     public static class TestReducer
             extends Reducer<Integer, Integer> {
 
-        private volatile int sum = 0;
+        private int sum = 0;
 
         @Override
         public void reduce(Integer value) {
