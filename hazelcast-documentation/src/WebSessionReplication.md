@@ -16,7 +16,7 @@ So we have to have all these sessions backed up somewhere if we do not want to l
 
 -   Target application or web server should support Java 1.6 or higher
 
--   Target application or web server should support Servlet 2.4 or higher spec
+-   Target application or web server should support Servlet 3.0 or higher spec
 
 -   Session objects that need to be clustered have to be Serializable
 

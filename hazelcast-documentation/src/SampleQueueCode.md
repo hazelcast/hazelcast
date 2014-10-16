@@ -79,4 +79,4 @@ Consumer 18
 
 In the case of a lot of producers and consumers for the queue, using a list of queues may solve the queue bottlenecks. Of course, in this case, you should be aware that ordering of messages being sent to different queues is not guaranteed. But, since in most cases strict ordering is not important, list of queues would be a good solution.
 
-***ATTENTION:*** *The items are taken from the queue in the same order they were put. However, if there are more than one consumers, this ordering is not guaranteed.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *The items are taken from the queue in the same order they were put. However, if there are more than one consumers, this ordering is not guaranteed.*

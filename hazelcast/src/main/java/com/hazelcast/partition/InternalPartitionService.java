@@ -110,6 +110,10 @@ public interface InternalPartitionService extends CoreService {
 
     List<Integer> getMemberPartitions(Address target);
 
+    /**
+     * Gets member partition IDs. Blocks until partitions are assigned.
+     * @return map of member address to partition Ids
+     **/
     Map<Address, List<Integer>> getMemberPartitionsMap();
 
     int getMemberGroupsSize();

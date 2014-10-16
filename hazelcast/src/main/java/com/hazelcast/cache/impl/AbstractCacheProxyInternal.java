@@ -49,7 +49,14 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * Base Cache Proxy
+ * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations of cache operations
+ * like put, replace, remove and invoke. These internal implementations are delegated by actual cache methods.
+ *
+ * <p>Note: this partial implementation is used by server or embedded mode cache</p>
+ * @param <K> the type of key
+ * @param <V> the type of value
+ * @see com.hazelcast.cache.impl.CacheProxy
+ * @see com.hazelcast.cache.ICache
  */
 abstract class AbstractCacheProxyInternal<K, V>
         extends AbstractCacheProxyBase<K, V>

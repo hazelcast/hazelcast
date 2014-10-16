@@ -20,21 +20,3 @@
  * </p>
  */
 package com.hazelcast.cache;
-/*
-<!--################################################################################################################-->
-<!--Change the following properties on the command line to override with the coordinates for your implementation-->
-<implementation-groupId>com.hazelcast</implementation-groupId>
-<implementation-artifactId>hazelcast</implementation-artifactId>
-<implementation-version>3.3-JCACHE-SNAPSHOT</implementation-version>
-
-<!-- Change the following properties to your CacheManager and Cache implementation. Used by the unwrap tests. -->
-<CacheManagerImpl>com.hazelcast.cache.impl.HazelcastCacheManager</CacheManagerImpl>
-<CacheImpl>com.hazelcast.cache.ICache</CacheImpl>
-<CacheEntryImpl>com.hazelcast.cache.impl.CacheEntry</CacheEntryImpl>
-
-<!--Change the following to point to your MBeanServer, so that the TCK can resolve it. -->
-<javax.management.builder.initial>com.hazelcast.cache.impl.TCKMBeanServerBuilder</javax.management.builder.initial>
-<org.jsr107.tck.management.agentId>TCKMbeanServer</org.jsr107.tck.management.agentId>
-
-<!--################################################################################################################-->
-*/

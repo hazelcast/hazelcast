@@ -33,10 +33,23 @@ import javax.cache.event.EventType;
 import java.util.HashSet;
 
 /**
- * Adapter for EventListener.
+ * This implementation of {@link CacheEventListener} uses the adapter pattern for wrapping all cache event listener types into
+ * single listener.
+ * <p>JCache has multiple {@link CacheEntryListener} sub-interfaces for each event type. This adaptor implementation delegate to
+ * the correct subtype using the event type</p>
  *
- * @param <K>
- * @param <V>
+ * <p>Another responsibility of this implementation is filtering events by using the already configured event filters</p>
+ *
+ * @param <K> the type of key
+ * @param <V> the type of value
+ *
+ * @see javax.cache.event.CacheEntryCreatedListener
+ * @see javax.cache.event.CacheEntryUpdatedListener
+ * @see javax.cache.event.CacheEntryRemovedListener
+ * @see javax.cache.event.CacheEntryExpiredListener
+ *
+ * @see javax.cache.event.CacheEntryEventFilter
+ *
  */
 public class CacheEventListenerAdaptor<K, V>
         implements CacheEventListener {

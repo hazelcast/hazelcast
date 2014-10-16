@@ -29,17 +29,13 @@ import java.util.Iterator;
 /**
  * Cluster-wide iterator for the {@link com.hazelcast.cache.ICache}
  *
- * This cluster key iterator, uses to indexes to iterate the cluster which ar PartitionId and tableIndex.
- *
- * Starting from the largest PartitionId it accesses related partition with a tableIndex. Each partition has
- * a concurrentMap with single segment. So each partition data is basically a concurrent hashMap to iterate on.
- *
- * With a configurable batch size of keys are fetch from partition data, i.e CacheRecordStore.
- *
- * Although keys fetch in batches the {@link #next()} returns the entry one by one due to uncertainty of data.
- *
- * @param <K> key
- * @param <V> value
+ * <p>
+ * This implementation is used by server or embedded mode
+ * </p>
+ * Note: for more information on the iterator details, see {@link AbstractClusterWideIterator}.
+ * @param <K> the type of key
+ * @param <V> the type of value
+ * @see AbstractClusterWideIterator
  */
 public class ClusterWideIterator<K, V>
         extends AbstractClusterWideIterator<K, V>

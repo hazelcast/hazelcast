@@ -117,7 +117,7 @@ public class OptimisticMember {
 }
 ```
 
-***NOTE:*** *Above sample code is intentionally broken.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Above sample code is intentionally broken.*
 
 #### Pessimistic vs. Optimistic Locking
 

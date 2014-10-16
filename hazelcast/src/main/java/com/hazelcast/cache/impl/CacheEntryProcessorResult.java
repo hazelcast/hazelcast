@@ -20,11 +20,12 @@ import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 
 /**
- * Result of the {@link CacheEntryProcessorEntry}
+ * This simple implementation of {@link EntryProcessorResult} wraps the result returned or exception thrown in a single object so
+ * that multiple exceptions from multiple entry processes can be returned.
  *
- * @param <T>
+ * @param <T> the type of the return value
+ * @see javax.cache.Cache#invokeAll(java.util.Set, javax.cache.processor.EntryProcessor, Object...)
  */
-
 public class CacheEntryProcessorResult<T>
         implements EntryProcessorResult<T> {
 

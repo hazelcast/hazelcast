@@ -25,9 +25,9 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Some statistics of a {@link com.hazelcast.cache.ICache}
+ * {@link CacheStatistics} implementation for {@link com.hazelcast.cache.ICache}.
  *
- * Statistics accumulated in this data object is published through MxBean
+ * <p>Statistics accumulated in this data object is published through MxBean as defined by spec.</p>
  *
  * @see com.hazelcast.cache.impl.CacheMXBeanImpl
  */
@@ -50,9 +50,6 @@ public class CacheStatisticsImpl
     public CacheStatisticsImpl() {
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getCacheRemovals() {
         return removals.get();
@@ -70,71 +67,43 @@ public class CacheStatisticsImpl
         return expiries.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getCacheGets() {
         return getCacheHits() + getCacheMisses();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getCachePuts() {
         return puts.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getCacheHits() {
         return hits.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getCacheMisses() {
         return misses.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getCacheEvictions() {
         return evictions.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public long getCachePutTimeTakenNanos() {
         return putTimeTakenNanos.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public long getCacheGetTimeTakenNanos() {
         return getCacheTimeTakenNanos.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public long getCacheRemoveTimeTakenNanos() {
         return removeTimeTakenNanos.get();
     }
 
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public float getCacheHitPercentage() {
         final long cacheHits = getCacheHits();
@@ -145,9 +114,6 @@ public class CacheStatisticsImpl
         return (float) cacheHits / cacheGets * FLOAT_HUNDRED;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public float getCacheMissPercentage() {
         final long cacheMisses = getCacheMisses();
@@ -158,9 +124,6 @@ public class CacheStatisticsImpl
         return (float) cacheMisses / cacheGets * FLOAT_HUNDRED;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public float getAverageGetTime() {
         final long cacheGetTimeTakenNanos = getCacheGetTimeTakenNanos();
@@ -171,9 +134,6 @@ public class CacheStatisticsImpl
         return ((1f * cacheGetTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public float getAveragePutTime() {
         final long cachePutTimeTakenNanos = getCachePutTimeTakenNanos();
@@ -184,9 +144,6 @@ public class CacheStatisticsImpl
         return ((1f * cachePutTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public float getAverageRemoveTime() {
         final long cacheRemoveTimeTakenNanos = getCacheRemoveTimeTakenNanos();
@@ -332,12 +289,6 @@ public class CacheStatisticsImpl
         return this;
     }
 
-    /**
-     *
-     *
-     * @param out output
-     * @throws IOException
-     */
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
@@ -354,11 +305,6 @@ public class CacheStatisticsImpl
         out.writeLong(removeTimeTakenNanos.get());
     }
 
-    /**
-     * {@inheritDoc}
-     * @param in input
-     * @throws IOException
-     */
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {

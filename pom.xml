@@ -217,7 +217,7 @@
                     </argLine>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
-                        com.hazelcast.test.annotation.SlowTest
+                        com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
                 </configuration>
             </plugin>
@@ -475,61 +475,7 @@
                                     <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
                                 </property>
                             </javaApiLinks>
-
-                            <sourceFileIncludes>
-                                <include>com/hazelcast/core/**</include>
-                                <include>com/hazelcast/config/**</include>
-                                <include>com/hazelcast/jmx/**</include>
-                                <include>com/hazelcast/monitor/*</include>
-                                <include>com/hazelcast/query/*</include>
-                                <include>com/hazelcast/security/*</include>
-                                <include>com/hazelcast/spi/*</include>
-                                <include>com/hazelcast/transaction/*</include>
-                                <include>com/hazelcast/mapreduce/*</include>
-                                <include>com/hazelcast/jca/**</include>
-                                <include>com/hazelcast/buildutils/**</include>
-
-                                <include>com/hazelcast/map/*</include>
-                                <include>com/hazelcast/map/merge/*</include>
-
-                                <include>com/hazelcast/cache/ICache.java</include>
-
-                                <include>com/hazelcast/nio/serialization/ClassDefinition.java</include>
-                                <include>com/hazelcast/nio/serialization/ClassDefinitionBuilder.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/IdentifiedDataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/Portable.java</include>
-                                <include>com/hazelcast/nio/serialization/PortableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/ByteArraySerializer.java</include>
-                                <include>com/hazelcast/nio/serialization/StreamSerializer.java</include>
-
-                                <include>com/hazelcast/client/HazelcastClient.java</include>
-                                <include>com/hazelcast/client/LoadBalancer.java</include>
-                                <include>com/hazelcast/client/config/**</include>
-                                <include>com/hazelcast/client/exception/**</include>
-                                <include>com/hazelcast/client/spi/*</include>
-
-                                <include>com/hazelcast/cluster/TcpIpJoinerOverAWS.java</include>
-
-                                <include>com/hazelcast/hibernate/HazelcastCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/HazelcastLocalCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/VersionAwareMapMergePolicy.java</include>
-                                <include>com/hazelcast/hibernate/instance/HazelcastAccessor.java</include>
-
-                                <include>com/hazelcast/spring/cache/HazelcastCache.java</include>
-                                <include>com/hazelcast/spring/cache/HazelcastCacheManager.java</include>
-                                <include>com/hazelcast/spring/context/SpringAware.java</include>
-                                <include>com/hazelcast/spring/context/SpringManagedContext.java</include>
-                                <include>com/hazelcast/spring/jpa/JPAMapStore.java</include>
-                                <include>com/hazelcast/spring/mongodb/MongoMapStore.java</include>
-
-                                <include>com/hazelcast/web/SessionListener.java</include>
-                                <include>com/hazelcast/web/WebFilter.java</include>
-                            </sourceFileIncludes>
-                            <excludePackageNames>*.impl.*</excludePackageNames>
-
-                        </configuration>
+                       </configuration>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -573,60 +519,6 @@
                                     <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
                                 </property>
                             </javaApiLinks>
-
-                            <sourceFileIncludes>
-                                <include>com/hazelcast/core/**</include>
-                                <include>com/hazelcast/config/**</include>
-                                <include>com/hazelcast/jmx/**</include>
-                                <include>com/hazelcast/monitor/*</include>
-                                <include>com/hazelcast/query/*</include>
-                                <include>com/hazelcast/security/*</include>
-                                <include>com/hazelcast/spi/*</include>
-                                <include>com/hazelcast/transaction/*</include>
-                                <include>com/hazelcast/mapreduce/*</include>
-                                <include>com/hazelcast/jca/**</include>
-                                <include>com/hazelcast/buildutils/**</include>
-
-                                <include>com/hazelcast/map/*</include>
-                                <include>com/hazelcast/map/merge/*</include>
-
-                                <include>com/hazelcast/cache/ICache.java</include>
-
-                                <include>com/hazelcast/nio/serialization/ClassDefinition.java</include>
-                                <include>com/hazelcast/nio/serialization/ClassDefinitionBuilder.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/IdentifiedDataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/Portable.java</include>
-                                <include>com/hazelcast/nio/serialization/PortableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/ByteArraySerializer.java</include>
-                                <include>com/hazelcast/nio/serialization/StreamSerializer.java</include>
-
-                                <include>com/hazelcast/client/HazelcastClient.java</include>
-                                <include>com/hazelcast/client/LoadBalancer.java</include>
-                                <include>com/hazelcast/client/config/**</include>
-                                <include>com/hazelcast/client/exception/**</include>
-                                <include>com/hazelcast/client/spi/*</include>
-
-                                <include>com/hazelcast/cluster/TcpIpJoinerOverAWS.java</include>
-
-                                <include>com/hazelcast/hibernate/HazelcastCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/HazelcastLocalCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/VersionAwareMapMergePolicy.java</include>
-                                <include>com/hazelcast/hibernate/instance/HazelcastAccessor.java</include>
-
-                                <include>com/hazelcast/spring/cache/HazelcastCache.java</include>
-                                <include>com/hazelcast/spring/cache/HazelcastCacheManager.java</include>
-                                <include>com/hazelcast/spring/context/SpringAware.java</include>
-                                <include>com/hazelcast/spring/context/SpringManagedContext.java</include>
-                                <include>com/hazelcast/spring/jpa/JPAMapStore.java</include>
-                                <include>com/hazelcast/spring/mongodb/MongoMapStore.java</include>
-
-                                <include>com/hazelcast/web/SessionListener.java</include>
-                                <include>com/hazelcast/web/WebFilter.java</include>
-                            </sourceFileIncludes>
-                            <excludePackageNames>*.impl.*</excludePackageNames>
-
                         </configuration>
                         <executions>
                             <execution>

@@ -2,14 +2,18 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.merge.MergePolicyProvider;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,7 +26,7 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
 
     private final PartitionContainer[] partitionContainers;
     private final ConcurrentMap<String, MapContainer> mapContainers;
-    private final AtomicReference<List<Integer>> ownedPartitions;
+    private final AtomicReference<Collection<Integer>> ownedPartitions;
     private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
         public MapContainer createNew(String mapName) {
             return new MapContainer(mapName, nodeEngine.getConfig().findMapConfig(mapName),
@@ -50,7 +54,7 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.partitionContainers = new PartitionContainer[partitionCount];
         this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
-        this.ownedPartitions = new AtomicReference<List<Integer>>();
+        this.ownedPartitions = new AtomicReference<Collection<Integer>>();
         this.expirationManager = new ExpirationManager(this, nodeEngine);
         this.nearCacheProvider = new NearCacheProvider(this, nodeEngine);
         this.localMapStatsProvider = new LocalMapStatsProvider(this, nodeEngine);
@@ -166,8 +170,8 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     }
 
     @Override
-    public List<Integer> getOwnedPartitions() {
-        List<Integer> partitions = ownedPartitions.get();
+    public Collection<Integer> getOwnedPartitions() {
+        Collection<Integer> partitions = ownedPartitions.get();
         if (partitions == null) {
             partitions = getMemberPartitions();
             ownedPartitions.set(partitions);
@@ -176,15 +180,25 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     }
 
     @Override
-    public AtomicReference<List<Integer>> ownedPartitions() {
+    public AtomicReference<Collection<Integer>> ownedPartitions() {
         return ownedPartitions;
     }
 
     @Override
-    public List<Integer> getMemberPartitions() {
+    public boolean isOwnedKey(Data key) {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        List<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-        return Collections.unmodifiableList(partitions);
+        Integer paritionId = partitionService.getPartitionId(key);
+        return getOwnedPartitions().contains(paritionId);
+    }
+
+    @Override
+    public Set<Integer> getMemberPartitions() {
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        List<Integer> partitions = partitionService.getMemberPartitionsMap().get(nodeEngine.getThisAddress());
+        if (partitions == null) {
+            return Collections.emptySet();
+        }
+        return new LinkedHashSet<Integer>(partitions);
     }
 
     @Override

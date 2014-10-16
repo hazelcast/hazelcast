@@ -56,7 +56,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
         final SerializationService serializationService = nodeEngine.getSerializationService();
         final PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         final List<QueryEntry> list = new LinkedList<QueryEntry>();
-        final Iterator<Record> iterator = recordStore.loadAwareIterator(now);
+        final Iterator<Record> iterator = recordStore.loadAwareIterator(now, false);
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             Data key = record.getKey();
@@ -294,7 +294,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             if (queryResult == null) {
                 continue;
             }
-            List<Integer> tmpPartitionIds = queryResult.getPartitionIds();
+            Collection<Integer> tmpPartitionIds = queryResult.getPartitionIds();
             if (tmpPartitionIds != null) {
                 partitionIds.removeAll(tmpPartitionIds);
                 for (QueryResultEntry queryResultEntry : queryResult.getResult()) {
@@ -317,7 +317,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             if (queryResult == null) {
                 continue;
             }
-            final List<Integer> queriedPartitionIds = queryResult.getPartitionIds();
+            final Collection<Integer> queriedPartitionIds = queryResult.getPartitionIds();
             if (queriedPartitionIds != null) {
                 partitionIds.removeAll(queriedPartitionIds);
                 result.addAll(queryResult.getResult());

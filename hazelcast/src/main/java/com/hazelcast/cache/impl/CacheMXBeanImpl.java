@@ -21,8 +21,11 @@ import com.hazelcast.config.CacheConfig;
 import javax.cache.management.CacheMXBean;
 
 /**
- * Implementation of the CacheMXBean.
+ * Implementation of the {@link CacheMXBean}.
  *
+ * This class is published through MXBean. It's a simple wrapper around {@link CacheConfig} for readonly access to cache
+ * configuration.
+ * @see com.hazelcast.config.CacheConfig
  */
 public class CacheMXBeanImpl
         implements CacheMXBean {
@@ -33,57 +36,36 @@ public class CacheMXBeanImpl
         this.cacheConfig = cacheConfig;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getKeyType() {
         return cacheConfig.getKeyType().getName();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getValueType() {
         return cacheConfig.getValueType().getName();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isReadThrough() {
         return cacheConfig.isReadThrough();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isWriteThrough() {
         return cacheConfig.isWriteThrough();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isStoreByValue() {
         return cacheConfig.isStoreByValue();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isStatisticsEnabled() {
         return cacheConfig.isStatisticsEnabled();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isManagementEnabled() {
         return cacheConfig.isManagementEnabled();

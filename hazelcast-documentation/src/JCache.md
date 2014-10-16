@@ -120,7 +120,7 @@ Future<SessionData> future = icache.getAsync("key-1" ) ;
 SessionData sessionData = future.get();
 ```
 <br></br>
-***NOTE:*** *Asynchronous methods are not compatible with synchronous events.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Asynchronous methods are not compatible with synchronous events.*
 <br></br>
 
 ### Custom ExpiryPolicy

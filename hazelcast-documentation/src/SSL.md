@@ -74,4 +74,4 @@ You can also set `keyStore` and `keyStorePassword` through the following system 
  - `javax.net.ssl.keyStore`
  - `javax.net.ssl.keyStorePassword` 
 
-***NOTE:*** *You cannot use SSL when [Hazelcast Encryption](#encryption) is enabled.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *You cannot use SSL when [Hazelcast Encryption](#encryption) is enabled.*

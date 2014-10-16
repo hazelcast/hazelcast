@@ -12,8 +12,8 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.util.Clock;
 
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Defines migration behavior of map service.
@@ -51,7 +51,7 @@ class MapMigrationAwareService implements MigrationAwareService {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             mapServiceContext.clearPartitionData(event.getPartitionId());
         }
-        final List<Integer> memberPartitions = mapServiceContext.getMemberPartitions();
+        final Collection<Integer> memberPartitions = mapServiceContext.getMemberPartitions();
         mapServiceContext.ownedPartitions().set(memberPartitions);
     }
 
@@ -60,7 +60,7 @@ class MapMigrationAwareService implements MigrationAwareService {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             mapServiceContext.clearPartitionData(event.getPartitionId());
         }
-        final List<Integer> memberPartitions = mapServiceContext.getMemberPartitions();
+        final Collection<Integer> memberPartitions = mapServiceContext.getMemberPartitions();
         mapServiceContext.ownedPartitions().set(memberPartitions);
     }
 
@@ -77,7 +77,7 @@ class MapMigrationAwareService implements MigrationAwareService {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
             final IndexService indexService = mapContainer.getIndexService();
             if (indexService.hasIndex()) {
-                final Iterator<Record> iterator = recordStore.iterator(now);
+                final Iterator<Record> iterator = recordStore.iterator(now, false);
                 while (iterator.hasNext()) {
                     final Record record = iterator.next();
                     if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {

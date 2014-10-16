@@ -22,9 +22,37 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
- * Hazelcast cache extension interface
- * @param <K> key
- * @param <V> value
+ * Hazelcast {@link javax.cache.Cache} extension
+ *<p>
+ *     Hazelcast provides extension methods to {@link javax.cache.Cache}.
+ * </p>
+ * <p>
+ *     There are three set of extensions:
+ *     <ul>
+ *         <li>asynchronous version of all cache operations</li>
+ *         <li>cache operations with custom ExpiryPolicy parameter to apply on that specific operation.</li>
+ *         <li>uncategorized like {@link #size()}</li>
+ *     </ul>
+ *</p>
+ *<p>
+ *     A method ending with Async is the asynchronous version of that method (for example {@link #getAsync(K)} ,
+ *     {@link #replaceAsync(K,V)} ).<br/>
+ *     These methods return a Future where you can get the result or wait for the operation to be completed.
+ *
+ *     <pre>
+ *         <code>ICache&lt;String , SessionData&gt; icache =  cache.unwrap( ICache.class );
+ *         Future&lt;SessionData&gt; future = icache.getAsync(&quot;key-1&quot; ) ;
+ *         SessionData sessionData = future.get();
+ *         </code>
+ *     </pre>
+ *</p>
+ *<p>
+ *     This interface can be accessed through {@link javax.cache.Cache#unwrap(Class)}
+ *</p>
+ * @param <K> the type of key
+ * @param <V> the type of value
+ * @see javax.cache.Cache
+ * @since 3.3.1
  */
 public interface ICache<K, V>
         extends javax.cache.Cache<K, V> {

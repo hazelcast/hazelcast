@@ -61,7 +61,7 @@ Then add below properties into your Hibernate configuration file (e.g. `hibernat
 	<property name="hibernate.cache.use_minimal_puts">true</property>
 	```
 	
-***NOTE:*** *QueryCache is always LOCAL to the node and never distributed across Hazelcast Cluster.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *QueryCache is always LOCAL to the node and never distributed across Hazelcast Cluster.*
 
 ### Hazelcast Configuration
 
@@ -96,7 +96,7 @@ Hazelcast creates a separate distributed map for each Hibernate cache region. So
 
 HazelcastCacheRegionFactory uses standard Hazelcast Distributed Maps. Therefore, all operations like get, put and remove will be performed using the Distributed Map logic. The only downside of using HazelcastCacheRegionFactory may be the lower performance compared to HazelcastLocalCacheRegionFactory since operations are handled as distributed calls.
 
-***NOTE:*** *If you use HazelcastCacheRegionFactory, you can see your maps on [Management Center](#management-center).*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If you use HazelcastCacheRegionFactory, you can see your maps on [Management Center](#management-center).*
 
 With HazelcastCacheRegionFactory, all of the following caches are distributed across Hazelcast Cluster.
 
@@ -115,7 +115,7 @@ An illustration of the above logic is shown below.
 
 If your operations are mostly read ones, then this option is a better one regarding performance.
 
-***NOTE:*** *If you use HazelcastLocalCacheRegionFactory, you cannot see your maps on [Management Center](#management-center).*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If you use HazelcastLocalCacheRegionFactory, you cannot see your maps on [Management Center](#management-center).*
 
 With HazelcastLocalCacheRegionFactory, all of the following caches are not distributed and kept locally in the Hazelcast Node.
 
@@ -158,7 +158,7 @@ To setup Native Client properly, you should add Hazelcast **group-name**, **grou
 <property name="hibernate.cache.hazelcast.native_client_password">dev-pass</property>
 ```
 
-***NOTE***: *To use Native Client, you should add `hazelcast-client-<version>.jar` into your classpath. Refer to [Native Clients](#native-client) for more information.*
+![image](images/NoteSmall.jpg) ***NOTE***: *To use Native Client, you should add `hazelcast-client-<version>.jar` into your classpath. Refer to [Native Clients](#native-client) for more information.*
 
 ### Hibernate Concurrency Strategies
 
