@@ -28,6 +28,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -313,7 +314,13 @@ public class ExecutorServiceProxy
     public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members) {
         Map<Member, Future<T>> futures = new HashMap<Member, Future<T>>(members.size());
         for (Member member : members) {
-            futures.put(member, submitToMember(task, member));
+            Callable callable = task;
+            // copying is needed for local member while submitting to multiple members
+            // callable may have state and local member execution may happen before serializing to other members
+            if (member.localMember()) {
+                callable = copyCallable(task);
+            }
+            futures.put(member, submitToMember(callable, member));
         }
         return futures;
     }
@@ -401,7 +408,13 @@ public class ExecutorServiceProxy
                 callback);
 
         for (Member member : members) {
-            submitToMember(task, member, executionCallbackFactory.<T>callbackFor(member));
+            Callable callable = task;
+            // copying is needed for local member while submitting to multiple members
+            // callable may have state and local member execution may happen before serializing to other members
+            if (member.localMember()) {
+                callable = copyCallable(task);
+            }
+            submitToMember(callable, member, executionCallbackFactory.<T>callbackFor(member));
         }
     }
 
@@ -603,6 +616,12 @@ public class ExecutorServiceProxy
             throw new RejectedExecutionException("No member selected with memberSelector[" + memberSelector + "]");
         }
         return selected;
+    }
+
+    private <T> Callable copyCallable(final Callable<T> task) {
+        NodeEngine nodeEngine = getNodeEngine();
+        Data callableData = nodeEngine.toData(task);
+        return nodeEngine.toObject(callableData);
     }
 
     @Override
