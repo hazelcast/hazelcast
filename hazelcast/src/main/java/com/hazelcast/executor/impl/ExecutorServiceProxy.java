@@ -28,6 +28,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -191,12 +192,13 @@ public class ExecutorServiceProxy
             throw new RejectedExecutionException(getRejectionMessage());
         }
 
-        Callable<T> callable = createRunnableAdapter(task);
         NodeEngine nodeEngine = getNodeEngine();
+        Callable<T> callable = createRunnableAdapter(task);
+        Data callableData = nodeEngine.toData(callable);
         String uuid = buildRandomUuidString();
         int partitionId = getTaskPartitionId(callable);
 
-        CallableTaskOperation op = new CallableTaskOperation(name, uuid, callable);
+        CallableTaskOperation op = new CallableTaskOperation(name, uuid, callableData);
         ICompletableFuture future = invoke(partitionId, op);
         boolean sync = checkSync();
         if (sync) {
@@ -230,10 +232,11 @@ public class ExecutorServiceProxy
             throw new RejectedExecutionException(getRejectionMessage());
         }
         NodeEngine nodeEngine = getNodeEngine();
+        Data taskData = nodeEngine.toData(task);
         String uuid = buildRandomUuidString();
 
         boolean sync = !preventSync && checkSync();
-        CallableTaskOperation op = new CallableTaskOperation(name, uuid, task);
+        CallableTaskOperation op = new CallableTaskOperation(name, uuid, taskData);
         ICompletableFuture future = invoke(partitionId, op);
         if (sync) {
             Object response;
@@ -290,11 +293,12 @@ public class ExecutorServiceProxy
             throw new RejectedExecutionException(getRejectionMessage());
         }
         NodeEngine nodeEngine = getNodeEngine();
+        Data taskData = nodeEngine.toData(task);
         String uuid = buildRandomUuidString();
         Address target = ((MemberImpl) member).getAddress();
 
         boolean sync = checkSync();
-        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, task);
+        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
         InternalCompletableFuture future = nodeEngine.getOperationService()
                 .invokeOnTarget(DistributedExecutorService.SERVICE_NAME, op, target);
         if (sync) {
@@ -359,7 +363,8 @@ public class ExecutorServiceProxy
             throw new RejectedExecutionException(getRejectionMessage());
         }
         NodeEngine nodeEngine = getNodeEngine();
-        CallableTaskOperation op = new CallableTaskOperation(name, null, task);
+        Data taskData = nodeEngine.toData(task);
+        CallableTaskOperation op = new CallableTaskOperation(name, null, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
                 .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
@@ -382,7 +387,8 @@ public class ExecutorServiceProxy
             throw new RejectedExecutionException(getRejectionMessage());
         }
         NodeEngine nodeEngine = getNodeEngine();
-        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, null, task);
+        Data taskData = nodeEngine.toData(task);
+        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, null, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         Address address = ((MemberImpl) member).getAddress();
         operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
