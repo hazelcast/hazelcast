@@ -29,6 +29,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -68,9 +69,9 @@ public class CacheProxy<K, V>
 
     protected final ILogger logger;
 
-    private HazelcastCacheManager cacheManager;
+    protected final HazelcastCacheManager cacheManager;
 
-    protected CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService,
+    protected CacheProxy(CacheConfig cacheConfig, NodeEngineImpl nodeEngine, ICacheService cacheService,
                          HazelcastServerCacheManager cacheManager) {
         super(cacheConfig, nodeEngine, cacheService);
         this.cacheManager = cacheManager;

@@ -28,6 +28,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -49,7 +50,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 abstract class AbstractCacheProxyExtension<K, V>
         extends AbstractCacheProxyInternal<K, V> {
 
-    protected AbstractCacheProxyExtension(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
+    protected AbstractCacheProxyExtension(CacheConfig cacheConfig, NodeEngineImpl nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
     }
 
@@ -64,7 +65,7 @@ abstract class AbstractCacheProxyExtension<K, V>
         ensureOpen();
         validateNotNull(key);
         final Data keyData = serializationService.toData(key);
-        final Operation op = new CacheGetOperation(getDistributedObjectName(), keyData, expiryPolicy);
+        final Operation op = operationProvider.createGetOperation(keyData, expiryPolicy);
         return invoke(op, keyData, false);
     }
 

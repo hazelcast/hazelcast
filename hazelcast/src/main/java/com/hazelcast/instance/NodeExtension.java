@@ -16,6 +16,8 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cache.CacheOperationProvider;
+import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -132,4 +134,9 @@ public interface NodeExtension {
      * Destroys <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
      */
     void destroy();
+
+    /**
+     * Creates cache operations according to the storage-type of the cache
+     */
+    CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, CacheStorageType storageType);
 }

@@ -23,9 +23,11 @@ import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.FutureUtil;
 
 import java.net.URI;
@@ -39,7 +41,7 @@ import java.util.concurrent.TimeoutException;
 public class HazelcastServerCacheManager
         extends HazelcastCacheManager {
 
-    private NodeEngine nodeEngine;
+    private NodeEngineImpl nodeEngine;
     private ICacheService cacheService;
 
     public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
@@ -51,7 +53,7 @@ public class HazelcastServerCacheManager
         this.hazelcastInstance = hazelcastInstance;
         //just to get a reference to nodeEngine and cacheService
         final CacheDistributedObject setupRef = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
-        nodeEngine = setupRef.getNodeEngine();
+        nodeEngine = (NodeEngineImpl)setupRef.getNodeEngine();
         cacheService = setupRef.getService();
 
         //TODO: should we destroy the ref ?

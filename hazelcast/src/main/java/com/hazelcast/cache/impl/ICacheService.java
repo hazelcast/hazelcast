@@ -39,8 +39,6 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     ICacheRecordStore getCache(String name, int partitionId);
 
-    ICacheRecordStore getOrCreateCache(String name, CacheStorageType cacheStorageType, int partitionId);
-
     CachePartitionSegment getSegment(int partitionId);
 
     void destroyCache(String objectName, boolean isLocal, String callerUuid);

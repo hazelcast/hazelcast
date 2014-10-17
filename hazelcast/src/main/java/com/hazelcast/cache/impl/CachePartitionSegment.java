@@ -39,20 +39,23 @@ import java.util.concurrent.ConcurrentMap;
  */
 public final class CachePartitionSegment {
 
-    private final ICacheService cacheService;
+    private final AbstractCacheService cacheService;
     private final int partitionId;
     // *** NOTE ***
     //      CacheInfo is implemented by considering comparison with String in hash-map.
-    private final ConstructorFunction<CacheInfo, ICacheRecordStore> cacheConstructorFunction;
-    private final ConcurrentMap<CacheInfo, ICacheRecordStore> caches =
-            new ConcurrentHashMap<CacheInfo, ICacheRecordStore>();
+    private final ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction;
+    private final ConcurrentMap<String, ICacheRecordStore> caches =
+            new ConcurrentHashMap<String, ICacheRecordStore>();
     private final Object mutex = new Object();
 
-    CachePartitionSegment(ICacheService cacheService,
-                          ConstructorFunction<CacheInfo,
-                          ICacheRecordStore> cacheConstructorFunction,
-                          int partitionId) {
-        this.cacheConstructorFunction = cacheConstructorFunction;
+    CachePartitionSegment(final AbstractCacheService cacheService,
+                          final int partitionId) {
+        this.cacheConstructorFunction = new ConstructorFunction<String, ICacheRecordStore>() {
+            @Override
+            public ICacheRecordStore createNew(String arg) {
+                return cacheService.createNewRecordStore(arg, partitionId);
+            }
+        };
         this.cacheService = cacheService;
         this.partitionId = partitionId;
     }
@@ -71,16 +74,8 @@ public final class CachePartitionSegment {
 
     public ICacheRecordStore getOrCreateCache(String name) {
         return
-            ConcurrencyUtil.getOrPutSynchronized(caches,
-                                                 new CacheInfo(name),
-                                                 mutex,
-                                                 cacheConstructorFunction);
-    }
-
-    public ICacheRecordStore getOrCreateCache(String name, CacheStorageType cacheStorageType) {
-        return
              ConcurrencyUtil.getOrPutSynchronized(caches,
-                                                  new CacheInfo(name, cacheStorageType),
+                                                  name,
                                                   mutex,
                                                   cacheConstructorFunction);
     }

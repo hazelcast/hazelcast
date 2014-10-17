@@ -51,14 +51,11 @@ public abstract class AbstractCacheService implements ICacheService {
         segments = new CachePartitionSegment[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
             segments[i] =
-                    new CachePartitionSegment(this,
-                                              createCacheConstructorFunction(i),
-                                              i);
+                    new CachePartitionSegment(this, i);
         }
     }
 
-    protected abstract ConstructorFunction<CacheInfo, ICacheRecordStore> createCacheConstructorFunction(int partitionId);
-
+    protected abstract ICacheRecordStore createNewRecordStore(String name, int partitionId);
     //endregion
 
     //region RemoteService
@@ -99,13 +96,6 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public ICacheRecordStore getOrCreateCache(String name, int partitionId) {
         return segments[partitionId].getOrCreateCache(name);
-    }
-
-    @Override
-    public ICacheRecordStore getOrCreateCache(String name,
-                                              CacheStorageType cacheStorageType,
-                                              int partitionId) {
-        return segments[partitionId].getOrCreateCache(name, cacheStorageType);
     }
 
     @Override
@@ -268,7 +258,7 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue,
-            Data dataOldValue, boolean isOldValueAvailable, int orderKey) {
+                             Data dataOldValue, boolean isOldValueAvailable, int orderKey) {
         final EventService eventService = getNodeEngine().getEventService();
         final Collection<EventRegistration> candidates = eventService.getRegistrations(AbstractCacheService.SERVICE_NAME, cacheName);
 

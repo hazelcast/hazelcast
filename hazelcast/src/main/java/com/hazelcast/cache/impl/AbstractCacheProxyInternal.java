@@ -31,6 +31,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -63,7 +64,7 @@ abstract class AbstractCacheProxyInternal<K, V>
     private final Object completionRegistrationMutex = new Object();
     private volatile String completionRegistrationId;
 
-    protected AbstractCacheProxyInternal(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
+    protected AbstractCacheProxyInternal(CacheConfig cacheConfig, NodeEngineImpl nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
@@ -150,7 +151,7 @@ abstract class AbstractCacheProxyInternal<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = serializationService.toData(key);
         final Data valueData = serializationService.toData(value);
-        final Operation op = new CachePutOperation(getDistributedObjectName(), keyData, valueData, expiryPolicy, isGet);
+        final Operation op = operationProvider.createPutOperation(keyData, valueData, expiryPolicy, isGet);
         return invoke(op, keyData, withCompletionEvent);
     }
 

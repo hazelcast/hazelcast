@@ -16,10 +16,13 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheOperationProvider;
+import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.ExecutionService;
@@ -27,6 +30,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.executor.CompletableFutureTask;
 
 import javax.cache.CacheException;
@@ -54,15 +58,16 @@ abstract class AbstractCacheProxyBase<K, V> {
     protected final String nameWithPrefix;
     protected final ICacheService cacheService;
     protected final SerializationService serializationService;
+    protected final CacheOperationProvider operationProvider;
 
-    private final NodeEngine nodeEngine;
+    private final NodeEngineImpl nodeEngine;
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
     private final CacheLoader<K, V> cacheLoader;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
-    protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
+    protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngineImpl nodeEngine, ICacheService cacheService) {
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
@@ -76,6 +81,8 @@ abstract class AbstractCacheProxyBase<K, V> {
             cacheLoader = null;
         }
 
+        NodeExtension nodeExtension = nodeEngine.getNode().getNodeExtension();
+        operationProvider = nodeExtension.getCacheOperationProvider(nameWithPrefix, cacheConfig.getCacheStorageType());
     }
 
     //region close&destroy

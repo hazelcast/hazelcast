@@ -53,11 +53,11 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 
 /**
  * Implementation of the {@link ICacheRecordStore}
- *
+ * <p/>
  * Represents a named ICache on-heap data for a single partition.
  * Total data of an ICache object is the total CacheRecordStore on all partitions.
  * This data structure is the actual cache operations implementation, data access, statistics, event firing etc.
- *
+ * <p/>
  * CacheRecordStore is managed by CachePartitionSegment.
  *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
@@ -71,7 +71,7 @@ public class CacheRecordStore
     final String name;
     final int partitionId;
     final NodeEngine nodeEngine;
-    final CacheService cacheService;
+    final AbstractCacheService cacheService;
     final CacheConfig cacheConfig;
     final CacheConcurrentHashMap<Data, CacheRecord> records = new CacheConcurrentHashMap<Data, CacheRecord>(1000);
     final CacheRecordFactory cacheRecordFactory;
@@ -89,7 +89,7 @@ public class CacheRecordStore
 
     private Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
 
-    CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine, final CacheService cacheService) {
+    public CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine, AbstractCacheService cacheService) {
         this.name = name;
         this.partitionId = partitionId;
         this.nodeEngine = nodeEngine;

@@ -73,7 +73,9 @@ public class CachePutRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CachePutOperation(name, key, value, expiryPolicy, get, completionId);
+        CachePutOperation putOperation = new CachePutOperation(name, key, value, expiryPolicy, get);
+        putOperation.setCompletionId(completionId);
+        return putOperation;
     }
 
     public void write(PortableWriter writer)
