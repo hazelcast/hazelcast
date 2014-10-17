@@ -18,6 +18,9 @@ package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
 
+/**
+ * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} where value has internal serialized format
+ */
 class CacheDataRecord
         extends AbstractCacheRecord<Data> {
 

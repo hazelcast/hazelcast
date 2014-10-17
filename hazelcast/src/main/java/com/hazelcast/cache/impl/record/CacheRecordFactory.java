@@ -21,7 +21,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
 /**
- * Provides factory for {@link com.hazelcast.cache.impl.record.CacheRecord}
+ * Provides factory for {@link com.hazelcast.cache.impl.record.CacheRecord}.
+ * <p>key, value and expiryTime are packed into a subclass of {@link com.hazelcast.cache.impl.record.AbstractCacheRecord}
+ * depending on the configured inMemoryFormat</p>
  */
 public class CacheRecordFactory {
 

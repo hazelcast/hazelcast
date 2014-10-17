@@ -22,6 +22,12 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
+/**
+ * Abstract implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} with key, value and expiration time as internal
+ * state.
+ * <p>This implementation provide getter, setter and serialization methods</p>
+ * @param <V>
+ */
 class AbstractCacheRecord<V>
         implements CacheRecord<V> {
 

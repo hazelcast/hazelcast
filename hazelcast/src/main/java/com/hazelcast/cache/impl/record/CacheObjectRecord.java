@@ -19,7 +19,7 @@ package com.hazelcast.cache.impl.record;
 import com.hazelcast.nio.serialization.Data;
 
 /**
- * Object format is {@link com.hazelcast.cache.impl.record.CacheRecord}
+ * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} which has internal object format
  */
 public class CacheObjectRecord
         extends AbstractCacheRecord<Object> {
