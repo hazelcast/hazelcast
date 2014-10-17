@@ -23,6 +23,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
@@ -66,11 +67,13 @@ public class QueryOperation extends AbstractMapOperation {
     }
 
     public void run() throws Exception {
-        Collection<Integer> initialPartitions = mapService.getMapServiceContext().getOwnedPartitions();
+        NodeEngine nodeEngine = getNodeEngine();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        Collection<Integer> initialPartitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
         IndexService indexService = mapService.getMapServiceContext().getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
         // TODO: fix
-        if (!getNodeEngine().getPartitionService().hasOnGoingMigration()) {
+        if (!partitionService.hasOnGoingMigration()) {
             entries = indexService.query(predicate);
         }
         result = new QueryResult();
@@ -86,7 +89,7 @@ public class QueryOperation extends AbstractMapOperation {
                 runParallel(initialPartitions);
             }
         }
-        Collection<Integer> finalPartitions = mapService.getMapServiceContext().getOwnedPartitions();
+        Collection<Integer> finalPartitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
         if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }
