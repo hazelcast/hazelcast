@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.transaction.TransactionTimedOutException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -90,6 +91,20 @@ public final class FutureUtil {
         }
     };
 
+
+    /**
+     * Handler for transaction specific rethrown of exceptions.
+     */
+    public static final ExceptionHandler RETHROW_TRANSACTION_EXCEPTION = new ExceptionHandler() {
+        @Override
+        public void handleException(Throwable throwable) {
+            if (throwable instanceof TimeoutException) {
+                throw new TransactionTimedOutException(throwable);
+            }
+            throw ExceptionUtil.rethrow(throwable);
+        }
+    };
+
     private static final ILogger LOGGER = Logger.getLogger(FutureUtil.class);
 
     private FutureUtil() {
@@ -99,9 +114,9 @@ public final class FutureUtil {
      * This ExceptionHandler rethrows {@link java.util.concurrent.ExecutionException}s and logs
      * {@link com.hazelcast.core.MemberLeftException}s to the log.
      *
-     * @param logger the ILogger instance to be used for logging
+     * @param logger  the ILogger instance to be used for logging
      * @param message the log message to appear in the logs before the stacktrace
-     * @param level the log level to be used for logging
+     * @param level   the log level to be used for logging
      */
     @PrivateApi
     public static ExceptionHandler logAllExceptions(final ILogger logger, final String message, final Level level) {
@@ -121,7 +136,7 @@ public final class FutureUtil {
      * {@link com.hazelcast.core.MemberLeftException}s to the log.
      *
      * @param message the log message to appear in the logs before the stacktrace
-     * @param level the log level to be used for logging
+     * @param level   the log level to be used for logging
      */
     @PrivateApi
     public static ExceptionHandler logAllExceptions(final String message, final Level level) {
@@ -141,7 +156,7 @@ public final class FutureUtil {
      * {@link com.hazelcast.core.MemberLeftException}s to the log.
      *
      * @param logger the ILogger instance to be used for logging
-     * @param level the log level to be used for logging
+     * @param level  the log level to be used for logging
      */
     @PrivateApi
     public static ExceptionHandler logAllExceptions(final ILogger logger, final Level level) {
