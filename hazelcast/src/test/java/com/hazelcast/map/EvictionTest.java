@@ -53,7 +53,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -701,16 +700,19 @@ public class EvictionTest extends HazelcastTestSupport {
         assertSizeEventually(nsize, map);
     }
 
+    /**
+     * Background task {@link com.hazelcast.map.eviction.ExpirationManager.ClearExpiredRecordsTask}
+     * should sweep expired records eventually.
+     */
     @Test
+    @Category(NightlyTest.class)
     public void testMapPutTTLWithListener() throws InterruptedException {
+        final String mapName = randomMapName();
         final HazelcastInstance instance = createHazelcastInstance();
 
         final int putCount = 100;
         final CountDownLatch latch = new CountDownLatch(putCount);
-        final IMap map = instance.getMap("testMapPutTTLWithListener");
-
-        final AtomicBoolean error = new AtomicBoolean(false);
-        final Set<Long> times = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
+        final IMap map = instance.getMap(mapName);
 
         map.addEntryListener(new EntryAdapter() {
             public void entryEvicted(final EntryEvent event) {
@@ -718,14 +720,16 @@ public class EvictionTest extends HazelcastTestSupport {
             }
         }, true);
 
-        int ttl = (int) (Math.random() * 3000);
+        final int ttl = (int) (Math.random() * 5000);
+
         for (int j = 0; j < putCount; j++) {
             map.put(j, j, ttl, TimeUnit.MILLISECONDS);
         }
 
-        // wait until eviction is completed.
-        assertOpenEventually(latch);
+        // wait until eviction is complete.
+        assertOpenEventually(latch, TimeUnit.MINUTES.toSeconds(10));
     }
+
 
     /**
      * Test for issue 614
