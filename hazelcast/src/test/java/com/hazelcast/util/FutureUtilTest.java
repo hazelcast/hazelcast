@@ -19,6 +19,7 @@ package com.hazelcast.util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionTimedOutException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -166,6 +167,15 @@ public class FutureUtilTest extends HazelcastTestSupport {
         Throwable throwable = exceptionHandler.throwables.iterator().next();
         assertTrue(throwable instanceof ExecutionException);
         assertTrue(throwable.getCause() instanceof SpecialRuntimeException);
+    }
+
+
+    @Test(expected = TransactionTimedOutException.class)
+    public void testTransactionTimedOutExceptionHandler() throws Exception {
+        final ExceptionHandler exceptionHandler = FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
+        final Throwable throwable = new TimeoutException();
+
+        exceptionHandler.handleException(throwable);
     }
 
     private static final class ExceptionCollector implements ExceptionHandler {
