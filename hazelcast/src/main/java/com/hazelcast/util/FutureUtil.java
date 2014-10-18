@@ -22,7 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.transaction.TransactionTimedOutException;
+import com.hazelcast.transaction.TransactionException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -99,7 +99,7 @@ public final class FutureUtil {
         @Override
         public void handleException(Throwable throwable) {
             if (throwable instanceof TimeoutException) {
-                throw new TransactionTimedOutException(throwable);
+                throw new TransactionException(throwable);
             }
             throw ExceptionUtil.rethrow(throwable);
         }
