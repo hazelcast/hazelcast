@@ -20,8 +20,18 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
- * Internal event data object used in publish - dispatch
- * All key value and oldValue are represented in {@link Data}
+ * Internal event data wrapper used during publishing and dispatching events.
+ *
+ * An event data is represented by
+ * <ul>
+ * <li>name</li>
+ * <li>Event type</li>
+ * <li>key</li>
+ * <li>value</li>
+ * <li>old value if available</li>
+ * <li>availability of old data</li>
+ * </ul>
+ * All key value and oldValue are represented in serialized {@link Data} form.
  *
  * @see com.hazelcast.cache.impl.CacheService#publishEvent(String, CacheEventSet, int)
  * @see com.hazelcast.cache.impl.CacheService#dispatchEvent(Object, CacheEventListener)
@@ -29,15 +39,40 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 public interface CacheEventData
         extends IdentifiedDataSerializable {
 
+    /**
+     * Cache Event Type of this event data
+     * @return Cache Event Type
+     * @see com.hazelcast.cache.impl.CacheEventType
+     */
     CacheEventType getCacheEventType();
 
+    /**
+     * get the name of the cache
+     * @return the name of the cache
+     */
     String getName();
 
+    /**
+     * Get Cache entry key as {@link Data}
+     * @return key as {@link Data}
+     */
     Data getDataKey();
 
+    /**
+     * Get Cache entry value as {@link Data}
+     * @return value as {@link Data}
+     * */
     Data getDataValue();
 
+    /**
+     * Get the old value of entry as {@link Data} if available
+     * @return if available old value of entry as {@link Data} else null
+     */
     Data getDataOldValue();
 
+    /**
+     * is old value available
+     * @return is old value available
+     */
     boolean isOldValueAvailable();
 }

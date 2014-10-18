@@ -53,18 +53,27 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
- *
- * <p>Represents a named ICache on-heap data store for a single partition.
- * Total data of an ICache object is the total CacheRecordStore on all partitions.
- * This data structure is the actual cache operation's implementation, data access, statistics, event firing etc.
+ * <p>
+ * Hazelcast splits data homogeneously to partitions using keys. Where CacheRecordStore represent a named ICache on-heap data
+ * store for a single partition.<br/>
+ * This data structure is responsible from CRUD operations, entry processing, statistics, publishing events, cache loader and
+ * writer and internal data operations like backup.
  * </p>
- * <p>CacheRecordStore represent the cache from the partition point of view. Hazelcast splits the cluster data homogeneously to
- * partitions using keys. So the CacheRecordStore is the actual keeps the data of the partition slice.
- * </p>
- * <p>CacheRecordStore is accessed through {@linkplain com.hazelcast.cache.impl.CachePartitionSegment} </p>
- * CacheRecordStore is managed by CachePartitionSegment.
- *
+ * <p>CacheRecordStore is accessed through {@linkplain com.hazelcast.cache.impl.CachePartitionSegment} and
+ * {@linkplain com.hazelcast.cache.impl.CacheService}</p>
+ * CacheRecordStore is managed by {@linkplain com.hazelcast.cache.impl.CachePartitionSegment}.
+ *<p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation.
+ *     <pre>
+ *         <code>CacheService service = getService();
+ *         ICacheRecordStore cache = service.getOrCreateCache(name, partitionId);
+ *         cache.get(key, expiryPolicy);
+ *         </code>
+ *     </pre>
+ * See {@link com.hazelcast.cache.impl.operation.AbstractCacheOperation} subclasses for actual examples.
+ *</p>
  * @see com.hazelcast.cache.impl.CachePartitionSegment
+ * @see com.hazelcast.cache.impl.CacheService
+ * @see com.hazelcast.cache.impl.operation.AbstractCacheOperation
  */
 public class CacheRecordStore
         implements ICacheRecordStore {

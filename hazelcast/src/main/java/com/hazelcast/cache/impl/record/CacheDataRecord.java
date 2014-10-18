@@ -22,8 +22,10 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
-class CacheDataRecord
-        extends AbstractCacheRecord<Data> {
+/**
+ * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} where value has internal serialized format
+ */
+class CacheDataRecord extends AbstractCacheRecord<Data> {
 
     private Data value;
 
@@ -56,6 +58,5 @@ class CacheDataRecord
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         value = in.readData();
-
     }
 }

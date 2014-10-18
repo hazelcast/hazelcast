@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.record;
-
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+package com.hazelcast.transaction;
 
 /**
- * <p>
- * An expirable data object which represents a cache entry.
- * </p>
- * Record of the {@link com.hazelcast.cache.impl.ICacheRecordStore}
- *
- * @param <V>
+ * Thrown when a transaction has timed out.
  */
-public interface CacheRecord<V>
-        extends Expirable, DataSerializable {
+public class TransactionTimedOutException extends TransactionException {
 
-    Data getKey();
+    public TransactionTimedOutException() {
+    }
 
-    V getValue();
+    public TransactionTimedOutException(String message) {
+        super(message);
+    }
 
-    void setValue(V value);
+    public TransactionTimedOutException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public TransactionTimedOutException(Throwable cause) {
+        super(cause);
+    }
 
 }

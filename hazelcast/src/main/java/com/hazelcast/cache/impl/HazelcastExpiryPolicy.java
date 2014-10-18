@@ -26,7 +26,17 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Custom Expiry Policy helper class for general usage
+ * <p>Hazelcast provides custom expiry policy on each cache operation. This class is a handy tool to be used with that
+ * functionality.
+ * <p>
+ *     Sample usage:
+ * <pre>
+ *     <code>ICache&lt;String , SessionData&gt; icache =  cache.unwrap( ICache.class );
+ *     HazelcastExpiryPolicy customExpiry = new HazelcastExpiryPolicy(20, 30, 40, TimeUnit.SECONDS);
+ *     icache.put(&quot;key1&quot;, sessionData, customExpiry );
+ *     </code>
+ * </pre>
+ * </p>
  */
 public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable {
 
