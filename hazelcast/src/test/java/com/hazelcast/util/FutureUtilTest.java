@@ -19,7 +19,7 @@ package com.hazelcast.util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.transaction.TransactionTimedOutException;
+import com.hazelcast.transaction.TransactionException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -170,7 +170,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     }
 
 
-    @Test(expected = TransactionTimedOutException.class)
+    @Test(expected = TransactionException.class)
     public void testTransactionTimedOutExceptionHandler() throws Exception {
         final ExceptionHandler exceptionHandler = FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
         final Throwable throwable = new TimeoutException();
