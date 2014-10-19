@@ -51,8 +51,7 @@ public abstract class AbstractCacheService implements ICacheService {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         segments = new CachePartitionSegment[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
-            segments[i] =
-                    new CachePartitionSegment(this, i);
+            segments[i] = new CachePartitionSegment(this, i);
         }
     }
 
@@ -344,8 +343,8 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, CacheStorageType storageType) {
-        if (CacheStorageType.OFFHEAP.equals(storageType)) {
-            throw new IllegalArgumentException("OffHeap storage type is available in Enterprise!!!");
+        if (CacheStorageType.NATIVE_MEMORY.equals(storageType)) {
+            throw new IllegalArgumentException("Native memory storage type is available in Enterprise!!!");
         }
         return new DefaultOperationProvider(nameWithPrefix);
     }

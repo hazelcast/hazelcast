@@ -25,33 +25,41 @@ import com.hazelcast.nio.serialization.SerializationService;
  */
 public class CacheRecordFactory {
 
-    private InMemoryFormat inMemoryFormat;
-    private SerializationService serializationService;
+    protected InMemoryFormat inMemoryFormat;
+    protected SerializationService serializationService;
 
     public CacheRecordFactory(InMemoryFormat inMemoryFormat, SerializationService serializationService) {
         this.inMemoryFormat = inMemoryFormat;
         this.serializationService = serializationService;
     }
 
-    public CacheRecord newRecord(Object value) {
-        return newRecordWithExpiry(value, -1);
+    public CacheRecord newRecord(Data key, Object value) {
+        return newRecordWithExpiry(key, value, -1);
     }
 
-    public CacheRecord newRecordWithExpiry(Object value, long expiryTime) {
+    public CacheRecord newRecordWithExpiry(Data key, Object value, long expiryTime) {
         final CacheRecord record;
         switch (inMemoryFormat) {
             case BINARY:
                 Data dataValue = serializationService.toData(value);
-                record = new CacheDataRecord(dataValue, expiryTime);
+                record = createCacheDataRecord(key, dataValue, expiryTime);
                 break;
             case OBJECT:
                 Object objectValue = serializationService.toObject(value);
-                record = new CacheObjectRecord(objectValue, expiryTime);
+                record = createCacheObjectRecord(key, objectValue, expiryTime);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + inMemoryFormat);
         }
         return record;
+    }
+
+    protected CacheRecord createCacheDataRecord(Data key, Data dataValue, long expiryTime) {
+        return new CacheDataRecord(dataValue, expiryTime);
+    }
+
+    protected CacheRecord createCacheObjectRecord(Data key, Object objectValue, long expiryTime) {
+        return new CacheObjectRecord(objectValue, expiryTime);
     }
 
     /**

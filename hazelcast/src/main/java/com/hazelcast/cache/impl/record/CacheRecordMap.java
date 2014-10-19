@@ -14,23 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache;
+package com.hazelcast.cache.impl.record;
 
-/**
- * Defines type of the cache storage, on-heap or native-memory
- */
-public enum CacheStorageType {
+import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 
-    /**
-     * On-heap cache storage type
-     */
-    HEAP,
+import java.io.Serializable;
+import java.util.Map;
 
-    /**
-     * Native memory cache storage type
-     */
-    NATIVE_MEMORY;
+public interface CacheRecordMap<K, V> extends Map<K, V>, Serializable {
 
-    public static final CacheStorageType DEFAULT_STORAGE_TYPE = HEAP;
+    CacheKeyIteratorResult fetchNext(int nextTableIndex, int size);
 
 }
