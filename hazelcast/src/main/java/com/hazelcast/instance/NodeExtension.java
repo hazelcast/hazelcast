@@ -135,8 +135,4 @@ public interface NodeExtension {
      */
     void destroy();
 
-    /**
-     * Creates cache operations according to the storage-type of the cache
-     */
-    CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, CacheStorageType storageType);
 }

@@ -19,7 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.cache.CacheOperationProvider;
 import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HeapOperationProvider;
+import com.hazelcast.cache.impl.DefaultOperationProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
@@ -166,11 +166,4 @@ public class DefaultNodeExtension implements NodeExtension {
         logger.info("Destroying node NodeExtension.");
     }
 
-    @Override
-    public CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, CacheStorageType storageType) {
-        if (CacheStorageType.OFFHEAP.equals(storageType)) {
-            throw new IllegalArgumentException("OffHeap storage type is available in Enterprise!!!");
-        }
-        return new HeapOperationProvider(nameWithPrefix);
-    }
 }

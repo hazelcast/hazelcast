@@ -11,11 +11,11 @@ import javax.cache.expiry.ExpiryPolicy;
 /**
  * TODO add a proper JavaDoc
  */
-public class HeapOperationProvider implements CacheOperationProvider {
+public class DefaultOperationProvider implements CacheOperationProvider {
 
     private final String nameWithPrefix;
 
-    public HeapOperationProvider(String nameWithPrefix) {
+    public DefaultOperationProvider(String nameWithPrefix) {
         this.nameWithPrefix = nameWithPrefix;
     }
 

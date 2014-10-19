@@ -62,8 +62,7 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
  *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
  */
-public class CacheRecordStore
-        implements ICacheRecordStore {
+public class CacheRecordStore implements ICacheRecordStore {
 
     private static final long INITIAL_DELAY = 5;
     private static final long PERIOD = 5;
@@ -660,16 +659,11 @@ public class CacheRecordStore
     }
 
     private CacheRecord createRecord(Data keyData, Object value, long expirationTime) {
-        final CacheRecord record = cacheRecordFactory.newRecordWithExpiry(keyData, value, expirationTime);
+        final CacheRecord record = cacheRecordFactory.newRecordWithExpiry(value, expirationTime);
         if (isEventsEnabled) {
             final Object recordValue = record.getValue();
-            Data dataValue;
-            if (!(recordValue instanceof Data)) {
-                dataValue = cacheService.toData(recordValue);
-            } else {
-                dataValue = (Data) recordValue;
-            }
-            publishEvent(name, CacheEventType.CREATED, record.getKey(), null, dataValue, false);
+            Data dataValue = cacheService.toData(recordValue);
+            publishEvent(name, CacheEventType.CREATED, keyData, null, dataValue, false);
         }
         return record;
     }
@@ -690,19 +684,17 @@ public class CacheRecordStore
         if (!disableWriteThrough) {
             writeThroughCache(key, value);
         }
-        updateRecord(record, value);
+        updateRecord(key, record, value);
         return !processExpiredEntry(key, record, expiryTime, now);
     }
 
-    private CacheRecord updateRecord(CacheRecord record, Object value) {
+    private CacheRecord updateRecord(Data key, CacheRecord record, Object value) {
         final Data dataOldValue;
         final Data dataValue;
         Object v = value;
         switch (cacheConfig.getInMemoryFormat()) {
             case BINARY:
-                if (!(value instanceof Data)) {
-                    v = cacheService.toData(value);
-                }
+                v = cacheService.toData(value);
                 dataValue = (Data) v;
                 dataOldValue = (Data) record.getValue();
                 break;
@@ -720,26 +712,16 @@ public class CacheRecordStore
         }
         record.setValue(v);
         if (isEventsEnabled) {
-            publishEvent(name, CacheEventType.UPDATED, record.getKey(), dataOldValue, dataValue, true);
+            publishEvent(name, CacheEventType.UPDATED, key, dataOldValue, dataValue, true);
         }
         return record;
     }
 
     void deleteRecord(Data key) {
         final CacheRecord record = records.remove(key);
-        final Data dataValue;
-        switch (cacheConfig.getInMemoryFormat()) {
-            case BINARY:
-                dataValue = (Data) record.getValue();
-                break;
-            case OBJECT:
-                dataValue = cacheService.toData(record.getValue());
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
-        }
         if (isEventsEnabled) {
-            publishEvent(name, CacheEventType.REMOVED, record.getKey(), null, dataValue, false);
+            Data dataValue = cacheService.toData(record.getValue());
+            publishEvent(name, CacheEventType.REMOVED, key, null, dataValue, false);
         }
     }
 
@@ -947,6 +929,11 @@ public class CacheRecordStore
                     .publishEvent(cacheName, CacheEventType.COMPLETED, dataKey, cacheService.toData(completionId), null, false,
                             orderKey);
         }
+    }
+
+    @Override
+    public int forceEvict() {
+        throw new UnsupportedOperationException("Force evict is not implemented yet!!!");
     }
 
     protected void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataOldValue, Data dataValue,

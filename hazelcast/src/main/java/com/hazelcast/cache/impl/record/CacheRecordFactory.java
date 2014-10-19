@@ -33,20 +33,20 @@ public class CacheRecordFactory {
         this.serializationService = serializationService;
     }
 
-    public CacheRecord newRecord(Data key, Object value) {
-        return newRecordWithExpiry(key, value, -1);
+    public CacheRecord newRecord(Object value) {
+        return newRecordWithExpiry(value, -1);
     }
 
-    public CacheRecord newRecordWithExpiry(Data key, Object value, long expiryTime) {
+    public CacheRecord newRecordWithExpiry(Object value, long expiryTime) {
         final CacheRecord record;
         switch (inMemoryFormat) {
             case BINARY:
                 Data dataValue = serializationService.toData(value);
-                record = new CacheDataRecord(key, dataValue, expiryTime);
+                record = new CacheDataRecord(dataValue, expiryTime);
                 break;
             case OBJECT:
                 Object objectValue = serializationService.toObject(value);
-                record = new CacheObjectRecord(key, objectValue, expiryTime);
+                record = new CacheObjectRecord(objectValue, expiryTime);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + inMemoryFormat);

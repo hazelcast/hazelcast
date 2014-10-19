@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheOperationProvider;
 import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
@@ -99,7 +100,7 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
-    public ICacheRecordStore getCache(String name, int partitionId) {
+    public ICacheRecordStore getCacheRecordStore(String name, int partitionId) {
         return segments[partitionId].getCache(name);
     }
 
@@ -340,5 +341,13 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     //endregion
+
+    @Override
+    public CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, CacheStorageType storageType) {
+        if (CacheStorageType.OFFHEAP.equals(storageType)) {
+            throw new IllegalArgumentException("OffHeap storage type is available in Enterprise!!!");
+        }
+        return new DefaultOperationProvider(nameWithPrefix);
+    }
 
 }

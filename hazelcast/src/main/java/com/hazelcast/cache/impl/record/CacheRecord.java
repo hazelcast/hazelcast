@@ -25,9 +25,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
  * @param <V>
  */
 public interface CacheRecord<V>
-        extends Expirable, DataSerializable {
-
-    Data getKey();
+        extends Expirable {
 
     V getValue();
 

@@ -62,7 +62,7 @@ public class CacheClearOperation
         CacheService service = getService();
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
 
-        cache = service.getCache(name, getPartitionId());
+        cache = service.getCacheRecordStore(name, getPartitionId());
         if (cache != null) {
             Set<Data> filteredKeys = new HashSet<Data>();
             if (keys != null) {

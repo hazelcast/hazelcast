@@ -31,6 +31,11 @@ import java.util.Set;
  */
 public interface ICacheRecordStore {
 
+    int MIN_FORCED_EVICT_PERCENTAGE = 10;
+    int DEFAULT_EVICTION_PERCENTAGE = 10;
+    int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = 95;
+    int DEFAULT_TTL = 1000 * 60 * 60; // 1 hour
+
     Object get(Data key, ExpiryPolicy expiryPolicy);
 
     void put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
@@ -84,5 +89,7 @@ public interface ICacheRecordStore {
     CacheStatisticsImpl getCacheStats();
 
     void publishCompletedEvent(String cacheName, int completionId, Data dataKey, int orderKey);
+
+    int forceEvict();
 
 }

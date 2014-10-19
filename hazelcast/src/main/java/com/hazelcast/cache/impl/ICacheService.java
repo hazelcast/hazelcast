@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheOperationProvider;
 import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.serialization.Data;
@@ -37,7 +38,7 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     ICacheRecordStore getOrCreateCache(String name, int partitionId);
 
-    ICacheRecordStore getCache(String name, int partitionId);
+    ICacheRecordStore getCacheRecordStore(String name, int partitionId);
 
     CachePartitionSegment getSegment(int partitionId);
 
@@ -75,4 +76,9 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
     void deregisterAllListener(String name);
 
     CacheStatisticsImpl getStatistics(String name);
+
+    /**
+     * Creates cache operations according to the storage-type of the cache
+     */
+    CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, CacheStorageType storageType);
 }

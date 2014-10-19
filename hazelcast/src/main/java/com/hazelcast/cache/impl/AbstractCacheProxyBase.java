@@ -81,8 +81,7 @@ abstract class AbstractCacheProxyBase<K, V> {
             cacheLoader = null;
         }
 
-        NodeExtension nodeExtension = nodeEngine.getNode().getNodeExtension();
-        operationProvider = nodeExtension.getCacheOperationProvider(nameWithPrefix, cacheConfig.getCacheStorageType());
+        operationProvider = cacheService.getCacheOperationProvider(nameWithPrefix, cacheConfig.getCacheStorageType());
     }
 
     //region close&destroy
