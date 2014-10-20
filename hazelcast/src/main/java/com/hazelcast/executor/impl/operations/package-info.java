@@ -14,32 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor.impl;
-
-import com.hazelcast.spi.impl.AbstractNamedOperation;
-
-public final class ShutdownOperation extends AbstractNamedOperation {
-
-    public ShutdownOperation() {
-    }
-
-    public ShutdownOperation(String name) {
-        super(name);
-    }
-
-    @Override
-    public void run() throws Exception {
-        DistributedExecutorService service = getService();
-        service.shutdownExecutor(getName());
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
-    public Object getResponse() {
-        return Boolean.TRUE;
-    }
-}
+/**
+ * <p>This package contains operations for the IExecutorService.<br/>
+ */
+package com.hazelcast.executor.impl.operations;
