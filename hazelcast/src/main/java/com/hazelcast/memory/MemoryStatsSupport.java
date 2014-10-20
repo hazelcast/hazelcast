@@ -1,5 +1,6 @@
 package com.hazelcast.memory;
 
+import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
 import com.hazelcast.util.EmptyStatement;
@@ -56,7 +57,13 @@ public final class MemoryStatsSupport {
         stats.setCommittedHeap(memoryUsage.getCommitted());
         stats.setUsedHeap(memoryUsage.getUsed());
 
+        stats.setCommittedNativeMemory(LocalInstanceStats.STAT_NOT_AVAILABLE);
+        stats.setMaxNativeMemory(LocalInstanceStats.STAT_NOT_AVAILABLE);
+        stats.setUsedNativeMemory(LocalInstanceStats.STAT_NOT_AVAILABLE);
+        stats.setFreeNativeMemory(LocalInstanceStats.STAT_NOT_AVAILABLE);
+
         stats.setGcStats(GCStatsSupport.getGCStats());
+
         return stats;
     }
 }

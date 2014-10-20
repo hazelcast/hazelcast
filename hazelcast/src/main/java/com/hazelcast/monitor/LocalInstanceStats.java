@@ -21,6 +21,11 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 public interface LocalInstanceStats extends DataSerializable, JsonSerializable {
 
+    /**
+     * Fill a stat value with this if it's not available
+     */
+    long STAT_NOT_AVAILABLE = -99L;
+
     long getCreationTime();
 
 }

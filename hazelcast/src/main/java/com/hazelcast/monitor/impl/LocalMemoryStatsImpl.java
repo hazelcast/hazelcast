@@ -2,6 +2,7 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalGCStats;
+import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -19,11 +20,13 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
     private long freePhysical;
 
-    private long maxOffHeap;
+    private long maxNativeMemory;
 
-    private long committedOffHeap;
+    private long committedNativeMemory;
 
-    private long usedOffHeap;
+    private long usedNativeMemory;
+
+    private long freeNativeMemory;
 
     private long maxHeap;
 
@@ -40,9 +43,9 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(totalPhysical);
         out.writeLong(freePhysical);
-        out.writeLong(maxOffHeap);
-        out.writeLong(committedOffHeap);
-        out.writeLong(usedOffHeap);
+        out.writeLong(maxNativeMemory);
+        out.writeLong(committedNativeMemory);
+        out.writeLong(usedNativeMemory);
         out.writeLong(maxHeap);
         out.writeLong(committedHeap);
         out.writeLong(usedHeap);
@@ -56,9 +59,9 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     public void readData(ObjectDataInput in) throws IOException {
         totalPhysical = in.readLong();
         freePhysical = in.readLong();
-        maxOffHeap = in.readLong();
-        committedOffHeap = in.readLong();
-        usedOffHeap = in.readLong();
+        maxNativeMemory = in.readLong();
+        committedNativeMemory = in.readLong();
+        usedNativeMemory = in.readLong();
         maxHeap = in.readLong();
         committedHeap = in.readLong();
         usedHeap = in.readLong();
@@ -85,35 +88,39 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public long getMaxOffHeap() {
-        return maxOffHeap;
+    public long getMaxNativeMemory() {
+        return maxNativeMemory;
     }
 
-    public void setMaxOffHeap(long maxOffHeap) {
-        this.maxOffHeap = maxOffHeap;
-    }
-
-    @Override
-    public long getCommittedOffHeap() {
-        return committedOffHeap;
-    }
-
-    public void setCommittedOffHeap(long allocated) {
-        this.committedOffHeap = allocated;
+    public void setMaxNativeMemory(long maxNativeMemory) {
+        this.maxNativeMemory = maxNativeMemory;
     }
 
     @Override
-    public long getUsedOffHeap() {
-        return usedOffHeap;
+    public long getCommittedNativeMemory() {
+        return committedNativeMemory;
     }
 
-    public void setUsedOffHeap(long used) {
-        this.usedOffHeap = used;
+    public void setCommittedNativeMemory(long allocated) {
+        this.committedNativeMemory = allocated;
     }
 
     @Override
-    public long getFreeOffHeap() {
-        return maxOffHeap - usedOffHeap;
+    public long getUsedNativeMemory() {
+        return usedNativeMemory;
+    }
+
+    public void setUsedNativeMemory(long used) {
+        this.usedNativeMemory = used;
+    }
+
+    @Override
+    public long getFreeNativeMemory() {
+        return freeNativeMemory;
+    }
+
+    public void setFreeNativeMemory(long freeNativeMemory) {
+        this.freeNativeMemory = freeNativeMemory;
     }
 
     @Override
@@ -162,9 +169,9 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         final StringBuilder sb = new StringBuilder("SerializableMemoryStats{");
         sb.append("totalPhysical=").append(totalPhysical);
         sb.append(", freePhysical=").append(freePhysical);
-        sb.append(", maxOffHeap=").append(maxOffHeap);
-        sb.append(", committedOffHeap=").append(committedOffHeap);
-        sb.append(", usedOffHeap=").append(usedOffHeap);
+        sb.append(", maxNativeMemory=").append(maxNativeMemory);
+        sb.append(", committedNativeMemory=").append(committedNativeMemory);
+        sb.append(", usedNativeMemory=").append(usedNativeMemory);
         sb.append(", maxHeap=").append(maxHeap);
         sb.append(", committedHeap=").append(committedHeap);
         sb.append(", usedHeap=").append(usedHeap);
@@ -184,9 +191,10 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         root.add("creationTime", creationTime);
         root.add("totalPhysical", totalPhysical);
         root.add("freePhysical", freePhysical);
-        root.add("maxOffHeap", maxOffHeap);
-        root.add("committedOffHeap", committedOffHeap);
-        root.add("usedOffHeap", usedOffHeap);
+        root.add("maxNativeMemory", maxNativeMemory);
+        root.add("committedNativeMemory", committedNativeMemory);
+        root.add("usedNativeMemory", usedNativeMemory);
+        root.add("freeNativeMemory", freeNativeMemory);
         root.add("maxHeap", maxHeap);
         root.add("committedHeap", committedHeap);
         root.add("usedHeap", usedHeap);
@@ -202,9 +210,10 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         creationTime = getLong(json, "creationTime", -1L);
         totalPhysical = getLong(json, "totalPhysical", -1L);
         freePhysical = getLong(json, "freePhysical", -1L);
-        maxOffHeap = getLong(json, "maxOffHeap", -1L);
-        committedOffHeap = getLong(json, "committedOffHeap", -1L);
-        usedOffHeap = getLong(json, "usedOffHeap", -1L);
+        maxNativeMemory = getLong(json, "maxNativeMemory", -1L);
+        committedNativeMemory = getLong(json, "committedNativeMemory", -1L);
+        usedNativeMemory = getLong(json, "usedNativeMemory", -1L);
+        freeNativeMemory = getLong(json, "freeNativeMemory", -1L);
         maxHeap = getLong(json, "maxHeap", -1L);
         committedHeap = getLong(json, "committedHeap", -1L);
         usedHeap = getLong(json, "usedHeap", -1L);
@@ -227,17 +236,17 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
         if (!heapStatsEquals(that)) {
             return false;
-        } else if (committedOffHeap != that.committedOffHeap) {
+        } else if (committedNativeMemory != that.committedNativeMemory) {
             return false;
         } else if (creationTime != that.creationTime) {
             return false;
         } else if (freePhysical != that.freePhysical) {
             return false;
-        }  else if (maxOffHeap != that.maxOffHeap) {
+        }  else if (maxNativeMemory != that.maxNativeMemory) {
             return false;
         } else if (totalPhysical != that.totalPhysical) {
             return false;
-        } else if (usedOffHeap != that.usedOffHeap) {
+        } else if (usedNativeMemory != that.usedNativeMemory) {
             return false;
         } else if (!that.getGCStats().equals(gcStats)) {
             return false;
@@ -265,13 +274,14 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         int result = (int) (creationTime ^ (creationTime >>> 32));
         result = 31 * result + (int) (totalPhysical ^ (totalPhysical >>> 32));
         result = 31 * result + (int) (freePhysical ^ (freePhysical >>> 32));
-        result = 31 * result + (int) (maxOffHeap ^ (maxOffHeap >>> 32));
-        result = 31 * result + (int) (committedOffHeap ^ (committedOffHeap >>> 32));
-        result = 31 * result + (int) (usedOffHeap ^ (usedOffHeap >>> 32));
+        result = 31 * result + (int) (maxNativeMemory ^ (maxNativeMemory >>> 32));
+        result = 31 * result + (int) (committedNativeMemory ^ (committedNativeMemory >>> 32));
+        result = 31 * result + (int) (usedNativeMemory ^ (usedNativeMemory >>> 32));
         result = 31 * result + (int) (maxHeap ^ (maxHeap >>> 32));
         result = 31 * result + (int) (committedHeap ^ (committedHeap >>> 32));
         result = 31 * result + (int) (usedHeap ^ (usedHeap >>> 32));
         result = 31 * result + (gcStats != null ? gcStats.hashCode() : 0);
         return result;
     }
+
 }

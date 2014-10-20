@@ -14,13 +14,13 @@ public interface LocalMemoryStats extends LocalInstanceStats {
 
     long getFreeHeap();
 
-    long getMaxOffHeap();
+    long getMaxNativeMemory();
 
-    long getCommittedOffHeap();
+    long getCommittedNativeMemory();
 
-    long getUsedOffHeap();
+    long getUsedNativeMemory();
 
-    long getFreeOffHeap();
+    long getFreeNativeMemory();
 
     LocalGCStats getGCStats();
 
