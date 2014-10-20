@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.util.EmptyStatement;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -42,7 +41,7 @@ public final class ConfigLoader {
     }
 
     public static URL locateConfig(final String path) {
-        if (path.isEmpty()){
+        if (path.isEmpty()) {
             return null;
         }
         URL url = asFile(path);
@@ -63,7 +62,7 @@ public final class ConfigLoader {
     }
 
     private static String extractPathOrNull(String path) {
-        if(path.startsWith(CLASSPATH_PREFIX)){
+        if (path.startsWith(CLASSPATH_PREFIX)) {
             return path.substring(CLASSPATH_PREFIX.length());
         }
         return null;

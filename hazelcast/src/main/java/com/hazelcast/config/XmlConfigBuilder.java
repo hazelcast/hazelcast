@@ -39,10 +39,6 @@ import java.util.Properties;
 import java.util.Set;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -50,32 +46,31 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.EXECUTOR_SERVICE;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.GROUP;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.HAZELCAST;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.IMPORT;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.JOB_TRACKER;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.LICENSE_KEY;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.LIST;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.LISTENERS;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.MANAGEMENT_CENTER;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.MAP;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.MEMBER_ATTRIBUTES;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.MULTIMAP;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.NETWORK;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.PARTITION_GROUP;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.PROPERTIES;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.QUEUE;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.REPLICATED_MAP;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.SECURITY;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.SEMAPHORE;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.SERIALIZATION;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.SERVICES;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.SET;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.TOPIC;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.WAN_REPLICATION;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.OFF_HEAP_MEMORY;
-import static com.hazelcast.config.XmlConfigBuilder.Elements.canOccurMultipleTimes;
+import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
+import static com.hazelcast.config.XmlElements.GROUP;
+import static com.hazelcast.config.XmlElements.IMPORT;
+import static com.hazelcast.config.XmlElements.JOB_TRACKER;
+import static com.hazelcast.config.XmlElements.LICENSE_KEY;
+import static com.hazelcast.config.XmlElements.LIST;
+import static com.hazelcast.config.XmlElements.LISTENERS;
+import static com.hazelcast.config.XmlElements.MANAGEMENT_CENTER;
+import static com.hazelcast.config.XmlElements.MAP;
+import static com.hazelcast.config.XmlElements.MEMBER_ATTRIBUTES;
+import static com.hazelcast.config.XmlElements.MULTIMAP;
+import static com.hazelcast.config.XmlElements.NETWORK;
+import static com.hazelcast.config.XmlElements.OFF_HEAP_MEMORY;
+import static com.hazelcast.config.XmlElements.PARTITION_GROUP;
+import static com.hazelcast.config.XmlElements.PROPERTIES;
+import static com.hazelcast.config.XmlElements.QUEUE;
+import static com.hazelcast.config.XmlElements.REPLICATED_MAP;
+import static com.hazelcast.config.XmlElements.SECURITY;
+import static com.hazelcast.config.XmlElements.SEMAPHORE;
+import static com.hazelcast.config.XmlElements.SERIALIZATION;
+import static com.hazelcast.config.XmlElements.SERVICES;
+import static com.hazelcast.config.XmlElements.SET;
+import static com.hazelcast.config.XmlElements.TOPIC;
+import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
+import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -87,6 +82,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     private static final int DEFAULT_VALUE = 5;
     private static final int THOUSAND_FACTOR = 5;
+    private final XmlConfigPreProcessor xmlConfigPreProcessor = new XmlConfigPreProcessor(this);
 
     private Config config;
     private InputStream in;
@@ -94,10 +90,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private URL configurationUrl;
     private Properties properties = System.getProperties();
     private Set<String> occurrenceSet = new HashSet<String>();
-    private Set<String> currentlyImportedFiles = new HashSet<String>();
     private Element root;
-    private XPathFactory xpathFactory = XPathFactory.newInstance();
-    private XPath xpath = xpathFactory.newXPath();
 
 
     /**
@@ -183,13 +176,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         } catch (final Throwable e) {
             domLevel3 = false;
         }
-
-        preprocess(root);
-        replaceImportStatementsWithActualFileContents(root);
+        xmlConfigPreProcessor.process(root);
         handleConfig(root);
     }
 
-    private Document parse(InputStream is) throws Exception {
+    Document parse(InputStream is) throws Exception {
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc;
         try {
@@ -220,150 +211,74 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         return doc;
     }
 
-    private void replaceImportStatementsWithActualFileContents(Node root) throws Exception {
-        Document document = root.getOwnerDocument();
-        NodeList misplacedImports = (NodeList) xpath.evaluate("//" + IMPORT.name + "/parent::*[not(name()=\"" + HAZELCAST.name + "\")]", document,
-                XPathConstants.NODESET);
-        if (misplacedImports.getLength() > 0) {
-            throw new IllegalStateException("<import> element can appear only in the top level of the XML");
-        }
-        NodeList importTags = (NodeList) xpath.evaluate("/" + HAZELCAST.name + "/" + IMPORT.name, document,
-                XPathConstants.NODESET);
-        for (Node node : new IterableNodeList(importTags)) {
-            NamedNodeMap attributes = node.getAttributes();
-            Node resourceAtrribute = attributes.getNamedItem("resource");
-            String resource = resourceAtrribute.getTextContent();
-            URL url = ConfigLoader.locateConfig(resource);
-            if (url == null) {
-                throw new HazelcastException("Failed to load resource : " + resource);
-            }
-            if (!currentlyImportedFiles.add(url.getPath())) {
-                throw new HazelcastException("Cyclic loading of resource " + url.getPath() + " is detected !");
-            }
-            Document doc = parse(url.openStream());
-            Element importedRoot = doc.getDocumentElement();
-            preprocess(importedRoot);
-            replaceImportStatementsWithActualFileContents(importedRoot);
-            for (Node fromImportedDoc : new IterableNodeList(importedRoot.getChildNodes())) {
-                Node importedNode = root.getOwnerDocument().importNode(fromImportedDoc, true);
-                root.insertBefore(importedNode, node);
-            }
-            root.removeChild(node);
-        }
-    }
-
-    private void preprocess(Node root) throws XPathExpressionException {
-        NodeList misplacedHazelcastTag = (NodeList) xpath.evaluate("//" + HAZELCAST.name, root.getOwnerDocument(),
-                XPathConstants.NODESET);
-        if (misplacedHazelcastTag.getLength() > 1) {
-            throw new IllegalStateException("<hazelcast> element can appear only once in the XML");
-        }
-        NamedNodeMap attributes = root.getAttributes();
-        if (attributes != null) {
-            for (int k = 0; k < attributes.getLength(); k++) {
-                Node attribute = attributes.item(k);
-                replaceVariables(attribute);
-
-            }
-        }
-        if (root.getNodeValue() != null) {
-            replaceVariables(root);
-        }
-        final NodeList childNodes = root.getChildNodes();
-        for (int k = 0; k < childNodes.getLength(); k++) {
-            Node child = childNodes.item(k);
-            preprocess(child);
-        }
-    }
-
-    private void replaceVariables(Node node) {
-        String value = node.getNodeValue();
-        StringBuilder sb = new StringBuilder();
-        int endIndex = -1;
-        int startIndex = value.indexOf("${");
-        while (startIndex > -1) {
-            endIndex = value.indexOf('}', startIndex);
-            if (endIndex == -1) {
-                LOGGER.warning("Bad variable syntax. Could not find a closing curly bracket '}' on node: " + node.getLocalName());
-                break;
-            }
-            String variable = value.substring(startIndex + 2, endIndex);
-            String variableReplacement = properties.getProperty(variable);
-            if (variableReplacement != null) {
-                sb.append(variableReplacement);
-            } else {
-                sb.append(value.substring(startIndex, endIndex + 1));
-                LOGGER.warning("Could not find a value for property  '" + variable + "' on node: " + node.getLocalName());
-            }
-
-            startIndex = value.indexOf("${", endIndex);
-        }
-
-        sb.append(value.substring(endIndex + 1));
-        node.setNodeValue(sb.toString());
-    }
-
     private void handleConfig(final Element docElement) throws Exception {
         for (org.w3c.dom.Node node : new IterableNodeList(docElement.getChildNodes())) {
             final String nodeName = cleanNodeName(node.getNodeName());
             if (occurrenceSet.contains(nodeName)) {
                 throw new IllegalStateException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
             }
-            if (NETWORK.isEqual(nodeName)) {
-                handleNetwork(node);
-            } else if (IMPORT.isEqual(nodeName)) {
-                throw new IllegalStateException("<import> element can appear only in the top level of the XML");
-            } else if (GROUP.isEqual(nodeName)) {
-                handleGroup(node);
-            } else if (PROPERTIES.isEqual(nodeName)) {
-                fillProperties(node, config.getProperties());
-            } else if (WAN_REPLICATION.isEqual(nodeName)) {
-                handleWanReplication(node);
-            } else if (EXECUTOR_SERVICE.isEqual(nodeName)) {
-                handleExecutor(node);
-            } else if (SERVICES.isEqual(nodeName)) {
-                handleServices(node);
-            } else if (QUEUE.isEqual(nodeName)) {
-                handleQueue(node);
-            } else if (MAP.isEqual(nodeName)) {
-                handleMap(node);
-            } else if (MULTIMAP.isEqual(nodeName)) {
-                handleMultiMap(node);
-            } else if (REPLICATED_MAP.isEqual(nodeName)) {
-                handleReplicatedMap(node);
-            } else if (LIST.isEqual(nodeName)) {
-                handleList(node);
-            } else if (SET.isEqual(nodeName)) {
-                handleSet(node);
-            } else if (TOPIC.isEqual(nodeName)) {
-                handleTopic(node);
-            } else if (OFF_HEAP_MEMORY.isEqual(nodeName)) {
-                fillOffHeapMemoryConfig(node, config.getOffHeapMemoryConfig());
-            } else if (JOB_TRACKER.isEqual(nodeName)) {
-                handleJobTracker(node);
-            } else if (SEMAPHORE.isEqual(nodeName)) {
-                handleSemaphore(node);
-            } else if (LISTENERS.isEqual(nodeName)) {
-                handleListeners(node);
-            } else if (PARTITION_GROUP.isEqual(nodeName)) {
-                handlePartitionGroup(node);
-            } else if (SERIALIZATION.isEqual(nodeName)) {
-                handleSerialization(node);
-            } else if (SECURITY.isEqual(nodeName)) {
-                handleSecurity(node);
-            } else if (MEMBER_ATTRIBUTES.isEqual(nodeName)) {
-                handleMemberAttributes(node);
-            } else if (LICENSE_KEY.isEqual(nodeName)) {
-                config.setLicenseKey(getTextContent(node));
-            } else if (MANAGEMENT_CENTER.isEqual(nodeName)) {
-                handleManagementCenterConfig(node);
-            } else {
+            if (handleXmlNode(node, nodeName)) {
                 continue;
             }
             if (!canOccurMultipleTimes(nodeName)) {
                 occurrenceSet.add(nodeName);
             }
         }
+    }
+
+    private boolean handleXmlNode(Node node, String nodeName) throws Exception {
+        if (NETWORK.isEqual(nodeName)) {
+            handleNetwork(node);
+        } else if (IMPORT.isEqual(nodeName)) {
+            throw new IllegalStateException("<import> element can appear only in the top level of the XML");
+        } else if (GROUP.isEqual(nodeName)) {
+            handleGroup(node);
+        } else if (PROPERTIES.isEqual(nodeName)) {
+            fillProperties(node, config.getProperties());
+        } else if (WAN_REPLICATION.isEqual(nodeName)) {
+            handleWanReplication(node);
+        } else if (EXECUTOR_SERVICE.isEqual(nodeName)) {
+            handleExecutor(node);
+        } else if (SERVICES.isEqual(nodeName)) {
+            handleServices(node);
+        } else if (QUEUE.isEqual(nodeName)) {
+            handleQueue(node);
+        } else if (MAP.isEqual(nodeName)) {
+            handleMap(node);
+        } else if (MULTIMAP.isEqual(nodeName)) {
+            handleMultiMap(node);
+        } else if (REPLICATED_MAP.isEqual(nodeName)) {
+            handleReplicatedMap(node);
+        } else if (LIST.isEqual(nodeName)) {
+            handleList(node);
+        } else if (SET.isEqual(nodeName)) {
+            handleSet(node);
+        } else if (TOPIC.isEqual(nodeName)) {
+            handleTopic(node);
+        } else if (OFF_HEAP_MEMORY.isEqual(nodeName)) {
+            fillOffHeapMemoryConfig(node, config.getOffHeapMemoryConfig());
+        } else if (JOB_TRACKER.isEqual(nodeName)) {
+            handleJobTracker(node);
+        } else if (SEMAPHORE.isEqual(nodeName)) {
+            handleSemaphore(node);
+        } else if (LISTENERS.isEqual(nodeName)) {
+            handleListeners(node);
+        } else if (PARTITION_GROUP.isEqual(nodeName)) {
+            handlePartitionGroup(node);
+        } else if (SERIALIZATION.isEqual(nodeName)) {
+            handleSerialization(node);
+        } else if (SECURITY.isEqual(nodeName)) {
+            handleSecurity(node);
+        } else if (MEMBER_ATTRIBUTES.isEqual(nodeName)) {
+            handleMemberAttributes(node);
+        } else if (LICENSE_KEY.isEqual(nodeName)) {
+            config.setLicenseKey(getTextContent(node));
+        } else if (MANAGEMENT_CENTER.isEqual(nodeName)) {
+            handleManagementCenterConfig(node);
+        } else {
+            return true;
+        }
+        return false;
     }
 
     private void handleServices(final Node node) {
@@ -1446,56 +1361,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 permConfig.addAction(getTextContent(child).trim());
             }
         }
-    }
-
-    enum Elements {
-        HAZELCAST("hazelcast", false),
-        IMPORT("import", true),
-        GROUP("group", false),
-        LICENSE_KEY("license-key", false),
-        MANAGEMENT_CENTER("management-center", false),
-        PROPERTIES("properties", false),
-        WAN_REPLICATION("wan-replication", true),
-        NETWORK("network", false),
-        PARTITION_GROUP("partition-group", false),
-        EXECUTOR_SERVICE("executor-service", true),
-        QUEUE("queue", true),
-        MAP("map", true),
-        MULTIMAP("multimap", true),
-        REPLICATED_MAP("replicatedmap", true),
-        LIST("list", true),
-        SET("set", true),
-        TOPIC("topic", true),
-        JOB_TRACKER("jobtracker", true),
-        SEMAPHORE("semaphore", true),
-        LISTENERS("listeners", false),
-        SERIALIZATION("serialization", false),
-        SERVICES("services", false),
-        SECURITY("security", false),
-        MEMBER_ATTRIBUTES("member-attributes", false),
-        OFF_HEAP_MEMORY("off-heap-memory", false);
-
-        private final String name;
-        private final boolean multipleOccurance;
-
-        Elements(String name, boolean multipleOccurance) {
-            this.name = name;
-            this.multipleOccurance = multipleOccurance;
-        }
-
-        public static boolean canOccurMultipleTimes(String name) {
-            for (Elements element : values()) {
-                if (name.equals(element.name)) {
-                    return element.multipleOccurance;
-                }
-            }
-            return false;
-        }
-
-        public boolean isEqual(String name) {
-            return this.name.equals(name);
-        }
-
     }
 
 }

@@ -134,8 +134,8 @@ You can compose your Hazelcast XML Configuration file from multiple XML configur
 hazelcast-config.xml
 ```xml
 <hazelcast>
-  <import resource="development-group-config.xml">
-  <import resource="development-network-config.xml">
+  <import resource="development-group-config.xml"/>
+  <import resource="development-network-config.xml"/>
 </hazelcast>
 ```
 
@@ -169,8 +169,8 @@ development-network-config.xml
 
 ```xml
 <hazelcast>
-  <import resource="file:////etc/hazelcast/development-group-config.xml"> <!-- loaded from filesystem -->
-  <import resource="classpath:development-network-config.xml">  <!-- loaded from classpath -->
+  <import resource="file:///etc/hazelcast/development-group-config.xml"/> <!-- loaded from filesystem -->
+  <import resource="classpath:development-network-config.xml"/>  <!-- loaded from classpath -->
 </hazelcast>
 ```
 
@@ -178,7 +178,7 @@ development-network-config.xml
 
 ```xml
 <hazelcast>
-  <import resource="${environment}-group-config.xml">
-  <import resource="${environment}-network-config.xml">
+  <import resource="${environment}-group-config.xml"/>
+  <import resource="${environment}-network-config.xml"/>
 </hazelcast>
 ```
