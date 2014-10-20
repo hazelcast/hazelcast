@@ -51,9 +51,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 
 /**
- * This class contains all the ID hooks for IdentifiedDataSerializable classes used inside the JCache framework.
- * CacheProxy operations serializer are defined in here. This factory class is used by internal serialization system to create
- * IdentifiedDataSerializable classes without using reflection.
+ * {@link CacheDataSerializerHook} contains all the ID hooks for {@link IdentifiedDataSerializable} classes used inside the
+ * JCache framework.
+ * <p>CacheProxy operations are mapped here. This factory class is used by internal serialization system to create
+ * {@link IdentifiedDataSerializable} classes without using reflection.</p>
  */
 public final class CacheDataSerializerHook
         implements DataSerializerHook {

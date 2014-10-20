@@ -59,7 +59,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -698,16 +697,19 @@ public class EvictionTest extends HazelcastTestSupport {
         assertSizeEventually(nsize, map);
     }
 
+    /**
+     * Background task {@link com.hazelcast.map.impl.eviction.ExpirationManager.ClearExpiredRecordsTask}
+     * should sweep expired records eventually.
+     */
     @Test
+    @Category(NightlyTest.class)
     public void testMapPutTTLWithListener() throws InterruptedException {
+        final String mapName = randomMapName();
         final HazelcastInstance instance = createHazelcastInstance();
 
         final int putCount = 100;
         final CountDownLatch latch = new CountDownLatch(putCount);
-        final IMap map = instance.getMap("testMapPutTTLWithListener");
-
-        final AtomicBoolean error = new AtomicBoolean(false);
-        final Set<Long> times = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
+        final IMap map = instance.getMap(mapName);
 
         map.addEntryListener(new EntryAdapter() {
             public void entryEvicted(final EntryEvent event) {
@@ -715,13 +717,14 @@ public class EvictionTest extends HazelcastTestSupport {
             }
         }, true);
 
-        int ttl = (int) (Math.random() * 3000);
+        final int ttl = (int) (Math.random() * 5000);
+
         for (int j = 0; j < putCount; j++) {
             map.put(j, j, ttl, TimeUnit.MILLISECONDS);
         }
 
-        // wait until eviction is completed.
-        assertOpenEventually(latch);
+        // wait until eviction is complete.
+        assertOpenEventually(latch, TimeUnit.MINUTES.toSeconds(10));
     }
 
     /**
@@ -1035,17 +1038,17 @@ public class EvictionTest extends HazelcastTestSupport {
         for (int i = 0; i < numberOfItemsToBeAdded; i++) {
             map1.put(i, i);
         }
+
         // 1. Wait for idle expiration.
         sleepSeconds(1);
 
-        assertTrueEventually(new AssertTask() {
+        // 2. On backups expiration has 10 seconds delay. So entries on backups should be there.
+        // but on owners they should be expired.
+        final long now = Clock.currentTimeMillis();
 
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                // 2. On backups expiration has 10 seconds delay. So entries on backups should be there.
-                // but on owners they should be expired.
-                final long now = Clock.currentTimeMillis();
-
                 final int notExpiredEntryCountOnNode1 = getNotExpiredEntryCount(map1, now, backup);
                 final int notExpiredEntryCountOnNode2 = getNotExpiredEntryCount(map2, now, backup);
 
@@ -1056,7 +1059,6 @@ public class EvictionTest extends HazelcastTestSupport {
 
 
     }
-
 
     private int getNotExpiredEntryCount(IMap map, long now, boolean backup) {
         int count = 0;
@@ -1075,7 +1077,7 @@ public class EvictionTest extends HazelcastTestSupport {
                 }
                 final RecordStore recordStore = container.getRecordStore(map.getName());
                 final DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
-                final Iterator<Record> iterator = defaultRecordStore.iterator(now, true);
+                final Iterator<Record> iterator = defaultRecordStore.iterator(now, backup);
                 while (iterator.hasNext()) {
                     iterator.next();
                     count++;

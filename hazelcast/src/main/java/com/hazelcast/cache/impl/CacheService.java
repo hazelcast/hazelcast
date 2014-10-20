@@ -59,12 +59,16 @@ import java.util.concurrent.ConcurrentMap;
  * <p>
  * If registered, it will provide all above cache operation for all partitions of the node which it is registered on.
  * </p>
+ * <p><b>Distributed Cache Name:</b> is used for providing a unique name to a cache object to overcome cache manager scoping which
+ * depends on URI and class loader parameters. It's a simple concatenation of CacheNamePrefix and cache name where CacheNamePrefix
+ * is calculated by each caches manager using {@link HazelcastCacheManager#cacheNamePrefix()}.
+ * </p>
  */
 public class CacheService
         implements ManagedService, RemoteService, MigrationAwareService, EventPublishingService<Object, CacheEventListener> {
 
     /**
-     * Service name
+     * Cache service name literal
      */
     public static final String SERVICE_NAME = "hz:impl:cacheService";
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
@@ -154,14 +158,40 @@ public class CacheService
 
     //region CacheService Impls
 
+    /**
+     * Create or get the {@link ICacheRecordStore} via internal {@link CachePartitionSegment} using cache name and partitionId
+     * @param name Cache name
+     * @param partitionId partition id of the cache
+     * @return {@link ICacheRecordStore}
+     * @see CachePartitionSegment
+     * @see ICacheRecordStore
+     */
     public ICacheRecordStore getOrCreateCache(String name, int partitionId) {
         return segments[partitionId].getOrCreateCache(name);
     }
 
+    /**
+     *
+     * Gets the {@link ICacheRecordStore} via internal {@link CachePartitionSegment} using cache name and partitionId
+     * @param name Cache name
+     * @param partitionId partition id of the cache
+     * @return {@link ICacheRecordStore}  or null if not created yet
+     * @see CachePartitionSegment
+     * @see ICacheRecordStore
+     */
     public ICacheRecordStore getCache(String name, int partitionId) {
         return segments[partitionId].getCache(name);
     }
 
+    /**
+     * Destroys the internal content, configuration and releases all resources of a cache from all partitions on all nodes
+     *
+     * <p>Note: This operation delete cache from the cluster as if not created before. the caller node won't destroyed and should
+     * be destroyed by the caller node.</p>
+     * @param objectName distributed cache name
+     * @param isLocal if true, destroys on this node only
+     * @param callerUuid the uuid of the node that called this method
+     */
     public void destroyCache(String objectName, boolean isLocal, String callerUuid) {
         for (CachePartitionSegment segment : segments) {
             segment.deleteCache(objectName);
@@ -189,6 +219,12 @@ public class CacheService
         }
     }
 
+    /**
+     * Creates the cache configuration on the cluster if not created previously.
+     * @param config Cache configuration to be created
+     * @param isLocal creates on current node only if true
+     * @return is it created or not
+     */
     public boolean createCacheConfigIfAbsent(CacheConfig config, boolean isLocal) {
         final CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
         final boolean created = localConfig == null;
@@ -217,10 +253,19 @@ public class CacheService
         }
     }
 
+    /**
+     * remove the cache configuration with the provided name
+     * @param name distributed cache name
+     */
     public void deleteCacheConfig(String name) {
         configs.remove(name);
     }
 
+    /**
+     * creates the cache statistics with provided cache name
+     * @param name distributed cache name
+     * @return {@link CacheStatisticsImpl}
+     */
     public CacheStatisticsImpl createCacheStatIfAbsent(String name) {
         if (!statistics.containsKey(name)) {
             statistics.putIfAbsent(name, new CacheStatisticsImpl());

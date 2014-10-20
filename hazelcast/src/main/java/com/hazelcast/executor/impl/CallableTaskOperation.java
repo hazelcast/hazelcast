@@ -16,9 +16,8 @@
 
 package com.hazelcast.executor.impl;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.util.concurrent.Callable;
 
 public final class CallableTaskOperation extends BaseCallableTaskOperation
         implements IdentifiedDataSerializable {
@@ -26,8 +25,8 @@ public final class CallableTaskOperation extends BaseCallableTaskOperation
     public CallableTaskOperation() {
     }
 
-    public CallableTaskOperation(String name, String uuid, Callable callable) {
-        super(name, uuid, callable);
+    public CallableTaskOperation(String name, String uuid, Data callableData) {
+        super(name, uuid, callableData);
     }
 
     @Override

@@ -43,6 +43,14 @@ Let's describe each property.
 	
 		`<max-size policy="USED_HEAP_PERCENTAGE">10</max-size>`
 
+	- `FREE_HEAP_SIZE`: Minimum free heap size in megabytes for each JVM.
+
+		`<max-size policy="FREE_HEAP_SIZE">512</max-size>`
+
+	- `FREE_HEAP_PERCENTAGE`: Minimum free heap size percentage for each JVM. If, for example, JVM is configured to have 1000 MB and this value is 10, then the map entries will be evicted when free heap size is below 100 MB.
+
+		`<max-size policy="FREE_HEAP_PERCENTAGE">10</max-size>`
+
 -	`eviction-percentage`: When `max-size` is reached, specified percentage of the map will be evicted. If 25 is set for example, 25% of the entries will be evicted. Setting this property to a smaller value will cause eviction of small number of map entries. So, if map entries are inserted frequently, smaller percentage values may lead to overheads. Valid values are integers between 0 and 100. Default value is 25.
 
 

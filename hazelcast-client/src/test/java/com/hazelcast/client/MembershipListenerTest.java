@@ -46,6 +46,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     @After
     public void tearDown() {
         Hazelcast.shutdownAll();
+        HazelcastClient.shutdownAll();
     }
 
     @Test

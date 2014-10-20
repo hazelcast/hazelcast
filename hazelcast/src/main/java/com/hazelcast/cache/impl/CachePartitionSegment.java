@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * <h1>Cache Partition Segment</h1>
  * <p>
- * CachePartitionSegment is a data access structure responsible from all cache data of a partition. Its responsible from creating
+ * CachePartitionSegment is a data access structure responsible from all cache data of a partition. It's responsible from creating
  * and/or returning the actual cache data object by name {@link com.hazelcast.cache.impl.ICacheRecordStore}
  * </p>
  *

@@ -16,16 +16,46 @@
 
 package com.hazelcast.cache.impl.record;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
-/**
- * Object format is {@link com.hazelcast.cache.impl.record.CacheRecord}
- */
-public class CacheObjectRecord
-        extends AbstractCacheRecord<Object> {
+import java.io.IOException;
 
-    CacheObjectRecord(Data key, Object value, long expiryTime) {
-        super(key, value, expiryTime);
+/**
+ * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} which has internal object format
+ */
+public class CacheObjectRecord extends AbstractCacheRecord<Object> {
+
+    private Object value;
+
+    public CacheObjectRecord() {
     }
 
+    CacheObjectRecord(Data key, Object value, long expiryTime) {
+        super(key, expiryTime);
+        this.value = value;
+    }
+
+    @Override
+    public Object getValue() {
+        return value;
+    }
+
+    @Override
+    public void setValue(Object value) {
+        this.value = value;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeObject(value);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        value = in.readObject();
+    }
 }

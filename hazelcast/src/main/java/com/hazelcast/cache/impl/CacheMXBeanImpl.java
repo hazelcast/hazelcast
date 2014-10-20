@@ -23,7 +23,8 @@ import javax.cache.management.CacheMXBean;
 /**
  * Implementation of the {@link CacheMXBean}.
  *
- * This class is published through MXBean. It's a simple simple wrapper around {@link CacheConfig} to access cache configuration.
+ * This class is published through MXBean. It's a simple wrapper around {@link CacheConfig} for readonly access to cache
+ * configuration.
  * @see com.hazelcast.config.CacheConfig
  */
 public class CacheMXBeanImpl
