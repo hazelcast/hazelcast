@@ -175,6 +175,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
                 public void run() {
                     final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
                     hz.getMap(mapName);
+                    assertClusterSizeEventually(instanceCount, hz, 20);
                     latch.countDown();
                 }
             });

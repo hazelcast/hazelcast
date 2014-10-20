@@ -51,13 +51,14 @@ final class TestNodeRegistry {
 
     private final Address[] addresses;
     private final ConcurrentMap<Address, NodeEngineImpl> nodes = new ConcurrentHashMap<Address, NodeEngineImpl>(10);
+    private final Object joinerLock = new Object();
 
     TestNodeRegistry(Address[] addresses) {
         this.addresses = addresses;
     }
 
     NodeContext createNodeContext(Address address) {
-        return new MockNodeContext(addresses, nodes, address);
+        return new MockNodeContext(addresses, nodes, address, joinerLock);
     }
 
     HazelcastInstance getInstance(Address address) {
@@ -97,12 +98,13 @@ final class TestNodeRegistry {
         final Address[] addresses;
         final ConcurrentMap<Address, NodeEngineImpl> nodes;
         final Address thisAddress;
-        final Object joinerLock = new Object();
+        final Object joinerLock;
 
-        public MockNodeContext(Address[] addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Address thisAddress) {
+        public MockNodeContext(Address[] addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Address thisAddress, Object joinerLock) {
             this.addresses = addresses;
             this.nodes = nodes;
             this.thisAddress = thisAddress;
+            this.joinerLock = joinerLock;
         }
 
         public AddressPicker createAddressPicker(Node node) {
