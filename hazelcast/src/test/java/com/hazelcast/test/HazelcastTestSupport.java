@@ -107,7 +107,7 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("the size of the collection is not correct", expectedSize, c.size());
+                assertEquals("the size of the collection is not correct: found-content:"+c, expectedSize, c.size());
             }
         }, timeoutSeconds);
     }
