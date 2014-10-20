@@ -2,7 +2,6 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalGCStats;
-import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
