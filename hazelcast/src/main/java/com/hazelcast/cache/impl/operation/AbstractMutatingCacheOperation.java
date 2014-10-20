@@ -24,7 +24,9 @@ import com.hazelcast.spi.BackupAwareOperation;
 import java.io.IOException;
 
 /**
- * Base modifying cache operation, this operation publishes COMPLETE events
+ * Base class for all mutable cache operation, main purpose of this abstract class is providing the completion event
+ * functionality.
+ * <p>this operation publishes COMPLETE events</p>
  */
 public abstract class AbstractMutatingCacheOperation
         extends AbstractCacheOperation
