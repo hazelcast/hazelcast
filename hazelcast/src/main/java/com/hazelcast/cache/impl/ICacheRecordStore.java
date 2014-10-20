@@ -50,9 +50,9 @@ public interface ICacheRecordStore {
      * because the entry is missing from the cache, the Cache's {@link javax.cache.integration.CacheLoader}
      * is called in an attempt to load the entry.
      * </p>
-     * @param key key
+     * @param key the key whose associated value is to be returned
      * @param expiryPolicy custom expiry policy or null to use configured default value.
-     * @return value in previously configured type
+     * @return the element, or null, if it does not exist.
      */
     Object get(Data key, ExpiryPolicy expiryPolicy);
 
@@ -73,8 +73,6 @@ public interface ICacheRecordStore {
      * @param value value to be associated with the specified key
      * @param expiryPolicy custom expiry policy or null to use configured default value.
      * @param caller  uuid of the calling node or client
-     * @return the value associated with the key at the start of the operation or
-     *         null if none was associated
      */
     void put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
 
@@ -101,7 +99,6 @@ public interface ICacheRecordStore {
     Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
 
     /**
-     /**
      * Removes the mapping for a key from this cache if it is present.
      * <p>
      * More formally, if this cache contains a mapping from key <tt>k</tt> to
@@ -115,10 +112,11 @@ public interface ICacheRecordStore {
      * The cache will not contain a mapping for the specified key once the
      * call returns.
      *
-     * @param key key whose mapping is to be removed from the cache
+     * @param key key with which the specified value is to be associated
+     * @param value value to be associated with the specified key
      * @param expiryPolicy custom expiry policy or null to use configured default value.
      * @param caller  uuid of the calling node or client
-     * @return returns false if there was no matching key
+     * @return true if a value was set.
      */
     boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
 
@@ -161,7 +159,6 @@ public interface ICacheRecordStore {
      * @param key key whose mapping is to be removed from the cache
      * @param caller  uuid of the calling node or client
      * @return returns false if there was no matching key
-     * @return
      */
     boolean remove(Data key, String caller);
 
@@ -282,8 +279,8 @@ public interface ICacheRecordStore {
      *
      * @param keySet The keys whose associated values are to be returned.
      * @param expiryPolicy custom expiry policy or null to use configured default value.
-     * @return A map of entries that were found for the given keys. Keys not found
-     *         in the cache are not in the returned map.
+     * @return A simple wrapper for map of entries that were found for the given keys. Keys not found
+     *         in the cache are not in the result.
      */
     MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy);
 
@@ -318,7 +315,7 @@ public interface ICacheRecordStore {
 
     /**
      * Gets the configuration of the cache that this store belongs to.
-     * @return
+     * @return {@link CacheConfig}
      */
     CacheConfig getConfig();
 
@@ -346,8 +343,8 @@ public interface ICacheRecordStore {
      * This is simply a put operation on the internal map data
      * without any CacheLoad
      *
-     * @param key
-     * @param record
+     * @param key the key to the entry
+     * @param record the value to be associated with the specified key
      */
     void setRecord(Data key, CacheRecord record);
 
