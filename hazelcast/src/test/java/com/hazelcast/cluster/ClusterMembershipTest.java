@@ -19,6 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
@@ -27,10 +28,15 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EventObject;
@@ -43,17 +49,93 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClusterMembershipTest extends HazelcastTestSupport {
+
+    @Test(expected = NullPointerException.class)
+    public void testAddMembershipListener_whenNullListener() {
+        HazelcastInstance hz = createHazelcastInstance();
+        Cluster cluster = hz.getCluster();
+
+        cluster.addMembershipListener(null);
+    }
+
+    @Test
+    public void testAddMembershipListener_whenListenerRegisteredTwice() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        Cluster cluster = hz1.getCluster();
+
+        final MembershipListener membershipListener = mock(MembershipListener.class);
+
+        String id1 = cluster.addMembershipListener(membershipListener);
+        String id2 = cluster.addMembershipListener(membershipListener);
+
+        // first we check if the registration id's are different
+        assertNotEquals(id1, id2);
+
+        // an now we make sure that if a member joins the cluster, the same interface gets invoked twice.
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                //now we verify that the memberAdded method is called twice.
+                verify(membershipListener, times(2)).memberAdded(any(MembershipEvent.class));
+            }
+        });
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testRemoveMembershipListener_whenNullListener() {
+        HazelcastInstance hz = createHazelcastInstance();
+        Cluster cluster = hz.getCluster();
+
+        cluster.removeMembershipListener(null);
+    }
+
+    @Test
+    public void testRemoveMembershipListener_whenNonExistingRegistrationId() {
+        HazelcastInstance hz = createHazelcastInstance();
+        Cluster cluster = hz.getCluster();
+
+        boolean result = cluster.removeMembershipListener("notexist");
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testRemoveMembershipListener() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        Cluster cluster = hz1.getCluster();
+
+        MembershipListener membershipListener = mock(MembershipListener.class);
+
+        String id = cluster.addMembershipListener(membershipListener);
+        boolean removed = cluster.removeMembershipListener(id);
+
+        assertTrue(removed);
+
+        // now we add a member
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+
+        // and verify that the listener isn't called.
+        verify(membershipListener,never()).memberAdded(any(MembershipEvent.class));
+    }
 
     @Test
     public void testMembershipListener() {
