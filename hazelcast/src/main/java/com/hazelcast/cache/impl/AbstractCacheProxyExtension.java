@@ -28,6 +28,8 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -164,10 +166,9 @@ abstract class AbstractCacheProxyExtension<K, V>
         final Map<K, V> result = new HashMap<K, V>();
         final Collection<Integer> partitions = getPartitionsForKeys(ks);
         try {
-            final CacheGetAllOperationFactory factory = new CacheGetAllOperationFactory(getDistributedObjectName(), ks,
-                    expiryPolicy);
-            final Map<Integer, Object> responses = getNodeEngine().getOperationService()
-                                                                  .invokeOnPartitions(getServiceName(), factory, partitions);
+            OperationFactory factory = operationProvider.createGetAllOperationFactory(ks, expiryPolicy);
+            OperationService operationService = getNodeEngine().getOperationService();
+            Map<Integer, Object> responses = operationService.invokeOnPartitions(getServiceName(), factory, partitions);
             for (Object response : responses.values()) {
                 final Object responseObject = serializationService.toObject(response);
                 final Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) responseObject).getEntrySet();
@@ -258,18 +259,12 @@ abstract class AbstractCacheProxyExtension<K, V>
         ensureOpen();
         try {
             final SerializationService serializationService = getNodeEngine().getSerializationService();
-            final CacheSizeOperationFactory operationFactory = new CacheSizeOperationFactory(getDistributedObjectName());
+            OperationFactory operationFactory = operationProvider.createSizeOperationFactory();
             final Map<Integer, Object> results = getNodeEngine().getOperationService()
                                                                 .invokeOnAllPartitions(getServiceName(), operationFactory);
             int total = 0;
             for (Object result : results.values()) {
-                Integer size;
-                if (result instanceof Data) {
-                    size = serializationService.toObject((Data) result);
-                } else {
-                    size = (Integer) result;
-                }
-                total += size;
+                total += (Integer)serializationService.toObject(result);
             }
             return total;
         } catch (Throwable t) {

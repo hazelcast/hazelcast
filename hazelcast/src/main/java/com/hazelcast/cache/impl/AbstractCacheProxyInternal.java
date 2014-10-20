@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
@@ -111,12 +112,12 @@ abstract class AbstractCacheProxyInternal<K, V>
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
         }
         final Data keyData = serializationService.toData(key);
-        final Data valueData = oldValue != null ? serializationService.toData(oldValue) : null;
+        final Data valueData = serializationService.toData(oldValue);
         final Operation operation;
         if (isGet) {
-            operation = new CacheGetAndRemoveOperation(getDistributedObjectName(), keyData);
+            operation = operationProvider.createGetAndRemoveOperation(keyData);
         } else {
-            operation = new CacheRemoveOperation(getDistributedObjectName(), keyData, valueData);
+            operation = operationProvider.createRemoveOperation(keyData, valueData);
         }
         return invoke(operation, keyData, withCompletionEvent);
     }
@@ -133,13 +134,13 @@ abstract class AbstractCacheProxyInternal<K, V>
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, newValue);
         }
         final Data keyData = serializationService.toData(key);
-        final Data oldValueData = oldValue != null ? serializationService.toData(oldValue) : null;
+        final Data oldValueData = serializationService.toData(oldValue);
         final Data newValueData = serializationService.toData(newValue);
         final Operation operation;
         if (isGet) {
-            operation = new CacheGetAndReplaceOperation(getDistributedObjectName(), keyData, newValueData, expiryPolicy);
+            operation = operationProvider.createGetAndReplaceOperation(keyData, newValueData, expiryPolicy);
         } else {
-            operation = new CacheReplaceOperation(getDistributedObjectName(), keyData, oldValueData, newValueData, expiryPolicy);
+            operation = operationProvider.createReplaceOperation(keyData, oldValueData, newValueData, expiryPolicy);
         }
         return invoke(operation, keyData, withCompletionEvent);
     }
@@ -162,8 +163,9 @@ abstract class AbstractCacheProxyInternal<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = serializationService.toData(key);
         final Data valueData = serializationService.toData(value);
-        final Operation op = new CachePutIfAbsentOperation(getDistributedObjectName(), keyData, valueData, expiryPolicy);
-        return invoke(op, keyData, withCompletionEvent);
+//        final Operation op = new CachePutIfAbsentOperation(getDistributedObjectName(), keyData, valueData, expiryPolicy);
+        Operation operation = operationProvider.createPutIfAbsentOperation(keyData, valueData, expiryPolicy);
+        return invoke(operation, keyData, withCompletionEvent);
     }
 
     protected void removeAllInternal(Set<? extends K> keys, boolean isRemoveAll) {
@@ -179,8 +181,7 @@ abstract class AbstractCacheProxyInternal<K, V>
         final int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
         final Integer completionId = registerCompletionLatch(partitionCount);
         final OperationService operationService = getNodeEngine().getOperationService();
-        final CacheClearOperationFactory operationFactory = new CacheClearOperationFactory(getDistributedObjectName(), keysData,
-                isRemoveAll, completionId);
+        OperationFactory operationFactory = operationProvider.createClearOperationFactory(keysData, isRemoveAll, completionId);
         try {
             final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
             int completionCount = 0;

@@ -93,9 +93,11 @@ public class CacheProxy<K, V>
         ensureOpen();
         validateNotNull(key);
         final Data k = serializationService.toData(key);
-        final Operation op = new CacheContainsKeyOperation(getDistributedObjectName(), k);
-        final InternalCompletableFuture<Boolean> f = getNodeEngine().getOperationService().invokeOnPartition(getServiceName(), op,
-                getPartitionId(getNodeEngine(), k));
+//        final Operation op = new CacheContainsKeyOperation(getDistributedObjectName(), k);
+        Operation operation = operationProvider.createContainsKeyOperation(k);
+        OperationService operationService = getNodeEngine().getOperationService();
+        int partitionId = getPartitionId(getNodeEngine(), k);
+        InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
         return f.getSafely();
     }
 
@@ -111,8 +113,7 @@ public class CacheProxy<K, V>
         for (K key : keys) {
             keysData.add(serializationService.toData(key));
         }
-        final OperationFactory operationFactory = new CacheLoadAllOperationFactory(getDistributedObjectName(), keysData,
-                replaceExistingValues);
+        OperationFactory operationFactory = operationProvider.createLoadAllOperationFactory(keysData, replaceExistingValues);
         try {
             submitLoadAllTask(operationFactory, completionListener);
         } catch (Exception e) {
@@ -224,13 +225,13 @@ public class CacheProxy<K, V>
         if (entryProcessor == null) {
             throw new NullPointerException("Entry Processor is null");
         }
-        final Data k = serializationService.toData(key);
+        final Data keyData = serializationService.toData(key);
         final Integer completionId = registerCompletionLatch(1);
-        final Operation op = new CacheEntryProcessorOperation(getDistributedObjectName(), k, completionId, entryProcessor,
-                arguments);
+        Operation op = operationProvider.createEntryProcessorOperation(keyData, completionId, entryProcessor, arguments);
         try {
-            final InternalCompletableFuture<T> f = getNodeEngine().getOperationService().invokeOnPartition(getServiceName(), op,
-                    getPartitionId(getNodeEngine(), k));
+            OperationService operationService = getNodeEngine().getOperationService();
+            int partitionId = getPartitionId(getNodeEngine(), keyData);
+            final InternalCompletableFuture<T> f = operationService.invokeOnPartition(getServiceName(), op, partitionId);
             final T safely = f.getSafely();
             waitCompletionLatch(completionId);
             return safely;

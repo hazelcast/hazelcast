@@ -30,6 +30,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.executor.CompletableFutureTask;
 
@@ -114,10 +115,10 @@ abstract class AbstractCacheProxyBase<K, V> {
             return;
         }
         isClosed.set(true);
-        final Operation op = new CacheDestroyOperation(getDistributedObjectName());
+        Operation operation = operationProvider.createDestroyOperation();
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(getDistributedObjectName());
-        final InternalCompletableFuture f = getNodeEngine().getOperationService()
-                                                           .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+        OperationService operationService = getNodeEngine().getOperationService();
+        InternalCompletableFuture f = operationService .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionId);
         f.getSafely();
         cacheService.destroyCache(getDistributedObjectName(), true, null);
     }
