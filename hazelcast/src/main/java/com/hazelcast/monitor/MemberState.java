@@ -47,4 +47,6 @@ public interface MemberState extends JsonSerializable {
 
     SerializableMXBeans getMXBeans();
 
+    LocalMemoryStats getLocalMemoryStats();
+
 }

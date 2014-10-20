@@ -18,6 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.memory.MemoryManager;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
@@ -75,4 +76,6 @@ public interface SerializationService {
     void push(BufferObjectDataOutput out);
 
     void destroy();
+
+    MemoryManager getMemoryManager();
 }

@@ -19,6 +19,9 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.memory.MemoryManager;
+import com.hazelcast.memory.MemoryStatsSupport;
+import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
@@ -63,11 +66,14 @@ public class TimedMemberStateFactory {
     private final HazelcastInstanceImpl instance;
     private final int maxVisibleInstanceCount;
     private final boolean cacheServiceEnabled;
+    private final LocalMemoryStats memoryStats;
 
     public TimedMemberStateFactory(HazelcastInstanceImpl instance) {
         this.instance = instance;
         maxVisibleInstanceCount = instance.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         cacheServiceEnabled = instance.node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
+        MemoryManager memoryManager = instance.getSerializationService().getMemoryManager();
+        memoryStats = memoryManager != null ? memoryManager.getMemoryStats() : null;
     }
 
     public TimedMemberState createTimedMemberState() {
@@ -110,6 +116,7 @@ public class TimedMemberStateFactory {
                 memberState.addPartition(partition.getPartitionId());
             }
         }
+        memberState.setLocalMemoryStats(memoryStats != null ? memoryStats : MemoryStatsSupport.getMemoryStats());
         Collection<DistributedObject> proxyObjects = new ArrayList<DistributedObject>(instance.getDistributedObjects());
         createRuntimeProps(memberState);
         createMemState(memberState, proxyObjects);
