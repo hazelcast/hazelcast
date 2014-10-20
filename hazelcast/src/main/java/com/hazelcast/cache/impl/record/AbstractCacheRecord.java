@@ -26,38 +26,26 @@ import java.io.IOException;
  * Abstract implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} with key, value and expiration time as internal
  * state.
  * <p>This implementation provide getter, setter and serialization methods</p>
+ *
  * @param <V>
  */
-class AbstractCacheRecord<V>
-        implements CacheRecord<V> {
+abstract class AbstractCacheRecord<V> implements CacheRecord<V> {
 
     private Data key;
-    private V value;
 
     private long expirationTime = -1;
 
-    AbstractCacheRecord(Data key, V value, long expirationTime) {
-        this.key = key;
-        this.value = value;
-        this.expirationTime = expirationTime;
+    public AbstractCacheRecord() {
     }
 
-    public AbstractCacheRecord() {
+    AbstractCacheRecord(Data key, long expirationTime) {
+        this.key = key;
+        this.expirationTime = expirationTime;
     }
 
     @Override
     public Data getKey() {
         return key;
-    }
-
-    @Override
-    public V getValue() {
-        return value;
-    }
-
-    @Override
-    public void setValue(V value) {
-        this.value = value;
     }
 
     public long getExpirationTime() {
@@ -75,19 +63,14 @@ class AbstractCacheRecord<V>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeData(key);
         out.writeLong(expirationTime);
-        out.writeObject(value);
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         key = in.readData();
         expirationTime = in.readLong();
-        value = in.readObject();
-
     }
 }
