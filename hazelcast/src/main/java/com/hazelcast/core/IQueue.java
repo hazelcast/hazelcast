@@ -18,10 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.monitor.LocalQueueStats;
 
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Concurrent, blocking, distributed, observable queue.
