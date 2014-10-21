@@ -271,10 +271,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return validJoinRequest;
     }
 
-    private void logIfConnectionToEndpointIsMissing(MemberImpl member) {
-        Connection conn = node.connectionManager.getOrConnect(member.getAddress());
-        if (conn == null || !conn.isAlive()) {
-            logger.warning("This node does not have a connection to " + member);
+    private void logIfConnectionToEndpointIsMissing(long now, MemberImpl member) {
+        if ((now - member.getLastRead()) >= PING_INTERVAL && (now - member.getLastPing()) >= PING_INTERVAL) {
+            Connection conn = node.connectionManager.getOrConnect(member.getAddress());
+            if (conn == null || !conn.isAlive()) {
+                logger.warning("This node does not have a connection to " + member);
+            }
         }
     }
 
@@ -296,7 +298,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 try {
-                    logIfConnectionToEndpointIsMissing(member);
+                    logIfConnectionToEndpointIsMissing(now, member);
                     if (removeMemberIfNotHeartBeating(now, member)) {
                         continue;
                     }
@@ -343,7 +345,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 try {
-                    logIfConnectionToEndpointIsMissing(member);
+                    logIfConnectionToEndpointIsMissing(now, member);
 
                     if (isMaster(member)) {
                         if (removeMemberIfNotHeartBeating(now, member)) {

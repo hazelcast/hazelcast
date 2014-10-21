@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.cluster.impl.operations.BindOperation;
+import com.hazelcast.cluster.impl.BindMessage;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -208,7 +208,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
             log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
         }
         final Address thisAddress = ioService.getThisAddress();
-        if (!connection.isClient() && !thisAddress.equals(localEndpoint)) {
+        if (ioService.isSocketBindAny() && !connection.isClient() && !thisAddress.equals(localEndpoint)) {
             log(Level.WARNING, "Wrong bind request from " + remoteEndPoint
                     + "! This node is not requested endpoint: " + localEndpoint);
             connection.close();
@@ -279,13 +279,16 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return false;
     }
 
-    void sendBindRequest(final TcpIpConnection connection, final Address remoteEndPoint, final boolean replyBack) {
+    void sendBindRequest(TcpIpConnection connection, Address remoteEndPoint, boolean replyBack) {
         connection.setEndPoint(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
-        final BindOperation bind = new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack);
-        final Data bindData = ioService.toData(bind);
-        final Packet packet = new Packet(bindData, portableContext);
-        packet.setHeader(Packet.HEADER_OP);
+        if (logger.isFinestEnabled()) {
+            log(Level.FINEST, "Sending bind packet to " + remoteEndPoint);
+        }
+        BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
+        Data bindData = ioService.toData(bind);
+        Packet packet = new Packet(bindData, portableContext);
+        packet.setHeader(Packet.HEADER_BIND);
         connection.write(packet);
         //now you can send anything...
     }
@@ -364,9 +367,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         final Address endPoint = connection.getEndPoint();
         if (endPoint != null) {
             connectionsInProgress.remove(endPoint);
-            final Connection existingConn = connectionsMap.get(endPoint);
-            if (existingConn == connection && live) {
-                connectionsMap.remove(endPoint);
+            connectionsMap.remove(endPoint, connection);
+            if (live) {
                 ioService.getEventService().executeEventCallback(new StripedRunnable() {
                     @Override
                     public void run() {
@@ -381,6 +383,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
                     }
                 });
             }
+        } else {
+            log(Level.SEVERE, "ENDPOINT NULL: " + connection);
         }
         if (connection.isAlive()) {
             connection.close();

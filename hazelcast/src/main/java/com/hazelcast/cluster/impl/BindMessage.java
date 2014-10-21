@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,42 +14,54 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster.impl.operations;
+package com.hazelcast.cluster.impl;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class BindOperation extends AbstractClusterOperation implements JoinOperation {
+public class BindMessage implements IdentifiedDataSerializable {
 
     private Address localAddress;
     private Address targetAddress;
     private boolean reply;
 
-    public BindOperation() {
+    public BindMessage() {
     }
 
-    public BindOperation(Address localAddress, final Address targetAddress, final boolean reply) {
+    public BindMessage(Address localAddress, Address targetAddress, boolean reply) {
         this.localAddress = localAddress;
         this.targetAddress = targetAddress;
         this.reply = reply;
     }
 
-    @Override
-    public void run() {
-        NodeEngineImpl ns = (NodeEngineImpl) getNodeEngine();
-        TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) ns.getNode().getConnectionManager();
-        TcpIpConnection connection = (TcpIpConnection) getConnection();
-        connectionManager.bind(connection, localAddress, targetAddress, reply);
+    public Address getLocalAddress() {
+        return localAddress;
+    }
+
+    public Address getTargetAddress() {
+        return targetAddress;
+    }
+
+    public boolean shouldReply() {
+        return reply;
     }
 
     @Override
-    protected void readInternal(final ObjectDataInput in) throws IOException {
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.BIND_MESSAGE;
+    }
+
+    @Override
+    public void readData(final ObjectDataInput in) throws IOException {
         localAddress = new Address();
         localAddress.readData(in);
         boolean hasTarget = in.readBoolean();
@@ -61,7 +73,7 @@ public class BindOperation extends AbstractClusterOperation implements JoinOpera
     }
 
     @Override
-    protected void writeInternal(final ObjectDataOutput out) throws IOException {
+    public void writeData(final ObjectDataOutput out) throws IOException {
         localAddress.writeData(out);
         boolean hasTarget = targetAddress != null;
         out.writeBoolean(hasTarget);
