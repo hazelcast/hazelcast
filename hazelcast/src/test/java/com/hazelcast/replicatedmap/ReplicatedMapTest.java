@@ -19,7 +19,10 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
@@ -44,7 +47,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
@@ -123,6 +128,65 @@ public class ReplicatedMapTest
             assertEquals("bar", entry.getValue());
         }
 
+        for (Map.Entry<String, String> entry : map1.entrySet()) {
+            assertStartsWith("foo-", entry.getKey());
+            assertEquals("bar", entry.getValue());
+        }
+    }
+
+    @Test
+    public void testPutAllObjectDelay0()
+            throws Exception {
+
+        testPutAll(buildConfig(InMemoryFormat.OBJECT, 0));
+    }
+
+    @Test
+    public void testPutAllObjectDelayDefault()
+            throws Exception {
+
+        testPutAll(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    @Test
+    public void testPutAllBinaryDelay0()
+            throws Exception {
+
+        testPutAll(buildConfig(InMemoryFormat.BINARY, 0));
+    }
+
+    @Test
+    public void testPutAllBinaryDelayDefault()
+            throws Exception {
+
+        testPutAll(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    private void testPutAll(Config config) throws TimeoutException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        HazelcastInstance testInstance = Hazelcast.newHazelcastInstance();
+        final Map<String, String> mapTest = testInstance.getMap("test");
+        for (int i = 0; i < 100; i++) {
+            mapTest.put("foo-" + i, "bar");
+        }
+
+        WatchedOperationExecutor executor = new WatchedOperationExecutor();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                map1.putAll(mapTest);
+            }
+        }, 60, EntryEventType.ADDED, map1, map2);
+
+        for (Map.Entry<String, String> entry : map2.entrySet()) {
+            assertStartsWith("foo-", entry.getKey());
+            assertEquals("bar", entry.getValue());
+        }
         for (Map.Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
@@ -974,6 +1038,83 @@ public class ReplicatedMapTest
         }
 
         assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
+    }
+
+    @Test
+    public void testAddListenerObjectDelay0()
+            throws Exception {
+
+        testAddEntryListener(buildConfig(InMemoryFormat.OBJECT, 0));
+    }
+
+    @Test
+    public void testAddListenerObjectDelayDefault()
+            throws Exception {
+
+        testAddEntryListener(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    @Test
+    public void testAddListenerBinaryDelay0()
+            throws Exception {
+
+        testAddEntryListener(buildConfig(InMemoryFormat.BINARY, 0));
+    }
+
+    @Test
+    public void testAddListenerBinaryDelayDefault()
+            throws Exception {
+
+        testAddEntryListener(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    private void testAddEntryListener(Config config)
+            throws TimeoutException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        final int operations = 100;
+        WatchedOperationExecutor executor = new WatchedOperationExecutor();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < operations; i++) {
+                    map1.put("foo-" + i, "bar");
+                }
+            }
+        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+
+        SimpleEntryListener listener = new SimpleEntryListener(1, 0);
+        map2.addEntryListener(listener, "foo-18");
+
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                map1.put("foo-18", "barUpdated");
+            }
+        }, 60, EntryEventType.UPDATED, map1, map2);
+
+        assertOpenEventually(listener.addLatch);
+        assertEquals("barUpdated", map2.get("foo-18"));
+    }
+
+    private class SimpleEntryListener extends EntryAdapter {
+
+        CountDownLatch addLatch;
+
+        SimpleEntryListener(int addCount, int evictCount) {
+            addLatch = new CountDownLatch(addCount);
+        }
+
+        @Override
+        public void entryUpdated(EntryEvent event) {
+            addLatch.countDown();
+        }
     }
 
     @Test(expected = java.lang.IllegalArgumentException.class)
