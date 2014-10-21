@@ -90,4 +90,5 @@ public interface ICacheRecordStore {
 
     void publishCompletedEvent(String cacheName, int completionId, Data dataKey, int orderKey);
 
+    int forceEvict();
 }

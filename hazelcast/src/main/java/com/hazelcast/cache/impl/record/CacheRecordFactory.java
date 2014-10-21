@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 /**
  * Provides factory for {@link com.hazelcast.cache.impl.record.CacheRecord}
  */
-public class CacheRecordFactory {
+public class CacheRecordFactory<R extends CacheRecord> {
 
     protected InMemoryFormat inMemoryFormat;
     protected SerializationService serializationService;
@@ -33,20 +33,20 @@ public class CacheRecordFactory {
         this.serializationService = serializationService;
     }
 
-    public CacheRecord newRecord(Data key, Object value) {
+    public R newRecord(Data key, Object value) {
         return newRecordWithExpiry(key, value, -1);
     }
 
-    public CacheRecord newRecordWithExpiry(Data key, Object value, long expiryTime) {
-        final CacheRecord record;
+    public R newRecordWithExpiry(Data key, Object value, long expiryTime) {
+        final R record;
         switch (inMemoryFormat) {
             case BINARY:
                 Data dataValue = serializationService.toData(value);
-                record = createCacheDataRecord(key, dataValue, expiryTime);
+                record = (R) createCacheDataRecord(key, dataValue, expiryTime);
                 break;
             case OBJECT:
                 Object objectValue = serializationService.toObject(value);
-                record = createCacheObjectRecord(key, objectValue, expiryTime);
+                record = (R) createCacheObjectRecord(key, objectValue, expiryTime);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + inMemoryFormat);

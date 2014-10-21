@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
 import com.hazelcast.cache.impl.record.CacheRecordMap;
-import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.IOUtil;
@@ -33,18 +32,14 @@ import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
-import javax.cache.configuration.Factory;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
-import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
-import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.processor.EntryProcessor;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -65,92 +60,61 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
  *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
  */
-public class CacheRecordStore implements ICacheRecordStore {
+public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Data, CacheRecord>> {
 
-    protected static final long INITIAL_DELAY = 5;
-    protected static final long PERIOD = 5;
-
-    protected final String name;
-    protected final int partitionId;
-    protected final NodeEngine nodeEngine;
-    protected final AbstractCacheService cacheService;
-    protected final CacheConfig cacheConfig;
-    protected final CacheRecordMap<Data, CacheRecord> records = createRecordCacheMap();
-    protected final CacheRecordFactory cacheRecordFactory;
-    protected final ScheduledFuture<?> evictionTaskFuture;
-    protected CacheStatisticsImpl statistics;
-    protected CacheLoader cacheLoader;
-    protected CacheWriter cacheWriter;
     protected boolean hasExpiringEntry;
-    protected boolean isEventsEnabled = true;
-    protected boolean isEventBatchingEnabled;
-    protected ExpiryPolicy defaultExpiryPolicy;
-    protected Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
+    protected final ScheduledFuture<?> evictionTaskFuture;
 
     public CacheRecordStore(String name,
                             int partitionId,
                             NodeEngine nodeEngine,
                             AbstractCacheService cacheService) {
-        this(name, partitionId, nodeEngine, cacheService, null);
+        this(name, partitionId, nodeEngine, cacheService, null, null, null);
     }
 
     public CacheRecordStore(String name,
                             int partitionId,
                             NodeEngine nodeEngine,
                             AbstractCacheService cacheService,
-                            CacheRecordFactory cacheRecordFactory) {
-        this.name = name;
-        this.partitionId = partitionId;
-        this.nodeEngine = nodeEngine;
-        this.cacheService = cacheService;
-        this.cacheConfig = cacheService.getCacheConfig(name);
-        if (this.cacheConfig == null) {
-            throw new IllegalStateException("Cache already destroyed");
-        }
-        if (cacheConfig.getCacheLoaderFactory() != null) {
-            final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
-            cacheLoader = cacheLoaderFactory.create();
-        }
-        if (cacheConfig.getCacheWriterFactory() != null) {
-            final Factory<CacheWriter> cacheWriterFactory = cacheConfig.getCacheWriterFactory();
-            cacheWriter = cacheWriterFactory.create();
-        }
+                            SerializationService serializationService,
+                            CacheRecordFactory cacheRecordFactory,
+                            ExpiryPolicy expiryPolicy) {
+        super(name,
+              partitionId,
+              nodeEngine,
+              cacheService,
+              serializationService,
+              cacheRecordFactory,
+              expiryPolicy);
         evictionTaskFuture =
                 nodeEngine.getExecutionService()
                         .scheduleWithFixedDelay("hz:cache",
                                 new EvictionTask(),
                                 INITIAL_DELAY, PERIOD,
                                 TimeUnit.SECONDS);
-
-        if (cacheRecordFactory != null) {
-            this.cacheRecordFactory = cacheRecordFactory;
-        } else {
-            this.cacheRecordFactory =
-                    createCacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                            nodeEngine.getSerializationService());
-        }
-        final Factory<ExpiryPolicy> expiryPolicyFactory =
-                cacheConfig.getExpiryPolicyFactory();
-        defaultExpiryPolicy = expiryPolicyFactory.create();
     }
 
+    @Override
     protected CacheRecordMap createRecordCacheMap() {
         return new CacheRecordHashMap<Data, CacheRecord>(1000);
     }
 
+    @Override
     protected CacheRecordFactory createCacheRecordFactory(InMemoryFormat inMemoryFormat,
                                                           SerializationService serializationService) {
         return new CacheRecordFactory(inMemoryFormat, serializationService);
     }
 
     @Override
-    public Object get(Data key, ExpiryPolicy expiryPolicy) {
-        final ExpiryPolicy localExpiryPolicy =
-                expiryPolicy != null
-                        ? expiryPolicy
-                        : defaultExpiryPolicy;
-        long now = Clock.currentTimeMillis();
+    protected <T> Data valueToData(T value) {
+        return cacheService.toData(value);
+    }
 
+    @Override
+    public Object get(Data key, ExpiryPolicy expiryPolicy) {
+        expiryPolicy = getExpiryPolicy(expiryPolicy);
+
+        long now = Clock.currentTimeMillis();
         Object value;
         CacheRecord record = records.get(key);
         final boolean isExpired = processExpiredEntry(key, record, now);
@@ -162,12 +126,12 @@ public class CacheRecordStore implements ICacheRecordStore {
             if (value == null) {
                 return null;
             }
-            createRecordWithExpiry(key, value, localExpiryPolicy, now, true);
+            createRecordWithExpiry(key, value, expiryPolicy, now, true);
 
             return value;
         } else {
             value = record.getValue();
-            updateAccessDuration(record, localExpiryPolicy, now);
+            updateAccessDuration(record, expiryPolicy, now);
             if (isStatisticsEnabled()) {
                 statistics.increaseCacheHits(1);
             }
@@ -186,10 +150,8 @@ public class CacheRecordStore implements ICacheRecordStore {
                                String caller,
                                boolean getValue,
                                boolean disableWriteThrough) {
-        final ExpiryPolicy localExpiryPolicy =
-                expiryPolicy != null
-                        ? expiryPolicy
-                        : defaultExpiryPolicy;
+        expiryPolicy = getExpiryPolicy(expiryPolicy);
+
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
@@ -201,41 +163,21 @@ public class CacheRecordStore implements ICacheRecordStore {
         // not be added to the cache or listeners called or writers called.
         if (record == null || isExpired) {
             isPutSucceed = createRecordWithExpiry(key,
-                    value,
-                    localExpiryPolicy,
-                    now,
-                    disableWriteThrough);
+                                                  value,
+                                                  expiryPolicy,
+                                                  now,
+                                                  disableWriteThrough);
         } else {
             oldValue = record.getValue();
             isPutSucceed = updateRecordWithExpiry(key,
-                    value,
-                    record,
-                    localExpiryPolicy,
-                    now,
-                    disableWriteThrough);
+                                                  value,
+                                                  record,
+                                                  expiryPolicy,
+                                                  now,
+                                                  disableWriteThrough);
         }
         updateGetAndPutStat(isPutSucceed, getValue, oldValue == null, start);
         return oldValue;
-    }
-
-    private void updateGetAndPutStat(boolean isPutSucceed,
-                                     boolean getValue,
-                                     boolean oldValueNull,
-                                     long start) {
-        if (isStatisticsEnabled()) {
-            if (isPutSucceed) {
-                statistics.increaseCachePuts(1);
-                statistics.addPutTimeNano(System.nanoTime() - start);
-            }
-            if (getValue) {
-                if (oldValueNull) {
-                    statistics.increaseCacheMisses(1);
-                } else {
-                    statistics.increaseCacheHits(1);
-                }
-                statistics.addGetTimeNano(System.nanoTime() - start);
-            }
-        }
     }
 
     protected Object getAndPut(Data key,
@@ -267,10 +209,8 @@ public class CacheRecordStore implements ICacheRecordStore {
                                   ExpiryPolicy expiryPolicy,
                                   String caller,
                                   boolean disableWriteThrough) {
-        final ExpiryPolicy localExpiryPolicy =
-                expiryPolicy != null
-                        ? expiryPolicy
-                        : defaultExpiryPolicy;
+        expiryPolicy = getExpiryPolicy(expiryPolicy);
+
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
@@ -278,7 +218,11 @@ public class CacheRecordStore implements ICacheRecordStore {
         CacheRecord record = records.get(key);
         boolean isExpired = processExpiredEntry(key, record, now);
         if (record == null || isExpired) {
-            result = createRecordWithExpiry(key, value, localExpiryPolicy, now, disableWriteThrough);
+            result = createRecordWithExpiry(key,
+                                            value,
+                                            expiryPolicy,
+                                            now,
+                                            disableWriteThrough);
         } else {
             result = false;
         }
@@ -342,7 +286,6 @@ public class CacheRecordStore implements ICacheRecordStore {
 
     @Override
     public boolean remove(Data key, Object value, String caller) {
-        final ExpiryPolicy localExpiryPolicy = defaultExpiryPolicy;
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
@@ -362,7 +305,7 @@ public class CacheRecordStore implements ICacheRecordStore {
                 deleteCacheEntry(key);
                 deleteRecord(key);
             } else {
-                long expiryTime = updateAccessDuration(record, localExpiryPolicy, now);
+                long expiryTime = updateAccessDuration(record, defaultExpiryPolicy, now);
                 processExpiredEntry(key, record, expiryTime, now);
                 result = false;
             }
@@ -380,32 +323,13 @@ public class CacheRecordStore implements ICacheRecordStore {
         return result;
     }
 
-    protected long updateAccessDuration(CacheRecord record,
-                                        ExpiryPolicy localExpiryPolicy,
-                                        long now) {
-        long expiryTime = -1L;
-        try {
-            Duration expiryDuration = localExpiryPolicy.getExpiryForAccess();
-            if (expiryDuration != null) {
-                expiryTime = expiryDuration.getAdjustedTime(now);
-                record.setExpirationTime(expiryTime);
-            }
-        } catch (Exception e) {
-            EmptyStatement.ignore(e);
-            //leave the expiry time untouched when we can't determine a duration
-        }
-        return expiryTime;
-    }
-
     @Override
     public boolean replace(Data key,
                            Object value,
                            ExpiryPolicy expiryPolicy,
                            String caller) {
-        final ExpiryPolicy localExpiryPolicy =
-                expiryPolicy != null
-                        ? expiryPolicy
-                        : defaultExpiryPolicy;
+        expiryPolicy = getExpiryPolicy(expiryPolicy);
+
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
@@ -415,7 +339,12 @@ public class CacheRecordStore implements ICacheRecordStore {
         if (record == null || isExpired) {
             result = false;
         } else {
-            result = updateRecordWithExpiry(key, value, record, localExpiryPolicy, now, false);
+            result = updateRecordWithExpiry(key,
+                                            value,
+                                            record,
+                                            expiryPolicy,
+                                            now,
+                                            false);
         }
         if (isStatisticsEnabled()) {
             statistics.addGetTimeNano(System.nanoTime() - start);
@@ -436,10 +365,8 @@ public class CacheRecordStore implements ICacheRecordStore {
                            Object newValue,
                            ExpiryPolicy expiryPolicy,
                            String caller) {
-        final ExpiryPolicy localExpiryPolicy =
-                expiryPolicy != null
-                        ? expiryPolicy
-                        : defaultExpiryPolicy;
+        expiryPolicy = getExpiryPolicy(expiryPolicy);
+
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
@@ -454,9 +381,14 @@ public class CacheRecordStore implements ICacheRecordStore {
             Object value = record.getValue();
 
             if (compare(value, oldValue)) {
-                result = updateRecordWithExpiry(key, newValue, record, localExpiryPolicy, now, false);
+                result = updateRecordWithExpiry(key,
+                                                newValue,
+                                                record,
+                                                expiryPolicy,
+                                                now,
+                                                false);
             } else {
-                updateAccessDuration(record, localExpiryPolicy, now);
+                updateAccessDuration(record, expiryPolicy, now);
                 result = false;
             }
         }
@@ -464,30 +396,13 @@ public class CacheRecordStore implements ICacheRecordStore {
         return result;
     }
 
-    protected void updateReplaceStat(boolean result, boolean isHit, long start) {
-        if (isStatisticsEnabled()) {
-            if (result) {
-                statistics.increaseCachePuts(1);
-                statistics.addPutTimeNano(System.nanoTime() - start);
-            }
-            statistics.addGetTimeNano(System.nanoTime() - start);
-            if (isHit) {
-                statistics.increaseCacheHits(1);
-            } else {
-                statistics.increaseCacheMisses(1);
-            }
-        }
-    }
-
     @Override
     public Object getAndReplace(Data key,
                                 Object value,
                                 ExpiryPolicy expiryPolicy,
                                 String caller) {
-        final ExpiryPolicy localExpiryPolicy =
-                expiryPolicy != null
-                        ? expiryPolicy
-                        : defaultExpiryPolicy;
+        expiryPolicy = getExpiryPolicy(expiryPolicy);
+
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
@@ -498,7 +413,7 @@ public class CacheRecordStore implements ICacheRecordStore {
             result = null;
         } else {
             result = record.getValue();
-            updateRecordWithExpiry(key, value, record, localExpiryPolicy, now, false);
+            updateRecordWithExpiry(key, value, record, expiryPolicy, now, false);
         }
         if (isStatisticsEnabled()) {
             statistics.addGetTimeNano(System.nanoTime() - start);
@@ -524,23 +439,16 @@ public class CacheRecordStore implements ICacheRecordStore {
     @Override
     public MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
         //we don not call loadAll. shouldn't we ?
-        final ExpiryPolicy localExpiryPolicy =
-                expiryPolicy != null
-                        ? expiryPolicy
-                        : defaultExpiryPolicy;
+        expiryPolicy = getExpiryPolicy(expiryPolicy);
+
         final MapEntrySet result = new MapEntrySet();
         for (Data key : keySet) {
-            final Object value = get(key, localExpiryPolicy);
+            final Object value = get(key, expiryPolicy);
             if (value != null) {
                 result.add(key, cacheService.toData(value));
             }
         }
         return result;
-    }
-
-    @Override
-    public int size() {
-        return records.size();
     }
 
     @Override
@@ -623,10 +531,12 @@ public class CacheRecordStore implements ICacheRecordStore {
         }
     }
 
+    @Override
     public CacheRecord getRecord(Data key) {
         return records.get(key);
     }
 
+    @Override
     public void setRecord(Data key, CacheRecord record) {
         if (key != null && record != null) {
             records.put(key, record);
@@ -708,25 +618,6 @@ public class CacheRecordStore implements ICacheRecordStore {
             }
         }
         return keysLoaded;
-    }
-
-    @Override
-    public CacheStatisticsImpl getCacheStats() {
-        return statistics;
-    }
-
-    public CacheConfig getConfig() {
-        return cacheConfig;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public Map<Data, CacheRecord> getReadOnlyRecords() {
-        return Collections.unmodifiableMap(records);
     }
 
     public int evictExpiredRecords() {
@@ -858,17 +749,6 @@ public class CacheRecordStore implements ICacheRecordStore {
                     dataValue,
                     false);
         }
-    }
-
-    protected CacheRecord accessRecord(CacheRecord record,
-                                       ExpiryPolicy expiryPolicy,
-                                       long now) {
-        final ExpiryPolicy localExpiryPolicy =
-                expiryPolicy != null
-                        ? expiryPolicy
-                        : defaultExpiryPolicy;
-        updateAccessDuration(record, localExpiryPolicy, now);
-        return record;
     }
 
     protected CacheRecord readThroughRecord(Data key, long now) {
@@ -1087,75 +967,9 @@ public class CacheRecordStore implements ICacheRecordStore {
         }
     }
 
-    protected void publishEvent(String cacheName,
-                                CacheEventType eventType,
-                                Data dataKey,
-                                Data dataOldValue,
-                                Data dataValue,
-                                boolean isOldValueAvailable) {
-        if (isEventBatchingEnabled) {
-            final CacheEventDataImpl cacheEventData =
-                    new CacheEventDataImpl(cacheName,
-                            eventType,
-                            dataKey,
-                            dataValue,
-                            dataOldValue,
-                            isOldValueAvailable);
-            Set<CacheEventData> cacheEventDatas = batchEvent.get(eventType);
-            if (cacheEventDatas == null) {
-                cacheEventDatas = new HashSet<CacheEventData>();
-                batchEvent.put(eventType, cacheEventDatas);
-            }
-            cacheEventDatas.add(cacheEventData);
-        } else {
-            cacheService.publishEvent(cacheName,
-                    eventType,
-                    dataKey,
-                    dataValue,
-                    dataOldValue,
-                    isOldValueAvailable,
-                    dataKey.hashCode());
-        }
-    }
-
-    protected void publishBatchedEvents(String cacheName,
-                                        CacheEventType cacheEventType,
-                                        int orderKey) {
-        final Set<CacheEventData> cacheEventDatas = batchEvent.get(cacheEventType);
-        CacheEventSet ces = new CacheEventSet(cacheEventType, cacheEventDatas);
-        cacheService.publishEvent(cacheName, ces, orderKey);
-    }
-
-    protected boolean compare(Object v1, Object v2) {
-        if (v1 == null && v2 == null) {
-            return true;
-        }
-        if (v1 == null) {
-            return false;
-        }
-        if (v2 == null) {
-            return false;
-        }
-        return v1.equals(v2);
-
-    }
-
-    protected boolean isReadThrough() {
-        return cacheConfig.isReadThrough();
-    }
-
-    protected boolean isWriteThrough() {
-        return cacheConfig.isWriteThrough();
-    }
-
-    protected boolean isStatisticsEnabled() {
-        if (!cacheConfig.isStatisticsEnabled()) {
-            return false;
-        }
-        if (statistics == null) {
-            this.statistics = cacheService.createCacheStatIfAbsent(name);
-        }
-        return true;
+    @Override
+    public int forceEvict() {
+        return evictExpiredRecords();
     }
 
     protected class EvictionTask implements Runnable {
