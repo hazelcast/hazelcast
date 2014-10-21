@@ -32,14 +32,15 @@ import java.util.Properties;
 import java.util.WeakHashMap;
 
 /**
- * Abstract {@link CachingProvider} implementation providing shared functionality to server and client caching providers.
- * <p>This class encapsulate following details:
+ * Abstract {@link CachingProvider} implementation providing shared functionality to server and client caching
+ * providers.
+ * <p>This class encapsulates following details:
  * <ul>
- *     <li>Hazelcast instance for default uri and default class loader</li>
- *     <li>default uri</li>
- *     <li>default class loader</li>
- *     <li>accessing the singleton {@link CacheManager} by uri and class loader</li>
- *     <li>managing lifecycle of cache managers</li>
+ *     <li>Hazelcast instance for default uri and default class loader.</li>
+ *     <li>default uri.</li>
+ *     <li>default class loader.</li>
+ *     <li>accessing the singleton {@link CacheManager} by uri and class loader.</li>
+ *     <li>managing lifecycle of cache managers.</li>
  * </ul></p>
  * @see CachingProvider
  */

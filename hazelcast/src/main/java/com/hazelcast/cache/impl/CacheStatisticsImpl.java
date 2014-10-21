@@ -58,10 +58,10 @@ public class CacheStatisticsImpl
     /**
      *
      * The total number of expiries from the cache. An expiry may or may not be evicted.
-     * This number represent the entries that fail evaluation and may not include the entries which are not yet
+     * This number represents the entries that fail evaluation and may not include the entries which are not yet
      * evaluated for expiry or not accessed.
      *
-     * @return the number of expiries
+     * @return the number of expiries.
      */
     public long getCacheExpiries() {
         return expiries.get();
@@ -155,7 +155,7 @@ public class CacheStatisticsImpl
     }
 
     /**
-     * implementation of {@link javax.cache.management.CacheStatisticsMXBean#clear()}
+     * Implementation of {@link javax.cache.management.CacheStatisticsMXBean#clear()}.
      * @see javax.cache.management.CacheStatisticsMXBean#clear()
      */
     public void clear() {
@@ -173,7 +173,7 @@ public class CacheStatisticsImpl
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCacheRemovals(long number) {
         removals.getAndAdd(number);
@@ -182,7 +182,7 @@ public class CacheStatisticsImpl
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCacheExpiries(long number) {
         expiries.getAndAdd(number);
@@ -191,7 +191,7 @@ public class CacheStatisticsImpl
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCachePuts(long number) {
         puts.getAndAdd(number);
@@ -200,7 +200,7 @@ public class CacheStatisticsImpl
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCacheHits(long number) {
         hits.getAndAdd(number);
@@ -209,7 +209,7 @@ public class CacheStatisticsImpl
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCacheMisses(long number) {
         misses.getAndAdd(number);
@@ -218,16 +218,16 @@ public class CacheStatisticsImpl
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCacheEvictions(long number) {
         evictions.getAndAdd(number);
     }
 
     /**
-     * Increments the getCache time accumulator
+     * Increments the getCache time accumulator.
      *
-     * @param duration the time taken in nanoseconds
+     * @param duration the time taken in nanoseconds.
      */
     public void addGetTimeNano(long duration) {
         if (getCacheTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
@@ -240,9 +240,9 @@ public class CacheStatisticsImpl
     }
 
     /**
-     * Increments the put time accumulator
+     * Increments the put time accumulator.
      *
-     * @param duration the time taken in nanoseconds
+     * @param duration the time taken in nanoseconds.
      */
     public void addPutTimeNano(long duration) {
         if (putTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
@@ -255,9 +255,9 @@ public class CacheStatisticsImpl
     }
 
     /**
-     * Increments the remove time accumulator
+     * Increments the remove time accumulator.
      *
-     * @param duration the time taken in nanoseconds
+     * @param duration the time taken in nanoseconds.
      */
     public void addRemoveTimeNano(long duration) {
         if (removeTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
@@ -273,8 +273,8 @@ public class CacheStatisticsImpl
      *
      * Simple CacheStatistics adder. Can be used to merge two statistics data,
      * such as the ones collected from multiple nodes.
-     * @param other CacheStatisticsImpl to be merged
-     * @return CacheStatisticsImpl with merged data
+     * @param other CacheStatisticsImpl to be merged.
+     * @return CacheStatisticsImpl with merged data.
      */
     public CacheStatisticsImpl accumulate(CacheStatisticsImpl other) {
         puts.addAndGet(other.getCachePuts());
