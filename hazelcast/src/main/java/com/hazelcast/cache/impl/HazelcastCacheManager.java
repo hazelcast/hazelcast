@@ -25,10 +25,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Abstract {@link CacheManager} implementation provides shared functionality to server and client cache managers.
- * There are two cache manager which can be accessed via their providers
+ * There are two cache managers which can be accessed via their providers.
  * <ul>
- *     <li>Client :  HazelcastClientCacheManager</li>
- *     <li>Server : HazelcastServerCacheManager</li>
+ *     <li>Client: HazelcastClientCacheManager.</li>
+ *     <li>Server: HazelcastServerCacheManager.</li>
  * </ul>
  * <p>
  *    {@link HazelcastCacheManager} manages the lifecycle of the caches created or accessed through itself.
@@ -235,8 +235,9 @@ public abstract class HazelcastCacheManager implements CacheManager {
 
     /**
      * Removes the local copy of the cache configuration if one exists.
-     * Default implementation do not require it. But client implementation overrides this to track a local copy of the config
-     * @param cacheName cache name
+     * Default implementation does not require it. But client implementation overrides this to track a local copy
+     * of the config.
+     * @param cacheName cache name.
      */
     protected void removeCacheConfigFromLocal(String cacheName) {
     }
@@ -295,8 +296,8 @@ public abstract class HazelcastCacheManager implements CacheManager {
     /**
      * This method calculates a fixed string based on the URI and classloader using the formula:
      * <p>/hz[/uri][/classloader]/</p>
-     * <p>uri and classloader are dropped if they have default values.</p>
-     * @return the calculated cache prefix
+     * <p>URI and classloader are dropped if they have default values.</p>
+     * @return the calculated cache prefix.
      */
     protected String cacheNamePrefix() {
         final StringBuilder sb = new StringBuilder("/hz");

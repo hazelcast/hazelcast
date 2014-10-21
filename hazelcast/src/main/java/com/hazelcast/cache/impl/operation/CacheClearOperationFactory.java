@@ -29,7 +29,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Factory for Clear Operation
+ * {@link OperationFactory} implementation for Clear Operations.
+ * <p>Clear operation has two main purpose;
+ * <ul>
+ *     <li>Remove all internal data using <code>isRemoveAll</code></li>
+ *     <li>Remove the entries of the provided keys</li>
+ * </ul></p>
+ * @see OperationFactory
  */
 public class CacheClearOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {

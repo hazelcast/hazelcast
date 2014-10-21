@@ -21,6 +21,14 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
+/**
+ * Abstract cache operation that implements {@link PartitionAwareOperation} serving a base class to provide multi partition
+ * operations
+ * @see com.hazelcast.cache.impl.operation.CacheSizeOperation
+ * @see com.hazelcast.cache.impl.operation.CacheGetAllOperation
+ * @see com.hazelcast.cache.impl.operation.CacheClearOperation
+ * @see com.hazelcast.cache.impl.operation.CacheGetConfigOperation
+ */
 abstract class PartitionWideCacheOperation
         extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {

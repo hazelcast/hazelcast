@@ -26,7 +26,12 @@ import com.hazelcast.spi.ReadonlyOperation;
 import java.io.IOException;
 
 /**
- * Provides iterator functionality for ICache.
+ * <p>Provides iterator functionality for ICache.</p>
+ * <p>
+ * Initialize and grab a number of keys defined by <code>size</code> parameter from the
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore} with the last table index.
+ * </p>
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#iterator(int, int)
  */
 public class CacheKeyIteratorOperation
         extends AbstractCacheOperation

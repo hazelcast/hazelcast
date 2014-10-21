@@ -26,7 +26,10 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * Cache PutIfAbsent Operation
+ * Operation implementation for calling
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String)}.
+ *
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String)
  */
 public class CachePutIfAbsentOperation
         extends AbstractMutatingCacheOperation {

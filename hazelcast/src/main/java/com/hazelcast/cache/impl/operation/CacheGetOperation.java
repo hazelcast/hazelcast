@@ -26,7 +26,9 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * Cache Get Operation
+ * Cache Get Operation,
+ * <p>Provides the cache get functionality.</p>
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#get(Data, javax.cache.expiry.ExpiryPolicy)
  */
 public class CacheGetOperation
         extends AbstractCacheOperation
