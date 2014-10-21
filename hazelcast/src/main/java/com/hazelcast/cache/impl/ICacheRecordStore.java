@@ -359,7 +359,7 @@ public interface ICacheRecordStore {
     CacheRecord removeRecord(Data key);
 
     /**
-     * Starting from the provided table index, a set of keys returned with maximum size is <code>size</code>
+     * Starting from the provided table index, a set of keys are returned with a maximum size of <code>size</code>
      * @param tableIndex initial table index.
      * @param size maximum key set size.
      * @return {@link CacheKeyIteratorResult} which wraps keys and last tableIndex.

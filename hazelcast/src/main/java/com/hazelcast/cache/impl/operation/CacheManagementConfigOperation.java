@@ -26,7 +26,11 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 import java.io.IOException;
 
 /**
- * Cache ManagementConfig Operation
+ * Cache ManagementConfig Operation provides enable/disable functionality of  management and statistics mxbeans of the cache
+ * @see com.hazelcast.cache.impl.HazelcastCacheManager#enableManagement(String, boolean)
+ * @see com.hazelcast.cache.impl.HazelcastCacheManager#enableStatistics(String, boolean)
+ * @see com.hazelcast.cache.impl.CacheService#enableManagement(String, boolean)
+ * @see com.hazelcast.cache.impl.CacheService#enableStatistics(String, boolean)
  */
 public class CacheManagementConfigOperation
         extends AbstractNamedOperation

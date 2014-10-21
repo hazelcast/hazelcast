@@ -27,7 +27,8 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
 
 /**
- * Provides Listener Registration Service.
+ * <p>Listener can be registered and unregistered by {@link com.hazelcast.cache.impl.CacheService}. This operator delegates the
+ * request to the cache service</p>
  */
 public class CacheListenerRegistrationOperation
         extends AbstractNamedOperation
