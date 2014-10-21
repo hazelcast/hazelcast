@@ -87,11 +87,6 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     }
 
     @Override
-    public Operation createDestroyOperation() {
-        return new CacheDestroyOperation(nameWithPrefix);
-    }
-
-    @Override
     public OperationFactory createGetAllOperationFactory(Set<Data> keySet, ExpiryPolicy policy) {
         return new CacheGetAllOperationFactory(nameWithPrefix, keySet, policy);
     }

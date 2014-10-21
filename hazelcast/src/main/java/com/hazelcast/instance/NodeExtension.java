@@ -16,8 +16,6 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.cache.CacheOperationProvider;
-import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;

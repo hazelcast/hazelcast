@@ -17,12 +17,10 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheOperationProvider;
-import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.ExecutionService;
@@ -82,7 +80,7 @@ abstract class AbstractCacheProxyBase<K, V> {
             cacheLoader = null;
         }
 
-        operationProvider = cacheService.getCacheOperationProvider(nameWithPrefix, cacheConfig.getCacheStorageType());
+        operationProvider = cacheService.getCacheOperationProvider(nameWithPrefix, cacheConfig.getInMemoryFormat());
     }
 
     //region close&destroy
@@ -115,10 +113,10 @@ abstract class AbstractCacheProxyBase<K, V> {
             return;
         }
         isClosed.set(true);
-        Operation operation = operationProvider.createDestroyOperation();
+        Operation operation = new CacheDestroyOperation(name);
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(getDistributedObjectName());
         OperationService operationService = getNodeEngine().getOperationService();
-        InternalCompletableFuture f = operationService .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionId);
+        InternalCompletableFuture f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionId);
         f.getSafely();
         cacheService.destroyCache(getDistributedObjectName(), true, null);
     }
@@ -199,7 +197,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         public void run() {
             try {
                 final Map<Integer, Object> results = getNodeEngine().getOperationService()
-                                                                    .invokeOnAllPartitions(getServiceName(), operationFactory);
+                        .invokeOnAllPartitions(getServiceName(), operationFactory);
                 validateResults(results);
                 if (completionListener != null) {
                     completionListener.onCompletion();

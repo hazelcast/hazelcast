@@ -33,8 +33,6 @@ public interface CacheOperationProvider {
 
     Operation createKeyIteratorOperation(int lastTableIndex, int fetchSize);
 
-    Operation createDestroyOperation();
-
     OperationFactory createGetAllOperationFactory(Set<Data> keySet, ExpiryPolicy policy);
 
     OperationFactory createLoadAllOperationFactory(Set<Data> keySet, boolean replaceExistingValues);

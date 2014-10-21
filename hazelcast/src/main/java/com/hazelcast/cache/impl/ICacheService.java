@@ -17,8 +17,8 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheOperationProvider;
-import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
@@ -58,8 +58,6 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     CacheConfig getCacheConfig(String name);
 
-    CacheConfig getCacheConfig(String name, CacheStorageType cacheStorageType);
-
     Collection<CacheConfig> getCacheConfigs();
 
     void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue, Data dataOldValue,
@@ -80,5 +78,5 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
     /**
      * Creates cache operations according to the storage-type of the cache
      */
-    CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, CacheStorageType storageType);
+    CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat storageType);
 }

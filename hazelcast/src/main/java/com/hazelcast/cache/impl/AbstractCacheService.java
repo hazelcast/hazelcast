@@ -17,10 +17,10 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheOperationProvider;
-import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -30,7 +30,6 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.Properties;
@@ -223,13 +222,6 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
-    public CacheConfig getCacheConfig(String name, CacheStorageType cacheStorageType) {
-        CacheConfig cacheConfig = getCacheConfig(name);
-        cacheConfig.setCacheStorageType(cacheStorageType);
-        return cacheConfig;
-    }
-
-    @Override
     public Collection<CacheConfig> getCacheConfigs() {
         return configs.values();
     }
@@ -342,9 +334,9 @@ public abstract class AbstractCacheService implements ICacheService {
     //endregion
 
     @Override
-    public CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, CacheStorageType storageType) {
-        if (CacheStorageType.NATIVE_MEMORY.equals(storageType)) {
-            throw new IllegalArgumentException("Native memory storage type is available in Enterprise!!!");
+    public CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat) {
+        if (InMemoryFormat.OFFHEAP.equals(inMemoryFormat)) {
+            throw new IllegalArgumentException("OffHeap is available in Enterprise!!!");
         }
         return new DefaultOperationProvider(nameWithPrefix);
     }

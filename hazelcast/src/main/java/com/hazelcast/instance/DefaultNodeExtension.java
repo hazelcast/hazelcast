@@ -16,10 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.cache.CacheOperationProvider;
-import com.hazelcast.cache.CacheStorageType;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.DefaultOperationProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
