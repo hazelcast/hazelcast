@@ -27,6 +27,10 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
+/**
+ * This client request  specifically calls {@link CacheContainsKeyOperation} on server side.
+ * @see com.hazelcast.cache.impl.operation.CacheContainsKeyOperation
+ */
 public class CacheContainsKeyRequest
         extends AbstractCacheRequest {
 

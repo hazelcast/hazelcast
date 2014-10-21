@@ -33,6 +33,10 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
+/**
+ * This client request  specifically calls {@link CacheCreateConfigOperation} on the server side.
+ * @see com.hazelcast.cache.impl.operation.CacheCreateConfigOperation
+ */
 public class CacheCreateConfigRequest
         extends ClientRequest {
 

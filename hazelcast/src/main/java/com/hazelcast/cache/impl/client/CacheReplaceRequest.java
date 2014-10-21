@@ -28,6 +28,10 @@ import com.hazelcast.spi.Operation;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
+/**
+ * This client request  specifically calls {@link CacheReplaceOperation} on server side.
+ * @see com.hazelcast.cache.impl.operation.CacheReplaceOperation
+ */
 public class CacheReplaceRequest
         extends AbstractCacheRequest {
 

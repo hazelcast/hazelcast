@@ -34,6 +34,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * This client request  specifically calls {@link CacheClearOperationFactory} on server side.
+ * @see com.hazelcast.cache.impl.operation.CacheClearOperationFactory
+ */
 public class CacheClearRequest
         extends AllPartitionsClientRequest
         implements RetryableRequest {

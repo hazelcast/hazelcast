@@ -29,6 +29,10 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.Map;
 
+/**
+ * This client request  specifically calls {@link CacheSizeOperationFactory} on server side.
+ * @see com.hazelcast.cache.impl.operation.CacheSizeOperationFactory
+ */
 public class CacheSizeRequest
         extends AllPartitionsClientRequest
         implements RetryableRequest {
