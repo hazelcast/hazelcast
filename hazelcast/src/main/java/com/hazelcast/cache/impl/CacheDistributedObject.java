@@ -20,10 +20,10 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 
 /**
- * Basic distributed object which serves as an accessor to {@link CacheService} and {@link NodeEngine}
+ * Basic distributed object which serves as an accessor to {@link CacheService} and {@link NodeEngine}.
  *<p>
  * <b>Warning: DO NOT use this distributed object directly, instead use {@link CacheProxy} through
- * {@link javax.cache.CacheManager}</b>
+ * {@link javax.cache.CacheManager}.</b>
  *</p>
  */
 public class CacheDistributedObject

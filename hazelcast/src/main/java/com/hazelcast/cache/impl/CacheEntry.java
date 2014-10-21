@@ -21,10 +21,11 @@ import javax.cache.Cache;
 /**
  * Simple  {@link Cache.Entry} implementation for wrapping a "key,value" pair.
  *
- * <p>This implementation is used by {@link javax.cache.integration.CacheWriter}s and {@link javax.cache.Cache#iterator()}.</p>
+ * <p>This implementation is used by {@link javax.cache.integration.CacheWriter}s and
+ * {@link javax.cache.Cache#iterator()}.</p>
  *
- * @param <K> the type of key
- * @param <V> the type of value
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  * @see javax.cache.integration.CacheWriter
  * @see javax.cache.Cache#iterator()
  */

@@ -54,15 +54,15 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
  * <p>
- * Hazelcast splits data homogeneously to partitions using keys. Where CacheRecordStore represent a named ICache on-heap data
- * store for a single partition.<br/>
- * This data structure is responsible from CRUD operations, entry processing, statistics, publishing events, cache loader and
- * writer and internal data operations like backup.
+ * Hazelcast splits data homogeneously to partitions using keys. CacheRecordStore represents a named ICache on-heap
+ * data store for a single partition.<br/>
+ * This data structure is responsible from CRUD operations, entry processing, statistics, publishing events, cache
+ * loader and writer and internal data operations like backup.
  * </p>
  * <p>CacheRecordStore is accessed through {@linkplain com.hazelcast.cache.impl.CachePartitionSegment} and
- * {@linkplain com.hazelcast.cache.impl.CacheService}</p>
+ * {@linkplain com.hazelcast.cache.impl.CacheService}.</p>
  * CacheRecordStore is managed by {@linkplain com.hazelcast.cache.impl.CachePartitionSegment}.
- *<p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation.
+ *<p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation:
  *     <pre>
  *         <code>CacheService service = getService();
  *         ICacheRecordStore cache = service.getOrCreateCache(name, partitionId);
@@ -844,9 +844,9 @@ public class CacheRecordStore
     }
 
     /**
-     * modifies the keys
+     * Modifies the keys.
      *
-     * @param keys : keys to delete, after method returns it includes only deleted keys
+     * @param keys keys to delete. After method returns, it includes only deleted keys
      */
     protected void deleteAllCacheEntry(Set<Data> keys) {
         if (isWriteThrough() && cacheWriter != null && keys != null && !keys.isEmpty()) {
