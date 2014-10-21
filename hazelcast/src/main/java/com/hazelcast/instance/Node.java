@@ -72,6 +72,8 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
+
 public class Node {
 
     private final ILogger logger;
@@ -552,7 +554,7 @@ public class Node {
         if (!joined()) {
             long maxJoinTime = groupProperties.MAX_JOIN_SECONDS.getInteger() * 1000L;
             logger.severe("Could not join cluster in " + maxJoinTime + " ms. Shutting down now!");
-            shutdown(true);
+            shutdownNodeByFiringEvents(Node.this, true);
         }
     }
 
