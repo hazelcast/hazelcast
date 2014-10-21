@@ -2,7 +2,7 @@
 
 # Preface
 
-Welcome to Hazelcast Reference Manual. This manual includes concepts, instructions and samples to guide you on how to use Hazelcast and build Hazelcast applications.
+Welcome to the Hazelcast Reference Manual. This manual includes concepts, instructions and samples to guide you on how to use Hazelcast and build Hazelcast applications.
 
 As the reader of this manual, you must be familiar with Java programming language and should have your preferred IDE.
 
