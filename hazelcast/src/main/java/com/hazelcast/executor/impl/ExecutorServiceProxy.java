@@ -469,13 +469,15 @@ public class ExecutorServiceProxy
                 }
             }
             done = wait(timeoutNanos, futures, result);
+            return result;
         } catch (Throwable t) {
             logger.severe(t);
+            // todo: should an exception not be thrown?
+            return result;
         } finally {
             if (!done) {
                 cancelAll(result);
             }
-            return result;
         }
     }
 
