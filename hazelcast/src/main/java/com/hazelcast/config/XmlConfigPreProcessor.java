@@ -54,10 +54,10 @@ public class XmlConfigPreProcessor {
 
     void process(Node root) throws Exception {
         traverseChildsAndReplaceVariables(root);
-        replaceImportStatementsWithActualFileContents(root);
+        replaceImportElementsWithActualFileContents(root);
     }
 
-    private void replaceImportStatementsWithActualFileContents(Node root) throws Exception {
+    private void replaceImportElementsWithActualFileContents(Node root) throws Exception {
         Document document = root.getOwnerDocument();
         NodeList misplacedImports = (NodeList) xpath.evaluate("//" + IMPORT.name
                         + "/parent::*[not(name()=\"" + HAZELCAST.name + "\")]", document,
@@ -68,26 +68,30 @@ public class XmlConfigPreProcessor {
         NodeList importTags = (NodeList) xpath.evaluate("/" + HAZELCAST.name + "/" + IMPORT.name, document,
                 XPathConstants.NODESET);
         for (Node node : new AbstractXmlConfigHelper.IterableNodeList(importTags)) {
-            NamedNodeMap attributes = node.getAttributes();
-            Node resourceAtrribute = attributes.getNamedItem("resource");
-            String resource = resourceAtrribute.getTextContent();
-            URL url = ConfigLoader.locateConfig(resource);
-            if (url == null) {
-                throw new HazelcastException("Failed to load resource : " + resource);
-            }
-            if (!currentlyImportedFiles.add(url.getPath())) {
-                throw new HazelcastException("Cyclic loading of resource " + url.getPath() + " is detected !");
-            }
-            Document doc = xmlConfigBuilder.parse(url.openStream());
-            Element importedRoot = doc.getDocumentElement();
-            traverseChildsAndReplaceVariables(importedRoot);
-            replaceImportStatementsWithActualFileContents(importedRoot);
-            for (Node fromImportedDoc : new AbstractXmlConfigHelper.IterableNodeList(importedRoot.getChildNodes())) {
-                Node importedNode = root.getOwnerDocument().importNode(fromImportedDoc, true);
-                root.insertBefore(importedNode, node);
-            }
-            root.removeChild(node);
+            loadAndReplaceImportElement(root, node);
         }
+    }
+
+    private void loadAndReplaceImportElement(Node root, Node node) throws Exception {
+        NamedNodeMap attributes = node.getAttributes();
+        Node resourceAtrribute = attributes.getNamedItem("resource");
+        String resource = resourceAtrribute.getTextContent();
+        URL url = ConfigLoader.locateConfig(resource);
+        if (url == null) {
+            throw new HazelcastException("Failed to load resource : " + resource);
+        }
+        if (!currentlyImportedFiles.add(url.getPath())) {
+            throw new HazelcastException("Cyclic loading of resource " + url.getPath() + " is detected !");
+        }
+        Document doc = xmlConfigBuilder.parse(url.openStream());
+        Element importedRoot = doc.getDocumentElement();
+        traverseChildsAndReplaceVariables(importedRoot);
+        replaceImportElementsWithActualFileContents(importedRoot);
+        for (Node fromImportedDoc : new AbstractXmlConfigHelper.IterableNodeList(importedRoot.getChildNodes())) {
+            Node importedNode = root.getOwnerDocument().importNode(fromImportedDoc, true);
+            root.insertBefore(importedNode, node);
+        }
+        root.removeChild(node);
     }
 
     private void traverseChildsAndReplaceVariables(Node root) throws XPathExpressionException {

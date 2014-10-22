@@ -22,20 +22,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.FileOutputStream;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.xml.sax.SAXException;
-
-import javax.xml.XMLConstants;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -43,7 +29,18 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.List;
-import java.util.Properties;
+import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.xml.sax.SAXException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -63,257 +60,11 @@ public class XMLConfigBuilderTest {
         System.clearProperty("hazelcast.config");
     }
 
-
-    @Test
-    public void testImportConfigFromResourceVariables() throws IOException {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
-        String networkConfig =  "<hazelcast>" +
-                "    <network>\n" +
-                "        <join>\n" +
-                "            <multicast enabled=\"false\"/>\n" +
-                "            <tcp-ip enabled=\"true\"/>\n" +
-                "        </join>\n" +
-                "    </network>\n" +
-                "</hazelcast>";
-        writeStringToStreamAndClose(os, networkConfig);
-
-        String xml = "<hazelcast>\n" +
-                "    <import resource=\"${config.location}\"/>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-
-        Properties properties = new Properties();
-        properties.setProperty("config.location", file.getAbsolutePath());
-        configBuilder.setProperties(properties);
-        Config config = configBuilder.build();
-        JoinConfig join = config.getNetworkConfig().getJoin();
-        assertFalse(join.getMulticastConfig().isEnabled());
-        assertTrue(join.getTcpIpConfig().isEnabled());
-    }
-
-    @Test
-    public void testImportedConfigVariableReplacement() throws IOException {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
-        String networkConfig =  "<hazelcast>" +
-                "    <network>\n" +
-                "        <join>\n" +
-                "            <multicast enabled=\"false\"/>\n" +
-                "            <tcp-ip enabled=\"${tcp.ip.enabled}\"/>\n" +
-                "        </join>\n" +
-                "    </network>\n" +
-                "</hazelcast>";
-        writeStringToStreamAndClose(os, networkConfig);
-
-        String xml = "<hazelcast>\n" +
-                "    <import resource=\"${config.location}\"/>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-
-        Properties properties = new Properties();
-        properties.setProperty("config.location", file.getAbsolutePath());
-        properties.setProperty("tcp.ip.enabled", "true");
-        configBuilder.setProperties(properties);
-        Config config = configBuilder.build();
-        JoinConfig join = config.getNetworkConfig().getJoin();
-        assertFalse(join.getMulticastConfig().isEnabled());
-        assertTrue(join.getTcpIpConfig().isEnabled());
-    }
-
-
-    @Test(expected = HazelcastException.class)
-    public void testTwoResourceCyclicImportThrowsException() throws Exception {
-        File config1 = createConfigFile("hz1", "xml");
-        File config2 = createConfigFile("hz2", "xml");
-        FileOutputStream os1 = new FileOutputStream(config1);
-        FileOutputStream os2 = new FileOutputStream(config2);
-        String config1Xml =  "<hazelcast>" +
-                "    <import resource=\"file://"+config2.getAbsolutePath()+"\"/>\n" +
-                "</hazelcast>";
-        String config2Xml =  "<hazelcast>" +
-                "    <import resource=\"file://"+config1.getAbsolutePath()+"\"/>\n" +
-                "</hazelcast>";
-        writeStringToStreamAndClose(os1, config1Xml);
-        writeStringToStreamAndClose(os2, config2Xml);
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(config1Xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testThreeResourceCyclicImportThrowsException() throws Exception {
-        File config1 = createConfigFile("hz1", "xml");
-        File config2 = createConfigFile("hz2", "xml");
-        File config3 = createConfigFile("hz3", "xml");
-        FileOutputStream os1 = new FileOutputStream(config1);
-        FileOutputStream os2 = new FileOutputStream(config2);
-        FileOutputStream os3 = new FileOutputStream(config2);
-        String config1Xml =  "<hazelcast>" +
-                "    <import resource=\"file://"+config2.getAbsolutePath()+"\"/>\n" +
-                "</hazelcast>";
-        String config2Xml =  "<hazelcast>" +
-                "    <import resource=\"file://"+config3.getAbsolutePath()+"\"/>\n" +
-                "</hazelcast>";
-        String config3Xml =  "<hazelcast>" +
-                "    <import resource=\"file://"+config1.getAbsolutePath()+"\"/>\n" +
-                "</hazelcast>";
-        writeStringToStreamAndClose(os1, config1Xml);
-        writeStringToStreamAndClose(os2, config2Xml);
-        writeStringToStreamAndClose(os3, config3Xml);
-        ByteArrayInputStream bis = new ByteArrayInputStream(config1Xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testImportEmptyResourceContent() throws Exception {
-        File config1 = createConfigFile("hz1", "xml");
-        FileOutputStream os1 = new FileOutputStream(config1);
-        String config1Xml =  "<hazelcast>" +
-                "    <import resource=\"file://"+config1.getAbsolutePath()+"\"/>\n" +
-                "</hazelcast>";
-        writeStringToStreamAndClose(os1, "");
-        ByteArrayInputStream bis = new ByteArrayInputStream(config1Xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testImportEmptyResourceThrowsException() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "    <import resource=\"\"/>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testImportNotExistingResourceThrowsException() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "    <import resource=\"notexisting.xml\"/>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-
-
-    @Test
-    public void testImportNetworkConfigFromFile() throws Exception {
-        File file = createConfigFile("foo", "bar");
-        FileOutputStream os = new FileOutputStream(file);
-        String networkConfig =  "<hazelcast>" +
-                "    <network>\n" +
-                "        <join>\n" +
-                "            <multicast enabled=\"false\"/>\n" +
-                "            <tcp-ip enabled=\"true\"/>\n" +
-                "        </join>\n" +
-                "    </network>\n" +
-                "</hazelcast>";
-        writeStringToStreamAndClose(os, networkConfig);
-
-        String xml = "<hazelcast>\n" +
-                "    <import resource=\"file://"+file.getAbsolutePath()+"\"/>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
-        JoinConfig join = config.getNetworkConfig().getJoin();
-        assertFalse(join.getMulticastConfig().isEnabled());
-        assertTrue(join.getTcpIpConfig().isEnabled());
-    }
-
-    @Test
-    public void testImportMapConfigFromFile() throws Exception {
-        File file = createConfigFile("mymap", "config");
-        FileOutputStream os = new FileOutputStream(file);
-        String mapConfig =  "<hazelcast>" +
-                "    <map name=\"mymap\">\n" +
-                "       <backup-count>6</backup-count>" +
-                "       <time-to-live-seconds>10</time-to-live-seconds>" +
-                "       <map-store enabled=\"true\" initial-mode=\"LAZY\">\n" +
-                "            <class-name>com.hazelcast.examples.MyMapStore</class-name>\n" +
-                "            <write-delay-seconds>10</write-delay-seconds>\n" +
-                "            <write-batch-size>100</write-batch-size>\n" +
-                "        </map-store>"+
-                "</map>\n" +
-                "</hazelcast>";
-        writeStringToStreamAndClose(os, mapConfig);
-
-        String xml = "<hazelcast>\n" +
-                "    <import resource=\"file://"+file.getAbsolutePath()+"\"/>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
-        MapConfig myMapConfig = config.getMapConfig("mymap");
-        assertEquals("mymap", myMapConfig.getName());
-        assertEquals(6, myMapConfig.getBackupCount());
-        assertEquals(10, myMapConfig.getTimeToLiveSeconds());
-        MapStoreConfig myMapStoreConfig = myMapConfig.getMapStoreConfig();
-        assertEquals(10, myMapStoreConfig.getWriteDelaySeconds());
-        assertEquals(100, myMapStoreConfig.getWriteBatchSize());
-        assertEquals("com.hazelcast.examples.MyMapStore", myMapStoreConfig.getClassName());
-    }
-
-
-    @Test
-    public void testImportGroupConfigFromClassPath() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "    <import resource=\"classpath:test-hazelcast.xml\"/>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
-        GroupConfig groupConfig = config.getGroupConfig();
-        assertEquals("foobar", groupConfig.getName());
-        assertEquals("dev-pass", groupConfig.getPassword());
-    }
-
-
-    @Test(expected = HazelcastException.class)
-    public void testImportElementOnlyAppersInTopLevel() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "   <network>" +
-                "        <import resource=\"\"/>\n" +
-                "   </network>" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testHazelcastElementOnlyAppersOnce() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "   <hazelcast>" +
-                "   </hazelcast>" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
-    }
-
     @Test(expected = HazelcastException.class)
     public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
         File file = File.createTempFile("foo", "bar");
         file.delete();
         System.setProperty("hazelcast.config", file.getAbsolutePath());
-
         new XmlConfigBuilder();
     }
 
@@ -400,33 +151,6 @@ public class XMLConfigBuilderTest {
         assertEquals("nocolon", configBuilder.cleanNodeName("noColon"));
         assertEquals("after", configBuilder.cleanNodeName("Before:After"));
         assertNull(configBuilder.cleanNodeName((String) null));
-    }
-
-    @Test
-    public void readVariables() {
-        String xml =
-                "<hazelcast>\n" +
-                        "    <semaphore name=\"${name}\">\n" +
-                        "        <initial-permits>${initial.permits}</initial-permits>\n" +
-                        "        <backup-count>${backupcount.part1}${backupcount.part2}</backup-count>\n" +
-                        "        <async-backup-count>${notreplaced}</async-backup-count>\n" +
-                        "    </semaphore>" +
-                        "</hazelcast>";
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-
-        Properties properties = new Properties();
-        properties.setProperty("name", "s");
-        properties.setProperty("initial.permits", "25");
-        properties.setProperty("backupcount.part1", "1");
-        properties.setProperty("backupcount.part2", "0");
-        configBuilder.setProperties(properties);
-
-        Config config = configBuilder.build();
-        SemaphoreConfig semaphoreConfig = config.getSemaphoreConfig("s");
-        assertEquals(25, semaphoreConfig.getInitialPermits());
-        assertEquals(10, semaphoreConfig.getBackupCount());
-        assertEquals(0, semaphoreConfig.getAsyncBackupCount());
     }
 
     @Test
@@ -815,193 +539,6 @@ public class XMLConfigBuilderTest {
         assertTrue(o instanceof DummyMapStore);
     }
 
-    @Test(expected = HazelcastException.class)
-    public void testXmlDeniesDuplicateNetworkConfig() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "    <network>\n" +
-                "        <join>\n" +
-                "            <tcp-ip enabled=\"true\"/>\n" +
-                "        </join>\n" +
-                "    </network>\n" +
-                "    <network>\n" +
-                "        <join>\n" +
-                "            <tcp-ip enabled=\"false\"/>\n" +
-                "        </join>\n" +
-                "    </network>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testXmlDeniesDuplicateGroupConfig() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "    <group>\n" +
-                "        <name>foobar</name>\n" +
-                "        <password>dev-pass</password>\n" +
-                "    </group>" +
-                "    <group>\n" +
-                "        <name>foobar</name>\n" +
-                "        <password>dev-pass</password>\n" +
-                "    </group>" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-    @Test(expected = HazelcastException.class)
-    public void testXmlDeniesDuplicateLicenseKeyConfig() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "    <license-key>foo</license-key>" +
-                "    <license-key>bar</license-key>" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-    @Test(expected = HazelcastException.class)
-    public void testXmlDeniesDuplicatePropertiesConfig() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "    <properties>\n" +
-                "        <property>foo</property>\n" +
-                "    </properties>" +
-                "    <properties>\n" +
-                "        <property>bar</property>\n" +
-                "    </properties>" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-    @Test(expected = HazelcastException.class)
-    public void testXmlDeniesDuplicatePartitionGroupConfig() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "   <partition-group>\n" +
-                "      <member-group>\n" +
-                "          <interface>foo</interface>\n" +
-                "      </member-group>\n" +
-                "   </partition-group>\n" +
-                "   <partition-group>\n" +
-                "      <member-group>\n" +
-                "          <interface>bar</interface>\n" +
-                "      </member-group>\n" +
-                "   </partition-group>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-    @Test(expected = HazelcastException.class)
-    public void testXmlDeniesDuplicateListenersConfig() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "   <listeners>" +
-                "        <listener>foo</listener>\n\n" +
-                "   </listeners>\n" +
-                "   <listeners>" +
-                "        <listener>bar</listener>\n\n" +
-                "   </listeners>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testXmlDeniesDuplicateSerializationConfig() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "       <serialization>\n" +
-                "        <portable-version>0</portable-version>\n" +
-                "        <data-serializable-factories>\n" +
-                "            <data-serializable-factory factory-id=\"1\">com.hazelcast.examples.DataSerializableFactory\n" +
-                "            </data-serializable-factory>\n" +
-                "        </data-serializable-factories>\n" +
-                "        <portable-factories>\n" +
-                "            <portable-factory factory-id=\"1\">com.hazelcast.examples.PortableFactory</portable-factory>\n" +
-                "        </portable-factories>\n" +
-                "        <serializers>\n" +
-                "            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>\n" +
-                "            <serializer type-class=\"com.hazelcast.examples.DummyType\" class-name=\"com.hazelcast.examples.SerializerFactory\"/>\n" +
-                "        </serializers>\n" +
-                "        <check-class-def-errors>true</check-class-def-errors>\n" +
-                "    </serialization>\n <serialization>\n" +
-                "        <portable-version>0</portable-version>\n" +
-                "        <data-serializable-factories>\n" +
-                "            <data-serializable-factory factory-id=\"1\">com.hazelcast.examples.DataSerializableFactory\n" +
-                "            </data-serializable-factory>\n" +
-                "        </data-serializable-factories>\n" +
-                "        <portable-factories>\n" +
-                "            <portable-factory factory-id=\"1\">com.hazelcast.examples.PortableFactory</portable-factory>\n" +
-                "        </portable-factories>\n" +
-                "        <serializers>\n" +
-                "            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>\n" +
-                "            <serializer type-class=\"com.hazelcast.examples.DummyType\" class-name=\"com.hazelcast.examples.SerializerFactory\"/>\n" +
-                "        </serializers>\n" +
-                "        <check-class-def-errors>true</check-class-def-errors>\n" +
-                "    </serialization>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-
-    @Test(expected = HazelcastException.class)
-    public void testXmlDeniesDuplicateServicesConfig() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "   <services>       " +
-                "       <service enabled=\"true\">\n" +
-                "            <name>custom-service</name>\n" +
-                "            <class-name>com.hazelcast.examples.MyService</class-name>\n" +
-                "        </service>\n" +
-                "   </services>" +
-                "   <services>   " +
-                "        <service enabled=\"true\">\n" +
-                "            <name>custom-service</name>\n" +
-                "            <class-name>com.hazelcast.examples.MyService</class-name>\n" +
-                "        </service>\n" +
-                "   </services>" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-    @Test(expected = HazelcastException.class)
-    public void testXmlDeniesDuplicateSecurityConfig() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "   <security>       " +
-                "   </security>" +
-                "   <security>   " +
-                "   </security>" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-    @Test(expected = HazelcastException.class)
-    public void testXmlDeniesDuplicateMemberAttributesConfig() throws Exception {
-        String xml = "<hazelcast>\n" +
-                "    <member-attributes>\n" +
-                "        <attribute name=\"attribute.float\" type=\"float\">1234.5678</attribute>\n" +
-                "    </member-attributes>\n" +
-                "    <member-attributes>\n" +
-                "        <attribute name=\"attribute.float\" type=\"float\">1234.5678</attribute>\n" +
-                "    </member-attributes>\n" +
-                "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
-    }
-
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.4.xsd");
@@ -1020,20 +557,6 @@ public class XMLConfigBuilderTest {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
         return configBuilder.build();
-    }
-
-
-    private File createConfigFile(String filename, String suffix) throws IOException {
-        File file = File.createTempFile(filename, suffix);
-        file.setWritable(true);
-        file.deleteOnExit();
-        return file;
-    }
-
-    private void writeStringToStreamAndClose(FileOutputStream os, String string) throws IOException {
-        os.write(string.getBytes());
-        os.flush();
-        os.close();
     }
 
 }
