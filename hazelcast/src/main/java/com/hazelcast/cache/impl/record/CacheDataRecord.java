@@ -23,11 +23,16 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 
 /**
- * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} where value has an internal serialized format.
+ * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} where value has internal serialized format
  */
 class CacheDataRecord extends AbstractCacheRecord<Data> {
 
     private Data value;
+
+    // Deserialization constructor
+    CacheDataRecord() {
+        super();
+    }
 
     CacheDataRecord(Data key, Data value, long expiryTime) {
         super(key, expiryTime);
