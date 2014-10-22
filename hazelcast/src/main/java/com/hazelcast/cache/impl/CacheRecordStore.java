@@ -470,6 +470,7 @@ public class CacheRecordStore
         return result;
     }
 
+    /*
     @Override
     public boolean contains(Data key) {
         long now = Clock.currentTimeMillis();
@@ -477,6 +478,7 @@ public class CacheRecordStore
         boolean isExpired = processExpiredEntry(key, record, now);
         return record != null && !isExpired;
     }
+    */
 
     @Override
     public MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
@@ -712,6 +714,7 @@ public class CacheRecordStore
     }
     */
 
+    /*
     protected boolean updateRecordWithExpiry(Data key,
                                              Object value,
                                              CacheRecord record,
@@ -735,7 +738,9 @@ public class CacheRecordStore
         updateRecord(key, record, value);
         return !processExpiredEntry(key, record, expiryTime, now);
     }
+    */
 
+    /*
     protected CacheRecord updateRecord(Data key, CacheRecord record, Object value) {
         final Data dataOldValue;
         final Data dataValue;
@@ -772,6 +777,7 @@ public class CacheRecordStore
         }
         return record;
     }
+    */
 
     protected void deleteRecord(Data key) {
         final CacheRecord record = records.remove(key);
@@ -943,6 +949,7 @@ public class CacheRecordStore
         return null;
     }
 
+    /*
     protected boolean processExpiredEntry(Data key, CacheRecord record, long now) {
         final boolean isExpired = record != null && record.isExpiredAt(now);
         if (!isExpired) {
@@ -1001,6 +1008,7 @@ public class CacheRecordStore
         }
         return true;
     }
+    */
 
     @Override
     public int forceEvict() {

@@ -25,6 +25,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
 import javax.cache.configuration.Factory;
+import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CacheLoader;
@@ -32,6 +33,7 @@ import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 
@@ -146,7 +148,7 @@ public abstract class AbstractCacheRecordStore<
         }
     }
 
-    protected boolean processExpiredEntry(Data key, R record, long now) {
+    public boolean processExpiredEntry(Data key, R record, long now) {
         final boolean isExpired = record != null && record.isExpiredAt(now);
         if (!isExpired) {
             return false;
@@ -173,6 +175,43 @@ public abstract class AbstractCacheRecordStore<
         return true;
     }
 
+    public boolean processExpiredEntry(Data key,
+                                       R record,
+                                       long expiryTime,
+                                       long now) {
+        final boolean isExpired = isExpiredAt(expiryTime, now);
+        if (!isExpired) {
+            return false;
+        }
+        if (isStatisticsEnabled()) {
+            statistics.increaseCacheExpiries(1);
+        }
+        records.remove(key);
+        if (isEventsEnabled) {
+            final Data dataValue;
+            switch (cacheConfig.getInMemoryFormat()) {
+                case BINARY:
+                    dataValue = (Data) record.getValue();
+                    break;
+                case OBJECT:
+                    dataValue = recordToData(record);
+                    break;
+                case OFFHEAP:
+                    dataValue = recordToData(record);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid storage format: "
+                            + cacheConfig.getInMemoryFormat());
+            }
+            publishEvent(name,
+                         CacheEventType.EXPIRED,
+                         key,
+                         null,
+                         dataValue,
+                         false);
+        }
+        return true;
+    }
 
     protected CacheRecord accessRecord(CacheRecord record,
                                        ExpiryPolicy expiryPolicy,
@@ -310,6 +349,25 @@ public abstract class AbstractCacheRecordStore<
         return v1.equals(v2);
     }
 
+    protected long expiryPolicyToTTL(ExpiryPolicy expiryPolicy) {
+        if (expiryPolicy == null) {
+            return -1;
+        }
+        Duration expiryDuration;
+        try {
+            expiryDuration = expiryPolicy.getExpiryForCreation();
+            long durationAmount = expiryDuration.getDurationAmount();
+            TimeUnit durationTimeUnit = expiryDuration.getTimeUnit();
+            return TimeUnit.MILLISECONDS.convert(durationAmount, durationTimeUnit);
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    protected ExpiryPolicy ttlToExpirePolicy(long ttl) {
+        return new CreatedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, ttl));
+    }
+
     protected R createRecord(Data keyData, Object value, long expirationTime) {
         final R record = createRecord(value, expirationTime);
         if (isEventsEnabled) {
@@ -350,6 +408,76 @@ public abstract class AbstractCacheRecordStore<
         return false;
     }
 
+    protected R updateRecord(Data key, R record, Object value) {
+        final Data dataOldValue;
+        final Data dataValue;
+        Object v = value;
+        switch (cacheConfig.getInMemoryFormat()) {
+            case BINARY:
+                if (!(value instanceof Data)) {
+                    v = valueToData(value);
+                }
+                dataValue = (Data) v;
+                dataOldValue = (Data) record.getValue();
+                break;
+            case OBJECT:
+                if (value instanceof Data) {
+                    v = dataToValue((Data) value);
+                    dataValue = (Data) value;
+                } else {
+                    dataValue = valueToData(value);
+                }
+                dataOldValue = valueToData(record.getValue());
+                break;
+            case OFFHEAP:
+                if (value instanceof Data) {
+                    v = dataToValue((Data) value);
+                    dataValue = (Data) value;
+                } else {
+                    dataValue = valueToData(value);
+                }
+                dataOldValue = recordToValue(record);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid storage format: "
+                        + cacheConfig.getInMemoryFormat());
+        }
+        record.setValue(v);
+        if (isEventsEnabled) {
+            publishEvent(name,
+                         CacheEventType.UPDATED,
+                         key,
+                         dataOldValue,
+                         dataValue,
+                         true);
+        }
+        return record;
+    }
+
+    public boolean updateRecordWithExpiry(Data key,
+                                          Object value,
+                                          R record,
+                                          ExpiryPolicy localExpiryPolicy,
+                                          long now,
+                                          boolean disableWriteThrough) {
+        long expiryTime = -1L;
+        try {
+            Duration expiryDuration = localExpiryPolicy.getExpiryForUpdate();
+            if (expiryDuration != null) {
+                expiryTime = expiryDuration.getAdjustedTime(now);
+                record.setExpirationTime(expiryTime);
+            }
+        } catch (Exception e) {
+            EmptyStatement.ignore(e);
+            //leave the expiry time untouched when we can't determine a duration
+        }
+        if (!disableWriteThrough) {
+            writeThroughCache(key, value);
+        }
+        updateRecord(key, record, value);
+        return !processExpiredEntry(key, record, expiryTime, now);
+    }
+
     public Object readThroughCache(Data key) throws CacheLoaderException {
         if (this.isReadThrough() && cacheLoader != null) {
             try {
@@ -373,7 +501,7 @@ public abstract class AbstractCacheRecordStore<
                 final Object objValue;
                 switch (cacheConfig.getInMemoryFormat()) {
                     case BINARY:
-                        objValue = dataToValue((Data)value);
+                        objValue = dataToValue((Data) value);
                         break;
                     case OBJECT:
                         objValue = value;
@@ -449,6 +577,50 @@ public abstract class AbstractCacheRecordStore<
                          Object value,
                          R record) {
 
+    }
+
+    @Override
+    public boolean contains(Data key) {
+        long now = Clock.currentTimeMillis();
+        R record = records.get(key);
+        boolean isExpired = processExpiredEntry(key, record, now);
+        return record != null && !isExpired;
+    }
+
+    protected Object getAndPut(Data key,
+                               Object value,
+                               ExpiryPolicy expiryPolicy,
+                               String caller,
+                               boolean getValue,
+                               boolean disableWriteThrough) {
+        expiryPolicy = getExpiryPolicy(expiryPolicy);
+
+        final long now = Clock.currentTimeMillis();
+        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
+
+        boolean isPutSucceed;
+        Object oldValue = null;
+        R record = records.get(key);
+        boolean isExpired = processExpiredEntry(key, record, now);
+        // check that new entry is not already expired, in which case it should
+        // not be added to the cache or listeners called or writers called.
+        if (record == null || isExpired) {
+            isPutSucceed = createRecordWithExpiry(key,
+                    value,
+                    expiryPolicy,
+                    now,
+                    disableWriteThrough);
+        } else {
+            oldValue = record.getValue();
+            isPutSucceed = updateRecordWithExpiry(key,
+                                                  value,
+                                                  record,
+                                                  expiryPolicy,
+                                                  now,
+                                                  disableWriteThrough);
+        }
+        updateGetAndPutStat(isPutSucceed, getValue, oldValue == null, start);
+        return oldValue;
     }
 
 }
