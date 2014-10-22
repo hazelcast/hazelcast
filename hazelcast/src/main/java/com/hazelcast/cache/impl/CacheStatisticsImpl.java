@@ -248,15 +248,19 @@ public class CacheStatisticsImpl
      *
      * @param duration the time taken in nanoseconds.
      */
-    public void addGetTimeNano(long duration) {
+    public void addGetTimeNanos(long duration) {
         for (;;) {
             long nanos = getCacheTimeTakenNanos;
             if (nanos <= Long.MAX_VALUE - duration) {
-                GET_CACHE_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, nanos + duration);
+                if (GET_CACHE_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, nanos + duration)) {
+                    return;
+                }
             } else {
                 //counter full. Just reset.
-                clear();
-                GET_CACHE_TIME_TAKEN_NANOS_UPDATER.set(this, duration);
+                if (GET_CACHE_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, duration)) {
+                    clear();
+                    return;
+                }
             }
         }
     }
@@ -266,15 +270,19 @@ public class CacheStatisticsImpl
      *
      * @param duration the time taken in nanoseconds.
      */
-    public void addPutTimeNano(long duration) {
+    public void addPutTimeNanos(long duration) {
         for (;;) {
             long nanos = putTimeTakenNanos;
             if (nanos <= Long.MAX_VALUE - duration) {
-                PUT_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, nanos + duration);
+                if (PUT_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, nanos + duration)) {
+                    return;
+                }
             } else {
                 //counter full. Just reset.
-                clear();
-                PUT_TIME_TAKEN_NANOS_UPDATER.set(this, duration);
+                if (PUT_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, duration)) {
+                    clear();
+                    return;
+                }
             }
         }
     }
@@ -284,15 +292,19 @@ public class CacheStatisticsImpl
      *
      * @param duration the time taken in nanoseconds.
      */
-    public void addRemoveTimeNano(long duration) {
+    public void addRemoveTimeNanos(long duration) {
         for (;;) {
             long nanos = removeTimeTakenNanos;
             if (nanos <= Long.MAX_VALUE - duration) {
-                REMOVALS_UPDATER.compareAndSet(this, nanos, nanos + duration);
+                if (REMOVALS_UPDATER.compareAndSet(this, nanos, nanos + duration)) {
+                    return;
+                }
             } else {
                 //counter full. Just reset.
-                clear();
-                REMOVALS_UPDATER.set(this, duration);
+                if (REMOVALS_UPDATER.compareAndSet(this, nanos, duration)) {
+                    clear();
+                    return;
+                }
             }
         }
     }
