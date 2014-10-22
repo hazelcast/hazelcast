@@ -205,9 +205,9 @@ public class CacheService
             deregisterAllListener(objectName);
         }
         //todo weird naming
-        enableStatistics(objectName, false);
+        setStatisticsEnabled(objectName, false);
         //todo weird naming
-        enableManagement(objectName, false);
+        setManagementEnabled(objectName, false);
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
         if (!isLocal) {
@@ -238,10 +238,10 @@ public class CacheService
         final boolean created = localConfig == null;
         if (created) {
             if (config.isStatisticsEnabled()) {
-                enableStatistics(config.getNameWithPrefix(), true);
+                setStatisticsEnabled(config.getNameWithPrefix(), true);
             }
             if (config.isManagementEnabled()) {
-                enableManagement(config.getNameWithPrefix(), true);
+                setManagementEnabled(config.getNameWithPrefix(), true);
             }
             if (!isLocal) {
                 createConfigOnAllMembers(config);
@@ -287,7 +287,7 @@ public class CacheService
         statistics.remove(name);
     }
 
-    public void enableStatistics(String cacheNameWithPrefix, boolean enabled) {
+    public void setStatisticsEnabled(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
         if (cacheConfig != null) {
             final String cacheManagerName = cacheConfig.getUriString();
@@ -304,7 +304,7 @@ public class CacheService
         }
     }
 
-    public void enableManagement(String cacheNameWithPrefix, boolean enabled) {
+    public void setManagementEnabled(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
         if (cacheConfig != null) {
             final String cacheManagerName = cacheConfig.getUriString();
