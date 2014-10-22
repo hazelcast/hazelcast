@@ -47,8 +47,8 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
  * {@link SerializationService} accessor which will be used by implementation of {@link com.hazelcast.cache.ICache}
  * in server or embedded mode.
  *
- * @param <K> the type of key
- * @param <V> the type of value
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  * @see com.hazelcast.cache.impl.CacheProxy
  */
 abstract class AbstractCacheProxyBase<K, V> {

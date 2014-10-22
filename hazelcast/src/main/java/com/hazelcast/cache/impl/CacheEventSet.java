@@ -68,7 +68,7 @@ public class CacheEventSet
 
     /**
      * Helper method for adding multiple CacheEventData into this Set
-     * @param cacheEventData event data represents a single event's data
+     * @param cacheEventData event data representing a single event's data.
      * @see CacheEventData
      */
     public void addEventData(CacheEventData cacheEventData) {

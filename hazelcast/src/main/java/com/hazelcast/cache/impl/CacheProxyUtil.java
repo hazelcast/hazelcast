@@ -44,7 +44,7 @@ public final class CacheProxyUtil {
      * Cache clear response validator, loop on results to validate that no exception exists on the result map.
      * Throws the first exception in the map.
      *
-     * @param results map of {@link CacheClearResponse}
+     * @param results map of {@link CacheClearResponse}.
      */
     public static void validateResults(Map<Integer, Object> results) {
         for (Object result : results.values()) {
