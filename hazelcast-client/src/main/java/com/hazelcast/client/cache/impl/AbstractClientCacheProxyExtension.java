@@ -45,7 +45,12 @@ import java.util.concurrent.Future;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * Abstract ICache implementation
+ * <p>Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
+ * {@link com.hazelcast.cache.ICache} is the designated interface.</p>
+ * <p>AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.</p>
+ * <p>Note: this partial implementation is used by client.</p>
+ * @param <K> the type of key
+ * @param <V> the type of value
  */
 abstract class AbstractClientCacheProxyExtension<K, V>
         extends AbstractClientCacheProxyInternal<K, V>

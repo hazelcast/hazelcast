@@ -28,10 +28,13 @@ import javax.cache.Cache;
 import java.util.Iterator;
 
 /**
- * client side cluster-wide iterator for the {@link com.hazelcast.cache.ICache}
- *
- * @param <K> key
- * @param <V> value
+ * Client side cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
+ * <p>
+ * This implementation is used by client implementation of jcache.
+ * </p>
+ * Note: For more information on the iterator details, see {@link AbstractClusterWideIterator}.
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  */
 public class ClientClusterWideIterator<K, V>
         extends AbstractClusterWideIterator<K, V>
