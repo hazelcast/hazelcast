@@ -14,7 +14,7 @@ It is 100% TCK (Technology Compatibility Kit) compliant.
 This chapter explains the usage of Hazelcast’s JCache implementation. For the full details of JCache, 
 please visit its website at the Java Community Process (JCP):
 
-[https://www.jcp.org/en/jsr/detail?id=107](#https://www.jcp.org/en/jsr/detail?id=107)
+[https://www.jcp.org/en/jsr/detail?id=107](https://www.jcp.org/en/jsr/detail?id=107)
 
 ## Setup and Usage
 
@@ -174,7 +174,6 @@ To run the JCache (JSR107) TCK against Hazelcast, perform the below instructions
     <!--################################################################################################################-->
     <!--Change the following properties on the command line to override with the coordinates for your implementation-->
     <implementation-groupId>com.hazelcast</implementation-groupId>
-    <!--<implementation-artifactId>hazelcast</implementation-artifactId>-->
     <implementation-artifactId>hazelcast</implementation-artifactId>
     <implementation-version>3.3.1</implementation-version>
 
