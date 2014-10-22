@@ -33,20 +33,20 @@ public class CacheRecordFactory<R extends CacheRecord> {
         this.serializationService = serializationService;
     }
 
-    public R newRecord(Data key, Object value) {
-        return newRecordWithExpiry(key, value, -1);
+    public R newRecord(Object value) {
+        return newRecordWithExpiry(value, -1);
     }
 
-    public R newRecordWithExpiry(Data key, Object value, long expiryTime) {
+    public R newRecordWithExpiry(Object value, long expiryTime) {
         final R record;
         switch (inMemoryFormat) {
             case BINARY:
                 Data dataValue = serializationService.toData(value);
-                record = (R) createCacheDataRecord(key, dataValue, expiryTime);
+                record = (R) createCacheDataRecord(dataValue, expiryTime);
                 break;
             case OBJECT:
                 Object objectValue = serializationService.toObject(value);
-                record = (R) createCacheObjectRecord(key, objectValue, expiryTime);
+                record = (R) createCacheObjectRecord(objectValue, expiryTime);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + inMemoryFormat);
@@ -54,11 +54,11 @@ public class CacheRecordFactory<R extends CacheRecord> {
         return record;
     }
 
-    protected CacheRecord createCacheDataRecord(Data key, Data dataValue, long expiryTime) {
+    protected CacheRecord createCacheDataRecord(Data dataValue, long expiryTime) {
         return new CacheDataRecord(dataValue, expiryTime);
     }
 
-    protected CacheRecord createCacheObjectRecord(Data key, Object objectValue, long expiryTime) {
+    protected CacheRecord createCacheObjectRecord(Object objectValue, long expiryTime) {
         return new CacheObjectRecord(objectValue, expiryTime);
     }
 

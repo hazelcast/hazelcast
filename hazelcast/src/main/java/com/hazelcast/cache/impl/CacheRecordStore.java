@@ -20,8 +20,8 @@ import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
 import com.hazelcast.cache.impl.record.CacheRecordMap;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.NearCache;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -60,8 +60,11 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
  *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
  */
-public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Data, CacheRecord>> {
+public class CacheRecordStore
+        extends AbstractCacheRecordStore<CacheRecord, CacheRecordMap<Data, CacheRecord>> {
 
+    protected SerializationService serializationService;
+    protected CacheRecordFactory cacheRecordFactory;
     protected boolean hasExpiringEntry;
     protected final ScheduledFuture<?> evictionTaskFuture;
 
@@ -69,24 +72,18 @@ public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Da
                             int partitionId,
                             NodeEngine nodeEngine,
                             AbstractCacheService cacheService) {
-        this(name, partitionId, nodeEngine, cacheService, null, null, null);
+        this(name, partitionId, nodeEngine, cacheService, null);
     }
 
     public CacheRecordStore(String name,
                             int partitionId,
                             NodeEngine nodeEngine,
                             AbstractCacheService cacheService,
-                            SerializationService serializationService,
-                            CacheRecordFactory cacheRecordFactory,
                             ExpiryPolicy expiryPolicy) {
-        super(name,
-              partitionId,
-              nodeEngine,
-              cacheService,
-              serializationService,
-              cacheRecordFactory,
-              expiryPolicy);
-        evictionTaskFuture =
+        super(name, partitionId, nodeEngine, cacheService, expiryPolicy);
+        this.serializationService = nodeEngine.getSerializationService();
+        this.cacheRecordFactory = createCacheRecordFactory();
+        this.evictionTaskFuture =
                 nodeEngine.getExecutionService()
                         .scheduleWithFixedDelay("hz:cache",
                                 new EvictionTask(),
@@ -99,10 +96,14 @@ public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Da
         return new CacheRecordHashMap<Data, CacheRecord>(1000);
     }
 
+    protected CacheRecordFactory createCacheRecordFactory() {
+        return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
+                                      nodeEngine.getSerializationService());
+    }
+
     @Override
-    protected CacheRecordFactory createCacheRecordFactory(InMemoryFormat inMemoryFormat,
-                                                          SerializationService serializationService) {
-        return new CacheRecordFactory(inMemoryFormat, serializationService);
+    protected <T> CacheRecord createRecord(T value, long creationTime, long expiryTime) {
+        return cacheRecordFactory.newRecordWithExpiry(value, expiryTime);
     }
 
     @Override
@@ -110,6 +111,46 @@ public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Da
         return cacheService.toData(value);
     }
 
+    @Override
+    protected <T> T dataToValue(Data data) {
+        return (T) serializationService.toObject(data);
+    }
+
+    @Override
+    protected <T> CacheRecord valueToRecord(T value) {
+        return cacheRecordFactory.newRecord(value);
+    }
+
+    @Override
+    protected <T> T recordToValue(CacheRecord record) {
+        return (T) record.getValue();
+    }
+
+    @Override
+    protected Data recordToData(CacheRecord record) {
+        Object value = recordToValue(record);
+        if (value == null) {
+            return null;
+        } else if (value instanceof Data) {
+            return (Data) value;
+        } else {
+            return valueToData(value);
+        }
+    }
+
+    @Override
+    protected CacheRecord dataToRecord(Data data) {
+        Object value = dataToValue(data);
+        if (value == null) {
+            return null;
+        } else if (value instanceof CacheRecord) {
+            return (CacheRecord) value;
+        } else {
+            return valueToRecord(value);
+        }
+    }
+
+    /*
     @Override
     public Object get(Data key, ExpiryPolicy expiryPolicy) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
@@ -138,6 +179,7 @@ public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Da
             return value;
         }
     }
+    */
 
     @Override
     public void put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller) {
@@ -625,6 +667,7 @@ public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Da
         return 0;
     }
 
+    /*
     protected boolean createRecordWithExpiry(Data key,
                                              Object value,
                                              ExpiryPolicy localExpiryPolicy,
@@ -649,10 +692,12 @@ public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Da
         }
         return false;
     }
+    */
 
+    /*
     protected CacheRecord createRecord(Data keyData, Object value, long expirationTime) {
         final CacheRecord record =
-                cacheRecordFactory.newRecordWithExpiry(keyData, value, expirationTime);
+                cacheRecordFactory.newRecordWithExpiry(value, expirationTime);
         if (isEventsEnabled) {
             final Object recordValue = record.getValue();
             Data dataValue;
@@ -665,6 +710,7 @@ public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Da
         }
         return record;
     }
+    */
 
     protected boolean updateRecordWithExpiry(Data key,
                                              Object value,
@@ -773,6 +819,7 @@ public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Da
         return record;
     }
 
+    /*
     protected Object readThroughCache(Data key) throws CacheLoaderException {
         if (this.isReadThrough() && cacheLoader != null) {
             try {
@@ -788,7 +835,9 @@ public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Da
         }
         return null;
     }
+    */
 
+    /*
     protected void writeThroughCache(Data key, Object value) throws CacheWriterException {
         if (isWriteThrough() && cacheWriter != null) {
             try {
@@ -816,6 +865,7 @@ public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Da
             }
         }
     }
+    */
 
     protected void deleteCacheEntry(Data key) {
         if (isWriteThrough() && cacheWriter != null) {
@@ -950,21 +1000,6 @@ public class CacheRecordStore extends AbstractCacheRecordStore<CacheRecordMap<Da
                     false);
         }
         return true;
-    }
-
-    public void publishCompletedEvent(String cacheName,
-                                      int completionId,
-                                      Data dataKey,
-                                      int orderKey) {
-        if (completionId > 0) {
-            cacheService.publishEvent(cacheName,
-                    CacheEventType.COMPLETED,
-                    dataKey,
-                    cacheService.toData(completionId),
-                    null,
-                    false,
-                    orderKey);
-        }
     }
 
     @Override

@@ -17,23 +17,28 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordMap;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriter;
+import javax.cache.integration.CacheWriterException;
 import java.util.*;
 
-public abstract class AbstractCacheRecordStore<CRM extends CacheRecordMap<? extends Data, ? extends CacheRecord>> implements ICacheRecordStore {
+import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
+
+public abstract class AbstractCacheRecordStore<
+            R extends CacheRecord,
+            CRM extends CacheRecordMap<Data, R>>
+        implements ICacheRecordStore {
 
     protected static final long INITIAL_DELAY = 5;
     protected static final long PERIOD = 5;
@@ -42,10 +47,8 @@ public abstract class AbstractCacheRecordStore<CRM extends CacheRecordMap<? exte
     protected final int partitionId;
     protected final NodeEngine nodeEngine;
     protected final AbstractCacheService cacheService;
-    protected final SerializationService serializationService;
     protected final CacheConfig cacheConfig;
-    protected final CRM records;
-    protected final CacheRecordFactory cacheRecordFactory;
+    protected CRM records;
     protected CacheStatisticsImpl statistics;
     protected CacheLoader cacheLoader;
     protected CacheWriter cacheWriter;
@@ -58,23 +61,11 @@ public abstract class AbstractCacheRecordStore<CRM extends CacheRecordMap<? exte
                                     int partitionId,
                                     NodeEngine nodeEngine,
                                     AbstractCacheService cacheService,
-                                    SerializationService serializationService,
-                                    ExpiryPolicy expiryPolicy) {
-        this(name, partitionId, nodeEngine, cacheService, serializationService, null, expiryPolicy);
-    }
-
-    public AbstractCacheRecordStore(String name,
-                                    int partitionId,
-                                    NodeEngine nodeEngine,
-                                    AbstractCacheService cacheService,
-                                    SerializationService serializationService,
-                                    CacheRecordFactory cacheRecordFactory,
                                     ExpiryPolicy expiryPolicy) {
         this.name = name;
         this.partitionId = partitionId;
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
-        this.serializationService = serializationService;
         this.cacheConfig = cacheService.getCacheConfig(name);
         if (this.cacheConfig == null) {
             throw new IllegalStateException("Cache is not exist !");
@@ -91,13 +82,6 @@ public abstract class AbstractCacheRecordStore<CRM extends CacheRecordMap<? exte
                 expiryPolicy != null
                         ? expiryPolicy :
                         (ExpiryPolicy) cacheConfig.getExpiryPolicyFactory().create();
-        if (cacheRecordFactory != null) {
-            this.cacheRecordFactory = cacheRecordFactory;
-        } else {
-            this.cacheRecordFactory =
-                    createCacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                            nodeEngine.getSerializationService());
-        }
         this.records = createRecordCacheMap();
     }
 
@@ -120,10 +104,24 @@ public abstract class AbstractCacheRecordStore<CRM extends CacheRecordMap<? exte
     }
 
     abstract protected CRM createRecordCacheMap();
-    abstract protected CacheRecordFactory createCacheRecordFactory(InMemoryFormat inMemoryFormat,
-                                                                   SerializationService serializationService);
+    abstract protected <T> R createRecord(T value, long creationTime, long expiryTime);
 
     abstract protected <T> Data valueToData(T value);
+    abstract protected <T> T dataToValue(Data data);
+
+    abstract protected <T> R valueToRecord(T value);
+    abstract protected <T> T recordToValue(R record);
+
+    abstract protected Data recordToData(R record);
+    abstract protected R dataToRecord(Data data);
+
+    protected R createRecord(Object value, long expiryTime) {
+        return createRecord(value, Clock.currentTimeMillis(), expiryTime);
+    }
+
+    protected R createRecord(long expiryTime) {
+        return createRecord(null, Clock.currentTimeMillis(), expiryTime);
+    }
 
     protected ExpiryPolicy getExpiryPolicy(ExpiryPolicy expiryPolicy) {
         if (expiryPolicy != null) {
@@ -147,6 +145,34 @@ public abstract class AbstractCacheRecordStore<CRM extends CacheRecordMap<? exte
             return valueToData(value);
         }
     }
+
+    protected boolean processExpiredEntry(Data key, R record, long now) {
+        final boolean isExpired = record != null && record.isExpiredAt(now);
+        if (!isExpired) {
+            return false;
+        }
+        records.remove(key);
+        if (isEventsEnabled) {
+            final Data dataValue;
+            switch (cacheConfig.getInMemoryFormat()) {
+                case BINARY:
+                    dataValue = (Data) record.getValue();
+                    break;
+                case OBJECT:
+                    dataValue = recordToData(record);
+                    break;
+                case OFFHEAP:
+                    dataValue = recordToData(record);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid storage format: "
+                            + cacheConfig.getInMemoryFormat());
+            }
+            publishEvent(name, CacheEventType.EXPIRED, key, null, dataValue, false);
+        }
+        return true;
+    }
+
 
     protected CacheRecord accessRecord(CacheRecord record,
                                        ExpiryPolicy expiryPolicy,
@@ -282,6 +308,147 @@ public abstract class AbstractCacheRecordStore<CRM extends CacheRecordMap<? exte
             return false;
         }
         return v1.equals(v2);
+    }
+
+    protected R createRecord(Data keyData, Object value, long expirationTime) {
+        final R record = createRecord(value, expirationTime);
+        if (isEventsEnabled) {
+            final Object recordValue = recordToValue(record);
+            Data dataValue;
+            if (!(recordValue instanceof Data)) {
+                dataValue = valueToData(recordValue);
+            } else {
+                dataValue = (Data) recordValue;
+            }
+            publishEvent(name, CacheEventType.CREATED, keyData, null, dataValue, false);
+        }
+        return record;
+    }
+
+    public boolean createRecordWithExpiry(Data key,
+                                          Object value,
+                                          ExpiryPolicy localExpiryPolicy,
+                                          long now,
+                                          boolean disableWriteThrough) {
+        Duration expiryDuration;
+        try {
+            expiryDuration = localExpiryPolicy.getExpiryForCreation();
+        } catch (Exception e) {
+            expiryDuration = Duration.ETERNAL;
+        }
+        long expiryTime = expiryDuration.getAdjustedTime(now);
+
+        if (!disableWriteThrough) {
+            writeThroughCache(key, value);
+        }
+
+        if (!isExpiredAt(expiryTime, now)) {
+            R record = createRecord(key, value, expiryTime);
+            records.put(key, record);
+            return true;
+        }
+        return false;
+    }
+
+    public Object readThroughCache(Data key) throws CacheLoaderException {
+        if (this.isReadThrough() && cacheLoader != null) {
+            try {
+                Object o = dataToValue(key);
+                return cacheLoader.load(o);
+            } catch (Exception e) {
+                if (!(e instanceof CacheLoaderException)) {
+                    throw new CacheLoaderException("Exception in CacheLoader during load", e);
+                } else {
+                    throw (CacheLoaderException) e;
+                }
+            }
+        }
+        return null;
+    }
+
+    public void writeThroughCache(Data key, Object value) throws CacheWriterException {
+        if (isWriteThrough() && cacheWriter != null) {
+            try {
+                final Object objKey = dataToValue(key);
+                final Object objValue;
+                switch (cacheConfig.getInMemoryFormat()) {
+                    case BINARY:
+                        objValue = dataToValue((Data)value);
+                        break;
+                    case OBJECT:
+                        objValue = value;
+                        break;
+                    case OFFHEAP:
+                        objValue = value;
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Invalid storage format: "
+                                + cacheConfig.getInMemoryFormat());
+                }
+                CacheEntry<?, ?> entry = new CacheEntry<Object, Object>(objKey, objValue);
+                cacheWriter.write(entry);
+            } catch (Exception e) {
+                if (!(e instanceof CacheWriterException)) {
+                    throw new CacheWriterException("Exception in CacheWriter during write", e);
+                } else {
+                    throw (CacheWriterException) e;
+                }
+            }
+        }
+    }
+
+    @Override
+    public void publishCompletedEvent(String cacheName,
+                                      int completionId,
+                                      Data dataKey,
+                                      int orderKey) {
+        if (completionId > 0) {
+            cacheService
+                    .publishEvent(cacheName,
+                            CacheEventType.COMPLETED,
+                            dataKey,
+                            cacheService.toData(completionId),
+                            null,
+                            false,
+                            orderKey);
+        }
+    }
+
+    @Override
+    public Object get(Data key, ExpiryPolicy expiryPolicy) {
+        expiryPolicy = getExpiryPolicy(expiryPolicy);
+
+        long now = Clock.currentTimeMillis();
+        Object value = null;
+        R record = records.get(key);
+        final boolean isExpired = processExpiredEntry(key, record, now);
+        if (record == null || isExpired) {
+            if (isStatisticsEnabled()) {
+                statistics.increaseCacheMisses(1);
+            }
+            value = readThroughCache(key);
+            if (value == null) {
+                return null;
+            }
+            createRecordWithExpiry(key, value, expiryPolicy, now, true);
+            return value;
+        }
+        else {
+            value = recordToValue(record);
+            updateAccessDuration(record, expiryPolicy, now);
+            if (isStatisticsEnabled()) {
+                statistics.increaseCacheHits(1);
+            }
+            onGet(key, expiryPolicy, value, record);
+            return value;
+        }
+    }
+
+    protected void onGet(Data key,
+                         ExpiryPolicy expiryPolicy,
+                         Object value,
+                         R record) {
+
     }
 
 }
