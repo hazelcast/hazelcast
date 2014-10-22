@@ -29,7 +29,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * This client request  specifically calls {@link CacheReplaceOperation} on server side.
+ * This client request  specifically calls {@link CacheReplaceOperation} on the server side.
  * @see com.hazelcast.cache.impl.operation.CacheReplaceOperation
  */
 public class CacheReplaceRequest

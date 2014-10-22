@@ -28,7 +28,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * This client request  specifically calls {@link CacheGetAndRemoveOperation} on server side.
+ * This client request  specifically calls {@link CacheGetAndRemoveOperation} on the server side.
  * @see com.hazelcast.cache.impl.operation.CacheGetAndRemoveOperation
  */
 public class CacheGetAndRemoveRequest

@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.security.Permission;
 
 /**
- * This client request  specifically calls {@link CacheManagementConfigOperation} on server side.
+ * This client request  specifically calls {@link CacheManagementConfigOperation} on the server side.
  * @see com.hazelcast.cache.impl.operation.CacheManagementConfigOperation
  */
 public class CacheManagementConfigRequest

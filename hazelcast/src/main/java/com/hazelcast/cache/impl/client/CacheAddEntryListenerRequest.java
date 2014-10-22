@@ -29,7 +29,8 @@ import java.io.IOException;
 import java.security.Permission;
 
 /**
- * Client request which registers an event listener on behalf of the client and delegate the received events back to client.
+ * Client request which registers an event listener on behalf of the client and delegates the received events
+ * back to client.
  * @see com.hazelcast.cache.impl.CacheService#registerListener(String, com.hazelcast.cache.impl.CacheEventListener)
  */
 public class CacheAddEntryListenerRequest

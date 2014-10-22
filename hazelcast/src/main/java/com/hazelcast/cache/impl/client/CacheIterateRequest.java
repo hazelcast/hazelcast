@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.security.Permission;
 
 /**
- * This client request  specifically calls {@link CacheKeyIteratorOperation} on server side.
+ * This client request  specifically calls {@link CacheKeyIteratorOperation} on the server side.
  * @see com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation
  */
 public class CacheIterateRequest

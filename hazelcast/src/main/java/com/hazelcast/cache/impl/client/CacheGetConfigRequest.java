@@ -25,7 +25,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * This client request  specifically calls {@link CacheGetConfigOperation} on server side.
+ * This client request  specifically calls {@link CacheGetConfigOperation} on the server side.
  * @see com.hazelcast.cache.impl.operation.CacheGetConfigOperation
  */
 public class CacheGetConfigRequest

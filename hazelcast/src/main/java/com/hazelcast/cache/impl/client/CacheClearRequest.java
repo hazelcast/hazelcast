@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This client request  specifically calls {@link CacheClearOperationFactory} on server side.
+ * This client request  specifically calls {@link CacheClearOperationFactory} on the server side.
  * @see com.hazelcast.cache.impl.operation.CacheClearOperationFactory
  */
 public class CacheClearRequest

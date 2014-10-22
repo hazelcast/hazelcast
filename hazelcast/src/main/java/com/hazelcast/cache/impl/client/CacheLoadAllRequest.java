@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This client request  specifically calls {@link CacheLoadAllOperationFactory} on server side.
+ * This client request  specifically calls {@link CacheLoadAllOperationFactory} on the server side.
  * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory
  */
 public class CacheLoadAllRequest
