@@ -28,6 +28,10 @@ import com.hazelcast.spi.Operation;
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
 
+/**
+ * This client request  specifically calls {@link CacheEntryProcessorOperation} on the server side.
+ * @see com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation
+ */
 public class CacheEntryProcessorRequest
         extends AbstractCacheRequest {
 

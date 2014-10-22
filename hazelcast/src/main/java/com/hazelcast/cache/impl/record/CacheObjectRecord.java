@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 
 /**
- * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} which has internal object format
+ * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} which has an internal object format.
  */
 public class CacheObjectRecord extends AbstractCacheRecord<Object> {
 

@@ -56,7 +56,7 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
  * <p>
  * Hazelcast splits data homogeneously to partitions using keys. CacheRecordStore represents a named ICache on-heap
  * data store for a single partition.<br/>
- * This data structure is responsible from CRUD operations, entry processing, statistics, publishing events, cache
+ * This data structure is responsible for CRUD operations, entry processing, statistics, publishing events, cache
  * loader and writer and internal data operations like backup.
  * </p>
  * <p>CacheRecordStore is accessed through {@linkplain com.hazelcast.cache.impl.CachePartitionSegment} and

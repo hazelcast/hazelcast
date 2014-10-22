@@ -66,8 +66,8 @@ import java.util.NoSuchElementException;
  * </ul>
  * </p>
  *
- * @param <K> the type of key
- * @param <V> the type of value
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  * @see com.hazelcast.cache.impl.CacheRecordStore#iterator(int tableIndex, int size)
  * @see com.hazelcast.cache.impl.ClusterWideIterator
  * @see com.hazelcast.cache.impl.CacheKeyIteratorResult

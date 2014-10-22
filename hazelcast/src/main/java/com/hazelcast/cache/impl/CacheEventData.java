@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
  * An event data is represented by
  * <ul>
  * <li>name</li>
- * <li>Event type</li>
+ * <li>event type</li>
  * <li>key</li>
  * <li>value</li>
  * <li>old value, if available</li>

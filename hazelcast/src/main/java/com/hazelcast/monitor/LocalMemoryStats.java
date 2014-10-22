@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.record;
+package com.hazelcast.monitor;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+public interface LocalMemoryStats extends LocalInstanceStats {
 
-/**
- * <p>
- * An expirable data object which represents a cache entry.
- * </p>
- * Record of {@link com.hazelcast.cache.impl.ICacheRecordStore}.
- *
- * @param <V>
- */
-public interface CacheRecord<V>
-        extends Expirable, DataSerializable {
+    long getTotalPhysical();
 
-    Data getKey();
+    long getFreePhysical();
 
-    V getValue();
+    long getMaxHeap();
 
-    void setValue(V value);
+    long getCommittedHeap();
+
+    long getUsedHeap();
+
+    long getFreeHeap();
+
+    long getMaxNativeMemory();
+
+    long getCommittedNativeMemory();
+
+    long getUsedNativeMemory();
+
+    long getFreeNativeMemory();
+
+    LocalGCStats getGCStats();
 
 }
