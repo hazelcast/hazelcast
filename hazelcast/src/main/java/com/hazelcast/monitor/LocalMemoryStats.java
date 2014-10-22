@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,28 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.management.JsonSerializable;
+public interface LocalMemoryStats extends LocalInstanceStats {
 
-public interface LocalInstanceStats extends JsonSerializable {
+    long getTotalPhysical();
 
-    /**
-     * Fill a stat value with this if it's not available
-     */
-    long STAT_NOT_AVAILABLE = -99L;
+    long getFreePhysical();
 
-    long getCreationTime();
+    long getMaxHeap();
+
+    long getCommittedHeap();
+
+    long getUsedHeap();
+
+    long getFreeHeap();
+
+    long getMaxNativeMemory();
+
+    long getCommittedNativeMemory();
+
+    long getUsedNativeMemory();
+
+    long getFreeNativeMemory();
+
+    LocalGCStats getGCStats();
 
 }
