@@ -29,13 +29,13 @@ import java.util.concurrent.Future;
  * <p>
  *     There are three set of extensions:
  *     <ul>
- *         <li>asynchronous version of all cache operations</li>
+ *         <li>asynchronous version of all cache operations.</li>
  *         <li>cache operations with custom ExpiryPolicy parameter to apply on that specific operation.</li>
- *         <li>uncategorized like {@link #size()}</li>
+ *         <li>uncategorized like {@link #size()}.</li>
  *     </ul>
  *</p>
  *<p>
- *     A method ending with Async is the asynchronous version of that method (for example {@link #getAsync(K)} ,
+ *     A method ending with Async is the asynchronous version of that method (for example {@link #getAsync(K)},
  *     {@link #replaceAsync(K,V)} ).<br/>
  *     These methods return a Future where you can get the result or wait for the operation to be completed.
  *
@@ -47,10 +47,10 @@ import java.util.concurrent.Future;
  *     </pre>
  *</p>
  *<p>
- *     This interface can be accessed through {@link javax.cache.Cache#unwrap(Class)}
+ *     This interface can be accessed through {@link javax.cache.Cache#unwrap(Class)}.
  *</p>
- * @param <K> the type of key
- * @param <V> the type of value
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  * @see javax.cache.Cache
  * @since 3.3.1
  */
@@ -109,7 +109,7 @@ public interface ICache<K, V>
      * using a custom expiry policy.
      * @param key   the key with which the specified value is to be associated.
      * @param value the value to be associated with the specified key.
-     * @param expiryPolicy
+     * @param expiryPolicy custom expiry policy for this operation.
      * @return
      * @see javax.cache.Cache#putIfAbsent(K,V)
      * @see java.util.concurrent.Future
@@ -141,7 +141,7 @@ public interface ICache<K, V>
 
     /**
      * Asynchronously removes the mapping for a key from this cache if it is present.
-     * @param key the key whose associated value is to be returned
+     * @param key the key whose associated value is to be returned.
      * @return Future
      * @see javax.cache.Cache#remove(K)
      * @see java.util.concurrent.Future
@@ -344,7 +344,7 @@ public interface ICache<K, V>
     int size();
 
     /**
-     * Close the cache, clear the internal content and release any resource.
+     * Closes the cache, clears the internal content and releases any resource.
      *
      * @see javax.cache.CacheManager#destroyCache(String)
      */
