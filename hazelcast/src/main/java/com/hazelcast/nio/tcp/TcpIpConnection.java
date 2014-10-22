@@ -25,7 +25,6 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.WriteResult;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -34,7 +33,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
@@ -134,7 +132,7 @@ public final class TcpIpConnection implements Connection {
         IOService ioService = connectionManager.ioService;
         Data dummyData = ioService.toData(0);
         Packet slotRequestPacket = new Packet(dummyData, ioService.getPortableContext());
-        slotRequestPacket.setHeader(Packet.HEADER_CLAIM_REQ);
+        slotRequestPacket.setHeader(Packet.HEADER_CLAIM);
         slotRequestPacket.setHeader(Packet.HEADER_URGENT);
         writeHandler.enqueueSocketWritable(slotRequestPacket);
     }
