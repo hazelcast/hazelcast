@@ -29,9 +29,9 @@ import java.util.Set;
 /**
  * {@link ICacheRecordStore} is the core contract providing internal functionality to
  * {@link com.hazelcast.cache.ICache} implementations on partition scope. All of the ICache methods actually
- * maps to a method on this interface through Hazelcast' RPC mechanism. Hazelcast
+ * map to a method on this interface through Hazelcast's RPC mechanism. Hazelcast
  * {@link com.hazelcast.spi.Operation} is sent to the relevant partition to be executed and the final
- * results returned to the callers.
+ * results are returned to the callers.
  *
  * For each partition, there is only one {@link ICacheRecordStore} in the cluster.
  * <p>Implementations of this interface may provide different internal data persistence like on-heap storage.</p>
@@ -408,7 +408,7 @@ public interface ICacheRecordStore {
      * <p>Synchronous Event Listeners require Completion Event to understand all events are executed and it is ready to proceed
      * the method call as this Completion events are always received at the end.</p>
      * @param cacheName  cache name.
-     * @param completionId completion id of the caller method..
+     * @param completionId completion id of the caller method.
      * @param dataKey  the key.
      * @param orderKey order key, all events of a method call will share same order key.
      */
