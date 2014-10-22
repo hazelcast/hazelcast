@@ -36,6 +36,7 @@ import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -1010,7 +1011,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    public static class PostJoinRegistrationOperation extends AbstractOperation {
+    public static class PostJoinRegistrationOperation extends AbstractOperation implements UrgentSystemOperation {
 
         private Collection<Registration> registrations;
 

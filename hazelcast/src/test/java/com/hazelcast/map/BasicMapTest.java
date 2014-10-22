@@ -81,6 +81,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Before
     public void init() {
+        System.setProperty("hazelcast.test.use.network", "true");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
         Config config = new Config();
         instances = factory.newInstances(config);
@@ -94,28 +95,29 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testBoxedPrimitives() {
         IMap map = getInstance().getMap("testPrimitives");
 
-        assertPutGet(map, new Boolean(true));
-        assertPutGet(map, new Boolean(false));
+        for (int i = 0; i < 10000; i++) {
+            assertPutGet(map, new Boolean(true));
+            assertPutGet(map, new Boolean(false));
 
-        assertPutGet(map, new Integer(10));
+            assertPutGet(map, new Integer(10));
 
-        assertPutGet(map, new Short((short) 10));
+            assertPutGet(map, new Short((short) 10));
 
-        assertPutGet(map, new Byte((byte) 10));
+            assertPutGet(map, new Byte((byte) 10));
 
-        assertPutGet(map, new Long(10));
+            assertPutGet(map, new Long(10));
 
-        assertPutGet(map, new Float(10));
+            assertPutGet(map, new Float(10));
 
-        assertPutGet(map, new Double(10));
+            assertPutGet(map, new Double(10));
 
-        assertPutGet(map, new Character('x'));
+            assertPutGet(map, new Character('x'));
+        }
     }
 
-    public void assertPutGet(Map map, Object value) {
+    public void assertPutGet(IMap map, Object value) {
         String key = UUID.randomUUID().toString();
-        map.put(key, value);
-        assertEquals(value, map.get(key));
+        map.putAsync(key, value);
     }
 
     @Test

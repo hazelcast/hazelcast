@@ -20,6 +20,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -37,8 +38,8 @@ class DroppingConnection implements Connection {
     }
 
     @Override
-    public boolean write(SocketWritable packet) {
-        return true;
+    public WriteResult write(SocketWritable packet) {
+        return WriteResult.SUCCESS;
     }
 
     @Override
@@ -96,5 +97,10 @@ class DroppingConnection implements Connection {
     @Override
     public int getPort() {
         return endpoint.getPort();
+    }
+
+    @Override
+    public void setAvailableSlots(Integer claimResponse) {
+
     }
 }

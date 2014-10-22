@@ -20,13 +20,19 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.WriteResult;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
@@ -62,6 +68,9 @@ public final class TcpIpConnection implements Connection {
 
     private TcpIpConnectionMonitor monitor;
 
+    private final AtomicInteger availableSlots = new AtomicInteger();
+    private final AtomicBoolean waitingForSlotResponse = new AtomicBoolean();
+
     public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
                            int connectionId, SocketChannelWrapper socketChannel) {
         this.connectionId = connectionId;
@@ -82,15 +91,50 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
-    public boolean write(SocketWritable packet) {
+    public WriteResult write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
             }
-            return false;
+            return WriteResult.FAILURE;
         }
-        writeHandler.enqueueSocketWritable(packet);
-        return true;
+        if (packet.isBackpressureAllowed()) {
+            return writeWithBackpressureApplied(packet);
+        } else {
+            writeHandler.enqueueSocketWritable(packet);
+            return WriteResult.SUCCESS;
+        }
+    }
+
+    private WriteResult writeWithBackpressureApplied(SocketWritable packet) {
+        WriteResult result = writeIfSlotAvailable(packet);
+        if (result != WriteResult.FULL) {
+            return result;
+        }
+        if (waitingForSlotResponse.compareAndSet(false, true)) {
+            requestNewSlots();
+            return WriteResult.FULL;
+        } else {
+            return writeIfSlotAvailable(packet);
+        }
+    }
+
+    private WriteResult writeIfSlotAvailable(SocketWritable packet) {
+        int availSlotsNow = availableSlots.decrementAndGet();
+        if (availSlotsNow >= 0) {
+            writeHandler.enqueueSocketWritable(packet);
+            return WriteResult.SUCCESS;
+        }
+        return WriteResult.FULL;
+    }
+
+    private void requestNewSlots() {
+        IOService ioService = connectionManager.ioService;
+        Data dummyData = ioService.toData(0);
+        Packet slotRequestPacket = new Packet(dummyData, ioService.getPortableContext());
+        slotRequestPacket.setHeader(Packet.HEADER_CLAIM);
+        slotRequestPacket.setHeader(Packet.HEADER_URGENT);
+        writeHandler.enqueueSocketWritable(slotRequestPacket);
     }
 
     @Override
@@ -117,6 +161,12 @@ public final class TcpIpConnection implements Connection {
     @Override
     public int getPort() {
         return socketChannel.socket().getPort();
+    }
+
+    @Override
+    public void setAvailableSlots(Integer claimResponse) {
+        availableSlots.set(claimResponse);
+        waitingForSlotResponse.set(false);
     }
 
     @Override

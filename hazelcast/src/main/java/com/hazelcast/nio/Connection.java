@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.WriteResult;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
@@ -36,7 +38,7 @@ public interface Connection {
      * not alive.
      * @throws NullPointerException if packet is null.
      */
-    boolean write(SocketWritable packet);
+    WriteResult write(SocketWritable packet);
 
     /**
      * Checks if the Connection is still alive.
@@ -118,4 +120,6 @@ public interface Connection {
      * 0 if the socket is not connected yet.
      */
     int getPort();
+
+    void setAvailableSlots(Integer claimResponse);
 }

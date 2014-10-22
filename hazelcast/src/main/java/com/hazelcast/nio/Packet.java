@@ -33,6 +33,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public static final int HEADER_EVENT = 2;
     public static final int HEADER_WAN_REPLICATION = 3;
     public static final int HEADER_URGENT = 4;
+    public static final int HEADER_CLAIM = 5;
 
     private static final int ST_VERSION = 10;
     private static final int ST_HEADER = 11;
@@ -54,6 +55,11 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public Packet(Data value, int partitionId, PortableContext context) {
         super(value, context);
         this.partitionId = partitionId;
+    }
+
+    @Override
+    public boolean isBackpressureAllowed() {
+        return isHeaderSet(HEADER_OP) && !isHeaderSet(HEADER_RESPONSE) && !isUrgent();
     }
 
     /**

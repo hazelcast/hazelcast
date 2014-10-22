@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
+import com.hazelcast.spi.BackoffPolicy;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ExecutionTracingService;
@@ -46,6 +47,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
@@ -129,6 +131,8 @@ final class BasicOperationService implements InternalOperationService {
     private final OperationPacketHandler operationPacketHandler;
     private final ResponsePacketHandler responsePacketHandler;
 
+    private final BackoffPolicy backoffPolicy;
+
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
@@ -147,6 +151,8 @@ final class BasicOperationService implements InternalOperationService {
         this.operationBackupHandler = new OperationBackupHandler();
         this.operationPacketHandler = new OperationPacketHandler();
         this.responsePacketHandler = new ResponsePacketHandler();
+
+        this.backoffPolicy = new ExponentialBackoffPolicy();
 
         executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
@@ -327,7 +333,22 @@ final class BasicOperationService implements InternalOperationService {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.send(packet, connection);
+
+        WriteResult sent = nodeEngine.send(packet, connection);
+        if (sent != WriteResult.FULL) {
+            return sent == WriteResult.SUCCESS;
+        }
+
+        int maxAttempts = 15;
+        int state = BackoffPolicy.EMPTY_STATE;
+        for (int i = 0; i < maxAttempts; i++) {
+            state = backoffPolicy.apply(state, i);
+            sent = nodeEngine.send(packet, connection);
+            if (sent != WriteResult.FULL) {
+                return sent == WriteResult.SUCCESS;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -346,7 +367,7 @@ final class BasicOperationService implements InternalOperationService {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.send(packet, connection);
+        return nodeEngine.send(packet, connection) == WriteResult.SUCCESS;
     }
 
     public void registerInvocation(BasicInvocation invocation) {
@@ -418,6 +439,11 @@ final class BasicOperationService implements InternalOperationService {
         }
         invocations.clear();
         scheduler.shutdown();
+    }
+
+    @Override
+    public int getNoOfScheduledOperations() {
+        return scheduler.getNoOfScheduledOperations();
     }
 
     /**
