@@ -283,19 +283,25 @@ public class NodeEngineImpl implements NodeEngine {
             eventService.handleEvent(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
             wanReplicationService.handleEvent(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_CLAIM_RES)) {
-            Connection connection = packet.getConn();
-            Data claimResponseData = packet.getData();
-            Integer claimResponse = (Integer) toObject(claimResponseData);
-            connection.setAvailableSlots(claimResponse);
-        } else if (packet.isHeaderSet(Packet.HEADER_CLAIM_REQ)) {
-            int operations = operationService.getNoOfScheduledOperations();
-            System.out.println("There is currently "+operations+" operations scheduled.");
-            Data claimResponseData = toData(1000); //TODO: Calculate size properly
-            Packet responsePacket = new Packet(claimResponseData, getSerializationService().getPortableContext());
-            responsePacket.setHeader(Packet.HEADER_CLAIM_RES);
-            responsePacket.setHeader(Packet.HEADER_URGENT);
-            send(responsePacket, packet.getConn());
+        } else if (packet.isHeaderSet(Packet.HEADER_CLAIM)) {
+            if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
+                System.out.println("Received claim response");
+                Connection connection = packet.getConn();
+                Data claimResponseData = packet.getData();
+                Integer claimResponse = (Integer) toObject(claimResponseData);
+                connection.setAvailableSlots(claimResponse);
+            } else {
+                System.out.println("Received claim request");
+                int operations = operationService.getNoOfScheduledOperations();
+                System.out.println("There is currently " + operations + " operations scheduled.");
+                Data claimResponseData = toData(1000); //TODO: Calculate size properly
+                Packet responsePacket = new Packet(claimResponseData, getSerializationService().getPortableContext());
+                responsePacket.setHeader(Packet.HEADER_CLAIM);
+                responsePacket.setHeader(Packet.HEADER_RESPONSE);
+                responsePacket.setHeader(Packet.HEADER_URGENT);
+                send(responsePacket, packet.getConn());
+            }
+
         } else {
             logger.severe("Unknown packet type! Header: " + packet.getHeader());
         }
