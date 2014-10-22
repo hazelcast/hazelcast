@@ -76,7 +76,8 @@ public class CacheService
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     private final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
     private NodeEngine nodeEngine;
-    private CachePartitionSegment[] segments; //todo visibility guarantee?
+    //todo visibility guarantee?
+    private CachePartitionSegment[] segments;
 
     //region ManagedService
     @Override
@@ -203,8 +204,10 @@ public class CacheService
         if (!isLocal) {
             deregisterAllListener(objectName);
         }
-        enableStatistics(objectName, false); //todo weird naming
-        enableManagement(objectName, false); //todo weird naming
+        //todo weird naming
+        enableStatistics(objectName, false);
+        //todo weird naming
+        enableManagement(objectName, false);
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
         if (!isLocal) {

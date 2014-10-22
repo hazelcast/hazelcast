@@ -56,15 +56,15 @@ public class CacheStatisticsImpl
     private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVE_TIME_TAKEN_NANOS_UPDATER =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removeTimeTakenNanos");
 
-    private volatile long removals = 0;
-    private volatile long expiries = 0;
-    private volatile long puts = 0;
-    private volatile long hits = 0;
-    private volatile long misses = 0;
-    private volatile long evictions = 0;
-    private volatile long putTimeTakenNanos = 0;
-    private volatile long getCacheTimeTakenNanos = 0;
-    private volatile long removeTimeTakenNanos = 0;
+    private volatile long removals;
+    private volatile long expiries;
+    private volatile long puts;
+    private volatile long hits;
+    private volatile long misses;
+    private volatile long evictions;
+    private volatile long putTimeTakenNanos;
+    private volatile long getCacheTimeTakenNanos;
+    private volatile long removeTimeTakenNanos;
 
     public CacheStatisticsImpl() {
     }
