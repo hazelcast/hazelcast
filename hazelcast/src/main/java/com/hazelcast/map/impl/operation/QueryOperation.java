@@ -69,10 +69,9 @@ public class QueryOperation extends AbstractMapOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        Collection<Integer> initialPartitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+        Collection<Integer> initialPartitions = mapService.getMapServiceContext().getOwnedPartitions();
         IndexService indexService = mapService.getMapServiceContext().getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
-        // TODO: fix
         if (!partitionService.hasOnGoingMigration()) {
             entries = indexService.query(predicate);
         }
@@ -89,7 +88,7 @@ public class QueryOperation extends AbstractMapOperation {
                 runParallel(initialPartitions);
             }
         }
-        Collection<Integer> finalPartitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+        Collection<Integer> finalPartitions = mapService.getMapServiceContext().getOwnedPartitions();
         if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }

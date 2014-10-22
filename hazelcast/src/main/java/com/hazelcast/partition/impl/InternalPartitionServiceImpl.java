@@ -247,7 +247,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     public Address getPartitionOwnerOrWait(int partition) throws InterruptedException {
         Address owner = getPartitionOwner(partition);
         while (owner == null) {
-            Thread.sleep(100);
+            Thread.sleep(PARTITION_OWNERSHIP_WAIT_MILLIS);
             owner = getPartitionOwner(partition);
         }
         return owner;
