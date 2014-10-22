@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * </pre>
  * </p>
  */
-// Isn't that public API?
+//todo Isn't that public API?
 public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable {
 
     private Duration create;

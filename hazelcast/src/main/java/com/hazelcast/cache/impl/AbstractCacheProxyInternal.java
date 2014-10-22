@@ -96,7 +96,7 @@ abstract class AbstractCacheProxyInternal<K, V>
             return f;
         } catch (Throwable e) {
             if (e instanceof IllegalStateException) {
-                // Latch is not unregistered if close throws an Exception!
+                //todo Latch is not unregistered if close throws an Exception!
                 close();
             }
             if (completionOperation) {
@@ -215,7 +215,7 @@ abstract class AbstractCacheProxyInternal<K, V>
     protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration.isSynchronous()) {
             syncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
-            // Should that be called if it wasn't registered because it's already there?
+            //todo Should that be called if it wasn't registered because it's already there?
             registerCompletionListener();
         } else {
             asyncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);

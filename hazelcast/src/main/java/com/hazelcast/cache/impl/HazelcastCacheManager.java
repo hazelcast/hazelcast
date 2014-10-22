@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * </p>
  * @see CacheManager
  */
-// AbstractHazelcastCacheManager would be better
+//todo AbstractHazelcastCacheManager would be better
 public abstract class HazelcastCacheManager implements CacheManager {
 
     protected final ConcurrentMap<String, ICache<?, ?>> caches = new ConcurrentHashMap<String, ICache<?, ?>>();

@@ -56,7 +56,6 @@ public class CacheStatisticsImpl
     private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVE_TIME_TAKEN_NANOS_UPDATER =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removeTimeTakenNanos");
 
-    // Would be better to use static AtomicFieldUpdaters to save memory
     private volatile long removals = 0;
     private volatile long expiries = 0;
     private volatile long puts = 0;

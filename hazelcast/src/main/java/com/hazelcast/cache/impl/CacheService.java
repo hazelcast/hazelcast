@@ -76,7 +76,7 @@ public class CacheService
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     private final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
     private NodeEngine nodeEngine;
-    private CachePartitionSegment[] segments; // visibility guarantee?
+    private CachePartitionSegment[] segments; //todo visibility guarantee?
 
     //region ManagedService
     @Override
@@ -203,8 +203,8 @@ public class CacheService
         if (!isLocal) {
             deregisterAllListener(objectName);
         }
-        enableStatistics(objectName, false); // weird naming
-        enableManagement(objectName, false);
+        enableStatistics(objectName, false); //todo weird naming
+        enableManagement(objectName, false); //todo weird naming
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
         if (!isLocal) {
@@ -218,7 +218,7 @@ public class CacheService
         for (MemberImpl member : members) {
             if (!member.localMember() && !member.getUuid().equals(callerUuid)) {
                 final CacheDestroyOperation op = new CacheDestroyOperation(objectName, true);
-                // exception handling?
+                //todo exception handling?
                 operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
             }
         }
@@ -253,7 +253,7 @@ public class CacheService
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true);
-                // exception handling?
+                //todo exception handling?
                 operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
             }
         }
@@ -274,7 +274,7 @@ public class CacheService
      */
     public CacheStatisticsImpl createCacheStatIfAbsent(String name) {
         if (!statistics.containsKey(name)) {
-            // wrong usage of putIfAbsent
+            //todo wrong usage of putIfAbsent
             statistics.putIfAbsent(name, new CacheStatisticsImpl());
         }
         return statistics.get(name);

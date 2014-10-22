@@ -95,7 +95,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         if (!isClosed.compareAndSet(false, true)) {
             return;
         }
-        // FutureUtil?
+        //todo FutureUtil?
         for (Future f : loadAllTasks) {
             try {
                 f.get(TIMEOUT, TimeUnit.SECONDS);
@@ -119,7 +119,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(getDistributedObjectName());
         final InternalCompletableFuture f = getNodeEngine().getOperationService()
                                                            .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
-        // What happens in exception case? Cache doesn't get destroyed
+        //todo What happens in exception case? Cache doesn't get destroyed
         f.getSafely();
         cacheService.destroyCache(getDistributedObjectName(), true, null);
     }
@@ -180,7 +180,7 @@ abstract class AbstractCacheProxyBase<K, V> {
 
             @Override
             public void onFailure(Throwable t) {
-                // Should the error being logged?
+                //todo Should the error being logged?
                 loadAllTasks.remove(future);
             }
         });

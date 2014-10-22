@@ -44,7 +44,7 @@ import java.util.WeakHashMap;
  * </ul></p>
  * @see CachingProvider
  */
-// AbstractHazelcastCachingProvider would be more consistent with other classes
+//todo AbstractHazelcastCachingProvider would be more consistent with other classes
 public abstract class HazelcastAbstractCachingProvider
         implements CachingProvider {
 

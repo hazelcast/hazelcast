@@ -37,11 +37,6 @@ import java.util.Properties;
 public final class HazelcastServerCachingProvider
         extends HazelcastAbstractCachingProvider {
 
-    // unnecessary
-    public HazelcastServerCachingProvider() {
-        super();
-    }
-
     /**
      * Helper method for creating caching provider for testing, etc.
      *
