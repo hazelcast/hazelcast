@@ -26,8 +26,8 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * Cache GetAndReplace Operation,
- * <p>Operation to call the cache record store method</p>
+ * Cache GetAndReplace Operation.
+ * <p>Operation to call the cache record store method.</p>
  * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndReplace(Data, Object, javax.cache.expiry.ExpiryPolicy, String)
  */
 public class CacheGetAndReplaceOperation

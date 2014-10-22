@@ -28,7 +28,7 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 
 /**
- * Cache PutBackup Operation, backup operation for operation adding cache entries into record stores.
+ * Backup operation for the operation of adding cache entries into record stores.
  * @see CacheEntryProcessorOperation
  * @see CachePutOperation
  * @see CachePutIfAbsentOperation
