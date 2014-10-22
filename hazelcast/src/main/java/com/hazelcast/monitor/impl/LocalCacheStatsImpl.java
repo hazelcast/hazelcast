@@ -3,11 +3,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.monitor.LocalCacheStats;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-
-import java.io.IOException;
 
 import static com.hazelcast.util.JsonUtil.getFloat;
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -24,7 +20,7 @@ import static com.hazelcast.util.JsonUtil.getLong;
  *
  * No setter methods are provided, all class fields supposed to be populated either
  * by a {@link com.hazelcast.cache.CacheStatistics} or while deserialization process
- * ({@link #fromJson(com.eclipsesource.json.JsonObject)}, or {@link #readData(com.hazelcast.nio.ObjectDataInput)}).
+ * ({@link #fromJson(com.eclipsesource.json.JsonObject)}.
  *
  * @see com.hazelcast.cache.CacheStatistics
  */
@@ -118,38 +114,6 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     @Override
     public long getCreationTime() {
         return creationTime;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(creationTime);
-        out.writeLong(cacheHits);
-        out.writeFloat(cacheHitPercentage);
-        out.writeLong(cacheMisses);
-        out.writeFloat(cacheMissPercentage);
-        out.writeLong(cacheGets);
-        out.writeLong(cachePuts);
-        out.writeLong(cacheRemovals);
-        out.writeLong(cacheEvictions);
-        out.writeFloat(averageGetTime);
-        out.writeFloat(averagePutTime);
-        out.writeFloat(averageRemoveTime);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        creationTime = in.readLong();
-        cacheHits = in.readLong();
-        cacheHitPercentage = in.readFloat();
-        cacheMisses = in.readLong();
-        cacheMissPercentage = in.readFloat();
-        cacheGets = in.readLong();
-        cachePuts = in.readLong();
-        cacheRemovals = in.readLong();
-        cacheEvictions = in.readLong();
-        averageGetTime = in.readFloat();
-        averagePutTime = in.readFloat();
-        averageRemoveTime = in.readFloat();
     }
 
     @Override

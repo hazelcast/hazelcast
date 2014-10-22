@@ -17,9 +17,8 @@
 package com.hazelcast.monitor;
 
 import com.hazelcast.management.JsonSerializable;
-import com.hazelcast.nio.serialization.DataSerializable;
 
-public interface LocalInstanceStats extends DataSerializable, JsonSerializable {
+public interface LocalInstanceStats extends JsonSerializable {
 
     /**
      * Fill a stat value with this if it's not available

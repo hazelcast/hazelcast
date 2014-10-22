@@ -3,10 +3,6 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.monitor.LocalMemoryStats;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getObject;
@@ -36,36 +32,6 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     private LocalGCStats gcStats;
 
     public LocalMemoryStatsImpl() {
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(totalPhysical);
-        out.writeLong(freePhysical);
-        out.writeLong(maxNativeMemory);
-        out.writeLong(committedNativeMemory);
-        out.writeLong(usedNativeMemory);
-        out.writeLong(maxHeap);
-        out.writeLong(committedHeap);
-        out.writeLong(usedHeap);
-        if (gcStats == null) {
-            gcStats = new LocalGCStatsImpl();
-        }
-        gcStats.writeData(out);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        totalPhysical = in.readLong();
-        freePhysical = in.readLong();
-        maxNativeMemory = in.readLong();
-        committedNativeMemory = in.readLong();
-        usedNativeMemory = in.readLong();
-        maxHeap = in.readLong();
-        committedHeap = in.readLong();
-        usedHeap = in.readLong();
-        gcStats = new LocalGCStatsImpl();
-        gcStats.readData(in);
     }
 
     @Override

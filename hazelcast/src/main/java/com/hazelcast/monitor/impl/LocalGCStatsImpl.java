@@ -2,11 +2,7 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalGCStats;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-
-import java.io.IOException;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 
@@ -78,29 +74,29 @@ public class LocalGCStatsImpl implements LocalGCStats {
         this.unknownTime = unknownTime;
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        out.writeLong(creationTime);
-        out.writeLong(majorCount);
-        out.writeLong(majorTime);
-        out.writeLong(minorCount);
-        out.writeLong(minorTime);
-        out.writeLong(unknownCount);
-        out.writeLong(unknownTime);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        creationTime = in.readLong();
-        majorCount = in.readLong();
-        majorTime = in.readLong();
-        minorCount = in.readLong();
-        minorTime = in.readLong();
-        unknownCount = in.readLong();
-        unknownTime = in.readLong();
-    }
+//    @Override
+//    public void writeData(ObjectDataOutput out)
+//            throws IOException {
+//        out.writeLong(creationTime);
+//        out.writeLong(majorCount);
+//        out.writeLong(majorTime);
+//        out.writeLong(minorCount);
+//        out.writeLong(minorTime);
+//        out.writeLong(unknownCount);
+//        out.writeLong(unknownTime);
+//    }
+//
+//    @Override
+//    public void readData(ObjectDataInput in)
+//            throws IOException {
+//        creationTime = in.readLong();
+//        majorCount = in.readLong();
+//        majorTime = in.readLong();
+//        minorCount = in.readLong();
+//        minorTime = in.readLong();
+//        unknownCount = in.readLong();
+//        unknownTime = in.readLong();
+//    }
 
     @Override
     public long getCreationTime() {

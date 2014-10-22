@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.memory.MemoryManager;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.DynamicByteBuffer;
@@ -620,11 +619,6 @@ public class SerializationServiceImpl implements SerializationService {
         global.set(null);
         constantTypesMap.clear();
         dataOutputQueue.clear();
-    }
-
-    @Override
-    public MemoryManager getMemoryManager() {
-        return null;
     }
 
     public final ClassLoader getClassLoader() {
