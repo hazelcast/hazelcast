@@ -1,5 +1,6 @@
 package com.hazelcast.map;
 
+import com.hazelcast.map.eviction.EvictionOperator;
 import com.hazelcast.map.eviction.ExpirationManager;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.nio.serialization.Data;
@@ -65,7 +66,8 @@ public interface MapServiceContext extends MapServiceContextSupport,
 
     /**
      * Check if key belongs on partitions of the this node
-     * @param key
+     *
+     * @param key key to be queried.
      * @return true if this node owns the key
      */
     boolean isOwnedKey(Data key);
@@ -75,6 +77,8 @@ public interface MapServiceContext extends MapServiceContextSupport,
     AtomicInteger getWriteBehindQueueItemCounter();
 
     ExpirationManager getExpirationManager();
+
+    EvictionOperator getEvictionOperator();
 
     void setService(MapService mapService);
 

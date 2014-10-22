@@ -1,7 +1,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.map.eviction.EvictionHelper;
+import com.hazelcast.map.eviction.EvictionOperator;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
@@ -10,9 +10,6 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.eviction.EvictionHelper.checkEvictable;
-import static com.hazelcast.map.eviction.EvictionHelper.evictableSize;
-import static com.hazelcast.map.eviction.EvictionHelper.fireEvent;
 import static com.hazelcast.util.ValidationUtil.isNotNegative;
 
 /**
@@ -206,7 +203,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return;
         }
         final MapConfig mapConfig = mapContainer.getMapConfig();
-        EvictionHelper.removeEvictableRecords(this, evictableSize, mapConfig, mapServiceContext, backup);
+        getEvictionOperator().removeEvictableRecords(this, evictableSize, mapConfig, backup);
     }
 
     private int getEvictableSize() {
@@ -214,11 +211,16 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size < 1) {
             return 0;
         }
-        final int evictableSize = evictableSize(size, mapContainer.getMapConfig(), mapServiceContext);
+        final int evictableSize = getEvictionOperator().evictableSize(size, mapContainer.getMapConfig());
         if (evictableSize < 1) {
             return 0;
         }
         return evictableSize;
+    }
+
+
+    private EvictionOperator getEvictionOperator() {
+        return mapServiceContext.getEvictionOperator();
     }
 
 
@@ -234,7 +236,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private boolean isEvictable() {
-        return checkEvictable(mapContainer, partitionId);
+        return getEvictionOperator().checkEvictable(mapContainer, partitionId);
     }
 
     protected void markRecordStoreExpirable(long ttl) {
@@ -361,7 +363,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (nearCacheProvider.isNearCacheAndInvalidationEnabled(mapName)) {
             nearCacheProvider.invalidateAllNearCaches(mapName, key);
         }
-        fireEvent(key, value, mapName, mapServiceContext);
+        getEvictionOperator().fireEvent(key, value, mapName, mapServiceContext);
     }
 
     void increaseRecordEvictionCriteriaNumber(Record record, MapConfig.EvictionPolicy evictionPolicy) {
