@@ -100,7 +100,7 @@ class DroppingConnection implements Connection {
     }
 
     @Override
-    public void setAvailableSlots(Integer claimResponse) {
+    public void setAvailableSlots(int claimResponse) {
 
     }
 }

@@ -23,7 +23,7 @@ public class ExponentialBackoffPolicyTest {
         int state = BackoffPolicy.EMPTY_STATE;
         for (int i = 1; i <= 10; i++) {
             long startTime = Clock.currentTimeMillis();
-            state = backoffPolicy.apply(state, i);
+            state = backoffPolicy.apply(state);
             long endTime = Clock.currentTimeMillis();
             long diff = endTime - startTime;
             assertTrue("Wrong waiting time calculation in iteration no " + i + ". Expected: " + minWaitingTime[i]

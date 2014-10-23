@@ -257,7 +257,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
-    public void setAvailableSlots(Integer claimResponse) {
+    public void setAvailableSlots(int claimResponse) {
         //noop
     }
 

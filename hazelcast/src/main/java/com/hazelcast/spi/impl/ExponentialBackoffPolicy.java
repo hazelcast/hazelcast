@@ -8,16 +8,22 @@ public class ExponentialBackoffPolicy implements BackoffPolicy {
     public static final int FIRST_STATE = 1;
 
     @Override
-    public int apply(int state, int iterationNo) {
-        if (state == BackoffPolicy.EMPTY_STATE) {
-            state = FIRST_STATE;
-        } else {
-            state *= BACKOFF_MULTIPLIER;
-        }
+    public int apply(int state) {
+        state = nextState(state);
         try {
             Thread.sleep(state);
         } catch (InterruptedException e) {
             throw ExceptionUtil.rethrow(e);
+        }
+        return state;
+    }
+
+    @Override
+    public int nextState(int state) {
+        if (state == BackoffPolicy.EMPTY_STATE) {
+            state = FIRST_STATE;
+        } else {
+            state *= BACKOFF_MULTIPLIER;
         }
         return state;
     }

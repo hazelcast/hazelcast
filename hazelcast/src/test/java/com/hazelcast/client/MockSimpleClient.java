@@ -158,7 +158,7 @@ public class MockSimpleClient implements SimpleClient {
         }
 
         @Override
-        public void setAvailableSlots(Integer claimResponse) {
+        public void setAvailableSlots(int claimResponse) {
 
         }
 
