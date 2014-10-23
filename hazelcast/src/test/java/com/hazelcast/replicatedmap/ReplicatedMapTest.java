@@ -24,7 +24,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
@@ -1141,7 +1140,7 @@ public class ReplicatedMapTest
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        SimpleEntryListener listener = new SimpleEntryListener(0, 95);
+        SimpleEntryListener listener = new SimpleEntryListener(0, 100);
         map2.addEntryListener(listener);
 
         SimpleEntryListener listenerKey = new SimpleEntryListener(0, 1);
@@ -1178,7 +1177,7 @@ public class ReplicatedMapTest
         }
 
         @Override
-        public void mapEvicted(MapEvent event) {
+        public void entryEvicted(EntryEvent event) {
             evictLatch.countDown();
         }
     }
