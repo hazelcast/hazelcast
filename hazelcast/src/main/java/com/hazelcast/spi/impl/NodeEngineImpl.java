@@ -73,6 +73,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
+    private final ClaimAccounting claimAccounting;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -85,6 +86,7 @@ public class NodeEngineImpl implements NodeEngine {
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
         wanReplicationService = node.getNodeExtension().geWanReplicationService();
+        claimAccounting = new ClaimAccounting(operationService, node.getConnectionManager());
     }
 
     @PrivateApi
@@ -291,9 +293,9 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     private void handleClaim(Packet packet) {
+        Connection connection = packet.getConn();
         if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
             System.out.println("Received claim response");
-            Connection connection = packet.getConn();
             Data claimResponseData = packet.getData();
             Integer claimResponse = (Integer) toObject(claimResponseData);
             connection.setAvailableSlots(claimResponse);
@@ -301,12 +303,13 @@ public class NodeEngineImpl implements NodeEngine {
             System.out.println("Received claim request");
             int operations = operationService.getNoOfScheduledOperations();
             System.out.println("There is currently " + operations + " operations scheduled.");
-            Data claimResponseData = toData(1000); //TODO: Calculate size properly
+            int newClaim = claimAccounting.claimSlots(connection);
+            Data claimResponseData = toData(newClaim);
             Packet responsePacket = new Packet(claimResponseData, getSerializationService().getPortableContext());
             responsePacket.setHeader(Packet.HEADER_CLAIM);
             responsePacket.setHeader(Packet.HEADER_RESPONSE);
             responsePacket.setHeader(Packet.HEADER_URGENT);
-            send(responsePacket, packet.getConn());
+            send(responsePacket, connection);
         }
     }
 

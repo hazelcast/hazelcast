@@ -228,6 +228,41 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static void assertLesser(Comparable limit, Comparable actual) {
+        assertLesser(actual + " is not lesser than " + limit, limit, actual);
+    }
+
+    public static void assertLesserOrEquals(Comparable limit, Comparable actual) {
+        assertLesserOrEquals(actual + " is not lesser or equals to " + limit, limit, actual);
+
+    }
+
+    public static void assertLesser(String message, Comparable limit, Comparable actual) {
+        if (limit == null) {
+            fail("Limit value cannot be null");
+        }
+        if (actual == null) {
+            fail("Actual value cannot be null");
+        }
+        int compareTo = actual.compareTo(limit);
+        if (compareTo >= 0) {
+            fail(message);
+        }
+    }
+
+    public static void assertLesserOrEquals(String message, Comparable limit, Comparable actual) {
+        if (limit == null) {
+            fail("Limit value cannot be null");
+        }
+        if (actual == null) {
+            fail("Actual value cannot be null");
+        }
+        int compareTo = actual.compareTo(limit);
+        if (compareTo > 0) {
+            fail(message);
+        }
+    }
+
     public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
         AssertionError error = null;
 
