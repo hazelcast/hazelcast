@@ -342,7 +342,7 @@ final class BasicOperationService implements InternalOperationService {
         int maxAttempts = 15;
         int state = BackoffPolicy.EMPTY_STATE;
         for (int i = 0; i < maxAttempts; i++) {
-            state = backoffPolicy.apply(state, i);
+            state = backoffPolicy.apply(state);
             sent = nodeEngine.send(packet, connection);
             if (sent != WriteResult.FULL) {
                 return sent == WriteResult.SUCCESS;

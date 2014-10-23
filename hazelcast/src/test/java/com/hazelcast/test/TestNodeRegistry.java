@@ -404,7 +404,7 @@ final class TestNodeRegistry {
         }
 
         @Override
-        public void setAvailableSlots(Integer claimResponse) {
+        public void setAvailableSlots(int claimResponse) {
 
         }
 

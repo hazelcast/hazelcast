@@ -121,5 +121,5 @@ public interface Connection {
      */
     int getPort();
 
-    void setAvailableSlots(Integer claimResponse);
+    void setAvailableSlots(int claimResponse);
 }
