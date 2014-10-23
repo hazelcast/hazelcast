@@ -297,7 +297,7 @@ public class NodeEngineImpl implements NodeEngine {
         if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
             //System.out.println("Received claim response");
             Data claimResponseData = packet.getData();
-            Integer claimResponse = (Integer) toObject(claimResponseData);
+            int claimResponse = (Integer) toObject(claimResponseData);
             connection.setAvailableSlots(claimResponse);
         } else {
             int newClaim = claimAccounting.claimSlots(connection);
