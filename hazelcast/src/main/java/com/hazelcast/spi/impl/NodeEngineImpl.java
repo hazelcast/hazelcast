@@ -295,14 +295,14 @@ public class NodeEngineImpl implements NodeEngine {
     private void handleClaim(Packet packet) {
         Connection connection = packet.getConn();
         if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-            System.out.println("Received claim response");
+            //System.out.println("Received claim response");
             Data claimResponseData = packet.getData();
             Integer claimResponse = (Integer) toObject(claimResponseData);
             connection.setAvailableSlots(claimResponse);
         } else {
-            System.out.println("Received claim request");
+            //System.out.println("Received claim request");
             int operations = operationService.getNoOfScheduledOperations();
-            System.out.println("There is currently " + operations + " operations scheduled.");
+            //System.out.println("There is currently " + operations + " operations scheduled.");
             int newClaim = claimAccounting.claimSlots(connection);
             Data claimResponseData = toData(newClaim);
             Packet responsePacket = new Packet(claimResponseData, getSerializationService().getPortableContext());
