@@ -86,7 +86,7 @@ public class NodeEngineImpl implements NodeEngine {
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
         wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
-        claimAccounting = new ClaimAccounting(operationService, node.getConnectionManager());
+        claimAccounting = new ClaimAccounting(this, node);
     }
 
     @PrivateApi
