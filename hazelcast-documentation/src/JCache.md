@@ -212,20 +212,38 @@ Before we move into the interesting part and start implementing the JCache cachi
 classes we need for this example.
 
 The User class is the representation of a user table in the database, to keep it simple it has just has two properties with
-userId and nickname.
+userId and username.
 
 ```java
 public class User {
   private int userId;
-  private String nickname;
+  private String username;
   
   // Getters and setters
 }
 ```
 
+The DAO interface is also kept easy and provides just a simple method to retrieve a user by it's userId.
 
+```java
+public interface UserDAO {
+  User findUserById( int userId );
+}
+```
 
+The full running example that is presented in this subsection is available in the samples repository 
+([here](http://github.com/hazelcast/...TODO)).
 
+#### Roundup of basics
+
+In the quick example we've already seen a couple of the base classes and explained how those work. I guess as a roundup we don't
+need to them one by one again but quickly repeat their uses.
+
+* `javax.cache.Caching`: 
+* `javax.cache.spi.CachingProvider`: 
+* `javax.cache.CacheManager`: 
+* `javax.cache.configuration.MutableConfiguration`: 
+* `javax.cache.Cache`:
 
 ## Hazelcast Cache Extension - ICache
 
