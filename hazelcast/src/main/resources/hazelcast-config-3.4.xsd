@@ -23,7 +23,8 @@
 
     <xs:element name="hazelcast">
         <xs:complexType>
-            <xs:sequence>
+            <xs:choice minOccurs="1" maxOccurs="unbounded">
+                <xs:element ref="import"/>
                 <xs:element name="group" type="cluster-group" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="management-center" type="management-center" minOccurs="0" maxOccurs="1"/>
@@ -48,10 +49,20 @@
                 <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="member-attributes" minOccurs="0" maxOccurs="1"/>
-            </xs:sequence>
+            </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
     </xs:element>
+    <xs:element name="import">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:restriction base="xs:anyType">
+                    <xs:attribute name="resource" type="xs:string" use="required"/>
+                </xs:restriction>
+            </xs:complexContent>
+        </xs:complexType>
+    </xs:element>
+
     <xs:complexType name="map">
         <xs:sequence>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
