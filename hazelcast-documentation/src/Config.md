@@ -129,9 +129,10 @@ Or a queue '`com.hazelcast.test.myqueue`';
 
 ## XML Configuration Composition
 
-You can compose your Hazelcast XML Configuration file from multiple XML configuration snippets. In order to compose XML configuration you can use `<import/>` element to load different XML configuration files. For example:  
+You can compose your Hazelcast XML Configuration file from multiple XML configuration snippets. In order to compose XML configuration, you can use `<import/>` element to load different XML configuration files. For example:  
 
-hazelcast-config.xml
+hazelcast-config.xml:
+
 ```xml
 <hazelcast>
   <import resource="development-group-config.xml"/>
@@ -139,7 +140,8 @@ hazelcast-config.xml
 </hazelcast>
 ```
 
-development-group-config.xml
+development-group-config.xml:
+
 ```xml
 <hazelcast>
   <group>
@@ -148,7 +150,9 @@ development-group-config.xml
   </group>
 </hazelcast>
 ```
-development-network-config.xml
+
+development-network-config.xml:
+
 ```xml
 <hazelcast>
   <network>
@@ -162,10 +166,11 @@ development-network-config.xml
   </network>
 </hazelcast>
 ```
+<br></br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *You can only use `<import/>` element on top level of the XML hierarchy.*
+<br></br>
 
-** Note that you can only use `<import/>` element on top level of the XML hierarchy.**
-
-- XML resources can be loaded from classpath and filesystem. For example :
+- XML resources can be loaded from classpath and filesystem. For example:
 
 ```xml
 <hazelcast>
@@ -174,7 +179,7 @@ development-network-config.xml
 </hazelcast>
 ```
 
-- Property placeholders can be used in the `<import/>` elements, For example:
+- Property placeholders can be used in the `<import/>` elements. For example:
 
 ```xml
 <hazelcast>
