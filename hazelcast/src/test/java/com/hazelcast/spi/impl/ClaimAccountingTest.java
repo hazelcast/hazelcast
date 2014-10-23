@@ -26,7 +26,7 @@ public class ClaimAccountingTest extends HazelcastTestSupport {
 //        Connection mockConnection = mock(Connection.class);
 //        ClaimAccounting accounting = new ClaimAccounting(internalOperationService, connectionManager);
 //        int slots = accounting.claimSlots(mockConnection);
-//        assertLesserOrEquals(ClaimAccounting.MAXIMUM_CLAIM_SIZE, slots);
+//        assertLesserOrEquals(ClaimAccounting.maximumClaimSize, slots);
 //    }
 
 

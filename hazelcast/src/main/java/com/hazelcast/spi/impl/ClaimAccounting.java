@@ -5,7 +5,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -15,16 +14,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Responsible for dealing with back-pressure claim requests.
  */
 public class ClaimAccounting implements ConnectionListener {
-    public static final int MAXIMUM_CAPACITY = 1000000;
-    public static final int MAXIMUM_CLAIM_SIZE = 5000;
-
-    /**
-     * If calculated claim size is smaller then this constant then we will
-     * treat it as exhausted capacity and we return 0 slots. The purpose is to prevent issuing many small
-     * claims as it would cause extra over-head.
-     *
-     */
-    public static final int MINIMUM_CLAIM_SIZE = 10;
+    public final int totalCapacity;
+    public final int maximumClaimSize;
+    public final int minimumClaimSize;
 
     private final AtomicInteger bookedCapacity = new AtomicInteger();
     private final ConcurrentMap<Connection, Integer> bookedCapacityPerMember = new ConcurrentHashMap<Connection, Integer>();
@@ -34,9 +26,14 @@ public class ClaimAccounting implements ConnectionListener {
     private final ILogger logger;
 
     public ClaimAccounting(InternalOperationService internalOperationService, Node node) {
-       this.internalOperationService = internalOperationService;
-       this.node = node;
-       this.logger = node.getLogger(ClaimAccounting.class);
+        this.internalOperationService = internalOperationService;
+        this.node = node;
+        this.logger = node.getLogger(ClaimAccounting.class);
+
+        this.totalCapacity = node.getGroupProperties().BACKPRESSURE_TOTAL_CAPACITY.getInteger();
+        this.maximumClaimSize = node.getGroupProperties().BACKPRESSURE_MAX_CLAIM_SIZE.getInteger();
+        this.minimumClaimSize = node.getGroupProperties().BACKPRESSURE_MIN_CLAIM_SIZE.getInteger();
+
     }
 
     public int claimSlots(Connection connection) {
@@ -50,11 +47,11 @@ public class ClaimAccounting implements ConnectionListener {
 
             int noOfScheduledOperations = internalOperationService.getNoOfScheduledOperations();
             int bookedCapacityWithoutMe = bookedCapacityBefore - myClaimsBefore;
-            int remainingCapacity = MAXIMUM_CAPACITY - noOfScheduledOperations - bookedCapacityWithoutMe;
+            int remainingCapacity = totalCapacity - noOfScheduledOperations - bookedCapacityWithoutMe;
             int activeConnectionCount = connectionManager.getActiveConnectionCount();
             newClaim = remainingCapacity / activeConnectionCount;
-            if (newClaim >= MINIMUM_CLAIM_SIZE) {
-                newClaim = Math.min(MAXIMUM_CLAIM_SIZE, newClaim);
+            if (newClaim >= minimumClaimSize) {
+                newClaim = Math.min(maximumClaimSize, newClaim);
             } else {
                 newClaim = 0;
             }
