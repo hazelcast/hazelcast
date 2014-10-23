@@ -22,6 +22,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ITopic;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
@@ -29,6 +30,8 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.DefaultNodeContext;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
@@ -72,7 +75,7 @@ public class SplitBrainHandlerTest {
 
     @Before
     @After
-    public  void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() throws IOException {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -330,7 +333,7 @@ public class SplitBrainHandlerTest {
          * h4 to restart it will have to be notified by h3.
          */
         h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().clear().setMembers(Collections.<String> emptyList());
+        h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().clear().setMembers(Collections.<String>emptyList());
 
         assertTrue(latch.await(60, TimeUnit.SECONDS));
 
@@ -411,7 +414,7 @@ public class SplitBrainHandlerTest {
         final CountDownLatch latch = new CountDownLatch(1);
         Config config1 = new Config();
         // bigger port to make sure address.hashCode() check pass during merge!
-        config1.getNetworkConfig().setPort(5901) ;
+        config1.getNetworkConfig().setPort(5901);
         config1.setProperties(props);
         config1.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
@@ -428,7 +431,7 @@ public class SplitBrainHandlerTest {
         Thread.sleep(5000);
 
         Config config2 = new Config();
-        config2.getNetworkConfig().setPort(5701) ;
+        config2.getNetworkConfig().setPort(5701);
         config2.setProperties(props);
         Hazelcast.newHazelcastInstance(config2);
 
@@ -616,5 +619,160 @@ public class SplitBrainHandlerTest {
     private static FirewallingTcpIpConnectionManager getConnectionManager(HazelcastInstance hz) {
         Node node = TestUtil.getNode(hz);
         return (FirewallingTcpIpConnectionManager) node.getConnectionManager();
+    }
+
+
+    @Test
+    public void testClusterMerge_when_split_not_detected_by_one_node_byMulticast() throws InterruptedException {
+        testClusterMerge_when_split_not_detected_by_one_node(true);
+    }
+
+    @Test
+    public void testClusterMerge_when_split_not_detected_by_one_node_byTCP() throws InterruptedException {
+        testClusterMerge_when_split_not_detected_by_one_node(false);
+    }
+
+    private void testClusterMerge_when_split_not_detected_by_one_node(boolean multicastEnabled)
+            throws InterruptedException {
+
+        Config config1 = createConfigWithPort(multicastEnabled, 5003);
+        HazelcastInstance hz1 = newHazelcastInstance(config1, "test-node1", new FirewallingNodeContext());
+        Config config2 = createConfigWithPort(multicastEnabled, 5002);
+        HazelcastInstance hz2 = newHazelcastInstance(config2, "test-node2", new FirewallingNodeContext());
+        Config config3 = createConfigWithPort(multicastEnabled, 5001);
+        HazelcastInstance hz3 = newHazelcastInstance(config3, "test-node3", new FirewallingNodeContext());
+
+        String topicName = "testTopic";
+
+        final CountDownLatch receivedLatch = new CountDownLatch(1);
+        final ITopic<String> testTopic = hz1.getTopic(topicName);
+        testTopic.addMessageListener(new TestMessageListener(receivedLatch));
+
+        final CountDownLatch receivedLatch2 = new CountDownLatch(1);
+        final ITopic<String> testTopic2 = hz2.getTopic(topicName);
+        testTopic2.addMessageListener(new TestMessageListener(receivedLatch2));
+
+        final CountDownLatch receivedLatch3 = new CountDownLatch(1);
+        final ITopic<String> testTopic3 = hz3.getTopic(topicName);
+        testTopic3.addMessageListener(new TestMessageListener(receivedLatch3));
+
+        final Node n1 = TestUtil.getNode(hz1);
+        Node n2 = TestUtil.getNode(hz2);
+        final Node n3 = TestUtil.getNode(hz3);
+
+
+        final CountDownLatch splitLatch = new CountDownLatch(3);
+        MembershipAdapter membershipAdapterForN1AndN2 = new MembershipAdapter() {
+            @Override
+            public void memberRemoved(MembershipEvent event) {
+                if (n3.getLocalMember().equals(event.getMember())) {
+                    splitLatch.countDown();
+                }
+            }
+        };
+
+        MembershipAdapter membershipAdapterForN3 = new MembershipAdapter() {
+            @Override
+            public void memberRemoved(MembershipEvent event) {
+                if (n1.getLocalMember().equals(event.getMember())) {
+                    splitLatch.countDown();
+                }
+            }
+        };
+
+        hz1.getCluster().addMembershipListener(membershipAdapterForN1AndN2);
+        hz2.getCluster().addMembershipListener(membershipAdapterForN1AndN2);
+        hz3.getCluster().addMembershipListener(membershipAdapterForN3);
+
+        final CountDownLatch mergeLatch = new CountDownLatch(2);
+        LifecycleListener lifecycleListener = new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleState.MERGED) {
+                    mergeLatch.countDown();
+                }
+            }
+        };
+        hz1.getLifecycleService().addLifecycleListener(lifecycleListener);
+        hz2.getLifecycleService().addLifecycleListener(lifecycleListener);
+
+        Thread.sleep(5000);
+
+        n1.clusterService.removeAddress(n3.address);
+        n2.clusterService.removeAddress(n3.address);
+        n3.clusterService.removeAddress(n1.address);
+
+        assertTrue(splitLatch.await(10, TimeUnit.SECONDS));
+        assertEquals(2, hz1.getCluster().getMembers().size());
+        assertEquals(2, hz2.getCluster().getMembers().size());
+        assertEquals(2, hz3.getCluster().getMembers().size());
+
+        assertTrue(mergeLatch.await(60, TimeUnit.SECONDS));
+
+        assertEquals(3, hz1.getCluster().getMembers().size());
+        assertEquals(3, hz2.getCluster().getMembers().size());
+        assertEquals(3, hz3.getCluster().getMembers().size());
+
+        new Thread(new PublishRunnable(testTopic, receivedLatch)).start();
+        new Thread(new PublishRunnable(testTopic2, receivedLatch2)).start();
+        new Thread(new PublishRunnable(testTopic3, receivedLatch3)).start();
+
+        assertTrue(receivedLatch.await(30, TimeUnit.SECONDS));
+        assertTrue(receivedLatch2.await(30, TimeUnit.SECONDS));
+        assertTrue(receivedLatch3.await(30, TimeUnit.SECONDS));
+
+    }
+
+    private Config createConfigWithPort(boolean multicastEnabled, int port) {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
+        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
+
+        config.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "10");
+        config.setProperty(GroupProperties.PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "10");
+
+//        config.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "120");
+
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.getJoin().getMulticastConfig().setEnabled(multicastEnabled);
+        networkConfig.getJoin().getTcpIpConfig()
+                .setEnabled(!multicastEnabled).addMember("127.0.0.1");
+        networkConfig.setPort(port);
+        return config;
+    }
+
+    private class TestMessageListener implements MessageListener<String> {
+        private CountDownLatch countDownLatch;
+
+        public TestMessageListener(CountDownLatch countDownLatch) {
+            this.countDownLatch = countDownLatch;
+        }
+
+        @Override
+        public void onMessage(Message<String> message) {
+            countDownLatch.countDown();
+        }
+    }
+
+    private class PublishRunnable implements Runnable {
+        private ITopic<String> testTopic;
+        private CountDownLatch countDownLatch;
+
+        public PublishRunnable(ITopic<String> testTopic, CountDownLatch countDownLatch) {
+            this.testTopic = testTopic;
+            this.countDownLatch = countDownLatch;
+        }
+
+        @Override
+        public void run() {
+            while (countDownLatch.getCount() > 0) {
+                testTopic.publish("message");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }
