@@ -1,6 +1,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
@@ -30,10 +31,12 @@ public class ClaimAccounting implements ConnectionListener {
 
     private final InternalOperationService internalOperationService;
     private final Node node;
+    private final ILogger logger;
 
     public ClaimAccounting(InternalOperationService internalOperationService, Node node) {
        this.internalOperationService = internalOperationService;
        this.node = node;
+       this.logger = node.getLogger(ClaimAccounting.class);
     }
 
     public int claimSlots(Connection connection) {
@@ -47,7 +50,6 @@ public class ClaimAccounting implements ConnectionListener {
 
             int noOfScheduledOperations = internalOperationService.getNoOfScheduledOperations();
             int bookedCapacityWithoutMe = bookedCapacityBefore - myClaimsBefore;
-
             int remainingCapacity = MAXIMUM_CAPACITY - noOfScheduledOperations - bookedCapacityWithoutMe;
             int activeConnectionCount = connectionManager.getActiveConnectionCount();
             newClaim = remainingCapacity / activeConnectionCount;
@@ -56,10 +58,20 @@ public class ClaimAccounting implements ConnectionListener {
             } else {
                 newClaim = 0;
             }
+            if (logger.isFinestEnabled()) {
+                logger.finest("Number of scheduled operations: " + noOfScheduledOperations
+                        + ", Booked capacity: " + bookedCapacityWithoutMe + ", Active connection count :"
+                        + activeConnectionCount + ", new claim for connection " + connection + " is: " + newClaim);
+            }
 
             int reservedCapacityAfter = bookedCapacityWithoutMe + newClaim;
             if (bookedCapacity.compareAndSet(bookedCapacityBefore, reservedCapacityAfter)) {
                 break;
+            } else {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("CAS has failed. I have to compute claim size for connection " + connection
+                        + " once again.");
+                }
             }
         }
         bookedCapacityPerMember.put(connection, newClaim);
