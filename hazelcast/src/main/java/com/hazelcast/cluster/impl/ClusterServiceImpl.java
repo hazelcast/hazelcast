@@ -675,7 +675,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     logger.finest(message);
                 }
                 // send members update back to node trying to join again...
-                Operation op = new MemberInfoUpdateOperation(createMemberInfos(getMemberList(), true),
+                final Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
+                final PostJoinOperation postJoinOp = postJoinOps != null && postJoinOps.length > 0
+                        ? new PostJoinOperation(postJoinOps) : null;
+
+                Operation op = new FinalizeJoinOperation(createMemberInfos(getMemberList(), true), postJoinOp,
                         getClusterTime(), false);
                 nodeEngine.getOperationService().send(op, target);
             } else {
