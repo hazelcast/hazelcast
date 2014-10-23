@@ -342,7 +342,7 @@ final class BasicOperationService implements InternalOperationService {
             return sent == WriteResult.SUCCESS;
         }
 
-        int maxAttempts = 15;
+        int maxAttempts = 1000; //TODO: Refactor it to GroupProperties
         int state = BackoffPolicy.EMPTY_STATE;
         for (int i = 0; i < maxAttempts; i++) {
             state = backoffPolicy.apply(state);
