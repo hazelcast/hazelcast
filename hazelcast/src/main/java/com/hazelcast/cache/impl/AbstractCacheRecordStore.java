@@ -117,6 +117,34 @@ public abstract class AbstractCacheRecordStore<
     abstract protected Data recordToData(R record);
     abstract protected R dataToRecord(Data data);
 
+    protected <T> T toValue(Object obj) {
+        if (obj instanceof Data) {
+            return dataToValue((Data) obj);
+        } else {
+            return (T) obj;
+        }
+    }
+
+    protected R toRecord(Object obj) {
+        if (obj instanceof CacheRecord) {
+            return (R) obj;
+        } else if (obj instanceof Data) {
+            return dataToRecord((Data) obj);
+        } else {
+            return valueToRecord(obj);
+        }
+    }
+
+    protected Data toData(Object obj) {
+        if (obj instanceof Data) {
+            return (Data) obj;
+        } else if (obj instanceof CacheRecord) {
+            return recordToData((R) obj);
+        } else {
+            return valueToData(obj);
+        }
+    }
+
     protected R createRecord(Object value, long expiryTime) {
         return createRecord(value, Clock.currentTimeMillis(), expiryTime);
     }
@@ -501,13 +529,13 @@ public abstract class AbstractCacheRecordStore<
                 final Object objValue;
                 switch (cacheConfig.getInMemoryFormat()) {
                     case BINARY:
-                        objValue = dataToValue((Data) value);
+                        objValue = toValue(value);
                         break;
                     case OBJECT:
-                        objValue = value;
+                        objValue = toValue(value);
                         break;
                     case OFFHEAP:
-                        objValue = value;
+                        objValue = toValue(value);
                         break;
                     default:
                         throw new IllegalArgumentException("Invalid storage format: "
