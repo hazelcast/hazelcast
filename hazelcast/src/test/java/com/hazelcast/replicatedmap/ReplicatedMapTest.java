@@ -1078,6 +1078,9 @@ public class ReplicatedMapTest
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
+        SimpleEntryListener listener = new SimpleEntryListener(1, 0);
+        map2.addEntryListener(listener, "foo-18");
+
         final int operations = 100;
         WatchedOperationExecutor executor = new WatchedOperationExecutor();
         executor.execute(new Runnable() {
@@ -1087,20 +1090,9 @@ public class ReplicatedMapTest
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
-
-        SimpleEntryListener listener = new SimpleEntryListener(1, 0);
-        map2.addEntryListener(listener, "foo-18");
-
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                map1.put("foo-18", "barUpdated");
-            }
-        }, 60, EntryEventType.UPDATED, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
         assertOpenEventually(listener.addLatch);
-        assertEquals("barUpdated", map2.get("foo-18"));
     }
 
     @Test
@@ -1172,7 +1164,7 @@ public class ReplicatedMapTest
         }
 
         @Override
-        public void entryUpdated(EntryEvent event) {
+        public void entryAdded(EntryEvent event) {
             addLatch.countDown();
         }
 
