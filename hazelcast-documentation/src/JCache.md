@@ -3,8 +3,8 @@
 
 ## JCache Overview
 
-As part of the upcoming Java Enterprise Edition (Java EE) 8 specification JCache provides a standardized caching layer for applications.
-This caching API is specified by the Java Community Process (JCP) as Java Specification Request (JSR) 107.
+As part of the upcoming Java Enterprise Edition (Java EE) 8 specification JCache provides a standardized caching layer for 
+applications. This caching API is specified by the Java Community Process (JCP) as Java Specification Request (JSR) 107.
 
 Caching keeps data in memory that are either slow to calculate / process or originating from another underlying backend system 
 whereas caching is used to prevent additional request round trips for frequently used data. In both cases the reasoning is to 
@@ -113,7 +113,9 @@ in the XML configuration look at [Declarative Configuration](#declarative-config
 To configure the provider at the commandline the following parameter needs to be added to the Java startup call depending on the
 chosen provider:
 
-`-Dhazelcast.jcache.provider.type=[client|server]`
+```plain
+-Dhazelcast.jcache.provider.type=[client|server]
+```
 
 To learn more about cluster topologies and Hazelcast clients read [Hazelcast Topology](#hazelcast-topology).
 
@@ -143,32 +145,87 @@ a look at a couple of the standard API classes and see how those will be used.
 
 ### Quick Basic Example
 
-A sample code is shown below.
+As a basic introduction how to use Hazelcast JCache integration inside an application we will have a quick look at the easiest
+but typesafe example possible.
 
 ```java
+// Retrieve the CachingProvider which is automatically backed by
+// the chosen Hazelcast server or client provider
 CachingProvider cachingProvider = Caching.getCachingProvider();
+
+// Create a CacheManager
 CacheManager cacheManager = cachingProvider.getCacheManager();
 
-//configure the cache
-MutableConfiguration<String, String> config = new MutableConfiguration<String, String>();
-config.setStoreByValue(true)
-.setTypes(String.class, String.class)
-.setExpiryPolicyFactory(AccessedExpiryPolicy.factoryOf(ONE_MINUTE))
-.setStatisticsEnabled(false);
+// Create a simple but typesafe configuration for the cache
+MutableConfiguration<String, String> config = 
+    new MutableConfiguration<String, String>()
+        .setTypes(String.class, String.class);
 
-//create the cache
-cacheManager.createCache(name, config);
+// Create and get the cache
+Cache<String, String> cache = cacheManager.createCache( "example", config );
+// Alternatively to request an already existing cache
+// Cache<String, String> cache = cacheManager
+//     .getCache( name, String.class, String.class );
 
-//get the cache
-Cache<String, Integer> cache = cacheManager.getCache(name, String.class, String.class);
-cache.put("theKey", "Hello World");
-String value = cache.get("theKey");
-System.out.println(value);//prints 'Hello World'
+// Put a value into the cache
+cache.put( "world", "Hello World" );
+
+// Retrieve the value again from the cache
+String value = cache.get( "world" );
+
+// Print the value 'Hello World'
+System.out.println( value );
 ```
 
-For more samples, please see [Hazelcast JCache Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/jcache/src/main/java/com/hazelcast/examples).
-                      
- 
+Even though the example is quite simple let's take the time to work through the code lines one by one.
+
+First of all we create or better retrieve the `javax.cache.spi.CachingProvider` using the static method from
+`javax.cache.Caching::getCachingManager` which automatically picks up Hazelcast as the underlying JCache implementation if
+available in the classpath. This way the Hazelcast implementation of a CachingProvider will automatically startup a new Hazelcast
+node or client (depending on the chosen provider type) and pick up the configuration from either the commandline parameter
+or from the classpath. How to use an existing `HazelcastInstance` will be shown later in the chapter, for now we keep it simple. 
+
+In the next line we ask the `CachingProvider` to return a `javax.cache.CacheManager` which is the general entry point into JCache.
+The `CachingProvider` therefor is responsible to create and manage named caches. 
+
+The next few lines creating a simple `javax.cache.configuration.MutableConfiguration` to configure the cache before actually
+creating it. In this case we only configure the key and value types to make the cache typesafe which is highly recommended and
+checked on retrieval of the cache.
+
+To eventually create the cache call `javax.cache.CacheManager::createCache` with a name for the cache and the previously created
+configuration. This call immediately returns the created cache. If a previously created cache needs to be retrieved the 
+corresponding method overloads for `javax.cache.CacheManager::getCache` can be used. Recommended is the version given in the
+example to test the type parameters to be correct against the assigned configuration.
+
+The following lines are simple `put` and `get` calls as already known from `java.util.Map` interface whereas the
+`javax.cache.Cache::put` has a `void` return type and does not return the previously assigned value of the key. To imitate the
+`java.util.Map::put` method a JCache cache has a method called `getAndPut`. 
+
+### JCache API Walkthrough
+
+This subsection will create a small account application with providing a caching layer over thought database abstraction. The
+database layer will be simulated using single demo data in a simple DAO layer. To show the difference between the "database"
+access and retrieving values from the cache a small waiting time is used in the DAO layer to simulate network and database
+latency.
+
+Before we move into the interesting part and start implementing the JCache caching layer we first have a quick look at some basic
+classes we need for this example.
+
+The User class is the representation of a user table in the database, to keep it simple it has just has two properties with
+userId and nickname.
+
+```java
+public class User {
+  private int userId;
+  private String nickname;
+  
+  // Getters and setters
+}
+```
+
+
+
+
 
 ## Hazelcast Cache Extension - ICache
 
