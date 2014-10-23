@@ -44,7 +44,7 @@ public final class CacheProxyUtil {
      * Cache clear response validator, loop on results to validate that no exception exists on the result map.
      * Throws the first exception in the map.
      *
-     * @param results map of {@link CacheClearResponse}
+     * @param results map of {@link CacheClearResponse}.
      */
     public static void validateResults(Map<Integer, Object> results) {
         for (Object result : results.values()) {
@@ -62,10 +62,10 @@ public final class CacheProxyUtil {
     }
 
     /**
-     * Key not null validator.
-     * @param key key to validate
-     * @param <K> the type of key
-     * @throws java.lang.NullPointerException if provided key is null
+     * Validates that a key is not null.
+     * @param key the key to be validated.
+     * @param <K> the type of key.
+     * @throws java.lang.NullPointerException if provided key is null.
      */
     public static <K> void validateNotNull(K key) {
         if (key == null) {
@@ -74,13 +74,13 @@ public final class CacheProxyUtil {
     }
 
     /**
-     * key, value pair to validate that both not null.
+     * Validates that key, value pair are both not null.
      *
-     * @param key key to validate
-     * @param <K> the type of key
-     * @param value value to validate
-     * @param <V> the type of value
-     * @throws java.lang.NullPointerException if key or value is null
+     * @param key the key to be validated.
+     * @param <K> the type of key.
+     * @param value the value to be validated.
+     * @param <V> the type of value.
+     * @throws java.lang.NullPointerException if key or value is null.
      */
     public static <K, V> void validateNotNull(K key, V value) {
         if (key == null) {
@@ -92,14 +92,14 @@ public final class CacheProxyUtil {
     }
 
     /**
-     * key and multi values to validate that all are not null.
+     * Validates that key and multi values are not null.
      *
-     * @param key key to validate
-     * @param value1 first value to validate
-     * @param value2 second value to validate
-     * @param <K> the type of key
-     * @param <V> the type of value
-     * @throws java.lang.NullPointerException if key or any value is null
+     * @param key the key to be validated.
+     * @param value1 first value to be validated.
+     * @param value2 second value to be validated.
+     * @param <K> the type of key.
+     * @param <V> the type of value.
+     * @throws java.lang.NullPointerException if key or any value is null.
      */
     public static <K, V> void validateNotNull(K key, V value1, V value2) {
         if (key == null) {
@@ -114,11 +114,11 @@ public final class CacheProxyUtil {
     }
 
     /**
-     * Validates that none of the keys are not null in set
+     * Validates that none of the keys are null in set.
      *
-     * @param keys set of keys to validate
-     * @param <K> the type of key
-     * @throws java.lang.NullPointerException if provided key set contains a null key
+     * @param keys set of keys to be validated.
+     * @param <K> the type of key.
+     * @throws java.lang.NullPointerException if provided key set contains a null key.
      */
     public static <K> void validateNotNull(Set<? extends K> keys) {
         if (keys == null || keys.contains(null)) {
@@ -129,10 +129,10 @@ public final class CacheProxyUtil {
     /**
      * This validator ensures that no key or value is null in the provided map.
      *
-     * @param map the map to validate
-     * @param <K> the type of key
-     * @param <V> the type of value
-     * @throws java.lang.NullPointerException if provided map contains a null key or value in the map
+     * @param map the map to be validated.
+     * @param <K> the type of key.
+     * @param <V> the type of value.
+     * @throws java.lang.NullPointerException if provided map contains a null key or value in the map.
      */
     public static <K, V> void validateNotNull(Map<? extends K, ? extends V> map) {
         if (map == null) {
@@ -164,11 +164,11 @@ public final class CacheProxyUtil {
     }
 
     /**
-     * Validate the configured key matches the provided key
-     * @param cacheConfig Cache configuration
-     * @param key key to validate its type
-     * @param <K> the type of key
-     * @throws ClassCastException if the provided key do not match with configured type
+     * Validates that the configured key matches the provided key.
+     * @param cacheConfig Cache configuration.
+     * @param key the key to be validated with its type.
+     * @param <K> the type of key.
+     * @throws ClassCastException if the provided key does not match with configured type.
      */
     public static <K> void validateConfiguredTypes(CacheConfig cacheConfig, K key)
             throws ClassCastException {
@@ -177,14 +177,14 @@ public final class CacheProxyUtil {
     }
 
     /**
-     * Validate the configured key and value types matches the provided key, value types
+     * Validates the configured key and value types matches the provided key, value types.
      *
-     * @param cacheConfig Cache configuration
-     * @param key key to validate
-     * @param <K> the type of key
-     * @param value value to validate
-     * @param <V> the type of value
-     * @throws ClassCastException if the provided key or value do not match with configured types
+     * @param cacheConfig Cache configuration.
+     * @param key the key to be validated.
+     * @param <K> the type of key.
+     * @param value the value to be validated.
+     * @param <V> the type of value.
+     * @throws ClassCastException if the provided key or value do not match with configured types.
      */
     public static <K, V> void validateConfiguredTypes(CacheConfig cacheConfig, K key, V value)
             throws ClassCastException {
@@ -195,15 +195,15 @@ public final class CacheProxyUtil {
     }
 
     /**
-     * Validate the configured key and value types matches the provided key, value types
+     * Validates the configured key and value types matches the provided key, value types.
      *
-     * @param cacheConfig Cache configuration
-     * @param key key to validate
-     * @param value1 value to validate
-     * @param value2 value to validate
-     * @param <K> the type of key
-     * @param <V> the type of value
-     * @throws ClassCastException if the provided key or value do not match with configured types
+     * @param cacheConfig Cache configuration.
+     * @param key the key to be validated.
+     * @param value1 value to be validated.
+     * @param value2 value to be validated.
+     * @param <K> the type of key.
+     * @param <V> the type of value.
+     * @throws ClassCastException if the provided key or value do not match with configured types.
      */
     public static <K, V> void validateConfiguredTypes(CacheConfig cacheConfig, K key, V value1, V value2)
             throws ClassCastException {
@@ -215,11 +215,11 @@ public final class CacheProxyUtil {
     }
 
     /**
-     * Validate key with key type
-     * @param keyType key class
-     * @param key key to validate
-     * @param <K> the type of key
-     * @throws ClassCastException if the provided key do not match with keyType
+     * Validates the key with key type.
+     * @param keyType key class.
+     * @param key key to be validated.
+     * @param <K> the type of key.
+     * @throws ClassCastException if the provided key do not match with keyType.
      */
     public static <K> void validateConfiguredKeyType(Class<K> keyType, K key)
             throws ClassCastException {
@@ -232,11 +232,11 @@ public final class CacheProxyUtil {
     }
 
     /**
-     * Validate the value with value type
-     * @param valueType value class
-     * @param value value to validate
-     * @param <V> the type of value
-     * @throws ClassCastException if the provided value do not match with valueType
+     * Validates the value with value type.
+     * @param valueType value class.
+     * @param value value to be validated.
+     * @param <V> the type of value.
+     * @throws ClassCastException if the provided value do not match with valueType.
      */
     public static <V> void validateConfiguredValueType(Class<V> valueType, V value)
             throws ClassCastException {

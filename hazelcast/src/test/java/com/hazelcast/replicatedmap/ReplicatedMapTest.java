@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
@@ -1103,19 +1104,85 @@ public class ReplicatedMapTest
         assertEquals("barUpdated", map2.get("foo-18"));
     }
 
+    @Test
+    public void testEvictionObjectDelay0()
+            throws Exception {
+
+        testEviction(buildConfig(InMemoryFormat.OBJECT, 0));
+    }
+
+    @Test
+    public void testEvictionObjectDelayDefault()
+            throws Exception {
+
+        testEviction(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    @Test
+    public void testEvictionBinaryDelay0()
+            throws Exception {
+
+        testEviction(buildConfig(InMemoryFormat.BINARY, 0));
+    }
+
+    @Test
+    public void testEvictionBinaryDelayDefault()
+            throws Exception {
+
+        testEviction(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    private void testEviction(Config config) throws TimeoutException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        SimpleEntryListener listener = new SimpleEntryListener(0, 95);
+        map2.addEntryListener(listener);
+
+        SimpleEntryListener listenerKey = new SimpleEntryListener(0, 1);
+        map1.addEntryListener(listenerKey, "foo-54");
+
+        final int operations = 100;
+        WatchedOperationExecutor executor = new WatchedOperationExecutor();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < operations; i++) {
+                    map1.put("foo-" + i, "bar", 3, TimeUnit.SECONDS);
+                }
+            }
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
+
+        assertOpenEventually(listener.evictLatch);
+        assertOpenEventually(listenerKey.evictLatch);
+    }
+
     private class SimpleEntryListener extends EntryAdapter {
 
         CountDownLatch addLatch;
+        CountDownLatch evictLatch;
 
         SimpleEntryListener(int addCount, int evictCount) {
             addLatch = new CountDownLatch(addCount);
+            evictLatch = new CountDownLatch(evictCount);
         }
 
         @Override
         public void entryUpdated(EntryEvent event) {
             addLatch.countDown();
         }
+
+        @Override
+        public void mapEvicted(MapEvent event) {
+            evictLatch.countDown();
+        }
     }
+
 
     @Test(expected = java.lang.IllegalArgumentException.class)
     public void putNullKey()

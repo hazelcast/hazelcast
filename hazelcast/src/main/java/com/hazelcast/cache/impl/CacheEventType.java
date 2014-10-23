@@ -19,8 +19,8 @@ package com.hazelcast.cache.impl;
 import javax.cache.event.EventType;
 
 /**
- * Hazelcast JCache implementation's internal event types. This enum type is an extension to {@link EventType} to define more
- * event types
+ * Hazelcast JCache implementation's internal event types. This enum type is an extension to {@link EventType}
+ * to define more event types.
  */
 public enum CacheEventType {
 
@@ -30,8 +30,8 @@ public enum CacheEventType {
     CREATED(1),
 
     /**
-     * An event type indicating that the cache entry was updated. i.e. a previous
-     * mapping existed
+     * An event type indicating that the cache entry was updated, i.e. a previous
+     * mapping existed.
      */
     UPDATED(2),
 
@@ -67,7 +67,7 @@ public enum CacheEventType {
     }
 
     /**
-     * @return unique id of the event type
+     * @return unique id of the event type.
      */
     public int getType() {
         return type;
@@ -83,11 +83,11 @@ public enum CacheEventType {
     }
 
     /**
-     * Converts an {@link CacheEventType} into {@link EventType}.
-     * Just an Enum type conversion take place
+     * Converts a {@link CacheEventType} into {@link EventType}.
+     * Just an Enum type conversion takes place.
      *
-     * @param cacheEventType a {@link CacheEventType}
-     * @return same event of {@link EventType} enum
+     * @param cacheEventType a {@link CacheEventType}.
+     * @return same event of {@link EventType} enum.
      */
     public static EventType convertToEventType(CacheEventType cacheEventType) {
         return EventType.valueOf(cacheEventType.name());

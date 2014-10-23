@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 
 /**
- * Implementation of {@link com.hazelcast.cache.impl.CacheEventData}
+ * Implementation of {@link com.hazelcast.cache.impl.CacheEventData}.
  *
  * @see com.hazelcast.cache.impl.CacheEventData
  */

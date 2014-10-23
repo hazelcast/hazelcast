@@ -37,11 +37,12 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 /**
- * Hazelcast {@link javax.cache.CacheManager} for server implementation. This subclass of {@link HazelcastCacheManager} is managed
- * by {@link HazelcastServerCachingProvider}.
- * <p>As it live on a node jvm, it has reference to {@link CacheService} and {@link NodeEngine} where this manager make calls</p>
- * <p>When JCache server implementation is configured, An instance of this class will be returned when
- * {@link javax.cache.spi.CachingProvider#getCacheManager()} called.</p>
+ * Hazelcast {@link javax.cache.CacheManager} for server implementation. This subclass of
+ * {@link HazelcastCacheManager} is managed by {@link HazelcastServerCachingProvider}.
+ * <p>As it lives on a node JVM, it has reference to {@link CacheService} and {@link NodeEngine} where this
+ * manager make calls.</p>
+ * <p>When JCache server implementation is configured, an instance of this class will be returned when
+ * {@link javax.cache.spi.CachingProvider#getCacheManager()} is called.</p>
  */
 public class HazelcastServerCacheManager
         extends HazelcastCacheManager {
@@ -75,7 +76,7 @@ public class HazelcastServerCacheManager
             throw new NullPointerException();
         }
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        cacheService.enableManagement(cacheNameWithPrefix, enabled);
+        cacheService.setManagementEnabled(cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
         enableStatisticManagementOnOtherNodes(cacheName, false, enabled);
     }
@@ -89,7 +90,7 @@ public class HazelcastServerCacheManager
             throw new NullPointerException();
         }
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        cacheService.enableStatistics(cacheNameWithPrefix, enabled);
+        cacheService.setStatisticsEnabled(cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
         enableStatisticManagementOnOtherNodes(cacheName, true, enabled);
     }

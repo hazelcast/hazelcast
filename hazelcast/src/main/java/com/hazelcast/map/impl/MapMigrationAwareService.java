@@ -12,7 +12,6 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.util.Clock;
 
-import java.util.Collection;
 import java.util.Iterator;
 
 /**
@@ -51,8 +50,7 @@ class MapMigrationAwareService implements MigrationAwareService {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             mapServiceContext.clearPartitionData(event.getPartitionId());
         }
-        final Collection<Integer> memberPartitions = mapServiceContext.getMemberPartitions();
-        mapServiceContext.ownedPartitions().set(memberPartitions);
+        mapServiceContext.reloadOwnedPartitions();
     }
 
     @Override
@@ -60,8 +58,7 @@ class MapMigrationAwareService implements MigrationAwareService {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             mapServiceContext.clearPartitionData(event.getPartitionId());
         }
-        final Collection<Integer> memberPartitions = mapServiceContext.getMemberPartitions();
-        mapServiceContext.ownedPartitions().set(memberPartitions);
+        mapServiceContext.reloadOwnedPartitions();
     }
 
     @Override

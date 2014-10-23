@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor.impl;
+package com.hazelcast.executor.impl.operations;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

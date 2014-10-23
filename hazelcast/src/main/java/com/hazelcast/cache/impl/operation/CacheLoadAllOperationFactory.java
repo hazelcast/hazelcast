@@ -29,7 +29,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Provides factory for {@link com.hazelcast.cache.impl.operation.CacheLoadAllOperation}
+ * Factory implementation for {@link com.hazelcast.cache.impl.operation.CacheLoadAllOperation}.
+ * @see com.hazelcast.spi.OperationFactory
  */
 public class CacheLoadAllOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {

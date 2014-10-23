@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl;
+package com.hazelcast.cache;
 
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -26,7 +27,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * <p>Hazelcast provides custom expiry policy on each cache operation. This class is a handy tool to be used with that
+ * <p>Hazelcast provides custom expiry policy on each cache operation. This class comes in handy for that
  * functionality.
  * <p>
  *     Sample usage:
@@ -45,7 +46,7 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     private Duration update;
 
     /**
-     * Constructs an expiry policy with provided values in Milliseconds
+     * Constructs an expiry policy with provided values in milliseconds.
      * @param createMillis
      * @param accessMillis
      * @param updateMillis
@@ -56,7 +57,7 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     }
 
     /**
-     * Constructs an expiry policy with provided values and TimeUnit
+     * Constructs an expiry policy with provided values and TimeUnit.
      * @param createDurationAmount
      * @param accessDurationAmount
      * @param updateDurationAmount
@@ -69,7 +70,7 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     }
 
     /**
-     * Expiry policy wrapper
+     * Expiry policy wrapper.
      * @param expiryPolicy
      */
     public HazelcastExpiryPolicy(ExpiryPolicy expiryPolicy) {
@@ -81,7 +82,7 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     }
 
     /**
-     * Constructs an expiry policy with provided values in Duration
+     * Constructs an expiry policy with provided values in Duration.
      * @param create
      * @param access
      * @param update

@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
  * {@link CacheStatistics} implementation for {@link com.hazelcast.cache.ICache}.
@@ -37,34 +37,53 @@ public class CacheStatisticsImpl
     private static final float FLOAT_HUNDRED = 100.0f;
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
 
-    private final AtomicLong removals = new AtomicLong();
-    private final AtomicLong expiries = new AtomicLong();
-    private final AtomicLong puts = new AtomicLong();
-    private final AtomicLong hits = new AtomicLong();
-    private final AtomicLong misses = new AtomicLong();
-    private final AtomicLong evictions = new AtomicLong();
-    private final AtomicLong putTimeTakenNanos = new AtomicLong();
-    private final AtomicLong getCacheTimeTakenNanos = new AtomicLong();
-    private final AtomicLong removeTimeTakenNanos = new AtomicLong();
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVALS_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removals");
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> EXPIRIES_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "expiries");
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> PUTS_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "puts");
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> HITS_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "hits");
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> MISSES_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "misses");
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> EVICTIONS_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "evictions");
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> PUT_TIME_TAKEN_NANOS_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "putTimeTakenNanos");
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> GET_CACHE_TIME_TAKEN_NANOS_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "getCacheTimeTakenNanos");
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVE_TIME_TAKEN_NANOS_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removeTimeTakenNanos");
+
+    private volatile long removals;
+    private volatile long expiries;
+    private volatile long puts;
+    private volatile long hits;
+    private volatile long misses;
+    private volatile long evictions;
+    private volatile long putTimeTakenNanos;
+    private volatile long getCacheTimeTakenNanos;
+    private volatile long removeTimeTakenNanos;
 
     public CacheStatisticsImpl() {
     }
 
     @Override
     public long getCacheRemovals() {
-        return removals.get();
+        return removals;
     }
 
     /**
      *
      * The total number of expiries from the cache. An expiry may or may not be evicted.
-     * This number represent the entries that fail evaluation and may not include the entries which are not yet
+     * This number represents the entries that fail evaluation and may not include the entries which are not yet
      * evaluated for expiry or not accessed.
      *
-     * @return the number of expiries
+     * @return the number of expiries.
      */
     public long getCacheExpiries() {
-        return expiries.get();
+        return expiries;
     }
 
     @Override
@@ -74,34 +93,34 @@ public class CacheStatisticsImpl
 
     @Override
     public long getCachePuts() {
-        return puts.get();
+        return puts;
     }
 
     @Override
     public long getCacheHits() {
-        return hits.get();
+        return hits;
     }
 
     @Override
     public long getCacheMisses() {
-        return misses.get();
+        return misses;
     }
 
     @Override
     public long getCacheEvictions() {
-        return evictions.get();
+        return evictions;
     }
 
     public long getCachePutTimeTakenNanos() {
-        return putTimeTakenNanos.get();
+        return putTimeTakenNanos;
     }
 
     public long getCacheGetTimeTakenNanos() {
-        return getCacheTimeTakenNanos.get();
+        return getCacheTimeTakenNanos;
     }
 
     public long getCacheRemoveTimeTakenNanos() {
-        return removeTimeTakenNanos.get();
+        return removeTimeTakenNanos;
     }
 
     @Override
@@ -155,117 +174,138 @@ public class CacheStatisticsImpl
     }
 
     /**
-     * implementation of {@link javax.cache.management.CacheStatisticsMXBean#clear()}
+     * Implementation of {@link javax.cache.management.CacheStatisticsMXBean#clear()}.
      * @see javax.cache.management.CacheStatisticsMXBean#clear()
      */
     public void clear() {
-        puts.set(0);
-        misses.set(0);
-        removals.set(0);
-        expiries.set(0);
-        hits.set(0);
-        evictions.set(0);
-        getCacheTimeTakenNanos.set(0);
-        putTimeTakenNanos.set(0);
-        removeTimeTakenNanos.set(0);
+        puts = 0;
+        misses = 0;
+        removals = 0;
+        expiries = 0;
+        hits = 0;
+        evictions = 0;
+        getCacheTimeTakenNanos = 0;
+        putTimeTakenNanos = 0;
+        removeTimeTakenNanos = 0;
     }
 
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCacheRemovals(long number) {
-        removals.getAndAdd(number);
+        REMOVALS_UPDATER.addAndGet(this, number);
     }
 
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCacheExpiries(long number) {
-        expiries.getAndAdd(number);
+        EXPIRIES_UPDATER.addAndGet(this, number);
     }
 
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCachePuts(long number) {
-        puts.getAndAdd(number);
+        PUTS_UPDATER.addAndGet(this, number);
     }
 
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCacheHits(long number) {
-        hits.getAndAdd(number);
+        HITS_UPDATER.addAndGet(this, number);
     }
 
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCacheMisses(long number) {
-        misses.getAndAdd(number);
+        MISSES_UPDATER.addAndGet(this, number);
     }
 
     /**
      * Increases the counter by the number specified.
      *
-     * @param number the number to increase the counter by
+     * @param number the number by which the counter is increased.
      */
     public void increaseCacheEvictions(long number) {
-        evictions.getAndAdd(number);
+        EVICTIONS_UPDATER.addAndGet(this, number);
     }
 
     /**
-     * Increments the getCache time accumulator
+     * Increments the getCache time accumulator.
      *
-     * @param duration the time taken in nanoseconds
+     * @param duration the time taken in nanoseconds.
      */
-    public void addGetTimeNano(long duration) {
-        if (getCacheTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
-            getCacheTimeTakenNanos.addAndGet(duration);
-        } else {
-            //counter full. Just reset.
-            clear();
-            getCacheTimeTakenNanos.set(duration);
+    public void addGetTimeNanos(long duration) {
+        for (;;) {
+            long nanos = getCacheTimeTakenNanos;
+            if (nanos <= Long.MAX_VALUE - duration) {
+                if (GET_CACHE_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, nanos + duration)) {
+                    return;
+                }
+            } else {
+                //counter full. Just reset.
+                if (GET_CACHE_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, duration)) {
+                    clear();
+                    return;
+                }
+            }
         }
     }
 
     /**
-     * Increments the put time accumulator
+     * Increments the put time accumulator.
      *
-     * @param duration the time taken in nanoseconds
+     * @param duration the time taken in nanoseconds.
      */
-    public void addPutTimeNano(long duration) {
-        if (putTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
-            putTimeTakenNanos.addAndGet(duration);
-        } else {
-            //counter full. Just reset.
-            clear();
-            putTimeTakenNanos.set(duration);
+    public void addPutTimeNanos(long duration) {
+        for (;;) {
+            long nanos = putTimeTakenNanos;
+            if (nanos <= Long.MAX_VALUE - duration) {
+                if (PUT_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, nanos + duration)) {
+                    return;
+                }
+            } else {
+                //counter full. Just reset.
+                if (PUT_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, duration)) {
+                    clear();
+                    return;
+                }
+            }
         }
     }
 
     /**
-     * Increments the remove time accumulator
+     * Increments the remove time accumulator.
      *
-     * @param duration the time taken in nanoseconds
+     * @param duration the time taken in nanoseconds.
      */
-    public void addRemoveTimeNano(long duration) {
-        if (removeTimeTakenNanos.get() <= Long.MAX_VALUE - duration) {
-            removeTimeTakenNanos.addAndGet(duration);
-        } else {
-            //counter full. Just reset.
-            clear();
-            removeTimeTakenNanos.set(duration);
+    public void addRemoveTimeNanos(long duration) {
+        for (;;) {
+            long nanos = removeTimeTakenNanos;
+            if (nanos <= Long.MAX_VALUE - duration) {
+                if (REMOVALS_UPDATER.compareAndSet(this, nanos, nanos + duration)) {
+                    return;
+                }
+            } else {
+                //counter full. Just reset.
+                if (REMOVALS_UPDATER.compareAndSet(this, nanos, duration)) {
+                    clear();
+                    return;
+                }
+            }
         }
     }
 
@@ -273,51 +313,51 @@ public class CacheStatisticsImpl
      *
      * Simple CacheStatistics adder. Can be used to merge two statistics data,
      * such as the ones collected from multiple nodes.
-     * @param other CacheStatisticsImpl to be merged
-     * @return CacheStatisticsImpl with merged data
+     * @param other CacheStatisticsImpl to be merged.
+     * @return CacheStatisticsImpl with merged data.
      */
     public CacheStatisticsImpl accumulate(CacheStatisticsImpl other) {
-        puts.addAndGet(other.getCachePuts());
-        removals.addAndGet(other.getCacheRemovals());
-        expiries.addAndGet(other.getCacheExpiries());
-        evictions.addAndGet(other.getCacheEvictions());
-        hits.addAndGet(other.getCacheHits());
-        misses.addAndGet(other.getCacheMisses());
-        putTimeTakenNanos.addAndGet(other.getCachePutTimeTakenNanos());
-        getCacheTimeTakenNanos.addAndGet(other.getCacheGetTimeTakenNanos());
-        removeTimeTakenNanos.addAndGet(other.getCacheRemoveTimeTakenNanos());
+        PUTS_UPDATER.addAndGet(this, other.getCachePuts());
+        REMOVALS_UPDATER.addAndGet(this, other.getCacheRemovals());
+        EXPIRIES_UPDATER.addAndGet(this, other.getCacheExpiries());
+        EVICTIONS_UPDATER.addAndGet(this, other.getCacheEvictions());
+        HITS_UPDATER.addAndGet(this, other.getCacheHits());
+        MISSES_UPDATER.addAndGet(this, other.getCacheMisses());
+        PUT_TIME_TAKEN_NANOS_UPDATER.addAndGet(this, other.getCachePutTimeTakenNanos());
+        GET_CACHE_TIME_TAKEN_NANOS_UPDATER.addAndGet(this, other.getCacheGetTimeTakenNanos());
+        REMOVE_TIME_TAKEN_NANOS_UPDATER.addAndGet(this, other.getCacheRemoveTimeTakenNanos());
         return this;
     }
 
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeLong(puts.get());
-        out.writeLong(removals.get());
-        out.writeLong(expiries.get());
-        out.writeLong(evictions.get());
+        out.writeLong(puts);
+        out.writeLong(removals);
+        out.writeLong(expiries);
+        out.writeLong(evictions);
 
-        out.writeLong(hits.get());
-        out.writeLong(misses.get());
+        out.writeLong(hits);
+        out.writeLong(misses);
 
-        out.writeLong(putTimeTakenNanos.get());
-        out.writeLong(getCacheTimeTakenNanos.get());
-        out.writeLong(removeTimeTakenNanos.get());
+        out.writeLong(putTimeTakenNanos);
+        out.writeLong(getCacheTimeTakenNanos);
+        out.writeLong(removeTimeTakenNanos);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        puts.set(in.readLong());
-        removals.set(in.readLong());
-        expiries.set(in.readLong());
-        evictions.set(in.readLong());
+        puts = in.readLong();
+        removals = in.readLong();
+        expiries = in.readLong();
+        evictions = in.readLong();
 
-        hits.set(in.readLong());
-        misses.set(in.readLong());
+        hits = in.readLong();
+        misses = in.readLong();
 
-        putTimeTakenNanos.set(in.readLong());
-        getCacheTimeTakenNanos.set(in.readLong());
-        removeTimeTakenNanos.set(in.readLong());
+        putTimeTakenNanos = in.readLong();
+        getCacheTimeTakenNanos = in.readLong();
+        removeTimeTakenNanos = in.readLong();
     }
 }

@@ -20,8 +20,10 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * PartitionService allows to query {@link Partition}s
- * and attach/detach {@link MigrationListener}s to listen partition migration events.
+ * PartitionService allows to query {@link Partition}s and attach/detach {@link MigrationListener}s to listen to partition
+ * migration events.
+ *
+ * The methods on the PartitionService are thread-safe.
  *
  * @see Partition
  * @see MigrationListener
@@ -29,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 public interface PartitionService {
 
     /**
-     * Returns all partitions.
+     * Returns a set containing all the {@link Partition}s in the cluster.
      *
      * @return all partitions
      */
@@ -40,6 +42,7 @@ public interface PartitionService {
      *
      * @param key key
      * @return partition which given key belongs to
+     * todo: what about null.
      */
     Partition getPartition(Object key);
 
@@ -54,16 +57,37 @@ public interface PartitionService {
     String randomPartitionKey();
 
     /**
+     * Adds a MigrationListener.
+     * <p/>
+     * The addMigrationListener returns a register-id. This id is needed to remove the MigrationListener using the
+     * {@link #removeMigrationListener(String)} method.
+     * <p/>
+     * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
+     *
      * @param migrationListener listener
      * @return returns registration id.
+     * @throws java.lang.NullPointerException if migrationListener is null.
+     * @throws UnsupportedOperationException  if this operation isn't supported. For example on the client side it isn't possible
+     *                                        to add a MigrationListener.
+     * @see #removeMigrationListener(String)
      */
     String addMigrationListener(MigrationListener migrationListener);
 
     /**
+     * Removes a MigrationListener.
+     * <p/>
+     * If the same MigrationListener is registered multiple times, it needs to be removed multiple times.
+     * <p/>
+     * This method can safely be called multiple times for the same registration-id; every subsequent call is just ignored.
+     *
      * @param registrationId Id of listener registration.
-     * @return true if registration is removed, false otherwise
+     * @return true if listener is removed, false otherwise.
+     * @throws java.lang.NullPointerException if registrationId is null.
+     * @throws UnsupportedOperationException  if this operation isn't supported. For example on the client side it isn't possible
+     *                                        to add/remove a MigrationListener.
+     * @see #addMigrationListener(MigrationListener)
      */
-    boolean removeMigrationListener(final String registrationId);
+    boolean removeMigrationListener(String registrationId);
 
     /**
      * Checks whether the cluster is in a safe state. When in a safe state
@@ -99,5 +123,4 @@ public interface PartitionService {
      * @since 3.3
      */
     boolean forceLocalMemberToBeSafe(long timeout, TimeUnit unit);
-
 }

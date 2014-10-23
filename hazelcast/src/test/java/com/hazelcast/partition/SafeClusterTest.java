@@ -30,7 +30,6 @@ public class SafeClusterTest extends HazelcastTestSupport {
         assertTrue(safe);
     }
 
-
     @Test
     public void isClusterSafe_multiNode() throws Exception {
         final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
@@ -41,7 +40,6 @@ public class SafeClusterTest extends HazelcastTestSupport {
 
         assertTrue(safe1);
         assertTrue(safe2);
-
     }
 
     @Test
@@ -80,5 +78,4 @@ public class SafeClusterTest extends HazelcastTestSupport {
 
         assertTrue(safe);
     }
-
 }

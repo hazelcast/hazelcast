@@ -23,6 +23,9 @@ import com.hazelcast.client.impl.client.RetryableRequest;
 
 import java.security.Permission;
 
+/**
+ * Abstract cache request to handle a completion id registration.
+ */
 public abstract class AbstractCacheRequest
         extends KeyBasedClientRequest
         implements RetryableRequest {

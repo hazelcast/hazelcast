@@ -44,36 +44,39 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Cache Service is the main access point of JCache implementation.
  * <p>
- * This service is responsible of
+ * This service is responsible for:
  *<ul>
- *     <li>Creating and/or accessing the named {@link com.hazelcast.cache.impl.CacheRecordStore}</li>
- *     <li>Creating/Deleting the cache configuration of the named {@link com.hazelcast.cache.ICache}</li>
- *     <li>Registering/Deregistering of cache listeners</li>
- *     <li>publish/dispatch cache events</li>
- *     <li>Enabling/Disabling statistic and management</li>
- *     <li>Data migration commit/rollback through {@link MigrationAwareService}</li>
+ *     <li>Creating and/or accessing the named {@link com.hazelcast.cache.impl.CacheRecordStore}.</li>
+ *     <li>Creating/Deleting the cache configuration of the named {@link com.hazelcast.cache.ICache}.</li>
+ *     <li>Registering/Deregistering of cache listeners.</li>
+ *     <li>Publish/dispatch cache events.</li>
+ *     <li>Enabling/Disabling statistic and management.</li>
+ *     <li>Data migration commit/rollback through {@link MigrationAwareService}.</li>
  *</ul>
  * </p>
- * <p><b>WARNING:</b>This service is an optionally registered service which is enable if the {@link javax.cache.Caching} class is
- *  found on the classpath.</p>
+ * <p><b>WARNING:</b>This service is an optionally registered service which is enabled when {@link javax.cache.Caching}
+ * class is found on the classpath.</p>
  * <p>
- * If registered, it will provide all above cache operation for all partitions of the node which it is registered on.
+ * If registered, it will provide all the above cache operations for all partitions of the node which it
+ * is registered on.
  * </p>
- * <p><b>Distributed Cache Name:</b> is used for providing a unique name to a cache object to overcome cache manager scoping which
- * depends on URI and class loader parameters. It's a simple concatenation of CacheNamePrefix and cache name where CacheNamePrefix
- * is calculated by each caches manager using {@link HazelcastCacheManager#cacheNamePrefix()}.
+ * <p><b>Distributed Cache Name</b> is used for providing a unique name to a cache object to overcome cache manager
+ * scoping which depends on URI and class loader parameters. It's a simple concatenation of CacheNamePrefix and
+ * cache name where CacheNamePrefix is calculated by each cache manager
+ * using {@link HazelcastCacheManager#cacheNamePrefix()}.
  * </p>
  */
 public class CacheService
         implements ManagedService, RemoteService, MigrationAwareService, EventPublishingService<Object, CacheEventListener> {
 
     /**
-     * Cache service name literal
+     * Cache service name literal.
      */
     public static final String SERVICE_NAME = "hz:impl:cacheService";
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     private final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
     private NodeEngine nodeEngine;
+    //todo visibility guarantee?
     private CachePartitionSegment[] segments;
 
     //region ManagedService
@@ -89,8 +92,7 @@ public class CacheService
 
     @Override
     public void reset() {
-        final ConcurrentMap<String, CacheConfig> cacheConfigs = configs;
-        for (String objectName : cacheConfigs.keySet()) {
+        for (String objectName : configs.keySet()) {
             destroyCache(objectName, true, null);
         }
         final CachePartitionSegment[] partitionSegments = segments;
@@ -159,10 +161,11 @@ public class CacheService
     //region CacheService Impls
 
     /**
-     * Create or get the {@link ICacheRecordStore} via internal {@link CachePartitionSegment} using cache name and partitionId
-     * @param name Cache name
-     * @param partitionId partition id of the cache
-     * @return {@link ICacheRecordStore}
+     * Creates or gets the {@link ICacheRecordStore} via internal {@link CachePartitionSegment} using cache
+     * name and partitionId.
+     * @param name cache name.
+     * @param partitionId partition id of the cache.
+     * @return {@link ICacheRecordStore}.
      * @see CachePartitionSegment
      * @see ICacheRecordStore
      */
@@ -172,10 +175,10 @@ public class CacheService
 
     /**
      *
-     * Gets the {@link ICacheRecordStore} via internal {@link CachePartitionSegment} using cache name and partitionId
-     * @param name Cache name
-     * @param partitionId partition id of the cache
-     * @return {@link ICacheRecordStore}  or null if not created yet
+     * Gets the {@link ICacheRecordStore} via internal {@link CachePartitionSegment} using cache name and partitionId.
+     * @param name cache name.
+     * @param partitionId partition id of the cache.
+     * @return {@link ICacheRecordStore}  or null if not created yet.
      * @see CachePartitionSegment
      * @see ICacheRecordStore
      */
@@ -184,13 +187,15 @@ public class CacheService
     }
 
     /**
-     * Destroys the internal content, configuration and releases all resources of a cache from all partitions on all nodes
+     * Destroys the internal content, configuration and releases all resources of a cache from all partitions on
+     * all nodes.
      *
-     * <p>Note: This operation delete cache from the cluster as if not created before. the caller node won't destroyed and should
-     * be destroyed by the caller node.</p>
-     * @param objectName distributed cache name
-     * @param isLocal if true, destroys on this node only
-     * @param callerUuid the uuid of the node that called this method
+     * <p>Note: This operation deletes cache from the cluster as if not created before. The caller node won't
+     * be destroyed. Once destroy operations on all other nodes are completed, then the caller node's cache will be
+     * destroyed.</p>
+     * @param objectName distributed cache name.
+     * @param isLocal if true, destroys on this node only.
+     * @param callerUuid the uuid of the node that called this method.
      */
     public void destroyCache(String objectName, boolean isLocal, String callerUuid) {
         for (CachePartitionSegment segment : segments) {
@@ -199,8 +204,10 @@ public class CacheService
         if (!isLocal) {
             deregisterAllListener(objectName);
         }
-        enableStatistics(objectName, false);
-        enableManagement(objectName, false);
+        //todo weird naming
+        setStatisticsEnabled(objectName, false);
+        //todo weird naming
+        setManagementEnabled(objectName, false);
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
         if (!isLocal) {
@@ -208,12 +215,13 @@ public class CacheService
         }
     }
 
-    protected void destroyCacheOnAllMembers(String objectName, String callerUuid) {
+    private void destroyCacheOnAllMembers(String objectName, String callerUuid) {
         final OperationService operationService = nodeEngine.getOperationService();
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             if (!member.localMember() && !member.getUuid().equals(callerUuid)) {
                 final CacheDestroyOperation op = new CacheDestroyOperation(objectName, true);
+                //todo exception handling?
                 operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
             }
         }
@@ -221,19 +229,19 @@ public class CacheService
 
     /**
      * Creates the cache configuration on the cluster if not created previously.
-     * @param config Cache configuration to be created
-     * @param isLocal creates on current node only if true
-     * @return is it created or not
+     * @param config cache configuration to be created.
+     * @param isLocal creates on current node only if true.
+     * @return is it created or not.
      */
     public boolean createCacheConfigIfAbsent(CacheConfig config, boolean isLocal) {
         final CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
         final boolean created = localConfig == null;
         if (created) {
             if (config.isStatisticsEnabled()) {
-                enableStatistics(config.getNameWithPrefix(), true);
+                setStatisticsEnabled(config.getNameWithPrefix(), true);
             }
             if (config.isManagementEnabled()) {
-                enableManagement(config.getNameWithPrefix(), true);
+                setManagementEnabled(config.getNameWithPrefix(), true);
             }
             if (!isLocal) {
                 createConfigOnAllMembers(config);
@@ -242,32 +250,34 @@ public class CacheService
         return created;
     }
 
-    protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
+    private <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
         final OperationService operationService = nodeEngine.getOperationService();
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true);
+                //todo exception handling?
                 operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
             }
         }
     }
 
     /**
-     * remove the cache configuration with the provided name
-     * @param name distributed cache name
+     * Removes the cache configuration with the provided name.
+     * @param name distributed cache name.
      */
     public void deleteCacheConfig(String name) {
         configs.remove(name);
     }
 
     /**
-     * creates the cache statistics with provided cache name
-     * @param name distributed cache name
-     * @return {@link CacheStatisticsImpl}
+     * Creates the cache statistics with provided cache name.
+     * @param name distributed cache name.
+     * @return {@link CacheStatisticsImpl}.
      */
     public CacheStatisticsImpl createCacheStatIfAbsent(String name) {
         if (!statistics.containsKey(name)) {
+            //todo wrong usage of putIfAbsent
             statistics.putIfAbsent(name, new CacheStatisticsImpl());
         }
         return statistics.get(name);
@@ -277,7 +287,7 @@ public class CacheService
         statistics.remove(name);
     }
 
-    public void enableStatistics(String cacheNameWithPrefix, boolean enabled) {
+    public void setStatisticsEnabled(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
         if (cacheConfig != null) {
             final String cacheManagerName = cacheConfig.getUriString();
@@ -294,7 +304,7 @@ public class CacheService
         }
     }
 
-    public void enableManagement(String cacheNameWithPrefix, boolean enabled) {
+    public void setManagementEnabled(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
         if (cacheConfig != null) {
             final String cacheManagerName = cacheConfig.getUriString();
@@ -339,7 +349,7 @@ public class CacheService
         }
     }
 
-    public void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue, Data dataOldValue,
+    void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue, Data dataOldValue,
                              boolean isOldValueAvailable, int orderKey) {
         final EventService eventService = getNodeEngine().getEventService();
         final Collection<EventRegistration> candidates = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
@@ -375,7 +385,7 @@ public class CacheService
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventData, orderKey);
     }
 
-    public void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
+    void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
         final EventService eventService = getNodeEngine().getEventService();
         final Collection<EventRegistration> candidates = eventService.getRegistrations(CacheService.SERVICE_NAME, cacheName);
 
@@ -385,7 +395,7 @@ public class CacheService
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventSet, orderKey);
     }
 
-    public NodeEngine getNodeEngine() {
+    NodeEngine getNodeEngine() {
         return nodeEngine;
     }
 

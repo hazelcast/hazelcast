@@ -54,15 +54,15 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
  * <p>
- * Hazelcast splits data homogeneously to partitions using keys. Where CacheRecordStore represent a named ICache on-heap data
- * store for a single partition.<br/>
- * This data structure is responsible from CRUD operations, entry processing, statistics, publishing events, cache loader and
- * writer and internal data operations like backup.
+ * Hazelcast splits data homogeneously to partitions using keys. CacheRecordStore represents a named ICache on-heap
+ * data store for a single partition.<br/>
+ * This data structure is responsible for CRUD operations, entry processing, statistics, publishing events, cache
+ * loader and writer and internal data operations like backup.
  * </p>
  * <p>CacheRecordStore is accessed through {@linkplain com.hazelcast.cache.impl.CachePartitionSegment} and
- * {@linkplain com.hazelcast.cache.impl.CacheService}</p>
+ * {@linkplain com.hazelcast.cache.impl.CacheService}.</p>
  * CacheRecordStore is managed by {@linkplain com.hazelcast.cache.impl.CachePartitionSegment}.
- *<p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation.
+ *<p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation:
  *     <pre>
  *         <code>CacheService service = getService();
  *         ICacheRecordStore cache = service.getOrCreateCache(name, partitionId);
@@ -188,7 +188,7 @@ public class CacheRecordStore
         if (isStatisticsEnabled()) {
             if (isPutSucceed) {
                 statistics.increaseCachePuts(1);
-                statistics.addPutTimeNano(System.nanoTime() - start);
+                statistics.addPutTimeNanos(System.nanoTime() - start);
             }
             if (getValue) {
                 if (oldValueNull) {
@@ -196,7 +196,7 @@ public class CacheRecordStore
                 } else {
                     statistics.increaseCacheHits(1);
                 }
-                statistics.addGetTimeNano(System.nanoTime() - start);
+                statistics.addGetTimeNanos(System.nanoTime() - start);
             }
         }
     }
@@ -230,7 +230,7 @@ public class CacheRecordStore
         }
         if (result && isStatisticsEnabled()) {
             statistics.increaseCachePuts(1);
-            statistics.addPutTimeNano(System.nanoTime() - start);
+            statistics.addPutTimeNanos(System.nanoTime() - start);
         }
         return result;
     }
@@ -252,11 +252,11 @@ public class CacheRecordStore
             deleteRecord(key);
         }
         if (isStatisticsEnabled()) {
-            statistics.addGetTimeNano(System.nanoTime() - start);
+            statistics.addGetTimeNanos(System.nanoTime() - start);
             if (result != null) {
                 statistics.increaseCacheHits(1);
                 statistics.increaseCacheRemovals(1);
-                statistics.addRemoveTimeNano(System.nanoTime() - start);
+                statistics.addRemoveTimeNanos(System.nanoTime() - start);
             } else {
                 statistics.increaseCacheMisses(1);
             }
@@ -281,7 +281,7 @@ public class CacheRecordStore
         }
         if (result && isStatisticsEnabled()) {
             statistics.increaseCacheRemovals(1);
-            statistics.addRemoveTimeNano(System.nanoTime() - start);
+            statistics.addRemoveTimeNanos(System.nanoTime() - start);
         }
         return result;
     }
@@ -315,7 +315,7 @@ public class CacheRecordStore
         }
         if (result && isStatisticsEnabled()) {
             statistics.increaseCacheRemovals(1);
-            statistics.addRemoveTimeNano(System.nanoTime() - start);
+            statistics.addRemoveTimeNanos(System.nanoTime() - start);
             if (hitCount == 1) {
                 statistics.increaseCacheHits(hitCount);
             } else {
@@ -357,11 +357,11 @@ public class CacheRecordStore
             result = updateRecordWithExpiry(key, value, record, localExpiryPolicy, now, false);
         }
         if (isStatisticsEnabled()) {
-            statistics.addGetTimeNano(System.nanoTime() - start);
+            statistics.addGetTimeNanos(System.nanoTime() - start);
             if (result) {
                 statistics.increaseCachePuts(1);
                 statistics.increaseCacheHits(1);
-                statistics.addPutTimeNano(System.nanoTime() - start);
+                statistics.addPutTimeNanos(System.nanoTime() - start);
             } else {
                 statistics.increaseCacheMisses(1);
             }
@@ -400,9 +400,9 @@ public class CacheRecordStore
         if (isStatisticsEnabled()) {
             if (result) {
                 statistics.increaseCachePuts(1);
-                statistics.addPutTimeNano(System.nanoTime() - start);
+                statistics.addPutTimeNanos(System.nanoTime() - start);
             }
-            statistics.addGetTimeNano(System.nanoTime() - start);
+            statistics.addGetTimeNanos(System.nanoTime() - start);
             if (isHit) {
                 statistics.increaseCacheHits(1);
             } else {
@@ -428,11 +428,11 @@ public class CacheRecordStore
             updateRecordWithExpiry(key, value, record, localExpiryPolicy, now, false);
         }
         if (isStatisticsEnabled()) {
-            statistics.addGetTimeNano(System.nanoTime() - start);
+            statistics.addGetTimeNanos(System.nanoTime() - start);
             if (result != null) {
                 statistics.increaseCacheHits(1);
                 statistics.increaseCachePuts(1);
-                statistics.addPutTimeNano(System.nanoTime() - start);
+                statistics.addPutTimeNanos(System.nanoTime() - start);
             } else {
                 statistics.increaseCacheMisses(1);
             }
@@ -587,7 +587,7 @@ public class CacheRecordStore
             }
         }
         if (isStatisticsEnabled()) {
-            statistics.addGetTimeNano(System.nanoTime() - start);
+            statistics.addGetTimeNanos(System.nanoTime() - start);
         }
         CacheEntryProcessorEntry entry = new CacheEntryProcessorEntry(key, record, this, now);
         final Object process = entryProcessor.process(entry, arguments);
@@ -844,9 +844,9 @@ public class CacheRecordStore
     }
 
     /**
-     * modifies the keys
+     * Modifies the keys.
      *
-     * @param keys : keys to delete, after method returns it includes only deleted keys
+     * @param keys keys to delete. After method returns, it includes only deleted keys
      */
     protected void deleteAllCacheEntry(Set<Data> keys) {
         if (isWriteThrough() && cacheWriter != null && keys != null && !keys.isEmpty()) {

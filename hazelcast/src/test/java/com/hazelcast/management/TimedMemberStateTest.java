@@ -21,7 +21,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
     @Test
     public void testSerialization() throws InterruptedException {
         HazelcastInstance hz = createHazelcastInstance();
-        TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
+        TimedMemberStateFactory timedMemberStateFactory = new DefaultTimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
         TimedMemberState state = timedMemberStateFactory.createTimedMemberState();
         JsonObject json = state.toJson();

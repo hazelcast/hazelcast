@@ -27,8 +27,9 @@ import java.util.Set;
 /**
  * <p>Internal Set wrapper of {@link CacheEventData} items used during publishing and dispatching events.</p>
  *
- * Multiple event objects is required via iterator to handle cache events by {@link javax.cache.event.CacheEntryListener}. This
- * implementation  serves that purpose as a {@link com.hazelcast.cache.impl.CacheEventData} set.
+ * Multiple event objects is required via iterator to handle cache events
+ * by {@link javax.cache.event.CacheEntryListener}. This implementation  serves that purpose
+ * as a {@link com.hazelcast.cache.impl.CacheEventData} set.
  *
  * @see com.hazelcast.cache.impl.CacheService#publishEvent(String, CacheEventSet, int)
  * @see com.hazelcast.cache.impl.CacheService#dispatchEvent(Object, CacheEventListener)
@@ -67,7 +68,7 @@ public class CacheEventSet
 
     /**
      * Helper method for adding multiple CacheEventData into this Set
-     * @param cacheEventData event data represents a single event's data
+     * @param cacheEventData event data representing a single event's data.
      * @see CacheEventData
      */
     public void addEventData(CacheEventData cacheEventData) {

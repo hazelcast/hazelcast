@@ -18,6 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -39,6 +40,9 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * The {@link ClientPartitionService} implementation.
+ */
 public final class ClientPartitionServiceImpl implements ClientPartitionService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientPartitionService.class);
@@ -59,7 +63,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     public void start() {
         getInitialPartitions();
-        client.getClientExecutionService().scheduleWithFixedDelay(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+        ClientExecutionService clientExecutionService = client.getClientExecutionService();
+        clientExecutionService.scheduleWithFixedDelay(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
     }
 
     public void refreshPartitions() {
@@ -70,31 +75,11 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    private class RefreshTask implements Runnable {
-        @Override
-        public void run() {
-            if (updating.compareAndSet(false, true)) {
-                try {
-                    final ClientClusterService clusterService = client.getClientClusterService();
-                    final Address master = clusterService.getMasterAddress();
-                    final PartitionsResponse response = getPartitionsFrom(master);
-                    if (response != null) {
-                        processPartitionResponse(response);
-                    }
-                } catch (HazelcastInstanceNotActiveException ignored) {
-                    EmptyStatement.ignore(ignored);
-                } finally {
-                    updating.set(false);
-                }
-            }
-        }
-    }
-
     private void getInitialPartitions() {
-        final ClientClusterService clusterService = client.getClientClusterService();
-        final Collection<MemberImpl> memberList = clusterService.getMemberList();
+        ClientClusterService clusterService = client.getClientClusterService();
+        Collection<MemberImpl> memberList = clusterService.getMemberList();
         for (MemberImpl member : memberList) {
-            final Address target = member.getAddress();
+            Address target = member.getAddress();
             PartitionsResponse response = getPartitionsFrom(target);
             if (response != null) {
                 processPartitionResponse(response);
@@ -118,8 +103,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     private void processPartitionResponse(PartitionsResponse response) {
-        final Address[] members = response.getMembers();
-        final int[] ownerIndexes = response.getOwnerIndexes();
+        Address[] members = response.getMembers();
+        int[] ownerIndexes = response.getOwnerIndexes();
         if (partitionCount == 0) {
             partitionCount = ownerIndexes.length;
         }
@@ -179,7 +164,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
 
         public Member getOwner() {
-            final Address owner = getPartitionOwner(partitionId);
+            Address owner = getPartitionOwner(partitionId);
             if (owner != null) {
                 return client.getClientClusterService().getMember(owner);
             }
@@ -192,6 +177,29 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             sb.append("partitionId=").append(partitionId);
             sb.append('}');
             return sb.toString();
+        }
+    }
+
+    private class RefreshTask implements Runnable {
+
+        @Override
+        public void run() {
+            if (!updating.compareAndSet(false, true)) {
+                return;
+            }
+
+            try {
+                ClientClusterService clusterService = client.getClientClusterService();
+                Address master = clusterService.getMasterAddress();
+                PartitionsResponse response = getPartitionsFrom(master);
+                if (response != null) {
+                    processPartitionResponse(response);
+                }
+            } catch (HazelcastInstanceNotActiveException ignored) {
+                EmptyStatement.ignore(ignored);
+            } finally {
+                updating.set(false);
+            }
         }
     }
 }

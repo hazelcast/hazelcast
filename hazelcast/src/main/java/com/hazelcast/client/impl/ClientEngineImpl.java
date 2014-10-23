@@ -41,7 +41,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -227,8 +226,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         final Connection conn = endpoint.getConnection();
         if (conn instanceof TcpIpConnection) {
             Address address = new Address(conn.getRemoteSocketAddress());
-            TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) node.getConnectionManager();
-            connectionManager.bind((TcpIpConnection) conn, address, null, false);
+            ((TcpIpConnection) conn).setEndPoint(address);
         }
         sendClientEvent(endpoint);
     }

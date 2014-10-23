@@ -7,9 +7,7 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Context which is needed by a map service.
@@ -61,7 +59,7 @@ public interface MapServiceContext extends MapServiceContextSupport,
 
     Collection<Integer> getOwnedPartitions();
 
-    AtomicReference<Collection<Integer>> ownedPartitions();
+    void reloadOwnedPartitions();
 
     /**
      * Check if key belongs on partitions of the this node
@@ -69,8 +67,6 @@ public interface MapServiceContext extends MapServiceContextSupport,
      * @return true if this node owns the key
      */
     boolean isOwnedKey(Data key);
-
-    Set<Integer> getMemberPartitions();
 
     AtomicInteger getWriteBehindQueueItemCounter();
 

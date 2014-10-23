@@ -25,13 +25,13 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
  * An event data is represented by
  * <ul>
  * <li>name</li>
- * <li>Event type</li>
+ * <li>event type</li>
  * <li>key</li>
  * <li>value</li>
- * <li>old value if available</li>
+ * <li>old value, if available</li>
  * <li>availability of old data</li>
  * </ul>
- * All key value and oldValue are represented in serialized {@link Data} form.
+ * All key values and old values are represented in serialized {@link Data} form.
  *
  * @see com.hazelcast.cache.impl.CacheService#publishEvent(String, CacheEventSet, int)
  * @see com.hazelcast.cache.impl.CacheService#dispatchEvent(Object, CacheEventListener)
@@ -40,39 +40,39 @@ public interface CacheEventData
         extends IdentifiedDataSerializable {
 
     /**
-     * Cache Event Type of this event data
-     * @return Cache Event Type
+     * Gets cache event type of this event data.
+     * @return Cache event type.
      * @see com.hazelcast.cache.impl.CacheEventType
      */
     CacheEventType getCacheEventType();
 
     /**
-     * get the name of the cache
-     * @return the name of the cache
+     * Gets the name of the cache.
+     * @return the name of the cache.
      */
     String getName();
 
     /**
-     * Get Cache entry key as {@link Data}
-     * @return key as {@link Data}
+     * Gets cache entry key as {@link Data}.
+     * @return key as {@link Data}.
      */
     Data getDataKey();
 
     /**
-     * Get Cache entry value as {@link Data}
-     * @return value as {@link Data}
+     * Gets cache entry value as {@link Data}.
+     * @return value as {@link Data}.
      * */
     Data getDataValue();
 
     /**
-     * Get the old value of entry as {@link Data} if available
-     * @return if available old value of entry as {@link Data} else null
+     * Gets the old value of entry as {@link Data}, if available.
+     * @return if available, old value of entry as {@link Data}, else null.
      */
     Data getDataOldValue();
 
     /**
-     * is old value available
-     * @return is old value available
+     * Returns true if old value is available.
+     * @return true of old value is available, else returns false.
      */
     boolean isOldValueAvailable();
 }

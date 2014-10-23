@@ -27,7 +27,16 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 import java.io.IOException;
 
 /**
- * Cache CreateConfig Operation
+ * Used to create cluster wide cache configuration.
+ * <p>This configuration is created using the following algorithm;
+ * <ul>
+ * <li>Find partition id using the distributed object name of cache as a key.</li>
+ * <li>Send the <code>CacheCreateConfigOperation</code> operation to the calculated partition which will force all
+ * clusters to be single threaded.</li>
+ * <li>{@link CacheService#createCacheConfigIfAbsent(com.hazelcast.config.CacheConfig, boolean)} is called.</li>
+ * </ul></p>
+ * <p>This operation's purpose is to pass the required parameters into
+ * {@link CacheService#createCacheConfigIfAbsent(com.hazelcast.config.CacheConfig, boolean)}.</p>
  */
 public class CacheCreateConfigOperation
         extends AbstractNamedOperation

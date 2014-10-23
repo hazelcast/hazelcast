@@ -49,12 +49,13 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations of cache operations
- * like put, replace, remove and invoke. These internal implementations are delegated by actual cache methods.
+ * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
+ * of cache operations like put, replace, remove and invoke. These internal implementations are delegated
+ * by actual cache methods.
  *
- * <p>Note: this partial implementation is used by server or embedded mode cache</p>
- * @param <K> the type of key
- * @param <V> the type of value
+ * <p>Note: this partial implementation is used by server or embedded mode cache.</p>
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  * @see com.hazelcast.cache.impl.CacheProxy
  * @see com.hazelcast.cache.ICache
  */
@@ -95,6 +96,7 @@ abstract class AbstractCacheProxyInternal<K, V>
             return f;
         } catch (Throwable e) {
             if (e instanceof IllegalStateException) {
+                //todo Latch is not unregistered if close throws an Exception!
                 close();
             }
             if (completionOperation) {
@@ -213,6 +215,7 @@ abstract class AbstractCacheProxyInternal<K, V>
     protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration.isSynchronous()) {
             syncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
+            //todo Should that be called if it wasn't registered because it's already there?
             registerCompletionListener();
         } else {
             asyncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
