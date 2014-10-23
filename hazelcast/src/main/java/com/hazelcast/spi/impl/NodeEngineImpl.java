@@ -86,7 +86,7 @@ public class NodeEngineImpl implements NodeEngine {
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
         wanReplicationService = node.getNodeExtension().geWanReplicationService();
-        claimAccounting = new ClaimAccounting(this, node);
+        claimAccounting = new ClaimAccounting(operationService, node);
     }
 
     @PrivateApi
@@ -300,9 +300,6 @@ public class NodeEngineImpl implements NodeEngine {
             Integer claimResponse = (Integer) toObject(claimResponseData);
             connection.setAvailableSlots(claimResponse);
         } else {
-            //System.out.println("Received claim request");
-            int operations = operationService.getNoOfScheduledOperations();
-            //System.out.println("There is currently " + operations + " operations scheduled.");
             int newClaim = claimAccounting.claimSlots(connection);
             Data claimResponseData = toData(newClaim);
             Packet responsePacket = new Packet(claimResponseData, getSerializationService().getPortableContext());
