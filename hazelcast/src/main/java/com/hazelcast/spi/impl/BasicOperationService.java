@@ -189,7 +189,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getResponseQueueSize() {
-        return scheduler.getResponseQueueSize();
+        return 0;
     }
 
     @Override
