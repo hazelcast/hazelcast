@@ -20,8 +20,6 @@ import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
 import com.hazelcast.cache.impl.record.CacheRecordMap;
-import com.hazelcast.map.impl.MapEntrySet;
-import com.hazelcast.map.impl.NearCache;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -32,22 +30,13 @@ import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
-import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
-import javax.cache.integration.CacheLoaderException;
-import javax.cache.integration.CacheWriterException;
 import javax.cache.processor.EntryProcessor;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 
 /**
  * Implementation of the {@link ICacheRecordStore}
@@ -123,7 +112,12 @@ public class CacheRecordStore
 
     @Override
     protected <T> T recordToValue(CacheRecord record) {
-        return (T) record.getValue();
+        Object value = record.getValue();
+        if (value instanceof Data) {
+            return dataToValue((Data) value);
+        } else {
+            return (T) value;
+        }
     }
 
     @Override
@@ -181,11 +175,14 @@ public class CacheRecordStore
     }
     */
 
+    /*
     @Override
     public void put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller) {
         getAndPut(key, value, expiryPolicy, caller, false, false);
     }
+    */
 
+    /*
     protected Object getAndPut(Data key,
                                Object value,
                                ExpiryPolicy expiryPolicy,
@@ -229,7 +226,9 @@ public class CacheRecordStore
                                boolean getValue) {
         return getAndPut(key, value, expiryPolicy, caller, getValue, false);
     }
+    */
 
+    /*
     @Override
     public Object getAndPut(Data key,
                             Object value,
@@ -237,6 +236,7 @@ public class CacheRecordStore
                             String caller) {
         return getAndPut(key, value, expiryPolicy, caller, true, false);
     }
+    */
 
     @Override
     public boolean putIfAbsent(Data key,
@@ -246,6 +246,7 @@ public class CacheRecordStore
         return putIfAbsent(key, value, expiryPolicy, caller, false);
     }
 
+    /*
     protected boolean putIfAbsent(Data key,
                                   Object value,
                                   ExpiryPolicy expiryPolicy,
@@ -274,6 +275,7 @@ public class CacheRecordStore
         }
         return result;
     }
+    */
 
     @Override
     public Object getAndRemove(Data key, String caller) {
@@ -304,6 +306,7 @@ public class CacheRecordStore
         return result;
     }
 
+    /*
     @Override
     public boolean remove(Data key, String caller) {
         final long now = Clock.currentTimeMillis();
@@ -343,7 +346,7 @@ public class CacheRecordStore
             result = false;
         } else {
             hitCount++;
-            if (compare(record.getValue(), value)) {
+            if (compare(toValue(record), toValue(value))) {
                 deleteCacheEntry(key);
                 deleteRecord(key);
             } else {
@@ -364,6 +367,7 @@ public class CacheRecordStore
         }
         return result;
     }
+    */
 
     @Override
     public boolean replace(Data key,
@@ -420,9 +424,9 @@ public class CacheRecordStore
             result = false;
         } else {
             isHit = true;
-            Object value = record.getValue();
+            Object currentValue = toValue(record);
 
-            if (compare(value, oldValue)) {
+            if (compare(currentValue, toValue(oldValue))) {
                 result = updateRecordWithExpiry(key,
                                                 newValue,
                                                 record,
@@ -480,6 +484,7 @@ public class CacheRecordStore
     }
     */
 
+    /*
     @Override
     public MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
         //we don not call loadAll. shouldn't we ?
@@ -494,12 +499,14 @@ public class CacheRecordStore
         }
         return result;
     }
+    */
 
     @Override
     public void clear() {
         records.clear();
     }
 
+    /*
     @Override
     public void removeAll(Set<Data> keys) {
         final long now = Clock.currentTimeMillis();
@@ -528,6 +535,7 @@ public class CacheRecordStore
             }
         }
     }
+    */
 
     @Override
     public void destroy() {
@@ -633,6 +641,7 @@ public class CacheRecordStore
         return new CacheEntryProcessorEntry(key, record, this, now);
     }
 
+    /*
     @Override
     public Set<Data> loadAll(Set<Data> keys, boolean replaceExistingValues) {
         Set<Data> keysLoaded = new HashSet<Data>();
@@ -663,6 +672,7 @@ public class CacheRecordStore
         }
         return keysLoaded;
     }
+    */
 
     public int evictExpiredRecords() {
         //TODO: Evict expired records and returns count of evicted records
@@ -779,6 +789,7 @@ public class CacheRecordStore
     }
     */
 
+    /*
     protected void deleteRecord(Data key) {
         final CacheRecord record = records.remove(key);
         final Data dataValue;
@@ -802,7 +813,9 @@ public class CacheRecordStore
                     false);
         }
     }
+    */
 
+    /*
     protected CacheRecord readThroughRecord(Data key, long now) {
         final ExpiryPolicy localExpiryPolicy = defaultExpiryPolicy;
         Object value = readThroughCache(key);
@@ -824,6 +837,7 @@ public class CacheRecordStore
         final CacheRecord record = createRecord(key, value, expiryTime);
         return record;
     }
+    */
 
     /*
     protected Object readThroughCache(Data key) throws CacheLoaderException {
@@ -873,6 +887,7 @@ public class CacheRecordStore
     }
     */
 
+    /*
     protected void deleteCacheEntry(Data key) {
         if (isWriteThrough() && cacheWriter != null) {
             try {
@@ -887,12 +902,9 @@ public class CacheRecordStore
             }
         }
     }
+    */
 
-    /**
-     * modifies the keys
-     *
-     * @param keys : keys to delete, after method returns it includes only deleted keys
-     */
+    /*
     protected void deleteAllCacheEntry(Set<Data> keys) {
         if (isWriteThrough() && cacheWriter != null && keys != null && !keys.isEmpty()) {
             Map<Object, Data> keysToDelete = new HashMap<Object, Data>();
@@ -917,7 +929,9 @@ public class CacheRecordStore
             }
         }
     }
+    */
 
+    /*
     protected Map<Data, Object> loadAllCacheEntry(Set<Data> keys) {
         if (cacheLoader != null) {
             Map<Object, Data> keysToLoad = new HashMap<Object, Data>();
@@ -948,6 +962,7 @@ public class CacheRecordStore
         }
         return null;
     }
+    */
 
     /*
     protected boolean processExpiredEntry(Data key, CacheRecord record, long now) {
