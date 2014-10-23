@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
@@ -629,11 +630,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
     public void setConfig(QueueConfig config, NodeEngine nodeEngine, QueueService service) {
         this.nodeEngine = nodeEngine;
         this.service = service;
-        logger = nodeEngine.getLogger(QueueContainer.class);
-        store = new QueueStoreWrapper(nodeEngine.getSerializationService());
+        this.logger = nodeEngine.getLogger(QueueContainer.class);
         this.config = new QueueConfig(config);
-        QueueStoreConfig storeConfig = config.getQueueStoreConfig();
-        store.setConfig(storeConfig, name);
+        // init queue store.
+        final QueueStoreConfig storeConfig = config.getQueueStoreConfig();
+        final SerializationService serializationService = nodeEngine.getSerializationService();
+        this.store = QueueStoreWrapper.create(name, storeConfig, serializationService);
     }
 
     long nextId() {
