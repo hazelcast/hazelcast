@@ -31,8 +31,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Cache Clear, remove all operation with or without a set of keys provided.
- * <p><code>isRemoveAll</code> will delete all internal cache data without doing anything but deletion</p>
+ * Cache Clear is a "remove all" operation with or without a set of keys provided.
+ * <p><code>isRemoveAll</code> will delete all internal cache data without doing anything but deletion.</p>
  */
 public class CacheClearOperation
         extends PartitionWideCacheOperation

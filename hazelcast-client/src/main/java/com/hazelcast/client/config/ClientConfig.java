@@ -20,7 +20,7 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.OffHeapMemoryConfig;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ManagedContext;
@@ -80,7 +80,7 @@ public class ClientConfig {
 
     private SerializationConfig serializationConfig = new SerializationConfig();
 
-    private OffHeapMemoryConfig offHeapMemoryConfig = new OffHeapMemoryConfig();
+    private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
     private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
 
@@ -597,12 +597,12 @@ public class ClientConfig {
         return this;
     }
 
-    public OffHeapMemoryConfig getOffHeapMemoryConfig() {
-        return offHeapMemoryConfig;
+    public NativeMemoryConfig getNativeMemoryConfig() {
+        return nativeMemoryConfig;
     }
 
-    public ClientConfig setOffHeapMemoryConfig(OffHeapMemoryConfig offHeapMemoryConfig) {
-        this.offHeapMemoryConfig = offHeapMemoryConfig;
+    public ClientConfig setNativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
+        this.nativeMemoryConfig = nativeMemoryConfig;
         return this;
     }
 

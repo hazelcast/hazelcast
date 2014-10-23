@@ -32,6 +32,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int MEMBER = 2;
     public static final int HEARTBEAT = 3;
     public static final int CONFIG_CHECK = 4;
+    public static final int BIND_MESSAGE = 5;
 
     // client
     public static final int MEMBERSHIP_EVENT = 8;
@@ -55,6 +56,8 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                         return new HeartbeatOperation();
                     case CONFIG_CHECK:
                         return new ConfigCheck();
+                    case BIND_MESSAGE:
+                        return new BindMessage();
                     case MEMBERSHIP_EVENT:
                         return new ClientMembershipEvent();
                     default:

@@ -26,7 +26,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 
 /**
- * Factory implementation of the {@link CacheSizeOperation}.
+ * Factory implementation of {@link CacheSizeOperation}.
  * @see CacheSizeOperation
  */
 public class CacheSizeOperationFactory

@@ -31,8 +31,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Backup operation of {@link com.hazelcast.cache.impl.operation.CacheClearOperation}
- * <p>Simply removes the records of all removed keys</p>
+ * Backup operation of {@link com.hazelcast.cache.impl.operation.CacheClearOperation}.
+ * <p>It simply clears the records of all removed keys.</p>
  */
 public class CacheClearBackupOperation
         extends AbstractNamedOperation

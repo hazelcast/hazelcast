@@ -26,8 +26,8 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 import java.io.IOException;
 
 /**
- * Cache CreateConfig Operation,
- * <p>Destroys the cache on the cluster or on a single node by calling {@link CacheService#destroyCache(String, boolean, String)}
+ * <p>Destroys the cache on the cluster or on a single node by calling
+ * {@link CacheService#destroyCache(String, boolean, String)}.
  * </p>
  * @see CacheService#destroyCache(String, boolean, String)
  */

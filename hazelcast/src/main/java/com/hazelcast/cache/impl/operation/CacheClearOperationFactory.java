@@ -30,10 +30,10 @@ import java.util.Set;
 
 /**
  * {@link OperationFactory} implementation for Clear Operations.
- * <p>Clear operation has two main purpose;
+ * <p>Clear operation has two main purposes;
  * <ul>
- *     <li>Remove all internal data using <code>isRemoveAll</code></li>
- *     <li>Remove the entries of the provided keys</li>
+ *     <li>Remove all internal data using <code>isRemoveAll</code>.</li>
+ *     <li>Remove the entries of the provided keys.</li>
  * </ul></p>
  * @see OperationFactory
  */

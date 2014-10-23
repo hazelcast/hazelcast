@@ -98,7 +98,7 @@ public class Config {
 
     private MemberAttributeConfig memberAttributeConfig = new MemberAttributeConfig();
 
-    private OffHeapMemoryConfig offHeapMemoryConfig = new OffHeapMemoryConfig();
+    private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
     private String licenseKey;
 
@@ -782,12 +782,12 @@ public class Config {
         return this;
     }
 
-    public OffHeapMemoryConfig getOffHeapMemoryConfig() {
-        return offHeapMemoryConfig;
+    public NativeMemoryConfig getNativeMemoryConfig() {
+        return nativeMemoryConfig;
     }
 
-    public Config setOffHeapMemoryConfig(OffHeapMemoryConfig offHeapMemoryConfig) {
-        this.offHeapMemoryConfig = offHeapMemoryConfig;
+    public Config setNativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
+        this.nativeMemoryConfig = nativeMemoryConfig;
         return this;
     }
 

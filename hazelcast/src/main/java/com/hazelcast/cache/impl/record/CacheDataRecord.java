@@ -29,6 +29,7 @@ class CacheDataRecord extends AbstractCacheRecord<Data> {
 
     private Data value;
 
+    // Deserialization constructor
     CacheDataRecord() {
         super();
     }

@@ -148,7 +148,7 @@ public class CacheEntryProcessorEntry<K, V>
                 cacheRecordStore.updateRecordWithExpiry(keyData, value, record, expiryPolicy, now, false);
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
-                    statistics.addGetTimeNano(System.nanoTime() - start);
+                    statistics.addGetTimeNanos(System.nanoTime() - start);
                 }
                 break;
             case REMOVE:
@@ -157,7 +157,7 @@ public class CacheEntryProcessorEntry<K, V>
             case CREATE:
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
-                    statistics.addGetTimeNano(System.nanoTime() - start);
+                    statistics.addGetTimeNanos(System.nanoTime() - start);
                 }
                 cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, false);
                 break;

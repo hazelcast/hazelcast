@@ -36,10 +36,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Load all entries of the keys to partition record store {@link com.hazelcast.cache.impl.ICacheRecordStore}.
+ * Loads all entries of the keys to partition record store {@link com.hazelcast.cache.impl.ICacheRecordStore}.
  * <p>{@link com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory} creates this operation.</p>
  * <p>Functionality: Filters out the partition keys and calls
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#loadAll(java.util.Set keys, boolean replaceExistingValues)}</p>
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#loadAll(java.util.Set keys, boolean replaceExistingValues)}.</p>
  */
 public class CacheLoadAllOperation
         extends AbstractNamedOperation

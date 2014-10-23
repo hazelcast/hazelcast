@@ -348,10 +348,10 @@
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>
 
-    <off-heap-memory allocator-type="POOLED" enabled="true">
+    <native-memory allocator-type="POOLED" enabled="true">
         <size unit="MEGABYTES" value="256" />
         <metadata-space-percentage>12.5</metadata-space-percentage>
-    </off-heap-memory>
+    </native-memory>
 
     <services enable-defaults="false">
         <service enabled="true">

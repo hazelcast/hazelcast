@@ -95,10 +95,10 @@ Property Name | Default Value | Type | Description
 `hazelcast.migration.min.delay.on.member.removed.seconds`|5|int|Minimum delay (in seconds) between detection of a member that has left and start of the rebalancing process.
 `hazelcast.graceful.shutdown.max.wait` | 600 | int  |   Maximum wait seconds during graceful shutdown.
 `hazelcast.system.log.enabled` | true | bool  |   Enable system logs.
-`hazelcast.elastic.memory.enabled` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) off-heap storage.
-`hazelcast.elastic.memory.total.size` | 128 | int  |   [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) storage total size in MB.
-`hazelcast.elastic.memory.chunk.size` | 1 | int  |   [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) storage chunk size in KB.
-`hazelcast.elastic.memory.shared.storage` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) shared storage.
+`hazelcast.elastic.memory.enabled` | false | bool  |   Enable [Native Memory](#native-memory) off-heap storage.
+`hazelcast.elastic.memory.total.size` | 128 | int  |   [Native Memory](#native-memory) storage total size in MB.
+`hazelcast.elastic.memory.chunk.size` | 1 | int  |   [Native Memory](#native-memory) storage chunk size in KB.
+`hazelcast.elastic.memory.shared.storage` | false | bool  |   Enable [Native Memory](#native-memory) shared storage.
 `hazelcast.elastic.memory.unsafe.enabled`|false|bool|Enable usage of `sun.misc.Unsafe` when allocating, reading and modifying off-heap storage.
 `hazelcast.enterprise.license.key` | null | string  |   [Hazelcast Enterprise](http://www.hazelcast.com/products.jsp) license key.
 `hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If there is no any message passing between client and member within the given time via this property in milliseconds the connection will be closed.

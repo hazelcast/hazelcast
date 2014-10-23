@@ -29,8 +29,8 @@ import java.io.IOException;
 /**
  * Operation of the Cache Entry Processor.
  * <p>{@link javax.cache.processor.EntryProcessor} is executed on the partition.
- * {@link com.hazelcast.cache.impl.ICacheRecordStore} provides the required functionality and this operation is responsible from
- * parameter passing and handling the backup at the end.</p>
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore} provides the required functionality and this
+ * operation is responsible for parameter passing and handling the backup at the end.</p>
  */
 public class CacheEntryProcessorOperation
         extends AbstractMutatingCacheOperation {

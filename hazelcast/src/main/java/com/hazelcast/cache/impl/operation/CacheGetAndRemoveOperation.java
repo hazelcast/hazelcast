@@ -21,8 +21,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 /**
- * Cache GetAndRemove Operation
- * <p>Operator to call the record store's functionality. Backup also triggered from this operation if a record removed</p>
+ * Cache GetAndRemove Operation.
+ * <p>Operation to call the record store's functionality. Backup is also triggered by this operation
+ * if a record is removed.</p>
  * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndRemove(com.hazelcast.nio.serialization.Data, String)
  */
 public class CacheGetAndRemoveOperation

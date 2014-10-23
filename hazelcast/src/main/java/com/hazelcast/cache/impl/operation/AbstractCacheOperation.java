@@ -30,8 +30,8 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 import java.io.IOException;
 
 /**
- * Base Cache Operation. Cache operations are named operations. Key based operations are subclasses of this base class providing a
- * cacheRecordStore access and partial backup support
+ * Base Cache Operation. Cache operations are named operations. Key based operations are subclasses of this base
+ * class providing a cacheRecordStore access and partial backup support.
  */
 abstract class AbstractCacheOperation
         extends AbstractNamedOperation

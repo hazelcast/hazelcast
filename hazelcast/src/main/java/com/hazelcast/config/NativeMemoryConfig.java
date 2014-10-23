@@ -21,9 +21,9 @@ import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.util.ValidationUtil;
 
 /**
- *  Contains off-heap memory configuration.
+ *  Contains native memory configuration.
  */
-public class OffHeapMemoryConfig {
+public class NativeMemoryConfig {
 
     /**
      * Default minimum block size
@@ -60,7 +60,7 @@ public class OffHeapMemoryConfig {
         return size;
     }
 
-    public OffHeapMemoryConfig setSize(final MemorySize size) {
+    public NativeMemoryConfig setSize(final MemorySize size) {
         ValidationUtil.isNotNull(size, "Memory size");
         this.size = size;
         return this;
@@ -70,7 +70,7 @@ public class OffHeapMemoryConfig {
         return enabled;
     }
 
-    public OffHeapMemoryConfig setEnabled(final boolean enabled) {
+    public NativeMemoryConfig setEnabled(final boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -79,7 +79,7 @@ public class OffHeapMemoryConfig {
         return allocatorType;
     }
 
-    public OffHeapMemoryConfig setAllocatorType(MemoryAllocatorType allocatorType) {
+    public NativeMemoryConfig setAllocatorType(MemoryAllocatorType allocatorType) {
         this.allocatorType = allocatorType;
         return this;
     }
@@ -88,7 +88,7 @@ public class OffHeapMemoryConfig {
         return minBlockSize;
     }
 
-    public OffHeapMemoryConfig setMinBlockSize(int minBlockSize) {
+    public NativeMemoryConfig setMinBlockSize(int minBlockSize) {
         ValidationUtil.shouldBePositive(minBlockSize, "Minimum block size");
         this.minBlockSize = minBlockSize;
         return this;
@@ -98,7 +98,7 @@ public class OffHeapMemoryConfig {
         return pageSize;
     }
 
-    public OffHeapMemoryConfig setPageSize(int pageSize) {
+    public NativeMemoryConfig setPageSize(int pageSize) {
         ValidationUtil.shouldBePositive(pageSize, "Page size");
         this.pageSize = pageSize;
         return this;
@@ -108,7 +108,7 @@ public class OffHeapMemoryConfig {
         return metadataSpacePercentage;
     }
 
-    public OffHeapMemoryConfig setMetadataSpacePercentage(float metadataSpacePercentage) {
+    public NativeMemoryConfig setMetadataSpacePercentage(float metadataSpacePercentage) {
         this.metadataSpacePercentage = metadataSpacePercentage;
         return this;
     }
@@ -134,7 +134,7 @@ public class OffHeapMemoryConfig {
 
     @Override
     public String toString() {
-        return "OffHeapMemoryConfig{"
+        return "NativeMemoryConfig{"
                 + "enabled=" + enabled
                 + ", size=" + size
                 + ", allocatorType=" + allocatorType

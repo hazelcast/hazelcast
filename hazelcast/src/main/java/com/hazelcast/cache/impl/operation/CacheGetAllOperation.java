@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Get all keys from Cache.
+ * Gets all keys from the cache.
  * <p>{@link com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory} creates this operation.</p>
  * <p>Functionality: Filters out the partition keys and calls
  * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAll(java.util.Set, javax.cache.expiry.ExpiryPolicy)}</p>

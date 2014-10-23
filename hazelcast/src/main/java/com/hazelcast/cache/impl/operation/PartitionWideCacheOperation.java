@@ -22,8 +22,8 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 /**
- * Abstract cache operation that implements {@link PartitionAwareOperation} serving a base class to provide multi partition
- * operations
+ * Abstract cache operation that implements {@link PartitionAwareOperation} serving a base class to provide
+ * multi partition operations.
  * @see com.hazelcast.cache.impl.operation.CacheSizeOperation
  * @see com.hazelcast.cache.impl.operation.CacheGetAllOperation
  * @see com.hazelcast.cache.impl.operation.CacheClearOperation
