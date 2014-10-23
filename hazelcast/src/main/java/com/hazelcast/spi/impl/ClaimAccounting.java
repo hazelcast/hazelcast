@@ -55,20 +55,20 @@ public class ClaimAccounting implements ConnectionListener {
             } else {
                 newClaim = 0;
             }
-            if (logger.isFinestEnabled()) {
-                logger.finest("Number of scheduled operations: " + noOfScheduledOperations
+//            if (logger.isFinestEnabled()) {
+                logger.severe("Number of scheduled operations: " + noOfScheduledOperations
                         + ", Booked capacity: " + bookedCapacityWithoutMe + ", Active connection count :"
                         + activeConnectionCount + ", new claim for connection " + connection + " is: " + newClaim);
-            }
+//            }
 
             int reservedCapacityAfter = bookedCapacityWithoutMe + newClaim;
             if (bookedCapacity.compareAndSet(bookedCapacityBefore, reservedCapacityAfter)) {
                 break;
             } else {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("CAS has failed. I have to compute claim size for connection " + connection
+//                if (logger.isFinestEnabled()) {
+                    logger.severe("CAS has failed. I have to compute claim size for connection " + connection
                         + " once again.");
-                }
+//                }
             }
         }
         bookedCapacityPerMember.put(connection, newClaim);
