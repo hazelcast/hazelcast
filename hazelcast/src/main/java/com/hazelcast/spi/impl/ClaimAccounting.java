@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Responsible for dealing with back-pressure claim requests.
  */
-public class ClaimAccounting {
+public class ClaimAccounting implements ConnectionListener {
     public static final int MAXIMUM_CAPACITY = 1000000;
     public static final int MAXIMUM_CLAIM_SIZE = 5000;
 
@@ -28,16 +28,15 @@ public class ClaimAccounting {
     private final AtomicInteger bookedCapacity = new AtomicInteger();
     private final ConcurrentMap<Connection, Integer> bookedCapacityPerMember = new ConcurrentHashMap<Connection, Integer>();
 
-    private final NodeEngine nodeEngine;
+    private final InternalOperationService internalOperationService;
     private final Node node;
 
-    public ClaimAccounting(NodeEngine nodeEngine, Node node) {
-       this.nodeEngine = nodeEngine;
+    public ClaimAccounting(InternalOperationService internalOperationService, Node node) {
+       this.internalOperationService = internalOperationService;
        this.node = node;
     }
 
     public int claimSlots(Connection connection) {
-        InternalOperationService internalOperationService = (InternalOperationService) nodeEngine.getOperationService();
         ConnectionManager connectionManager = node.getConnectionManager();
 
         int newClaim;
@@ -53,7 +52,7 @@ public class ClaimAccounting {
             int activeConnectionCount = connectionManager.getActiveConnectionCount();
             newClaim = remainingCapacity / activeConnectionCount;
             if (newClaim >= MINIMUM_CLAIM_SIZE) {
-                newClaim = Math.min(MAXIMUM_CAPACITY, newClaim);
+                newClaim = Math.min(MAXIMUM_CLAIM_SIZE, newClaim);
             } else {
                 newClaim = 0;
             }
@@ -67,20 +66,17 @@ public class ClaimAccounting {
         return newClaim;
     }
 
-    private class ClaimCleaner implements ConnectionListener {
+    @Override
+    public void connectionAdded(Connection connection) {
 
-        @Override
-        public void connectionAdded(Connection connection) {
+    }
 
-        }
-
-        @Override
-        public void connectionRemoved(Connection connection) {
-            Integer claim = bookedCapacityPerMember.get(connection);
-            if (claim != null) {
-                bookedCapacity.getAndAdd(-claim);
-                bookedCapacityPerMember.remove(connection);
-            }
+    @Override
+    public void connectionRemoved(Connection connection) {
+        Integer claim = bookedCapacityPerMember.get(connection);
+        if (claim != null) {
+            bookedCapacity.getAndAdd(-claim);
+            bookedCapacityPerMember.remove(connection);
         }
     }
 }
