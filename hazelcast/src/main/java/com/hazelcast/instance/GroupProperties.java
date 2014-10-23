@@ -410,7 +410,7 @@ public class GroupProperties {
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
         BACKPRESSURE_TOTAL_CAPACITY = new GroupProperty(config, PROP_BACKPRESSURE_TOTAL_CAPACITY, "1000000");
-        BACKPRESSURE_MAX_CLAIM_SIZE = new GroupProperty(config, PROP_BACKPRESSURE_MAX_CLAIM_SIZE, "5000");
+        BACKPRESSURE_MAX_CLAIM_SIZE = new GroupProperty(config, PROP_BACKPRESSURE_MAX_CLAIM_SIZE, "50000");
         /* If calculated claim size is smaller than PROP_BACKPRESSURE_MIN_CLAIM_SIZE then Hazelcast will
         * treat it as exhausted capacity and we return 0 slots. The purpose is to prevent issuing many small
         * claims as it would cause extra over-head.*/
