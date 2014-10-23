@@ -118,7 +118,8 @@ abstract class AbstractCacheProxyBase<K, V> {
         OperationService operationService = getNodeEngine().getOperationService();
         InternalCompletableFuture f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionId);
         f.getSafely();
-        cacheService.destroyCache(getDistributedObjectName(), true, null);
+        //TODO @ali this may cause open-source jcache fail
+//        cacheService.destroyCache(getDistributedObjectName(), true, null);
     }
 
     public boolean isClosed() {

@@ -355,7 +355,7 @@ public abstract class AbstractXmlConfigHelper {
 
         final Node allocTypeNode = atts.getNamedItem("allocator-type");
         final String allocType = getTextContent(allocTypeNode);
-        if (allocType != null && !"".equals("")) {
+        if (allocType != null && !"".equals(allocType)) {
             offHeapMemoryConfig.setAllocatorType(OffHeapMemoryConfig.MemoryAllocatorType.valueOf(upperCaseInternal(allocType)));
         }
 
