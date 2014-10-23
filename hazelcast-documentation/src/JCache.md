@@ -3,7 +3,7 @@
 
 ## JCache Overview
 
-As part of the JEE 6 specification JCache provides a standardized caching layer for applications. This caching API is specified
+As part of the JEE 8 specification JCache provides a standardized caching layer for applications. This caching API is specified
 by the Java Community Process (JCP) as Java Specification Request (JSR) 107.
 
 Caching keeps data in memory that are either slow to calculate / process or originating from another underlying backend system 
