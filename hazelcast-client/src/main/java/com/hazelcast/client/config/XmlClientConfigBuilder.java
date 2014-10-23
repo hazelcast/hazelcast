@@ -147,8 +147,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 fillProperties(node, clientConfig.getProperties());
             } else if ("serialization".equals(nodeName)) {
                 handleSerialization(node);
-            } else if ("off-heap-memory".equals(nodeName)) {
-                fillOffHeapMemoryConfig(node, clientConfig.getOffHeapMemoryConfig());
+            } else if ("native-memory".equals(nodeName)) {
+                fillNativeMemoryConfig(node, clientConfig.getNativeMemoryConfig());
             } else if ("group".equals(nodeName)) {
                 handleGroup(node);
             } else if ("listeners".equals(nodeName)) {

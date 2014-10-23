@@ -27,6 +27,14 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -37,13 +45,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
@@ -58,7 +59,7 @@ import static com.hazelcast.config.XmlElements.MAP;
 import static com.hazelcast.config.XmlElements.MEMBER_ATTRIBUTES;
 import static com.hazelcast.config.XmlElements.MULTIMAP;
 import static com.hazelcast.config.XmlElements.NETWORK;
-import static com.hazelcast.config.XmlElements.OFF_HEAP_MEMORY;
+import static com.hazelcast.config.XmlElements.NATIVE_MEMORY;
 import static com.hazelcast.config.XmlElements.PARTITION_GROUP;
 import static com.hazelcast.config.XmlElements.PROPERTIES;
 import static com.hazelcast.config.XmlElements.QUEUE;
@@ -255,8 +256,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             handleSet(node);
         } else if (TOPIC.isEqual(nodeName)) {
             handleTopic(node);
-        } else if (OFF_HEAP_MEMORY.isEqual(nodeName)) {
-            fillOffHeapMemoryConfig(node, config.getOffHeapMemoryConfig());
+        } else if (NATIVE_MEMORY.isEqual(nodeName)) {
+            fillNativeMemoryConfig(node, config.getNativeMemoryConfig());
         } else if (JOB_TRACKER.isEqual(nodeName)) {
             handleJobTracker(node);
         } else if (SEMAPHORE.isEqual(nodeName)) {

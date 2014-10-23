@@ -41,20 +41,20 @@ enum XmlElements {
     SERVICES("services", false),
     SECURITY("security", false),
     MEMBER_ATTRIBUTES("member-attributes", false),
-    OFF_HEAP_MEMORY("off-heap-memory", false);
+    NATIVE_MEMORY("native-memory", false);
 
     final String name;
-    final boolean multipleOccurance;
+    final boolean multipleOccurrence;
 
-    XmlElements(String name, boolean multipleOccurance) {
+    XmlElements(String name, boolean multipleOccurrence) {
         this.name = name;
-        this.multipleOccurance = multipleOccurance;
+        this.multipleOccurrence = multipleOccurrence;
     }
 
     public static boolean canOccurMultipleTimes(String name) {
         for (XmlElements element : values()) {
             if (name.equals(element.name)) {
-                return element.multipleOccurance;
+                return element.multipleOccurrence;
             }
         }
         return false;

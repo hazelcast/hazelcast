@@ -45,7 +45,7 @@
                 <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="off-heap-memory" type="off-heap-memory" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="member-attributes" minOccurs="0" maxOccurs="1"/>
@@ -1090,7 +1090,7 @@
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
     </xs:complexType>
 
-    <xs:complexType name="off-heap-memory">
+    <xs:complexType name="native-memory">
         <xs:sequence>
             <xs:element name="size" type="memory-size" minOccurs="0" maxOccurs="1"/>
             <xs:element name="min-block-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1"/>
