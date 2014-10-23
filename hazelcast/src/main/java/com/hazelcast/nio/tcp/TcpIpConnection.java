@@ -119,9 +119,13 @@ public final class TcpIpConnection implements Connection {
             return result;
         }
         if (waitingForSlotResponse.compareAndSet(false, true)) {
-            if (Clock.currentTimeMillis() > dontAskForSlotsBefore) {
+            long askInMs = dontAskForSlotsBefore - Clock.currentTimeMillis();
+            if (askInMs <= 0) {
                 requestNewSlots();
             } else {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("No slots are available, but I can only ask for new ones in " + askInMs + " ms.");
+                }
                 waitingForSlotResponse.set(false);
             }
             return WriteResult.FULL;
@@ -140,6 +144,7 @@ public final class TcpIpConnection implements Connection {
     }
 
     private void requestNewSlots() {
+        logger.finest("Requesting new slots for "+toString());
         IOService ioService = connectionManager.ioService;
         Data dummyData = ioService.toData(0);
         Packet slotRequestPacket = new Packet(dummyData, ioService.getPortableContext());
