@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.CreatedExpiryPolicy;
@@ -809,7 +810,7 @@ public abstract class AbstractCacheRecordStore<
                              isOnNewPut,
                              isSaveSucceed);
             return oldValue;
-        } catch (Throwable error) {
+        } catch (Exception e) {
             onGetAndPutError(key,
                              value,
                              expiryPolicy,
@@ -819,8 +820,8 @@ public abstract class AbstractCacheRecordStore<
                              record,
                              oldValue,
                              isOnNewPut,
-                             error);
-            throw new RuntimeException(error);
+                             e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
@@ -868,7 +869,7 @@ public abstract class AbstractCacheRecordStore<
                                     R record,
                                     Object oldValue,
                                     boolean wouldBeNewPut,
-                                    Throwable error) {
+                                    Exception e) {
 
     }
 
