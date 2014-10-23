@@ -42,7 +42,7 @@ Hazelcast Enterprise customers may also define dependencies, a sample of which i
 
 ##### Setting the License Key for Hazelcast Enterprise
 
-To be able to use Hazelcast Enterprise, you need to set license the key in configuration.
+To use Hazelcast Enterprise, you need to set the license key in configuration.
 
 -   **Declarative Configuration**
 
