@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.NodeEngine;
 
@@ -32,7 +33,7 @@ public class ClaimAccounting {
 
     public ClaimAccounting(NodeEngine nodeEngine, Node node) {
        this.nodeEngine = nodeEngine;
-        this.node = node;
+       this.node = node;
     }
 
     public int claimSlots(Connection connection) {
@@ -64,5 +65,22 @@ public class ClaimAccounting {
         }
         bookedCapacityPerMember.put(connection, newClaim);
         return newClaim;
+    }
+
+    private class ClaimCleaner implements ConnectionListener {
+
+        @Override
+        public void connectionAdded(Connection connection) {
+
+        }
+
+        @Override
+        public void connectionRemoved(Connection connection) {
+            Integer claim = bookedCapacityPerMember.get(connection);
+            if (claim != null) {
+                bookedCapacity.getAndAdd(-claim);
+                bookedCapacityPerMember.remove(connection);
+            }
+        }
     }
 }
