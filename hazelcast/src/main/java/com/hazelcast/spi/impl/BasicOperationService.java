@@ -113,7 +113,10 @@ final class BasicOperationService implements InternalOperationService {
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
     private static final int CONCURRENCY_LEVEL = 16;
-    private static final int ASYNC_QUEUE_CAPACITY = 100000;
+
+    //todo: a temporary hack for the back pressure since icompletablefuture completion handler is going to be executed
+    //on this thread.
+    private static final int ASYNC_QUEUE_CAPACITY = Integer.MAX_VALUE;
 
     final ConcurrentMap<Long, BasicInvocation> invocations;
     final BasicOperationScheduler scheduler;
