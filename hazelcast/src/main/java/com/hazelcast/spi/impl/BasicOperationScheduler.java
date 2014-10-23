@@ -80,7 +80,6 @@ public final class BasicOperationScheduler {
     private final BlockingQueue genericWorkQueue = new LinkedBlockingQueue();
     private final ConcurrentLinkedQueue genericPriorityWorkQueue = new ConcurrentLinkedQueue();
 
-    private final ResponseThread responseThread;
     private final AtomicInteger noOfScheduledOperations = new AtomicInteger();
 
     private volatile boolean shutdown;
@@ -112,9 +111,6 @@ public final class BasicOperationScheduler {
 
         this.partitionOperationThreads = new OperationThread[getPartitionOperationThreadCount()];
         initOperationThreads(partitionOperationThreads, new PartitionOperationThreadFactory());
-
-        this.responseThread = new ResponseThread();
-        responseThread.start();
 
         logger.info("Starting with " + genericOperationThreads.length + " generic operation threads and "
                 + partitionOperationThreads.length + " partition operation threads.");
@@ -237,10 +233,6 @@ public final class BasicOperationScheduler {
         return size;
     }
 
-    public int getResponseQueueSize() {
-        return responseThread.workQueue.size();
-    }
-
     public void execute(Operation op) {
         String executorName = op.getExecutorName();
         if (executorName == null) {
@@ -284,10 +276,12 @@ public final class BasicOperationScheduler {
     public void execute(Packet packet) {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-                //it is an response packet.
-                responseThread.process(packet);
+                // It is a response packet.
+                // The response is directly dispatched on the IO thread. The amount of work that needs
+                // to be done is very little and there is not a lot of contention.
+                dispatcher.dispatch(packet);
             } else {
-                //it is an must be an operation packet
+                // It is an operation packet.
                 int partitionId = packet.getPartitionId();
                 boolean hasPriority = packet.isUrgent();
                 execute(packet, partitionId, hasPriority);
@@ -380,9 +374,9 @@ public final class BasicOperationScheduler {
             sb.append(operationThread.getName())
                     .append(" processedCount=").append(operationThread.processedCount).append('\n');
         }
-        sb.append(responseThread.getName())
-                .append(" processedCount: ").append(responseThread.processedResponses)
-                .append(" pendingCount: ").append(responseThread.workQueue.size()).append('\n');
+//        sb.append(responseThread.getName())
+//                .append(" processedCount: ").append(responseThread.processedResponses)
+//                .append(" pendingCount: ").append(responseThread.workQueue.size()).append('\n');
     }
 
     private class GenericOperationThreadFactory implements ThreadFactory {
@@ -493,57 +487,6 @@ public final class BasicOperationScheduler {
 
         public void awaitTermination(int timeout, TimeUnit unit) throws InterruptedException {
             join(unit.toMillis(timeout));
-        }
-    }
-
-    private class ResponseThread extends Thread {
-        private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
-        // field is only written by the response-thread itself, but can be read by other threads.
-        private volatile long processedResponses;
-
-        public ResponseThread() {
-            super(node.threadGroup, node.getThreadNamePrefix("response"));
-            setContextClassLoader(node.getConfigClassLoader());
-        }
-
-        public void run() {
-            try {
-                doRun();
-            } catch (Throwable t) {
-                inspectOutputMemoryError(t);
-                logger.severe(t);
-            }
-        }
-
-        private void doRun() {
-            for (;;) {
-                Object task;
-                try {
-                    task = workQueue.take();
-                } catch (InterruptedException e) {
-                    if (shutdown) {
-                        return;
-                    }
-                    continue;
-                }
-
-                if (shutdown) {
-                    return;
-                }
-
-                process(task);
-            }
-        }
-
-        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
-        private void process(Object response) {
-            processedResponses++;
-            try {
-                dispatcher.dispatch(response);
-            } catch (Throwable e) {
-                inspectOutputMemoryError(e);
-                logger.severe("Failed to process response: " + response + " on response thread:" + getName());
-            }
         }
     }
 
