@@ -22,8 +22,10 @@ public class ExponentialBackoffPolicy implements BackoffPolicy {
     public int nextState(int state) {
         if (state == BackoffPolicy.EMPTY_STATE) {
             state = FIRST_STATE;
-        } else {
+        } else if (state < 500) {
             state *= BACKOFF_MULTIPLIER;
+        } else {
+            //do nothing
         }
         return state;
     }
