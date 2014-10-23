@@ -29,8 +29,8 @@ import java.io.IOException;
  * Cache ManagementConfig Operation provides enable/disable functionality of  management and statistics mxbeans of the cache
  * @see com.hazelcast.cache.impl.HazelcastCacheManager#enableManagement(String, boolean)
  * @see com.hazelcast.cache.impl.HazelcastCacheManager#enableStatistics(String, boolean)
- * @see com.hazelcast.cache.impl.CacheService#enableManagement(String, boolean)
- * @see com.hazelcast.cache.impl.CacheService#enableStatistics(String, boolean)
+ * @see com.hazelcast.cache.impl.CacheService#setManagementEnabled(String, boolean)
+ * @see com.hazelcast.cache.impl.CacheService#setStatisticsEnabled(String, boolean)
  */
 public class CacheManagementConfigOperation
         extends AbstractNamedOperation
@@ -53,9 +53,9 @@ public class CacheManagementConfigOperation
             throws Exception {
         final CacheService service = getService();
         if (isStat) {
-            service.enableStatistics(name, enabled);
+            service.setStatisticsEnabled(name, enabled);
         } else {
-            service.enableManagement(name, enabled);
+            service.setManagementEnabled(name, enabled);
         }
     }
 

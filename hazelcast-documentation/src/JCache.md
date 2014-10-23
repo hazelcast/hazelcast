@@ -24,7 +24,7 @@ provider and will show examples of the basic usage as well as the additionally o
 To gain a full understanding of the JCache functionality and provided guarantees of different operations it is advised to read
 the specification document (which is also the main documentation for functionality) at the specification page of JSR-107:
 
-[https://www.jcp.org/en/jsr/detail?id=107](#https://www.jcp.org/en/jsr/detail?id=107)
+[https://www.jcp.org/en/jsr/detail?id=107](https://www.jcp.org/en/jsr/detail?id=107)
 
 ## Setup and Configuration
 
@@ -245,7 +245,6 @@ To run the JCache (JSR107) TCK against Hazelcast, perform the below instructions
     <!--################################################################################################################-->
     <!--Change the following properties on the command line to override with the coordinates for your implementation-->
     <implementation-groupId>com.hazelcast</implementation-groupId>
-    <!--<implementation-artifactId>hazelcast</implementation-artifactId>-->
     <implementation-artifactId>hazelcast</implementation-artifactId>
     <implementation-version>3.3.1</implementation-version>
 
