@@ -88,7 +88,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     private static final AtomicIntegerFieldUpdater<BasicInvocation> BACKUPS_COMPLETED_FIELD_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(BasicInvocation.class, "backupsCompleted");
 
-
     static final class InternalResponse {
 
         private String toString;
@@ -391,7 +390,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     //this method is called by the operation service to signal the invocation that something has happened, e.g.
     //a response is returned.
-    //@Override
     public void notify(Object obj) {
         Object response = resolveResponse(obj);
 
