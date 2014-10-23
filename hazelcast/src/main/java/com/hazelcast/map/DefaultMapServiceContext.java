@@ -2,7 +2,9 @@ package com.hazelcast.map;
 
 import com.hazelcast.map.eviction.EvictionOperator;
 import com.hazelcast.map.eviction.ExpirationManager;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.map.merge.MergePolicyProvider;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
@@ -12,9 +14,7 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -176,32 +176,32 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     public Collection<Integer> getOwnedPartitions() {
         Collection<Integer> partitions = ownedPartitions.get();
         if (partitions == null) {
-            partitions = getMemberPartitions();
-            ownedPartitions.set(partitions);
+            reloadOwnedPartitions();
+            partitions = ownedPartitions.get();
         }
         return partitions;
     }
 
     @Override
-    public AtomicReference<Collection<Integer>> ownedPartitions() {
-        return ownedPartitions;
+    public void reloadOwnedPartitions() {
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+        if (partitions == null) {
+            partitions = Collections.emptySet();
+        }
+        ownedPartitions.set(Collections.unmodifiableSet(new LinkedHashSet<Integer>(partitions)));
     }
 
     @Override
     public boolean isOwnedKey(Data key) {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        Integer paritionId = partitionService.getPartitionId(key);
-        return getOwnedPartitions().contains(paritionId);
-    }
-
-    @Override
-    public Set<Integer> getMemberPartitions() {
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        List<Integer> partitions = partitionService.getMemberPartitionsMap().get(nodeEngine.getThisAddress());
-        if (partitions == null) {
-            return Collections.emptySet();
+        Integer partitionId = partitionService.getPartitionId(key);
+        try {
+            Address owner = partitionService.getPartitionOwnerOrWait(partitionId);
+            return nodeEngine.getThisAddress().equals(owner);
+        } catch (InterruptedException e) {
+            throw new HazelcastException(e);
         }
-        return new LinkedHashSet<Integer>(partitions);
     }
 
     @Override

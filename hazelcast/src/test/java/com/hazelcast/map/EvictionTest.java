@@ -738,19 +738,35 @@ public class EvictionTest extends HazelcastTestSupport {
      */
     @Test
     public void testContainsKeyShouldDelayEviction() throws InterruptedException {
+        String mapName = randomMapName();
+        final int waitSeconds = 2;
+
         Config cfg = new Config();
-        String mapname = "testContainsKeyShouldDelayEviction";
-        cfg.getMapConfig(mapname).setMaxIdleSeconds(3);
+        cfg.getMapConfig(mapName).setMaxIdleSeconds(30);
+
         HazelcastInstance instance = createHazelcastInstance(cfg);
-        final IMap<Object, Object> map = instance.getMap(mapname);
+
+        final IMap<Object, Object> map = instance.getMap(mapName);
         map.put(1, 1);
 
-        assertTrueAllTheTime(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(map.containsKey(1));
-            }
-        }, 5);
+        sleepSeconds(waitSeconds);
+
+        EntryView<Object, Object> entryView = map.getEntryView(1);
+        final long lastAccessTime = entryView.getLastAccessTime();
+
+        //1. Shift lastAccessTime.
+        map.containsKey(1);
+
+        entryView = map.getEntryView(1);
+        final long lastAccessTimeAfterContainsOperation = entryView.getLastAccessTime();
+
+        //2. Expecting lastAccessTime to be shifted by containsKey operation.
+        final long diffSecs = TimeUnit.MILLISECONDS.toSeconds(lastAccessTimeAfterContainsOperation - lastAccessTime);
+
+        //3. So there should be a diff at least waitSeconds.
+        final String failureMessage = String.format("Diff seconds %d, wait seconds %d", diffSecs, waitSeconds);
+        assertTrue(failureMessage, diffSecs >= waitSeconds);
+
     }
 
     @Test

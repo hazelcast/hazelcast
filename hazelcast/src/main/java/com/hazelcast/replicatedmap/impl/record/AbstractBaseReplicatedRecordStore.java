@@ -29,6 +29,7 @@ import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.InitializingObject;
@@ -176,13 +177,26 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
     }
 
     void fireEntryListenerEvent(Object key, Object oldValue, Object value) {
-        EntryEventType eventType =
-                value == null ? EntryEventType.REMOVED : oldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-        EntryEvent event = new EntryEvent(getName(), localMember, eventType.getType(), key, oldValue, value);
+        EntryEventType eventType = value == null ? EntryEventType.REMOVED
+                : oldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
 
-        Collection<EventRegistration> registrations = eventService.getRegistrations(ReplicatedMapService.SERVICE_NAME, getName());
+        fireEntryListenerEvent(key, oldValue, value, eventType);
+    }
+
+    void fireEntryListenerEvent(Object key, Object oldValue, Object value, EntryEventType eventType) {
+        Collection<EventRegistration> registrations = eventService.getRegistrations(
+                ReplicatedMapService.SERVICE_NAME, name);
         if (registrations.size() > 0) {
-            eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, event, getName().hashCode());
+            EntryEvent event = new EntryEvent(name, nodeEngine.getLocalMember(), eventType.getType(),
+                    key, oldValue, value);
+
+            for (EventRegistration registration : registrations) {
+                EventFilter filter = registration.getFilter();
+                boolean publish = filter == null || filter.eval(key);
+                if (publish) {
+                    eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registration, event, name.hashCode());
+                }
+            }
         }
     }
 
