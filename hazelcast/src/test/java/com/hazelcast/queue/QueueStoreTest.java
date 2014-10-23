@@ -19,10 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.QueueStore;
-import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -33,18 +30,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -214,6 +206,27 @@ public class QueueStoreTest extends HazelcastTestSupport {
 
     }
 
+    @Test
+    public void testFactoryImplQueueStoreConfig() throws InterruptedException {
+        final Config config = new Config();
+        final QueueConfig queueConfig = config.getQueueConfig("default");
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        TestQueueStore testQueueStore = new TestQueueStore();
+        queueStoreConfig.setFactoryImplementation(new TestQueueStoreFactory(testQueueStore));
+        queueConfig.setQueueStoreConfig(queueStoreConfig);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IQueue<Object> queue = instance.getQueue("testQueueStore");
+
+        int numEntries = 5;
+
+        for (int i = 0; i < numEntries; i++) {
+            queue.put(i);
+        }
+
+        assertEquals("Queue Size should be equal to number of entries added", numEntries, queue.size());
+    }
+
     static class IdCheckerQueueStore implements QueueStore {
 
         Long lastKey;
@@ -381,6 +394,19 @@ public class QueueStoreTest extends HazelcastTestSupport {
             }
             callCount.incrementAndGet();
             latchDeleteAll.countDown();
+        }
+    }
+
+    private static class TestQueueStoreFactory implements QueueStoreFactory {
+        private final TestQueueStore queueStore;
+
+        private TestQueueStoreFactory(TestQueueStore queueStore) {
+            this.queueStore = queueStore;
+        }
+
+        @Override
+        public QueueStore newQueueStore(String name, Properties properties) {
+            return queueStore;
         }
     }
 }
