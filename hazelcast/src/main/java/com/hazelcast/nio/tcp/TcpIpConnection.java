@@ -124,7 +124,7 @@ public final class TcpIpConnection implements Connection {
                 requestNewSlots();
             } else {
 //                if (logger.isFinestEnabled()) {
-                    logger.severe("No slots are available, but I can only ask for new ones in " + askInMs + " ms.");
+                 logger.info("No slots to " + toString() + " are available, but I can only ask for new ones in " + askInMs + " ms.");
 //                }
                 waitingForSlotResponse.set(false);
             }
@@ -144,7 +144,7 @@ public final class TcpIpConnection implements Connection {
     }
 
     private void requestNewSlots() {
-        logger.severe("Requesting new slots for "+toString());
+        logger.info("Requesting new slots for " + toString());
         IOService ioService = connectionManager.ioService;
         Data dummyData = ioService.toData(0);
         Packet slotRequestPacket = new Packet(dummyData, ioService.getPortableContext());
@@ -184,7 +184,9 @@ public final class TcpIpConnection implements Connection {
         if (claimResponse == 0) {
             backoffState = backoffPolicy.nextState(backoffState);
             dontAskForSlotsBefore = Clock.currentTimeMillis() + backoffState;
+            logger.info("Received empty claim response from " + toString() + ". Next attempt in " + backoffState + " ms.");
         } else {
+            logger.info("Received " + claimResponse + "slots for " + toString());
             backoffState = BackoffPolicy.EMPTY_STATE;
         }
         availableSlots.set(claimResponse);

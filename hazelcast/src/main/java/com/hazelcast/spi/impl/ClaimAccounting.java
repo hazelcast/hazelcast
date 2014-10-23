@@ -56,7 +56,7 @@ public class ClaimAccounting implements ConnectionListener {
                 newClaim = 0;
             }
 //            if (logger.isFinestEnabled()) {
-                logger.severe("Number of scheduled operations: " + noOfScheduledOperations
+                logger.info("Number of scheduled operations: " + noOfScheduledOperations
                         + ", Booked capacity: " + bookedCapacityWithoutMe + ", Active connection count :"
                         + activeConnectionCount + ", new claim for connection " + connection + " is: " + newClaim);
 //            }
@@ -66,7 +66,7 @@ public class ClaimAccounting implements ConnectionListener {
                 break;
             } else {
 //                if (logger.isFinestEnabled()) {
-                    logger.severe("CAS has failed. I have to compute claim size for connection " + connection
+                logger.info("CAS has failed. I have to compute claim size for connection " + connection
                         + " once again.");
 //                }
             }
