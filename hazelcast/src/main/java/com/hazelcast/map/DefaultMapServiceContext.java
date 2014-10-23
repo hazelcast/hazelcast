@@ -1,5 +1,6 @@
 package com.hazelcast.map;
 
+import com.hazelcast.map.eviction.EvictionOperator;
 import com.hazelcast.map.eviction.ExpirationManager;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.map.merge.MergePolicyProvider;
@@ -46,6 +47,7 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     private final MergePolicyProvider mergePolicyProvider;
     private final MapEventPublisher mapEventPublisher;
     private final MapContextQuerySupport mapContextQuerySupport;
+    private EvictionOperator evictionOperator;
     private MapService mapService;
 
     public DefaultMapServiceContext(NodeEngine nodeEngine) {
@@ -56,6 +58,7 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
         this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
         this.ownedPartitions = new AtomicReference<Collection<Integer>>();
         this.expirationManager = new ExpirationManager(this, nodeEngine);
+        this.evictionOperator = EvictionOperator.create(this);
         this.nearCacheProvider = new NearCacheProvider(this, nodeEngine);
         this.localMapStatsProvider = new LocalMapStatsProvider(this, nodeEngine);
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
@@ -212,6 +215,11 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     }
 
     @Override
+    public EvictionOperator getEvictionOperator() {
+        return evictionOperator;
+    }
+
+    @Override
     public void setService(MapService mapService) {
         this.mapService = mapService;
     }
@@ -239,5 +247,12 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     @Override
     public LocalMapStatsProvider getLocalMapStatsProvider() {
         return localMapStatsProvider;
+    }
+
+    /**
+     * Used for testing purposes.
+     */
+    public void setEvictionOperator(EvictionOperator evictionOperator) {
+        this.evictionOperator = evictionOperator;
     }
 }
