@@ -1,30 +1,36 @@
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Responsible for dealing with back-pressure claim requests.
+ */
 public class ClaimAccounting {
     public static final int MAXIMUM_CAPACITY = 1000000;
     public static final int MAXIMUM_CLAIM_SIZE = 1000;
 
-    private final AtomicInteger bookedCapacity;
-    private final ConcurrentMap<Connection, Integer> bookedCapacityPerMember;
+    private final AtomicInteger bookedCapacity = new AtomicInteger();
+    private final ConcurrentMap<Connection, Integer> bookedCapacityPerMember = new ConcurrentHashMap<Connection, Integer>();
 
-    private final InternalOperationService internalOperationService;
-    private final ConnectionManager connectionManager;
+    private final NodeEngine nodeEngine;
+    private final Node node;
 
-    public ClaimAccounting(InternalOperationService internalOperationService, ConnectionManager connectionManager) {
-        this.internalOperationService = internalOperationService;
-        this.connectionManager = connectionManager;
-        bookedCapacityPerMember = new ConcurrentHashMap<Connection, Integer>();
-        bookedCapacity = new AtomicInteger();
+    public ClaimAccounting(NodeEngine nodeEngine, Node node) {
+       this.nodeEngine = nodeEngine;
+        this.node = node;
     }
 
     public int claimSlots(Connection connection) {
+        InternalOperationService internalOperationService = (InternalOperationService) nodeEngine.getOperationService();
+        ConnectionManager connectionManager = node.getConnectionManager();
+
         int newClaim;
         for ( ;; ) {
             int bookedCapacityBefore = bookedCapacity.get();

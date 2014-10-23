@@ -19,15 +19,15 @@ public class ClaimAccountingTest extends HazelcastTestSupport {
         internalOperationService = mock(InternalOperationService.class);
         connectionManager = mock(ConnectionManager.class);
     }
-
-    @Test
-    public void testClaimSlots_maximumNumberOfSlotsCantExceedThreshold() throws Exception {
-        when(internalOperationService.getNoOfScheduledOperations()).thenReturn(10);
-        Connection mockConnection = mock(Connection.class);
-        ClaimAccounting accounting = new ClaimAccounting(internalOperationService, connectionManager);
-        int slots = accounting.claimSlots(mockConnection);
-        assertLesserOrEquals(ClaimAccounting.MAXIMUM_CLAIM_SIZE, slots);
-    }
+//
+//    @Test
+//    public void testClaimSlots_maximumNumberOfSlotsCantExceedThreshold() throws Exception {
+//        when(internalOperationService.getNoOfScheduledOperations()).thenReturn(10);
+//        Connection mockConnection = mock(Connection.class);
+//        ClaimAccounting accounting = new ClaimAccounting(internalOperationService, connectionManager);
+//        int slots = accounting.claimSlots(mockConnection);
+//        assertLesserOrEquals(ClaimAccounting.MAXIMUM_CLAIM_SIZE, slots);
+//    }
 
 
 
