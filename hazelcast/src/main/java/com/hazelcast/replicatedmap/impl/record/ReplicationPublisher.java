@@ -373,7 +373,7 @@ public class ReplicationPublisher<K, V>
         storage.put(marshalledKey,
                 new ReplicatedRecord<K, V>(marshalledKey, marshalledValue, timestamp, updateHash, ttlMillis));
         if (ttlMillis > 0) {
-            replicatedRecordStore.scheduleTtlEntry(ttlMillis, marshalledKey, null);
+            replicatedRecordStore.scheduleTtlEntry(ttlMillis, marshalledKey, marshalledValue);
         } else {
             replicatedRecordStore.cancelTtlEntry(marshalledKey);
         }
