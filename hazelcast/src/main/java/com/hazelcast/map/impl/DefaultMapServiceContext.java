@@ -1,10 +1,7 @@
 package com.hazelcast.map.impl;
 
-<<<<<<< HEAD
-import com.hazelcast.map.impl.eviction.EvictionOperator;
-=======
 import com.hazelcast.core.HazelcastException;
->>>>>>> 3975da687d01a67f99412e47086eb323ab922e24
+import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.nio.Address;
