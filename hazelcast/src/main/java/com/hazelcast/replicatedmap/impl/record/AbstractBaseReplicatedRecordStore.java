@@ -29,6 +29,7 @@ import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.InitializingObject;
@@ -188,7 +189,14 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
         if (registrations.size() > 0) {
             EntryEvent event = new EntryEvent(name, nodeEngine.getLocalMember(), eventType.getType(),
                     key, oldValue, value);
-            eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, event, name.hashCode());
+
+            for (EventRegistration registration : registrations) {
+                EventFilter filter = registration.getFilter();
+                boolean publish = filter == null || filter.eval(key);
+                if (publish) {
+                    eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registration, event, name.hashCode());
+                }
+            }
         }
     }
 
