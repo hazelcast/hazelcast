@@ -24,7 +24,10 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackoffPolicy;
 import com.hazelcast.spi.WriteResult;
+import com.hazelcast.spi.impl.ExponentialBackoffPolicy;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -70,6 +73,10 @@ public final class TcpIpConnection implements Connection {
 
     private final AtomicInteger availableSlots = new AtomicInteger();
     private final AtomicBoolean waitingForSlotResponse = new AtomicBoolean();
+    private final BackoffPolicy backoffPolicy = new ExponentialBackoffPolicy();
+    private volatile int backoffState;
+    private volatile long dontAskForSlotsBefore;
+
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
                            int connectionId, SocketChannelWrapper socketChannel) {
@@ -112,7 +119,11 @@ public final class TcpIpConnection implements Connection {
             return result;
         }
         if (waitingForSlotResponse.compareAndSet(false, true)) {
-            requestNewSlots();
+            if (Clock.currentTimeMillis() > dontAskForSlotsBefore) {
+                requestNewSlots();
+            } else {
+                waitingForSlotResponse.set(false);
+            }
             return WriteResult.FULL;
         } else {
             return writeIfSlotAvailable(packet);
@@ -164,7 +175,13 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
-    public void setAvailableSlots(Integer claimResponse) {
+    public void setAvailableSlots(int claimResponse) {
+        if (claimResponse == 0) {
+            backoffState = backoffPolicy.nextState(backoffState);
+            dontAskForSlotsBefore = Clock.currentTimeMillis() + backoffState;
+        } else {
+            backoffState = BackoffPolicy.EMPTY_STATE;
+        }
         availableSlots.set(claimResponse);
         waitingForSlotResponse.set(false);
     }
