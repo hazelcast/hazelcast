@@ -182,18 +182,18 @@ This section only describes the JCache provided standard properties. For Hazelca
   <read-through>true</read-through>
   <write-through>true</write-through>
   <cache-loader-factory>
-    com.example.dao.MyCacheLoaderFactory
+    com.example.cache.MyCacheLoaderFactory
   </cache-loader-factory>
   <cache-writer-factory>
-    com.example.dao.MyCacheWriterFactory
+    com.example.cache.MyCacheWriterFactory
   </cache-writer-factory>
   <expiry-policy-factory>
-    com.example.expire.MyExpirePolicyFactory
+    com.example.cache.MyExpirePolicyFactory
   </expiry-policy-factory>
 
   <entry-listeners>
     <entry-listener>
-      com.example.listeners.MyEntryListener
+      com.example.cache.MyEntryListener
     </entry-listener>
   </entry-listeners>
 </cache>
