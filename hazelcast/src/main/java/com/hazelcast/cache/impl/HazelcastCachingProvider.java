@@ -29,7 +29,22 @@ import java.net.URI;
 import java.util.Properties;
 
 /**
- * Hazelcast implementation of {@link CachingProvider}
+ * Main {@link CachingProvider} implementation to provide Hazelcast JCache Implementation.
+ * <p>Main purpose of this provider implementation is delegating to selected internal actual provider
+ * implementation.</p>
+ * <p>There are two internal {@link CachingProvider}s:
+ * <ol>
+ *     <li>{@link HazelcastServerCachingProvider}</li>
+ *     <li>HazelcastClientCachingProvider</li>
+ * </ol>
+ * </p>
+ * <p>
+ * <h3>Provider Type Selection:</h3>
+ * First step is to check whether a selection exists using the system property
+ * <pre>hazelcast.jcache.provider.type</pre> with values "client" or "server".
+ * If no selection exists, then the default behavior for selecting the internal provider type is based on
+ * which dependency found on classpath. Client and server provider classes are searched on classpath respectively.
+ * </p>
  */
 public final class HazelcastCachingProvider
         implements CachingProvider {

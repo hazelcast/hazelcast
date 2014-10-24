@@ -50,5 +50,5 @@ And, the following is the Spring declarative configuration for the same sample.
 </hz:map>
 ```
 <br></br>
-***ATTENTION:*** *Non-primitive types to be indexed should implement *`Comparable`*.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Non-primitive types to be indexed should implement *`Comparable`*.*
 

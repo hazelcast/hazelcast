@@ -144,27 +144,19 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public void deleteRecord(Data key) {
-        Record record = records.remove(key);
-        if (record != null) {
-            record.invalidate();
-        }
-    }
-
-    @Override
     public Iterator<Record> iterator() {
         return new ReadOnlyRecordIterator(records.values());
     }
 
     @Override
-    public Iterator<Record> iterator(long now) {
-        return new ReadOnlyRecordIterator(records.values(), now);
+    public Iterator<Record> iterator(long now, boolean backup) {
+        return new ReadOnlyRecordIterator(records.values(), now, backup);
     }
 
     @Override
-    public Iterator<Record> loadAwareIterator(long now) {
+    public Iterator<Record> loadAwareIterator(long now, boolean backup) {
         checkIfLoaded();
-        return iterator(now);
+        return iterator(now, backup);
     }
 
     @Override
@@ -309,23 +301,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         }
         final Object value = record != null ? record.getValue() : null;
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(key, value);
-    }
-
-
-    // TODO Does it need to load from store on backup?
-    @Override
-    public Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey) {
-        checkIfLoaded();
-        final long now = getNow();
-
-        Record record = getRecordOrNull(dataKey, now, true);
-        if (record == null) {
-            record = loadRecordOrNull(dataKey, true);
-        } else {
-            accessRecord(record);
-        }
-        final Object data = record != null ? record.getValue() : null;
-        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, data);
     }
 
     private Record loadRecordOrNull(Data key, boolean backup) {
@@ -600,7 +575,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public Object get(Data key, boolean backup) {
         checkIfLoaded();
-        long now = getNow();
+        final long now = getNow();
 
         Record record = getRecordOrNull(key, now, backup);
         if (record == null) {
@@ -615,6 +590,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return value;
     }
 
+    @Override
+    public Data readBackupData(Data key) {
+        final long now = getNow();
+
+        final Record record = getRecord(key);
+        // expiration has delay on backups, but reading backup data should not be affected by this delay.
+        // this is the reason why we are passing `false` to isExpired() method.
+        final boolean expired = isExpired(record, now, false);
+        if (expired) {
+            return null;
+        }
+        final MapServiceContext mapServiceContext = this.mapServiceContext;
+        final Object value = record.getValue();
+        mapServiceContext.interceptAfterGet(name, value);
+        // this serialization step is needed not to expose the object, see issue 1292
+        return mapServiceContext.toData(value);
+    }
 
     @Override
     public MapEntrySet getAll(Set<Data> keys) {
@@ -778,6 +770,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     public boolean merge(Data key, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         checkIfLoaded();
         final long now = getNow();
+
         Record record = getRecordOrNull(key, now, false);
         Object newValue;
         if (record == null) {
@@ -1016,6 +1009,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return oldValue;
     }
 
+    @Override
+    public Record getRecordOrNull(Data key) {
+        final long now = getNow();
+
+        return getRecordOrNull(key, now, false);
+    }
+
     private Record getRecordOrNull(Data key, long now, boolean backup) {
         Record record = records.get(key);
         if (record == null) {
@@ -1024,4 +1024,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return getOrNullIfExpired(record, now, backup);
     }
 
+    private void deleteRecord(Data key) {
+        Record record = records.remove(key);
+        if (record != null) {
+            record.invalidate();
+        }
+    }
 }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.executor.impl;
 
+import com.hazelcast.executor.impl.operations.CallableTaskOperation;
+import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
@@ -25,8 +27,8 @@ public class ExecutorDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.EXECUTOR_DS_FACTORY, -13);
 
-    static final int CALLABLE_TASK = 0;
-    static final int MEMBER_CALLABLE_TASK = 1;
+    public static final int CALLABLE_TASK = 0;
+    public static final int MEMBER_CALLABLE_TASK = 1;
     static final int RUNNABLE_ADAPTER = 2;
 
     @Override

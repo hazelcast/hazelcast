@@ -39,20 +39,20 @@ To configure Hazelcast programmatically, just instantiate a `Config` object and 
 Config config = new Config();
 config.getNetworkConfig().setPort( 5900 );
 config.getNetworkConfig().setPortAutoIncrement( false );
-        
+
 NetworkConfig network = config.getNetworkConfig();
 JoinConfig join = network.getJoin();
 join.getMulticastConfig().setEnabled( false );
 join.getTcpIpConfig().addMember( "10.45.67.32" ).addMember( "10.45.67.100" )
             .setRequiredMember( "192.168.10.100" ).setEnabled( true );
 network.getInterfaces().setEnabled( true ).addInterface( "10.45.67.*" );
-        
+
 MapConfig mapConfig = new MapConfig();
 mapConfig.setName( "testMap" );
 mapConfig.setBackupCount( 2 );
 mapConfig.getMaxSizeConfig().setSize( 10000 );
 mapConfig.setTimeToLiveSeconds( 300 );
-        
+
 MapStoreConfig mapStoreConfig = new MapStoreConfig();
 mapStoreConfig.setClassName( "com.hazelcast.examples.DummyStore" )
     .setEnabled( true );
@@ -70,7 +70,7 @@ After creating `Config` object, you can use it to create a new Hazelcast instanc
 
 -   `HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance( config );`
 <a name="named-hazelcastinstance"></a>
--   To create a named `HazelcastInstance` you should set `instanceName` of `Config` object. 
+-   To create a named `HazelcastInstance` you should set `instanceName` of `Config` object.
 
 ```java
     Config config = new Config();
@@ -127,5 +127,63 @@ Or a queue '`com.hazelcast.test.myqueue`';
 </queue>
 ```
 
+## XML Configuration Composition
 
+You can compose your Hazelcast XML Configuration file from multiple XML configuration snippets. In order to compose XML configuration, you can use `<import/>` element to load different XML configuration files. For example:  
 
+hazelcast-config.xml:
+
+```xml
+<hazelcast>
+  <import resource="development-group-config.xml"/>
+  <import resource="development-network-config.xml"/>
+</hazelcast>
+```
+
+development-group-config.xml:
+
+```xml
+<hazelcast>
+  <group>
+      <name>dev</name>
+      <password>dev-pass</password>
+  </group>
+</hazelcast>
+```
+
+development-network-config.xml:
+
+```xml
+<hazelcast>
+  <network>
+    <port auto-increment="true" port-count="100">5701</port>
+    <join>
+        <multicast enabled="true">
+            <multicast-group>224.2.2.3</multicast-group>
+            <multicast-port>54327</multicast-port>
+        </multicast>
+    </join>
+  </network>
+</hazelcast>
+```
+<br></br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *You can only use `<import/>` element on top level of the XML hierarchy.*
+<br></br>
+
+- XML resources can be loaded from classpath and filesystem. For example:
+
+```xml
+<hazelcast>
+  <import resource="file:///etc/hazelcast/development-group-config.xml"/> <!-- loaded from filesystem -->
+  <import resource="classpath:development-network-config.xml"/>  <!-- loaded from classpath -->
+</hazelcast>
+```
+
+- Property placeholders can be used in the `<import/>` elements. For example:
+
+```xml
+<hazelcast>
+  <import resource="${environment}-group-config.xml"/>
+  <import resource="${environment}-network-config.xml"/>
+</hazelcast>
+```

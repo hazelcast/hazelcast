@@ -165,13 +165,12 @@
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMultiMapProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMapProxy"/>
     <suppress checks="" files="com.hazelcast.client.HazelcastClient"/>
-
-
-
     <suppress checks="Javadoc" files="com.hazelcast.client.impl.operations[\\/]"/>
     <suppress checks="Javadoc" files="com.hazelcast.client.impl.client[\\/]"/>
+    <suppress checks="" files="com.hazelcast.client.impl.HazelcastClientInstance"/>
+    <suppress checks="" files="com.hazelcast.client.impl.HazelcastClientProxy"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.proxy.ClientExecutorServiceProxy"/>
-    <suppress checks="MethodCount" files="com.hazelcast.client.HazelcastClientProxy"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.impl.HazelcastClientProxy"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.impl.client.ClientPortableFactory"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.client.impl.client.ClientPortableHook"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.config.ClientConfig"/>
@@ -187,6 +186,11 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
+
+    <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.client.impl[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
+
 
     <!-- Monitor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
@@ -362,10 +366,7 @@
     <suppress checks="JavadocType" files="com.hazelcast.executor.impl[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.executor.impl[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.executor.impl[\\/]"/>
-    <suppress checks="MethodCount" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
-    <!-- the invokeAll is so scary that Peter doesn't dare to touch it. Need get someone involved who write it-->
-    <suppress checks="" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
+    <suppress checks="ClassFanOutComplexity|MethodCount" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
     <suppress checks="ReturnCount" files="com.hazelcast.executor.impl.ExecutorPortableHook"/>
 
     <!-- Collections -->

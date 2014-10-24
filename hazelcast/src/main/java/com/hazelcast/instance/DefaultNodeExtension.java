@@ -22,6 +22,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.management.DefaultTimedMemberStateFactory;
+import com.hazelcast.management.TimedMemberStateFactory;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -127,6 +129,11 @@ public class DefaultNodeExtension implements NodeExtension {
             return (T) new CacheService();
         }
         throw new IllegalArgumentException("Unknown service class: " + clazz);
+    }
+
+    @Override
+    public TimedMemberStateFactory getTimedMemberStateFactory() {
+        return new DefaultTimedMemberStateFactory(node.hazelcastInstance);
     }
 
     @Override

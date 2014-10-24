@@ -18,23 +18,40 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.util.ConstructorFunction;
 
+import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Cache Service is the base access point of jcache impl to manage
- * cache data on a node.
- * This service is an optionally registered service which is enable if the
- * javax.cache.Caching class is found on classpath.
- *
- * If enable this service will provide all cache data operation for all partitions
- * of the node which it is registered on.
- *
+ * Cache Service is the main access point of JCache implementation.
+ * <p>
+ * This service is responsible for:
+ *<ul>
+ *     <li>Creating and/or accessing the named {@link com.hazelcast.cache.impl.CacheRecordStore}.</li>
+ *     <li>Creating/Deleting the cache configuration of the named {@link com.hazelcast.cache.ICache}.</li>
+ *     <li>Registering/Deregistering of cache listeners.</li>
+ *     <li>Publish/dispatch cache events.</li>
+ *     <li>Enabling/Disabling statistic and management.</li>
+ *     <li>Data migration commit/rollback through {@link com.hazelcast.spi.MigrationAwareService}.</li>
+ *</ul>
+ * </p>
+ * <p><b>WARNING:</b>This service is an optionally registered service which is enabled when {@link javax.cache.Caching}
+ * class is found on the classpath.</p>
+ * <p>
+ * If registered, it will provide all the above cache operations for all partitions of the node which it
+ * is registered on.
+ * </p>
+ * <p><b>Distributed Cache Name</b> is used for providing a unique name to a cache object to overcome cache manager
+ * scoping which depends on URI and class loader parameters. It's a simple concatenation of CacheNamePrefix and
+ * cache name where CacheNamePrefix is calculated by each cache manager
+ * using {@link HazelcastCacheManager#cacheNamePrefix()}.
+ * </p>
  */
 public class CacheService extends AbstractCacheService implements ICacheService {
 
@@ -44,8 +61,7 @@ public class CacheService extends AbstractCacheService implements ICacheService 
 
     @Override
     public void reset() {
-        final ConcurrentMap<String, CacheConfig> cacheConfigs = configs;
-        for (String objectName : cacheConfigs.keySet()) {
+        for (String objectName : configs.keySet()) {
             destroyCache(objectName, true, null);
         }
         final CachePartitionSegment[] partitionSegments = segments;
@@ -76,4 +92,5 @@ public class CacheService extends AbstractCacheService implements ICacheService 
         return op.isEmpty() ? null : op;
     }
     //endregion
+
 }

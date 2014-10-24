@@ -74,6 +74,19 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
         assertUsedHeapSizePolicyWorks(maps, perNodeHeapMaxSizeInMegaBytes);
     }
+    
+    @Test
+    public void testFreeHeapSizePolicy() {
+    	final int freeHeapMinSizeInMegaBytes = (int) (Runtime.getRuntime().maxMemory()/1024 /1024 - 1);
+    	final int nodeCount = 1;
+    	final String mapName = randomMapName();
+    	final Config config = createConfig(MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE, freeHeapMinSizeInMegaBytes, mapName);
+    	final Collection<IMap> maps = createMaps(mapName, config, nodeCount);
+    	setTestSizeEstimator(maps, 1);
+    	testMaxSizePolicy(maps, 100);
+    	
+    	assertUsedHeapSizePolicyWorks(maps, freeHeapMinSizeInMegaBytes);
+    }
 
 
     @Test
@@ -90,6 +103,22 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         testMaxSizePolicy(maps, putCount);
 
         assertUsedHeapPercentagePolicyTriggersEviction(maps, putCount);
+    }
+    
+    @Test
+    public void testFreeHeapPercentagePolicy() {
+    	final int minFreeHeapPercentage = 60;
+    	final int nodeCount = 1;
+    	final int putCount = 1000;
+    	final String mapName = randomMapName();
+    	final Config config = createConfig(MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE, minFreeHeapPercentage, mapName);
+    	final Collection<IMap> maps = createMaps(mapName, config, nodeCount);
+    	// pick an enormously big heap cost for an entry for testing.
+    	final long oneEntryHeapCostInMegaBytes = 1 << 30;
+    	setTestSizeEstimator(maps, oneEntryHeapCostInMegaBytes);
+    	testMaxSizePolicy(maps, putCount);
+    	
+    	assertUsedHeapPercentagePolicyTriggersEviction(maps, putCount);
     }
 
     private void testPerNodePolicy(int nodeCount) {

@@ -110,9 +110,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
 
-    private static final ExceptionHandler WHILE_FINALIZE_JOINS_EXCEPTION_HANDLER =
-            logAllExceptions("While waiting finalize join calls...", Level.WARNING);
-
     private static final String EXECUTOR_NAME = "hz:cluster";
     private static final int HEARTBEAT_INTERVAL = 500;
     private static final int PING_INTERVAL = 5000;
@@ -160,12 +157,16 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final ConcurrentMap<MemberImpl, Long> masterConfirmationTimes = new ConcurrentHashMap<MemberImpl, Long>();
 
+    private final ExceptionHandler whileFinalizeJoinsExceptionHandler;
+
     private volatile long clusterTimeDiff = Long.MAX_VALUE;
 
     public ClusterServiceImpl(final Node node) {
         this.node = node;
         nodeEngine = node.nodeEngine;
         logger = node.getLogger(ClusterService.class.getName());
+        whileFinalizeJoinsExceptionHandler =
+                logAllExceptions(logger, "While waiting finalize join calls...", Level.WARNING);
         thisAddress = node.getThisAddress();
         thisMember = node.getLocalMember();
         setMembers(thisMember);
@@ -270,10 +271,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return validJoinRequest;
     }
 
-    private void logIfConnectionToEndpointIsMissing(MemberImpl member) {
-        Connection conn = node.connectionManager.getOrConnect(member.getAddress());
-        if (conn == null || !conn.isAlive()) {
-            logger.warning("This node does not have a connection to " + member);
+    private void logIfConnectionToEndpointIsMissing(long now, MemberImpl member) {
+        if ((now - member.getLastRead()) >= PING_INTERVAL && (now - member.getLastPing()) >= PING_INTERVAL) {
+            Connection conn = node.connectionManager.getOrConnect(member.getAddress());
+            if (conn == null || !conn.isAlive()) {
+                logger.warning("This node does not have a connection to " + member);
+            }
         }
     }
 
@@ -295,7 +298,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 try {
-                    logIfConnectionToEndpointIsMissing(member);
+                    logIfConnectionToEndpointIsMissing(now, member);
                     if (removeMemberIfNotHeartBeating(now, member)) {
                         continue;
                     }
@@ -342,7 +345,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 try {
-                    logIfConnectionToEndpointIsMissing(member);
+                    logIfConnectionToEndpointIsMissing(now, member);
 
                     if (isMaster(member)) {
                         if (removeMemberIfNotHeartBeating(now, member)) {
@@ -910,12 +913,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     }
                 }
                 updateMembers(memberInfos);
-
-                try {
-                    waitWithDeadline(calls, 10, TimeUnit.SECONDS, WHILE_FINALIZE_JOINS_EXCEPTION_HANDLER);
-                } catch (TimeoutException e) {
-                    logger.warning("While waiting finalize join calls...", e);
-                }
+                waitWithDeadline(calls, Math.min(calls.size(), FinalizeJoinOperation.FINALIZE_JOIN_MAX_TIMEOUT),
+                        TimeUnit.SECONDS, whileFinalizeJoinsExceptionHandler);
             } finally {
                 node.getPartitionService().resumeMigration();
             }
@@ -1269,23 +1268,34 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public String addMembershipListener(MembershipListener listener) {
+        if(listener == null){
+            throw new NullPointerException("listener can't be null");
+        }
+
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration;
         if (listener instanceof InitialMembershipListener) {
             lock.lock();
             try {
                 ((InitialMembershipListener) listener).init(new InitialMembershipEvent(getClusterProxy(), getMembers()));
-                final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
-                return registration.getId();
+                registration = eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
             } finally {
                 lock.unlock();
             }
         } else {
-            final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
-            return registration.getId();
+            registration = eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
         }
+
+        return registration.getId();
     }
 
-    public boolean removeMembershipListener(final String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
+    public boolean removeMembershipListener(String registrationId) {
+        if(registrationId == null){
+            throw new NullPointerException("registrationId can't be null");
+        }
+
+        EventService eventService = nodeEngine.getEventService();
+        return eventService.deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("BC_UNCONFIRMED_CAST")

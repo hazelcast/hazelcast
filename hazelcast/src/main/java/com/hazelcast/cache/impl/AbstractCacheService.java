@@ -115,8 +115,8 @@ public abstract class AbstractCacheService implements ICacheService {
         if (!isLocal) {
             deregisterAllListener(objectName);
         }
-        enableStatistics(objectName, false);
-        enableManagement(objectName, false);
+        setStatisticsEnabled(objectName, false);
+        setManagementEnabled(objectName, false);
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
         if (!isLocal) {
@@ -141,10 +141,10 @@ public abstract class AbstractCacheService implements ICacheService {
         final boolean created = localConfig == null;
         if (created) {
             if (config.isStatisticsEnabled()) {
-                enableStatistics(config.getNameWithPrefix(), true);
+                setStatisticsEnabled(config.getNameWithPrefix(), true);
             }
             if (config.isManagementEnabled()) {
-                enableManagement(config.getNameWithPrefix(), true);
+                setManagementEnabled(config.getNameWithPrefix(), true);
             }
             if (!isLocal) {
                 createConfigOnAllMembers(config);
@@ -183,7 +183,7 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
-    public void enableStatistics(String cacheNameWithPrefix, boolean enabled) {
+    public void setStatisticsEnabled(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
         if (cacheConfig != null) {
             final String cacheManagerName = cacheConfig.getUriString();
@@ -201,7 +201,7 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
-    public void enableManagement(String cacheNameWithPrefix, boolean enabled) {
+    public void setManagementEnabled(String cacheNameWithPrefix, boolean enabled) {
         final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
         if (cacheConfig != null) {
             final String cacheManagerName = cacheConfig.getUriString();

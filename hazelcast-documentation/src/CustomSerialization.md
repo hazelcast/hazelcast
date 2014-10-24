@@ -62,7 +62,7 @@ And now, as the last step, let's register the `EmployeeStreamSerializer` in the 
 </serialization>
 ```
  
-***NOTE:*** *`StreamSerializer` cannot be created for well-known types (e.g. Long, String) and primitive arrays. Hazelcast already registers these types.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *`StreamSerializer` cannot be created for well-known types (e.g. Long, String) and primitive arrays. Hazelcast already registers these types.*
 
 
 <br></br>

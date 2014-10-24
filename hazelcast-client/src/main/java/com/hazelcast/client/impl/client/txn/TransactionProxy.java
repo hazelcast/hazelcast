@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.impl.client.txn;
 
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -45,15 +45,12 @@ import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
 import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 
-/**
- * @author ali 6/6/13
- */
 final class TransactionProxy {
 
     private static final ThreadLocal<Boolean> THREAD_FLAG = new ThreadLocal<Boolean>();
 
     private final TransactionOptions options;
-    private final HazelcastClient client;
+    private final HazelcastClientInstanceImpl client;
     private final long threadId = Thread.currentThread().getId();
     private final ClientConnection connection;
 
@@ -62,7 +59,7 @@ final class TransactionProxy {
     private State state = NO_TXN;
     private long startTime;
 
-    TransactionProxy(HazelcastClient client, TransactionOptions options, ClientConnection connection) {
+    TransactionProxy(HazelcastClientInstanceImpl client, TransactionOptions options, ClientConnection connection) {
         this.options = options;
         this.client = client;
         this.connection = connection;

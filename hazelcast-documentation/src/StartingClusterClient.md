@@ -1,6 +1,6 @@
 
 
-### Starting the Cluster and Client
+## Starting the Cluster and Client
 
 
 Having `hazelcast-`*`<version>`*`.jar` added to your classpath, it is time to get started. 

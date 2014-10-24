@@ -25,6 +25,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+/**
+ * An adapter that adapts a {@link Runnable} to become a {@link Callable}.
+ * @param <V>
+ */
 public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Callable<V>, HazelcastInstanceAware {
 
     private Runnable task;

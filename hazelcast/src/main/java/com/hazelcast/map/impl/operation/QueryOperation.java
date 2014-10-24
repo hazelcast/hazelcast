@@ -23,6 +23,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
@@ -66,11 +67,12 @@ public class QueryOperation extends AbstractMapOperation {
     }
 
     public void run() throws Exception {
-        List<Integer> initialPartitions = mapService.getMapServiceContext().getOwnedPartitions();
+        NodeEngine nodeEngine = getNodeEngine();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        Collection<Integer> initialPartitions = mapService.getMapServiceContext().getOwnedPartitions();
         IndexService indexService = mapService.getMapServiceContext().getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
-        // TODO: fix
-        if (!getNodeEngine().getPartitionService().hasOnGoingMigration()) {
+        if (!partitionService.hasOnGoingMigration()) {
             entries = indexService.query(predicate);
         }
         result = new QueryResult();
@@ -86,7 +88,7 @@ public class QueryOperation extends AbstractMapOperation {
                 runParallel(initialPartitions);
             }
         }
-        List<Integer> finalPartitions = mapService.getMapServiceContext().getOwnedPartitions();
+        Collection<Integer> finalPartitions = mapService.getMapServiceContext().getOwnedPartitions();
         if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }
@@ -98,7 +100,7 @@ public class QueryOperation extends AbstractMapOperation {
         }
     }
 
-    protected void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
+    protected void runParallel(final Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final NodeEngine nodeEngine = getNodeEngine();
         final ExecutorService executor
                 = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
@@ -118,7 +120,7 @@ public class QueryOperation extends AbstractMapOperation {
         }
     }
 
-    protected void runParallelForPaging(List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
+    protected void runParallelForPaging(Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final NodeEngine nodeEngine = getNodeEngine();
         final ExecutorService executor
                 = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);

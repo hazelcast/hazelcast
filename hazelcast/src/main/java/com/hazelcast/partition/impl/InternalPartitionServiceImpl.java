@@ -76,7 +76,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -90,12 +89,13 @@ import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
+/**
+ * The {@link InternalPartitionService} implementation.
+ */
 public class InternalPartitionServiceImpl implements InternalPartitionService, ManagedService,
         EventPublishingService<MigrationEvent, MigrationListener> {
 
     private static final String EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT = "Partition state sync invocation timed out";
-    private static final ExceptionHandler PARTITION_STATE_SYNC_TIMEOUT_HANDLER =
-            logAllExceptions(EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT, Level.INFO);
 
     private static final int DEFAULT_PAUSE_MILLIS = 1000;
     private static final float MIGRATION_TIMEOUT_MULTIPLICATOR = 1.5f;
@@ -128,6 +128,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final CoalescingDelayedTrigger delayedResumeMigrationTrigger;
 
+    private final ExceptionHandler partitionStateSyncTimeoutHandler;
+
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
@@ -146,6 +148,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.logger = node.getLogger(InternalPartitionService.class);
+        partitionStateSyncTimeoutHandler =
+                logAllExceptions(logger, EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT, Level.FINEST);
         this.partitions = new InternalPartitionImpl[partitionCount];
         PartitionListener partitionListener = new LocalPartitionListener(this, node.getThisAddress());
         for (int i = 0; i < partitionCount; i++) {
@@ -243,7 +247,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     public Address getPartitionOwnerOrWait(int partition) throws InterruptedException {
         Address owner = getPartitionOwner(partition);
         while (owner == null) {
-            Thread.sleep(100);
+            Thread.sleep(PARTITION_OWNERSHIP_WAIT_MILLIS);
             owner = getPartitionOwner(partition);
         }
         return owner;
@@ -504,20 +508,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             OperationService operationService = nodeEngine.getOperationService();
 
             List<Future> calls = firePartitionStateOperation(members, partitionState, operationService);
-
-            try {
-                waitWithDeadline(calls, 3, TimeUnit.SECONDS, PARTITION_STATE_SYNC_TIMEOUT_HANDLER);
-            } catch (TimeoutException e) {
-                logger.finest(e);
-            }
+            waitWithDeadline(calls, 3, TimeUnit.SECONDS, partitionStateSyncTimeoutHandler);
         } finally {
             lock.unlock();
         }
     }
 
     private List<Future> firePartitionStateOperation(Collection<MemberImpl> members,
-                                                                        PartitionRuntimeState partitionState,
-                                                                        OperationService operationService) {
+                                                     PartitionRuntimeState partitionState,
+                                                     OperationService operationService) {
         List<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
@@ -969,7 +968,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         Operation operation = new HasOngoingMigration();
         Address masterAddress = node.getMasterAddress();
         OperationService operationService = nodeEngine.getOperationService();
-        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(SERVICE_NAME, operation, masterAddress);
+        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(SERVICE_NAME, operation,
+                masterAddress);
         Future future = invocationBuilder.setTryCount(100).setTryPauseMillis(100).invoke();
         try {
             return (Boolean) future.get(1, TimeUnit.MINUTES);
@@ -1362,6 +1362,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public String addMigrationListener(MigrationListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("listener can't be null");
+        }
+
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration = eventService.registerListener(SERVICE_NAME, SERVICE_NAME, listener);
         return registration.getId();
@@ -1369,6 +1373,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public boolean removeMigrationListener(String registrationId) {
+        if (registrationId == null) {
+            throw new NullPointerException("registrationId can't be null");
+        }
+
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }

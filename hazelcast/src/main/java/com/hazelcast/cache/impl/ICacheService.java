@@ -52,9 +52,9 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     void deleteCacheStat(String name);
 
-    void enableStatistics(String cacheNameWithPrefix, boolean enabled);
+    void setStatisticsEnabled(String cacheNameWithPrefix, boolean enabled);
 
-    void enableManagement(String cacheNameWithPrefix, boolean enabled);
+    void setManagementEnabled(String cacheNameWithPrefix, boolean enabled);
 
     CacheConfig getCacheConfig(String name);
 

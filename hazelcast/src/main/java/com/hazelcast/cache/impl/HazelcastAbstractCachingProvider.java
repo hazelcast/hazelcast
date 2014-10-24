@@ -32,8 +32,19 @@ import java.util.Properties;
 import java.util.WeakHashMap;
 
 /**
- * Base CachingProvider implementations
+ * Abstract {@link CachingProvider} implementation providing shared functionality to server and client caching
+ * providers.
+ * <p>This class encapsulates following details:
+ * <ul>
+ *     <li>Hazelcast instance for default uri and default class loader.</li>
+ *     <li>default uri.</li>
+ *     <li>default class loader.</li>
+ *     <li>accessing the singleton {@link CacheManager} by uri and class loader.</li>
+ *     <li>managing lifecycle of cache managers.</li>
+ * </ul></p>
+ * @see CachingProvider
  */
+//todo AbstractHazelcastCachingProvider would be more consistent with other classes
 public abstract class HazelcastAbstractCachingProvider
         implements CachingProvider {
 
@@ -57,9 +68,6 @@ public abstract class HazelcastAbstractCachingProvider
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public CacheManager getCacheManager(URI uri, ClassLoader classLoader, Properties properties) {
         final URI managerURI = getManagerUri(uri);
@@ -84,49 +92,31 @@ public abstract class HazelcastAbstractCachingProvider
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ClassLoader getDefaultClassLoader() {
         return defaultClassLoader;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public URI getDefaultURI() {
         return defaultURI;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Properties getDefaultProperties() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public CacheManager getCacheManager(URI uri, ClassLoader classLoader) {
         return getCacheManager(uri, classLoader, null);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public CacheManager getCacheManager() {
         return getCacheManager(null, null, null);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close() {
         //closing a cacheProvider do not close it forever see javadoc of close()
@@ -145,9 +135,6 @@ public abstract class HazelcastAbstractCachingProvider
         shutdownHazelcastInstance();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     protected void shutdownHazelcastInstance() {
         final HazelcastInstance localInstanceRef = hazelcastInstance;
         if (localInstanceRef != null) {
@@ -156,9 +143,6 @@ public abstract class HazelcastAbstractCachingProvider
         hazelcastInstance = null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close(ClassLoader classLoader) {
         final ClassLoader managerClassLoader = getManagerClassLoader(classLoader);
@@ -172,9 +156,6 @@ public abstract class HazelcastAbstractCachingProvider
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close(URI uri, ClassLoader classLoader) {
         final URI managerURI = getManagerUri(uri);
@@ -193,9 +174,6 @@ public abstract class HazelcastAbstractCachingProvider
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isSupported(OptionalFeature optionalFeature) {
         switch (optionalFeature) {
@@ -208,9 +186,6 @@ public abstract class HazelcastAbstractCachingProvider
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     protected URI getManagerUri(URI uri) {
         return uri == null ? defaultURI : uri;
     }

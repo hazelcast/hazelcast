@@ -26,18 +26,19 @@ import java.util.Properties;
 
 /**
  * Provides server cachingProvider implementation.
- *
+ * <p>This implementation is used by {@link com.hazelcast.cache.impl.HazelcastCachingProvider} internally when
+ * server type is configured.</p>
+ * <p>This implementation creates a new singleton hazelcastInstance node. This instance is provided into the
+ * created managers.</p>
+ * <p>If you need to use your already created HazelcastInstance, you can directly create a provider using
+ * {@link #createCachingProvider(com.hazelcast.core.HazelcastInstance)}.</p>
  * @see javax.cache.spi.CachingProvider
  */
 public final class HazelcastServerCachingProvider
         extends HazelcastAbstractCachingProvider {
 
-    public HazelcastServerCachingProvider() {
-        super();
-    }
-
     /**
-     * Helper method for creating caching provider for testing etc
+     * Helper method for creating caching provider for testing, etc.
      *
      * @param hazelcastInstance
      * @return HazelcastServerCachingProvider
@@ -53,6 +54,7 @@ public final class HazelcastServerCachingProvider
         if (config.getInstanceName() == null) {
             config.setInstanceName("CacheProvider");
         }
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
     }
 

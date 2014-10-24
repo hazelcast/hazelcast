@@ -70,6 +70,12 @@ public final class EvictionHelper {
             case USED_HEAP_SIZE:
                 result = isEvictableHeapSize(mapContainer);
                 break;
+            case FREE_HEAP_PERCENTAGE:
+                result = isEvictableFreeHeapPercentage(mapContainer);
+                break;
+            case FREE_HEAP_SIZE:
+                result = isEvictableFreeHeapSize(mapContainer);
+                break;
             default:
                 throw new IllegalArgumentException("Not an appropriate max size policy [" + maxSizePolicy + ']');
         }
@@ -81,7 +87,7 @@ public final class EvictionHelper {
         final EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
         // criteria is a long value, like last access times or hits,
         // used for calculating LFU or LRU.
-        long[] criterias = createAndPopulateEvictionCriteriaArray(recordStore, evictionPolicy);
+        final long[] criterias = createAndPopulateEvictionCriteriaArray(recordStore, evictionPolicy);
         if (criterias == null) {
             return;
         }
@@ -212,6 +218,8 @@ public final class EvictionHelper {
                 break;
             case USED_HEAP_PERCENTAGE:
             case USED_HEAP_SIZE:
+            case FREE_HEAP_PERCENTAGE:
+            case FREE_HEAP_SIZE:
                 // if we have an evictable size, be sure to evict at least one entry in worst case.
                 evictableSize = Math.max(currentPartitionSize * evictionPercentage / ONE_HUNDRED_PERCENT, 1);
                 break;
@@ -303,6 +311,13 @@ public final class EvictionHelper {
         return maxSize < (usedHeapSize / ONE_MEGABYTE);
     }
 
+    private static boolean isEvictableFreeHeapSize(final MapContainer mapContainer) {
+        final long availableMemory = getAvailableMemory();
+        final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
+        final int minSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        return minSize < (availableMemory / ONE_MEGABYTE);
+    }
+
     private static boolean isEvictableHeapPercentage(final MapContainer mapContainer) {
         final long usedHeapSize = getUsedHeapSize(mapContainer);
         if (usedHeapSize == -1L) {
@@ -313,6 +328,15 @@ public final class EvictionHelper {
         final long total = getTotalMemory();
         return maxSize < (1D * ONE_HUNDRED_PERCENT * usedHeapSize / total);
     }
+
+    private static boolean isEvictableFreeHeapPercentage(final MapContainer mapContainer) {
+        final long availableMemory = getAvailableMemory();
+        final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
+        final int minSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        final long total = getTotalMemory();
+        return minSize < (1D * ONE_HUNDRED_PERCENT * availableMemory / total);
+    }
+
 
     private static List<Integer> findPartitionIds(MapServiceContext mapServiceContext) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -340,6 +364,22 @@ public final class EvictionHelper {
 
     private static long getTotalMemory() {
         return Runtime.getRuntime().totalMemory();
+    }
+
+    private static long getFreeMemory() {
+        return Runtime.getRuntime().freeMemory();
+    }
+
+    private static long getMaxMemory() {
+        return Runtime.getRuntime().maxMemory();
+    }
+
+    private static long getAvailableMemory() {
+        final long totalMemory = getTotalMemory();
+        final long freeMemory = getFreeMemory();
+        final long maxMemory = getMaxMemory();
+        final long availableMemory = freeMemory + (maxMemory - totalMemory);
+        return availableMemory;
     }
 
     private static long getUsedHeapSize(final MapContainer mapContainer) {

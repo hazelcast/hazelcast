@@ -16,6 +16,10 @@
 
 package com.hazelcast.map.impl;
 
+import static com.hazelcast.map.impl.mapstore.MapStoreManagers.createWriteBehindManager;
+import static com.hazelcast.map.impl.mapstore.MapStoreManagers.createWriteThroughManager;
+import static com.hazelcast.map.impl.mapstore.MapStoreManagers.emptyMapStoreManager;
+
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
@@ -25,13 +29,13 @@ import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.OffHeapRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.record.RecordStatistics;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -48,10 +52,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.impl.mapstore.MapStoreManagers.createWriteBehindManager;
-import static com.hazelcast.map.impl.mapstore.MapStoreManagers.createWriteThroughManager;
-import static com.hazelcast.map.impl.mapstore.MapStoreManagers.emptyMapStoreManager;
-
 /**
  * Map container.
  */
@@ -66,7 +66,6 @@ public class MapContainer extends MapContainerSupport {
     private final List<MapInterceptor> interceptors;
     private final Map<String, MapInterceptor> interceptorMap;
     private final IndexService indexService = new IndexService();
-    private final boolean nearCacheEnabled;
     private final SizeEstimator nearCacheSizeEstimator;
     private final PartitioningStrategy partitioningStrategy;
     private WanReplicationPublisher wanReplicationPublisher;
@@ -86,7 +85,6 @@ public class MapContainer extends MapContainerSupport {
         initWanReplication(nodeEngine);
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
-        nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
         nearCacheSizeEstimator = SizeEstimators.createNearCacheSizeEstimator();
         mapStoreManager = createMapStoreManager(this);
         mapStoreManager.start();
@@ -166,6 +164,7 @@ public class MapContainer extends MapContainerSupport {
             ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(),
                     mapStoreConfig.getProperties(), name);
         }
+
         loadInitialKeys();
     }
 
@@ -204,10 +203,23 @@ public class MapContainer extends MapContainerSupport {
         if (keys == null || keys.isEmpty()) {
             return;
         }
+
+        int maxSizePerNode = getMaxSizePerNode();
+
         for (Object key : keys) {
             Data dataKey = mapServiceContext.toData(key, partitioningStrategy);
-            initialKeys.put(dataKey, key);
+
+            // this node will load only owned keys
+            if (mapServiceContext.isOwnedKey(dataKey)) {
+
+                initialKeys.put(dataKey, key);
+
+                if (initialKeys.size() == maxSizePerNode) {
+                    break;
+                }
+            }
         }
+
         // remove the keys remains more than 20 minutes.
         mapServiceContext.getNodeEngine().getExecutionService().schedule(new Runnable() {
             @Override
@@ -286,7 +298,7 @@ public class MapContainer extends MapContainerSupport {
     }
 
     public boolean isNearCacheEnabled() {
-        return nearCacheEnabled;
+        return mapConfig.isNearCacheEnabled();
     }
 
     public int getTotalBackupCount() {

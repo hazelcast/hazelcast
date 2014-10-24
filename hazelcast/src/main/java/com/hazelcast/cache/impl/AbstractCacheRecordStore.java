@@ -267,7 +267,7 @@ public abstract class AbstractCacheRecordStore<
         if (isStatisticsEnabled()) {
             if (isPutSucceed) {
                 statistics.increaseCachePuts(1);
-                statistics.addPutTimeNano(System.nanoTime() - start);
+                statistics.addPutTimeNanos(System.nanoTime() - start);
             }
             if (getValue) {
                 if (oldValueNull) {
@@ -275,7 +275,7 @@ public abstract class AbstractCacheRecordStore<
                 } else {
                     statistics.increaseCacheHits(1);
                 }
-                statistics.addGetTimeNano(System.nanoTime() - start);
+                statistics.addGetTimeNanos(System.nanoTime() - start);
             }
         }
     }
@@ -301,9 +301,9 @@ public abstract class AbstractCacheRecordStore<
         if (isStatisticsEnabled()) {
             if (result) {
                 statistics.increaseCachePuts(1);
-                statistics.addPutTimeNano(System.nanoTime() - start);
+                statistics.addPutTimeNanos(System.nanoTime() - start);
             }
-            statistics.addGetTimeNano(System.nanoTime() - start);
+            statistics.addGetTimeNanos(System.nanoTime() - start);
             if (isHit) {
                 statistics.increaseCacheHits(1);
             } else {
@@ -620,6 +620,11 @@ public abstract class AbstractCacheRecordStore<
         }
     }
 
+    /**
+     * Modifies the keys.
+     *
+     * @param keys keys to delete. After method returns, it includes only deleted keys
+     */
     protected void deleteAllCacheEntry(Set<Data> keys) {
         if (isWriteThrough() && cacheWriter != null && keys != null && !keys.isEmpty()) {
             Map<Object, Data> keysToDelete = new HashMap<Object, Data>();
@@ -910,7 +915,7 @@ public abstract class AbstractCacheRecordStore<
         }
         if (result && isStatisticsEnabled()) {
             statistics.increaseCachePuts(1);
-            statistics.addPutTimeNano(System.nanoTime() - start);
+            statistics.addPutTimeNanos(System.nanoTime() - start);
         }
         return result;
     }
@@ -932,7 +937,8 @@ public abstract class AbstractCacheRecordStore<
         }
         if (result && isStatisticsEnabled()) {
             statistics.increaseCacheRemovals(1);
-            statistics.addRemoveTimeNano(System.nanoTime() - start);
+
+            statistics.addRemoveTimeNanos(System.nanoTime() - start);
         }
         onRemove(key, null, record, result);
         return result;
@@ -966,7 +972,7 @@ public abstract class AbstractCacheRecordStore<
         }
         if (result && isStatisticsEnabled()) {
             statistics.increaseCacheRemovals(1);
-            statistics.addRemoveTimeNano(System.nanoTime() - start);
+            statistics.addRemoveTimeNanos(System.nanoTime() - start);
             if (hitCount == 1) {
                 statistics.increaseCacheHits(hitCount);
             } else {

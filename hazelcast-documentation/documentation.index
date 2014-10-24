@@ -1,17 +1,18 @@
 # You can now add comments using a hash-sign upfront the line :)
-src/Introduction.md
-	src/WhyHazelcast.md
-	src/GettingStarted.md
-		src/InstallingHZEnterprise.md
-		src/StartingClusterClient.md
-		src/ConfiguringHazelcast.md
-	src/UseCases.md
-	src/Resources.md
+src/Preface.md
 src/WhatsNew.md
 #	src/WhatsNewImprovements.md
 	src/WhatsNewFixes.md
 	src/UpgradingFrom2x.md
 	src/DocumentRevisionHistory.md
+src/GettingStarted.md
+	src/WhyHazelcast.md
+	src/Installation.md
+		src/InstallingHZEnterprise.md
+	src/StartingClusterClient.md
+	src/ConfiguringHazelcast.md
+	src/UseCases.md
+	src/Resources.md
 src/Distributed_Data_Structures.md
 	src/Map.md
 		src/Map-Backups.md
@@ -149,5 +150,7 @@ src/Config.md
 	src/ListenerConfig.md
 	src/Logging.md
 	src/ConfigurationProperties.md
+	src/ConfigurationWrapUp.md
 src/NetworkPartitioning.md
 src/FAQ.md
+src/Glossary.md

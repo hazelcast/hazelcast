@@ -22,19 +22,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.xml.sax.SAXException;
-
-import javax.xml.XMLConstants;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +29,18 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.List;
-import java.util.Properties;
+import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.xml.sax.SAXException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -67,7 +65,6 @@ public class XMLConfigBuilderTest {
         File file = File.createTempFile("foo", "bar");
         file.delete();
         System.setProperty("hazelcast.config", file.getAbsolutePath());
-
         new XmlConfigBuilder();
     }
 
@@ -154,33 +151,6 @@ public class XMLConfigBuilderTest {
         assertEquals("nocolon", configBuilder.cleanNodeName("noColon"));
         assertEquals("after", configBuilder.cleanNodeName("Before:After"));
         assertNull(configBuilder.cleanNodeName((String) null));
-    }
-
-    @Test
-    public void readVariables() {
-        String xml =
-                "<hazelcast>\n" +
-                        "    <semaphore name=\"${name}\">\n" +
-                        "        <initial-permits>${initial.permits}</initial-permits>\n" +
-                        "        <backup-count>${backupcount.part1}${backupcount.part2}</backup-count>\n" +
-                        "        <async-backup-count>${notreplaced}</async-backup-count>\n" +
-                        "    </semaphore>" +
-                        "</hazelcast>";
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-
-        Properties properties = new Properties();
-        properties.setProperty("name", "s");
-        properties.setProperty("initial.permits", "25");
-        properties.setProperty("backupcount.part1", "1");
-        properties.setProperty("backupcount.part2", "0");
-        configBuilder.setProperties(properties);
-
-        Config config = configBuilder.build();
-        SemaphoreConfig semaphoreConfig = config.getSemaphoreConfig("s");
-        assertEquals(25, semaphoreConfig.getInitialPermits());
-        assertEquals(10, semaphoreConfig.getBackupCount());
-        assertEquals(0, semaphoreConfig.getAsyncBackupCount());
     }
 
     @Test
@@ -568,7 +538,6 @@ public class XMLConfigBuilderTest {
         assertNotNull(o);
         assertTrue(o instanceof DummyMapStore);
     }
-
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
