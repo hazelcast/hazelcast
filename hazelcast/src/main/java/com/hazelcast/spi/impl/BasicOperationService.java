@@ -33,6 +33,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackoffPolicy;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ExecutionTracingService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -188,7 +189,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getResponseQueueSize() {
-        return scheduler.getResponseQueueSize();
+        return 0;
     }
 
     @Override
@@ -332,7 +333,9 @@ final class BasicOperationService implements InternalOperationService {
         int partitionId = scheduler.getPartitionIdForExecution(op);
         Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
-        if (op instanceof UrgentSystemOperation) {
+
+        //TODO: This is a temporary hack to make sure backup ops are never pressured back
+        if (op instanceof UrgentSystemOperation || op instanceof BackupOperation) {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
