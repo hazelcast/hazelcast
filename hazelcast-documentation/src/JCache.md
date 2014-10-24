@@ -187,7 +187,7 @@ This section only describes the JCache provided standard properties. For Hazelca
   <cache-writer-factory>
     com.example.dao.MyCacheWriterFactory
   </cache-writer-factory>
-  <>
+  <expiry-policy-factory>
     com.example.expire.MyExpirePolicyFactory
   </expiry-policy-factory>
 
