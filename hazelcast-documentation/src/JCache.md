@@ -3,8 +3,8 @@
 
 ## JCache Overview
 
-As part of the upcoming Java Enterprise Edition (Java EE) 8 specification JCache provides a standardized caching layer for 
-applications. This caching API is specified by the Java Community Process (JCP) as Java Specification Request (JSR) 107.
+This chapter describes the basics of the standardized Java caching layer API which is commonly referred to as JCache. The JCache
+caching API is specified by the Java Community Process (JCP) as Java Specification Request (JSR) 107.
 
 Caching keeps data in memory that are either slow to calculate / process or originating from another underlying backend system 
 whereas caching is used to prevent additional request round trips for frequently used data. In both cases the reasoning is to 
