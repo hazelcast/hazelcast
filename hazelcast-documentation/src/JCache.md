@@ -174,10 +174,10 @@ This section only describes the JCache provided standard properties. For Hazelca
 
 ```xml
 <cache>
-  <key-type>java.lang.String</key-type>
-  <value-type>java.lang.Integer</value-type>
-  <statistics-enabled>true</statistics-enabled>
-  <management-enabled>true</management-enabled>
+  <key-type>java.lang.Object</key-type>
+  <value-type>java.lang.Object</value-type>
+  <statistics-enabled>false</statistics-enabled>
+  <management-enabled>false</management-enabled>
 
   <read-through>true</read-through>
   <write-through>true</write-through>
@@ -200,6 +200,7 @@ This section only describes the JCache provided standard properties. For Hazelca
         com.example.cache.MyEntryEventFilterFactory
       </entry-event-filter-factory>
     </entry-listener>
+    ...
   </entry-listeners>
 </cache>
 ```
@@ -214,12 +215,10 @@ This section only describes the JCache provided standard properties. For Hazelca
 - **cache-writer-factory:** The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.integration.CacheWriter` instance to the cache
 - **expiry-policy-factory:** The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.expiry.ExpiryPolicy` instance to the cache
 - **entry-listener:** A set of configurations to describe a `javax.cache.event.CacheEntryListener`
- -- *old-value-required*: If set to true previously assigned values for the affected keys will be send to the `javax.cache.event.CacheEntryListener` implementation, this value creates additional traffic, defaults to false 
- -- *synchronous*: If set to true an the `javax.cache.event.CacheEntryListener` implementation will be called in a synchronous manner, default to false
- -- **entry-listener-factory**: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryListener` instance
- -- **entry-event-filter-factory**: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryEventFilter` instance
- 
-TODO
+  - *old-value-required*: If set to true previously assigned values for the affected keys will be send to the `javax.cache.event.CacheEntryListener` implementation, this value creates additional traffic, defaults to false 
+  - *synchronous*: If set to true an the `javax.cache.event.CacheEntryListener` implementation will be called in a synchronous manner, default to false
+  - **entry-listener-factory**: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryListener` instance
+  - **entry-event-filter-factory**: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryEventFilter` instance
 
 #### Programmatic Configuration
 
@@ -256,16 +255,34 @@ JCache `javax.cache.spi.CachingProvider`s are configured by either specifying th
 it in a declarative manner inside the typical Hazelcast configuration XML file. For more information on how to setup properties
 in the XML configuration look at [Declarative Configuration](#declarative-configuration).
 
-To configure the provider at the commandline the following parameter needs to be added to the Java startup call depending on the
-chosen provider:
+Hazelcast implements a delegating `CachingProvider` that can automatically be configured for either client or server mode and
+delegates to the real underlying implementation based on the users choice. It is recommended to use this `CachingProvider`
+implementation.
+
+The delegating `CachingProvider`s fully qualified class name is:
+
+```plain
+com.hazelcast.cache.impl.HazelcastCachingProvider
+```
+
+To configure the delegating provider at the commandline the following parameter needs to be added to the Java startup call
+depending on the chosen provider:
 
 ```plain
 -Dhazelcast.jcache.provider.type=[client|server]
 ```
 
-An additional way of selecting a `CachingProvider` is to explicitly call `Caching::getCachingProvider` overloads and provide
-them using the canonical class name of the provider to use. The class names of server and client providers provided by Hazelcast
-are mentioned in the following two subsections.
+By default the delegating `CachingProvider` is automatically picked up by the JCache SPI and provided using the previously shown
+way. In cases where multiple `javax.cache.spi.CachingProvider` implementations reside on the classpath, like in some Application
+Server scenarios) there is an additional way of selecting a `CachingProvider` is to explicitly call `Caching::getCachingProvider`
+overloads and provide them using the canonical class name of the provider to use. The class names of server and client providers
+provided by Hazelcast are mentioned in the following two subsections.
+
+<br></br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *Hazelcast advises to use the `Caching::getCachingProvider` overloads to select a
+`CachingProvider` explicitly to make sure uploading to later environments or Application Server versions doesn't result in
+unexpected behavior like a wrong `CachingProvider` to be chosen*
+<br></br>
 
 To learn more about cluster topologies and Hazelcast clients read [Hazelcast Topology](#hazelcast-topology).
 
@@ -358,9 +375,19 @@ The SPI that is implemented to bridge between JCache API and the implementation 
 providers chosen as seen in the subsection for [Provider Configuration](#provider-configuration) which enable the JCache API to
 interact with Hazelcast clusters.
 
+When a `javax.cache.spi.CachingProvider::getCacheManager` overload is used that takes a `java.lang.ClassLoader` argument, this
+classloader will be part of the scope of the created `java.cache.Cache` und not possible to retrieve on other nodes. We advise
+to not use those overloads!
+
 *_javax.cache.CacheManager_:*
 
 The `CacheManager` provides the capability to create new and manage existing JCache caches.
+  
+<br></br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *A `javax.cache.Cache` instance created with key and value types in the configuration
+provides a type checking of those types at retrieval of the cache. For that reason all non types retrieval methods like `getCache`
+throw an exception because types cannot be checked.*
+<br></br>
   
 *_javax.cache.configuration.Configuration_, _javax.cache.configuration.MutableConfiguration_:*
 
@@ -378,6 +405,22 @@ This interface represents the cache instance itself. It is comparable to `java.u
 to the caching use case. Therefor for example `javax.cache.Cache::put`, unlike `java.util.Map::put`, does not return the old value
 previously assigned to the given key.
 
+### Factory
+
+### CacheLoader
+
+### CacheWriter
+
+### CompletionListener
+
+### ExpirePolicy
+
+### CacheEntryListener
+
+### JCache Scopes and Namespaces
+
+
+
 ## Hazelcast JCache Extension - ICache
 
 Hazelcast provides extension methods to Cache API through the interface `com.hazelcast.cache.ICache`. 
@@ -387,9 +430,11 @@ It has two set of extensions:
 * asynchronous version of all cache operations
 * cache operations with custom `ExpiryPolicy` parameter to apply on that specific operation.
 
+### Retrieving an ICache Instance
+
 ### ICache Configuration
 
-### Async operations
+### Async Operations
 
 A method ending with `Async` is the asynchronous version of that method (for example `getAsync(K)` , `replaceAsync(K,V)`). These methods return a `Future` where you can get the result or wait the operation to be completed.
 
@@ -399,9 +444,12 @@ ICache<String , SessionData> cache = cache.unwrap( ICache.class );
 Future<SessionData> future = cache.getAsync("key-1" ) ;
 SessionData sessionData = future.get();
 ```
+
 <br></br>
 ![image](images/NoteSmall.jpg) ***NOTE:*** *Asynchronous methods are not compatible with synchronous events.*
 <br></br>
+
+### Additional Methods
 
 ### Custom ExpiryPolicy
 
@@ -430,7 +478,7 @@ icache.put("session-key-2", SessionData,  AccessedExpiryPolicy.factoryOf(TEN_MIN
 
 Now, your customized session will expire in ten minutes after being accessed.
 
-## Running the JCache TCK
+## JCache Specification Compliance
 
 To run the JCache (JSR107) TCK against Hazelcast, perform the below instructions.
 
