@@ -303,13 +303,13 @@ Hazelcast supports symmetric encryption, secure sockets layer (SSL) and Java Aut
 
 ## How can I set socket options
 
-Hazelcast allows to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, `SO_RCVBUF` using Hazelcast configuration properties. See [Advanced Configuration Properties](#advanced-configuration-properties)
+Hazelcast allows to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, `SO_RCVBUF` using Hazelcast configuration properties. Please see `hazelcast.socket.*` properties explained at [Advanced Configuration Properties](#advanced-configuration-properties).
 
 ## I periodically see client disconnections during idle time
 
-In Hazelcast, socket connections are created with `SO_KEEPALIVE` option enabled by default. In most operating systems, default keep-alive time is 2 hours. If you have a firewall between clients and servers which is configured to reset idle connections/sessions, make sure that firewall's idle timeout is greater than TCP keepalive defined in OS.
+In Hazelcast, socket connections are created with `SO_KEEPALIVE` option enabled by default. In most operating systems, default keep-alive time is 2 hours. If you have a firewall between clients and servers which is configured to reset idle connections/sessions, make sure that firewall's idle timeout is greater than TCP keep-alive defined in OS.
 
-For additional info see;
+For additional information please see:
 
  - [Using TCP keepalive under Linux](http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html)
  - [Microsoft TechNet](http://technet.microsoft.com/en-us/library/cc957549.aspx)
