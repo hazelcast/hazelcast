@@ -18,7 +18,6 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientExtension;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
@@ -29,6 +28,7 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.client.ClientRequest;
@@ -100,9 +100,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
-    private final HazelcastClient client;
+    private final HazelcastClientInstanceImpl client;
     private final Router router;
-    private SocketInterceptor socketInterceptor;
+    private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
     private final IOSelector inSelector;
     private final IOSelector outSelector;
@@ -122,7 +122,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private volatile boolean alive;
 
-    public ClientConnectionManagerImpl(HazelcastClient client,
+    public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client,
                                        LoadBalancer loadBalancer,
                                        AddressTranslator addressTranslator) {
         this.client = client;

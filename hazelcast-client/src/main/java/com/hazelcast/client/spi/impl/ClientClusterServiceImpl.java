@@ -16,15 +16,16 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.ClientImpl;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.LifecycleServiceImpl;
+import com.hazelcast.client.impl.ClientImpl;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Cluster;
@@ -58,21 +59,20 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 
-
 /**
- * @author mdogan 5/15/13
+ * The {@llink ClientClusterService} implementation.
  */
 public class ClientClusterServiceImpl implements ClientClusterService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientClusterService.class);
 
-    private final HazelcastClient client;
+    private final HazelcastClientInstanceImpl client;
     private final ClientConnectionManager connectionManager;
     private final ClusterListenerThread clusterThread;
     private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
 
-    public ClientClusterServiceImpl(HazelcastClient client) {
+    public ClientClusterServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.connectionManager = client.getConnectionManager();
         this.clusterThread = createListenerThread();
@@ -113,11 +113,13 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 addressProvider);
     }
 
+    @Override
     public MemberImpl getMember(Address address) {
         final Map<Address, MemberImpl> members = membersRef.get();
         return members != null ? members.get(address) : null;
     }
 
+    @Override
     public MemberImpl getMember(String uuid) {
         final Collection<MemberImpl> memberList = getMemberList();
         for (MemberImpl member : memberList) {
@@ -128,24 +130,29 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return null;
     }
 
+    @Override
     public Collection<MemberImpl> getMemberList() {
         final Map<Address, MemberImpl> members = membersRef.get();
         return members != null ? members.values() : Collections.<MemberImpl>emptySet();
     }
 
+    @Override
     public Address getMasterAddress() {
         final Collection<MemberImpl> memberList = getMemberList();
         return !memberList.isEmpty() ? memberList.iterator().next().getAddress() : null;
     }
 
+    @Override
     public int getSize() {
         return getMemberList().size();
     }
 
+    @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis();
     }
 
+    @Override
     public Client getLocalClient() {
         final String uuid = connectionManager.getUuid();
         ClientConnection conn = clusterThread.getConnection();
@@ -156,7 +163,12 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return client.getSerializationService();
     }
 
+    @Override
     public String addMembershipListener(MembershipListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("listener can't be null");
+        }
+
         final String id = UuidUtil.buildRandomUuidString();
         listeners.put(id, listener);
         if (listener instanceof InitialMembershipListener) {
@@ -177,13 +189,19 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         for (MembershipListener membershipListener : listeners.values()) {
             if (membershipListener instanceof InitialMembershipListener) {
                 // TODO: needs sync with membership events...
-                final Cluster cluster = client.getCluster();
-                ((InitialMembershipListener) membershipListener).init(new InitialMembershipEvent(cluster, cluster.getMembers()));
+                Cluster cluster = client.getCluster();
+                InitialMembershipEvent event = new InitialMembershipEvent(cluster, cluster.getMembers());
+                ((InitialMembershipListener) membershipListener).init(event);
             }
         }
     }
 
+    @Override
     public boolean removeMembershipListener(String registrationId) {
+        if (registrationId == null) {
+            throw new NullPointerException("registrationId can't be null");
+        }
+
         return listeners.remove(registrationId) != null;
     }
 
@@ -203,7 +221,6 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     public void stop() {
         clusterThread.shutdown();
     }
-
 
     void fireConnectionEvent(boolean disconnected) {
         final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
@@ -230,7 +247,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     void fireMembershipEvent(final MembershipEvent event) {
-        client.getClientExecutionService().execute(new Runnable() {
+        ClientExecutionService clientExecutionService = client.getClientExecutionService();
+        clientExecutionService.execute(new Runnable() {
+            @Override
             public void run() {
                 for (MembershipListener listener : listeners.values()) {
                     if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
@@ -244,7 +263,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     void fireMemberAttributeEvent(final MemberAttributeEvent event) {
-        client.getClientExecutionService().execute(new Runnable() {
+        ClientExecutionService clientExecutionService = client.getClientExecutionService();
+        clientExecutionService.execute(new Runnable() {
             @Override
             public void run() {
                 for (MembershipListener listener : listeners.values()) {
@@ -261,5 +281,4 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     void setMembersRef(Map<Address, MemberImpl> map) {
         membersRef.set(map);
     }
-
 }

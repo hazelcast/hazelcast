@@ -21,7 +21,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
 /**
- * Provides factory for {@link com.hazelcast.cache.impl.record.CacheRecord}
+ * Provides factory for {@link com.hazelcast.cache.impl.record.CacheRecord}.
+ * <p>Key, value and expiryTime are packed into a subclass of
+ * {@link com.hazelcast.cache.impl.record.AbstractCacheRecord}
+ * depending on the configured inMemoryFormat.</p>
  */
 public class CacheRecordFactory<R extends CacheRecord> {
 
@@ -63,11 +66,11 @@ public class CacheRecordFactory<R extends CacheRecord> {
     }
 
     /**
-     * Determines if the Cache Entry associated with this value would be expired
-     * at the specified time
+     * Determines whether the Cache Entry associated with this value would be expired
+     * at the specified time.
      *
-     * @param now time in milliseconds (since the Epoc)
-     * @return true if the value would be expired at the specified time
+     * @param now time in milliseconds (since the Epoc).
+     * @return true if the value would be expired at the specified time.
      */
     public static boolean isExpiredAt(long expirationTime, long now) {
         return expirationTime > -1 && expirationTime <= now;

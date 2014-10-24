@@ -16,10 +16,10 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionTimedOutException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,14 +35,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.FutureUtil.ExceptionHandler;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import static com.hazelcast.util.FutureUtil.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -110,60 +110,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
         assertEquals(2, (int) array[1]);
     }
 
-    @Test
-    public void test_waitWithDeadline_first_finished_second_interrupted() throws Exception {
-        AtomicBoolean waitLock = new AtomicBoolean(true);
-        final AtomicBoolean interrupted = new AtomicBoolean(false);
-
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
-
-        List<Future> futures = new ArrayList<Future>();
-        for (int i = 0; i < 2; i++) {
-            futures.add(executorService.submit(new BlockingTask(waitLock, interrupted)));
-        }
-
-        try {
-            waitWithDeadline(futures, 5, TimeUnit.SECONDS, logAllExceptions(Level.WARNING));
-        } catch (TimeoutException e) {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(true, interrupted.get());
-                }
-            });
-            return;
-        }
-
-        fail();
-    }
-
-    @Test
-    public void test_returnWithDeadline_first_finished_second_interrupted() throws Exception {
-        AtomicBoolean waitLock = new AtomicBoolean(true);
-        final AtomicBoolean interrupted = new AtomicBoolean(false);
-
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
-
-        List<Future> futures = new ArrayList<Future>();
-        for (int i = 0; i < 2; i++) {
-            futures.add(executorService.submit(new BlockingCallable(waitLock, interrupted)));
-        }
-
-        try {
-            returnWithDeadline(futures, 5, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(true, interrupted.get());
-                }
-            });
-            return;
-        }
-
-        fail();
-    }
-
     @Test(expected = TimeoutException.class)
     public void test_returnWithDeadline_timeout_exception() throws Exception {
         AtomicBoolean waitLock = new AtomicBoolean(true);
@@ -174,67 +120,15 @@ public class FutureUtilTest extends HazelcastTestSupport {
             futures.add(executorService.submit(new TimeoutingTask(waitLock)));
         }
 
-        returnWithDeadline(futures, 1, TimeUnit.SECONDS);
-    }
-
-    @Test
-    public void test_waitWithDeadline_timeout_per_future() throws Exception {
-        AtomicBoolean waitLock = new AtomicBoolean(true);
-        final AtomicBoolean interrupted = new AtomicBoolean(false);
-        final AtomicLong deltaToInterrupted = new AtomicLong(0);
-
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
-
-        List<Future> futures = new ArrayList<Future>();
-        for (int i = 0; i < 2; i++) {
-            futures.add(executorService.submit(new BlockingTimeMeasureTask(waitLock, interrupted, deltaToInterrupted)));
-        }
-
-        try {
-            waitWithDeadline(futures, 60, TimeUnit.SECONDS, 1, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(true, interrupted.get());
-                    assertTrue("perFutureTimeout greater than 65 seconds",
-                            TimeUnit.NANOSECONDS.toSeconds(deltaToInterrupted.get()) < 65);
+        returnWithDeadline(futures, 1, TimeUnit.SECONDS, new ExceptionHandler() {
+            @Override
+            public void handleException(Throwable throwable) {
+                if (throwable instanceof TimeoutException) {
+                    ExceptionUtil.sneakyThrow(throwable);
                 }
-            });
-            return;
-        }
-
-        fail();
-    }
-
-    @Test
-    public void test_returnWithDeadline_timeout_per_future() throws Exception {
-        AtomicBoolean waitLock = new AtomicBoolean(true);
-        final AtomicBoolean interrupted = new AtomicBoolean(false);
-        final AtomicLong deltaToInterrupted = new AtomicLong(0);
-
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
-
-        List<Future> futures = new ArrayList<Future>();
-        for (int i = 0; i < 2; i++) {
-            futures.add(executorService.submit(new BlockingTimeMeasureTask(waitLock, interrupted, deltaToInterrupted)));
-        }
-
-        try {
-            returnWithDeadline(futures, 60, TimeUnit.SECONDS, 1, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(true, interrupted.get());
-                    assertTrue("perFutureTimeout greater than 65 seconds",
-                            TimeUnit.NANOSECONDS.toSeconds(deltaToInterrupted.get()) < 65);
-                }
-            });
-            return;
-        }
-
-        fail();
+                throw ExceptionUtil.rethrow(throwable);
+            }
+        });
     }
 
     @Test
@@ -273,6 +167,15 @@ public class FutureUtilTest extends HazelcastTestSupport {
         Throwable throwable = exceptionHandler.throwables.iterator().next();
         assertTrue(throwable instanceof ExecutionException);
         assertTrue(throwable.getCause() instanceof SpecialRuntimeException);
+    }
+
+
+    @Test(expected = TransactionTimedOutException.class)
+    public void testTransactionTimedOutExceptionHandler() throws Exception {
+        final ExceptionHandler exceptionHandler = FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
+        final Throwable throwable = new TimeoutException();
+
+        exceptionHandler.handleException(throwable);
     }
 
     private static final class ExceptionCollector implements ExceptionHandler {
@@ -349,87 +252,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
                 }
             }
             return index;
-        }
-    }
-
-    private static final class BlockingTask
-            implements Runnable {
-
-        private final AtomicBoolean waitLock;
-        private final AtomicBoolean interrupted;
-
-        private BlockingTask(AtomicBoolean waitLock, AtomicBoolean interrupted) {
-            this.waitLock = waitLock;
-            this.interrupted = interrupted;
-        }
-
-        @Override
-        public void run() {
-            if (waitLock.compareAndSet(true, false)) {
-                try {
-                    for (; ; ) {
-                        Thread.sleep(100);
-                    }
-                } catch (InterruptedException ignored) {
-                    interrupted.set(true);
-                }
-            }
-        }
-    }
-
-    private static final class BlockingTimeMeasureTask
-            implements Runnable {
-
-        private final AtomicBoolean waitLock;
-        private final AtomicBoolean interrupted;
-        private final AtomicLong deltaToInterrupted;
-
-        private BlockingTimeMeasureTask(AtomicBoolean waitLock, AtomicBoolean interrupted, AtomicLong deltaToInterrupted) {
-            this.waitLock = waitLock;
-            this.interrupted = interrupted;
-            this.deltaToInterrupted = deltaToInterrupted;
-        }
-
-        @Override
-        public void run() {
-            long start = System.nanoTime();
-            if (waitLock.compareAndSet(true, false)) {
-                try {
-                    for (; ; ) {
-                        Thread.sleep(100);
-                    }
-                } catch (InterruptedException ignored) {
-                    deltaToInterrupted.set(System.nanoTime() - start);
-                    interrupted.set(true);
-                }
-            }
-        }
-    }
-
-    private static final class BlockingCallable
-            implements Callable<Integer> {
-
-        private final AtomicBoolean waitLock;
-        private final AtomicBoolean interrupted;
-
-        private BlockingCallable(AtomicBoolean waitLock, AtomicBoolean interrupted) {
-            this.waitLock = waitLock;
-            this.interrupted = interrupted;
-        }
-
-        @Override
-        public Integer call()
-                throws Exception {
-            if (waitLock.compareAndSet(true, false)) {
-                try {
-                    for (; ; ) {
-                        Thread.sleep(100);
-                    }
-                } catch (InterruptedException ignored) {
-                    interrupted.set(true);
-                }
-            }
-            return 1;
         }
     }
 

@@ -22,6 +22,11 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
+/**
+ * Implementation of {@link com.hazelcast.cache.impl.CacheEventData}.
+ *
+ * @see com.hazelcast.cache.impl.CacheEventData
+ */
 public class CacheEventDataImpl
         implements CacheEventData {
 
@@ -45,22 +50,27 @@ public class CacheEventDataImpl
         this.isOldValueAvailable = isOldValueAvailable;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public CacheEventType getCacheEventType() {
         return eventType;
     }
 
+    @Override
     public Data getDataKey() {
         return dataKey;
     }
 
+    @Override
     public Data getDataValue() {
         return dataNewValue;
     }
 
+    @Override
     public Data getDataOldValue() {
         return dataOldValue;
     }

@@ -283,9 +283,9 @@ if (partitionService().isLocalMemberSafe()) {
 ```
 
 
-## When do I need Off-heap solutions
+## When do I need Native Memory solutions
 
-Off-heap solutions can be preferred;
+Native Memory solutions can be preferred;
 
 - When the amount of data per node is large enough to create significant garbage collection pauses,
 - When your application requires predictable latency.

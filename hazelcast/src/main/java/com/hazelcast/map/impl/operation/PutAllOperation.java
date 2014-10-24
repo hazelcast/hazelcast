@@ -89,7 +89,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 keysToInvalidate.add(dataKey);
 
                 // check in case of an expiration.
-                final Record record = recordStore.getRecord(dataKey);
+                final Record record = recordStore.getRecordOrNull(dataKey);
                 if (record == null) {
                     continue;
                 }

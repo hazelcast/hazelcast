@@ -72,9 +72,9 @@ public class Employee implements DataSerializable {
 
 As you can see, since `address` field itself is `DataSerializable`, it is calling `address.writeData(out)` when writing and `address.readData(in)` when reading. Also note that, the order of writing and reading fields should be the same. While Hazelcast serializes a DataSerializable, it writes the `className` first and when de-serializes it, `className` is used to instantiate the object using reflection.
 
-***NOTE:*** *Since Hazelcast needs to create an instance during deserialization,`DataSerializable` class has a no-arg constructor.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Since Hazelcast needs to create an instance during deserialization,`DataSerializable` class has a no-arg constructor.*
 
-***NOTE:*** *`DataSerializable` is a good option if serialization is only needed for in-cluster communication.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *`DataSerializable` is a good option if serialization is only needed for in-cluster communication.*
 
 
 ### IdentifiedDataSerializable

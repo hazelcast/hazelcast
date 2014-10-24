@@ -30,7 +30,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Provides factory for {@link com.hazelcast.cache.impl.operation.CacheGetAllOperation}
+ * Factory implementation for {@link com.hazelcast.cache.impl.operation.CacheGetAllOperation}.
+ * @see com.hazelcast.spi.OperationFactory
  */
 public class CacheGetAllOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {

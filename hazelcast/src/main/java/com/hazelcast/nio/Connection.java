@@ -41,8 +41,6 @@ public interface Connection {
     /**
      * Checks if the Connection is still alive.
      *
-     * todo: rename to isAlive?
-     *
      * @return true if alive, false otherwise.
      */
     boolean isAlive();

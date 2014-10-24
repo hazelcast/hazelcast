@@ -42,7 +42,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
 /**
- * Base Client Cache Proxy
+ * Abstract class providing cache open/close operations and {@link ClientContext} accessor which will be used
+ * by implementation of {@link com.hazelcast.cache.ICache} for client.
+ *
+ * @param <K> the type of key
+ * @param <V> the type of value
  */
 abstract class AbstractClientCacheProxyBase<K, V> {
 

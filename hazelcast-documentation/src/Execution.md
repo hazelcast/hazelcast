@@ -62,6 +62,6 @@ public void echoOnMembers( String input, Set<Member> members ) throws Exception 
 ```
 
 
-***NOTE:*** *You can obtain the set of cluster members via `HazelcastInstance#getCluster().getMembers()` call.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *You can obtain the set of cluster members via `HazelcastInstance#getCluster().getMembers()` call.*
 
 

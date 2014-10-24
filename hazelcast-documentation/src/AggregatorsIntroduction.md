@@ -85,7 +85,7 @@ Last but not least, you might prefer (or end up in a necessary situation) implem
 requirements. But do not be afraid, this is a very basic task. The `Supplier` abstract class has just one method.
 <br></br>
 
-***NOTE:*** *Due to a limitation of the Java Lambda API you cannot implement abstract classes using Lambdas, so instead it is
+![image](images/NoteSmall.jpg) ***NOTE:*** *Due to a limitation of the Java Lambda API you cannot implement abstract classes using Lambdas, so instead it is
 recommended to create a standard named class instead.*
  
 ```java

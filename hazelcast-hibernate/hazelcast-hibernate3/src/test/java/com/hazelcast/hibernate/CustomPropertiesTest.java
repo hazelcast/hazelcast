@@ -16,7 +16,7 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.client.HazelcastClientProxy;
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;

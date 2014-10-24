@@ -56,9 +56,8 @@ public class MapReplicationOperation extends AbstractOperation {
     }
 
     public MapReplicationOperation(MapService mapService, PartitionContainer container, int partitionId,
-            int replicaIndex) {
+                                   int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        final long now = getNow();
 
         data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
@@ -71,7 +70,7 @@ public class MapReplicationOperation extends AbstractOperation {
             String name = entry.getKey();
             // now prepare data to migrate records
             Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());
-            final Iterator<Record> iterator = recordStore.iterator(now);
+            final Iterator<Record> iterator = recordStore.iterator();
             while (iterator.hasNext()) {
                 final Record record = iterator.next();
                 RecordReplicationInfo recordReplicationInfo;
@@ -81,10 +80,6 @@ public class MapReplicationOperation extends AbstractOperation {
             data.put(name, recordSet);
         }
         readDelayedEntries(container);
-    }
-
-    private long getNow() {
-        return Clock.currentTimeMillis();
     }
 
     private void readDelayedEntries(PartitionContainer container) {

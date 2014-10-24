@@ -21,7 +21,6 @@ import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.operation.RemoveOperation;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
@@ -47,7 +46,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int VALUES = 9;
     public static final int ENTRY_SET = 10;
     public static final int ENTRY_VIEW = 11;
-    public static final int MAP_STATS = 12;
+//    public static final int MAP_STATS = 12;
     public static final int QUERY_RESULT_ENTRY = 13;
     public static final int QUERY_RESULT_SET = 14;
 
@@ -106,11 +105,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return (IdentifiedDataSerializable) EntryViews.createSimpleEntryView();
             }
         };
-        constructors[MAP_STATS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LocalMapStatsImpl();
-            }
-        };
+//        constructors[MAP_STATS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new LocalMapStatsImpl();
+//            }
+//        };
         constructors[QUERY_RESULT_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new QueryResultEntryImpl();

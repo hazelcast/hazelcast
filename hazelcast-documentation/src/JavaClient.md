@@ -183,7 +183,7 @@ IExecutorService executorService = client.getExecutorService("default");
 
 After getting an instance of `IExecutorService`, it can be used as the interface with the one provided on the server side. Please see [Distributed Computing](#distributed-computing) chapter for detailed usage.
 
-***NOTE:*** *This service is only supported by the Java client.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *This service is only supported by the Java client.*
 
   
 #### Client Service
@@ -443,7 +443,7 @@ clientConfig.getNetworkConfig().setAwsConfig( clientAwsConfig );
 HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 ```
 
-***Note:*** *If *`inside-aws`* parameter is not set, private addresses of nodes will always be converted to public addresses. And, client will use public addresses to connect to nodes. In order to use private addresses, you should set it to *`true`*. Also note that, when connecting outside from AWS, setting *`inside-aws`* parameter to *`true`* will cause the client not to be able to reach to the nodes.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If *`inside-aws`* parameter is not set, private addresses of nodes will always be converted to public addresses. And, client will use public addresses to connect to nodes. In order to use private addresses, you should set it to *`true`*. Also note that, when connecting outside from AWS, setting *`inside-aws`* parameter to *`true`* will cause the client not to be able to reach to the nodes.*
 
 #### Load Balancer
 

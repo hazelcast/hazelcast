@@ -27,7 +27,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Thrown when a member left during an invocation or execution.
+ * A {@link ExecutionException} thrown when a member left during an invocation or execution.
  */
 public class MemberLeftException extends ExecutionException implements RetryableException {
 

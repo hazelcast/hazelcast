@@ -51,13 +51,14 @@ final class TestNodeRegistry {
 
     private final Address[] addresses;
     private final ConcurrentMap<Address, NodeEngineImpl> nodes = new ConcurrentHashMap<Address, NodeEngineImpl>(10);
+    private final Object joinerLock = new Object();
 
     TestNodeRegistry(Address[] addresses) {
         this.addresses = addresses;
     }
 
     NodeContext createNodeContext(Address address) {
-        return new MockNodeContext(addresses, nodes, address);
+        return new MockNodeContext(addresses, nodes, address, joinerLock);
     }
 
     HazelcastInstance getInstance(Address address) {
@@ -97,12 +98,13 @@ final class TestNodeRegistry {
         final Address[] addresses;
         final ConcurrentMap<Address, NodeEngineImpl> nodes;
         final Address thisAddress;
-        final Object joinerLock = new Object();
+        final Object joinerLock;
 
-        public MockNodeContext(Address[] addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Address thisAddress) {
+        public MockNodeContext(Address[] addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Address thisAddress, Object joinerLock) {
             this.addresses = addresses;
             this.nodes = nodes;
             this.thisAddress = thisAddress;
+            this.joinerLock = joinerLock;
         }
 
         public AddressPicker createAddressPicker(Node node) {
@@ -336,26 +338,7 @@ final class TestNodeRegistry {
         public boolean write(SocketWritable socketWritable) {
             final Packet packet = (Packet) socketWritable;
             if (nodeEngine.getNode().isActive()) {
-
-                Packet newPacket = new Packet(nodeEngine.getSerializationService().getPortableContext());
-                ByteBuffer buffer = ByteBuffer.allocate(4096);
-                boolean writeDone;
-                boolean readDone;
-                do {
-                    writeDone = packet.writeTo(buffer);
-                    buffer.flip();
-                    readDone = newPacket.readFrom(buffer);
-                    if (buffer.hasRemaining()) {
-                        throw new IllegalStateException("Buffer should be empty! " + buffer);
-                    }
-                    buffer.clear();
-                } while (!writeDone);
-
-                if (!readDone) {
-                    throw new IllegalStateException("Read should be completed!");
-                }
-
-                newPacket.setConn(localConnection);
+                Packet newPacket = readFromPacket(packet);
                 MemberImpl member = nodeEngine.getClusterService().getMember(localEndpoint);
                 if (member != null) {
                     member.didRead();
@@ -364,6 +347,29 @@ final class TestNodeRegistry {
                 return true;
             }
             return false;
+        }
+
+        private Packet readFromPacket(Packet packet) {
+            Packet newPacket = new Packet(nodeEngine.getSerializationService().getPortableContext());
+            ByteBuffer buffer = ByteBuffer.allocate(4096);
+            boolean writeDone;
+            boolean readDone;
+            do {
+                writeDone = packet.writeTo(buffer);
+                buffer.flip();
+                readDone = newPacket.readFrom(buffer);
+                if (buffer.hasRemaining()) {
+                    throw new IllegalStateException("Buffer should be empty! " + buffer);
+                }
+                buffer.clear();
+            } while (!writeDone);
+
+            if (!readDone) {
+                throw new IllegalStateException("Read should be completed!");
+            }
+
+            newPacket.setConn(localConnection);
+            return newPacket;
         }
 
         public long lastReadTime() {

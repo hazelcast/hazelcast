@@ -24,6 +24,16 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * <p>Internal Set wrapper of {@link CacheEventData} items used during publishing and dispatching events.</p>
+ *
+ * Multiple event objects is required via iterator to handle cache events
+ * by {@link javax.cache.event.CacheEntryListener}. This implementation  serves that purpose
+ * as a {@link com.hazelcast.cache.impl.CacheEventData} set.
+ *
+ * @see com.hazelcast.cache.impl.CacheService#publishEvent(String, CacheEventSet, int)
+ * @see com.hazelcast.cache.impl.CacheService#dispatchEvent(Object, CacheEventListener)
+ */
 public class CacheEventSet
         implements IdentifiedDataSerializable {
 
@@ -42,14 +52,25 @@ public class CacheEventSet
         this.eventType = eventType;
     }
 
+    /**
+     * @return Set of CacheEventData
+     */
     public Set<CacheEventData> getEvents() {
         return events;
     }
 
+    /**
+     * @return Event type
+     */
     public CacheEventType getEventType() {
         return eventType;
     }
 
+    /**
+     * Helper method for adding multiple CacheEventData into this Set
+     * @param cacheEventData event data representing a single event's data.
+     * @see CacheEventData
+     */
     public void addEventData(CacheEventData cacheEventData) {
         if (events == null) {
             events = new HashSet<CacheEventData>();

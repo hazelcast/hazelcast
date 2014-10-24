@@ -1,5 +1,5 @@
 
-### Configuring Hazelcast
+## Configuring Hazelcast
 
 While Hazelcast is starting up, it checks for the configuration as follows:
 
@@ -14,7 +14,7 @@ While Hazelcast is starting up, it checks for the configuration as follows:
 
 
 
-When you download and unzip `hazelcast-`*version*`.zip` you will see the `hazelcast.xml` in **/bin** folder. This is the configuration XML file for Hazelcast, a part of which is shown below.
+When you download and unzip `hazelcast-<`*version*`>.zip` you will see the `hazelcast.xml` in `/bin` folder. This is the configuration XML file for Hazelcast, a part of which is shown below.
 
 ![](images/HazelcastXML.jpg)
 

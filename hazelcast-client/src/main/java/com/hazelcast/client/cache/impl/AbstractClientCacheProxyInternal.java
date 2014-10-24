@@ -62,7 +62,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * Base Client Cache Proxy
+ * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
+ * of cache operations like put, replace, remove and invoke. These internal implementations are delegated
+ * by actual cache methods.
+ *
+ * <p>Note: this partial implementation is used by client.</p>
+ * @param <K> the type of key
+ * @param <V> the type of value
  */
 abstract class AbstractClientCacheProxyInternal<K, V>
         extends AbstractClientCacheProxyBase<K, V> {

@@ -23,12 +23,10 @@ import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.FutureUtil;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -36,8 +34,17 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+
+/**
+ * Hazelcast {@link javax.cache.CacheManager} for server implementation. This subclass of
+ * {@link HazelcastCacheManager} is managed by {@link HazelcastServerCachingProvider}.
+ * <p>As it lives on a node JVM, it has reference to {@link CacheService} and {@link NodeEngine} where this
+ * manager make calls.</p>
+ * <p>When JCache server implementation is configured, an instance of this class will be returned when
+ * {@link javax.cache.spi.CachingProvider#getCacheManager()} is called.</p>
+ */
 public class HazelcastServerCacheManager
         extends HazelcastCacheManager {
 
@@ -53,7 +60,7 @@ public class HazelcastServerCacheManager
         this.hazelcastInstance = hazelcastInstance;
         //just to get a reference to nodeEngine and cacheService
         final CacheDistributedObject setupRef = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
-        nodeEngine = (NodeEngineImpl)setupRef.getNodeEngine();
+        nodeEngine = (NodeEngineImpl) setupRef.getNodeEngine();
         cacheService = setupRef.getService();
 
         //TODO: should we destroy the ref ?
@@ -70,7 +77,7 @@ public class HazelcastServerCacheManager
             throw new NullPointerException();
         }
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        cacheService.enableManagement(cacheNameWithPrefix, enabled);
+        cacheService.setManagementEnabled(cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
         enableStatisticManagementOnOtherNodes(cacheName, false, enabled);
     }
@@ -84,7 +91,7 @@ public class HazelcastServerCacheManager
             throw new NullPointerException();
         }
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        cacheService.enableStatistics(cacheNameWithPrefix, enabled);
+        cacheService.setStatisticsEnabled(cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
         enableStatisticManagementOnOtherNodes(cacheName, true, enabled);
     }
@@ -98,15 +105,11 @@ public class HazelcastServerCacheManager
                 final CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan,
                         enabled);
                 final Future future = nodeEngine.getOperationService()
-                                                .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
                 futures.add(future);
             }
         }
-        try {
-            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            logger.warning(e);
-        }
+        waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     }
 
@@ -143,7 +146,7 @@ public class HazelcastServerCacheManager
         final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
-                                                                   .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.getSafely();
     }
 
