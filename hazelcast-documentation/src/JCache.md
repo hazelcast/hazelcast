@@ -351,9 +351,7 @@ interact with Hazelcast clusters.
 
 *_javax.cache.CacheManager_:*
 
-The `CacheManager` provides the capability to create new and manage existing JCache caches. It also manages changing the behavior
-of existing caches by updating the corresponding configurations. Changed configurations are automatically shared in the cluster
-and updated on all cluster members to ensure a consistent behavior of the cache on all nodes.
+The `CacheManager` provides the capability to create new and manage existing JCache caches.
   
 *_javax.cache.configuration.Configuration_, _javax.cache.configuration.MutableConfiguration_:*
 
