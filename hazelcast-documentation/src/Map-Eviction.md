@@ -60,7 +60,7 @@ Let's describe each property.
 ```xml
 <map name="documents">
   <max-size policy="PER_NODE">10000</max-size>
-  <eviction -policy>LRU</eviction -policy> 
+  <eviction-policy>LRU</eviction-policy> 
   <max-idle-seconds>60</max-idle-seconds>
 </map>
 ```
