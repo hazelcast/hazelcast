@@ -99,6 +99,7 @@ public abstract class HazelcastCacheManager implements CacheManager {
             registerListeners(newCacheConfig, cacheProxy);
             return cacheProxy;
         } else {
+            // TODO: Might race in terms we don't check existing config and given config to be similar
             final ICache<?, ?> entries = caches.putIfAbsent(newCacheConfig.getNameWithPrefix(), cacheProxy);
             if (entries == null) {
                 //REGISTER LISTENERS
