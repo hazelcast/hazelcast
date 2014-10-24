@@ -192,24 +192,33 @@ This section only describes the JCache provided standard properties. For Hazelca
   </expiry-policy-factory>
 
   <entry-listeners>
-    <entry-listener>
-      com.example.cache.MyEntryListener
+    <entry-listener old-value-required="false" synchronous="false">
+      <entry-listener-factory>
+        com.example.cache.MyEntryListenerFactory
+      </entry-listener-factory>
+      <entry-event-filter-factory>
+        com.example.cache.MyEntryEventFilterFactory
+      </entry-event-filter-factory>
     </entry-listener>
   </entry-listeners>
 </cache>
 ```
 
-- **key-type:**
-- **value-type:**
-- **statistics-enabled:**
-- **management-enabled:**
-- **read-through:**
-- **write-through:**
-- **cache-loader-factory:**
-- **cache-writer-factory:**
-- **expiry-policy-factory:**
-- **entry-listener:**
-
+- **key-type:** The fully qualified class name of the cache key type, defaults to `java.lang.Object`
+- **value-type:** The fully qualified class name of the cache value type, defaults to `java.lang.Object`
+- **statistics-enabled:** If set to true statistics like cache hits and misses are collected, defaults to false
+- **management-enabled:** If set to true JMX beans are enabled and collected statistics are provided - it doesn't automatically enables statistics collection, defaults to false
+- **read-through:** If set to true enables read-through behavior of the cache to an underlying configured `javax.cache.integration.CacheLoader`, defaults to false
+- **write-through:** If set to true enables write-through behavior of the cache to an underlying configured `javax.cache.integration.CacheWriter`, defaults to false
+- **cache-loader-factory:** The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.integration.CacheLoader` instance to the cache
+- **cache-writer-factory:** The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.integration.CacheWriter` instance to the cache
+- **expiry-policy-factory:** The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.expiry.ExpiryPolicy` instance to the cache
+- **entry-listener:** A set of configurations to describe a `javax.cache.event.CacheEntryListener`
+ -- *old-value-required*: If set to true previously assigned values for the affected keys will be send to the `javax.cache.event.CacheEntryListener` implementation, this value creates additional traffic, defaults to false 
+ -- *synchronous*: If set to true an the `javax.cache.event.CacheEntryListener` implementation will be called in a synchronous manner, default to false
+ -- **entry-listener-factory**: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryListener` instance
+ -- **entry-event-filter-factory**: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryEventFilter` instance
+ 
 TODO
 
 #### Programmatic Configuration
