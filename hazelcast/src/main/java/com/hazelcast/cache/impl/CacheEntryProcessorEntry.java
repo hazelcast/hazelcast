@@ -30,33 +30,36 @@ import javax.cache.processor.MutableEntry;
  * @param <V>
  * @see com.hazelcast.map.EntryProcessor
  */
-public class CacheEntryProcessorEntry<K, V>
+public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
         implements MutableEntry<K, V> {
 
-    private K key;
-    private V value;
+    protected K key;
+    protected V value;
 
-    private State state = State.NONE;
+    protected State state = State.NONE;
 
-    private final Data keyData;
-    private CacheRecord record;
-    private CacheRecord recordLoaded;
+    protected final Data keyData;
+    protected R record;
+    protected R recordLoaded;
 
-    private final CacheRecordStore cacheRecordStore;
-    private final long now;
-    private final long start;
-    private final ExpiryPolicy expiryPolicy;
+    protected final AbstractCacheRecordStore cacheRecordStore;
+    protected final long now;
+    protected final long start;
+    protected final ExpiryPolicy expiryPolicy;
 
-    public CacheEntryProcessorEntry(Data keyData, CacheRecord record, CacheRecordStore cacheRecordStore, long now) {
+    public CacheEntryProcessorEntry(Data keyData,
+                                    R record,
+                                    AbstractCacheRecordStore cacheRecordStore,
+                                    long now) {
         this.keyData = keyData;
         this.record = record;
         this.cacheRecordStore = cacheRecordStore;
         this.now = now;
         this.start = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? System.nanoTime() : 0;
 
-        final Factory<ExpiryPolicy> expiryPolicyFactory = cacheRecordStore.cacheConfig.getExpiryPolicyFactory();
+        final Factory<ExpiryPolicy> expiryPolicyFactory =
+                cacheRecordStore.cacheConfig.getExpiryPolicyFactory();
         this.expiryPolicy = expiryPolicyFactory.create();
-
     }
 
     @Override
@@ -105,7 +108,7 @@ public class CacheEntryProcessorEntry<K, V>
         }
         if (recordLoaded == null) {
             //LOAD IT
-            recordLoaded = cacheRecordStore.readThroughRecord(keyData, now);
+            recordLoaded = (R) cacheRecordStore.readThroughRecord(keyData, now);
         }
         if (recordLoaded != null) {
             state = State.LOAD;
@@ -114,17 +117,18 @@ public class CacheEntryProcessorEntry<K, V>
         return null;
     }
 
-    private V getRecordValue(CacheRecord theRecord) {
+    protected V getRecordValue(R record) {
         final Object objValue;
         switch (cacheRecordStore.cacheConfig.getInMemoryFormat()) {
             case BINARY:
-                objValue = cacheRecordStore.cacheService.toObject(theRecord.getValue());
+                objValue = cacheRecordStore.cacheService.toObject(record.getValue());
                 break;
             case OBJECT:
-                objValue = theRecord.getValue();
+                objValue = record.getValue();
                 break;
             default:
-                throw new IllegalArgumentException("Invalid storage format: " + cacheRecordStore.cacheConfig.getInMemoryFormat());
+                throw new IllegalArgumentException("Invalid storage format: "
+                        + cacheRecordStore.cacheConfig.getInMemoryFormat());
         }
         return (V) objValue;
     }
@@ -173,8 +177,10 @@ public class CacheEntryProcessorEntry<K, V>
         throw new IllegalArgumentException("Unwrapping to " + clazz + " is not supported by this implementation");
     }
 
-    private enum State {
+    protected enum State {
+
         NONE, ACCESS, UPDATE, LOAD, CREATE, REMOVE
 
     }
+
 }
