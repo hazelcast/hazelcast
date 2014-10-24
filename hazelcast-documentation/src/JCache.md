@@ -28,7 +28,7 @@ the specification document (which is also the main documentation for functionali
 
 ## Setup and Configuration
 
-This subchapter will show was is necessary to provide JCache API and the Hazelcast JCache implementation to your application. In
+This sub-chapter will show was is necessary to provide JCache API and the Hazelcast JCache implementation to your application. In
 addition it demonstrates the different configuration options as well as the description of the configuration properties.
 
 ### Application Setup
@@ -92,101 +92,10 @@ For users of other buildsystems like for example ANT users have to download thos
 Hazelcast community website ([http://www.hazelcast.org](http://www.hazelcast.org)) or from the Maven repository search page
 ([http://search.maven.org](http://search.maven.org)).
 
-### JCache Configuration
+### Quick Example
 
-Hazelcast JCache provides two different ways to configure caches, the expected, typical Hazelcast ways of programmatic (using
-the Config API) and a declarative way (using `hazelcast.xml` or `hazelcast-client.xml`).
- 
-#### Declarative Configuration
-
-As expected Hazelcast provides a way of declarative configure JCache caches using it's configuration files. Since JCache requires
-the configuration to be provided while creation of the cache, therefor `javax.cache.configuration.Configuration` instances for 
-declarative configuration are created differently.
- 
-To retrieve the XML based `Configuration` instance the Hazelcast config is asked for the named `com.hazelcast.config.CacheConfig`
-instance using the following snippet:
-
-```java
-Config config = hazelcastInstance.getConfig();
-CacheConfig cacheConfig = config.getCacheConfig("cache-name");
-```
-
-
-TODO
-
-#### Programmatic Configuration
-
-TODO
-
-## JCache Providers
-
-JCache providers are used to create caches by a specification compliant implementation. Those providers abstract the platform
-specific behavior and bindings and provide the different JCache required features.
-
-Hazelcast has two types of providers that are possible to be use. Depending on the application setup and the cluster topology
-there is either the Client Provider (used from Hazelcast clients) or the Server Provider (which is used by cluster nodes).
-
-### Provider Configuration
-
-JCache `javax.cache.spi.CachingProvider`s are configured by either specifying the provider at the commandline or configure
-it in a declarative manner inside the typical Hazelcast configuration XML file. For more information on how to setup properties
-in the XML configuration look at [Declarative Configuration](#declarative-configuration).
-
-To configure the provider at the commandline the following parameter needs to be added to the Java startup call depending on the
-chosen provider:
-
-```plain
--Dhazelcast.jcache.provider.type=[client|server]
-```
-
-An additional way of selecting a `CachingProvider` is to explicitly call `Caching::getCachingProvider` overloads and provide
-them using the canonical class name of the provider to use. The class names of server and client providers provided by Hazelcast
-are mentioned in the following two subsections.
-
-To learn more about cluster topologies and Hazelcast clients read [Hazelcast Topology](#hazelcast-topology).
-
-### Client Provider
-
-For cluster topologies where Hazelcast light clients are used to connect to a remote Hazelcast cluster the Client Provider is
-the provider to be used to configure JCache.
-
-This provider provides the same features as the Server provider but does not hold data on it's own but delegates requests and
-calls to the remotely connected cluster.
- 
-The client provider is able to connect to multiple clusters at the same time. (TODO: how is this possible?)
-
-For requesting this CachingProvider using `Caching#getCachingProvider(String)` or
-`Caching#getCachingProvider(String, ClassLoader)` use the following fully qualified class name:
-
-```plain
-com.hazelcast.client.cache.impl.HazelcastClientCachingProvider
-```
-
-### Server Provider
-
-If a Hazelcast node is embedded into an application directly and the Hazelcast client is not used, the Server Provider is
-required. In this case the node itself becomes part of the distributed cache and requests and operations are distributed directly
-inside the cluster by it's given key.
-
-This provider provides the same features as the Client provider but keeps data in the local Hazelcast node as well as distributes
-non-owned keys to other direct cluster members.
-
-For requesting this CachingProvider using `Caching#getCachingProvider(String)` or
-`Caching#getCachingProvider(String, ClassLoader)` use the following fully qualified class name:
-
-```plain
-com.hazelcast.cache.impl.HazelcastServerCachingProvider
-```
-
-## Introduction to the JCache API
-
-This section explains the JCache API by providing small examples and use cases. While walking through the examples we will have
-a look at a couple of the standard API classes and see how those will be used.
-
-### Quick Basic Example
-
-As a basic introduction how to use Hazelcast JCache integration inside an application we will have a quick look at the easiest
-but typesafe example possible.
+Before moving on to configuration, let's have a look at a basic introduction example how to use Hazelcast JCache integration
+inside an application int the easiest but typesafe way possible.
 
 ```java
 // Retrieve the CachingProvider which is automatically backed by
@@ -197,7 +106,7 @@ CachingProvider cachingProvider = Caching.getCachingProvider();
 CacheManager cacheManager = cachingProvider.getCacheManager();
 
 // Create a simple but typesafe configuration for the cache
-MutableConfiguration<String, String> config = 
+CompleteConfiguration<String, String> config = 
     new MutableConfiguration<String, String>()
         .setTypes(String.class, String.class);
 
@@ -241,6 +150,156 @@ The following lines are simple `put` and `get` calls as already known from `java
 `javax.cache.Cache::put` has a `void` return type and does not return the previously assigned value of the key. To imitate the
 `java.util.Map::put` method a JCache cache has a method called `getAndPut`. 
 
+### JCache Configuration
+
+Hazelcast JCache provides two different ways to configure caches, the expected, typical Hazelcast ways of programmatic (using
+the Config API seen above) and a declarative way (using `hazelcast.xml` or `hazelcast-client.xml`).
+ 
+#### Declarative Configuration
+
+As expected Hazelcast provides a way of declarative configure JCache caches using it's configuration files. Since JCache requires
+the configuration to be provided while creation of the cache, therefor `javax.cache.configuration.Configuration` instances for 
+declarative configuration are created differently.
+ 
+To retrieve the XML based `Configuration` instance the Hazelcast config is asked for the named `com.hazelcast.config.CacheConfig`
+instance using the following snippet:
+
+```java
+Config config = hazelcastInstance.getConfig();
+CompleteConfiguration cacheConfig = config.getCacheConfig( "cache-name" );
+```
+
+This section only describes the JCache provided standard properties. For Hazelcast specific properties please read the
+[ICache Configuration](#icache-configuration) section.
+
+```xml
+<cache>
+  <key-type>java.lang.String</key-type>
+  <value-type>java.lang.Integer</value-type>
+  <statistics-enabled>true</statistics-enabled>
+  <management-enabled>true</management-enabled>
+
+  <read-through>true</read-through>
+  <write-through>true</write-through>
+  <cache-loader-factory>
+    com.example.dao.MyCacheLoaderFactory
+  </cache-loader-factory>
+  <cache-writer-factory>
+    com.example.dao.MyCacheWriterFactory
+  </cache-writer-factory>
+  <>
+    com.example.expire.MyExpirePolicyFactory
+  </expiry-policy-factory>
+
+  <entry-listeners>
+    <entry-listener>
+      com.example.listeners.MyEntryListener
+    </entry-listener>
+  </entry-listeners>
+</cache>
+```
+
+- **key-type:**
+- **value-type:**
+- **statistics-enabled:**
+- **management-enabled:**
+- **read-through:**
+- **write-through:**
+- **cache-loader-factory:**
+- **cache-writer-factory:**
+- **expiry-policy-factory:**
+- **entry-listener:**
+
+TODO
+
+#### Programmatic Configuration
+
+Using the programmatic API is fairly simple, just instantiate either `javax.cache.configuration.MutableConfiguration` if only
+JCache standard configuration is used or `com.hazelcast.config.CacheConfig` for a deeper Hazelcast integration. The later 
+configuration class offers additional options that are specific to Hazelcast like asynchronous and synchronous backup counts.
+Both classes share the same supertype interface `javax.cache.configuration.CompleteConfiguration` which is part of the JCache
+standard.
+
+<br></br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *It is advised to keep your own code as near as possible to the standard API of JCache
+to stay vendor independent, therefor it is recommended to configure those values using the previously explained declarative API
+and only use the `javax.cache.configuration.Configuration` or `javax.cache.configuration.CompleteConfiguration` interfaces in 
+your code when passing the configuration instance around.*
+<br></br>
+
+If no Hazelcast specific properties need to be configured it is recommended to instantiate a
+`javax.cache.configuration.MutableConfiguration` and using the setters to configure it as shown in the example before. Since
+configurable properties are the same as above in the subsection for [Declarative Configuration](#declarative-configuration) they
+are not again explained here. For Hazelcast specific properties please read the [ICache Configuration](#icache-configuration)
+section.
+
+## JCache Providers
+
+JCache providers are used to create caches by a specification compliant implementation. Those providers abstract the platform
+specific behavior and bindings and provide the different JCache required features.
+
+Hazelcast has two types of providers that are possible to be use. Depending on the application setup and the cluster topology
+there is either the Client Provider (used from Hazelcast clients) or the Server Provider (which is used by cluster nodes).
+
+### Provider Configuration
+
+JCache `javax.cache.spi.CachingProvider`s are configured by either specifying the provider at the commandline or configure
+it in a declarative manner inside the typical Hazelcast configuration XML file. For more information on how to setup properties
+in the XML configuration look at [Declarative Configuration](#declarative-configuration).
+
+To configure the provider at the commandline the following parameter needs to be added to the Java startup call depending on the
+chosen provider:
+
+```plain
+-Dhazelcast.jcache.provider.type=[client|server]
+```
+
+An additional way of selecting a `CachingProvider` is to explicitly call `Caching::getCachingProvider` overloads and provide
+them using the canonical class name of the provider to use. The class names of server and client providers provided by Hazelcast
+are mentioned in the following two subsections.
+
+To learn more about cluster topologies and Hazelcast clients read [Hazelcast Topology](#hazelcast-topology).
+
+### Client Provider
+
+For cluster topologies where Hazelcast light clients are used to connect to a remote Hazelcast cluster the Client Provider is
+the provider to be used to configure JCache.
+
+This provider provides the same features as the Server provider but does not hold data on it's own but delegates requests and
+calls to the remotely connected cluster.
+ 
+The client provider is able to connect to multiple clusters at the same time. (TODO: how is this possible?)
+
+For requesting this CachingProvider using `Caching#getCachingProvider( String )` or
+`Caching#getCachingProvider( String, ClassLoader )` use the following fully qualified class name:
+
+```plain
+com.hazelcast.client.cache.impl.HazelcastClientCachingProvider
+```
+
+### Server Provider
+
+If a Hazelcast node is embedded into an application directly and the Hazelcast client is not used, the Server Provider is
+required. In this case the node itself becomes part of the distributed cache and requests and operations are distributed directly
+inside the cluster by it's given key.
+
+This provider provides the same features as the Client provider but keeps data in the local Hazelcast node as well as distributes
+non-owned keys to other direct cluster members.
+
+TODO: URI -> namespacing, different from client!
+
+For requesting this CachingProvider using `Caching#getCachingProvider( String )` or
+`Caching#getCachingProvider( String, ClassLoader )` use the following fully qualified class name:
+
+```plain
+com.hazelcast.cache.impl.HazelcastServerCachingProvider
+```
+
+## Introduction to the JCache API
+
+This section explains the JCache API by providing small examples and use cases. While walking through the examples we will have
+a look at a couple of the standard API classes and see how those will be used.
+
 ### JCache API Walkthrough
 
 This subsection will create a small account application with providing a caching layer over thought database abstraction. The
@@ -281,7 +340,7 @@ need to them one by one again but quickly repeat their uses.
 
 *_javax.cache.Caching_:*
 
-The accesspoint into the JCache API. It is used to retrieve the general CachingProvider backed by any compliant JCache
+The access point into the JCache API. It is used to retrieve the general CachingProvider backed by any compliant JCache
 implementation like Hazelcast JCache.
 
 *_javax.cache.spi.CachingProvider_:*
@@ -312,7 +371,7 @@ This interface represents the cache instance itself. It is comparable to `java.u
 to the caching use case. Therefor for example `javax.cache.Cache::put`, unlike `java.util.Map::put`, does not return the old value
 previously assigned to the given key.
 
-## Hazelcast Cache Extension - ICache
+## Hazelcast JCache Extension - ICache
 
 Hazelcast provides extension methods to Cache API through the interface `com.hazelcast.cache.ICache`. 
 
@@ -321,6 +380,7 @@ It has two set of extensions:
 * asynchronous version of all cache operations
 * cache operations with custom `ExpiryPolicy` parameter to apply on that specific operation.
 
+### ICache Configuration
 
 ### Async operations
 
@@ -328,8 +388,8 @@ A method ending with `Async` is the asynchronous version of that method (for exa
 
 
 ```java
-ICache<String , SessionData> icache =  cache.unwrap( ICache.class );
-Future<SessionData> future = icache.getAsync("key-1" ) ;
+ICache<String , SessionData> cache = cache.unwrap( ICache.class );
+Future<SessionData> future = cache.getAsync("key-1" ) ;
 SessionData sessionData = future.get();
 ```
 <br></br>
