@@ -361,6 +361,8 @@ The DAO interface is also kept easy and it provides just a simple method to retr
 ```java
 public interface UserDAO {
   User findUserById( int userId );
+  boolean storeUser( int userId, User user );
+  boolean removeUser( int userId );
 }
 ```
 
