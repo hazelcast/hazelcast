@@ -13,7 +13,7 @@ gain performance or decreasing application latencies.
 Starting with Hazelcast release 3.3.1 a specification compliant JCache implementation is offered. To show our commitment to this
 important specification the Java world was waiting for over a decade, we do not just provide a simple wrapper around our existing
 APIs but implemented a caching structure from ground up to optimize the behavior to the needs of JCache. As mentioned before
-the Hazelcast JCache implementation is 100% TCK (Technology Compatibility Kit) compliant and therefor passes all specification
+the Hazelcast JCache implementation is 100% TCK (Technology Compatibility Kit) compliant and therefore passes all specification
 requirements.
 
 In addition to the given specification we added a hand full of features on top, like asynchronous versions of almost all
@@ -36,14 +36,14 @@ addition it demonstrates the different configuration options as well as the desc
 To provide the application with the new JCache functionality it has to have the JCache API inside it's application's
 classpath. This API is the bridge between the specified standard and the implementation provided by Hazelcast.
 
-How to integrate the JCache API JAR into the application classpath depends on the buildsystem used. For Maven, Gradle, SBT,
-Ivy and a lot of other buildsystems (all systems using Maven based dependency repositories) the process is as easy as adding
+How to integrate the JCache API JAR into the application classpath depends on the build system used. For Maven, Gradle, SBT,
+Ivy and a lot of other build systems (all systems using Maven based dependency repositories) the process is as easy as adding
 the Maven coordinates to the build descriptor.
 
 As already mentioned, next to the default Hazelcast coordinates that might be already part of the application, JCache
 coordinates have to be added.
  
-For Maven users the coordinates look like the following snippet, for other buildsystems the the way to describe those might
+For Maven users the coordinates look like the following snippet, for other build systems the the way to describe those might
 diverge:
 
 ```xml
@@ -55,7 +55,7 @@ diverge:
 ```
 
 To activate Hazelcast as the JCache provider implementation either, if not already available, add the hazelcast-all.jar or
-hazelcast.jar to the classpath by the following Maven snippet. Again users of other buildsystems have to adjust the way of
+hazelcast.jar to the classpath by the following Maven snippet. Again users of other build systems have to adjust the way of
 defining the dependency to their needs:
 
 ```xml
@@ -135,10 +135,10 @@ node or client (depending on the chosen provider type) and pick up the configura
 or from the classpath. How to use an existing `HazelcastInstance` will be shown later in the chapter, for now we keep it simple. 
 
 In the next line we ask the `CachingProvider` to return a `javax.cache.CacheManager` which is the general application's entry
-point into JCache. The `CachingProvider` therefor is responsible to create and manage named caches. 
+point into JCache. The `CachingProvider` therefore is responsible to create and manage named caches. 
 
 The next few lines creating a simple `javax.cache.configuration.MutableConfiguration` to configure the cache before actually
-creating it. In this case we only configure the key and value types to make the cache typesafe which is highly recommended and
+creating it. In this case we only configure the key and value types to make the cache type safe which is highly recommended and
 checked on retrieval of the cache.
 
 To eventually create the cache call `javax.cache.CacheManager::createCache` with a name for the cache and the previously created
@@ -158,7 +158,7 @@ the Config API seen above) and a declarative way (using `hazelcast.xml` or `haze
 #### Declarative Configuration
 
 As expected Hazelcast provides a way of declarative configure JCache caches using it's configuration files. Since JCache requires
-the configuration to be provided while creation of the cache, therefor `javax.cache.configuration.Configuration` instances for 
+the configuration to be provided while creation of the cache, therefore `javax.cache.configuration.Configuration` instances for 
 declarative configuration are created differently.
  
 To retrieve the XML based `Configuration` instance the Hazelcast config is asked for the named `com.hazelcast.config.CacheConfig`
@@ -230,7 +230,7 @@ standard.
 
 <br></br>
 ![image](images/NoteSmall.jpg) ***NOTE:*** *It is advised to keep your own code as near as possible to the standard API of JCache
-to stay vendor independent, therefor it is recommended to configure those values using the previously explained declarative API
+to stay vendor independent, therefore it is recommended to configure those values using the previously explained declarative API
 and only use the `javax.cache.configuration.Configuration` or `javax.cache.configuration.CompleteConfiguration` interfaces in 
 your code when passing the configuration instance around.*
 <br></br>
@@ -326,7 +326,7 @@ com.hazelcast.cache.impl.HazelcastServerCachingProvider
 This section explains the JCache API by providing small examples and use cases. While walking through the examples we will have
 a look at a couple of the standard API classes and see how those will be used.
 
-### JCache API Walkthrough
+### JCache API Walk-through
 
 This subsection will create a small account application with providing a caching layer over thought database abstraction. The
 database layer will be simulated using single demo data in a simple DAO layer. To show the difference between the "database"
@@ -391,8 +391,8 @@ throw an exception because types cannot be checked.*
   
 *_javax.cache.configuration.Configuration_, _javax.cache.configuration.MutableConfiguration_:*
 
-Those two classes are used to configure a cache prior to retrieve it from a `CacheManager`. The `Configuration` interface therefor
-acts as a common supertype for all compatible configuration classes such as `MutableConfiguration`.
+Those two classes are used to configure a cache prior to retrieve it from a `CacheManager`. The `Configuration` interface therefore
+acts as a common super type for all compatible configuration classes such as `MutableConfiguration`.
 
 Hazelcast itself offers a special implementation (`com.hazelcast.config.CacheConfig`) of the `Configuration` interface which
 offers more options on the specific Hazelcast properties that can be set to configure features like synchronous and asynchronous
