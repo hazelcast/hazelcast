@@ -4,13 +4,13 @@
 
 ### Map Overview
 
-Hazelcast Map (`IMap`) extends the interface `java.util.concurrent.ConcurrentMap` and hence `java.util.Map`. In simple terms, it is the distributed implementation of Java map. And operations like reading and writing from/to a Hazelcast map can be performed with the well known methods like get and put.
+Hazelcast Map (`IMap`) extends the interface `java.util.concurrent.ConcurrentMap` and hence `java.util.Map`. It is the distributed implementation of Java map. You can perfrom operations like reading and writing from/to a Hazelcast map with the well known get and put methods.
 
 #### How Distributed Map Works
 
-Hazelcast will partition your map entries and almost evenly distribute onto all Hazelcast members. Each member carries approximately "(1/n `*` total-data) + backups", **n** being the number of nodes in the cluster.
+Hazelcast will partition your map entries and almost evenly distribute onto all Hazelcast members. Each member carries approximately "(1/n `*` total-data) + backups", **n** being the number of nodes in the cluster. For example, if you have a node with 1000 objects to be storied in the cluster, and then you start a second node, each node will both store 500 objects and back up the 500 objects in the other node.
 
-Just for exemplary purposes, let's create a Hazelcast instance (node) and fill a map named `Capitals` with key-value pairs using the below code.
+Let's create a Hazelcast instance (node) and fill a map named `Capitals` with key-value pairs using the following code.
 
 ```java
 public class FillMapMember {
@@ -35,19 +35,19 @@ public class FillMapMember {
 }
 ```
 
-When you run this code, a node is created with a map whose entries are distributed across the node's partitions. See the below illustration. This is a single node cluster for now.
+When you run this code, a node is created with a map whose entries are distributed across the node's partitions. See the below illustration. For now, this is a single node cluster.
 
 ![](images/1Node.jpg)
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *Please note that some of the partitions will not contain any data entries since we only have 120 objects and the partition count is 271 by default. This count is configurable and can be changed using the system property `hazelcast.partition.count`. Please see [Advanced Configuration Properties](#advanced-configuration-properties).*
 
-Now, let's create a second node which will result in a cluster with 2 nodes. This is where backups of entries are created, too. Please remember the backup partitions mentioned in [Hazelcast Overview](#hazelcast-overview) section. So, run the above code again to create the second node. Below illustration shows two nodes and how the data and its backup is distributed.
+Now, let's create a second node by running the above code again. This will create a cluster with 2 nodes. This is also where backups of entries are created; remember the backup partitions mentioned in [Hazelcast Overview](#hazelcast-overview). The following illustration shows two nodes and how the data and its backup is distributed.
 
 ![](images/2Nodes.jpg)
 
-As you see, when a new member joins the cluster, it takes ownership (responsibility) and load of -some- of the entire data in the cluster. Eventually, it will carry almost "(1/n `*` total-data) + backups" and reduces the load on others.
+As you see, when a new member joins the cluster, it takes ownership and loads some of the data in the cluster. Eventually, it will carry almost "(1/n `*` total-data) + backups" of the data, reducing the load on other nodes.
 
-`HazelcastInstance::getMap` actually returns an instance of `com.hazelcast.core.IMap` which extends `java.util.concurrent.ConcurrentMap` interface. So methods like `ConcurrentMap.putIfAbsent(key,value)` and `ConcurrentMap.replace(key,value)` can be used on distributed map as shown in the example below.
+`HazelcastInstance::getMap` returns an instance of `com.hazelcast.core.IMap` which extends the `java.util.concurrent.ConcurrentMap` interface. Methods like `ConcurrentMap.putIfAbsent(key,value)` and `ConcurrentMap.replace(key,value)` can be used on the distributed map, as shown in the example below.
 
 ```java
 import com.hazelcast.core.Hazelcast;
@@ -77,7 +77,7 @@ public boolean removeCustomer( Customer customer ) {
 }
 ```
 
-All `ConcurrentMap` operations such as `put` and `remove` might wait if the key is locked by another thread in the local or remote JVM. But, they will eventually return with success. `ConcurrentMap` operations never throw `java.util.ConcurrentModificationException`.
+All `ConcurrentMap` operations such as `put` and `remove` might wait if the key is locked by another thread in the local or remote JVM. But, they will eventually return with success. `ConcurrentMap` operations never throw a `java.util.ConcurrentModificationException`.
 
 Also see:
 
