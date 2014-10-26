@@ -8,28 +8,28 @@ caching API is specified by the Java Community Process (JCP) as Java Specificati
 
 Caching keeps data in memory that are either slow to calculate / process or originating from another underlying backend system 
 whereas caching is used to prevent additional request round trips for frequently used data. In both cases the reasoning is to 
-gain performance or decreasing application latencies.
+gain performance or decrease application latencies.
 
-Starting with Hazelcast release 3.3.1 a specification compliant JCache implementation is offered. To show our commitment to this
+Starting with Hazelcast release 3.3.1, a specification compliant JCache implementation is offered. To show our commitment to this
 important specification the Java world was waiting for over a decade, we do not just provide a simple wrapper around our existing
-APIs but implemented a caching structure from ground up to optimize the behavior to the needs of JCache. As mentioned before
+APIs but implemented a caching structure from ground up to optimize the behavior to the needs of JCache. As mentioned before,
 the Hazelcast JCache implementation is 100% TCK (Technology Compatibility Kit) compliant and therefore passes all specification
 requirements.
 
 In addition to the given specification we added a hand full of features on top, like asynchronous versions of almost all
-operations, to give the user the power he expects.  
+operations, to give the user the expected power.  
 
-This chapter will give a basic understanding of how to configure your application, how to setup Hazelcast to be your JCache
-provider and will show examples of the basic usage as well as the additionally offered features that are not part of JSR-107.
-To gain a full understanding of the JCache functionality and provided guarantees of different operations it is advised to read
+This chapter gives a basic understanding of how to configure your application, how to setup Hazelcast to be your JCache
+provider and shows examples of the basic usage as well as the additionally offered features that are not part of JSR-107.
+To gain a full understanding of the JCache functionality and provided guarantees of different operations, it is advised to read
 the specification document (which is also the main documentation for functionality) at the specification page of JSR-107:
 
 [https://www.jcp.org/en/jsr/detail?id=107](https://www.jcp.org/en/jsr/detail?id=107)
 
 ## Setup and Configuration
 
-This sub-chapter will show was is necessary to provide JCache API and the Hazelcast JCache implementation to your application. In
-addition it demonstrates the different configuration options as well as the description of the configuration properties.
+This sub-chapter shows what is necessary to provide JCache API and the Hazelcast JCache implementation for your application. In
+addition, it demonstrates the different configuration options as well as the description of the configuration properties.
 
 ### Application Setup
 
