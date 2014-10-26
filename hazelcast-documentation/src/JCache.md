@@ -143,18 +143,18 @@ or from the classpath. We will show how to use an existing `HazelcastInstance` l
 In the next line, we ask the `CachingProvider` to return a `javax.cache.CacheManager` which is the general application's entry
 point into JCache. The `CachingProvider` therefore is responsible to create and manage named caches. 
 
-The next few lines creating a simple `javax.cache.configuration.MutableConfiguration` to configure the cache before actually
-creating it. In this case we only configure the key and value types to make the cache type safe which is highly recommended and
+The next few lines create a simple `javax.cache.configuration.MutableConfiguration` to configure the cache before actually
+creating it. In this case, we only configure the key and value types to make the cache typesafe which is highly recommended and
 checked on retrieval of the cache.
 
-To eventually create the cache call `javax.cache.CacheManager::createCache` with a name for the cache and the previously created
-configuration. This call immediately returns the created cache. If a previously created cache needs to be retrieved the 
-corresponding method overloads for `javax.cache.CacheManager::getCache` can be used. Recommended is the version given in the
+To eventually create the cache, we call `javax.cache.CacheManager::createCache` with a name for the cache and the previously created
+configuration. This call immediately returns the created cache. If a previously created cache needs to be retrieved, the 
+corresponding method overloading `javax.cache.CacheManager::getCache` can be used. Recommended is the version given in the
 example to test the type parameters to be correct against the assigned configuration.
 
 The following lines are simple `put` and `get` calls as already known from `java.util.Map` interface whereas the
 `javax.cache.Cache::put` has a `void` return type and does not return the previously assigned value of the key. To imitate the
-`java.util.Map::put` method a JCache cache has a method called `getAndPut`. 
+`java.util.Map::put` method, a JCache cache has a method called `getAndPut`. 
 
 ### JCache Configuration
 
