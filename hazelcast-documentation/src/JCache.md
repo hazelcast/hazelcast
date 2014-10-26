@@ -231,23 +231,23 @@ This section only describes the JCache provided standard properties. For Hazelca
 
 #### Programmatic Configuration
 
-Using the programmatic API is fairly simple, just instantiate either `javax.cache.configuration.MutableConfiguration` if only
-JCache standard configuration is used or `com.hazelcast.config.CacheConfig` for a deeper Hazelcast integration. The later 
-configuration class offers additional options that are specific to Hazelcast like asynchronous and synchronous backup counts.
+Using the programmatic configuration is fairly simple; just instantiate either `javax.cache.configuration.MutableConfiguration` if only
+JCache standard configuration is used or `com.hazelcast.config.CacheConfig` for a deeper Hazelcast integration. The latter 
+class offers additional options that are specific to Hazelcast like asynchronous and synchronous backup counts.
 Both classes share the same supertype interface `javax.cache.configuration.CompleteConfiguration` which is part of the JCache
 standard.
 
 <br></br>
 ![image](images/NoteSmall.jpg) ***NOTE:*** *It is advised to keep your own code as near as possible to the standard API of JCache
-to stay vendor independent, therefore it is recommended to configure those values using the previously explained declarative API
+to stay vendor independent. Therefore, it is recommended to configure those values using the previously explained declarative API
 and only use the `javax.cache.configuration.Configuration` or `javax.cache.configuration.CompleteConfiguration` interfaces in 
 your code when passing the configuration instance around.*
 <br></br>
 
-If no Hazelcast specific properties need to be configured it is recommended to instantiate a
-`javax.cache.configuration.MutableConfiguration` and using the setters to configure it as shown in the example before. Since
-configurable properties are the same as above in the subsection for [Declarative Configuration](#declarative-configuration) they
-are not again explained here. For Hazelcast specific properties please read the [ICache Configuration](#icache-configuration)
+If you don't need to configure Hazelcast specific properties, it is recommended to instantiate a
+`javax.cache.configuration.MutableConfiguration` and using the setters to configure it as shown in the example in [Quick Example](#quick-example). Since
+configurable properties are the same as the ones explained in [Declarative Configuration](#declarative-configuration), they
+are not again mentioned here. For Hazelcast specific properties, please read the [ICache Configuration](#icache-configuration)
 section.
 
 ## JCache Providers
