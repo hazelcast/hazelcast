@@ -149,8 +149,8 @@ checked on retrieval of the cache.
 
 To eventually create the cache, we call `javax.cache.CacheManager::createCache` with a name for the cache and the previously created
 configuration. This call immediately returns the created cache. If a previously created cache needs to be retrieved, the 
-corresponding method overloading `javax.cache.CacheManager::getCache` can be used. Recommended is the version given in the
-example to test the type parameters to be correct against the assigned configuration.
+corresponding method overloading `javax.cache.CacheManager::getCache` can be used. ??? Recommended is the version given in the
+example to test the type parameters to be correct against the assigned configuration ???.
 
 The following lines are simple `put` and `get` calls as already known from `java.util.Map` interface whereas the
 `javax.cache.Cache::put` has a `void` return type and does not return the previously assigned value of the key. To imitate the
@@ -158,17 +158,20 @@ The following lines are simple `put` and `get` calls as already known from `java
 
 ### JCache Configuration
 
-Hazelcast JCache provides two different ways to configure caches, the expected, typical Hazelcast ways of programmatic (using
-the Config API seen above) and a declarative way (using `hazelcast.xml` or `hazelcast-client.xml`).
+Hazelcast JCache provides two different ways of cache configuration:
+
+-  the expected, typical Hazelcast ways of programmatic (using
+the Config API seen above) one, and 
+- a declarative way (using `hazelcast.xml` or `hazelcast-client.xml`)
  
 #### Declarative Configuration
 
-As expected Hazelcast provides a way of declarative configure JCache caches using it's configuration files. Since JCache requires
-the configuration to be provided while creation of the cache, therefore `javax.cache.configuration.Configuration` instances for 
+As expected, Hazelcast provides a way of declarative configuration of JCache caches using its configuration files. Since JCache requires
+the configuration to be provided during the cache creation, `javax.cache.configuration.Configuration` instances for 
 declarative configuration are created differently.
  
-To retrieve the XML based `Configuration` instance the Hazelcast config is asked for the named `com.hazelcast.config.CacheConfig`
-instance using the following snippet:
+??? To retrieve the XML based `Configuration` instance the Hazelcast config is asked for the named `com.hazelcast.config.CacheConfig`
+instance using the following snippet ???:
 
 ```java
 Config config = hazelcastInstance.getConfig();
@@ -211,20 +214,20 @@ This section only describes the JCache provided standard properties. For Hazelca
 </cache>
 ```
 
-- **key-type:** The fully qualified class name of the cache key type, defaults to `java.lang.Object`
-- **value-type:** The fully qualified class name of the cache value type, defaults to `java.lang.Object`
-- **statistics-enabled:** If set to true statistics like cache hits and misses are collected, defaults to false
-- **management-enabled:** If set to true JMX beans are enabled and collected statistics are provided - it doesn't automatically enables statistics collection, defaults to false
-- **read-through:** If set to true enables read-through behavior of the cache to an underlying configured `javax.cache.integration.CacheLoader`, defaults to false
-- **write-through:** If set to true enables write-through behavior of the cache to an underlying configured `javax.cache.integration.CacheWriter`, defaults to false
-- **cache-loader-factory:** The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.integration.CacheLoader` instance to the cache
-- **cache-writer-factory:** The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.integration.CacheWriter` instance to the cache
-- **expiry-policy-factory:** The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.expiry.ExpiryPolicy` instance to the cache
-- **entry-listener:** A set of configurations to describe a `javax.cache.event.CacheEntryListener`
-  - *old-value-required*: If set to true previously assigned values for the affected keys will be send to the `javax.cache.event.CacheEntryListener` implementation, this value creates additional traffic, defaults to false 
-  - *synchronous*: If set to true an the `javax.cache.event.CacheEntryListener` implementation will be called in a synchronous manner, default to false
-  - **entry-listener-factory**: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryListener` instance
-  - **entry-event-filter-factory**: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryEventFilter` instance
+- `key-type`: The fully qualified class name of the cache key type, defaults to `java.lang.Object`.
+- `value-type`: The fully qualified class name of the cache value type, defaults to `java.lang.Object`.
+- `statistics-enabled`: If set to true, statistics like cache hits and misses are collected. Its default value is false.
+- `management-enabled`: If set to true, JMX beans are enabled and collected statistics are provided - It doesn't automatically enables statistics collection, defaults to false.
+- `read-through`: If set to true, enables read-through behavior of the cache to an underlying configured `javax.cache.integration.CacheLoader`, defaults to false.
+- `write-through`: If set to true, enables write-through behavior of the cache to an underlying configured `javax.cache.integration.CacheWriter`, defaults to false.
+- `cache-loader-factory`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.integration.CacheLoader` instance to the cache.
+- `cache-writer-factory`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.integration.CacheWriter` instance to the cache.
+- `expiry-policy-factory`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.expiry.ExpiryPolicy` instance to the cache.
+- `entry-listener`: A set of attributes and elements, explained below, to describe a `javax.cache.event.CacheEntryListener`.
+  - `old-value-required`: If set to true, previously assigned values for the affected keys will be sent to the `javax.cache.event.CacheEntryListener` implementation. Setting this attribute to true creates additional traffic, defaults to false.
+  - `synchronous`: If set to true, the `javax.cache.event.CacheEntryListener` implementation will be called in a synchronous manner, defaults to false.
+  - `entry-listener-factory`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryListener` instance.
+  - `entry-event-filter-factory`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryEventFilter` instance.
 
 #### Programmatic Configuration
 
