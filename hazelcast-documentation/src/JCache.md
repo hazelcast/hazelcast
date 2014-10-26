@@ -33,18 +33,17 @@ addition, it demonstrates the different configuration options as well as the des
 
 ### Application Setup
 
-To provide the application with the new JCache functionality it has to have the JCache API inside it's application's
+To provide the application with the new JCache functionality, it has to have the JCache API inside its application's
 classpath. This API is the bridge between the specified standard and the implementation provided by Hazelcast.
 
-How to integrate the JCache API JAR into the application classpath depends on the build system used. For Maven, Gradle, SBT,
-Ivy and a lot of other build systems (all systems using Maven based dependency repositories) the process is as easy as adding
+The way to integrate the JCache API JAR into the application classpath depends on the build system used. For Maven, Gradle, SBT,
+Ivy and a lot of other build systems (all systems using Maven based dependency repositories), the process is as easy as adding
 the Maven coordinates to the build descriptor.
 
-As already mentioned, next to the default Hazelcast coordinates that might be already part of the application, JCache
-coordinates have to be added.
+As already mentioned, next to the default Hazelcast coordinates that might be already part of the application, you have to add JCache
+coordinates.
  
-For Maven users the coordinates look like the following snippet, for other build systems the the way to describe those might
-diverge:
+For Maven users, the coordinates look like the following snippet: 
 
 ```xml
 <dependency>
@@ -53,10 +52,14 @@ diverge:
   <version>1.0.0</version>
 </dependency>
 ```
+For other build systems, the way to describe those might
+be different.
 
-To activate Hazelcast as the JCache provider implementation either, if not already available, add the hazelcast-all.jar or
-hazelcast.jar to the classpath by the following Maven snippet. Again users of other build systems have to adjust the way of
-defining the dependency to their needs:
+
+To activate Hazelcast as the JCache provider implementation add either `hazelcast-all.jar` or
+`hazelcast.jar` to the classpath (if not already available) by either one of the following Maven snippets.
+
+If you use `hazelcast-all.jar`: 
 
 ```xml
 <dependency>
@@ -66,7 +69,7 @@ defining the dependency to their needs:
 </dependency>
 ```
 
-or
+If you use `hazelcast.jar`:
 
 ```xml
 <dependency>
@@ -75,9 +78,12 @@ or
   <version>3.4.0</version>
 </dependency>
 ```
+Again users of other build systems have to adjust the way of
+defining the dependency to their needs.
 
-When users want to use Hazelcast clients to connect to a remote cluster the hazelcast-client.jar dependency is also required
-on client side applications. It is already included in the hazelcast-all.jar or can be added to the classpath using the following
+
+When users want to use Hazelcast clients to connect to a remote cluster, the `hazelcast-client.jar` dependency is also required
+on the client side applications. This JAR is already included in `hazelcast-all.jar`. Or, you can add it to the classpath using the following
 Maven snippet:
 
 ```xml
@@ -88,7 +94,7 @@ Maven snippet:
 </dependency>
 ```
 
-For users of other buildsystems like for example ANT users have to download those dependencies from either the JSR-107 and
+For other build systems, e.g. ANT, the users have to download those dependencies from either the JSR-107 and
 Hazelcast community website ([http://www.hazelcast.org](http://www.hazelcast.org)) or from the Maven repository search page
 ([http://search.maven.org](http://search.maven.org)).
 
