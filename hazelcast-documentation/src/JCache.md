@@ -100,8 +100,8 @@ Hazelcast community website ([http://www.hazelcast.org](http://www.hazelcast.org
 
 ### Quick Example
 
-Before moving on to configuration, let's have a look at a basic introduction example how to use Hazelcast JCache integration
-inside an application int the easiest but typesafe way possible.
+Before moving on to configuration, let's have a look at a basic introduction example. Below code shows how to use Hazelcast JCache integration
+inside an application in the easiest but typesafe way possible.
 
 ```java
 // Retrieve the CachingProvider which is automatically backed by
@@ -132,15 +132,15 @@ String value = cache.get( "world" );
 System.out.println( value );
 ```
 
-Even though the example is quite simple let's take the time to work through the code lines one by one.
+Although the example is quite simple, let's go through the code lines one by one.
 
-First of all we create or better retrieve the `javax.cache.spi.CachingProvider` using the static method from
-`javax.cache.Caching::getCachingManager` which automatically picks up Hazelcast as the underlying JCache implementation if
-available in the classpath. This way the Hazelcast implementation of a CachingProvider will automatically startup a new Hazelcast
-node or client (depending on the chosen provider type) and pick up the configuration from either the commandline parameter
-or from the classpath. How to use an existing `HazelcastInstance` will be shown later in the chapter, for now we keep it simple. 
+First of all, we create or better retrieve the `javax.cache.spi.CachingProvider` using the static method from
+`javax.cache.Caching::getCachingManager` which automatically picks up Hazelcast as the underlying JCache implementation, if
+available in the classpath. This way the Hazelcast implementation of a `CachingProvider` will automatically start a new Hazelcast
+node or client (depending on the chosen provider type) and pick up the configuration from either the command line parameter
+or from the classpath. We will show how to use an existing `HazelcastInstance` later in this chapter, for now we keep it simple. 
 
-In the next line we ask the `CachingProvider` to return a `javax.cache.CacheManager` which is the general application's entry
+In the next line, we ask the `CachingProvider` to return a `javax.cache.CacheManager` which is the general application's entry
 point into JCache. The `CachingProvider` therefore is responsible to create and manage named caches. 
 
 The next few lines creating a simple `javax.cache.configuration.MutableConfiguration` to configure the cache before actually
