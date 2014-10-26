@@ -363,6 +363,7 @@ public interface UserDAO {
   User findUserById( int userId );
   boolean storeUser( int userId, User user );
   boolean removeUser( int userId );
+  Collection<Integer> allUserIds();
 }
 ```
 
@@ -422,9 +423,9 @@ previously assigned to the given key.
 
 ### CompletionListener
 
-### ExpirePolicy
-
 ### CacheEntryListener
+
+### ExpirePolicy
 
 ### JCache Scopes and Namespaces
 
