@@ -17,16 +17,12 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
-import com.hazelcast.cache.impl.operation.CacheGetOperation;
-import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
@@ -51,6 +47,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * {@link com.hazelcast.cache.ICache} is the designated interface.</p>
  * <p>AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.</p>
  * <p>Note: this partial implementation is used by server or embedded mode cache.</p>
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  * @see com.hazelcast.cache.impl.CacheProxy
@@ -268,10 +265,10 @@ abstract class AbstractCacheProxyExtension<K, V>
             final SerializationService serializationService = getNodeEngine().getSerializationService();
             OperationFactory operationFactory = operationProvider.createSizeOperationFactory();
             final Map<Integer, Object> results = getNodeEngine().getOperationService()
-                                                                .invokeOnAllPartitions(getServiceName(), operationFactory);
+                    .invokeOnAllPartitions(getServiceName(), operationFactory);
             int total = 0;
             for (Object result : results.values()) {
-                total += (Integer)serializationService.toObject(result);
+                total += (Integer) serializationService.toObject(result);
             }
             return total;
         } catch (Throwable t) {

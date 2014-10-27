@@ -3,7 +3,6 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.CacheOperationProvider;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
-import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheGetAndRemoveOperation;
@@ -97,8 +96,8 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     }
 
     @Override
-    public OperationFactory createClearOperationFactory(Set<Data> keySet, boolean isRemoveAll, Integer completionId) {
-        return new CacheClearOperationFactory(nameWithPrefix, keySet, isRemoveAll, completionId);
+    public OperationFactory createClearOperationFactory(Set<Data> keySet, boolean isClear, Integer completionId) {
+        return new CacheClearOperationFactory(nameWithPrefix, keySet, isClear, completionId);
     }
 
     @Override

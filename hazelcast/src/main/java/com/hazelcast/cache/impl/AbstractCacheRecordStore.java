@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordMap;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -35,17 +34,22 @@ import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 
 public abstract class AbstractCacheRecordStore<
-            R extends CacheRecord,
-            CRM extends CacheRecordMap<Data, R>>
+        R extends CacheRecord,
+        CRM extends CacheRecordMap<Data, R>>
         implements ICacheRecordStore {
 
     protected static final long INITIAL_DELAY = 5;
+    protected static final int INITIAL_MAP_CAPACITY = 1000;
     protected static final long PERIOD = 5;
 
     protected final String name;
@@ -84,11 +88,26 @@ public abstract class AbstractCacheRecordStore<
             cacheWriter = cacheWriterFactory.create();
         }
         this.defaultExpiryPolicy =
-                expiryPolicy != null
-                        ? expiryPolicy :
-                        (ExpiryPolicy) cacheConfig.getExpiryPolicyFactory().create();
-        this.records = createRecordCacheMap();
+                expiryPolicy != null ? expiryPolicy : (ExpiryPolicy) cacheConfig.getExpiryPolicyFactory().create();
     }
+
+    protected abstract CRM createRecordCacheMap();
+
+    protected abstract <T> R createRecord(T value, long creationTime, long expiryTime);
+
+    protected abstract Data toData(Object o);
+
+//    protected abstract <T> Data valueToData(T value);
+//
+//    protected abstract <T> T dataToValue(Data data);
+//
+//    protected abstract <T> R valueToRecord(T value);
+//
+//    protected abstract <T> T recordToValue(R record);
+//
+//    protected abstract Data recordToData(R record);
+//
+//    protected abstract R dataToRecord(Data data);
 
     protected boolean isReadThrough() {
         return cacheConfig.isReadThrough();
@@ -108,62 +127,50 @@ public abstract class AbstractCacheRecordStore<
         return true;
     }
 
-    abstract protected CRM createRecordCacheMap();
-    abstract protected <T> R createRecord(T value, long creationTime, long expiryTime);
-
-    abstract protected <T> Data valueToData(T value);
-    abstract protected <T> T dataToValue(Data data);
-
-    abstract protected <T> R valueToRecord(T value);
-    abstract protected <T> T recordToValue(R record);
-
-    abstract protected Data recordToData(R record);
-    abstract protected R dataToRecord(Data data);
-
-    protected Data toData(Object obj) {
-        if (obj instanceof Data) {
-            return (Data) obj;
-        } else if (obj instanceof CacheRecord) {
-            return recordToData((R) obj);
-        } else {
-            return valueToData(obj);
-        }
-    }
-
-    protected <T> T toValue(Object obj) {
-        if (obj instanceof Data) {
-            return (T) dataToValue((Data) obj);
-        } else if (obj instanceof CacheRecord) {
-            return (T) recordToValue((R) obj);
-        } else {
-            return (T) obj;
-        }
-    }
-
-    protected R toRecord(Object obj) {
-        if (obj instanceof Data) {
-            return dataToRecord((Data) obj);
-        } else if (obj instanceof CacheRecord) {
-            return (R) obj;
-        } else {
-            return (R) valueToRecord(obj);
-        }
-    }
-
-    protected <T> T convertAsInMemoryFormat(Object obj,
-                                            InMemoryFormat inMemoryFormat) {
-        switch (inMemoryFormat) {
-            case BINARY:
-                return (T) toData(obj);
-            case OBJECT:
-                return (T) toValue(obj);
-            case OFFHEAP:
-                return (T) toData(obj);
-            default:
-                throw new IllegalArgumentException("Invalid storage format: "
-                        + cacheConfig.getInMemoryFormat());
-        }
-    }
+//    protected Data toData(Object obj) {
+//        if (obj instanceof Data) {
+//            return (Data) obj;
+//        } else if (obj instanceof CacheRecord) {
+//            return recordToData((R) obj);
+//        } else {
+//            return valueToData(obj);
+//        }
+//    }
+//
+//    protected <T> T toValue(Object obj) {
+//        if (obj instanceof Data) {
+//            return (T) dataToValue((Data) obj);
+//        } else if (obj instanceof CacheRecord) {
+//            return (T) recordToValue((R) obj);
+//        } else {
+//            return (T) obj;
+//        }
+//    }
+//
+//    protected R toRecord(Object obj) {
+//        if (obj instanceof Data) {
+//            return dataToRecord((Data) obj);
+//        } else if (obj instanceof CacheRecord) {
+//            return (R) obj;
+//        } else {
+//            return (R) valueToRecord(obj);
+//        }
+//    }
+//
+//    protected <T> T convertAsInMemoryFormat(Object obj,
+//                                            InMemoryFormat inMemoryFormat) {
+//        switch (inMemoryFormat) {
+//            case BINARY:
+//                return (T) toData(obj);
+//            case OBJECT:
+//                return (T) toValue(obj);
+//            case OFFHEAP:
+//                return (T) toData(obj);
+//            default:
+//                throw new IllegalArgumentException("Invalid storage format: "
+//                        + cacheConfig.getInMemoryFormat());
+//        }
+//    }
 
     protected ExpiryPolicy getExpiryPolicy(ExpiryPolicy expiryPolicy) {
         if (expiryPolicy != null) {
@@ -173,20 +180,20 @@ public abstract class AbstractCacheRecordStore<
         }
     }
 
-    protected <R extends CacheRecord> Data getRecordData(R record) {
-        if (record == null) {
-            return null;
-        }
-        Object value = record.getValue();
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof Data) {
-            return (Data) value;
-        } else {
-            return valueToData(value);
-        }
-    }
+//    protected <R extends CacheRecord> Data getRecordData(R record) {
+//        if (record == null) {
+//            return null;
+//        }
+//        Object value = record.getValue();
+//        if (value == null) {
+//            return null;
+//        }
+//        if (value instanceof Data) {
+//            return (Data) value;
+//        } else {
+//            return valueToData(value);
+//        }
+//    }
 
     public boolean processExpiredEntry(Data key, R record, long now) {
         final boolean isExpired = record != null && record.isExpiredAt(now);
@@ -195,21 +202,7 @@ public abstract class AbstractCacheRecordStore<
         }
         records.remove(key);
         if (isEventsEnabled) {
-            final Data dataValue;
-            switch (cacheConfig.getInMemoryFormat()) {
-                case BINARY:
-                    dataValue = toData(record);
-                    break;
-                case OBJECT:
-                    dataValue = toData(record);
-                    break;
-                case OFFHEAP:
-                    dataValue = toData(record);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid storage format: "
-                            + cacheConfig.getInMemoryFormat());
-            }
+            Data dataValue = nodeEngine.toData(record.getValue());
             publishEvent(name, CacheEventType.EXPIRED, key, null, dataValue, false);
         }
         return true;
@@ -228,27 +221,8 @@ public abstract class AbstractCacheRecordStore<
         }
         records.remove(key);
         if (isEventsEnabled) {
-            final Data dataValue;
-            switch (cacheConfig.getInMemoryFormat()) {
-                case BINARY:
-                    dataValue = toData(record);
-                    break;
-                case OBJECT:
-                    dataValue = toData(record);
-                    break;
-                case OFFHEAP:
-                    dataValue = toData(record);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid storage format: "
-                            + cacheConfig.getInMemoryFormat());
-            }
-            publishEvent(name,
-                         CacheEventType.EXPIRED,
-                         key,
-                         null,
-                         dataValue,
-                         false);
+            Data dataValue = nodeEngine.toData(record.getValue());
+            publishEvent(name, CacheEventType.EXPIRED, key, null, dataValue, false);
         }
         return null;
     }
@@ -359,12 +333,12 @@ public abstract class AbstractCacheRecordStore<
             cacheEventDatas.add(cacheEventData);
         } else {
             cacheService.publishEvent(cacheName,
-                                      eventType,
-                                      dataKey,
-                                      dataValue,
-                                      dataOldValue,
-                                      isOldValueAvailable,
-                                      dataKey.hashCode());
+                    eventType,
+                    dataKey,
+                    dataValue,
+                    dataOldValue,
+                    isOldValueAvailable,
+                    dataKey.hashCode());
         }
     }
 
@@ -408,18 +382,10 @@ public abstract class AbstractCacheRecordStore<
         return new CreatedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, ttl));
     }
 
-    protected R createRecord(Object value, long expiryTime) {
-        return createRecord(value, Clock.currentTimeMillis(), expiryTime);
-    }
-
-    protected R createRecord(long expiryTime) {
-        return createRecord(null, Clock.currentTimeMillis(), expiryTime);
-    }
-
     protected R createRecord(Data keyData, Object value, long expirationTime) {
-        final R record = createRecord(value, expirationTime);
+        final R record = createRecord(value, expirationTime, expirationTime);
         if (isEventsEnabled) {
-            Data dataValue = toData(value);
+            Data dataValue = nodeEngine.toData(value);
             publishEvent(name, CacheEventType.CREATED, keyData, null, dataValue, false);
         }
         return record;
@@ -453,34 +419,23 @@ public abstract class AbstractCacheRecordStore<
     }
 
     protected R updateRecord(Data key, R record, Object value) {
-        final Data dataOldValue;
-        final Data dataValue;
-        Object v = value;
+        Data dataOldValue = null;
+        Data dataValue = null;
+        if (isEventsEnabled) {
+            dataOldValue = nodeEngine.toData(record.getValue());
+            dataValue = nodeEngine.toData(value);
+
+        }
+        Object v;
         switch (cacheConfig.getInMemoryFormat()) {
             case BINARY:
-                if (!(value instanceof Data)) {
-                    v = valueToData(value);
-                }
-                dataValue = (Data) v;
-                dataOldValue = (Data) record.getValue();
+                v = dataValue == null ? nodeEngine.toData(value) : dataValue;
                 break;
             case OBJECT:
-                if (value instanceof Data) {
-                    v = dataToValue((Data) value);
-                    dataValue = (Data) value;
-                } else {
-                    dataValue = valueToData(value);
-                }
-                dataOldValue = valueToData(record.getValue());
+                v = nodeEngine.toObject(value);
                 break;
             case OFFHEAP:
-                if (value instanceof Data) {
-                    v = dataToValue((Data) value);
-                    dataValue = (Data) value;
-                } else {
-                    dataValue = valueToData(value);
-                }
-                dataOldValue = recordToValue(record);
+                v = toData(value);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid storage format: "
@@ -488,12 +443,7 @@ public abstract class AbstractCacheRecordStore<
         }
         record.setValue(v);
         if (isEventsEnabled) {
-            publishEvent(name,
-                         CacheEventType.UPDATED,
-                         key,
-                         dataOldValue,
-                         dataValue,
-                         true);
+            publishEvent(name, CacheEventType.UPDATED, key, dataOldValue, dataValue, true);
         }
         return record;
     }
@@ -526,28 +476,14 @@ public abstract class AbstractCacheRecordStore<
 
     protected void deleteRecord(Data key) {
         final R record = records.remove(key);
-        final Data dataValue;
-        switch (cacheConfig.getInMemoryFormat()) {
-            case BINARY:
-                dataValue = toData(record);
-                break;
-            case OBJECT:
-                dataValue = toData(record);
-                break;
-            case OFFHEAP:
-                dataValue = toData(record);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid storage format: "
-                        + cacheConfig.getInMemoryFormat());
-        }
+        final Data dataValue = toData(record.getValue());
         if (isEventsEnabled) {
             publishEvent(name,
-                         CacheEventType.REMOVED,
-                         key,
-                         null,
-                         dataValue,
-                         false);
+                    CacheEventType.REMOVED,
+                    key,
+                    null,
+                    dataValue,
+                    false);
         }
     }
 
@@ -575,7 +511,7 @@ public abstract class AbstractCacheRecordStore<
     public Object readThroughCache(Data key) throws CacheLoaderException {
         if (this.isReadThrough() && cacheLoader != null) {
             try {
-                Object o = dataToValue(key);
+                Object o = nodeEngine.toObject(key);
                 return cacheLoader.load(o);
             } catch (Exception e) {
                 if (!(e instanceof CacheLoaderException)) {
@@ -591,8 +527,8 @@ public abstract class AbstractCacheRecordStore<
     public void writeThroughCache(Data key, Object value) throws CacheWriterException {
         if (isWriteThrough() && cacheWriter != null) {
             try {
-                final Object objKey = dataToValue(key);
-                final Object objValue = toValue(value);
+                final Object objKey = nodeEngine.toObject(key);
+                final Object objValue = nodeEngine.toObject(value);
                 CacheEntry<?, ?> entry = new CacheEntry<Object, Object>(objKey, objValue);
                 cacheWriter.write(entry);
             } catch (Exception e) {
@@ -608,7 +544,7 @@ public abstract class AbstractCacheRecordStore<
     protected void deleteCacheEntry(Data key) {
         if (isWriteThrough() && cacheWriter != null) {
             try {
-                final Object objKey = dataToValue(key);
+                final Object objKey = nodeEngine.toObject(key);
                 cacheWriter.delete(objKey);
             } catch (Exception e) {
                 if (!(e instanceof CacheWriterException)) {
@@ -629,7 +565,7 @@ public abstract class AbstractCacheRecordStore<
         if (isWriteThrough() && cacheWriter != null && keys != null && !keys.isEmpty()) {
             Map<Object, Data> keysToDelete = new HashMap<Object, Data>();
             for (Data key : keys) {
-                final Object localKeyObj = dataToValue(key);
+                final Object localKeyObj = nodeEngine.toObject(key);
                 keysToDelete.put(localKeyObj, key);
             }
             final Set<Object> keysObject = keysToDelete.keySet();
@@ -654,7 +590,7 @@ public abstract class AbstractCacheRecordStore<
         if (cacheLoader != null) {
             Map<Object, Data> keysToLoad = new HashMap<Object, Data>();
             for (Data key : keys) {
-                final Object localKeyObj = dataToValue(key);
+                final Object localKeyObj = nodeEngine.toObject(key);
                 keysToLoad.put(localKeyObj, key);
             }
 
@@ -691,7 +627,7 @@ public abstract class AbstractCacheRecordStore<
                     .publishEvent(cacheName,
                             CacheEventType.COMPLETED,
                             dataKey,
-                            cacheService.toData(completionId),
+                            nodeEngine.toData(completionId),
                             null,
                             false,
                             orderKey);
@@ -716,9 +652,8 @@ public abstract class AbstractCacheRecordStore<
             }
             createRecordWithExpiry(key, value, expiryPolicy, now, true);
             return value;
-        }
-        else {
-            value = recordToValue(record);
+        } else {
+            value = nodeEngine.toObject(record.getValue());
             updateAccessDuration(record, expiryPolicy, now);
             if (isStatisticsEnabled()) {
                 statistics.increaseCacheHits(1);
@@ -765,67 +700,23 @@ public abstract class AbstractCacheRecordStore<
             // not be added to the cache or listeners called or writers called.
             if (record == null || isExpired) {
                 isOnNewPut = true;
-                onBeforeGetAndPut(key,
-                                  value,
-                                  expiryPolicy,
-                                  caller,
-                                  getValue,
-                                  disableWriteThrough,
-                                  record,
-                                  oldValue,
-                                  isExpired,
-                                  isOnNewPut);
-                record = createRecordWithExpiry(key,
-                                                value,
-                                                expiryPolicy,
-                                                now,
-                                                disableWriteThrough);
+                record = createRecordWithExpiry(key, value, expiryPolicy, now, disableWriteThrough);
                 isSaveSucceed = record != null;
             } else {
                 if (getValue) {
                     oldValue = record.getValue();
                 }
-                onBeforeGetAndPut(key,
-                                  value,
-                                  expiryPolicy,
-                                  caller,
-                                  getValue,
-                                  disableWriteThrough,
-                                  record,
-                                  oldValue,
-                                  isExpired,
-                                  isOnNewPut);
+
                 isSaveSucceed = updateRecordWithExpiry(key,
-                                                       value,
-                                                       record,
-                                                       expiryPolicy,
-                                                       now,
-                                                       disableWriteThrough);
+                        value,
+                        record,
+                        expiryPolicy,
+                        now,
+                        disableWriteThrough);
             }
             updateGetAndPutStat(isSaveSucceed, getValue, oldValue == null, start);
-            onAfterGetAndPut(key,
-                             value,
-                             expiryPolicy,
-                             caller,
-                             getValue,
-                             disableWriteThrough,
-                             record,
-                             oldValue,
-                             isExpired,
-                             isOnNewPut,
-                             isSaveSucceed);
             return oldValue;
         } catch (Exception e) {
-            onGetAndPutError(key,
-                             value,
-                             expiryPolicy,
-                             caller,
-                             getValue,
-                             disableWriteThrough,
-                             record,
-                             oldValue,
-                             isOnNewPut,
-                             e);
             throw ExceptionUtil.rethrow(e);
         }
     }
@@ -836,46 +727,6 @@ public abstract class AbstractCacheRecordStore<
                                String caller,
                                boolean getValue) {
         return getAndPut(key, value, expiryPolicy, caller, getValue, false);
-    }
-
-    protected void onBeforeGetAndPut(Data key,
-                                     Object value,
-                                     ExpiryPolicy expiryPolicy,
-                                     String caller,
-                                     boolean getValue,
-                                     boolean disableWriteThrough,
-                                     R record,
-                                     Object oldValue,
-                                     boolean isExpired,
-                                     boolean willBeNewPut) {
-
-    }
-
-    protected void onAfterGetAndPut(Data key,
-                                    Object value,
-                                    ExpiryPolicy expiryPolicy,
-                                    String caller,
-                                    boolean getValue,
-                                    boolean disableWriteThrough,
-                                    R record,
-                                    Object oldValue,
-                                    boolean isExpired,
-                                    boolean isNewPut,
-                                    boolean isSaveSucceed) {
-
-    }
-
-    protected void onGetAndPutError(Data key,
-                                    Object value,
-                                    ExpiryPolicy expiryPolicy,
-                                    String caller,
-                                    boolean getValue,
-                                    boolean disableWriteThrough,
-                                    R record,
-                                    Object oldValue,
-                                    boolean wouldBeNewPut,
-                                    Exception e) {
-
     }
 
     @Override
@@ -906,10 +757,10 @@ public abstract class AbstractCacheRecordStore<
         boolean isExpired = processExpiredEntry(key, record, now);
         if (record == null || isExpired) {
             result = createRecordWithExpiry(key,
-                                            value,
-                                            expiryPolicy,
-                                            now,
-                                            disableWriteThrough) != null;
+                    value,
+                    expiryPolicy,
+                    now,
+                    disableWriteThrough) != null;
         } else {
             result = false;
         }
@@ -961,7 +812,9 @@ public abstract class AbstractCacheRecordStore<
             result = false;
         } else {
             hitCount++;
-            if (compare(toValue(record), toValue(value))) {
+            Object oldValue = nodeEngine.toObject(record.getValue());
+            Object v = nodeEngine.toObject(value);
+            if (compare(oldValue, v)) {
                 deleteCacheEntry(key);
                 deleteRecord(key);
             } else {
@@ -1000,7 +853,7 @@ public abstract class AbstractCacheRecordStore<
         for (Data key : keySet) {
             final Object value = get(key, expiryPolicy);
             if (value != null) {
-                result.add(key, valueToData(value));
+                result.add(key, nodeEngine.toData(value));
             }
         }
         return result;

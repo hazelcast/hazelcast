@@ -24,6 +24,7 @@ package com.hazelcast.cache.impl.record;
 public interface Expirable {
     /**
      * Gets the expiration time in milliseconds.
+     *
      * @return expiration time.
      * @see System#currentTimeMillis()
      */
@@ -31,6 +32,7 @@ public interface Expirable {
 
     /**
      * Sets the expiration time in milliseconds.
+     *
      * @param expirationTime
      * @see System#currentTimeMillis()
      */
@@ -39,6 +41,7 @@ public interface Expirable {
     /**
      * Checks whether the expiration time is passed with respect to the provided time.
      * <p>Returns <tt>true</tt> if and only if {@code now > getExpirationTime()}</p>.
+     *
      * @param now time in milliseconds.
      * @return true if expired.
      */

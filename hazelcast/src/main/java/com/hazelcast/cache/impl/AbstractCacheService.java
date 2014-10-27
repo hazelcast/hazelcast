@@ -226,33 +226,12 @@ public abstract class AbstractCacheService implements ICacheService {
         return configs.values();
     }
 
-    public Object toObject(Object data) {
-        if (data == null) {
-            return null;
-        }
-        if (data instanceof Data) {
-            return nodeEngine.toObject(data);
-        } else {
-            return data;
-        }
-    }
-
-    public Data toData(Object object) {
-        if (object == null) {
-            return null;
-        }
-        if (object instanceof Data) {
-            return (Data) object;
-        } else {
-            return nodeEngine.getSerializationService().toData(object);
-        }
-    }
-
     @Override
     public void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue,
                              Data dataOldValue, boolean isOldValueAvailable, int orderKey) {
-        final EventService eventService = getNodeEngine().getEventService();
-        final Collection<EventRegistration> candidates = eventService.getRegistrations(AbstractCacheService.SERVICE_NAME, cacheName);
+        final EventService eventService = nodeEngine.getEventService();
+        final Collection<EventRegistration> candidates =
+                eventService.getRegistrations(AbstractCacheService.SERVICE_NAME, cacheName);
 
         if (candidates.isEmpty()) {
             return;
@@ -287,8 +266,9 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
-        final EventService eventService = getNodeEngine().getEventService();
-        final Collection<EventRegistration> candidates = eventService.getRegistrations(AbstractCacheService.SERVICE_NAME, cacheName);
+        final EventService eventService = nodeEngine.getEventService();
+        final Collection<EventRegistration> candidates =
+                eventService.getRegistrations(AbstractCacheService.SERVICE_NAME, cacheName);
 
         if (candidates.isEmpty()) {
             return;
@@ -297,19 +277,13 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
-    public NodeEngine getNodeEngine() {
-        return nodeEngine;
-    }
-
-    @Override
     public void dispatchEvent(Object event, CacheEventListener listener) {
         listener.handleEvent(event);
-
     }
 
     @Override
     public String registerListener(String distributedObjectName, CacheEventListener listener) {
-        final EventService eventService = getNodeEngine().getEventService();
+        final EventService eventService = nodeEngine.getEventService();
         final EventRegistration registration = eventService
                 .registerListener(AbstractCacheService.SERVICE_NAME, distributedObjectName, listener);
         return registration.getId();
@@ -317,7 +291,7 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public boolean deregisterListener(String name, String registrationId) {
-        final EventService eventService = getNodeEngine().getEventService();
+        final EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }
 

@@ -18,17 +18,9 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.AbstractMutatingCacheOperation;
-import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
-import com.hazelcast.cache.impl.operation.CacheGetAndRemoveOperation;
-import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
-import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
-import com.hazelcast.cache.impl.operation.CachePutOperation;
-import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
-import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
@@ -54,8 +46,9 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
  * of cache operations like put, replace, remove and invoke. These internal implementations are delegated
  * by actual cache methods.
- *
+ * <p/>
  * <p>Note: this partial implementation is used by server or embedded mode cache.</p>
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  * @see com.hazelcast.cache.impl.CacheProxy
@@ -177,7 +170,7 @@ abstract class AbstractCacheProxyInternal<K, V>
         return invoke(operation, keyData, withCompletionEvent);
     }
 
-    protected void removeAllInternal(Set<? extends K> keys, boolean isRemoveAll) {
+    protected void removeAllInternal(Set<? extends K> keys, boolean isClear) {
         final Set<Data> keysData;
         if (keys != null) {
             keysData = new HashSet<Data>();
@@ -190,7 +183,7 @@ abstract class AbstractCacheProxyInternal<K, V>
         final int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
         final Integer completionId = registerCompletionLatch(partitionCount);
         final OperationService operationService = getNodeEngine().getOperationService();
-        OperationFactory operationFactory = operationProvider.createClearOperationFactory(keysData, isRemoveAll, completionId);
+        OperationFactory operationFactory = operationProvider.createClearOperationFactory(keysData, isClear, completionId);
         try {
             final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
             int completionCount = 0;

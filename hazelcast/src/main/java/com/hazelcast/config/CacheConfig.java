@@ -329,11 +329,15 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     @Override
     public String toString() {
-        return "CacheConfig{" +
-                "name='" + name + '\'' +
-                ", managerPrefix='" + managerPrefix + '\'' +
-                ", inMemoryFormat=" + inMemoryFormat +
-                ", backupCount=" + backupCount +
-                '}';
+        return "CacheConfig{"
+                + "name='" + name + '\''
+                + ", managerPrefix='" + managerPrefix + '\''
+                + ", uriString='" + uriString + '\''
+                + ", asyncBackupCount=" + asyncBackupCount
+                + ", backupCount=" + backupCount
+                + ", inMemoryFormat=" + inMemoryFormat
+                + ", evictionPolicy=" + evictionPolicy
+                + ", nearCacheConfig=" + nearCacheConfig
+                + '}';
     }
 }

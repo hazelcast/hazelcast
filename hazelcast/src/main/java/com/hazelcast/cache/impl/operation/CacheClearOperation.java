@@ -38,62 +38,64 @@ public class CacheClearOperation
         extends PartitionWideCacheOperation
         implements BackupAwareOperation {
 
-    private boolean isRemoveAll;
+    private boolean isClear;
     private Set<Data> keys;
     private int completionId;
 
-    private boolean shouldBackup;
-
-    private transient Set<Data> backupKeys = new HashSet<Data>();
+    private transient Set<Data> filteredKeys = new HashSet<Data>();
 
     private transient ICacheRecordStore cache;
+
+    private transient boolean shouldBackup;
 
     public CacheClearOperation() {
     }
 
-    public CacheClearOperation(String name, Set<Data> keys, boolean isRemoveAll, int completionId) {
+    public CacheClearOperation(String name, Set<Data> keys, boolean isClear, int completionId) {
         super(name);
         this.keys = keys;
-        this.isRemoveAll = isRemoveAll;
+        this.isClear = isClear;
         this.completionId = completionId;
     }
 
     @Override
     public void run() {
         CacheService service = getService();
-        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
 
         cache = service.getCacheRecordStore(name, getPartitionId());
-        if (cache != null) {
-            Set<Data> filteredKeys = new HashSet<Data>();
-            if (keys != null) {
-                for (Data k : keys) {
-                    if (partitionService.getPartitionId(k) == getPartitionId()) {
-                        filteredKeys.add(k);
-                    }
-                }
+        if (cache == null) {
+            return;
+        }
+        filterKeys();
+        try {
+            shouldBackup = true;
+            if (isClear) {
+                cache.clear();
+            } else if (keys == null) {
+                cache.removeAll(new HashSet<Data>());
+            } else if (!filteredKeys.isEmpty()) {
+                cache.removeAll(filteredKeys);
+            } else {
+                shouldBackup = false;
             }
-            try {
-                if (keys == null || !filteredKeys.isEmpty()) {
-                    if (isRemoveAll) {
-                        cache.removeAll(filteredKeys);
-                    } else {
-                        cache.clear();
-                    }
-                    response = new CacheClearResponse(Boolean.TRUE);
-                    int orderKey = keys != null ? keys.hashCode() : 1;
-                    cache.publishCompletedEvent(name, completionId, new HeapData(), orderKey);
-                }
-            } catch (CacheException e) {
-                response = new CacheClearResponse(e);
-            }
-            shouldBackup = !filteredKeys.isEmpty();
-            if (shouldBackup) {
-                for (Data key : filteredKeys) {
-                    backupKeys.add(key);
-                }
-            }
+            response = new CacheClearResponse(Boolean.TRUE);
+            int orderKey = keys != null ? keys.hashCode() : 1;
+            cache.publishCompletedEvent(name, completionId, new HeapData(), orderKey);
+        } catch (CacheException e) {
+            response = new CacheClearResponse(e);
+        }
 
+    }
+
+    private void filterKeys() {
+        if (keys == null) {
+            return;
+        }
+        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        for (Data k : keys) {
+            if (partitionService.getPartitionId(k) == getPartitionId()) {
+                filteredKeys.add(k);
+            }
         }
     }
 
@@ -119,7 +121,7 @@ public class CacheClearOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new CacheClearBackupOperation(name, backupKeys);
+        return new CacheClearBackupOperation(name, filteredKeys, isClear || keys == null);
     }
 
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -28,11 +27,12 @@ import java.util.Iterator;
 
 /**
  * Cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
- *
+ * <p/>
  * <p>
  * This implementation is used for server or embedded mode.
  * </p>
  * Note: For more information on the iterator details, see {@link AbstractClusterWideIterator}.
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  * @see AbstractClusterWideIterator

@@ -37,7 +37,7 @@ public interface CacheOperationProvider {
 
     OperationFactory createLoadAllOperationFactory(Set<Data> keySet, boolean replaceExistingValues);
 
-    OperationFactory createClearOperationFactory(Set<Data> keySet, boolean isRemoveAll, Integer completionId);
+    OperationFactory createClearOperationFactory(Set<Data> keySet, boolean isClear, Integer completionId);
 
     OperationFactory createSizeOperationFactory();
 }

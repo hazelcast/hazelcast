@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
@@ -46,14 +47,17 @@ public class CacheEntryProcessorEntry<K, V>
     private CacheRecord recordLoaded;
 
     private final CacheRecordStore cacheRecordStore;
+    private final SerializationService serializationService;
     private final long now;
     private final long start;
     private final ExpiryPolicy expiryPolicy;
 
-    public CacheEntryProcessorEntry(Data keyData, CacheRecord record, CacheRecordStore cacheRecordStore, long now) {
+    public CacheEntryProcessorEntry(Data keyData, CacheRecord record, CacheRecordStore cacheRecordStore,
+                                    SerializationService serializationService, long now) {
         this.keyData = keyData;
         this.record = record;
         this.cacheRecordStore = cacheRecordStore;
+        this.serializationService = serializationService;
         this.now = now;
         this.start = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? System.nanoTime() : 0;
 
@@ -89,7 +93,7 @@ public class CacheEntryProcessorEntry<K, V>
     @Override
     public K getKey() {
         if (key == null) {
-            key = (K) cacheRecordStore.cacheService.toObject(keyData);
+            key = serializationService.toObject(keyData);
         }
         return key;
     }
@@ -121,7 +125,7 @@ public class CacheEntryProcessorEntry<K, V>
         final Object objValue;
         switch (cacheRecordStore.cacheConfig.getInMemoryFormat()) {
             case BINARY:
-                objValue = cacheRecordStore.cacheService.toObject(theRecord.getValue());
+                objValue = serializationService.toObject(theRecord.getValue());
                 break;
             case OBJECT:
                 objValue = theRecord.getValue();

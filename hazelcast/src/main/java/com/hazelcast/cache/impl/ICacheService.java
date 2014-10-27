@@ -23,13 +23,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
 import java.util.Collection;
 
 public interface ICacheService extends ManagedService, RemoteService, MigrationAwareService,
-            EventPublishingService<Object, CacheEventListener> {
+        EventPublishingService<Object, CacheEventListener> {
 
     /**
      * Service name
@@ -61,11 +60,9 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
     Collection<CacheConfig> getCacheConfigs();
 
     void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue, Data dataOldValue,
-            boolean isOldValueAvailable, int orderKey);
+                      boolean isOldValueAvailable, int orderKey);
 
     void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey);
-
-    NodeEngine getNodeEngine();
 
     String registerListener(String distributedObjectName, CacheEventListener listener);
 

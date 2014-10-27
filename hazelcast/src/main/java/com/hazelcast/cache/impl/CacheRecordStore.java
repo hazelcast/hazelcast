@@ -39,16 +39,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
-<<<<<<< HEAD
- * Implementation of the {@link ICacheRecordStore}
- * <p/>
- * Represents a named ICache on-heap data for a single partition.
- * Total data of an ICache object is the total CacheRecordStore on all partitions.
- * This data structure is the actual cache operations implementation, data access, statistics, event firing etc.
- * <p/>
- * CacheRecordStore is managed by CachePartitionSegment.
- *
-=======
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
  * <p>
  * Hazelcast splits data homogeneously to partitions using keys. CacheRecordStore represents a named ICache on-heap
@@ -59,16 +49,16 @@ import java.util.concurrent.TimeUnit;
  * <p>CacheRecordStore is accessed through {@linkplain com.hazelcast.cache.impl.CachePartitionSegment} and
  * {@linkplain com.hazelcast.cache.impl.CacheService}.</p>
  * CacheRecordStore is managed by {@linkplain com.hazelcast.cache.impl.CachePartitionSegment}.
- *<p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation:
- *     <pre>
+ * <p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation:
+ * <pre>
  *         <code>CacheService service = getService();
  *         ICacheRecordStore cache = service.getOrCreateCache(name, partitionId);
  *         cache.get(key, expiryPolicy);
  *         </code>
  *     </pre>
  * See {@link com.hazelcast.cache.impl.operation.AbstractCacheOperation} subclasses for actual examples.
- *</p>
->>>>>>> 3975da687d01a67f99412e47086eb323ab922e24
+ * </p>
+ *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
  * @see com.hazelcast.cache.impl.CacheService
  * @see com.hazelcast.cache.impl.operation.AbstractCacheOperation
@@ -94,6 +84,7 @@ public class CacheRecordStore
                             AbstractCacheService cacheService,
                             ExpiryPolicy expiryPolicy) {
         super(name, partitionId, nodeEngine, cacheService, expiryPolicy);
+        this.records = createRecordCacheMap();
         this.serializationService = nodeEngine.getSerializationService();
         this.cacheRecordFactory = createCacheRecordFactory();
         this.evictionTaskFuture =
@@ -106,12 +97,12 @@ public class CacheRecordStore
 
     @Override
     protected CacheRecordMap createRecordCacheMap() {
-        return new CacheRecordHashMap<Data, CacheRecord>(1000);
+        return new CacheRecordHashMap<Data, CacheRecord>(INITIAL_MAP_CAPACITY);
     }
 
     protected CacheRecordFactory createCacheRecordFactory() {
         return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                                      nodeEngine.getSerializationService());
+                nodeEngine.getSerializationService());
     }
 
     @Override
@@ -120,168 +111,9 @@ public class CacheRecordStore
     }
 
     @Override
-    protected <T> Data valueToData(T value) {
-        return cacheService.toData(value);
+    protected Data toData(Object o) {
+        return nodeEngine.toData(o);
     }
-
-    @Override
-    protected <T> T dataToValue(Data data) {
-        return (T) serializationService.toObject(data);
-    }
-
-    @Override
-    protected <T> CacheRecord valueToRecord(T value) {
-        return cacheRecordFactory.newRecord(value);
-    }
-
-    @Override
-    protected <T> T recordToValue(CacheRecord record) {
-        Object value = record.getValue();
-        if (value instanceof Data) {
-            return dataToValue((Data) value);
-        } else {
-            return (T) value;
-        }
-    }
-
-    @Override
-    protected Data recordToData(CacheRecord record) {
-        Object value = recordToValue(record);
-        if (value == null) {
-            return null;
-        } else if (value instanceof Data) {
-            return (Data) value;
-        } else {
-            return valueToData(value);
-        }
-    }
-
-    @Override
-    protected CacheRecord dataToRecord(Data data) {
-        Object value = dataToValue(data);
-        if (value == null) {
-            return null;
-        } else if (value instanceof CacheRecord) {
-            return (CacheRecord) value;
-        } else {
-            return valueToRecord(value);
-        }
-    }
-
-    /*
-    @Override
-    public Object get(Data key, ExpiryPolicy expiryPolicy) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
-
-        long now = Clock.currentTimeMillis();
-        Object value;
-        CacheRecord record = records.get(key);
-        final boolean isExpired = processExpiredEntry(key, record, now);
-        if (record == null || isExpired) {
-            if (isStatisticsEnabled()) {
-                statistics.increaseCacheMisses(1);
-            }
-            value = readThroughCache(key);
-            if (value == null) {
-                return null;
-            }
-            createRecordWithExpiry(key, value, expiryPolicy, now, true);
-
-            return value;
-        } else {
-            value = record.getValue();
-            updateAccessDuration(record, expiryPolicy, now);
-            if (isStatisticsEnabled()) {
-                statistics.increaseCacheHits(1);
-            }
-            return value;
-        }
-    }
-    */
-
-    /*
-    @Override
-    public void put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller) {
-        getAndPut(key, value, expiryPolicy, caller, false, false);
-    }
-    */
-
-    /*
-    protected Object getAndPut(Data key,
-                               Object value,
-                               ExpiryPolicy expiryPolicy,
-                               String caller,
-                               boolean getValue,
-                               boolean disableWriteThrough) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
-
-        final long now = Clock.currentTimeMillis();
-        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
-
-        boolean isPutSucceed;
-        Object oldValue = null;
-        CacheRecord record = records.get(key);
-        boolean isExpired = processExpiredEntry(key, record, now);
-        // check that new entry is not already expired, in which case it should
-        // not be added to the cache or listeners called or writers called.
-        if (record == null || isExpired) {
-            isPutSucceed = createRecordWithExpiry(key,
-                                                  value,
-                                                  expiryPolicy,
-                                                  now,
-                                                  disableWriteThrough);
-        } else {
-            oldValue = record.getValue();
-            isPutSucceed = updateRecordWithExpiry(key,
-                                                  value,
-                                                  record,
-                                                  expiryPolicy,
-                                                  now,
-                                                  disableWriteThrough);
-        }
-        updateGetAndPutStat(isPutSucceed, getValue, oldValue == null, start);
-        return oldValue;
-    }
-
-<<<<<<< HEAD
-    protected Object getAndPut(Data key,
-                               Object value,
-                               ExpiryPolicy expiryPolicy,
-                               String caller,
-                               boolean getValue) {
-=======
-    private void updateGetAndPutStat(boolean isPutSucceed, boolean getValue, boolean oldValueNull, long start) {
-        if (isStatisticsEnabled()) {
-            if (isPutSucceed) {
-                statistics.increaseCachePuts(1);
-                statistics.addPutTimeNanos(System.nanoTime() - start);
-            }
-            if (getValue) {
-                if (oldValueNull) {
-                    statistics.increaseCacheMisses(1);
-                } else {
-                    statistics.increaseCacheHits(1);
-                }
-                statistics.addGetTimeNanos(System.nanoTime() - start);
-            }
-        }
-    }
-
-    protected Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, boolean getValue) {
->>>>>>> 3975da687d01a67f99412e47086eb323ab922e24
-        return getAndPut(key, value, expiryPolicy, caller, getValue, false);
-    }
-    */
-
-    /*
-    @Override
-    public Object getAndPut(Data key,
-                            Object value,
-                            ExpiryPolicy expiryPolicy,
-                            String caller) {
-        return getAndPut(key, value, expiryPolicy, caller, true, false);
-    }
-    */
 
     @Override
     public boolean putIfAbsent(Data key,
@@ -290,37 +122,6 @@ public class CacheRecordStore
                                String caller) {
         return putIfAbsent(key, value, expiryPolicy, caller, false);
     }
-
-    /*
-    protected boolean putIfAbsent(Data key,
-                                  Object value,
-                                  ExpiryPolicy expiryPolicy,
-                                  String caller,
-                                  boolean disableWriteThrough) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
-
-        final long now = Clock.currentTimeMillis();
-        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
-
-        boolean result;
-        CacheRecord record = records.get(key);
-        boolean isExpired = processExpiredEntry(key, record, now);
-        if (record == null || isExpired) {
-            result = createRecordWithExpiry(key,
-                                            value,
-                                            expiryPolicy,
-                                            now,
-                                            disableWriteThrough);
-        } else {
-            result = false;
-        }
-        if (result && isStatisticsEnabled()) {
-            statistics.increaseCachePuts(1);
-            statistics.addPutTimeNanos(System.nanoTime() - start);
-        }
-        return result;
-    }
-    */
 
     @Override
     public Object getAndRemove(Data key, String caller) {
@@ -351,69 +152,6 @@ public class CacheRecordStore
         return result;
     }
 
-    /*
-    @Override
-    public boolean remove(Data key, String caller) {
-        final long now = Clock.currentTimeMillis();
-        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
-        deleteCacheEntry(key);
-
-        CacheRecord record = records.get(key);
-        boolean isExpired = record != null && record.isExpiredAt(now);
-
-        boolean result = true;
-        if (record == null || isExpired) {
-            result = false;
-        } else {
-            deleteRecord(key);
-        }
-        if (result && isStatisticsEnabled()) {
-            statistics.increaseCacheRemovals(1);
-            statistics.addRemoveTimeNanos(System.nanoTime() - start);
-        }
-        return result;
-    }
-
-    @Override
-    public boolean remove(Data key, Object value, String caller) {
-        final long now = Clock.currentTimeMillis();
-        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
-
-        CacheRecord record = records.get(key);
-        boolean isExpired = record != null && record.isExpiredAt(now);
-        int hitCount = 0;
-
-        boolean result = true;
-        if (record == null || isExpired) {
-            if (isStatisticsEnabled()) {
-                statistics.increaseCacheMisses(1);
-            }
-            result = false;
-        } else {
-            hitCount++;
-            if (compare(toValue(record), toValue(value))) {
-                deleteCacheEntry(key);
-                deleteRecord(key);
-            } else {
-                long expiryTime = updateAccessDuration(record, defaultExpiryPolicy, now);
-                processExpiredEntry(key, record, expiryTime, now);
-                result = false;
-            }
-        }
-        if (result && isStatisticsEnabled()) {
-            statistics.increaseCacheRemovals(1);
-            statistics.addRemoveTimeNanos(System.nanoTime() - start);
-            if (hitCount == 1) {
-                statistics.increaseCacheHits(hitCount);
-            } else {
-                statistics.increaseCacheMisses(1);
-            }
-
-        }
-        return result;
-    }
-    */
-
     @Override
     public boolean replace(Data key,
                            Object value,
@@ -431,11 +169,11 @@ public class CacheRecordStore
             result = false;
         } else {
             result = updateRecordWithExpiry(key,
-                                            value,
-                                            record,
-                                            expiryPolicy,
-                                            now,
-                                            false);
+                    value,
+                    record,
+                    expiryPolicy,
+                    now,
+                    false);
         }
         if (isStatisticsEnabled()) {
             statistics.addGetTimeNanos(System.nanoTime() - start);
@@ -469,15 +207,15 @@ public class CacheRecordStore
             result = false;
         } else {
             isHit = true;
-            Object currentValue = toValue(record);
-
-            if (compare(currentValue, toValue(oldValue))) {
+            Object currentValue = nodeEngine.toObject(record.getValue());
+            Object oldValueObject = nodeEngine.toObject(oldValue);
+            if (compare(currentValue, oldValueObject)) {
                 result = updateRecordWithExpiry(key,
-                                                newValue,
-                                                record,
-                                                expiryPolicy,
-                                                now,
-                                                false);
+                        newValue,
+                        record,
+                        expiryPolicy,
+                        now,
+                        false);
             } else {
                 updateAccessDuration(record, expiryPolicy, now);
                 result = false;
@@ -518,33 +256,6 @@ public class CacheRecordStore
         }
         return result;
     }
-
-    /*
-    @Override
-    public boolean contains(Data key) {
-        long now = Clock.currentTimeMillis();
-        CacheRecord record = records.get(key);
-        boolean isExpired = processExpiredEntry(key, record, now);
-        return record != null && !isExpired;
-    }
-    */
-
-    /*
-    @Override
-    public MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
-        //we don not call loadAll. shouldn't we ?
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
-
-        final MapEntrySet result = new MapEntrySet();
-        for (Data key : keySet) {
-            final Object value = get(key, expiryPolicy);
-            if (value != null) {
-                result.add(key, cacheService.toData(value));
-            }
-        }
-        return result;
-    }
-    */
 
     @Override
     public void clear() {
@@ -588,7 +299,7 @@ public class CacheRecordStore
         onDestroy();
         closeResources();
         //close the configured CacheEntryListeners
-        EventService eventService = cacheService.getNodeEngine().getEventService();
+        EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> candidates =
                 eventService.getRegistrations(CacheService.SERVICE_NAME, name);
 
@@ -673,402 +384,16 @@ public class CacheRecordStore
         if (isStatisticsEnabled()) {
             statistics.addGetTimeNanos(System.nanoTime() - start);
         }
-        CacheEntryProcessorEntry entry = createCacheEntryProcessorEntry(key, record, this, now);
+        CacheEntryProcessorEntry entry = new CacheEntryProcessorEntry(key, record, this, serializationService, now);
         final Object process = entryProcessor.process(entry, arguments);
         entry.applyChanges();
         return process;
     }
 
-    protected CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key,
-                                                                      CacheRecord record,
-                                                                      CacheRecordStore cacheRecordStore,
-                                                                      long now) {
-        return new CacheEntryProcessorEntry(key, record, this, now);
-    }
-
-    /*
-    @Override
-    public Set<Data> loadAll(Set<Data> keys, boolean replaceExistingValues) {
-        Set<Data> keysLoaded = new HashSet<Data>();
-        Map<Data, Object> loaded = loadAllCacheEntry(keys);
-        if (loaded == null || loaded.isEmpty()) {
-            return keysLoaded;
-        }
-        if (replaceExistingValues) {
-            for (Map.Entry<Data, Object> entry : loaded.entrySet()) {
-                final Data key = entry.getKey();
-                final Object value = entry.getValue();
-                if (value != null) {
-                    getAndPut(key, value, null, null, false, true);
-                    keysLoaded.add(key);
-                }
-            }
-        } else {
-            for (Map.Entry<Data, Object> entry : loaded.entrySet()) {
-                final Data key = entry.getKey();
-                final Object value = entry.getValue();
-                if (value != null) {
-                    final boolean hasPut = putIfAbsent(key, value, null, null, true);
-                    if (hasPut) {
-                        keysLoaded.add(key);
-                    }
-                }
-            }
-        }
-        return keysLoaded;
-    }
-    */
-
     public int evictExpiredRecords() {
         //TODO: Evict expired records and returns count of evicted records
         return 0;
     }
-
-    /*
-    protected boolean createRecordWithExpiry(Data key,
-                                             Object value,
-                                             ExpiryPolicy localExpiryPolicy,
-                                             long now,
-                                             boolean disableWriteThrough) {
-        Duration expiryDuration;
-        try {
-            expiryDuration = localExpiryPolicy.getExpiryForCreation();
-        } catch (Exception e) {
-            expiryDuration = Duration.ETERNAL;
-        }
-        long expiryTime = expiryDuration.getAdjustedTime(now);
-
-        if (!disableWriteThrough) {
-            writeThroughCache(key, value);
-        }
-
-        if (!isExpiredAt(expiryTime, now)) {
-            CacheRecord record = createRecord(key, value, expiryTime);
-            records.put(key, record);
-            return true;
-        }
-        return false;
-    }
-    */
-
-    /*
-    protected CacheRecord createRecord(Data keyData, Object value, long expirationTime) {
-        final CacheRecord record =
-                cacheRecordFactory.newRecordWithExpiry(value, expirationTime);
-        if (isEventsEnabled) {
-            final Object recordValue = record.getValue();
-            Data dataValue;
-            if (!(recordValue instanceof Data)) {
-                dataValue = cacheService.toData(recordValue);
-            } else {
-                dataValue = (Data) recordValue;
-            }
-            publishEvent(name, CacheEventType.CREATED, keyData, null, dataValue, false);
-        }
-        return record;
-    }
-    */
-
-    /*
-    protected boolean updateRecordWithExpiry(Data key,
-                                             Object value,
-                                             CacheRecord record,
-                                             ExpiryPolicy localExpiryPolicy,
-                                             long now,
-                                             boolean disableWriteThrough) {
-        long expiryTime = -1L;
-        try {
-            Duration expiryDuration = localExpiryPolicy.getExpiryForUpdate();
-            if (expiryDuration != null) {
-                expiryTime = expiryDuration.getAdjustedTime(now);
-                record.setExpirationTime(expiryTime);
-            }
-        } catch (Exception e) {
-            EmptyStatement.ignore(e);
-            //leave the expiry time untouched when we can't determine a duration
-        }
-        if (!disableWriteThrough) {
-            writeThroughCache(key, value);
-        }
-        updateRecord(key, record, value);
-        return !processExpiredEntry(key, record, expiryTime, now);
-    }
-    */
-
-    /*
-    protected CacheRecord updateRecord(Data key, CacheRecord record, Object value) {
-        final Data dataOldValue;
-        final Data dataValue;
-        Object v = value;
-        switch (cacheConfig.getInMemoryFormat()) {
-            case BINARY:
-                if (!(value instanceof Data)) {
-                    v = cacheService.toData(value);
-                }
-                dataValue = (Data) v;
-                dataOldValue = (Data) record.getValue();
-                break;
-            case OBJECT:
-                if (value instanceof Data) {
-                    v = cacheService.toObject(value);
-                    dataValue = (Data) value;
-                } else {
-                    dataValue = cacheService.toData(value);
-                }
-                dataOldValue = cacheService.toData(record.getValue());
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid storage format: "
-                        + cacheConfig.getInMemoryFormat());
-        }
-        record.setValue(v);
-        if (isEventsEnabled) {
-            publishEvent(name,
-                    CacheEventType.UPDATED,
-                    key,
-                    dataOldValue,
-                    dataValue,
-                    true);
-        }
-        return record;
-    }
-    */
-
-    /*
-    protected void deleteRecord(Data key) {
-        final CacheRecord record = records.remove(key);
-        final Data dataValue;
-        switch (cacheConfig.getInMemoryFormat()) {
-            case BINARY:
-                dataValue = (Data) record.getValue();
-                break;
-            case OBJECT:
-                dataValue = cacheService.toData(record.getValue());
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid storage format: "
-                        + cacheConfig.getInMemoryFormat());
-        }
-        if (isEventsEnabled) {
-            publishEvent(name,
-                    CacheEventType.REMOVED,
-                    key,
-                    null,
-                    dataValue,
-                    false);
-        }
-    }
-    */
-
-    /*
-    protected CacheRecord readThroughRecord(Data key, long now) {
-        final ExpiryPolicy localExpiryPolicy = defaultExpiryPolicy;
-        Object value = readThroughCache(key);
-        if (value == null) {
-            return null;
-        }
-        Duration expiryDuration;
-        try {
-            expiryDuration = localExpiryPolicy.getExpiryForCreation();
-        } catch (Exception e) {
-            expiryDuration = Duration.ETERNAL;
-        }
-        long expiryTime = expiryDuration.getAdjustedTime(now);
-
-        if (isExpiredAt(expiryTime, now)) {
-            return null;
-        }
-        //TODO below createRecord may fire create event, is it OK?
-        final CacheRecord record = createRecord(key, value, expiryTime);
-        return record;
-    }
-    */
-
-    /*
-    protected Object readThroughCache(Data key) throws CacheLoaderException {
-        if (this.isReadThrough() && cacheLoader != null) {
-            try {
-                Object o = cacheService.toObject(key);
-                return cacheLoader.load(o);
-            } catch (Exception e) {
-                if (!(e instanceof CacheLoaderException)) {
-                    throw new CacheLoaderException("Exception in CacheLoader during load", e);
-                } else {
-                    throw (CacheLoaderException) e;
-                }
-            }
-        }
-        return null;
-    }
-    */
-
-    /*
-    protected void writeThroughCache(Data key, Object value) throws CacheWriterException {
-        if (isWriteThrough() && cacheWriter != null) {
-            try {
-                final Object objKey = cacheService.toObject(key);
-                final Object objValue;
-                switch (cacheConfig.getInMemoryFormat()) {
-                    case BINARY:
-                        objValue = cacheService.toObject(value);
-                        break;
-                    case OBJECT:
-                        objValue = value;
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Invalid storage format: "
-                                + cacheConfig.getInMemoryFormat());
-                }
-                CacheEntry<?, ?> entry = new CacheEntry<Object, Object>(objKey, objValue);
-                cacheWriter.write(entry);
-            } catch (Exception e) {
-                if (!(e instanceof CacheWriterException)) {
-                    throw new CacheWriterException("Exception in CacheWriter during write", e);
-                } else {
-                    throw (CacheWriterException) e;
-                }
-            }
-        }
-    }
-    */
-
-    /*
-    protected void deleteCacheEntry(Data key) {
-        if (isWriteThrough() && cacheWriter != null) {
-            try {
-                final Object objKey = cacheService.toObject(key);
-                cacheWriter.delete(objKey);
-            } catch (Exception e) {
-                if (!(e instanceof CacheWriterException)) {
-                    throw new CacheWriterException("Exception in CacheWriter during delete", e);
-                } else {
-                    throw (CacheWriterException) e;
-                }
-            }
-        }
-    }
-    */
-
-    /*
-    protected void deleteAllCacheEntry(Set<Data> keys) {
-        if (isWriteThrough() && cacheWriter != null && keys != null && !keys.isEmpty()) {
-            Map<Object, Data> keysToDelete = new HashMap<Object, Data>();
-            for (Data key : keys) {
-                final Object localKeyObj = cacheService.toObject(key);
-                keysToDelete.put(localKeyObj, key);
-            }
-            final Set<Object> keysObject = keysToDelete.keySet();
-            try {
-                cacheWriter.deleteAll(keysObject);
-            } catch (Exception e) {
-                if (!(e instanceof CacheWriterException)) {
-                    throw new CacheWriterException("Exception in CacheWriter during deleteAll", e);
-                } else {
-                    throw (CacheWriterException) e;
-                }
-            } finally {
-                for (Object undeletedKey : keysObject) {
-                    final Data undeletedKeyData = keysToDelete.get(undeletedKey);
-                    keys.remove(undeletedKeyData);
-                }
-            }
-        }
-    }
-    */
-
-    /*
-    protected Map<Data, Object> loadAllCacheEntry(Set<Data> keys) {
-        if (cacheLoader != null) {
-            Map<Object, Data> keysToLoad = new HashMap<Object, Data>();
-            for (Data key : keys) {
-                final Object localKeyObj = cacheService.toObject(key);
-                keysToLoad.put(localKeyObj, key);
-            }
-
-            Map<Object, Object> loaded;
-            try {
-                loaded = cacheLoader.loadAll(keysToLoad.keySet());
-            } catch (Throwable e) {
-                if (!(e instanceof CacheLoaderException)) {
-                    throw new CacheLoaderException("Exception in CacheLoader during loadAll", e);
-                } else {
-                    throw (CacheLoaderException) e;
-                }
-            }
-            Map<Data, Object> result = new HashMap<Data, Object>();
-
-            for (Map.Entry<Object, Data> entry : keysToLoad.entrySet()) {
-                final Object keyObj = entry.getKey();
-                final Object valueObject = loaded.get(keyObj);
-                final Data keyData = entry.getValue();
-                result.put(keyData, valueObject);
-            }
-            return result;
-        }
-        return null;
-    }
-    */
-
-    /*
-    protected boolean processExpiredEntry(Data key, CacheRecord record, long now) {
-        final boolean isExpired = record != null && record.isExpiredAt(now);
-        if (!isExpired) {
-            return false;
-        }
-        records.remove(key);
-        if (isEventsEnabled) {
-            final Data dataValue;
-            switch (cacheConfig.getInMemoryFormat()) {
-                case BINARY:
-                    dataValue = (Data) record.getValue();
-                    break;
-                case OBJECT:
-                    dataValue = cacheService.toData(record.getValue());
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid storage format: "
-                            + cacheConfig.getInMemoryFormat());
-            }
-            publishEvent(name, CacheEventType.EXPIRED, key, null, dataValue, false);
-        }
-        return true;
-    }
-
-    protected boolean processExpiredEntry(Data key,
-                                          CacheRecord record,
-                                          long expiryTime,
-                                          long now) {
-        final boolean isExpired = isExpiredAt(expiryTime, now);
-        if (!isExpired) {
-            return false;
-        }
-        if (isStatisticsEnabled()) {
-            statistics.increaseCacheExpiries(1);
-        }
-        records.remove(key);
-        if (isEventsEnabled) {
-            final Data dataValue;
-            switch (cacheConfig.getInMemoryFormat()) {
-                case BINARY:
-                    dataValue = (Data) record.getValue();
-                    break;
-                case OBJECT:
-                    dataValue = cacheService.toData(record.getValue());
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid storage format: "
-                            + cacheConfig.getInMemoryFormat());
-            }
-            publishEvent(name,
-                    CacheEventType.EXPIRED,
-                    key,
-                    null,
-                    dataValue,
-                    false);
-        }
-        return true;
-    }
-    */
 
     @Override
     public int forceEvict() {

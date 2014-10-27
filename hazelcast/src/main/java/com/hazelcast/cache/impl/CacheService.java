@@ -17,29 +17,21 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
-import com.hazelcast.config.CacheConfig;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.util.ConstructorFunction;
-
-import java.util.Collection;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Cache Service is the main access point of JCache implementation.
  * <p>
  * This service is responsible for:
- *<ul>
- *     <li>Creating and/or accessing the named {@link com.hazelcast.cache.impl.CacheRecordStore}.</li>
- *     <li>Creating/Deleting the cache configuration of the named {@link com.hazelcast.cache.ICache}.</li>
- *     <li>Registering/Deregistering of cache listeners.</li>
- *     <li>Publish/dispatch cache events.</li>
- *     <li>Enabling/Disabling statistic and management.</li>
- *     <li>Data migration commit/rollback through {@link com.hazelcast.spi.MigrationAwareService}.</li>
- *</ul>
+ * <ul>
+ * <li>Creating and/or accessing the named {@link com.hazelcast.cache.impl.CacheRecordStore}.</li>
+ * <li>Creating/Deleting the cache configuration of the named {@link com.hazelcast.cache.ICache}.</li>
+ * <li>Registering/Deregistering of cache listeners.</li>
+ * <li>Publish/dispatch cache events.</li>
+ * <li>Enabling/Disabling statistic and management.</li>
+ * <li>Data migration commit/rollback through {@link com.hazelcast.spi.MigrationAwareService}.</li>
+ * </ul>
  * </p>
  * <p><b>WARNING:</b>This service is an optionally registered service which is enabled when {@link javax.cache.Caching}
  * class is found on the classpath.</p>
