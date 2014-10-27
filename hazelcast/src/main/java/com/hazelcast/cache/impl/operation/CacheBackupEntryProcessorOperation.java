@@ -16,73 +16,50 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.BackupAwareEntryProcessor;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
 
 /**
- * Operation of the Cache Entry Processor.
- * <p>{@link javax.cache.processor.EntryProcessor} is executed on the partition.
- * {@link com.hazelcast.cache.impl.ICacheRecordStore} provides the required functionality and this
- * operation is responsible for parameter passing and handling the backup at the end.</p>
+ * Operation of the Cache Backup Entry Processor.
+ * <p>{@link com.hazelcast.cache.BackupAwareEntryProcessor} is executed on the partition.
+ * Executing this method applies a backup entry processor to the requested
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore} which provides the required
+ * functionality to apply the backup using the given {@link javax.cache.processor.EntryProcessor}.</p>
  */
-public class CacheEntryProcessorOperation
-        extends AbstractMutatingCacheOperation {
+public class CacheBackupEntryProcessorOperation
+        extends AbstractCacheOperation
+        implements BackupOperation, IdentifiedDataSerializable {
 
     private EntryProcessor entryProcessor;
     private Object[] arguments;
 
-    private transient CacheRecord backupRecord;
-    private transient EntryProcessor backupEntryProcessor;
-
-    public CacheEntryProcessorOperation() {
+    public CacheBackupEntryProcessorOperation() {
     }
 
-    public CacheEntryProcessorOperation(String name, Data key, int completionId,
-                                        javax.cache.processor.EntryProcessor entryProcessor, Object... arguments) {
-        super(name, key, completionId);
+    public CacheBackupEntryProcessorOperation(String name, Data key, EntryProcessor entryProcessor,
+                                              Object... arguments) {
+        super(name, key);
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;
-        this.completionId = completionId;
-    }
-
-    @Override
-    public boolean shouldBackup() {
-        return true;
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        if (backupEntryProcessor != null) {
-            return new CacheBackupEntryProcessorOperation(name, key, backupEntryProcessor, arguments);
-        } else {
-            return new CachePutBackupOperation(name, key, backupRecord);
-        }
     }
 
     @Override
     public int getId() {
-        return CacheDataSerializerHook.ENTRY_PROCESSOR;
+        return CacheDataSerializerHook.BACKUP_ENTRY_PROCESSOR;
     }
 
     @Override
     public void run()
             throws Exception {
-        response = cache.invoke(key, entryProcessor, arguments);
-        if (entryProcessor instanceof BackupAwareEntryProcessor) {
-            BackupAwareEntryProcessor processor = (BackupAwareEntryProcessor) entryProcessor;
-            backupEntryProcessor = processor.createBackupEntryProcessor();
-        }
-        if (backupEntryProcessor == null) {
-            backupRecord = cache.getRecord(key);
-        }
+        cache.invoke(key, entryProcessor, arguments);
     }
 
     @Override

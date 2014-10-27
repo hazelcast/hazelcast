@@ -32,6 +32,7 @@ package com.hazelcast.cache;
  *     </pre>
  * </p>
  *
+ * @since 3.3.1
  */
 public interface CacheStatistics {
 

@@ -46,6 +46,8 @@ import java.util.Properties;
  * If no selection exists, then the default behavior for selecting the internal provider type is based on
  * which dependency found on classpath. Client and server provider classes are searched on classpath respectively.
  * </p>
+ *
+ * @since 3.4
  */
 public final class HazelcastCachingProvider
         implements CachingProvider {
