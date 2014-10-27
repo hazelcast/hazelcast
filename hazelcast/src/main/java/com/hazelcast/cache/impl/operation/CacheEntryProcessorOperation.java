@@ -58,6 +58,7 @@ public class CacheEntryProcessorOperation
 
     @Override
     public Operation getBackupOperation() {
+        // TODO: Add sub-interface to backup using same entry processor instead of put backup
         return new CachePutBackupOperation(name, key, backupRecord);
     }
 

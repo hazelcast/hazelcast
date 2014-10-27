@@ -2,15 +2,15 @@
 
 ### Near Cache
 
-Map entries in Hazelcast are partitioned across the cluster. Imagine that you are reading key `k` so many times and `k` is owned by another member in your cluster. Each `map.get(k)` will be a remote operation, meaning lots of network trips. If you have a map that is read-mostly, then you should consider creating a Near Cache for the map so that reads can be much faster and consume less network traffic. All these benefits do not come free. When using near cache, you should consider the following issues:
+Map entries in Hazelcast are partitioned across the cluster. Imagine that you are reading the key `k` so many times and `k` is owned by another member in your cluster. Each `map.get(k)` will be a remote operation, meaning lots of network trips. If you have a map that is read-mostly, then you should consider creating a Near Cache for the map so that reads can be much faster and consume less network traffic. All these benefits do not come free. When using Near Cache, you should consider the following issues:
 
 -   JVM will have to hold extra cached data so it will increase the memory consumption.
 
 -   If invalidation is turned on and entries are updated frequently, then invalidations will be costly.
 
--   Near cache breaks the strong consistency guarantees; you might be reading stale data.
+-   Near Cache breaks the strong consistency guarantees; you might be reading stale data.
 
-Near cache is highly recommended for the maps that are read-mostly. Here is a near cache configuration for a map:
+Near Cache is highly recommended for the maps that are read-mostly. Here is a Near Cache configuration for a map:
 
 ```xml
 <hazelcast>
@@ -69,4 +69,4 @@ Near cache is highly recommended for the maps that are read-mostly. Here is a ne
 </hazelcast>
 ```
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *Programmatically, near cache configuration is done by using the class [NearCacheConfig](https://github.com/hazelcast/hazelcast/blob/607aa5484958af706ee18a1eb15d89afd12ee7af/hazelcast/src/main/java/com/hazelcast/config/NearCacheConfig.java). And this class is used both in nodes and clients. To create a near cache in a client (native Java client), use the method `addNearCacheConfig` in the class `ClientConfig` (please see [Java Client](#java-client) section). Please note that near cache configuration is specific to the node or client itself, a map in a node may not have near cache configured while the same map in a client may have.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Programmatically, near cache configuration is done by using the class [NearCacheConfig](https://github.com/hazelcast/hazelcast/blob/607aa5484958af706ee18a1eb15d89afd12ee7af/hazelcast/src/main/java/com/hazelcast/config/NearCacheConfig.java). And this class is used both in nodes and clients. To create a Near Cache in a client (native Java client), use the method `addNearCacheConfig` in the class `ClientConfig` (please see [Java Client](#java-client) section). Please note that Near Cache configuration is specific to the node or client itself, a map in a node may not have near cache configured while the same map in a client may have.*

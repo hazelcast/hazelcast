@@ -93,6 +93,7 @@ src/JCache.md
 src/IntegratedClustering.md
 	src/WebSessionReplication.md
 		src/TomcatSessionReplication.md
+		src/JettySessionReplication.md
 	src/SpringIntegration.md
 src/Storage.md
 src/Clients.md
@@ -150,7 +151,6 @@ src/Config.md
 	src/ListenerConfig.md
 	src/Logging.md
 	src/ConfigurationProperties.md
-	src/ConfigurationWrapUp.md
 src/NetworkPartitioning.md
 src/FAQ.md
 src/Glossary.md
