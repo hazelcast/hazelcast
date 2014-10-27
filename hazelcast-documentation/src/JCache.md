@@ -65,7 +65,7 @@ If you use `hazelcast-all.jar`:
 <dependency>
   <groupId>com.hazelcast</groupId>
   <artifactId>hazelcast-all</artifactId>
-  <version>3.4.0</version>
+  <version>3.4</version>
 </dependency>
 ```
 
@@ -75,7 +75,7 @@ If you use `hazelcast.jar`:
 <dependency>
   <groupId>com.hazelcast</groupId>
   <artifactId>hazelcast</artifactId>
-  <version>3.4.0</version>
+  <version>3.4</version>
 </dependency>
 ```
 Again users of other build systems have to adjust the way of
@@ -90,7 +90,7 @@ Maven snippet:
 <dependency>
   <groupId>com.hazelcast</groupId>
   <artifactId>hazelcast</artifactId>
-  <version>3.4.0</version>
+  <version>3.4</version>
 </dependency>
 ```
 
@@ -862,7 +862,7 @@ Everybody can test Hazelcast JCache for compliance by executing the TCK on his o
        to override with the coordinates for your implementation-->
   <implementation-groupId>com.hazelcast</implementation-groupId>
   <implementation-artifactId>hazelcast</implementation-artifactId>
-  <implementation-version>3.3.1</implementation-version>
+  <implementation-version>3.4</implementation-version>
 
   <!-- Change the following properties to your CacheManager and 
        Cache implementation. Used by the unwrap tests. -->
