@@ -171,9 +171,17 @@ declarative configuration makes creation of a `javax.cache.Cache` fully transpar
 internally. A call to `javax.cache.Cache::createCache` is not required in this case, the cache can just be retrieved using
 `javax.cache.Cache::getCache` overloads and by passing in the name of the cache as defined in the configuration.
 
-TODO: hz-prefix => looking up config file (different from 3.3.1), hazelcast:config://, hazelcast:name:// 
+To retrieve the cache defined below only a simple call to is necessary since as explained the cache is created automatically
+by the implementation.
 
-This section only describes the JCache provided standard properties. For Hazelcast specific properties please read the
+```java
+CachingProvider cachingProvider = Caching.getCachingProvider();
+CacheManager cacheManager = cachingProvider.getCacheManager();
+Cache<Object, Object> cache = cacheManager
+    .getCache( default, Object.class, Object.class );
+```
+
+Note that this section only describes the JCache provided standard properties. For Hazelcast specific properties please see the
 [ICache Configuration](#icache-configuration) section.
 
 ```xml
@@ -298,9 +306,11 @@ the provider to be used to configure JCache.
 This provider provides the same features as the Server provider but does not hold data on its own but delegates requests and
 calls to the remotely connected cluster.
  
-The client provider is able to connect to multiple clusters at the same time. (???TODO: how is this possible? ???)
+The client provider is able to connect to multiple clusters at the same time. This can be achieved by scoping the client side
+`CacheManager` which different Hazelcast configuration files. For more information please see
+[Scopes and Namespaces](#scopes-and-namespaces).
 
-For requesting this CachingProvider using `Caching#getCachingProvider( String )` or
+For requesting this `CachingProvider` using `Caching#getCachingProvider( String )` or
 `Caching#getCachingProvider( String, ClassLoader )`, use the following fully qualified class name:
 
 ```plain
@@ -316,9 +326,11 @@ directly across the cluster by its given key.
 This provider provides the same features as the Client provider, but keeps data in the local Hazelcast node and also distributes
 non-owned keys to other direct cluster members.
 
-??? TODO: URI -> namespacing, different from client! ???
+Almost like the client provider is able to connect to multiple clusters at the same time the server provider can join multiple
+clusters. This can be achieved by scoping the client side `CacheManager` which different Hazelcast configuration files. For more
+information please see [Scopes and Namespaces](#scopes-and-namespaces).
 
-For requesting this CachingProvider using `Caching#getCachingProvider( String )` or
+For requesting this `CachingProvider` using `Caching#getCachingProvider( String )` or
 `Caching#getCachingProvider( String, ClassLoader )`, use the following fully qualified class name:
 
 ```plain
@@ -771,9 +783,6 @@ By default JCache delivers a set of predefined expiry strategies in the standard
 Whereas `EternalExpirePolicy` does not expire cache entries, it is still possible to evict values from memory if an underlying
 `CacheLoader` is defined.
 
-### Scopes and Namespaces
-
-
 ## Hazelcast JCache Extension - ICache
 
 Hazelcast provides extension methods to Cache API through the interface `com.hazelcast.cache.ICache`. 
@@ -782,6 +791,92 @@ It has two set of extensions:
 
 * Asynchronous version of all cache operations.
 * Cache operations with custom `ExpiryPolicy` parameter to apply on that specific operation.
+
+### Scopes and Namespaces
+
+As mentioned in the sections before a `CacheManager` can be scoped to either, in case of client, connect to multiple clusters or,
+in case of an embedded node, join different clusters at the same time. This process is called scoping and is applied by requesting
+a `CacheManager` by passing a `java.net.URI` instance, pointing to a Hazelcast configuration or the name of a named
+`com.hazelcast.core.HazelcastInstance` instance, to `CachingProvider::getCacheManager`.
+
+<br></br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *Multiple requests for the same `java.net.URI` result in returning a `CacheManager`
+instance that shares the same `HazelcastInstance` as the `CacheManager` returned by the previous call.*
+<br></br>
+
+#### Configuration Scope
+
+Connecting or joining different clusters is done by applying a configuration scope to the `CacheManager`. If the same `URI` is
+used to request a `CacheManager` that was created before those `CacheManager`s share the same underlying `HazelcastInstance`.
+
+A configuration scope is applied by passing in the path of the configuration file using the special URI schema called 
+`hazelcast:config://`.
+
+Using Configuration Scope:
+
+```java
+CachingProvider cachingProvider = Caching.getCachingProvider();
+URI configFile = new URI("hazelcast:config://my-configurations/scoped-hazelcast.xml");
+CacheManager cacheManager = cachingProvider.getCacheManager(configFile, null);
+```
+
+The retrieved `CacheManager` is scoped to use the `HazelcastInstance` just created and configured using the given XML
+configuration file.
+
+The configuration file is first tried to be resolved from the classpath and in case of being not available on classpath it is
+tried to be resolved from the filesystem. If configuration file cannot be found on both paths an exception is thrown to prevent
+unexpectedly using the default configuration.  
+
+<br></br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *No check is performed to prevent creating multiple `CacheManager`s with same cluster
+configuration on different configuration files. If the same cluster is referred from different configuration files multiple
+cluster members or clients are created.*
+<br></br>
+
+#### Named Instance Scope
+
+A `CacheManager` can also be bound to an already existing but named `HazelcastInstance` instance. This requires the instance to
+be created using a `com.hazelcast.config.Config` and an `instanceName` to be set. Also here it is to mention that multiple
+`CacheManager`s created using an equal `java.net.URI` will share the same `HazelcastInstance`.
+ 
+A named scope is almost applied the same way as the configuration scope but using another URI schema called
+`hazelcast:name://`.
+
+Using Named Scope:
+
+```java
+Config config = new Config();
+config.setInstanceName("my-named-hazelcast-instance");
+// Create a named HazelcastInstance
+Hazelcast.newHazelcastInstance(config);
+
+CachingProvider cachingProvider = Caching.getCachingProvider();
+URI hzName = new URI("hazelcast:name://my-named-hazelcast-instance");
+CacheManager cacheManager = cachingProvider.getCacheManager(hzName, null);
+```
+
+#### Namespaces
+
+All `java.net.URI`s that don't use any of the above mentioned Hazelcast specific schemes are recognized as namespacing. Those
+`CacheManager`s share the same underlying default `HazelcastInstance` created (or set) by the `CachingProvider` but caches with
+same names but differently namespaces on `CacheManager` level won't share the same data. This is useful where multiple
+applications might share the same Hazelcast JCache implementation (e.g. on application or OSGi servers) but are developed by
+independent teams. To prevent them interfering on caches using the same name every application can use its own namespace when
+retrieving the `CacheManager`.
+
+Using namespacing:
+
+```java
+CachingProvider cachingProvider = Caching.getCachingProvider();
+
+URI nsApp1 = new URI("application-1");
+CacheManager cacheManagerApp1 = cachingProvider.getCacheManager(nsApp1, null);
+
+URI nsApp2 = new URI("application-2");
+CacheManager cacheManagerApp2 = cachingProvider.getCacheManager(nsApp2, null);
+```
+
+That way both applications share the same `HazelcastInstance` instance but not the same caches.
 
 ### Retrieving an ICache Instance
 
