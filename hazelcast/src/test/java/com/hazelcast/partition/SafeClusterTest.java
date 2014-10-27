@@ -61,7 +61,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
     @Test
     public void isClusterSafe_whenMigration() {
         final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
-        final HazelcastInstance node1 = factory.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance node1 = factory.newHazelcastInstance(createConfigWithDummyMigrationService());
 
         IMap<Object, Object> map = node1.getMap("migrationMap");
         for (int i = 0; i < 100; i++) {
@@ -69,7 +69,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
         }
         SimpleMigrationListener migrationListener = new SimpleMigrationListener(1, 1);
         node1.getPartitionService().addMigrationListener(migrationListener);
-        final HazelcastInstance node2 = factory.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance node2 = factory.newHazelcastInstance(createConfigWithDummyMigrationService());
         assertOpenEventually(migrationListener.startLatch);
         //we can not make sure whether migration is complete at this time gap.
         //for this reason we used DummyMigrationService
@@ -119,7 +119,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
     @Test
     public void isMemberSafe_whenMigration() {
         final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
-        final HazelcastInstance node1 = factory.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance node1 = factory.newHazelcastInstance(createConfigWithDummyMigrationService());
 
         IMap<Object, Object> map = node1.getMap("migrationMap");
         for (int i = 0; i < 100; i++) {
@@ -127,7 +127,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
         }
         SimpleMigrationListener migrationListener = new SimpleMigrationListener(1, 1);
         node1.getPartitionService().addMigrationListener(migrationListener);
-        HazelcastInstance node2 = factory.newHazelcastInstance(createConfigWithDummyTxService());
+        HazelcastInstance node2 = factory.newHazelcastInstance(createConfigWithDummyMigrationService());
         assertOpenEventually(migrationListener.startLatch);
         Member member = node1.getCluster().getLocalMember();
         final boolean safe = node2.getPartitionService().isMemberSafe(member);
@@ -220,7 +220,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
         }
     }
 
-    private Config createConfigWithDummyTxService() {
+    private Config createConfigWithDummyMigrationService() {
         Config config = new Config();
         ServicesConfig servicesConfig = config.getServicesConfig();
         servicesConfig.addServiceConfig(new ServiceConfig().setName(DUMMY_MIGRATION_SERVICE)
