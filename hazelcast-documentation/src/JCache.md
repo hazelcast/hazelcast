@@ -178,7 +178,7 @@ by the implementation.
 CachingProvider cachingProvider = Caching.getCachingProvider();
 CacheManager cacheManager = cachingProvider.getCacheManager();
 Cache<Object, Object> cache = cacheManager
-    .getCache( default, Object.class, Object.class );
+    .getCache( "default", Object.class, Object.class );
 ```
 
 Note that this section only describes the JCache provided standard properties. For Hazelcast specific properties please see the
