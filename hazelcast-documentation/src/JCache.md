@@ -274,7 +274,7 @@ implementation.
 The delegating `CachingProvider`s fully qualified class name is:
 
 ```plain
-com.hazelcast.cache.impl.HazelcastCachingProvider
+com.hazelcast.cache.HazelcastCachingProvider
 ```
 
 To configure the delegating provider at the command line, the following parameter needs to be added to the Java startup call
@@ -652,7 +652,8 @@ to be fully serializable since in a distributed environment like Hazelcast it is
 the cluster.
 
 ```java
-public class UserUpdateEntryProcessor implements EntryProcessor<Integer, User, User> {
+public class UserUpdateEntryProcessor
+    implements EntryProcessor<Integer, User, User> {
 
   @Override
   public User process( MutableEntry<Integer, User> entry, Object... arguments )

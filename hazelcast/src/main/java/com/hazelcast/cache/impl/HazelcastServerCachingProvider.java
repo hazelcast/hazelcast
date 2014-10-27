@@ -26,7 +26,7 @@ import java.util.Properties;
 
 /**
  * Provides server cachingProvider implementation.
- * <p>This implementation is used by {@link com.hazelcast.cache.impl.HazelcastCachingProvider} internally when
+ * <p>This implementation is used by {@link com.hazelcast.cache.HazelcastCachingProvider} internally when
  * server type is configured.</p>
  * <p>This implementation creates a new singleton hazelcastInstance node. This instance is provided into the
  * created managers.</p>
