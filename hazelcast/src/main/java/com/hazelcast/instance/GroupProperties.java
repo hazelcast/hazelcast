@@ -132,6 +132,11 @@ public class GroupProperties {
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
 
+    //back-pressure related properties
+    public static final String PROP_BACKPRESSURE_TOTAL_CAPACITY = "hazelcast.backpressure.total.capacity";
+    public static final String PROP_BACKPRESSURE_MAX_CLAIM_SIZE = "hazelcast.backpressure.max.claim.size";
+    public static final String PROP_BACKPRESSURE_MIN_CLAIM_SIZE = "hazelcast.backpressure.min.claim.size";
+
     /**
      * forces the jcache provider which can have values client or server to force provider type,
      * if not provided provider will be client or server whichever found on classPath first respectively
@@ -280,6 +285,12 @@ public class GroupProperties {
 
     public final GroupProperty MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS;
 
+    public final GroupProperty BACKPRESSURE_TOTAL_CAPACITY;
+
+    public final GroupProperty BACKPRESSURE_MAX_CLAIM_SIZE;
+
+    public final GroupProperty BACKPRESSURE_MIN_CLAIM_SIZE;
+
     /**
      * @param config
      */
@@ -364,6 +375,14 @@ public class GroupProperties {
         CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
+        BACKPRESSURE_TOTAL_CAPACITY = new GroupProperty(config, PROP_BACKPRESSURE_TOTAL_CAPACITY, "1000000");
+        BACKPRESSURE_MAX_CLAIM_SIZE = new GroupProperty(config, PROP_BACKPRESSURE_MAX_CLAIM_SIZE, "50000");
+        /* If calculated claim size is smaller than PROP_BACKPRESSURE_MIN_CLAIM_SIZE then Hazelcast will
+        * treat it as exhausted capacity and we return 0 slots. The purpose is to prevent issuing many small
+        * claims as it would cause extra over-head.*/
+        BACKPRESSURE_MIN_CLAIM_SIZE = new GroupProperty(config, PROP_BACKPRESSURE_MIN_CLAIM_SIZE, "10");
+
+
     }
 
     public static class GroupProperty {
