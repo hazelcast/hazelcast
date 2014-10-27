@@ -23,7 +23,7 @@ public class BackPressureTest extends HazelcastTestSupport {
 
     @Test
     @Ignore
-    public void test() throws ExecutionException, InterruptedException {
+    public void asyncBackupCausesOOME() throws ExecutionException, InterruptedException {
         HazelcastInstance[] cluster = this.createHazelcastInstanceFactory(5).newInstances();
         warmUpPartitions(cluster);
         HazelcastInstance hz1 = cluster[0];
@@ -32,6 +32,64 @@ public class BackPressureTest extends HazelcastTestSupport {
 
         for(int k=0;k<100000000;k++){
             SomeOperation operation = new SomeOperation(0, 1, 1000000);
+            Future f = operationService.invokeOnPartition("don'tcare", operation, 0);
+            f.get();
+
+            if(k%10000 == 0){
+                System.out.println("At: "+k);
+            }
+        }
+    }
+
+    @Test
+    @Ignore
+    public void asyncOperationsCausesNoProblems() throws ExecutionException, InterruptedException {
+        HazelcastInstance[] cluster = this.createHazelcastInstanceFactory(5).newInstances();
+        warmUpPartitions(cluster);
+        HazelcastInstance hz1 = cluster[0];
+        Node node = getNode(hz1);
+        OperationService operationService = node.getNodeEngine().getOperationService();
+
+        for(int k=0;k<100000000;k++){
+            SomeOperation operation = new SomeOperation(0, 0, 1000000);
+            operationService.invokeOnPartition("don'tcare", operation, 0);
+
+            if(k%10000 == 0){
+                System.out.println("At: "+k);
+            }
+        }
+    }
+
+    @Test
+    @Ignore
+    public void asyncOperationsWithSyncBackupCausesNoProblems() throws ExecutionException, InterruptedException {
+        HazelcastInstance[] cluster = this.createHazelcastInstanceFactory(5).newInstances();
+        warmUpPartitions(cluster);
+        HazelcastInstance hz1 = cluster[0];
+        Node node = getNode(hz1);
+        OperationService operationService = node.getNodeEngine().getOperationService();
+
+        for(int k=0;k<100000000;k++){
+            SomeOperation operation = new SomeOperation(1, 0, 1000000);
+            operationService.invokeOnPartition("don'tcare", operation, 0);
+
+            if(k%10000 == 0){
+                System.out.println("At: "+k);
+            }
+        }
+    }
+
+    @Test
+    @Ignore
+    public void syncBackupCausesNoProblems() throws ExecutionException, InterruptedException {
+        HazelcastInstance[] cluster = this.createHazelcastInstanceFactory(5).newInstances();
+        warmUpPartitions(cluster);
+        HazelcastInstance hz1 = cluster[0];
+        Node node = getNode(hz1);
+        OperationService operationService = node.getNodeEngine().getOperationService();
+
+        for(int k=0;k<100000000;k++){
+            SomeOperation operation = new SomeOperation(1, 0, 1000000);
             Future f = operationService.invokeOnPartition("don'tcare", operation, 0);
             f.get();
 
