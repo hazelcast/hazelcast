@@ -385,7 +385,7 @@ CompleteConfiguration<Integer, User> config =
         .setTypes( Integer.class, User.class )
         // Configure to expire entries 30 secs after creation in the cache
         .setExpiryPolicyFactory( FactoryBuilder.factoryOf(
-            new AccessedExpiryPolicy( new Duration( TimeUnit.SECONDS, 1 ) )
+            new AccessedExpiryPolicy( new Duration( TimeUnit.SECONDS, 30 ) )
         ) )
         // Configure read-through of the underlying store
         .setReadThrough( true )
@@ -429,9 +429,10 @@ config does not use a `javax.cache.event.CacheEntryEventFilter` since the listen
 happens on the cache. Again we will look in the implementation of the listener in later in this chapter.
 
 Now let's walk through the different interfaces and classes provided by JCache, a full running example that is presented in this
-subsection is available in the samples repository ([here](http://github.com/hazelcast/...TODO)). The application is built to be a
-commandline app and therefore offers a small shell to accept different commands. After startup enter help to see all available
-commands including their description.
+subsection is available in the samples repository 
+[over here](https://github.com/hazelcast/hazelcast-code-samples/tree/master/jcache/src/main/java/com/hazelcast/examples/application).
+The application is built to be a commandline app and therefore offers a small shell to accept different commands. After startup
+enter help to see all available commands including their description.
 
 ### Roundup of Basics
 
@@ -904,7 +905,6 @@ After unwrapping the `Cache` instance into a `ICache` instance you have access t
 ### Async Operations
 
 A method ending with `Async` is the asynchronous version of that method (for example `getAsync(K)`, `replaceAsync(K,V)`). These methods return a `Future` where you can get the result or wait the operation to be completed.
-
 
 ```java
 ICache<String , SessionData> cache = cache.unwrap( ICache.class );
