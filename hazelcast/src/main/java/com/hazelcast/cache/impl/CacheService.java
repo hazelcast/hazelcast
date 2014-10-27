@@ -204,9 +204,7 @@ public class CacheService
         if (!isLocal) {
             deregisterAllListener(objectName);
         }
-        //todo weird naming
         setStatisticsEnabled(objectName, false);
-        //todo weird naming
         setManagementEnabled(objectName, false);
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
