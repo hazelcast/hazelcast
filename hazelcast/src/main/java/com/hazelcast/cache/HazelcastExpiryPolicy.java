@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -39,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * </pre>
  * </p>
  */
-public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable {
+public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable, Serializable {
 
     private Duration create;
     private Duration access;
