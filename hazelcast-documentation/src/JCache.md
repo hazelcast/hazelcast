@@ -816,8 +816,8 @@ Using Configuration Scope:
 
 ```java
 CachingProvider cachingProvider = Caching.getCachingProvider();
-URI configFile = new URI("hazelcast:config://my-configurations/scoped-hazelcast.xml");
-CacheManager cacheManager = cachingProvider.getCacheManager(configFile, null);
+URI configFile = new URI( "hazelcast:config://my-configs/scoped-hazelcast.xml" );
+CacheManager cacheManager = cachingProvider.getCacheManager( configFile, null );
 ```
 
 The retrieved `CacheManager` is scoped to use the `HazelcastInstance` just created and configured using the given XML
@@ -846,13 +846,13 @@ Using Named Scope:
 
 ```java
 Config config = new Config();
-config.setInstanceName("my-named-hazelcast-instance");
+config.setInstanceName( "my-named-hazelcast-instance" );
 // Create a named HazelcastInstance
-Hazelcast.newHazelcastInstance(config);
+Hazelcast.newHazelcastInstance( config );
 
 CachingProvider cachingProvider = Caching.getCachingProvider();
-URI hzName = new URI("hazelcast:name://my-named-hazelcast-instance");
-CacheManager cacheManager = cachingProvider.getCacheManager(hzName, null);
+URI hzName = new URI( "hazelcast:name://my-named-hazelcast-instance" );
+CacheManager cacheManager = cachingProvider.getCacheManager( hzName, null );
 ```
 
 #### Namespaces
@@ -869,16 +869,35 @@ Using namespacing:
 ```java
 CachingProvider cachingProvider = Caching.getCachingProvider();
 
-URI nsApp1 = new URI("application-1");
-CacheManager cacheManagerApp1 = cachingProvider.getCacheManager(nsApp1, null);
+URI nsApp1 = new URI( "application-1" );
+CacheManager cacheManagerApp1 = cachingProvider.getCacheManager( nsApp1, null );
 
-URI nsApp2 = new URI("application-2");
-CacheManager cacheManagerApp2 = cachingProvider.getCacheManager(nsApp2, null);
+URI nsApp2 = new URI( "application-2" );
+CacheManager cacheManagerApp2 = cachingProvider.getCacheManager( nsApp2, null );
 ```
 
 That way both applications share the same `HazelcastInstance` instance but not the same caches.
 
 ### Retrieving an ICache Instance
+
+Beside the already seen [Scopes and Namespaces](#scopes-and-namespaces) feature which is implemented using the URI feature of the
+specification, all other extended operations are required to retrieve the `com.hazelcast.cache.ICache` interface instance from
+the JCache `javax.cache.Cache` instance. For Hazelcast both interfaces are implemented on the same object instance but still it
+is recommended to stay to the specification way to retrieve the `ICache` version since it might be subject to be changed in the 
+future without any further notification.
+
+To retrieve or unwrap the `ICache` instance execute the following code snippet:
+
+```java
+CachingProvider cachingProvider = Caching.getCachingProvider();
+CacheManager cacheManager = cachingProvider.getCacheManager();
+Cache<Object, Object> cache = cacheManager.getCache( ... );
+
+ICache<Object, Object> unwrappedCache = cache.unwrap( ICache.class );
+```
+
+After unwrapping the `Cache` instance into a `ICache` instance you have access to all below explained operations, e.g. 
+[Async Operations](#async-operations) and [Additional Methods](#additional-methods).
 
 ### ICache Configuration
 
@@ -936,8 +955,8 @@ implementation. This is tested by running the TCK against the Hazelcast implemen
 Everybody can test Hazelcast JCache for compliance by executing the TCK on his own, just perform the instructions below:
 
 1. Checkout the TCK from [https://github.com/jsr107/jsr107tck](https://github.com/jsr107/jsr107tck).
-2. Change the properties as below.
-
+2. Change the properties as below. 
+3. Run the TCK by `mvn clean install`
 
 ```xml
 <properties>
