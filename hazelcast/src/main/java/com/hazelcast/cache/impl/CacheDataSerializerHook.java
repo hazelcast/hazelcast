@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.operation.CacheBackupEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheClearBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
@@ -92,8 +93,9 @@ public final class CacheDataSerializerHook
     public static final short DESTROY_CACHE = 30;
     public static final short CACHE_EVENT_DATA = 31;
     public static final short CACHE_EVENT_DATA_SET = 32;
+    public static final short BACKUP_ENTRY_PROCESSOR = 33;
 
-    private static final int LEN = 33;
+    private static final int LEN = 34;
 
     public int getFactoryId() {
         return F_ID;
@@ -255,6 +257,12 @@ public final class CacheDataSerializerHook
         constructors[CACHE_EVENT_DATA_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheEventSet();
+            }
+        };
+        constructors[BACKUP_ENTRY_PROCESSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheBackupEntryProcessorOperation();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

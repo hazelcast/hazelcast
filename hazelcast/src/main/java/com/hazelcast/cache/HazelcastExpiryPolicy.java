@@ -39,6 +39,8 @@ import java.util.concurrent.TimeUnit;
  *     </code>
  * </pre>
  * </p>
+ *
+ * @since 3.3.1
  */
 public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable, Serializable {
 
