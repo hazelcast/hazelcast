@@ -30,11 +30,8 @@ import java.io.IOException;
  */
 public abstract class AbstractMutatingCacheOperation
         extends AbstractCacheOperation
-        implements BackupAwareOperation {
-    /**
-     * Completion Id to be ignored.
-     */
-    public static final int IGNORE_COMPLETION = -1;
+        implements BackupAwareOperation, MutableOperation {
+
     protected int completionId;
 
     protected AbstractMutatingCacheOperation() {
@@ -51,10 +48,12 @@ public abstract class AbstractMutatingCacheOperation
         cache.publishCompletedEvent(name, completionId, key, key.hashCode());
     }
 
+    @Override
     public int getCompletionId() {
         return completionId;
     }
 
+    @Override
     public void setCompletionId(int completionId) {
         this.completionId = completionId;
     }

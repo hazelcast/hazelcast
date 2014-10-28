@@ -74,7 +74,7 @@ public class CacheClearOperation
                 }
             }
             try {
-                if (keys == null || !filteredKeys.isEmpty()) {
+                if (keys == null || keys.size() == 0 || !filteredKeys.isEmpty()) {
                     if (isRemoveAll) {
                         cache.removeAll(filteredKeys);
                     } else {
@@ -93,7 +93,6 @@ public class CacheClearOperation
                     backupKeys.add(key);
                 }
             }
-
         }
     }
 

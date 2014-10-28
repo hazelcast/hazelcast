@@ -33,7 +33,7 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
     /**
      * Default InMemory Format.
      */
-    public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
+    public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.OFFHEAP;
     /**
      * Default Eviction Policy.
      */

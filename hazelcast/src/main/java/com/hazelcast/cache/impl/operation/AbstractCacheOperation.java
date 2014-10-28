@@ -37,12 +37,12 @@ abstract class AbstractCacheOperation
         extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
-    Data key;
-    Object response;
+    protected Data key;
+    protected Object response;
 
-    transient ICacheRecordStore cache;
+    protected transient ICacheRecordStore cache;
 
-    transient CacheRecord backupRecord;
+    protected transient CacheRecord backupRecord;
 
     protected AbstractCacheOperation() {
     }

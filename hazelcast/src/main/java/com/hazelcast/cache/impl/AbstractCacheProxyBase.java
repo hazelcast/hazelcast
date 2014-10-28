@@ -120,13 +120,13 @@ abstract class AbstractCacheProxyBase<K, V> {
             return;
         }
         isClosed.set(true);
-        Operation operation = new CacheDestroyOperation(name);
+
+        Operation operation = new CacheDestroyOperation(cacheConfig.getNameWithPrefix());
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(getDistributedObjectName());
         OperationService operationService = getNodeEngine().getOperationService();
         InternalCompletableFuture f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionId);
         //todo What happens in exception case? Cache doesn't get destroyed
         f.getSafely();
-        //TODO @ali this causes pooled off-heap fail
         cacheService.destroyCache(getDistributedObjectName(), true, null);
     }
 

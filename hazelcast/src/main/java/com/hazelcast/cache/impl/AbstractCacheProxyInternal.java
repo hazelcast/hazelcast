@@ -17,18 +17,10 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.operation.AbstractMutatingCacheOperation;
-import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
-import com.hazelcast.cache.impl.operation.CacheGetAndRemoveOperation;
-import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
-import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
-import com.hazelcast.cache.impl.operation.CachePutOperation;
-import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
-import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
+import com.hazelcast.cache.impl.operation.*;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
@@ -84,8 +76,8 @@ abstract class AbstractCacheProxyInternal<K, V>
         Integer completionId = null;
         if (completionOperation) {
             completionId = registerCompletionLatch(1);
-            if (op instanceof AbstractMutatingCacheOperation) {
-                ((AbstractMutatingCacheOperation) op).setCompletionId(completionId);
+            if (op instanceof MutableOperation) {
+                ((MutableOperation) op).setCompletionId(completionId);
             }
         }
         try {
@@ -270,7 +262,7 @@ abstract class AbstractCacheProxyInternal<K, V>
             syncLocks.put(id, countDownLatch);
             return id;
         }
-        return AbstractMutatingCacheOperation.IGNORE_COMPLETION;
+        return MutableOperation.IGNORE_COMPLETION;
     }
 
     protected void deregisterCompletionLatch(Integer countDownLatchId) {

@@ -282,7 +282,8 @@ abstract class AbstractCacheProxyExtension<K, V>
     @Override
     public CacheStatistics getLocalCacheStatistics() {
         final ICacheService service = getService();
-        final CacheStatisticsImpl statistics = service.createCacheStatIfAbsent(name);
+        final CacheStatisticsImpl statistics =
+                service.createCacheStatIfAbsent(cacheConfig.getNameWithPrefix());
         return statistics;
     }
 

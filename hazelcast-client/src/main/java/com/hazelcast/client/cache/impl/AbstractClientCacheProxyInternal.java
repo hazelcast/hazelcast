@@ -31,7 +31,7 @@ import com.hazelcast.cache.impl.client.CachePutRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
-import com.hazelcast.cache.impl.operation.AbstractMutatingCacheOperation;
+import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
@@ -347,7 +347,7 @@ abstract class AbstractClientCacheProxyInternal<K, V>
             syncLocks.put(id, countDownLatch);
             return id;
         }
-        return AbstractMutatingCacheOperation.IGNORE_COMPLETION;
+        return MutableOperation.IGNORE_COMPLETION;
     }
 
     protected void deregisterCompletionLatch(Integer countDownLatchId) {

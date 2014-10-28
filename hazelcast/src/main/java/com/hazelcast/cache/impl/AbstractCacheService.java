@@ -107,11 +107,16 @@ public abstract class AbstractCacheService implements ICacheService {
         return segments[partitionId];
     }
 
-    @Override
-    public void destroyCache(String objectName, boolean isLocal, String callerUuid) {
+    protected void destroySegments(String objectName) {
         for (CachePartitionSegment segment : segments) {
             segment.deleteCache(objectName);
         }
+    }
+
+    @Override
+    public void destroyCache(String objectName, boolean isLocal, String callerUuid) {
+        destroySegments(objectName);
+
         if (!isLocal) {
             deregisterAllListener(objectName);
         }
@@ -304,7 +309,6 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public void dispatchEvent(Object event, CacheEventListener listener) {
         listener.handleEvent(event);
-
     }
 
     @Override

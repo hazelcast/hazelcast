@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
-import com.hazelcast.cache.impl.record.CacheRecordMap;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -37,18 +36,31 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Implementation of the {@link ICacheRecordStore}
- * <p/>
- * Represents a named ICache on-heap data for a single partition.
- * Total data of an ICache object is the total CacheRecordStore on all partitions.
- * This data structure is the actual cache operations implementation, data access, statistics, event firing etc.
- * <p/>
- * CacheRecordStore is managed by CachePartitionSegment.
- *
+ * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
+ * <p>
+ * Hazelcast splits data homogeneously to partitions using keys. CacheRecordStore represents a named ICache on-heap
+ * data store for a single partition.<br/>
+ * This data structure is responsible for CRUD operations, entry processing, statistics, publishing events, cache
+ * loader and writer and internal data operations like backup.
+ * </p>
+ * <p>CacheRecordStore is accessed through {@linkplain com.hazelcast.cache.impl.CachePartitionSegment} and
+ * {@linkplain com.hazelcast.cache.impl.CacheService}.</p>
+ * CacheRecordStore is managed by {@linkplain com.hazelcast.cache.impl.CachePartitionSegment}.
+ *<p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation:
+ *     <pre>
+ *         <code>CacheService service = getService();
+ *         ICacheRecordStore cache = service.getOrCreateCache(name, partitionId);
+ *         cache.get(key, expiryPolicy);
+ *         </code>
+ *     </pre>
+ * See {@link com.hazelcast.cache.impl.operation.AbstractCacheOperation} subclasses for actual examples.
+ *</p>
  * @see com.hazelcast.cache.impl.CachePartitionSegment
+ * @see com.hazelcast.cache.impl.CacheService
+ * @see com.hazelcast.cache.impl.operation.AbstractCacheOperation
  */
 public class CacheRecordStore
-        extends AbstractCacheRecordStore<CacheRecord, CacheRecordMap<Data, CacheRecord>> {
+        extends AbstractCacheRecordStore<CacheRecord, CacheRecordHashMap<Data, CacheRecord>> {
 
     protected SerializationService serializationService;
     protected CacheRecordFactory cacheRecordFactory;
@@ -79,7 +91,7 @@ public class CacheRecordStore
     }
 
     @Override
-    protected CacheRecordMap createRecordCacheMap() {
+    protected CacheRecordHashMap createRecordCacheMap() {
         return new CacheRecordHashMap<Data, CacheRecord>(1000);
     }
 
@@ -146,6 +158,22 @@ public class CacheRecordStore
             return (CacheRecord) value;
         } else {
             return valueToRecord(value);
+        }
+    }
+
+    @Override
+    protected Data toHeapData(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        if (obj instanceof Data) {
+            return (Data) obj;
+        } else if (obj instanceof CacheRecord) {
+            CacheRecord record = (CacheRecord) obj;
+            Object value = record.getValue();
+            return toHeapData(value);
+        } else {
+            return serializationService.toData(obj);
         }
     }
 
