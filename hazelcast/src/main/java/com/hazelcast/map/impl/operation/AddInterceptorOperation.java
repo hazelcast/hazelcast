@@ -17,7 +17,9 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -42,7 +44,9 @@ public class AddInterceptorOperation extends AbstractOperation {
 
     public void run() {
         mapService = getService();
-        mapService.getMapServiceContext().getMapContainer(mapName).addInterceptor(id, mapInterceptor);
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        mapContainer.addInterceptor(id, mapInterceptor);
     }
 
     @Override
