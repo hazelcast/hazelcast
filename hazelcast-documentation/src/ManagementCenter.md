@@ -433,27 +433,27 @@ To see the documentation, click on the **Documentation** button located at the t
 
 ### Suggested Heap Size
 
-<strong>For 2 Nodes </strong>
+**For 2 Nodes**
 
 | Mancenter Heap Size | # of Maps | # of Queues | # of Topics |
 | -------- | --------- | ---------- | ------------ |
 | 256m | 3k | 1k | 1k |
 | 1024m | 10k | 1k | 1k |
 
-<strong>For 10 Nodes </strong>
+**For 10 Nodes**
 
 | Mancenter Heap Size | # of Maps | # of Queues | # of Topics |
 | -------- | --------- | ---------- | ------------ |
 | 256m | 50 | 30 | 30 |
-| 1024m | 2k | 1k | 1k | 1k |
+| 1024m | 2k | 1k | 1k | 
 
-<strong>For 20 Nodes* </strong>
+**For 20 Nodes**
 
 | Mancenter Heap Size | # of Maps | # of Queues | # of Topics |
 | -------- | --------- | ---------- | ------------ |
-| 256m | NA | NA | NA |
-| 1024m | 1k | 1k | 1k | 1k |
+| 256m* | NA | NA | NA |
+| 1024m | 1k | 1k | 1k | 
 
-* With 256m heap, management center is unable to collect statistics.
+\* With 256m heap, management center is unable to collect statistics.
 
 <br> </br>
