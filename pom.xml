@@ -319,6 +319,7 @@
                     -DCacheImpl=${CacheImpl}
                     -DCacheEntryImpl=${CacheEntryImpl}
                     -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
+                    -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                 </argLine>
             </properties>
             <id>test-coverage</id>
@@ -355,6 +356,8 @@
                             <includes>
                                 <include>**/*.java</include>
                             </includes>
+                            <excludes><exclude>**dummyTest**</exclude></excludes>
+                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
@@ -664,7 +667,14 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                -Djavax.management.builder.initial=${javax.management.builder.initial}
+                                -DCacheManagerImpl=${CacheManagerImpl}
+                                -DCacheImpl=${CacheImpl}
+                                -DCacheEntryImpl=${CacheEntryImpl}
+                                -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
+                                -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                             </argLine>
+                            <excludes><exclude>**dummyTest**</exclude></excludes>
                             <groups>com.hazelcast.test.annotation.NightlyTest,com.hazelcast.test.annotation.SlowTest
                             </groups>
                         </configuration>
