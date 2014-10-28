@@ -35,10 +35,6 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
         super(hazelcastRegion, props);
     }
 
-    public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
-        return put(key, value, version);
-    }
-
     /**
      * {@inheritDoc}
      * <p/>
@@ -47,15 +43,10 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
     public boolean afterUpdate(final Object key, final Object value, final Object currentVersion, final Object previousVersion,
                                final SoftLock lock) throws CacheException {
         try {
-            return update(key, value, currentVersion, previousVersion, lock);
+            return update(key, value, currentVersion, lock);
         } finally {
             unlockItem(key, lock);
         }
-    }
-
-    public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version,
-                               final boolean minimalPutOverride) throws CacheException {
-        return put(key, value, version);
     }
 
     public SoftLock lockItem(final Object key, final Object version) throws CacheException {

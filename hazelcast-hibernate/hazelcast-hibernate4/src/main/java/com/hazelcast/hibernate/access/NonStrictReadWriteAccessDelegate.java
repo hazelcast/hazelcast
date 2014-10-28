@@ -16,6 +16,7 @@
 
 package com.hazelcast.hibernate.access;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.spi.access.SoftLock;
@@ -35,18 +36,18 @@ public class NonStrictReadWriteAccessDelegate<T extends HazelcastRegion> extends
         super(hazelcastRegion, props);
     }
 
-    public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
-        return put(key, value, version);
-    }
-
     public boolean afterUpdate(final Object key, final Object value, final Object currentVersion, final Object previousVersion,
                                final SoftLock lock) throws CacheException {
-        return update(key, value, currentVersion, previousVersion, lock);
+        return update(key, value, currentVersion, lock);
     }
 
-    public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version,
-                               final boolean minimalPutOverride) throws CacheException {
-        return put(key, value, version);
+    @Override
+    public void remove(final Object key) throws CacheException {
+        try {
+            cache.remove(key);
+        } catch (HazelcastException e) {
+            throw new CacheException("Operation timeout during remove operation from cache!", e);
+        }
     }
 
     public SoftLock lockItem(Object key, Object version) throws CacheException {

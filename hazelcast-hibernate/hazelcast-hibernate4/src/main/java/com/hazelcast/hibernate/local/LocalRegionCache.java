@@ -22,7 +22,11 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.hibernate.CacheEnvironment;
+import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.hibernate.RegionCache;
+import com.hazelcast.hibernate.serialization.ExpiryMarker;
+import com.hazelcast.hibernate.serialization.Expirable;
+import com.hazelcast.hibernate.serialization.Value;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
 import org.hibernate.cache.spi.CacheDataDescription;
@@ -37,6 +41,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Local only {@link com.hazelcast.hibernate.RegionCache} implementation
@@ -48,24 +53,12 @@ public class LocalRegionCache implements RegionCache {
     private static final int MAX_SIZE = 100000;
     private static final float BASE_EVICTION_RATE = 0.2F;
 
-    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
-        @Override
-        public String toString() {
-            return "Lock::Success";
-        }
-    };
-
-    private static final SoftLock LOCK_FAILURE = new SoftLock() {
-        @Override
-        public String toString() {
-            return "Lock::Failure";
-        }
-    };
-
+    protected final HazelcastInstance hazelcastInstance;
     protected final ITopic<Object> topic;
     protected final MessageListener<Object> messageListener;
-    protected final ConcurrentMap<Object, Value> cache;
+    protected final ConcurrentMap<Object, Expirable> cache;
     protected final Comparator versionComparator;
+    protected final AtomicLong markerIdCounter;
     protected MapConfig config;
 
     /**
@@ -94,13 +87,15 @@ public class LocalRegionCache implements RegionCache {
      */
     public LocalRegionCache(final String name, final HazelcastInstance hazelcastInstance,
                             final CacheDataDescription metadata, final boolean withTopic) {
+        this.hazelcastInstance = hazelcastInstance;
         try {
             config = hazelcastInstance != null ? hazelcastInstance.getConfig().findMapConfig(name) : null;
         } catch (UnsupportedOperationException e) {
             Logger.getLogger(LocalRegionCache.class).finest(e);
         }
         versionComparator = metadata != null && metadata.isVersioned() ? metadata.getVersionComparator() : null;
-        cache = new ConcurrentHashMap<Object, Value>();
+        cache = new ConcurrentHashMap<Object, Expirable>();
+        markerIdCounter = new AtomicLong();
 
         messageListener = createMessageListener();
         if (withTopic && hazelcastInstance != null) {
@@ -111,38 +106,89 @@ public class LocalRegionCache implements RegionCache {
         }
     }
 
-    public Object get(final Object key) {
-        final Value value = cache.get(key);
-        return value != null ? value.getValue() : null;
+    public Object get(final Object key, long txTimestamp) {
+        final Expirable value = cache.get(key);
+        return value != null ? value.getValue(txTimestamp) : null;
     }
 
-    public boolean put(final Object key, final Object value, final Object currentVersion) {
-        final Value newValue = new Value(currentVersion, value, null, Clock.currentTimeMillis());
-        cache.put(key, newValue);
-        return true;
+    @Override
+    public boolean insert(final Object key, final Object value, final Object currentVersion) {
+        final Value newValue = new Value(currentVersion, nextTimestamp(), value);
+        return cache.putIfAbsent(key, newValue) == null;
     }
 
-    public boolean update(final Object key, final Object value, final Object currentVersion,
-                          final Object previousVersion, final SoftLock lock) {
-        if (lock == LOCK_FAILURE) {
-            return false;
-        }
-
-        final Value currentValue = cache.get(key);
-        if (lock == LOCK_SUCCESS) {
-            if (currentValue != null && currentVersion != null
-                    && versionComparator.compare(currentVersion, currentValue.getVersion()) < 0) {
+    public boolean put(final Object key, final Object value, final long txTimestamp, final Object version) {
+        while (true) {
+            Expirable previous = cache.get(key);
+            Value newValue = new Value(version, nextTimestamp(), value);
+            if (previous == null) {
+                if (cache.putIfAbsent(key, newValue) == null) {
+                    return true;
+                }
+            } else if (previous.isReplaceableBy(txTimestamp, version, versionComparator)) {
+                if (cache.replace(key, previous, newValue)) {
+                    return true;
+                }
+            } else {
                 return false;
             }
         }
-        if (topic != null) {
-            topic.publish(createMessage(key, value, currentVersion));
-        }
-        cache.put(key, new Value(currentVersion, value, lock, Clock.currentTimeMillis()));
-        return true;
     }
 
-    protected Object createMessage(final Object key, Object value, final Object currentVersion) {
+    public boolean update(final Object key, final Object newValue, final Object newVersion, final SoftLock softLock) {
+        boolean updated;
+        while (true) {
+            Expirable original = cache.get(key);
+            Expirable revised;
+            long timestamp = nextTimestamp();
+            if (original == null) {
+                // The entry must have expired. it should be safe to update
+                revised = new Value(newVersion, timestamp, newValue);
+                updated = true;
+                if (cache.putIfAbsent(key, revised) == null) {
+                    break;
+                }
+            } else {
+                if (original.matches(softLock)) {
+                    // The lock matches
+                    final ExpiryMarker marker = (ExpiryMarker) original;
+                    if (marker.isConcurrent()) {
+                        revised = marker.expire(timestamp);
+                        updated = false;
+                    } else {
+                        revised = new Value(newVersion, timestamp, newValue);
+                        updated = true;
+                    }
+                    if (cache.replace(key, original, revised)) {
+                        break;
+                    }
+                } else if (original.getValue() == null) {
+                    // It's marked for expiration, leave it as is
+                    updated = false;
+                    break;
+                } else {
+                    // It's a value. Instead of removing it, expire it to prevent stale from in progress
+                    // transactions being put in the cache
+                    revised = new ExpiryMarker(newVersion, timestamp, nextMarkerId()).expire(timestamp);
+                    updated = false;
+                    if (cache.replace(key, original, revised)) {
+                        break;
+                    }
+                }
+            }
+        }
+        maybeNotifyTopic(key, newValue, newVersion);
+
+        return updated;
+    }
+
+    protected void maybeNotifyTopic(final Object key, final Object value, final Object version) {
+        if (topic != null) {
+            topic.publish(createMessage(key, value, version));
+        }
+    }
+
+    protected Object createMessage(final Object key, final Object value, final Object currentVersion) {
         return new Invalidation(key, currentVersion);
     }
 
@@ -151,7 +197,7 @@ public class LocalRegionCache implements RegionCache {
             public void onMessage(final Message<Object> message) {
                 final Invalidation invalidation = (Invalidation) message.getMessageObject();
                 if (versionComparator != null) {
-                    final Value value = cache.get(invalidation.getKey());
+                    final Expirable value = cache.get(invalidation.getKey());
                     if (value != null) {
                         Object currentVersion = value.getVersion();
                         Object newVersion = invalidation.getVersion();
@@ -167,43 +213,53 @@ public class LocalRegionCache implements RegionCache {
     }
 
     public boolean remove(final Object key) {
-        final Value value = cache.remove(key);
+        final Expirable value = cache.remove(key);
         if (value != null) {
-            if (topic != null) {
-                topic.publish(createMessage(key, null, value.getVersion()));
-            }
+            maybeNotifyTopic(key, null, value.getVersion());
             return true;
         }
         return false;
     }
 
     public SoftLock tryLock(final Object key, final Object version) {
-        final Value value = cache.get(key);
-        if (value == null) {
-            if (cache.putIfAbsent(key, new Value(version, null, LOCK_SUCCESS, Clock.currentTimeMillis())) == null) {
-                return LOCK_SUCCESS;
-            } else {
-                return LOCK_FAILURE;
-            }
-        } else {
-            if (version == null || versionComparator.compare(version, value.getVersion()) >= 0) {
-                if (cache.replace(key, value, value.createLockedValue(LOCK_SUCCESS))) {
-                    return LOCK_SUCCESS;
-                } else {
-                    return LOCK_FAILURE;
+        ExpiryMarker marker;
+        String markerId = nextMarkerId();
+        while (true) {
+            final Expirable original = cache.get(key);
+            long timeout = nextTimestamp() + CacheEnvironment.getDefaultCacheTimeoutInMillis();
+            if (original == null) {
+                marker = new ExpiryMarker(version, timeout, markerId);
+                if (cache.putIfAbsent(key, marker) == null) {
+                    break;
                 }
             } else {
-                return LOCK_FAILURE;
+                marker = original.markForExpiration(timeout, markerId);
+                if (cache.replace(key, original, marker)) {
+                    break;
+                }
             }
         }
+        return marker;
     }
 
     public void unlock(final Object key, SoftLock lock) {
-        final Value value = cache.get(key);
-        if (value != null) {
-            final SoftLock currentLock = value.getLock();
-            if (currentLock == lock) {
-                cache.replace(key, value, value.createUnlockedValue());
+        while (true) {
+            final Expirable original = cache.get(key);
+            if (original != null) {
+                if (original.matches(lock)) {
+                    final Expirable revised = ((ExpiryMarker) original).expire(nextTimestamp());
+                    if (cache.replace(key, original, revised)) {
+                        break;
+                    }
+                } else if (original.getValue() != null) {
+                    if (cache.remove(key, original)) {
+                        break;
+                    }
+                } else {
+                    break;
+                }
+            } else {
+                break;
             }
         }
     }
@@ -250,18 +306,28 @@ public class LocalRegionCache implements RegionCache {
         }
     }
 
+    private String nextMarkerId() {
+        return Long.toString(markerIdCounter.getAndIncrement());
+    }
+
+    private long nextTimestamp() {
+        return hazelcastInstance == null ? Clock.currentTimeMillis()
+                : HazelcastTimestamper.nextTimestamp(hazelcastInstance);
+    }
+
     private List<EvictionEntry> searchEvictableEntries(long timeToLive, boolean limitSize) {
         List<EvictionEntry> entries = null;
-        Iterator<Entry<Object, Value>> iter = cache.entrySet().iterator();
-        long now = Clock.currentTimeMillis();
+        Iterator<Entry<Object, Expirable>> iter = cache.entrySet().iterator();
+        long now = nextTimestamp();
         while (iter.hasNext()) {
-            final Entry<Object, Value> e = iter.next();
+            final Entry<Object, Expirable> e = iter.next();
             final Object k = e.getKey();
-            final Value v = e.getValue();
-            if (v.getLock() == LOCK_SUCCESS) {
+            final Expirable expirable = e.getValue();
+            if (expirable instanceof ExpiryMarker) {
                 continue;
             }
-            if (v.getCreationTime() + timeToLive < now) {
+            final Value v = (Value) expirable;
+            if (v.getTimestamp() + timeToLive < now) {
                 iter.remove();
             } else if (limitSize) {
                 if (entries == null) {
@@ -307,8 +373,8 @@ public class LocalRegionCache implements RegionCache {
         }
 
         public int compareTo(final EvictionEntry o) {
-            final long thisVal = this.value.getCreationTime();
-            final long anotherVal = o.value.getCreationTime();
+            final long thisVal = this.value.getTimestamp();
+            final long anotherVal = o.value.getTimestamp();
             return (thisVal < anotherVal ? -1 : (thisVal == anotherVal ? 0 : 1));
         }
 

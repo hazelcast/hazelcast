@@ -20,6 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.hibernate.RegionCache;
+import com.hazelcast.hibernate.serialization.Expirable;
+import com.hazelcast.hibernate.serialization.Value;
 import com.hazelcast.util.Clock;
 
 /**
@@ -32,8 +34,12 @@ public class TimestampsRegionCache extends LocalRegionCache implements RegionCac
     }
 
     @Override
-    public boolean put(Object key, Object value, Object currentVersion) {
-        return update(key, value, currentVersion, null, null);
+    public boolean put(Object key, Object value, long txTimestamp, Object version) {
+        boolean succeed = super.put(key, value, (Long) value, version);
+        if (succeed) {
+            maybeNotifyTopic(key, value, version);
+        }
+        return succeed;
     }
 
     @Override
@@ -44,20 +50,20 @@ public class TimestampsRegionCache extends LocalRegionCache implements RegionCac
                 final Object key = ts.getKey();
 
                 for (;;) {
-                    final Value value = cache.get(key);
+                    final Expirable value = cache.get(key);
                     final Long current = value != null ? (Long) value.getValue() : null;
                     if (current != null) {
                         if (ts.getTimestamp() > current) {
                             if (cache.replace(key, value, new Value(value.getVersion(),
-                                    ts.getTimestamp(), Clock.currentTimeMillis()))) {
+                                    Clock.currentTimeMillis(), ts.getTimestamp()))) {
                                 return;
                             }
                         } else {
                             return;
                         }
                     } else {
-                        if (cache.putIfAbsent(key, new Value(null, ts.getTimestamp(),
-                                Clock.currentTimeMillis())) == null) {
+                        if (cache.putIfAbsent(key, new Value(null, Clock.currentTimeMillis(),
+                                ts.getTimestamp())) == null) {
                             return;
                         }
                     }

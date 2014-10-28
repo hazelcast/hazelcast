@@ -22,38 +22,42 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.hibernate.RegionCache;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.hibernate.serialization.Expirable;
+import com.hazelcast.hibernate.serialization.Value;
 import org.hibernate.cache.spi.CacheDataDescription;
 import org.hibernate.cache.spi.access.SoftLock;
-import org.hibernate.cache.spi.entry.CacheEntry;
 
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.hibernate.HazelcastTimestamper.nextTimestamp;
 
 /**
  * A {@link RegionCache} implementation based on the underlying IMap
+ * <p/>
+ * Note, IMap locks are intentionally not used in this class. Hibernate region caches make use of a concept
+ * called soft-locking which has the following properties:
+ * <ul>
+ *     <li>Multiple transactions can soft-lock an entry concurrently</li>
+ *     <li>While an entry is soft-locked, the value of the cache entry is always {@code null}</li>
+ *     <li>An entry is unlocked from a soft-lock when all transactions</li>
+ *     <li>An entry is unlocked if it reaches the configured lock timeout</li>
+ * </ul>
+ * These requirements are incompatible with IMap locks
  */
 public class IMapRegionCache implements RegionCache {
 
     private static final long COMPARISON_VALUE = 500;
 
-    private static final SoftLock LOCK_SUCCESS = new SoftLock() {
-    };
-
-    private static final SoftLock LOCK_FAILURE = new SoftLock() {
-    };
-
     private final String name;
     private final HazelcastInstance hazelcastInstance;
-    private final IMap<Object, Object> map;
+    private final IMap<Object, Expirable> map;
     private final Comparator versionComparator;
     private final int lockTimeout;
     private final long tryLockAndGetTimeout;
-    private final boolean explicitVersionCheckEnabled;
-    private final ILogger logger;
+    private final AtomicLong markerIdCounter;
 
     public IMapRegionCache(final String name, final HazelcastInstance hazelcastInstance,
                            final Properties props, final CacheDataDescription metadata) {
@@ -64,36 +68,50 @@ public class IMapRegionCache implements RegionCache {
         lockTimeout = CacheEnvironment.getLockTimeoutInMillis(props);
         final long maxOperationTimeout = HazelcastTimestamper.getMaxOperationTimeout(hazelcastInstance);
         tryLockAndGetTimeout = Math.min(maxOperationTimeout, COMPARISON_VALUE);
-        explicitVersionCheckEnabled = CacheEnvironment.isExplicitVersionCheckEnabled(props);
-        logger = createLogger(name, hazelcastInstance);
+        markerIdCounter = new AtomicLong();
     }
 
-    public Object get(final Object key) {
-        return map.get(key);
+    public Object get(final Object key, final long txTimestamp) {
+        Expirable entry = map.get(key);
+        return entry == null ? null : entry.getValue(txTimestamp);
     }
 
-    public boolean put(final Object key, final Object value, final Object currentVersion) {
-        return update(key, value, currentVersion, null, null);
+    public boolean insert(final Object key, final Object value, final Object currentVersion) {
+        return map.putIfAbsent(key, new Value(currentVersion, nextTimestamp(hazelcastInstance), value)) == null;
     }
 
-    public boolean update(final Object key, final Object value, final Object currentVersion,
-                          final Object previousVersion, final SoftLock lock) {
-        if (lock == LOCK_FAILURE) {
-            logger.warning("Cache lock could not be acquired!");
-            return false;
-        }
-        if (versionComparator != null && currentVersion != null) {
-            if (explicitVersionCheckEnabled && value instanceof CacheEntry) {
-                return compareVersion(key, value);
-            } else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {
-                map.set(key, value);
-                return true;
+    @Override
+    public boolean put(Object key, Object value, long txTimestamp, final Object version) {
+        // Ideally this would be an entry processor. Unfortunately there is no guarantee that
+        // the versionComparator is Serializable.
+        //
+        // An alternatively this could be implemented using a `map.get` followed by `map.set` wrapped inside a
+        // `map.tryLock` block. Unfortunately this implementation was prone to `IllegalMonitorStateException` when
+        // the lock was released under heavy load or after network partitions. Hence this implementation now uses
+        // a spin loop around atomic operations.
+        long timeout = System.currentTimeMillis() + tryLockAndGetTimeout;
+        do {
+            Expirable previousEntry = map.get(key);
+            Value newValue = new Value(version, txTimestamp, value);
+            if (previousEntry == null) {
+                if (map.putIfAbsent(key, newValue) == null) {
+                    return true;
+                }
+            } else if (previousEntry.isReplaceableBy(txTimestamp, version, versionComparator)) {
+                if (map.replace(key, previousEntry, newValue)) {
+                    return true;
+                }
+            } else {
+                return false;
             }
-            return false;
-        } else {
-            map.set(key, value);
-            return true;
-        }
+        } while (System.currentTimeMillis() < timeout);
+
+        return false;
+    }
+
+    public boolean update(final Object key, final Object newValue, final Object newVersion, final SoftLock lock) {
+        return (Boolean) map.executeOnKey(key, new UpdateEntryProcessor(lock, newValue, newVersion,
+                nextMarkerId(), nextTimestamp(hazelcastInstance)));
     }
 
     public boolean remove(final Object key) {
@@ -101,17 +119,13 @@ public class IMapRegionCache implements RegionCache {
     }
 
     public SoftLock tryLock(final Object key, final Object version) {
-        try {
-            return map.tryLock(key, lockTimeout, TimeUnit.MILLISECONDS) ? LOCK_SUCCESS : LOCK_FAILURE;
-        } catch (InterruptedException e) {
-            return LOCK_FAILURE;
-        }
+        long timeout = nextTimestamp(hazelcastInstance) + lockTimeout;
+
+        return (SoftLock) map.executeOnKey(key, new LockEntryProcessor(nextMarkerId(), timeout, version));
     }
 
     public void unlock(final Object key, SoftLock lock) {
-        if (lock == LOCK_SUCCESS) {
-            map.unlock(key);
-        }
+        map.executeOnKey(key, new UnlockEntryProcessor(lock, nextMarkerId(), nextTimestamp(hazelcastInstance)));
     }
 
     public boolean contains(final Object key) {
@@ -141,39 +155,8 @@ public class IMapRegionCache implements RegionCache {
         return map;
     }
 
-    private ILogger createLogger(final String name, final HazelcastInstance hazelcastInstance) {
-        try {
-            return hazelcastInstance.getLoggingService().getLogger(name);
-        } catch (UnsupportedOperationException e) {
-            return Logger.getLogger(name);
-        }
+    private String nextMarkerId() {
+        return hazelcastInstance.getCluster().getLocalMember().getUuid() + markerIdCounter.getAndIncrement();
     }
 
-    private boolean compareVersion(Object key, Object value) {
-        final CacheEntry currentEntry = (CacheEntry) value;
-        try {
-            return compareVersionUnderRowLock(key, value, currentEntry);
-        } catch (InterruptedException e) {
-            return false;
-        }
-    }
-
-    private boolean compareVersionUnderRowLock(Object key, Object value, CacheEntry currentEntry) throws InterruptedException {
-        if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
-            try {
-                final CacheEntry previousEntry = (CacheEntry) map.get(key);
-                if (previousEntry == null
-                        || versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
-                    map.set(key, value);
-                    return true;
-                } else {
-                    return false;
-                }
-            } finally {
-                map.unlock(key);
-            }
-        } else {
-            return false;
-        }
-    }
 }

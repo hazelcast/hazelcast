@@ -26,19 +26,19 @@ import java.util.Map;
  */
 public interface RegionCache {
 
-    Object get(final Object key);
+    Object get(final Object key, final long txTimestamp);
 
-    boolean put(final Object key, final Object value, final Object currentVersion);
+    boolean insert(final Object key, final Object value, final Object currentVersion);
 
-    boolean update(final Object key, final Object value,
-                final Object currentVersion, final Object previousVersion,
-                final SoftLock lock);
+    boolean put(final Object key, final Object value, final long txTimestamp, final Object version);
+
+    boolean update(final Object key, final Object newValue, final Object newVersion, final SoftLock lock);
 
     boolean remove(final Object key);
 
     SoftLock tryLock(final Object key, final Object version);
 
-    void unlock(final Object key, SoftLock lock);
+    void unlock(final Object key, final SoftLock lock);
 
     boolean contains(final Object key);
 
