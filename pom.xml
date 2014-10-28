@@ -79,6 +79,13 @@
         <sonar.verbose>true</sonar.verbose>
         <animal.sniffer.plugin.version>1.11</animal.sniffer.plugin.version>
         <jsr107.api.version>1.0.0</jsr107.api.version>
+        <CacheManagerImpl>com.hazelcast.cache.impl.HazelcastCacheManager</CacheManagerImpl>
+        <CacheImpl>com.hazelcast.cache.ICache</CacheImpl>
+        <CacheEntryImpl>com.hazelcast.cache.impl.CacheEntry</CacheEntryImpl>
+        <javax.management.builder.initial>com.hazelcast.cache.impl.TCKMBeanServerBuilder
+        </javax.management.builder.initial>
+        <org.jsr107.tck.management.agentId>TCKMbeanServer</org.jsr107.tck.management.agentId>
+        <jsr107.api.version>1.0.0</jsr107.api.version>
     </properties>
     <licenses>
         <license>
@@ -214,7 +221,15 @@
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=false
+                        -Djavax.management.builder.initial=${javax.management.builder.initial}
+                        -DCacheManagerImpl=${CacheManagerImpl}
+                        -DCacheImpl=${CacheImpl}
+                        -DCacheEntryImpl=${CacheEntryImpl}
+                        -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                     </argLine>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
                         com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
@@ -296,6 +311,11 @@
                     -Dhazelcast.mancenter.enabled=false
                     -Dhazelcast.logging.type=none
                     -Dhazelcast.test.use.network=false
+                    -Djavax.management.builder.initial=${javax.management.builder.initial}
+                    -DCacheManagerImpl=${CacheManagerImpl}
+                    -DCacheImpl=${CacheImpl}
+                    -DCacheEntryImpl=${CacheEntryImpl}
+                    -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                 </argLine>
             </properties>
             <id>test-coverage</id>
@@ -329,8 +349,9 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <testFailureIgnore>true</testFailureIgnore>
-                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest
-                            </groups>
+                            <includes>
+                                <include>**/*.java</include>
+                            </includes>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>

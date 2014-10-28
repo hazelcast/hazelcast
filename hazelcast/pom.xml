@@ -173,7 +173,7 @@
                     <execution>
                         <goals>
                             <goal>test-jar</goal>
-<!--Need to add sources for this test jar to Maven central. partic TestHazelcastInstanceFactory. Brian request. -->
+                            <!--Need to add sources for this test jar to Maven central. partic TestHazelcastInstanceFactory. Brian request. -->
                         </goals>
                     </execution>
                 </executions>
@@ -213,7 +213,7 @@
                             <finalName>${project.build.finalName}</finalName>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <createSourcesJar>true</createSourcesJar>
-							<shadeSourcesContent>true</shadeSourcesContent>
+                            <shadeSourcesContent>true</shadeSourcesContent>
                             <artifactSet>
                                 <includes>
                                     <include>com.eclipsesource.minimal-json:minimal-json</include>
@@ -234,6 +234,25 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <version>1.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-tests</artifactId>
+            <classifier>tests</classifier>
+            <version>1.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-tests</artifactId>
+            <version>1.0.0</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
