@@ -60,6 +60,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
+
 @Category(QuickTest.class)
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
@@ -73,15 +74,16 @@ import org.junit.runners.Suite;
         CompletionListenerFutureTest.class, CacheWriterExceptionTest.class, CacheLoaderExceptionTest.class, CacheEntryListenerExceptionTest.class,
         ConfigurationTest.class, MutableCacheEntryListenerConfigurationTest.class, FactoryBuilderTest.class, MutableConfigurationTest.class
 })
+
 public class TckTests {
     @BeforeClass
     public static void setupProperties() {
-        System.setProperty("javax.management.builder.initial", "com.hazelcast.cache.impl.TCKMBeanServerBuilder");
-        System.setProperty("org.jsr107.tck.management.agentId", "TCKMbeanServer");
-        System.setProperty("javax.cache.Cache.Entry", "com.hazelcast.cache.impl.CacheEntry");
-        System.setProperty("javax.cache.Cache", "com.hazelcast.cache.ICache");
-        System.setProperty("javax.cache.CacheManager", "com.hazelcast.cache.impl.HazelcastCacheManager");
-        System.setProperty("javax.cache.annotation.CacheInvocationContext", "javax.cache.annotation.impl.cdi.CdiCacheKeyInvocationContextImpl");
+//        System.setProperty("javax.management.builder.initial", "com.hazelcast.cache.impl.TCKMBeanServerBuilder");
+//        System.setProperty("org.jsr107.tck.management.agentId", "TCKMbeanServer");
+//        System.setProperty("javax.cache.Cache.Entry", "com.hazelcast.cache.impl.CacheEntry");
+//        System.setProperty("javax.cache.Cache", "com.hazelcast.cache.ICache");
+//        System.setProperty("javax.cache.CacheManager", "com.hazelcast.cache.HazelcastCacheManager");
+//        System.setProperty("javax.cache.annotation.CacheInvocationContext", "javax.cache.annotation.impl.cdi.CdiCacheKeyInvocationContextImpl");
     }
 
 }

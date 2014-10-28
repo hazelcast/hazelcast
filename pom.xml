@@ -79,13 +79,13 @@
         <sonar.verbose>true</sonar.verbose>
         <animal.sniffer.plugin.version>1.11</animal.sniffer.plugin.version>
         <jsr107.api.version>1.0.0</jsr107.api.version>
-        <CacheManagerImpl>com.hazelcast.cache.impl.HazelcastCacheManager</CacheManagerImpl>
+        <CacheManagerImpl>com.hazelcast.cache.HazelcastCacheManager</CacheManagerImpl>
         <CacheImpl>com.hazelcast.cache.ICache</CacheImpl>
         <CacheEntryImpl>com.hazelcast.cache.impl.CacheEntry</CacheEntryImpl>
         <javax.management.builder.initial>com.hazelcast.cache.impl.TCKMBeanServerBuilder
         </javax.management.builder.initial>
         <org.jsr107.tck.management.agentId>TCKMbeanServer</org.jsr107.tck.management.agentId>
-        <jsr107.api.version>1.0.0</jsr107.api.version>
+        <javax.cache.annotation.CacheInvocationContext>javax.cache.annotation.impl.cdi.CdiCacheKeyInvocationContextImpl</javax.cache.annotation.CacheInvocationContext>
     </properties>
     <licenses>
         <license>
@@ -161,6 +161,7 @@
         </resources>
 
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -226,10 +227,12 @@
                         -DCacheImpl=${CacheImpl}
                         -DCacheEntryImpl=${CacheEntryImpl}
                         -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
+                        -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                     </argLine>
                     <includes>
-                        <include>**/*.java</include>
+                        <include>**/**.java</include>
                     </includes>
+                    <excludes><exclude>**dummyTest**</exclude></excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
                         com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
