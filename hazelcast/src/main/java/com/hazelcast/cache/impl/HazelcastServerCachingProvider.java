@@ -35,7 +35,7 @@ import java.util.Properties;
  * @see javax.cache.spi.CachingProvider
  */
 public final class HazelcastServerCachingProvider
-        extends HazelcastAbstractCachingProvider {
+        extends AbstractHazelcastCachingProvider {
 
     /**
      * Helper method for creating caching provider for testing, etc.

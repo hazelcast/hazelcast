@@ -71,11 +71,11 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * @param <V> the type of value.
  */
 public class CacheProxy<K, V>
-        extends AbstractCacheProxyExtension<K, V> {
+        extends AbstractCacheProxy<K, V> {
 
     protected final ILogger logger;
 
-    private HazelcastCacheManager cacheManager;
+    private AbstractHazelcastCacheManager cacheManager;
 
     protected CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService,
                          HazelcastServerCacheManager cacheManager) {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.impl.HazelcastAbstractCachingProvider;
+import com.hazelcast.cache.impl.AbstractHazelcastCachingProvider;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
@@ -31,7 +31,7 @@ import java.util.Properties;
  *
  * @see javax.cache.spi.CachingProvider
  */
-public final class HazelcastClientCachingProvider extends HazelcastAbstractCachingProvider {
+public final class HazelcastClientCachingProvider extends AbstractHazelcastCachingProvider {
 
     public HazelcastClientCachingProvider() {
         super();

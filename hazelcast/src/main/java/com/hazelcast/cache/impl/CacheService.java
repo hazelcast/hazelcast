@@ -63,7 +63,7 @@ import java.util.concurrent.ConcurrentMap;
  * <p><b>Distributed Cache Name</b> is used for providing a unique name to a cache object to overcome cache manager
  * scoping which depends on URI and class loader parameters. It's a simple concatenation of CacheNamePrefix and
  * cache name where CacheNamePrefix is calculated by each cache manager
- * using {@link HazelcastCacheManager#cacheNamePrefix()}.
+ * using {@link AbstractHazelcastCacheManager#cacheNamePrefix()}.
  * </p>
  */
 public class CacheService
