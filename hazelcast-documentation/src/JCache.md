@@ -160,8 +160,7 @@ The following lines are simple `put` and `get` calls as already known from `java
 
 Hazelcast JCache provides two different ways of cache configuration:
 
--  the expected, typical Hazelcast ways of programmatic (using
-the Config API seen above) one, and 
+- the expected, typical Hazelcast ways of programmatic (using the Config API seen above) one, and 
 - a declarative way (using `hazelcast.xml` or `hazelcast-client.xml`)
  
 #### JCache Declarative Configuration
@@ -231,6 +230,12 @@ Note that this section only describes the JCache provided standard properties. F
   - `synchronous`: If set to true, the `javax.cache.event.CacheEntryListener` implementation will be called in a synchronous manner, defaults to false.
   - `entry-listener-factory`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryListener` instance.
   - `entry-event-filter-factory`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryEventFilter` instance.
+
+<br></br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *The JMX MBeans provided by Hazelcast JCache show statistics of the local node only. 
+To show the cluster-wide statistics the user is requested to collect statistic information from all nodes and accumulate them to 
+the overall statistics.*
+<br></br>
 
 #### JCache Programmatic Configuration
 
@@ -844,7 +849,7 @@ be created using a `com.hazelcast.config.Config` and an `instanceName` to be set
 A named scope is almost applied the same way as the configuration scope but using another URI schema called
 `hazelcast:name://`.
 
-Using Named Scope:
+Using Named Instance Scope:
 
 ```java
 Config config = new Config();
@@ -903,50 +908,221 @@ After unwrapping the `Cache` instance into a `ICache` instance you have access t
 
 ### ICache Configuration
 
-### Async Operations
+As mentioned in [JCache Declarative Configuration](#jcache-declarative-configuration) the Hazelcast ICache extension offers
+additional configuration properties over the default JCache configuration. Those include internal storage format, backup counts
+and eviction policy.
 
-A method ending with `Async` is the asynchronous version of that method (for example `getAsync(K)`, `replaceAsync(K,V)`). These methods return a `Future` where you can get the result or wait the operation to be completed.
+The XML declarative configuration for ICache is an superset of the previously discussed JCache config: 
 
-```java
-ICache<String , SessionData> cache = cache.unwrap( ICache.class );
-Future<SessionData> future = cache.getAsync("key-1" ) ;
-SessionData sessionData = future.get();
+```xml
+<cache>
+  <!-- ... default cache configuration goes here ... -->
+  <backup-count>1</backup-count>
+  <async-backup-count>1</async-backup-count>
+  <in-memory-format>BINARY</in-memory-format>
+  <eviction-policy>NONE</eviction-policy>
+</cache>
 ```
 
-<br></br>
-![image](images/NoteSmall.jpg) ***NOTE:*** *Asynchronous methods are not compatible with synchronous events.*
-<br></br>
+- `backup-count`: The number of synchronous backups. Those backups are executed before the mutating cache operation finishes, the operation is blocked, default is 1.
+- `async-backup-count`: The number of asynchronous backups. Those backups are executed asynchronously so the mutating operation is not blocked and finished immediately, default is 0.  
+- `in-memory-format`: The In Memory Format defines the internal storage format. For more information please see [In Memory Format](#in-memory-format). Default is BINARY.
+- `eviction-policy`: The eviction policy **(currently available on Hi-Density storage only)** is used to define which elements are evicted from the memory in case of low memory, default is RANDOM. Following eviction policies are available:
+  - `LRU`: With _Least Recently Used_ longest unused (not accessed) elements are removed from the cache.  
+  - `LFU`: With _Least Frequently Used_ elements are removed from the cache being used (accessed) least frequently.
+  - `RANDOM`: Random elements are removed from the cache, no information about access frequency or last access are taken into account.
+  - `NONE`: No elements will be removed from the cache at all.
 
-### Additional Methods
+Since `javax.cache.configuration.MutableConfiguration` misses those additional configuration properties Hazelcast ICache extension
+provides an extended configuration class called `com.hazelcast.config.CacheConfig`. All above shown properties can be configured
+using this `javax.cache.configuration.CompleteConfiguration` implementation by using the corresponding setter methods.
 
-### BackupAwareEntryProcessor
+### Async Operations
+
+As another addition of Hazelcast ICache over the normal JCache specification, Hazelcast provides asynchronous versions of almost
+all operations, returning a `com.hazelcast.core.ICompletableFuture`. Using those methods and the returned future objects it is
+possible to use JCache in a reactive way by registering zero or more callbacks on the future to prevent blocking the current
+thread.
+
+```java
+ICache<Integer, String> unwrappedCache = cache.unwrap( ICache.class );
+ICompletableFuture<String> future = unwrappedCache.putAsync( 1, "value" );
+future.andThen( new ExecutionCallback<String>() {
+  public void onResponse( String response ) {
+    System.out.println( "Previous value: " + response ); 
+  }
+  
+  public void onFailure( Throwable t ) {
+    t.printStackTrace();
+  }
+} );
+```
+
+As seen in the example the asynchronous versions of the methods append an `Async` to the end of the method name. Following methods
+are available in asynchronous versions:
+
+ - `get(key)`:
+  - `getAsync(key)`
+  - `getAsync(key, expiryPolicy)`
+ - `put(key, value)`:
+  - `putAsync(key, value)`
+  - `putAsync(key, value, expiryPolicy)`
+ - `putIfAbsent(key, value)`:
+  - `putIfAbsentAsync(key, value)`
+  - `putIfAbsentAsync(key, value, expiryPolicy)`
+ - `getAndPut(key, value)`:
+  - `getAndPutAsync(key, value)`
+  - `getAndPutAsync(key, value, expiryPolicy)`
+ - `remove(key)`:
+  - `removeAsync(key)`
+ - `remove(key, value)`:
+  - `removeAsync(key, value)`
+ - `getAndRemove(key)`:
+  - `getAndRemoveAsync(key)`
+ - `replace(key, value)`:
+  - `replaceAsync(key, value)`
+  - `replaceAsync(key, value, expiryPolicy)`
+ - `replace(key, oldValue, newValue)`:
+  - `replaceAsync(key, oldValue, newValue)`
+  - `replaceAsync(key, oldValue, newValue, expiryPolicy)`
+ - `getAndReplace(key, value)`: 
+  - `getAndReplaceAsync(key, value)`
+  - `getAndReplaceAsync(key, value, expiryPolicy)`
+
+The versions mentioned with a given `javax.cache.expiry.ExpiryPolicy` are further discussed in
+[Custom ExpiryPolicy](#custom-expirypolicy).
+
+<br></br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *Asynchronous versions of the methods are not compatible with synchronous events.*
+<br></br>
 
 ### Custom ExpiryPolicy
 
-You can provide a custom expiry policy for a cache operation if you want to by-pass the global one already set in your `config` configuration.
+Whereas the JCache specification has just the option to configure a single `ExpiryPolicy` per cache, Hazelcast ICache extension
+offers the possibility to define a custom `ExpiryPolicy` per key by providing a set of method overloads with an `ExpirePolicy`
+parameter as already seen in the list of asynchronous operations.
 
-Using the cache configuration, you can set an expiration of one minute as shown in the sample code below.
+Said that custom expiry policies can passed to a cache operation.
 
-```java
-MutableConfiguration<String, String> config = new MutableConfiguration<String, String>();
-config.setExpiryPolicyFactory(AccessedExpiryPolicy.factoryOf(ONE_MINUTE));
-```
-
-And you use the cache as usual:
-
+As a reminder this is how a `ExpirePolicy` is set on JCache configuration:
 
 ```java
-cache.put(“session-key-1”, SessionData);
+CompleteConfiguration<String, String> config =
+    new MutableConfiguration<String, String>()
+        setExpiryPolicyFactory( 
+            AccessedExpiryPolicy.factoryOf( Duration.ONE_MINUTE ) 
+        );
 ```
 
-This will use the global configuration and if we by-pass the policy and want to use a different expiry policy for some operation,
+To pass a custom `ExpirePolicy`, as mentioned, a set of overloads is provided and can be used as shown in the following snippet:
 
 ```java
-ICache<String , SessionData> icache =  cache.unwrap( ICache.class );
-icache.put("session-key-2", SessionData,  AccessedExpiryPolicy.factoryOf(TEN_MINUTE) );
+ICache<Integer, String> unwrappedCache = cache.unwrap( ICache.class );
+unwrappedCache.put( 1, "value", new AccessedExpiryPolicy( Duration.ONE_DAY ) );
 ```
 
-Now, your customized session will expire in ten minutes after being accessed.
+For sure the `ExpirePolicy` instance can be pre-created, cached and re-used but only per cache instance since `ExpirePolicy` 
+implementations can be marked as `java.io.Closeable`. The following list shows provided method overloads over `javax.cache.Cache`
+by `com.hazelcast.cache.ICache` featuring the `ExpiryPolicy` parameter. Asynchronous method overloads are not listed here, for 
+more information about those methods please see [Async Operations](#async-operations):
+
+ - `get(key)`:
+  - `get(key, expiryPolicy)`
+ - `getAll(keys)`
+  - `getAll(keys, expirePolicy)`
+ - `put(key, value)`
+  - `put(key, value, expirePolicy)`
+ - `getAndPut(key, value)`
+  - `getAndPut(key, value, expirePolicy)`
+ - `putAll(map)`:
+  - `putAll(map, expirePolicy)`
+ - `putIfAbsent(key, value)`:
+  - `putIfAbsent(key, value, expirePolicy)`
+ - `replace(key, value)`:
+  - `replace(key, value, expirePolicy)`
+ - `replace(key, oldValue, newValue)`:
+  - `replace(key, oldValue, newValue, expirePolicy)`
+ - `getAndReplace(key, value)`:
+  - `getAndReplace(key, value, expirePolicy)`
+
+### Additional Methods
+
+In addition to above mentioned asynchronous and per element expiry operations there is also a set of convenience methods
+available. Those methods are also not part of the JCache specification but provided by the `com.hazelcast.cache.ICache` interface.
+
+ - `size()`: Returns the estimated size of the distributed cache.
+ - `destroy()`: Destroys the cache _and removes the data from memory_ which is different from `javax.cache.Cache::close`. 
+ - `getLocalCacheStatistics()`: Returns an `com.hazelcast.cache.CacheStatistics` instance providing the same statistics data as provided by the JMX beans. On clients this method is not available yet therefore a `java.lang.UnsupportedOperationException`is thrown. 
+
+### BackupAwareEntryProcessor
+
+Another feature, especially interesting for distributed environments like Hazelcast, is the JCache specified
+`javax.cache.processor.EntryProcessor`. For more general information see [JCache EntryProcessor](#jcache-entryprocessor).
+ 
+Since Hazelcast provides backups of cached entries on other nodes the default backup-way for an object changed by an
+`EntryProcessor` is serializing the complete object and sending it to the backup partition. This can be a huge network overhead
+for big objects. 
+
+Hazelcast offers a sub-interface for `EntryProcessor` called `com.hazelcast.cache.BackupAwareEntryProcessor` which offers an
+additional feature. If provides the user with the possibility to create or pass another `EntryProcessor` to run on backup
+partitions and apply delta changes to those backup entries.
+
+The backup partition `EntryProcessor` can either be the currently running processor itself (by returning `this`) or it can be
+a specialized `EntryProcessor` implementation (other from the currently running one) which does different operations or leaves
+out operations, e.g. sending emails.
+
+If we again take the `EntryProcessor` example from the demonstration application [JCache EntryProcessor](#jcache-entryprocessor) 
+the changed code will look like the following snippet.
+
+```java
+public class UserUpdateEntryProcessor
+    implements BackupAwareEntryProcessor<Integer, User, User> {
+
+  @Override
+  public User process( MutableEntry<Integer, User> entry, Object... arguments )
+      throws EntryProcessorException {
+      
+    // Test arguments length
+    if ( arguments.length < 1 ) {
+      throw new EntryProcessorException( "One argument needed: username" );
+    }
+    
+    // Get first argument and test for String type
+    Object argument = arguments[0];
+    if ( !( argument instanceof String ) ) {
+      throw new EntryProcessorException(
+          "First argument has wrong type, required java.lang.String" );
+    }
+
+    // Retrieve the value from the MutableEntry
+    User user = entry.getValue();
+    
+    // Retrieve the new username from the first argument
+    String newUsername = ( String ) arguments[0];
+
+    // Set the new username
+    user.setUsername( newUsername );
+    
+    // Set the changed user to mark the entry as dirty
+    entry.setValue( user );
+
+    // Return the changed user to return it to the caller
+    return user;
+  }
+  
+  public EntryProcessor<K, V, T> createBackupEntryProcessor() {
+    return this;
+  }
+}
+```
+
+The additional method `BackupAwareEntryProcessor::createBackupEntryProcessor` is used to create or return the `EntryProcessor`
+implementation to run on the backup partition, in this case the same processor again.
+
+<br></br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *For the backup runs the returned value from the backup processor is ignored an not 
+returned to the user.*
+<br></br>
 
 ## JCache Specification Compliance
 
