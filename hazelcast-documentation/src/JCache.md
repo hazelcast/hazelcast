@@ -1142,7 +1142,11 @@ Everybody can test Hazelcast JCache for compliance by executing the TCK. Just pe
 
 1. Checkout the TCK from [https://github.com/jsr107/jsr107tck](https://github.com/jsr107/jsr107tck)
 2. Change the properties int `tck-parent/pom.xml` as shown below 
+<<<<<<< HEAD
 3. Run the TCK by `mvn clean install`.
+=======
+3. Run the TCK by `mvn clean install`
+>>>>>>> FETCH_HEAD
 
 ```xml
 <properties>
