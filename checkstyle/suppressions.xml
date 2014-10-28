@@ -54,6 +54,7 @@
     <suppress checks="JavadocType" files="com.hazelcast.cache.impl[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.cache.impl[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.cache.impl[\\/]"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.cache.impl.AbstractClientCacheProxyExtension"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.client.cache.impl.AbstractClientCacheProxyInternal"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheRecordStore"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheService"/>

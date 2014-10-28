@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -86,17 +87,22 @@ abstract class AbstractCacheProxyExtension<K, V>
     }
 
     @Override
+    public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        return putIfAbsentAsyncInternal(key, value, null, false);
+    }
+
+    @Override
     public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return putIfAbsentAsyncInternal(key, value, expiryPolicy, false);
     }
 
     @Override
-    public Future<V> getAndPutAsync(K key, V value) {
+    public ICompletableFuture<V> getAndPutAsync(K key, V value) {
         return getAndPutAsync(key, value, null);
     }
 
     @Override
-    public Future<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public ICompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return putAsyncInternal(key, value, expiryPolicy, true, false);
     }
 
@@ -111,37 +117,37 @@ abstract class AbstractCacheProxyExtension<K, V>
     }
 
     @Override
-    public Future<V> getAndRemoveAsync(K key) {
+    public ICompletableFuture<V> getAndRemoveAsync(K key) {
         return removeAsyncInternal(key, null, false, true, false);
     }
 
     @Override
-    public Future<Boolean> replaceAsync(K key, V value) {
+    public ICompletableFuture<Boolean> replaceAsync(K key, V value) {
         return replaceAsyncInternal(key, null, value, null, false, false, false);
     }
 
     @Override
-    public Future<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return replaceAsyncInternal(key, null, value, expiryPolicy, false, false, false);
     }
 
     @Override
-    public Future<Boolean> replaceAsync(K key, V oldValue, V newValue) {
+    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
         return replaceAsyncInternal(key, oldValue, newValue, null, true, false, false);
     }
 
     @Override
-    public Future<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
         return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, false);
     }
 
     @Override
-    public Future<V> getAndReplaceAsync(K key, V value) {
+    public ICompletableFuture<V> getAndReplaceAsync(K key, V value) {
         return replaceAsyncInternal(key, null, value, null, false, true, false);
     }
 
     @Override
-    public Future<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public ICompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return replaceAsyncInternal(key, null, value, expiryPolicy, false, true, false);
     }
 

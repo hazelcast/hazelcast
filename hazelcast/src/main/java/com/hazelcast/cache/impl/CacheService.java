@@ -271,14 +271,15 @@ public class CacheService
     /**
      * Creates the cache statistics with provided cache name.
      * @param name distributed cache name.
-     * @return {@link CacheStatisticsImpl}.
+     * @return {@link CacheStatisticsImpl} or an empty statistics if not enabled.
      */
     public CacheStatisticsImpl createCacheStatIfAbsent(String name) {
-        if (!statistics.containsKey(name)) {
-            //todo wrong usage of putIfAbsent
-            statistics.putIfAbsent(name, new CacheStatisticsImpl());
+        CacheStatisticsImpl statistics = new CacheStatisticsImpl();
+        CacheStatisticsImpl temp = this.statistics.putIfAbsent(name, statistics);
+        if (temp != null) {
+            statistics = temp;
         }
-        return statistics.get(name);
+        return statistics;
     }
 
     public void deleteCacheStat(String name) {
