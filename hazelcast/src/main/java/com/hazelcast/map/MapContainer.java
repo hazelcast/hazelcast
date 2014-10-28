@@ -16,10 +16,6 @@
 
 package com.hazelcast.map;
 
-import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteBehindManager;
-import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteThroughManager;
-import static com.hazelcast.map.mapstore.MapStoreManagers.emptyMapStoreManager;
-
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
@@ -34,7 +30,6 @@ import com.hazelcast.map.record.ObjectRecordFactory;
 import com.hazelcast.map.record.OffHeapRecordFactory;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordFactory;
-import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -51,6 +46,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.map.eviction.ExpirationTimeSetter.pickTTL;
+import static com.hazelcast.map.eviction.ExpirationTimeSetter.setExpirationTime;
+import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteBehindManager;
+import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteThroughManager;
+import static com.hazelcast.map.mapstore.MapStoreManagers.emptyMapStoreManager;
+
+
 /**
  * Map container.
  */
@@ -58,8 +60,6 @@ public class MapContainer extends MapContainerSupport {
 
     private static final int INITIAL_KEYS_REMOVE_DELAY_MINUTES = 20;
 
-
-    private final String name;
     private final RecordFactory recordFactory;
     private final MapServiceContext mapServiceContext;
     private final List<MapInterceptor> interceptors;
@@ -74,9 +74,9 @@ public class MapContainer extends MapContainerSupport {
     private MapStoreWrapper storeWrapper;
     private MapStoreManager mapStoreManager;
 
+
     public MapContainer(final String name, final MapConfig mapConfig, final MapServiceContext mapServiceContext) {
-        super(mapConfig);
-        this.name = name;
+        super(name, mapConfig);
         this.mapServiceContext = mapServiceContext;
         this.partitioningStrategy = createPartitioningStrategy();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -136,6 +136,7 @@ public class MapContainer extends MapContainerSupport {
     }
 
     private MapStoreWrapper createMapStoreWrapper(MapStoreConfig mapStoreConfig, NodeEngine nodeEngine) {
+        final String name = getName();
         Object store;
         MapStoreWrapper storeWrapper;
         try {
@@ -163,7 +164,7 @@ public class MapContainer extends MapContainerSupport {
     private void initMapStore(Object store, MapStoreConfig mapStoreConfig, NodeEngine nodeEngine) {
         if (store instanceof MapLoaderLifecycleSupport) {
             ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(),
-                    mapStoreConfig.getProperties(), name);
+                    mapStoreConfig.getProperties(), getName());
         }
 
         loadInitialKeys();
@@ -271,32 +272,21 @@ public class MapContainer extends MapContainerSupport {
         interceptors.remove(interceptor);
     }
 
-    public Record createRecord(Data key, Object value, long ttl, long now) {
+    public Record createRecord(Data key, Object value, long ttlMillis, long now) {
         Record record = getRecordFactory().newRecord(key, value);
         record.setLastAccessTime(now);
         record.setLastUpdateTime(now);
         record.setCreationTime(now);
-        final long configTTLSeconds = mapConfig.getTimeToLiveSeconds();
-        final long configTTLMillis
-                = mapServiceContext.convertTime(configTTLSeconds, TimeUnit.SECONDS);
 
-        if (ttl < 0L && configTTLMillis > 0L) {
-            record.setTtl(configTTLMillis);
-        } else if (ttl > 0L) {
-            record.setTtl(ttl);
-        }
-        final RecordStatistics statistics = record.getStatistics();
-        if (statistics != null) {
-            final long ttlOnRecord = record.getTtl();
-            final long expirationTime = mapServiceContext.getExpirationTime(ttlOnRecord, now);
-            statistics.setExpirationTime(expirationTime);
-        }
+        final long ttlMillisFromConfig = getTtlMillisFromConfig();
+        final long ttl = pickTTL(ttlMillis, ttlMillisFromConfig);
+        record.setTtl(ttl);
+
+        final long maxIdleMillis = getMaxIdleMillis();
+        setExpirationTime(record, maxIdleMillis);
         return record;
     }
 
-    public String getName() {
-        return name;
-    }
 
     public boolean isNearCacheEnabled() {
         return nearCacheEnabled;
