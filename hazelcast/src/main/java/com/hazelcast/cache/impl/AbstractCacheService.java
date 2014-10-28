@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheOperationProvider;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
@@ -35,6 +34,8 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 
 public abstract class AbstractCacheService implements ICacheService {
 
@@ -257,7 +258,7 @@ public abstract class AbstractCacheService implements ICacheService {
     public void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue,
                              Data dataOldValue, boolean isOldValueAvailable, int orderKey) {
         final EventService eventService = getNodeEngine().getEventService();
-        final Collection<EventRegistration> candidates = eventService.getRegistrations(AbstractCacheService.SERVICE_NAME, cacheName);
+        final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
 
         if (candidates.isEmpty()) {
             return;
@@ -293,7 +294,7 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
         final EventService eventService = getNodeEngine().getEventService();
-        final Collection<EventRegistration> candidates = eventService.getRegistrations(AbstractCacheService.SERVICE_NAME, cacheName);
+        final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
 
         if (candidates.isEmpty()) {
             return;

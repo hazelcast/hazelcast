@@ -16,10 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
-import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
-import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
@@ -29,7 +26,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -55,17 +51,17 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
  * <h1>ICache implementation</h1>
- *<p>
+ * <p>
  * This proxy is the implementation of ICache and javax.cache.Cache which is returned by
  * HazelcastServerCacheManager. It represents a cache for server or embedded mode.
- *</p>
- *<p>
- *Each cache method actually is an operation which is sent to related partition(s) or node(s).
- * Operations are executed on partition's or node's executor pools and the results are delivered to the user.
- *</p>
+ * </p>
  * <p>
- *     In order to access a {@linkplain CacheProxy} by name, a cacheManager should be used. It's advised to use
- *     {@link com.hazelcast.cache.ICache} instead.
+ * Each cache method actually is an operation which is sent to related partition(s) or node(s).
+ * Operations are executed on partition's or node's executor pools and the results are delivered to the user.
+ * </p>
+ * <p>
+ * In order to access a {@linkplain CacheProxy} by name, a cacheManager should be used. It's advised to use
+ * {@link com.hazelcast.cache.ICache} instead.
  * </p>
  *
  * @param <K> the type of key.

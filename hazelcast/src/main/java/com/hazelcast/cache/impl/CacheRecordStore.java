@@ -92,7 +92,7 @@ public class CacheRecordStore
 
     @Override
     protected CacheRecordHashMap createRecordCacheMap() {
-        return new CacheRecordHashMap<Data, CacheRecord>(1000);
+        return new CacheRecordHashMap<Data, CacheRecord>(DEFAULT_INITIAL_CAPACITY);
     }
 
     @Override

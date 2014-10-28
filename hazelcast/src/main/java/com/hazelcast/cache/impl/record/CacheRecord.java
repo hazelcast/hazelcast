@@ -16,9 +16,6 @@
 
 package com.hazelcast.cache.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
-
 /**
  * <p>
  * An expirable data object which represents a cache entry.

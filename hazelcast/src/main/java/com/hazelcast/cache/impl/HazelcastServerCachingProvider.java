@@ -54,7 +54,6 @@ public final class HazelcastServerCachingProvider
         if (config.getInstanceName() == null) {
             config.setInstanceName("CacheProvider");
         }
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
     }
 

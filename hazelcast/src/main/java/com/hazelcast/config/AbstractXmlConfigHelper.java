@@ -74,7 +74,7 @@ public abstract class AbstractXmlConfigHelper {
                 private int index;
                 private Node next;
 
-                private boolean findNext() {
+                public boolean hasNext() {
                     next = null;
                     for (; index < maximum; index++) {
                         final Node item = parent.item(index);
@@ -86,12 +86,8 @@ public abstract class AbstractXmlConfigHelper {
                     return false;
                 }
 
-                public boolean hasNext() {
-                    return findNext();
-                }
-
                 public Node next() {
-                    if (findNext()) {
+                    if (hasNext()) {
                         index++;
                         return next;
                     }

@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.operation.*;
+import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -25,7 +25,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -47,8 +46,9 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
  * of cache operations like put, replace, remove and invoke. These internal implementations are delegated
  * by actual cache methods.
- *
+ * <p/>
  * <p>Note: this partial implementation is used by server or embedded mode cache.</p>
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  * @see com.hazelcast.cache.impl.CacheProxy
