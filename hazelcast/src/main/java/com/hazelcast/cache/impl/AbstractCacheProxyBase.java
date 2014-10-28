@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheOperationProvider;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -29,7 +28,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.executor.CompletableFutureTask;
 
 import javax.cache.CacheException;
@@ -65,14 +63,14 @@ abstract class AbstractCacheProxyBase<K, V> {
     protected final SerializationService serializationService;
     protected final CacheOperationProvider operationProvider;
 
-    private final NodeEngineImpl nodeEngine;
+    private final NodeEngine nodeEngine;
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
     private final CacheLoader<K, V> cacheLoader;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
-    protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngineImpl nodeEngine, ICacheService cacheService) {
+    protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;

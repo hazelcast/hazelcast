@@ -21,10 +21,10 @@ import com.hazelcast.cache.impl.operation.AbstractMutatingCacheOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -66,7 +66,7 @@ abstract class AbstractCacheProxyInternal<K, V>
     private final Object completionRegistrationMutex = new Object();
     private volatile String completionRegistrationId;
 
-    protected AbstractCacheProxyInternal(CacheConfig cacheConfig, NodeEngineImpl nodeEngine, ICacheService cacheService) {
+    protected AbstractCacheProxyInternal(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();

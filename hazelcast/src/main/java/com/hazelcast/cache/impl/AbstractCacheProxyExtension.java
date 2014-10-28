@@ -23,10 +23,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -56,7 +56,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 abstract class AbstractCacheProxyExtension<K, V>
         extends AbstractCacheProxyInternal<K, V> {
 
-    protected AbstractCacheProxyExtension(CacheConfig cacheConfig, NodeEngineImpl nodeEngine, ICacheService cacheService) {
+    protected AbstractCacheProxyExtension(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
     }
 

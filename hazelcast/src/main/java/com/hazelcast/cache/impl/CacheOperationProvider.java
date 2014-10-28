@@ -1,4 +1,4 @@
-package com.hazelcast.cache;
+package com.hazelcast.cache.impl;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
