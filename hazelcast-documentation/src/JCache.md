@@ -812,13 +812,13 @@ Connecting or joining different clusters is done by applying a configuration sco
 used to request a `CacheManager` that was created before those `CacheManager`s share the same underlying `HazelcastInstance`.
 
 A configuration scope is applied by passing in the path of the configuration file using the special URI schema called 
-`hazelcast:config://`.
+`hazelcast+config`.
 
 Using Configuration Scope:
 
 ```java
 CachingProvider cachingProvider = Caching.getCachingProvider();
-URI configFile = new URI( "hazelcast:config://my-configs/scoped-hazelcast.xml" );
+URI configFile = new URI( "hazelcast+config://my-configs/scoped-hazelcast.xml" );
 CacheManager cacheManager = cachingProvider.getCacheManager( configFile, null );
 ```
 
@@ -842,7 +842,7 @@ be created using a `com.hazelcast.config.Config` and an `instanceName` to be set
 `CacheManager`s created using an equal `java.net.URI` will share the same `HazelcastInstance`.
  
 A named scope is almost applied the same way as the configuration scope but using another URI schema called
-`hazelcast:name://`.
+`hazelcast:name`.
 
 Using Named Instance Scope:
 
@@ -853,7 +853,7 @@ config.setInstanceName( "my-named-hazelcast-instance" );
 Hazelcast.newHazelcastInstance( config );
 
 CachingProvider cachingProvider = Caching.getCachingProvider();
-URI hzName = new URI( "hazelcast:name://my-named-hazelcast-instance" );
+URI hzName = new URI( "hazelcast+name://my-named-hazelcast-instance" );
 CacheManager cacheManager = cachingProvider.getCacheManager( hzName, null );
 ```
 
@@ -916,6 +916,8 @@ The XML declarative configuration for ICache is an superset of the previously di
   <async-backup-count>1</async-backup-count>
   <in-memory-format>BINARY</in-memory-format>
   <eviction-policy>NONE</eviction-policy>
+  <eviction-percentage>25</eviction-percentage>
+  <eviction-threshold-percentage>25</eviction-threshold-percentage>
 </cache>
 ```
 
@@ -927,6 +929,8 @@ The XML declarative configuration for ICache is an superset of the previously di
   - `LFU`: With _Least Frequently Used_ elements are removed from the cache being used (accessed) least frequently.
   - `RANDOM`: Random elements are removed from the cache, no information about access frequency or last access are taken into account.
   - `NONE`: No elements will be removed from the cache at all.
+- `eviction-percentage`: The eviction percentage property **(currently available on Hi-Density storage only)** defines the amount of percentage of the cache that will be evicted when the threshold is reached. Can be set to any integer number between 0 and 100, defaults to 0.
+- `eviction-threshold-percentage`: the eviction threshold property **(currently available on Hi-Density storage only)** defines a threshold when reached to trigger the eviction process. Can be set to any integer number between 0 and 100, defaults to 0.
 
 Since `javax.cache.configuration.MutableConfiguration` misses those additional configuration properties Hazelcast ICache extension
 provides an extended configuration class called `com.hazelcast.config.CacheConfig`. All above shown properties can be configured
@@ -1153,7 +1157,7 @@ Everybody can test Hazelcast JCache for compliance by executing the TCK on his o
   <!-- Change the following properties to your CacheManager and 
        Cache implementation. Used by the unwrap tests. -->
   <CacheManagerImpl>
-    com.hazelcast.cache.impl.HazelcastCacheManager
+    com.hazelcast.cache.HazelcastCacheManager
   </CacheManagerImpl>
   <CacheImpl>com.hazelcast.cache.ICache</CacheImpl>
   <CacheEntryImpl>
