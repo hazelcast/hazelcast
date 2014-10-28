@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.4.xsd"
+           xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <group>
+        <name>foobar</name>
+        <password>dev-pass</password>
+    </group>
+
+
+    <cache name="cache2">
+        <key-type class-name="java.lang.Object" />
+        <value-type class-name="java.lang.Object"/>
+        <statistics-enabled>false</statistics-enabled>
+        <management-enabled>false</management-enabled>
+
+        <read-through>true</read-through>
+        <write-through>true</write-through>
+        <cache-loader-factory class-name="com.example.cache.MyCacheLoaderFactory" />
+        <cache-writer-factory class-name="com.example.cache.MyCacheWriterFactory"/>
+        <expiry-policy-factory class-name="com.example.cache.MyExpirePolicyFactory"/>
+
+        <cache-entry-listeners>
+            <cache-entry-listener old-value-required="false" synchronous="false" >
+                <cache-entry-listener-factory class-name="com.example.cache.MyEntryListenerFactory" />
+                <cache-entry-event-filter-factory class-name="com.example.cache.MyEntryEventFilterFactory" />
+            </cache-entry-listener>
+        </cache-entry-listeners>
+
+        <backup-count>1</backup-count>
+        <async-backup-count>1</async-backup-count>
+        <eviction-policy>LRU</eviction-policy>
+
+    </cache>
+
+</hazelcast>
