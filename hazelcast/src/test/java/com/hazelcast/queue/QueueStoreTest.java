@@ -22,12 +22,15 @@ import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.QueueStore;
+import com.hazelcast.core.QueueStoreFactory;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,7 +40,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -211,7 +217,45 @@ public class QueueStoreTest extends HazelcastTestSupport {
         instance1.shutdown();
 
         queue.offer(randomString());
+    }
 
+    @Test
+    public void testQueueStoreFactory() {
+        final String queueName = randomString();
+        final Config config = new Config();
+        final QueueConfig queueConfig = config.getQueueConfig(queueName);
+        final QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        queueStoreConfig.setEnabled(true);
+        final QueueStoreFactory queueStoreFactory = new SimpleQueueStoreFactory();
+        queueStoreConfig.setFactoryImplementation(queueStoreFactory);
+        queueConfig.setQueueStoreConfig(queueStoreConfig);
+
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        final IQueue<Integer> queue = instance.getQueue(queueName);
+        queue.add(1);
+
+        final QueueStore queueStore = queueStoreFactory.newQueueStore(queueName, null);
+        final TestQueueStore testQueueStore = (TestQueueStore) queueStore;
+        final int size = testQueueStore.store.size();
+
+        assertEquals("Queue store size should be 1 but found " + size, 1, size);
+    }
+
+    static class SimpleQueueStoreFactory implements QueueStoreFactory<Integer> {
+
+        private final ConcurrentMap<String, QueueStore> stores = new ConcurrentHashMap<String, QueueStore>();
+
+        @Override
+        public QueueStore<Integer> newQueueStore(String name, Properties properties) {
+            return ConcurrencyUtil.getOrPutIfAbsent(stores, name, new ConstructorFunction<String, QueueStore>() {
+                @Override
+                public QueueStore createNew(String arg) {
+                    return new TestQueueStore();
+                }
+            });
+        }
     }
 
     static class IdCheckerQueueStore implements QueueStore {
