@@ -2,7 +2,7 @@
 
 ### Queue Overview
 
-Hazelcast distributed queue is an implementation of `java.util.concurrent.BlockingQueue`. Being distributed, it enables all cluster members to interact with it. Meaning that, you can add an item in one machine and remove it from another one.
+Hazelcast distributed queue is an implementation of `java.util.concurrent.BlockingQueue`. Being distributed, it enables all cluster members to interact with it. Using Hazelcast distributed queue, you can add an item in one machine and remove it from another one.
 
 ```java
 import com.hazelcast.core.Hazelcast;
@@ -21,7 +21,7 @@ if ( task != null ) {
 }
 ```
 
-FIFO ordering will apply to all queue operations cluster wide. User objects (such as `MyTask` in the example above), that are (en/de)queued have to be `Serializable`.
+FIFO ordering will apply to all queue operations across the cluster. User objects (such as `MyTask` in the example above) that are enqueued or dequeued have to be `Serializable`.
 
-There is no batching while iterating over Queue. All items will be copied to local and iteration will occur locally.
+Hazelcast distributed queue performs no batching while iterating over the queue. All items will be copied locally and iteration will occur locally.
 

@@ -8,7 +8,7 @@ Hazelcast Map (`IMap`) extends the interface `java.util.concurrent.ConcurrentMap
 
 #### How Distributed Map Works
 
-Hazelcast will partition your map entries and almost evenly distribute onto all Hazelcast members. Each member carries approximately "(1/n `*` total-data) + backups", **n** being the number of nodes in the cluster. For example, if you have a node with 1000 objects to be storied in the cluster, and then you start a second node, each node will both store 500 objects and back up the 500 objects in the other node.
+Hazelcast will partition your map entries and almost evenly distribute onto all Hazelcast members. Each member carries approximately "(1/n `*` total-data) + backups", **n** being the number of nodes in the cluster. For example, if you have a node with 1000 objects to be stored in the cluster, and then you start a second node, each node will both store 500 objects and back up the 500 objects in the other node.
 
 Let's create a Hazelcast instance (node) and fill a map named `Capitals` with key-value pairs using the following code.
 

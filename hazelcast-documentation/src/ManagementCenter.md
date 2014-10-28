@@ -431,4 +431,29 @@ The historical data collected with Time Travel feature are stored in a file data
 
 To see the documentation, click on the **Documentation** button located at the toolbar. Management Center manual will appear as a tab.
 
+### Suggested Heap Size
+
+**For 2 Nodes**
+
+| Mancenter Heap Size | # of Maps | # of Queues | # of Topics |
+| -------- | --------- | ---------- | ------------ |
+| 256m | 3k | 1k | 1k |
+| 1024m | 10k | 1k | 1k |
+
+**For 10 Nodes**
+
+| Mancenter Heap Size | # of Maps | # of Queues | # of Topics |
+| -------- | --------- | ---------- | ------------ |
+| 256m | 50 | 30 | 30 |
+| 1024m | 2k | 1k | 1k | 
+
+**For 20 Nodes**
+
+| Mancenter Heap Size | # of Maps | # of Queues | # of Topics |
+| -------- | --------- | ---------- | ------------ |
+| 256m* | N/A | N/A | N/A |
+| 1024m | 1k | 1k | 1k |
+
+\* With 256m heap, management center is unable to collect statistics.
+
 <br> </br>
