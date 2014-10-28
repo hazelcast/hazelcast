@@ -31,12 +31,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *     <li>Server: HazelcastServerCacheManager.</li>
  * </ul>
  * <p>
- *    {@link HazelcastCacheManager} manages the lifecycle of the caches created or accessed through itself.
+ *    {@link AbstractHazelcastCacheManager} manages the lifecycle of the caches created or accessed through itself.
  * </p>
  * @see CacheManager
  */
 //todo AbstractHazelcastCacheManager would be better
-public abstract class HazelcastCacheManager implements CacheManager {
+public abstract class AbstractHazelcastCacheManager
+        implements CacheManager {
 
     protected final ConcurrentMap<String, ICache<?, ?>> caches = new ConcurrentHashMap<String, ICache<?, ?>>();
     protected final URI uri;
@@ -53,7 +54,8 @@ public abstract class HazelcastCacheManager implements CacheManager {
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
-    public HazelcastCacheManager(CachingProvider cachingProvider, URI uri, ClassLoader classLoader, Properties properties) {
+    public AbstractHazelcastCacheManager(CachingProvider cachingProvider, URI uri,
+                                         ClassLoader classLoader, Properties properties) {
         if (cachingProvider == null) {
             throw new NullPointerException("CachingProvider missing");
         }
@@ -99,6 +101,7 @@ public abstract class HazelcastCacheManager implements CacheManager {
             registerListeners(newCacheConfig, cacheProxy);
             return cacheProxy;
         } else {
+            // TODO: Might race in terms we don't check existing config and given config to be similar
             final ICache<?, ?> entries = caches.putIfAbsent(newCacheConfig.getNameWithPrefix(), cacheProxy);
             if (entries == null) {
                 //REGISTER LISTENERS
@@ -279,7 +282,7 @@ public abstract class HazelcastCacheManager implements CacheManager {
 
     @Override
     public <T> T unwrap(Class<T> clazz) {
-        if (clazz.isAssignableFrom(HazelcastCacheManager.class)) {
+        if (clazz.isAssignableFrom(AbstractHazelcastCacheManager.class)) {
             return (T) this;
         }
         throw new IllegalArgumentException();

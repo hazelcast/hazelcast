@@ -1,1 +1,1 @@
-com.hazelcast.cache.impl.HazelcastCachingProvider
+com.hazelcast.cache.HazelcastCachingProvider

@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl;
+package com.hazelcast.cache;
 
+import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -34,8 +35,8 @@ import java.util.Properties;
  * implementation.</p>
  * <p>There are two internal {@link CachingProvider}s:
  * <ol>
- *     <li>{@link HazelcastServerCachingProvider}</li>
- *     <li>HazelcastClientCachingProvider</li>
+ *     <li>{@link com.hazelcast.cache.impl.HazelcastServerCachingProvider}</li>
+ *     <li>{@link HazelcastClientCachingProvider}</li>
  * </ol>
  * </p>
  * <p>

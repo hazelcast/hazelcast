@@ -58,7 +58,7 @@ public class NodeMulticastListener implements MulticastListener {
 
     private void logDroppedMessage(Object msg) {
         if (logger.isFinestEnabled()) {
-            logger.info("Dropped: " + msg);
+            logger.finest("Dropped: " + msg);
         }
     }
 

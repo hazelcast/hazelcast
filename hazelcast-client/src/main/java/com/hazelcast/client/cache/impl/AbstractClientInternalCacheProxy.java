@@ -70,7 +70,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * @param <K> the type of key
  * @param <V> the type of value
  */
-abstract class AbstractClientCacheProxyInternal<K, V>
+abstract class AbstractClientInternalCacheProxy<K, V>
         extends AbstractClientCacheProxyBase<K, V> {
 
     protected final ClientNearCache<Data, Object> nearCache;
@@ -84,7 +84,7 @@ abstract class AbstractClientCacheProxyInternal<K, V>
     private final Object completionRegistrationMutex = new Object();
     private volatile String completionRegistrationId;
 
-    protected AbstractClientCacheProxyInternal(CacheConfig cacheConfig, ClientContext clientContext) {
+    protected AbstractClientInternalCacheProxy(CacheConfig cacheConfig, ClientContext clientContext) {
         super(cacheConfig, clientContext);
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();

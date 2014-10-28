@@ -2,7 +2,7 @@
 
 ### Map Locks
 
-Hazelcast Distributed Map (IMap) is thread-safe and meets your thread safety requirements. When these requirements increase or you want to have more control on the concurrency, below features and solutions provided by Hazelcast can be considered.
+Hazelcast Distributed Map (IMap) is thread-safe to meet your thread safety requirements. When these requirements increase or you want to have more control on the concurrency, consider the following Hazelcast features and solutions.
 
 Let's work on a sample case as shown below.
 
@@ -30,11 +30,11 @@ public class RacyUpdateMember {
 }
 ```
 
-If the above code is run by more than one cluster members simultaneously, there will be likely a race condition.
+If the above code is run by more than one cluster member simultaneously, there will be likely a race condition. You can solve this with Hazelcast.
 
 #### Pessimistic Locking
 
-One usual way to solve this race issue is using the lock mechanism provided by Hazelcast distributed map, i.e. `map.lock` and `map.unlock` methods. You simply lock the entry until you finished with it. See the below sample code.
+One way to solve the race issue is the lock mechanism provided by Hazelcast distributed map, i.e. the `map.lock` and `map.unlock` methods. You simply lock the entry until you are finished with it. See the below sample code.
 
 ```java
 public class PessimisticUpdateMember {
@@ -68,12 +68,12 @@ The IMap lock will automatically be collected by the garbage collector when the 
 
 The IMap lock is reentrant, but it does not support fairness.
 
-Another way can be acquiring a predictable `Lock` object from Hazelcast. By this way, every value in the map can be given a lock or you can create a stripe of locks.
+Another way to solve the race issue can be acquiring a predictable `Lock` object from Hazelcast. This way, every value in the map can be given a lock or you can create a stripe of locks.
 
 
 #### Optimistic Locking
 
-Hazelcast way of optimistic locking is to use `map.replace` method. See the below sample code. 
+The Hazelcast way of optimistic locking is to use the `map.replace` method. See the below sample code. 
 
 ```java
 public class OptimisticMember {
@@ -123,15 +123,15 @@ public class OptimisticMember {
 
 Depending on the locking requirements, one locking strategy can be picked.
 
-Optimistic locking is better for mostly read only systems and it brings a performance boost over pessimistic locking.
+Optimistic locking is better for mostly read only systems. It has a performance boost over pessimistic locking.
 
-Pessimistic locking is good if there are lots of updates on the same key and it is more robust than optimistic one from the perspective of data consistency.
-In Hazelcast, use `IExecutorService` for submitting a task to a key owner or to a member, or members. This is the recommended way of task executions which uses pessimistic or optimistic locking techniques. By following this manner, there will be less network hops and less data over wire and also tasks will be executed very near to data. Please refer to [Data Affinity](#data-affinity).
+Pessimistic locking is good if there are lots of updates on the same key. It is more robust than optimistic locking from the perspective of data consistency.
+In Hazelcast, use `IExecutorService` to submit a task to a key owner, or to a member or members. This is the recommended way to perform task executions that use pessimistic or optimistic locking techniques. `IExecutorService` will have less network hops and less data over wire, and tasks will be executed very near to the data. Please refer to [Data Affinity](#data-affinity).
 
 #### ABA Problem
 
-ABA problem occurs in environments when a shared resource is open to change by multiple threads. So, even one thread sees the same value for a particular key in consecutive reads, it does not mean nothing has changed between the reads. Because one another thread may come and change the value, do another work and change the value back, but the first thread can think that nothing has changed.
+The ABA problem occurs in environments when a shared resource is open to change by multiple threads. Even if one thread sees the same value for a particular key in consecutive reads, it does not mean nothing has changed between the reads. Another thread may come and change the value, do work, and change the value back, but the first thread can think that nothing has changed.
 
-To prevent these kind of problems, one possible solution is to use a version number and to check it before any write to be sure that nothing has changed between consecutive reads. Although all the other fields will be equal, the version field will prevent objects from being seen as equal. This is called the optimistic locking strategy and it is used in environments which do not expect intensive concurrent changes on a specific key.
+To prevent these kind of problems, one solution is to use a version number and to check it before any write to be sure that nothing has changed between consecutive reads. Although all the other fields will be equal, the version field will prevent objects from being seen as equal. This is the optimistic locking strategy, and it is used in environments which do not expect intensive concurrent changes on a specific key.
 
-In Hazelcast, you can apply optimistic locking strategy by using `replace` method of map. This method compares values in object or data forms depending on the in memory format configuration. If the values are equal, it replaces the old value with the new one. If you want to use your defined `equals` method, in memory format should be `Object`. Otherwise, Hazelcast serializes objects to binary forms and compares them.  
+In Hazelcast, you can apply optimistic locking strategy with the map `replace` method. This method compares values in object or data forms depending on the in-memory format configuration. If the values are equal, it replaces the old value with the new one. If you want to use your defined `equals` method, in-memory format should be `Object`. Otherwise, Hazelcast serializes objects to binary forms and compares them.  

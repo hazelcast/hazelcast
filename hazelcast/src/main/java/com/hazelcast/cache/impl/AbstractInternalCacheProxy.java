@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.operation.*;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
@@ -53,7 +54,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * @see com.hazelcast.cache.impl.CacheProxy
  * @see com.hazelcast.cache.ICache
  */
-abstract class AbstractCacheProxyInternal<K, V>
+abstract class AbstractInternalCacheProxy<K, V>
         extends AbstractCacheProxyBase<K, V>
         implements ICache<K, V> {
 
@@ -65,7 +66,7 @@ abstract class AbstractCacheProxyInternal<K, V>
     private final Object completionRegistrationMutex = new Object();
     private volatile String completionRegistrationId;
 
-    protected AbstractCacheProxyInternal(CacheConfig cacheConfig, NodeEngineImpl nodeEngine, ICacheService cacheService) {
+    protected AbstractInternalCacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();

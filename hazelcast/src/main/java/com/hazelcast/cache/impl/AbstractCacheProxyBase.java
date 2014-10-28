@@ -65,14 +65,14 @@ abstract class AbstractCacheProxyBase<K, V> {
     protected final SerializationService serializationService;
     protected final CacheOperationProvider operationProvider;
 
-    private final NodeEngineImpl nodeEngine;
+    private final NodeEngine nodeEngine;
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
     private final CacheLoader<K, V> cacheLoader;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
-    protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngineImpl nodeEngine, ICacheService cacheService) {
+    protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
@@ -100,18 +100,24 @@ abstract class AbstractCacheProxyBase<K, V> {
         if (!isClosed.compareAndSet(false, true)) {
             return;
         }
-        //todo FutureUtil?
+        Exception caughtException = null;
         for (Future f : loadAllTasks) {
             try {
                 f.get(TIMEOUT, TimeUnit.SECONDS);
             } catch (Exception e) {
-                throw new CacheException(e);
+                if (caughtException == null) {
+                    caughtException = e;
+                }
+                getNodeEngine().getLogger(getClass()).warning("Problem while waiting for loadAll tasks to complete", e);
             }
         }
         loadAllTasks.clear();
         //close the configured CacheLoader
         closeCacheLoader();
         closeListeners();
+        if (caughtException != null) {
+            throw new CacheException("Problem while waiting for loadAll tasks to complete", caughtException);
+        }
     }
 
     public void destroy() {
@@ -127,7 +133,9 @@ abstract class AbstractCacheProxyBase<K, V> {
         InternalCompletableFuture f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionId);
         //todo What happens in exception case? Cache doesn't get destroyed
         f.getSafely();
+
         cacheService.destroyCache(getDistributedObjectName(), true, null);
+        f.getSafely();
     }
 
     public boolean isClosed() {
@@ -186,8 +194,8 @@ abstract class AbstractCacheProxyBase<K, V> {
 
             @Override
             public void onFailure(Throwable t) {
-                //todo Should the error being logged?
                 loadAllTasks.remove(future);
+                getNodeEngine().getLogger(getClass()).warning("Problem in loadAll task", t);
             }
         });
     }
