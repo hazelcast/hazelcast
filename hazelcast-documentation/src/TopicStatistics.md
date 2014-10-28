@@ -3,7 +3,7 @@
 
 ### Statistics
 
-Topic has two statistic variables that you can queried. These values are incremental and local to the member.
+Topic has two statistic variables that you can query. These values are incremental and local to the member.
 
 ```java
 HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();

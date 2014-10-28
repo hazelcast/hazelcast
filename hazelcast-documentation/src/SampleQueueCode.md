@@ -1,7 +1,7 @@
 
 ### Sample Queue Code
 
-The following sample code illustrate a producer and consumer connected by a distributed queue.
+The following sample code illustrates a producer and consumer connected by a distributed queue.
 
 Let's put one integer on the queue every second, 100 integers total.
 
