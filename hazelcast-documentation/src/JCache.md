@@ -1,14 +1,14 @@
  
 # Hazelcast JCache
 
-## JCache Overview
-
 This chapter describes the basics of the standardized Java caching layer API which is commonly referred to as JCache. The JCache
 caching API is specified by the Java Community Process (JCP) as Java Specification Request (JSR) 107.
 
 Caching keeps data in memory that are either slow to calculate / process or originating from another underlying backend system 
 whereas caching is used to prevent additional request round trips for frequently used data. In both cases the reasoning is to 
 gain performance or decrease application latencies.
+
+## JCache Overview
 
 Starting with Hazelcast release 3.3.1, a specification compliant JCache implementation is offered. To show our commitment to this
 important specification the Java world was waiting for over a decade, we do not just provide a simple wrapper around our existing
@@ -52,11 +52,11 @@ For Maven users, the coordinates look like the following snippet:
   <version>1.0.0</version>
 </dependency>
 ```
-For other build systems, the way to describe those might
+For other build systems, the way to describe the coordinates might
 be different.
 
 
-To activate Hazelcast as the JCache provider implementation add either `hazelcast-all.jar` or
+To activate Hazelcast as the JCache provider implementation, add either `hazelcast-all.jar` or
 `hazelcast.jar` to the classpath (if not already available) by either one of the following Maven snippets.
 
 If you use `hazelcast-all.jar`: 
@@ -78,11 +78,11 @@ If you use `hazelcast.jar`:
   <version>3.4</version>
 </dependency>
 ```
-Again users of other build systems have to adjust the way of
+The users of other build systems have to adjust the way of
 defining the dependency to their needs.
 
 
-When users want to use Hazelcast clients to connect to a remote cluster, the `hazelcast-client.jar` dependency is also required
+When the users want to use Hazelcast clients to connect to a remote cluster, the `hazelcast-client.jar` dependency is also required
 on the client side applications. This JAR is already included in `hazelcast-all.jar`. Or, you can add it to the classpath using the following
 Maven snippet:
 
@@ -94,7 +94,7 @@ Maven snippet:
 </dependency>
 ```
 
-For other build systems, e.g. ANT, the users have to download those dependencies from either the JSR-107 and
+For other build systems, e.g. ANT, the users have to download these dependencies from either the JSR-107 specification and
 Hazelcast community website ([http://www.hazelcast.org](http://www.hazelcast.org)) or from the Maven repository search page
 ([http://search.maven.org](http://search.maven.org)).
 
@@ -228,7 +228,7 @@ Note that this section only describes the JCache provided standard properties. F
 
 <br></br>
 ![image](images/NoteSmall.jpg) ***NOTE:*** *The JMX MBeans provided by Hazelcast JCache show statistics of the local node only. 
-To show the cluster-wide statistics the user is requested to collect statistic information from all nodes and accumulate them to 
+To show the cluster-wide statistics, the user should collect statistic information from all nodes and accumulate them to 
 the overall statistics.*
 <br></br>
 
@@ -340,11 +340,11 @@ com.hazelcast.cache.impl.HazelcastServerCachingProvider
 ## Introduction to the JCache API
 
 This section explains the JCache API by providing simple examples and use cases. While walking through the examples, we will have
-a look at a couple of the standard API classes and see how those are used.
+a look at a couple of the standard API classes and see how these classes are used.
 
 ### JCache API Walk-through
 
-This subsection creates a small account application with providing a caching layer over an imagined database abstraction. The
+This subsection creates a small account application by providing a caching layer over an imagined database abstraction. The
 database layer will be simulated using single demo data in a simple DAO interface. To show the difference between the "database"
 access and retrieving values from the cache, a small waiting time is used in the DAO implementation to simulate network and
 database latency.
@@ -439,12 +439,12 @@ enter help to see all available commands including their description.
 In the section [Quick Example](#quick-example), we have already seen a couple of the base classes and explained how those work. 
 Below, we quickly repeat their usages.
 
-*_javax.cache.Caching_:*
+**`javax.cache.Caching`**:
 
 The access point into the JCache API. It is used to retrieve the general `CachingProvider` backed by any compliant JCache
 implementation like Hazelcast JCache.
 
-*_javax.cache.spi.CachingProvider_:*
+**`javax.cache.spi.CachingProvider`**:
 
 The SPI that is implemented to bridge between JCache API and the implementation itself. Hazelcast nodes and clients use different
 providers chosen as seen in the subsection for [Provider Configuration](#provider-configuration) which enable the JCache API to
@@ -454,7 +454,7 @@ When a `javax.cache.spi.CachingProvider::getCacheManager` overload is used that 
 classloader will be part of the scope of the created `java.cache.Cache` and it is not possible to retrieve it on other nodes.
 We advise not to use those overloads, those are not meant to be used in distributed environments!
 
-*_javax.cache.CacheManager_:*
+**`javax.cache.CacheManager`**:
 
 The `CacheManager` provides the capability to create new and manage existing JCache caches.
   
@@ -464,7 +464,7 @@ provides a type checking of those types at retrieval of the cache. For that reas
 `getCache` throw an exception because types cannot be checked.*
 <br></br>
   
-*_javax.cache.configuration.Configuration_, _javax.cache.configuration.MutableConfiguration_:*
+**`javax.cache.configuration.Configuration`**, **`javax.cache.configuration.MutableConfiguration`**:
 
 These two classes are used to configure a cache prior to retrieving it from a `CacheManager`. The `Configuration` interface,
 therefore, acts as a common super type for all compatible configuration classes such as `MutableConfiguration`.
@@ -474,7 +474,7 @@ offers more options on the specific Hazelcast properties that can be set to conf
 backups counts or selecting the underlying [In Memory Format](#in-memory-format) of the cache. For more information on this
 configuration class, please see the reference in [JCache Programmatic Configuration](#jcache-programmatic-configuration).
  
-*_javax.cache.Cache_:*
+**`javax.cache.Cache`**:
 
 This interface represents the cache instance itself. It is comparable to `java.util.Map` but offers special operations dedicated
 to the caching use case. Therefore, for example `javax.cache.Cache::put`, unlike `java.util.Map::put`, does not return the old 
@@ -487,12 +487,12 @@ all given keys in the same bulk operations since no transactional behavior is ap
 
 ### Factory and FactoryBuilder
 
-`javax.cache.configuration.Factory` implementations are used for configuration of the different features like 
-`CacheEntryListener`, `ExpirePolicy` and `CacheLoader`s or `CacheWriter`s. Those factories are required for distribution of the
-different features to nodes in a cluster environment like Hazelcast, therefore factories have to be serializable.
+The `javax.cache.configuration.Factory` implementations are used for configuration of the different features like 
+`CacheEntryListener`, `ExpirePolicy` and `CacheLoader`s or `CacheWriter`s. These factory implementations are required to distribute the
+different features to nodes in a cluster environment like Hazelcast. Therefore, these factory implementations have to be serializable.
 
-`Factory` implementations are easy to implement and follow the default Provider- or Factory-Pattern, 
-`UserCacheEntryListenerFactory` demonstrates the process to implement a custom JCache `Factory`.
+The `Factory` implementations are easy to perform and follow the default Provider- or Factory-Pattern. The sample class 
+`UserCacheEntryListenerFactory` shown below demonstrates the process to implement a custom JCache `Factory`.
 
 ```java
 public class UserCacheEntryListenerFactory
@@ -506,8 +506,8 @@ public class UserCacheEntryListenerFactory
 }
 ```
 
-To simplify the process for users JCache API offers a set of useful helper methods collected in
-`javax.cache.configuration.FactoryBuilder`. In the above configuration example `FactoryBuilder::factoryOf` is used to create a 
+To simplify the process for the users, JCache API offers a set of useful helper methods collected in
+`javax.cache.configuration.FactoryBuilder`. In the above configuration example, `FactoryBuilder::factoryOf` is used to create a 
 singleton factory for the given instance.
 
 ### CacheLoader
@@ -812,13 +812,13 @@ Connecting or joining different clusters is done by applying a configuration sco
 used to request a `CacheManager` that was created before those `CacheManager`s share the same underlying `HazelcastInstance`.
 
 A configuration scope is applied by passing in the path of the configuration file using the special URI schema called 
-`hazelcast:config://`.
+`hazelcast+config`.
 
 Using Configuration Scope:
 
 ```java
 CachingProvider cachingProvider = Caching.getCachingProvider();
-URI configFile = new URI( "hazelcast:config://my-configs/scoped-hazelcast.xml" );
+URI configFile = new URI( "hazelcast+config://my-configs/scoped-hazelcast.xml" );
 CacheManager cacheManager = cachingProvider.getCacheManager( configFile, null );
 ```
 
@@ -842,7 +842,7 @@ be created using a `com.hazelcast.config.Config` and an `instanceName` to be set
 `CacheManager`s created using an equal `java.net.URI` will share the same `HazelcastInstance`.
  
 A named scope is almost applied the same way as the configuration scope but using another URI schema called
-`hazelcast:name://`.
+`hazelcast:name`.
 
 Using Named Instance Scope:
 
@@ -853,7 +853,7 @@ config.setInstanceName( "my-named-hazelcast-instance" );
 Hazelcast.newHazelcastInstance( config );
 
 CachingProvider cachingProvider = Caching.getCachingProvider();
-URI hzName = new URI( "hazelcast:name://my-named-hazelcast-instance" );
+URI hzName = new URI( "hazelcast+name://my-named-hazelcast-instance" );
 CacheManager cacheManager = cachingProvider.getCacheManager( hzName, null );
 ```
 
@@ -903,11 +903,11 @@ After unwrapping the `Cache` instance into a `ICache` instance you have access t
 
 ### ICache Configuration
 
-As mentioned in [JCache Declarative Configuration](#jcache-declarative-configuration) the Hazelcast ICache extension offers
-additional configuration properties over the default JCache configuration. Those include internal storage format, backup counts
+As mentioned in [JCache Declarative Configuration](#jcache-declarative-configuration), the Hazelcast ICache extension offers
+additional configuration properties over the default JCache configuration. These additional properties include internal storage format, backup counts
 and eviction policy.
 
-The XML declarative configuration for ICache is an superset of the previously discussed JCache config: 
+The declarative configuration for ICache is a superset of the previously discussed JCache configuration: 
 
 ```xml
 <cache>
@@ -916,9 +916,19 @@ The XML declarative configuration for ICache is an superset of the previously di
   <async-backup-count>1</async-backup-count>
   <in-memory-format>BINARY</in-memory-format>
   <eviction-policy>NONE</eviction-policy>
+  <eviction-percentage>25</eviction-percentage>
+  <eviction-threshold-percentage>25</eviction-threshold-percentage>
 </cache>
 ```
 
+- `backup-count`: The number of synchronous backups. Those backups are executed before the mutating cache operation is finished. This operation is blocked. Its default value is 1.
+- `async-backup-count`: The number of asynchronous backups. Those backups are executed asynchronously so the mutating operation is not blocked and finished immediately. Its default value 0.  
+- `in-memory-format`: It defines the internal storage format. For more information please see [In Memory Format](#in-memory-format). Default is BINARY.
+- `eviction-policy`: The eviction policy **(currently available on Hi-Density storage only)** is used to define which entries are evicted (removed) from the cache when it is low in space. Its default value is `RANDOM`. Following eviction policies are available:
+  - `LRU`: Abbreviation for Least Recently Used. When `eviction-policy` is set to `LRU`, the longest unused (not accessed) entries are removed from the cache.  
+  - `LFU`: Abbreviation for Least Frequently Used. When `eviction-policy` is set to `LFU`, the entries that are used (accessed) least frequently are removed from the cache.
+  - `RANDOM`: When `eviction-policy` is set to `RANDOM`, random entries are removed from the cache. No information about access frequency or last accessed time are taken into account.
+  - `NONE`: When `eviction-policy` is set to `NONE`, no entries are removed from the cache at all.
 - `backup-count`: The number of synchronous backups. Those backups are executed before the mutating cache operation finishes, the operation is blocked, default is 1.
 - `async-backup-count`: The number of asynchronous backups. Those backups are executed asynchronously so the mutating operation is not blocked and finished immediately, default is 0.  
 - `in-memory-format`: The In Memory Format defines the internal storage format. For more information please see [In Memory Format](#in-memory-format). Default is BINARY.
@@ -927,17 +937,21 @@ The XML declarative configuration for ICache is an superset of the previously di
   - `LFU`: With _Least Frequently Used_ elements are removed from the cache being used (accessed) least frequently.
   - `RANDOM`: Random elements are removed from the cache, no information about access frequency or last access are taken into account.
   - `NONE`: No elements will be removed from the cache at all.
+- `eviction-percentage`: The eviction percentage property **(currently available on Hi-Density storage only)** defines the amount of percentage of the cache that will be evicted when the threshold is reached. Can be set to any integer number between 0 and 100, defaults to 0.
+- `eviction-threshold-percentage`: the eviction threshold property **(currently available on Hi-Density storage only)** defines a threshold when reached to trigger the eviction process. Can be set to any integer number between 0 and 100, defaults to 0.
 
-Since `javax.cache.configuration.MutableConfiguration` misses those additional configuration properties Hazelcast ICache extension
-provides an extended configuration class called `com.hazelcast.config.CacheConfig`. All above shown properties can be configured
-using this `javax.cache.configuration.CompleteConfiguration` implementation by using the corresponding setter methods.
+Since `javax.cache.configuration.MutableConfiguration` misses the above additional configuration properties, Hazelcast ICache extension
+provides an extended configuration class called `com.hazelcast.config.CacheConfig`. This class is an implementation of `javax.cache.configuration.CompleteConfiguration` and all the properties shown above can be configured
+using its corresponding setter methods.
 
 ### Async Operations
 
 As another addition of Hazelcast ICache over the normal JCache specification, Hazelcast provides asynchronous versions of almost
-all operations, returning a `com.hazelcast.core.ICompletableFuture`. Using those methods and the returned future objects it is
-possible to use JCache in a reactive way by registering zero or more callbacks on the future to prevent blocking the current
+all methods, returning a `com.hazelcast.core.ICompletableFuture`. By using these methods and the returned future objects, JCache can be used in a reactive way by registering zero or more callbacks on the future to prevent blocking the current
 thread.
+
+
+Name of the asynchronous versions of the methods append the phrase `Async` to the method name. A sample code is shown below using the method `putAsync()`.
 
 ```java
 ICache<Integer, String> unwrappedCache = cache.unwrap( ICache.class );
@@ -953,38 +967,38 @@ future.andThen( new ExecutionCallback<String>() {
 } );
 ```
 
-As seen in the example the asynchronous versions of the methods append an `Async` to the end of the method name. Following methods
+Following methods
 are available in asynchronous versions:
 
  - `get(key)`:
-  - `getAsync(key)`
-  - `getAsync(key, expiryPolicy)`
+	- `getAsync(key)`
+    - `getAsync(key, expiryPolicy)`
  - `put(key, value)`:
-  - `putAsync(key, value)`
-  - `putAsync(key, value, expiryPolicy)`
+    - `putAsync(key, value)`
+    - `putAsync(key, value, expiryPolicy)`
  - `putIfAbsent(key, value)`:
-  - `putIfAbsentAsync(key, value)`
-  - `putIfAbsentAsync(key, value, expiryPolicy)`
+    - `putIfAbsentAsync(key, value)`
+    - `putIfAbsentAsync(key, value, expiryPolicy)`
  - `getAndPut(key, value)`:
-  - `getAndPutAsync(key, value)`
-  - `getAndPutAsync(key, value, expiryPolicy)`
+    - `getAndPutAsync(key, value)`
+    - `getAndPutAsync(key, value, expiryPolicy)`
  - `remove(key)`:
-  - `removeAsync(key)`
+    - `removeAsync(key)`
  - `remove(key, value)`:
-  - `removeAsync(key, value)`
+    - `removeAsync(key, value)`
  - `getAndRemove(key)`:
-  - `getAndRemoveAsync(key)`
+    - `getAndRemoveAsync(key)`
  - `replace(key, value)`:
-  - `replaceAsync(key, value)`
-  - `replaceAsync(key, value, expiryPolicy)`
+    - `replaceAsync(key, value)`
+    - `replaceAsync(key, value, expiryPolicy)`
  - `replace(key, oldValue, newValue)`:
-  - `replaceAsync(key, oldValue, newValue)`
-  - `replaceAsync(key, oldValue, newValue, expiryPolicy)`
+    - `replaceAsync(key, oldValue, newValue)`
+    - `replaceAsync(key, oldValue, newValue, expiryPolicy)`
  - `getAndReplace(key, value)`: 
-  - `getAndReplaceAsync(key, value)`
-  - `getAndReplaceAsync(key, value, expiryPolicy)`
+    - `getAndReplaceAsync(key, value)`
+    - `getAndReplaceAsync(key, value, expiryPolicy)`
 
-The versions mentioned with a given `javax.cache.expiry.ExpiryPolicy` are further discussed in
+The methods mentioned with a given `javax.cache.expiry.ExpiryPolicy` are further discussed in the section
 [Custom ExpiryPolicy](#custom-expirypolicy).
 
 <br></br>
@@ -993,13 +1007,11 @@ The versions mentioned with a given `javax.cache.expiry.ExpiryPolicy` are furthe
 
 ### Custom ExpiryPolicy
 
-Whereas the JCache specification has just the option to configure a single `ExpiryPolicy` per cache, Hazelcast ICache extension
-offers the possibility to define a custom `ExpiryPolicy` per key by providing a set of method overloads with an `ExpirePolicy`
-parameter as already seen in the list of asynchronous operations.
+The JCache specification has just the option to configure a single `ExpiryPolicy` per cache. Hazelcast ICache extension
+offers the possibility to define a custom `ExpiryPolicy` per key by providing a set of method overloads with an `expirePolicy`
+parameter, as already seen in the list of asynchronous methods in the section [Async Methods](#async-methods). This implies that custom expiry policies can passed to a cache operation.
 
-Said that custom expiry policies can passed to a cache operation.
-
-As a reminder this is how a `ExpirePolicy` is set on JCache configuration:
+As a reminder, here is how an `ExpirePolicy` is set on JCache configuration:
 
 ```java
 CompleteConfiguration<String, String> config =
@@ -1016,10 +1028,9 @@ ICache<Integer, String> unwrappedCache = cache.unwrap( ICache.class );
 unwrappedCache.put( 1, "value", new AccessedExpiryPolicy( Duration.ONE_DAY ) );
 ```
 
-For sure the `ExpirePolicy` instance can be pre-created, cached and re-used but only per cache instance since `ExpirePolicy` 
+For sure the `ExpirePolicy` instance can be pre-created, cached and re-used but only for each cache instance since `ExpirePolicy` 
 implementations can be marked as `java.io.Closeable`. The following list shows provided method overloads over `javax.cache.Cache`
-by `com.hazelcast.cache.ICache` featuring the `ExpiryPolicy` parameter. Asynchronous method overloads are not listed here, for 
-more information about those methods please see [Async Operations](#async-operations):
+by `com.hazelcast.cache.ICache` featuring the `ExpiryPolicy` parameter:
 
  - `get(key)`:
   - `get(key, expiryPolicy)`
@@ -1039,34 +1050,36 @@ more information about those methods please see [Async Operations](#async-operat
   - `replace(key, oldValue, newValue, expirePolicy)`
  - `getAndReplace(key, value)`:
   - `getAndReplace(key, value, expirePolicy)`
+  
+Asynchronous method overloads are not listed here. Please see [Async Operations](#async-operations) for the list of asynchronous method overloads.
 
 ### Additional Methods
 
-In addition to above mentioned asynchronous and per element expiry operations there is also a set of convenience methods
-available. Those methods are also not part of the JCache specification but provided by the `com.hazelcast.cache.ICache` interface.
+In addition to the operations explained in the sections [Async Operations](#async-operations) and [Custom ExpiryPolicy](#custom-expirypolicy), Hazelcast ICache also provides a set of convenience methods. These methods are not part of the JCache 
+specification.
 
  - `size()`: Returns the estimated size of the distributed cache.
- - `destroy()`: Destroys the cache _and removes the data from memory_ which is different from `javax.cache.Cache::close`. 
- - `getLocalCacheStatistics()`: Returns an `com.hazelcast.cache.CacheStatistics` instance providing the same statistics data as provided by the JMX beans. On clients this method is not available yet therefore a `java.lang.UnsupportedOperationException`is thrown. 
+ - `destroy()`: Destroys the cache _and removes the data from memory_ which is different from the method `javax.cache.Cache::close`. 
+ - `getLocalCacheStatistics()`: Returns a `com.hazelcast.cache.CacheStatistics` instance providing the same statistics data as provided by the JMX beans. On clients, this method is not available yet. Therefore, the exception `java.lang.UnsupportedOperationException` is thrown when you use this method on a Hazelcast client.
 
 ### BackupAwareEntryProcessor
 
 Another feature, especially interesting for distributed environments like Hazelcast, is the JCache specified
-`javax.cache.processor.EntryProcessor`. For more general information see [JCache EntryProcessor](#jcache-entryprocessor).
+`javax.cache.processor.EntryProcessor`. For more general information, please see [JCache EntryProcessor](#jcache-entryprocessor).
  
-Since Hazelcast provides backups of cached entries on other nodes the default backup-way for an object changed by an
-`EntryProcessor` is serializing the complete object and sending it to the backup partition. This can be a huge network overhead
+Since Hazelcast provides backups of cached entries on other nodes, the default way to backup an object changed by an
+`EntryProcessor` is to serialize the complete object and send it to the backup partition. This can be a huge network overhead
 for big objects. 
 
 Hazelcast offers a sub-interface for `EntryProcessor` called `com.hazelcast.cache.BackupAwareEntryProcessor` which offers an
-additional feature. If provides the user with the possibility to create or pass another `EntryProcessor` to run on backup
-partitions and apply delta changes to those backup entries.
+additional feature. It provides the user with the possibility to create or pass another `EntryProcessor` to run on backup
+partitions and apply delta changes to the backup entries.
 
 The backup partition `EntryProcessor` can either be the currently running processor itself (by returning `this`) or it can be
 a specialized `EntryProcessor` implementation (other from the currently running one) which does different operations or leaves
 out operations, e.g. sending emails.
 
-If we again take the `EntryProcessor` example from the demonstration application [JCache EntryProcessor](#jcache-entryprocessor) 
+If we again take the `EntryProcessor` example from the demonstration application [JCache EntryProcessor](#jcache-entryprocessor), 
 the changed code will look like the following snippet.
 
 ```java
@@ -1115,20 +1128,21 @@ The additional method `BackupAwareEntryProcessor::createBackupEntryProcessor` is
 implementation to run on the backup partition, in this case the same processor again.
 
 <br></br>
-![image](images/NoteSmall.jpg) ***NOTE:*** *For the backup runs the returned value from the backup processor is ignored an not 
+![image](images/NoteSmall.jpg) ***NOTE:*** *For the backup runs, the returned value from the backup processor is ignored and not 
 returned to the user.*
 <br></br>
 
 ## JCache Specification Compliance
 
-Hazelcast JCache is fully compliant to the JSR 107 TCK (Technology Compatibility Kit), therefore it is officially a JCache
+Hazelcast JCache is fully compliant with the JSR 107 TCK (Technology Compatibility Kit), therefore it is officially a JCache
 implementation. This is tested by running the TCK against the Hazelcast implementation.
 
-Everybody can test Hazelcast JCache for compliance by executing the TCK on his own, just perform the instructions below:
+Everybody can test Hazelcast JCache for compliance by executing the TCK. Just perform the instructions below:
 
-1. Checkout the TCK from [https://github.com/jsr107/jsr107tck](https://github.com/jsr107/jsr107tck).
-2. Change the properties as below. 
-3. Run the TCK by `mvn clean install`
+
+1. Checkout the TCK from [https://github.com/jsr107/jsr107tck](https://github.com/jsr107/jsr107tck)
+2. Change the properties int `tck-parent/pom.xml` as shown below 
+3. Run the TCK by `mvn clean install`.
 
 ```xml
 <properties>
@@ -1153,7 +1167,7 @@ Everybody can test Hazelcast JCache for compliance by executing the TCK on his o
   <!-- Change the following properties to your CacheManager and 
        Cache implementation. Used by the unwrap tests. -->
   <CacheManagerImpl>
-    com.hazelcast.cache.impl.HazelcastCacheManager
+    com.hazelcast.cache.HazelcastCacheManager
   </CacheManagerImpl>
   <CacheImpl>com.hazelcast.cache.ICache</CacheImpl>
   <CacheEntryImpl>
