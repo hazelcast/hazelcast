@@ -929,14 +929,6 @@ The declarative configuration for ICache is a superset of the previously discuss
   - `LFU`: Abbreviation for Least Frequently Used. When `eviction-policy` is set to `LFU`, the entries that are used (accessed) least frequently are removed from the cache.
   - `RANDOM`: When `eviction-policy` is set to `RANDOM`, random entries are removed from the cache. No information about access frequency or last accessed time are taken into account.
   - `NONE`: When `eviction-policy` is set to `NONE`, no entries are removed from the cache at all.
-- `backup-count`: The number of synchronous backups. Those backups are executed before the mutating cache operation finishes, the operation is blocked, default is 1.
-- `async-backup-count`: The number of asynchronous backups. Those backups are executed asynchronously so the mutating operation is not blocked and finished immediately, default is 0.  
-- `in-memory-format`: The In Memory Format defines the internal storage format. For more information please see [In Memory Format](#in-memory-format). Default is BINARY.
-- `eviction-policy`: The eviction policy **(currently available on Hi-Density storage only)** is used to define which elements are evicted from the memory in case of low memory, default is RANDOM. Following eviction policies are available:
-  - `LRU`: With _Least Recently Used_ longest unused (not accessed) elements are removed from the cache.  
-  - `LFU`: With _Least Frequently Used_ elements are removed from the cache being used (accessed) least frequently.
-  - `RANDOM`: Random elements are removed from the cache, no information about access frequency or last access are taken into account.
-  - `NONE`: No elements will be removed from the cache at all.
 - `eviction-percentage`: The eviction percentage property **(currently available on Hi-Density storage only)** defines the amount of percentage of the cache that will be evicted when the threshold is reached. Can be set to any integer number between 0 and 100, defaults to 0.
 - `eviction-threshold-percentage`: the eviction threshold property **(currently available on Hi-Density storage only)** defines a threshold when reached to trigger the eviction process. Can be set to any integer number between 0 and 100, defaults to 0.
 
@@ -1033,23 +1025,23 @@ implementations can be marked as `java.io.Closeable`. The following list shows p
 by `com.hazelcast.cache.ICache` featuring the `ExpiryPolicy` parameter:
 
  - `get(key)`:
-  - `get(key, expiryPolicy)`
- - `getAll(keys)`
-  - `getAll(keys, expirePolicy)`
- - `put(key, value)`
-  - `put(key, value, expirePolicy)`
- - `getAndPut(key, value)`
-  - `getAndPut(key, value, expirePolicy)`
+  	- `get(key, expiryPolicy)`
+ - `getAll(keys)`:
+  	- `getAll(keys, expirePolicy)`
+ - `put(key, value)`:
+ 	 - `put(key, value, expirePolicy)`
+ - `getAndPut(key, value)`:
+	  - `getAndPut(key, value, expirePolicy)`
  - `putAll(map)`:
-  - `putAll(map, expirePolicy)`
+	  - `putAll(map, expirePolicy)`
  - `putIfAbsent(key, value)`:
-  - `putIfAbsent(key, value, expirePolicy)`
+  	- `putIfAbsent(key, value, expirePolicy)`
  - `replace(key, value)`:
-  - `replace(key, value, expirePolicy)`
+  	- `replace(key, value, expirePolicy)`
  - `replace(key, oldValue, newValue)`:
-  - `replace(key, oldValue, newValue, expirePolicy)`
+  	- `replace(key, oldValue, newValue, expirePolicy)`
  - `getAndReplace(key, value)`:
-  - `getAndReplace(key, value, expirePolicy)`
+  	- `getAndReplace(key, value, expirePolicy)`
   
 Asynchronous method overloads are not listed here. Please see [Async Operations](#async-operations) for the list of asynchronous method overloads.
 
@@ -1141,12 +1133,9 @@ Everybody can test Hazelcast JCache for compliance by executing the TCK. Just pe
 
 
 1. Checkout the TCK from [https://github.com/jsr107/jsr107tck](https://github.com/jsr107/jsr107tck)
-2. Change the properties int `tck-parent/pom.xml` as shown below 
-<<<<<<< HEAD
+2. Change the properties in `tck-parent/pom.xml` as shown below 
 3. Run the TCK by `mvn clean install`.
-=======
-3. Run the TCK by `mvn clean install`
->>>>>>> FETCH_HEAD
+
 
 ```xml
 <properties>
