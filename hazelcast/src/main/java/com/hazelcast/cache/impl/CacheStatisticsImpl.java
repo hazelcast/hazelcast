@@ -296,12 +296,12 @@ public class CacheStatisticsImpl
         for (;;) {
             long nanos = removeTimeTakenNanos;
             if (nanos <= Long.MAX_VALUE - duration) {
-                if (REMOVALS_UPDATER.compareAndSet(this, nanos, nanos + duration)) {
+                if (REMOVE_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, nanos + duration)) {
                     return;
                 }
             } else {
                 //counter full. Just reset.
-                if (REMOVALS_UPDATER.compareAndSet(this, nanos, duration)) {
+                if (REMOVE_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, duration)) {
                     clear();
                     return;
                 }

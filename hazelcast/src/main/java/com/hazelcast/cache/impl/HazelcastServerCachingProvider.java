@@ -32,6 +32,7 @@ import java.util.Properties;
  * created managers.</p>
  * <p>If you need to use your already created HazelcastInstance, you can directly create a provider using
  * {@link #createCachingProvider(com.hazelcast.core.HazelcastInstance)}.</p>
+ *
  * @see javax.cache.spi.CachingProvider
  */
 public final class HazelcastServerCachingProvider

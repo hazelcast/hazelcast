@@ -40,6 +40,7 @@ import java.util.Set;
 
 /**
  * This client request  specifically calls {@link CacheGetAllOperationFactory} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory
  */
 public class CacheGetAllRequest
@@ -77,7 +78,7 @@ public class CacheGetAllRequest
         MapEntrySet resultSet = new MapEntrySet();
         CacheService service = getService();
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) service.toObject(entry.getValue());
+            MapEntrySet mapEntrySet = serializationService.toObject(entry.getValue());
             Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
             for (Map.Entry<Data, Data> dataEntry : entrySet) {
                 resultSet.add(dataEntry);

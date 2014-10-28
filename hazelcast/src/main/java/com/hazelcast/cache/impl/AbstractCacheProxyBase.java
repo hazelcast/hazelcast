@@ -27,6 +27,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.executor.CompletableFutureTask;
 
 import javax.cache.CacheException;
@@ -58,8 +59,9 @@ abstract class AbstractCacheProxyBase<K, V> {
     //this will represent the name from the user perspective
     protected final String name;
     protected final String nameWithPrefix;
-    protected final CacheService cacheService;
+    protected final ICacheService cacheService;
     protected final SerializationService serializationService;
+    protected final CacheOperationProvider operationProvider;
 
     private final NodeEngine nodeEngine;
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
@@ -68,7 +70,7 @@ abstract class AbstractCacheProxyBase<K, V> {
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
-    protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService) {
+    protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
@@ -82,6 +84,7 @@ abstract class AbstractCacheProxyBase<K, V> {
             cacheLoader = null;
         }
 
+        operationProvider = cacheService.getCacheOperationProvider(nameWithPrefix, cacheConfig.getInMemoryFormat());
     }
 
     //region close&destroy
@@ -115,12 +118,13 @@ abstract class AbstractCacheProxyBase<K, V> {
             return;
         }
         isClosed.set(true);
-        final Operation op = new CacheDestroyOperation(getDistributedObjectName());
+        Operation operation = new CacheDestroyOperation(name);
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(getDistributedObjectName());
-        final InternalCompletableFuture f = getNodeEngine().getOperationService()
-                                                           .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+        OperationService operationService = getNodeEngine().getOperationService();
+        InternalCompletableFuture f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionId);
         //todo What happens in exception case? Cache doesn't get destroyed
         f.getSafely();
+        //TODO @ali this causes pooled off-heap fail
         cacheService.destroyCache(getDistributedObjectName(), true, null);
     }
 
@@ -140,7 +144,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         return CacheService.SERVICE_NAME;
     }
 
-    protected CacheService getService() {
+    protected ICacheService getService() {
         return cacheService;
     }
 
@@ -201,7 +205,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         public void run() {
             try {
                 final Map<Integer, Object> results = getNodeEngine().getOperationService()
-                                                                    .invokeOnAllPartitions(getServiceName(), operationFactory);
+                        .invokeOnAllPartitions(getServiceName(), operationFactory);
                 validateResults(results);
                 if (completionListener != null) {
                     completionListener.onCompletion();

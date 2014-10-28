@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
@@ -55,7 +55,7 @@ abstract class AbstractCacheOperation
     @Override
     public final void beforeRun()
             throws Exception {
-        CacheService service = getService();
+        AbstractCacheService service = getService();
         cache = service.getOrCreateCache(name, getPartitionId());
     }
 

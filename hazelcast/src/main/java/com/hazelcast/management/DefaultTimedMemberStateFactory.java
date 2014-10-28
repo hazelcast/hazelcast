@@ -3,6 +3,7 @@ package com.hazelcast.management;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.CacheDistributedObject;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
@@ -129,7 +130,7 @@ public class DefaultTimedMemberStateFactory implements TimedMemberStateFactory {
         }
 
         if (cacheServiceEnabled) {
-            final CacheService cacheService = getCacheService();
+            final ICacheService cacheService = getCacheService();
             for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
                 if (cacheConfig.isStatisticsEnabled()) {
                     CacheStatistics statistics = cacheService.getStatistics(cacheConfig.getNameWithPrefix());
@@ -277,7 +278,7 @@ public class DefaultTimedMemberStateFactory implements TimedMemberStateFactory {
         return count;
     }
 
-    private CacheService getCacheService() {
+    private ICacheService getCacheService() {
         final CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         return setupRef.getService();
     }

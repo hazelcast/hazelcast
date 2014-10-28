@@ -42,22 +42,22 @@ public class CacheClearOperationFactory
 
     private String name;
     private Set<Data> keys;
-    private boolean isRemoveAll;
+    private boolean isClear;
     private int completionId;
 
     public CacheClearOperationFactory() {
     }
 
-    public CacheClearOperationFactory(String name, Set<Data> keys, boolean isRemoveAll, int completionId) {
+    public CacheClearOperationFactory(String name, Set<Data> keys, boolean isClear, int completionId) {
         this.name = name;
         this.keys = keys;
-        this.isRemoveAll = isRemoveAll;
+        this.isClear = isClear;
         this.completionId = completionId;
     }
 
     @Override
     public Operation createOperation() {
-        return new CacheClearOperation(name, keys, isRemoveAll, completionId);
+        return new CacheClearOperation(name, keys, isClear, completionId);
     }
 
     @Override
@@ -74,7 +74,7 @@ public class CacheClearOperationFactory
     public void writeData(ObjectDataOutput out)
             throws IOException {
         out.writeUTF(name);
-        out.writeBoolean(isRemoveAll);
+        out.writeBoolean(isClear);
         out.writeInt(completionId);
         out.writeBoolean(keys != null);
         if (keys != null) {
@@ -89,7 +89,7 @@ public class CacheClearOperationFactory
     public void readData(ObjectDataInput in)
             throws IOException {
         name = in.readUTF();
-        isRemoveAll = in.readBoolean();
+        isClear = in.readBoolean();
         completionId = in.readInt();
         boolean isKeysNotNull = in.readBoolean();
         if (isKeysNotNull) {

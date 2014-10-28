@@ -48,7 +48,7 @@ public class HazelcastServerCacheManager
         extends HazelcastCacheManager {
 
     private NodeEngine nodeEngine;
-    private CacheService cacheService;
+    private ICacheService cacheService;
 
     public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
@@ -104,7 +104,7 @@ public class HazelcastServerCacheManager
                 final CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan,
                         enabled);
                 final Future future = nodeEngine.getOperationService()
-                                                .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
                 futures.add(future);
             }
         }
@@ -145,7 +145,7 @@ public class HazelcastServerCacheManager
         final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
-                                                                   .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.getSafely();
     }
 

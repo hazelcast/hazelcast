@@ -16,19 +16,13 @@
 
 package com.hazelcast.cache.impl.record;
 
-/**
- * <p>
- * An expirable data object which represents a cache entry.
- * </p>
- * Record of {@link com.hazelcast.cache.impl.ICacheRecordStore}.
- *
- * @param <V>
- */
-public interface CacheRecord<V>
-        extends Expirable {
+import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 
-    V getValue();
+import java.io.Serializable;
+import java.util.Map;
 
-    void setValue(V value);
+public interface CacheRecordMap<K, V> extends Map<K, V>, Serializable {
+
+    CacheKeyIteratorResult fetchNext(int nextTableIndex, int size);
 
 }

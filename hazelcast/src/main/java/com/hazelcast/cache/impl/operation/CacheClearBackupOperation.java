@@ -40,14 +40,17 @@ public class CacheClearBackupOperation
 
     private Set<Data> keys;
 
+    private boolean isClear;
+
     private transient ICacheRecordStore cache;
 
     public CacheClearBackupOperation() {
     }
 
-    public CacheClearBackupOperation(String name, Set<Data> keys) {
+    public CacheClearBackupOperation(String name, Set<Data> keys, boolean isClear) {
         super(name);
         this.keys = keys;
+        this.isClear = isClear;
     }
 
     @Override
@@ -70,6 +73,10 @@ public class CacheClearBackupOperation
     @Override
     public void run()
             throws Exception {
+        if (isClear) {
+            cache.clear();
+            return;
+        }
         if (keys != null) {
             for (Data key : keys) {
                 cache.removeRecord(key);
@@ -81,6 +88,7 @@ public class CacheClearBackupOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
+        out.writeBoolean(isClear);
         out.writeBoolean(keys != null);
         if (keys != null) {
             out.writeInt(keys.size());
@@ -94,6 +102,7 @@ public class CacheClearBackupOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
+        isClear = in.readBoolean();
         boolean isKeysNotNull = in.readBoolean();
         if (isKeysNotNull) {
             int size = in.readInt();

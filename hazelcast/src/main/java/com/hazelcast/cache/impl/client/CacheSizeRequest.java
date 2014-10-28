@@ -77,9 +77,8 @@ public class CacheSizeRequest
     @Override
     protected Object reduce(Map<Integer, Object> map) {
         int total = 0;
-        CacheService cacheService = getService();
         for (Object result : map.values()) {
-            Integer size = (Integer) cacheService.toObject(result);
+            Integer size = serializationService.toObject(result);
             total += size;
         }
         return total;

@@ -17,9 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
-import com.hazelcast.cache.impl.operation.CacheGetOperation;
-import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
@@ -28,6 +25,8 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -48,6 +47,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * {@link com.hazelcast.cache.ICache} is the designated interface.</p>
  * <p>AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.</p>
  * <p>Note: this partial implementation is used by server or embedded mode cache.</p>
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  * @see com.hazelcast.cache.impl.CacheProxy
@@ -56,7 +56,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 abstract class AbstractCacheProxyExtension<K, V>
         extends AbstractCacheProxyInternal<K, V> {
 
-    protected AbstractCacheProxyExtension(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService) {
+    protected AbstractCacheProxyExtension(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
     }
 
@@ -71,7 +71,7 @@ abstract class AbstractCacheProxyExtension<K, V>
         ensureOpen();
         validateNotNull(key);
         final Data keyData = serializationService.toData(key);
-        final Operation op = new CacheGetOperation(getDistributedObjectName(), keyData, expiryPolicy);
+        final Operation op = operationProvider.createGetOperation(keyData, expiryPolicy);
         return invoke(op, keyData, false);
     }
 
@@ -170,10 +170,9 @@ abstract class AbstractCacheProxyExtension<K, V>
         final Map<K, V> result = new HashMap<K, V>();
         final Collection<Integer> partitions = getPartitionsForKeys(ks);
         try {
-            final CacheGetAllOperationFactory factory = new CacheGetAllOperationFactory(getDistributedObjectName(), ks,
-                    expiryPolicy);
-            final Map<Integer, Object> responses = getNodeEngine().getOperationService()
-                                                                  .invokeOnPartitions(getServiceName(), factory, partitions);
+            OperationFactory factory = operationProvider.createGetAllOperationFactory(ks, expiryPolicy);
+            OperationService operationService = getNodeEngine().getOperationService();
+            Map<Integer, Object> responses = operationService.invokeOnPartitions(getServiceName(), factory, partitions);
             for (Object response : responses.values()) {
                 final Object responseObject = serializationService.toObject(response);
                 final Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) responseObject).getEntrySet();
@@ -264,18 +263,12 @@ abstract class AbstractCacheProxyExtension<K, V>
         ensureOpen();
         try {
             final SerializationService serializationService = getNodeEngine().getSerializationService();
-            final CacheSizeOperationFactory operationFactory = new CacheSizeOperationFactory(getDistributedObjectName());
+            OperationFactory operationFactory = operationProvider.createSizeOperationFactory();
             final Map<Integer, Object> results = getNodeEngine().getOperationService()
-                                                                .invokeOnAllPartitions(getServiceName(), operationFactory);
+                    .invokeOnAllPartitions(getServiceName(), operationFactory);
             int total = 0;
             for (Object result : results.values()) {
-                Integer size;
-                if (result instanceof Data) {
-                    size = serializationService.toObject((Data) result);
-                } else {
-                    size = (Integer) result;
-                }
-                total += size;
+                total += (Integer) serializationService.toObject(result);
             }
             return total;
         } catch (Throwable t) {
@@ -285,7 +278,7 @@ abstract class AbstractCacheProxyExtension<K, V>
 
     @Override
     public CacheStatistics getLocalCacheStatistics() {
-        final CacheService service = getService();
+        final ICacheService service = getService();
         final CacheStatisticsImpl statistics = service.createCacheStatIfAbsent(name);
         return statistics;
     }

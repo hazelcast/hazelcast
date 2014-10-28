@@ -67,6 +67,8 @@
     <suppress checks="NPathComplexity" files="com.hazelcast.config.CacheConfig"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
+    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractCacheRecordStore"/>
+    <suppress checks="MethodLength" files="com.hazelcast.cache.impl.AbstractCacheRecordStore"/>
 
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
