@@ -95,18 +95,24 @@ abstract class AbstractCacheProxyBase<K, V> {
         if (!isClosed.compareAndSet(false, true)) {
             return;
         }
-        //todo FutureUtil?
+        Exception caughtException = null;
         for (Future f : loadAllTasks) {
             try {
                 f.get(TIMEOUT, TimeUnit.SECONDS);
             } catch (Exception e) {
-                throw new CacheException(e);
+                if (caughtException == null) {
+                    caughtException = e;
+                }
+                getNodeEngine().getLogger(getClass()).warning("Problem while waiting for loadAll tasks to complete", e);
             }
         }
         loadAllTasks.clear();
         //close the configured CacheLoader
         closeCacheLoader();
         closeListeners();
+        if (caughtException != null) {
+            throw new CacheException("Problem while waiting for loadAll tasks to complete", caughtException);
+        }
     }
 
     public void destroy() {
@@ -119,9 +125,9 @@ abstract class AbstractCacheProxyBase<K, V> {
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(getDistributedObjectName());
         final InternalCompletableFuture f = getNodeEngine().getOperationService()
                                                            .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
-        //todo What happens in exception case? Cache doesn't get destroyed
-        f.getSafely();
+
         cacheService.destroyCache(getDistributedObjectName(), true, null);
+        f.getSafely();
     }
 
     public boolean isClosed() {
@@ -180,8 +186,8 @@ abstract class AbstractCacheProxyBase<K, V> {
 
             @Override
             public void onFailure(Throwable t) {
-                //todo Should the error being logged?
                 loadAllTasks.remove(future);
+                getNodeEngine().getLogger(getClass()).warning("Problem in loadAll task", t);
             }
         });
     }

@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
-import com.hazelcast.cache.impl.HazelcastCacheManager;
 import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheContainsKeyRequest;
 import com.hazelcast.cache.impl.client.CacheEntryProcessorRequest;
@@ -70,10 +70,10 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * @param <V> value type
  */
 public class ClientCacheProxy<K, V>
-        extends AbstractClientCacheProxyExtension<K, V> {
+        extends AbstractClientCacheProxy<K, V> {
     protected final ILogger logger;
 
-    private HazelcastCacheManager cacheManager;
+    private AbstractHazelcastCacheManager cacheManager;
 
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext clientContext,
                             HazelcastClientCacheManager cacheManager) {
