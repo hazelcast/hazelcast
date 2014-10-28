@@ -17,11 +17,9 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 
 @Category(QuickTest.class)
-@Ignore
 public class CacheMBStatisticsBeanTest
         extends org.jsr107.tck.management.CacheMBStatisticsBeanTest {
 }
