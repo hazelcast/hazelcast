@@ -133,17 +133,6 @@ abstract class AbstractRecordStore implements RecordStore {
         }
     }
 
-    protected void updateTtl(Record record, long ttl) {
-        if (ttl < 0L) {
-            return;
-        }
-        record.setTtl(ttl);
-        if (record.getStatistics() != null) {
-            final long expirationTime = mapServiceContext.getExpirationTime(ttl, getNow());
-            record.getStatistics().setExpirationTime(expirationTime);
-        }
-    }
-
 
     protected void removeIndex(Data key) {
         final IndexService indexService = mapContainer.getIndexService();

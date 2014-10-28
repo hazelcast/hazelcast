@@ -40,11 +40,11 @@ public final class MapDataStores {
         final MapStoreWrapper store = mapContainer.getStore();
         final SerializationService serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         final int writeDelaySeconds = mapContainer.getMapConfig().getMapStoreConfig().getWriteDelaySeconds();
-        final long millis = mapServiceContext.convertTime(writeDelaySeconds, TimeUnit.SECONDS);
+        final long writeDelayMillis = TimeUnit.SECONDS.toMillis(writeDelaySeconds);
         // TODO writeCoalescing should be configurable.
         boolean writeCoalescing = true;
         final WriteBehindStore mapDataStore
-                = new WriteBehindStore(store, serializationService, millis, partitionId, writeCoalescing);
+                = new WriteBehindStore(store, serializationService, writeDelayMillis, partitionId, writeCoalescing);
         final WriteBehindQueue writeBehindQueue = pickWriteBehindQueue(mapServiceContext, writeCoalescing);
         mapDataStore.setWriteBehindQueue(writeBehindQueue);
         mapDataStore.setWriteBehindProcessor(writeBehindProcessor);
