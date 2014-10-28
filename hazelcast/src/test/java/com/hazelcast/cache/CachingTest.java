@@ -17,9 +17,15 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(QuickTest.class)
 public class CachingTest
         extends org.jsr107.tck.CachingTest {
+    @Test
+    @Override
+    public void dummyTest() {
+    }
+
 }
