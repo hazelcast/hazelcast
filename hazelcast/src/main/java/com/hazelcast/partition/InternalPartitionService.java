@@ -156,7 +156,7 @@ public interface InternalPartitionService extends CoreService {
 
     long[] incrementPartitionReplicaVersions(int partitionId, int totalBackupCount);
 
-    void setPartitionReplicaVersions(int partitionId, long[] versions);
+    void setPartitionReplicaVersions(int partitionId, long[] versions, int replicaOffset);
 
     void clearPartitionReplicaVersions(int partitionId);
 
