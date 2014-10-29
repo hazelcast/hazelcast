@@ -142,6 +142,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
         verify(membershipListener,never()).memberAdded(any(MembershipEvent.class));
     }
 
+
     private ExecutorService ex;
 
     @Test
