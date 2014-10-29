@@ -79,12 +79,12 @@ public class CacheEntryEventImpl<K, V>
 
     @Override
     public String toString() {
-        return "CacheEntryEventImpl{" +
-                "eventType=" + getEventType() +
-                ", key=" + key +
-                ", newValue=" + newValue +
-                ", oldValue=" + oldValue +
-                ", source=" + getSource() +
-                '}';
+        return "CacheEntryEventImpl{"
+                + "eventType=" + getEventType()
+                + ", key=" + key
+                + ", newValue=" + newValue
+                + ", oldValue=" + oldValue
+                + ", source=" + getSource()
+                + '}';
     }
 }
