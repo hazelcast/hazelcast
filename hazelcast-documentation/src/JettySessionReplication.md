@@ -7,7 +7,7 @@
 ![](images/enterprise-onlycopy.jpg)
 
 
-***Sample Code:*** *Please see our sample application for [Jetty Based Web Session Replication](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/jetty-session-replication).*
+***Sample Code:*** *Please see our sample application for [Jetty Based Web Session Replication](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/enterprise-session-replication).*
 
 #### Overview
 
@@ -67,7 +67,8 @@ This type of deployment is the simplest approach. You can just configure your Je
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
 - Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
 - Update `$HAZELCAST_ENTERPRISE_ROOT/bin/hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
-- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar` and `hazelcast.xml` to the folder `$JETTY_HOME/lib/ext`.
+- Put `hazelcast.xml` to the folder `$JETTY_HOME/etc`.
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar` to the folder `$JETTY_HOME/lib/ext`.
 - Configure Session ID Manager and Session Manager. Please see below explanations for configuring these managers.
 
 *Configuring the HazelcastSessionIdManager*
@@ -147,7 +148,8 @@ In this deployment type, Jetty instances work as clients to an existing Hazelcas
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
 - Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
 - Update `$HAZELCAST_ENTERPRISE_ROOT/bin/hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
-- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar` and `hazelcast.xml` to the folder `$JETTY_HOME/lib/ext`.
+- Put `hazelcast.xml` to the folder `$JETTY_HOME/etc`.
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar`.
 - Configure Session ID Manager and Session Manager. Please see below explanations for configuring these managers.
 
 *Configuring the HazelcastSessionIdManager*
@@ -177,7 +179,7 @@ Filename must be the same as the application name, e.g. `example.war` should hav
     <Set name="sessionHandler">
         <New class="org.eclipse.jetty.server.session.SessionHandler">
             <Arg>
-                <New id="mongoMgr" class="com.hazelcast.session.HazelcastSessionManager">
+                <New id="hazelMgr" class="com.hazelcast.session.HazelcastSessionManager">
                     <Set name="idManager">
                         <Ref id="hazelcastIdMgr"/>
                     </Set>
@@ -196,7 +198,7 @@ Filename must be the same as the application name, e.g. `example.war` should hav
     <Set name="sessionHandler">
         <New class="org.eclipse.jetty.server.session.SessionHandler">
             <Arg>
-                <New id="mongoMgr" class="com.hazelcast.session.HazelcastSessionManager">
+                <New id="hazelMgr" class="com.hazelcast.session.HazelcastSessionManager">
                     <Set name="sessionIdManager">
                         <Ref id="hazelcastIdMgr"/>
                     </Set>
@@ -218,6 +220,7 @@ Filename must be the same as the application name, e.g. `example.war` should hav
 
 - `workerName`: Set this attribute to a unique value for each Jetty instance to enable session affinity with a sticky-session configured load balancer.
 - `cleanUpPeriod`: Defines the working period of session clean-up task in milliseconds.
+- `configLocation`: You can specify location of `hazelcast.xml`.
 
 <br></br>
 

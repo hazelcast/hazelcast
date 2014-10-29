@@ -45,15 +45,15 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     boolean createCacheConfigIfAbsent(CacheConfig config, boolean isLocal);
 
-    void deleteCacheConfig(String name);
+    CacheConfig deleteCacheConfig(String name);
 
     CacheStatisticsImpl createCacheStatIfAbsent(String name);
 
     void deleteCacheStat(String name);
 
-    void setStatisticsEnabled(String cacheNameWithPrefix, boolean enabled);
+    void setStatisticsEnabled(CacheConfig cacheConfig, String cacheNameWithPrefix, boolean enabled);
 
-    void setManagementEnabled(String cacheNameWithPrefix, boolean enabled);
+    void setManagementEnabled(CacheConfig cacheConfig, String cacheNameWithPrefix, boolean enabled);
 
     CacheConfig getCacheConfig(String name);
 

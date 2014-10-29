@@ -116,13 +116,14 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public void destroyCache(String objectName, boolean isLocal, String callerUuid) {
+        CacheConfig config = deleteCacheConfig(objectName);
         destroySegments(objectName);
 
         if (!isLocal) {
             deregisterAllListener(objectName);
         }
-        setStatisticsEnabled(objectName, false);
-        setManagementEnabled(objectName, false);
+        setStatisticsEnabled(config, objectName, false);
+        setManagementEnabled(config, objectName, false);
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
         if (!isLocal) {
@@ -147,10 +148,10 @@ public abstract class AbstractCacheService implements ICacheService {
         final boolean created = localConfig == null;
         if (created) {
             if (config.isStatisticsEnabled()) {
-                setStatisticsEnabled(config.getNameWithPrefix(), true);
+                setStatisticsEnabled(config, config.getNameWithPrefix(), true);
             }
             if (config.isManagementEnabled()) {
-                setManagementEnabled(config.getNameWithPrefix(), true);
+                setManagementEnabled(config, config.getNameWithPrefix(), true);
             }
             if (!isLocal) {
                 createConfigOnAllMembers(config);
@@ -171,8 +172,8 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
-    public void deleteCacheConfig(String name) {
-        configs.remove(name);
+    public CacheConfig deleteCacheConfig(String name) {
+        return configs.remove(name);
     }
 
     @Override
@@ -189,8 +190,8 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
-    public void setStatisticsEnabled(String cacheNameWithPrefix, boolean enabled) {
-        final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
+    public void setStatisticsEnabled(CacheConfig cacheConfig, String cacheNameWithPrefix, boolean enabled) {
+        cacheConfig = cacheConfig != null ? cacheConfig : configs.get(cacheNameWithPrefix);
         if (cacheConfig != null) {
             final String cacheManagerName = cacheConfig.getUriString();
             cacheConfig.setStatisticsEnabled(enabled);
@@ -207,8 +208,8 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
-    public void setManagementEnabled(String cacheNameWithPrefix, boolean enabled) {
-        final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
+    public void setManagementEnabled(CacheConfig cacheConfig, String cacheNameWithPrefix, boolean enabled) {
+        cacheConfig = cacheConfig != null ? cacheConfig : configs.get(cacheNameWithPrefix);
         if (cacheConfig != null) {
             final String cacheManagerName = cacheConfig.getUriString();
             cacheConfig.setManagementEnabled(enabled);
