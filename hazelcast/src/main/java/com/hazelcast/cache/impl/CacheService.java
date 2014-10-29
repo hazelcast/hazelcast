@@ -198,6 +198,7 @@ public class CacheService
      * @param callerUuid the uuid of the node that called this method.
      */
     public void destroyCache(String objectName, boolean isLocal, String callerUuid) {
+        deleteCacheConfig(objectName);
         for (CachePartitionSegment segment : segments) {
             segment.deleteCache(objectName);
         }
@@ -206,7 +207,6 @@ public class CacheService
         }
         setStatisticsEnabled(objectName, false);
         setManagementEnabled(objectName, false);
-        deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
         if (!isLocal) {
             destroyCacheOnAllMembers(objectName, callerUuid);
