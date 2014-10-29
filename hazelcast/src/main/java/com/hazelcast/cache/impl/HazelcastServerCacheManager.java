@@ -48,8 +48,8 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 public class HazelcastServerCacheManager
         extends AbstractHazelcastCacheManager {
 
-    private NodeEngineImpl nodeEngine;
-    private ICacheService cacheService;
+    private final NodeEngine nodeEngine;
+    private final ICacheService cacheService;
 
     public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
@@ -148,6 +148,12 @@ public class HazelcastServerCacheManager
         final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
                 .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.getSafely();
+    }
+
+    @Override
+    protected void removeCacheConfigFromLocal(String cacheName) {
+        cacheService.deleteCacheConfig(cacheName);
+        super.removeCacheConfigFromLocal(cacheName);
     }
 
     protected void postClose() {

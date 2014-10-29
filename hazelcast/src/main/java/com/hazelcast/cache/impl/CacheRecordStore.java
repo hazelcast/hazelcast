@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
@@ -28,10 +29,16 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.util.EmptyStatement;
 
+import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheWriter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -67,20 +74,18 @@ public class CacheRecordStore
     protected boolean hasExpiringEntry;
     protected final ScheduledFuture<?> evictionTaskFuture;
 
-    public CacheRecordStore(String name,
-                            int partitionId,
-                            NodeEngine nodeEngine,
-                            AbstractCacheService cacheService) {
-        this(name, partitionId, nodeEngine, cacheService, null);
-    }
-
-    public CacheRecordStore(String name,
-                            int partitionId,
-                            NodeEngine nodeEngine,
-                            AbstractCacheService cacheService,
-                            ExpiryPolicy expiryPolicy) {
-        super(name, partitionId, nodeEngine, cacheService, expiryPolicy);
+    public CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine,
+                     AbstractCacheService cacheService) {
+        super(name, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
+        if (cacheConfig.getCacheLoaderFactory() != null) {
+            final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
+            cacheLoader = cacheLoaderFactory.create();
+        }
+        if (cacheConfig.getCacheWriterFactory() != null) {
+            final Factory<CacheWriter> cacheWriterFactory = cacheConfig.getCacheWriterFactory();
+            cacheWriter = cacheWriterFactory.create();
+        }
         this.records = createRecordCacheMap();
         this.cacheRecordFactory = createCacheRecordFactory();
         this.evictionTaskFuture =

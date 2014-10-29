@@ -92,15 +92,14 @@ abstract class AbstractInternalCacheProxy<K, V>
             return f;
         } catch (Throwable e) {
             if (e instanceof IllegalStateException) {
-                //todo Latch is not unregistered if close throws an Exception!
                 close();
             }
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+        } finally {
             if (completionOperation) {
                 deregisterCompletionLatch(completionId);
             }
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
-
     }
 
     //region internal base operations
