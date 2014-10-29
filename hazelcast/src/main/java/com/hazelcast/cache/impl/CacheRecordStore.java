@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
@@ -30,15 +29,11 @@ import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.util.EmptyStatement;
 
 import javax.cache.configuration.Factory;
-import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheWriter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 

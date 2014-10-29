@@ -83,9 +83,12 @@ public abstract class AbstractCacheRecordStore<
                                     final NodeEngine nodeEngine,
                                     final AbstractCacheService cacheService) {
         this(name, partitionId, nodeEngine, cacheService, null,
-                DEFAULT_EVICTION_PERCENTAGE, DEFAULT_EVICTION_THRESHOLD_PERCENTAGE, DEFAULT_IS_EVICTION_TASK_ENABLE);
+             DEFAULT_EVICTION_PERCENTAGE,
+             DEFAULT_EVICTION_THRESHOLD_PERCENTAGE,
+             DEFAULT_IS_EVICTION_TASK_ENABLE);
     }
 
+    //CHECKSTYLE:OFF
     public AbstractCacheRecordStore(final String name,
                                     final int partitionId,
                                     final NodeEngine nodeEngine,
