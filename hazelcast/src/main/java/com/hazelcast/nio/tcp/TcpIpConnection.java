@@ -39,13 +39,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
- *
+ * <p/>
  * A Connection has 2 sides:
  * <ol>
- *     <li>the side where it receives data from the remote  machine</li>
- *     <li>the side where it sends data to the remote machine</li>
+ * <li>the side where it receives data from the remote  machine</li>
+ * <li>the side where it sends data to the remote machine</li>
  * </ol>
- *
+ * <p/>
  * The reading side is the {@link com.hazelcast.nio.tcp.ReadHandler} and the writing side of this connection
  * is the {@link com.hazelcast.nio.tcp.WriteHandler}.
  */
@@ -98,6 +98,49 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
+    public WriteResult writeBackup(Packet packet) {
+        if (!live) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Connection is closed, won't write packet -> " + packet);
+            }
+            return WriteResult.FAILURE;
+        }
+
+        boolean full = false;
+        for (;;) {
+            int oldAvailableSlots = availableSlots.get();
+
+            if (oldAvailableSlots <= 0) {
+                full = true;
+                break;
+            }
+
+            int newAvailableSlots = oldAvailableSlots - 1;
+            if (availableSlots.compareAndSet(oldAvailableSlots, newAvailableSlots)) {
+                break;
+            }
+        }
+
+        if (full) {
+            // if the connection is full, we are going to try to send a claim.
+            if (waitingForSlotResponse.compareAndSet(false, true)) {
+                long askInMs = dontAskForSlotsBefore - Clock.currentTimeMillis();
+                if (askInMs <= 0) {
+                    sendClaim();
+                } else {
+                    waitingForSlotResponse.set(false);
+                }
+                return WriteResult.FULL;
+            }
+        }
+
+        // we are going to the packet no matter the queue is full because we can't store it locally.
+        // because the future will not be waiting for all backups to complete, it will provide the back pressure
+        writeHandler.enqueueSocketWritable(packet);
+        return full ? WriteResult.FULL : WriteResult.SUCCESS;
+    }
+
+    @Override
     public WriteResult write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
@@ -105,26 +148,28 @@ public final class TcpIpConnection implements Connection {
             }
             return WriteResult.FAILURE;
         }
+
         if (packet.isBackpressureAllowed()) {
-            return writeWithBackpressureApplied(packet);
+            return writeWithBackPressureApplied(packet);
         } else {
             writeHandler.enqueueSocketWritable(packet);
             return WriteResult.SUCCESS;
         }
     }
 
-    private WriteResult writeWithBackpressureApplied(SocketWritable packet) {
+    private WriteResult writeWithBackPressureApplied(SocketWritable packet) {
         WriteResult result = writeIfSlotAvailable(packet);
         if (result != WriteResult.FULL) {
             return result;
         }
+
         if (waitingForSlotResponse.compareAndSet(false, true)) {
             long askInMs = dontAskForSlotsBefore - Clock.currentTimeMillis();
             if (askInMs <= 0) {
-                requestNewSlots();
+                sendClaim();
             } else {
 //                if (logger.isFinestEnabled()) {
-                 logger.info("No slots to " + toString() + " are available, but I can only ask for new ones in " + askInMs + " ms.");
+                logger.info("No slots to " + toString() + " are available, but I can only ask for new ones in " + askInMs + " ms.");
 //                }
                 waitingForSlotResponse.set(false);
             }
@@ -143,8 +188,9 @@ public final class TcpIpConnection implements Connection {
         return WriteResult.FULL;
     }
 
-    private void requestNewSlots() {
-        logger.info("Requesting new slots for " + toString());
+    private void sendClaim() {
+        //todo: needs to be removed or put under debug
+        logger.info("Sending claim for " + toString());
         IOService ioService = connectionManager.ioService;
         Data dummyData = ioService.toData(0);
         Packet slotRequestPacket = new Packet(dummyData, ioService.getPortableContext());
