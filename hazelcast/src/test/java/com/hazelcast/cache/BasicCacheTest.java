@@ -63,7 +63,6 @@ import static junit.framework.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Repeat(100)
 public class BasicCacheTest
         extends HazelcastTestSupport {
 
