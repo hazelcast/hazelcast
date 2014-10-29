@@ -86,7 +86,8 @@ public class CacheRecordStore
                 nodeEngine.getExecutionService()
                         .scheduleWithFixedDelay("hz:cache",
                                 new EvictionTask(),
-                                INITIAL_DELAY, PERIOD,
+                                DEFAULT_EVICTION_TASK_INITIAL_DELAY,
+                                DEFAULT_EVICTION_TASK_PERIOD,
                                 TimeUnit.SECONDS);
     }
 

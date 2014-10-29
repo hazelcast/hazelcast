@@ -50,11 +50,13 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 /**
  * @author sozal 14/10/14
  */
-public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends CacheRecordMap<Data, R>>
+public abstract class AbstractCacheRecordStore<
+            R extends CacheRecord, CRM extends CacheRecordMap<Data, R>>
         implements ICacheRecordStore {
 
-    protected static final long INITIAL_DELAY = 5;
-    protected static final long PERIOD = 5;
+    protected static final long DEFAULT_EVICTION_TASK_INITIAL_DELAY = 5;
+    protected static final long DEFAULT_EVICTION_TASK_PERIOD = 5;
+    protected static final boolean DEFAULT_IS_EVICTION_TASK_ENABLE = false;
 
     protected final String name;
     protected final int partitionId;
@@ -73,7 +75,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final int evictionPercentage;
     protected final float evictionThreshold;
     protected Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
-    //private final ScheduledFuture<?> evictionTaskFuture;
+    protected final ScheduledFuture<?> evictionTaskFuture;
 
     public AbstractCacheRecordStore(final String name,
                                     final int partitionId,
@@ -81,7 +83,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                                     final AbstractCacheService cacheService,
                                     final ExpiryPolicy expiryPolicy) {
         this(name, partitionId, nodeEngine, cacheService, expiryPolicy,
-             null, DEFAULT_EVICTION_PERCENTAGE, DEFAULT_EVICTION_THRESHOLD_PERCENTAGE);
+             null, DEFAULT_EVICTION_PERCENTAGE,
+             DEFAULT_EVICTION_THRESHOLD_PERCENTAGE, DEFAULT_IS_EVICTION_TASK_ENABLE);
     }
 
     //CHECKSTYLE:OFF
@@ -92,7 +95,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                                     final ExpiryPolicy expiryPolicy,
                                     final EvictionPolicy evictionPolicy,
                                     final int evictionPercentage,
-                                    final int evictionThresholdPercentage) {
+                                    final int evictionThresholdPercentage,
+                                    final boolean evictionTaskEnable) {
         this.name = name;
         this.partitionId = partitionId;
         this.nodeEngine = nodeEngine;
@@ -126,12 +130,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         this.evictionThreshold = (float) Math.max(1, ONE_HUNDRED_PERCENT - evictionThresholdPercentage)
                                         / ONE_HUNDRED_PERCENT;
         this.records = createRecordCacheMap();
-        /*
-        this.evictionTaskFuture =
-                nodeEngine.getExecutionService()
-                        .scheduleWithFixedDelay("hz:cache", new EvictionTask(),
-                                                5, 5, TimeUnit.SECONDS);
-        */
+        if (evictionTaskEnable) {
+            this.evictionTaskFuture = createEvictionTaskFuture();
+        } else {
+            this.evictionTaskFuture = null;
+        }
     }
     //CHECKSTYLE:ON
 
@@ -187,6 +190,20 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public int forceEvict() {
         int percentage = Math.max(MIN_FORCED_EVICT_PERCENTAGE, evictionPercentage);
         return records.evictRecords(percentage, EvictionPolicy.RANDOM);
+    }
+
+    protected ScheduledFuture<?> createEvictionTaskFuture() {
+        return
+            nodeEngine.getExecutionService()
+                .scheduleWithFixedDelay("hz:cache",
+                        createEvictionTask(),
+                        DEFAULT_EVICTION_TASK_INITIAL_DELAY,
+                        DEFAULT_EVICTION_TASK_PERIOD,
+                        TimeUnit.SECONDS);
+    }
+
+    protected EvictionTask createEvictionTask() {
+        return new EvictionTask();
     }
 
     protected Data toData(Object obj) {
@@ -297,10 +314,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return record;
     }
 
-    protected void updateGetAndPutStat(boolean isPutSucceed,
-                                       boolean getValue,
-                                       boolean oldValueNull,
-                                       long start) {
+    protected void updateGetAndPutStat(boolean isPutSucceed, boolean getValue,
+                                       boolean oldValueNull, long start) {
         if (isStatisticsEnabled()) {
             if (isPutSucceed) {
                 statistics.increaseCachePuts(1);
@@ -317,8 +332,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    protected long updateAccessDuration(CacheRecord record,
-                                        ExpiryPolicy expiryPolicy,
+    protected long updateAccessDuration(CacheRecord record, ExpiryPolicy expiryPolicy,
                                         long now) {
         long expiryTime = -1L;
         try {
@@ -349,12 +363,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    protected void publishEvent(String cacheName,
-                                CacheEventType eventType,
-                                Data dataKey,
-                                Data dataOldValue,
-                                Data dataValue,
-                                boolean isOldValueAvailable) {
+    protected void publishEvent(String cacheName, CacheEventType eventType,
+                                Data dataKey, Data dataOldValue,
+                                Data dataValue, boolean isOldValueAvailable) {
         if (isEventBatchingEnabled) {
             final CacheEventDataImpl cacheEventData =
                     new CacheEventDataImpl(cacheName, eventType, dataKey,
@@ -371,8 +382,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    protected void publishBatchedEvents(String cacheName,
-                                        CacheEventType cacheEventType,
+    protected void publishBatchedEvents(String cacheName, CacheEventType cacheEventType,
                                         int orderKey) {
         final Set<CacheEventData> cacheEventDatas = batchEvent.get(cacheEventType);
         CacheEventSet ces = new CacheEventSet(cacheEventType, cacheEventDatas);
@@ -417,6 +427,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
+    protected R createRecord(long expiryTime) {
+        return createRecord(null, Clock.currentTimeMillis(), expiryTime);
+    }
+
     protected R createRecord(Object value, long expiryTime) {
         return createRecord(value, Clock.currentTimeMillis(), expiryTime);
     }
@@ -430,11 +444,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return record;
     }
 
-    public R createRecordWithExpiry(Data key,
-                                    Object value,
-                                    ExpiryPolicy expiryPolicy,
-                                    long now,
-                                    boolean disableWriteThrough) {
+    public R createRecordWithExpiry(Data key, Object value, ExpiryPolicy expiryPolicy,
+                                    long now, boolean disableWriteThrough) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         Duration expiryDuration;
@@ -457,23 +468,16 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return null;
     }
 
-    protected void onBeforeUpdateRecord(Data key,
-                                        R record,
-                                        Object value,
-                                        Data oldDataValue) {
+    protected void onBeforeUpdateRecord(Data key, R record,
+                                        Object value, Data oldDataValue) {
     }
 
-    protected void onAfterUpdateRecord(Data key,
-                                       R record,
-                                       Object value,
-                                       Data oldDataValue) {
+    protected void onAfterUpdateRecord(Data key, R record,
+                                       Object value, Data oldDataValue) {
     }
 
-    protected void onUpdateRecordError(Data key,
-                                       R record,
-                                       Object value,
-                                       Data newDataValue,
-                                       Data oldDataValue,
+    protected void onUpdateRecordError(Data key, R record, Object value,
+                                       Data newDataValue, Data oldDataValue,
                                        Throwable error) {
     }
 
@@ -527,11 +531,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    public boolean updateRecordWithExpiry(Data key,
-                                          Object value,
-                                          R record,
-                                          ExpiryPolicy expiryPolicy,
-                                          long now,
+    public boolean updateRecordWithExpiry(Data key, Object value, R record,
+                                          ExpiryPolicy expiryPolicy, long now,
                                           boolean disableWriteThrough) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
@@ -553,16 +554,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return processExpiredEntry(key, record, expiryTime, now) != null;
     }
 
-    protected void onDeleteRecord(Data key,
-                                  R record,
-                                  Data dataValue,
-                                  boolean deleted) {
+    protected void onDeleteRecord(Data key, R record,
+                                  Data dataValue, boolean deleted) {
     }
 
-    protected void onDeleteRecordError(Data key,
-                                       R record,
-                                       Data dataValue,
-                                       Throwable error) {
+    protected void onDeleteRecordError(Data key, R record,
+                                       Data dataValue, Throwable error) {
     }
 
     protected boolean deleteRecord(Data key) {
@@ -727,10 +724,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void publishCompletedEvent(String cacheName,
-                                      int completionId,
-                                      Data dataKey,
-                                      int orderKey) {
+    public void publishCompletedEvent(String cacheName, int completionId,
+                                      Data dataKey, int orderKey) {
         if (completionId > 0) {
             cacheService
                     .publishEvent(cacheName, CacheEventType.COMPLETED, dataKey,
@@ -782,10 +777,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    protected void onGet(Data key,
-                         ExpiryPolicy expiryPolicy,
-                         Object value,
-                         R record) {
+    protected void onGet(Data key, ExpiryPolicy expiryPolicy,
+                         Object value, R record) {
     }
 
     @Override
@@ -796,11 +789,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return record != null && !isExpired;
     }
 
-    protected Object getAndPut(Data key,
-                               Object value,
-                               ExpiryPolicy expiryPolicy,
-                               String caller,
-                               boolean getValue,
+    protected Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy,
+                               String caller, boolean getValue,
                                boolean disableWriteThrough) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
@@ -846,48 +836,29 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    protected Object getAndPut(Data key,
-                               Object value,
-                               ExpiryPolicy expiryPolicy,
-                               String caller,
-                               boolean getValue) {
+    protected Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy,
+                               String caller, boolean getValue) {
         return getAndPut(key, value, expiryPolicy, caller, getValue, false);
     }
 
-    protected void onBeforeGetAndPut(Data key,
-                                     Object value,
-                                     ExpiryPolicy expiryPolicy,
-                                     String caller,
-                                     boolean getValue,
-                                     boolean disableWriteThrough,
-                                     R record,
-                                     Object oldValue,
-                                     boolean isExpired,
+    protected void onBeforeGetAndPut(Data key, Object value, ExpiryPolicy expiryPolicy,
+                                     String caller, boolean getValue,
+                                     boolean disableWriteThrough, R record,
+                                     Object oldValue, boolean isExpired,
                                      boolean willBeNewPut) {
     }
 
-    protected void onAfterGetAndPut(Data key,
-                                    Object value,
-                                    ExpiryPolicy expiryPolicy,
-                                    String caller,
-                                    boolean getValue,
-                                    boolean disableWriteThrough,
-                                    R record,
-                                    Object oldValue,
-                                    boolean isExpired,
-                                    boolean isNewPut,
-                                    boolean isSaveSucceed) {
+    protected void onAfterGetAndPut(Data key, Object value,
+                                    ExpiryPolicy expiryPolicy, String caller,
+                                    boolean getValue, boolean disableWriteThrough,
+                                    R record, Object oldValue, boolean isExpired,
+                                    boolean isNewPut, boolean isSaveSucceed) {
     }
 
-    protected void onGetAndPutError(Data key,
-                                    Object value,
-                                    ExpiryPolicy expiryPolicy,
-                                    String caller,
-                                    boolean getValue,
-                                    boolean disableWriteThrough,
-                                    R record,
-                                    Object oldValue,
-                                    boolean wouldBeNewPut,
+    protected void onGetAndPutError(Data key, Object value, ExpiryPolicy expiryPolicy,
+                                    String caller, boolean getValue,
+                                    boolean disableWriteThrough, R record,
+                                    Object oldValue, boolean wouldBeNewPut,
                                     Throwable error) {
     }
 
@@ -897,46 +868,28 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public Object getAndPut(Data key,
-                            Object value,
-                            ExpiryPolicy expiryPolicy,
+    public Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy,
                             String caller) {
         return getAndPut(key, value, expiryPolicy, caller, true, false);
     }
 
-    protected void onBeforePutIfAbsent(Data key,
-                                       Object value,
-                                       ExpiryPolicy expiryPolicy,
-                                       String caller,
-                                       boolean disableWriteThrough,
-                                       R record,
-                                       boolean isExpired) {
+    protected void onBeforePutIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy,
+                                       String caller, boolean disableWriteThrough,
+                                       R record, boolean isExpired) {
     }
 
-    protected void onAfterPutIfAbsent(Data key,
-                                      Object value,
-                                      ExpiryPolicy expiryPolicy,
-                                      String caller,
-                                      boolean disableWriteThrough,
-                                      R record,
-                                      boolean isExpired,
-                                      boolean isSaveSucceed) {
+    protected void onAfterPutIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy,
+                                      String caller, boolean disableWriteThrough,
+                                      R record, boolean isExpired, boolean isSaveSucceed) {
     }
 
-    protected void onPutIfAbsentError(Data key,
-                                      Object value,
-                                      ExpiryPolicy expiryPolicy,
-                                      String caller,
-                                      boolean disableWriteThrough,
-                                      R record,
-                                      Throwable error) {
+    protected void onPutIfAbsentError(Data key, Object value, ExpiryPolicy expiryPolicy,
+                                      String caller, boolean disableWriteThrough,
+                                      R record, Throwable error) {
     }
 
-    protected boolean putIfAbsent(Data key,
-                                  Object value,
-                                  ExpiryPolicy expiryPolicy,
-                                  String caller,
-                                  boolean disableWriteThrough) {
+    protected boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy,
+                                  String caller, boolean disableWriteThrough) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         final long now = Clock.currentTimeMillis();
@@ -974,38 +927,25 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public boolean putIfAbsent(Data key,
-                               Object value,
-                               ExpiryPolicy expiryPolicy,
-                               String caller) {
+    public boolean putIfAbsent(Data key, Object value,
+                               ExpiryPolicy expiryPolicy, String caller) {
         return putIfAbsent(key, value, expiryPolicy, caller, false);
     }
 
-    protected void onBeforeGetAndReplace(Data key,
-                                         Object oldValue,
-                                         Object newValue,
-                                         ExpiryPolicy expiryPolicy,
-                                         String caller,
-                                         boolean getValue,
-                                         R record,
-                                         boolean isExpired) {
+    protected void onBeforeGetAndReplace(Data key, Object oldValue,
+                                         Object newValue, ExpiryPolicy expiryPolicy,
+                                         String caller, boolean getValue,
+                                         R record, boolean isExpired) {
     }
 
-    protected void onAfterGetAndReplace(Data key,
-                                        Object oldValue,
-                                        Object newValue,
-                                        ExpiryPolicy expiryPolicy,
-                                        String caller,
-                                        boolean getValue,
-                                        R record,
-                                        boolean isExpired,
-                                        boolean replaced) {
+    protected void onAfterGetAndReplace(Data key, Object oldValue,
+                                        Object newValue, ExpiryPolicy expiryPolicy,
+                                        String caller, boolean getValue,
+                                        R record, boolean isExpired, boolean replaced) {
     }
 
     @Override
-    public boolean replace(Data key,
-                           Object value,
-                           ExpiryPolicy expiryPolicy,
+    public boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy,
                            String caller) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
@@ -1043,11 +983,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public boolean replace(Data key,
-                           Object oldValue,
-                           Object newValue,
-                           ExpiryPolicy expiryPolicy,
-                           String caller) {
+    public boolean replace(Data key, Object oldValue, Object newValue,
+                           ExpiryPolicy expiryPolicy, String caller) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         final long now = Clock.currentTimeMillis();
@@ -1084,9 +1021,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public Object getAndReplace(Data key,
-                                Object value,
-                                ExpiryPolicy expiryPolicy,
+    public Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy,
                                 String caller) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
@@ -1128,12 +1063,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return obj;
     }
 
-    protected void onRemove(Data key,
-                            Object value,
-                            String caller,
-                            boolean getValue,
-                            R record,
-                            boolean removed) {
+    protected void onRemove(Data key, Object value, String caller,
+                            boolean getValue, R record, boolean removed) {
     }
 
     @Override
