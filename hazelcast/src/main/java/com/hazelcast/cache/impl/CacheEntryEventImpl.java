@@ -77,4 +77,14 @@ public class CacheEntryEventImpl<K, V>
         throw new IllegalArgumentException("Unwrapping to " + clazz + " is not supported by this implementation");
     }
 
+    @Override
+    public String toString() {
+        return "CacheEntryEventImpl{" +
+                "eventType=" + getEventType() +
+                ", key=" + key +
+                ", newValue=" + newValue +
+                ", oldValue=" + oldValue +
+                ", source=" + getSource() +
+                '}';
+    }
 }
