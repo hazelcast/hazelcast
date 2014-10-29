@@ -66,10 +66,6 @@ public class NativeMemoryConfig {
 
     public NativeMemoryConfig setSize(final MemorySize size) {
         ValidationUtil.isNotNull(size, "Memory size");
-        if (size.megaBytes() < MIN_INITIAL_MEMORY_SIZE) {
-            throw new IllegalArgumentException("Initial memory size cannot be less than "
-                    + MIN_INITIAL_MEMORY_SIZE + " MB");
-        }
         this.size = size;
         return this;
     }
