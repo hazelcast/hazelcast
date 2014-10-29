@@ -212,6 +212,18 @@ public class NodeEngineImpl implements NodeEngine {
         return connection.write(packet);
     }
 
+    public WriteResult sendBackup(Packet packet, Connection connection) {
+        if (connection == null || !connection.isAlive()) {
+            return WriteResult.FAILURE;
+        }
+
+        final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
+        if (memberImpl != null) {
+            memberImpl.didWrite();
+        }
+        return connection.writeBackup(packet);
+    }
+
     /**
      * Retries sending packet maximum 5 times until connection to target becomes available.
      */

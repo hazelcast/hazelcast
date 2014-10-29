@@ -108,6 +108,11 @@ public class MockSimpleClient implements SimpleClient {
         }
 
         @Override
+        public WriteResult writeBackup(Packet packet) {
+            return write(packet);
+        }
+
+        @Override
         public Address getEndPoint() {
             return null;
         }
