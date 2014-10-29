@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.config.CacheConfig;
@@ -108,8 +109,8 @@ public class CacheRecordStore
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
         this.cacheConfig = cacheService.getCacheConfig(name);
-        if (this.cacheConfig == null) {
-            throw new IllegalStateException("Cache already destroyed");
+        if (cacheConfig == null) {
+            throw new CacheNotExistsException("Cache already destroyed, node " + nodeEngine.getLocalMember());
         }
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();

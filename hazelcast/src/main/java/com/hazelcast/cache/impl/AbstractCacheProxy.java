@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
