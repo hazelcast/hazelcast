@@ -326,6 +326,13 @@ final class BasicOperationService implements InternalOperationService {
         if (target == null) {
             throw new IllegalArgumentException("Target is required!");
         }
+
+        // todo: a hack to prevent urgent backup operations be kicked out of this method.
+        if (op instanceof BackupOperation && !op.isUrgent()) {
+            System.out.println("Unexpected operation: "+op);
+            //throw new IllegalArgumentException("Can't send a Backup operation using the regular send method, op: " + op);
+        }
+
         if (nodeEngine.getThisAddress().equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
@@ -334,8 +341,7 @@ final class BasicOperationService implements InternalOperationService {
         Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
 
-        //TODO: This is a temporary hack to make sure backup ops are never pressured back
-        if (op instanceof UrgentSystemOperation || op instanceof BackupOperation) {
+        if (op instanceof UrgentSystemOperation) {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
@@ -355,6 +361,41 @@ final class BasicOperationService implements InternalOperationService {
             }
         }
         return false;
+    }
+
+    /**
+     * Writes the backup. The backup is ALWAYS going to be accepted by the connection because we can't apply back-pressure
+     * on the partition thread. But this method will return if the connection had enough capacity
+     *
+     * @param op
+     * @param target
+     * @return
+     */
+    private WriteResult sendBackup(Operation op, Address target) {
+        if (target == null) {
+            throw new IllegalArgumentException("Target is required!");
+        }
+
+        if (nodeEngine.getThisAddress().equals(target)) {
+            throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
+        }
+
+        if (!(op instanceof BackupOperation)) {
+            throw new IllegalArgumentException("Only BackupOperations are allowed to be executed using the sendBackup method. " +
+                    "Operation = " + op);
+        }
+
+        Data data = nodeEngine.toData(op);
+        int partitionId = scheduler.getPartitionIdForExecution(op);
+        Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
+        packet.setHeader(Packet.HEADER_OP);
+
+        if (op instanceof UrgentSystemOperation) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        Connection connection = node.getConnectionManager().getOrConnect(target);
+
+        return nodeEngine.sendBackup(packet, connection);
     }
 
     @Override
@@ -467,7 +508,7 @@ final class BasicOperationService implements InternalOperationService {
         private final Map<Integer, Object> partitionResults;
 
         private InvokeOnPartitions(String serviceName, OperationFactory operationFactory,
-                                  Map<Address, List<Integer>> memberPartitions) {
+                                   Map<Address, List<Integer>> memberPartitions) {
             this.serviceName = serviceName;
             this.operationFactory = operationFactory;
             this.memberPartitions = memberPartitions;
@@ -928,12 +969,28 @@ final class BasicOperationService implements InternalOperationService {
             return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackupCount, totalBackupCount);
         }
 
+        /**
+         * Makes the actual backup.
+         *
+         * @param backupAwareOp
+         * @param partitionId
+         * @param replicaVersions
+         * @param syncBackupCount
+         * @param totalBackupCount
+         * @return the number of sync backups. If one of the connections is full, the number of sync backups is not determined
+         * based on the syncBackupCount, but by the total number of backups done. Because the future is going to wait for every
+         * backup to complete
+         */
         private int makeBackups(BackupAwareOperation backupAwareOp, int partitionId, long[] replicaVersions,
-                int syncBackupCount, int totalBackupCount) {
+                                int syncBackupCount, int totalBackupCount) {
 
-            int sentSyncBackupCount = 0;
+            int syncBackups = 0;
+            int asyncBackups = 0;
+
+            boolean fullConnectionEncountered = false;
             InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition partition = partitionService.getPartition(partitionId);
+
             for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
                 Address target = partition.getReplicaAddress(replicaIndex);
                 if (target == null) {
@@ -944,17 +1001,31 @@ final class BasicOperationService implements InternalOperationService {
 
                 boolean isSyncBackup = replicaIndex <= syncBackupCount;
                 Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, isSyncBackup);
-                send(backup, target);
+
+                WriteResult result = sendBackup(backup, target);
+
+                if (result == WriteResult.FULL) {
+                    fullConnectionEncountered = true;
+                }
 
                 if (isSyncBackup) {
-                    sentSyncBackupCount++;
+                    syncBackups++;
+                } else {
+                    asyncBackups++;
                 }
             }
-            return sentSyncBackupCount;
+
+            // so if one of the backups complained about the connection being full, we are going to sync on all
+            // the backups not only the synchronous ones.
+            if (fullConnectionEncountered) {
+                syncBackups += asyncBackups;
+            }
+
+            return syncBackups;
         }
 
         private Backup newBackup(BackupAwareOperation backupAwareOp, long[] replicaVersions,
-                int replicaIndex, boolean isSyncBackup) {
+                                 int replicaIndex, boolean isSyncBackup) {
             Operation op = (Operation) backupAwareOp;
             Operation backupOp = initBackupOperation(backupAwareOp, replicaIndex);
             Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);

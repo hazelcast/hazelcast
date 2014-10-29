@@ -22,6 +22,32 @@ import java.util.concurrent.locks.LockSupport;
 public class BackPressureTest extends HazelcastTestSupport {
 
     @Test
+    public void testWithSyncBackup() throws ExecutionException, InterruptedException {
+        HazelcastInstance[] cluster = this.createHazelcastInstanceFactory(5).newInstances();
+        warmUpPartitions(cluster);
+        HazelcastInstance hz1 = cluster[0];
+        Node node = getNode(hz1);
+        OperationService operationService = node.getNodeEngine().getOperationService();
+
+        SomeOperation operation = new SomeOperation(1, 0, 1000000);
+        Future f = operationService.invokeOnPartition("don'tcare", operation, 0);
+        f.get();
+    }
+
+    @Test
+    public void testWithASyncBackup() throws ExecutionException, InterruptedException {
+        HazelcastInstance[] cluster = this.createHazelcastInstanceFactory(5).newInstances();
+        warmUpPartitions(cluster);
+        HazelcastInstance hz1 = cluster[0];
+        Node node = getNode(hz1);
+        OperationService operationService = node.getNodeEngine().getOperationService();
+
+        SomeOperation operation = new SomeOperation(0, 1, 1000000);
+        Future f = operationService.invokeOnPartition("don'tcare", operation, 0);
+        f.get();
+    }
+
+    @Test
     @Ignore
     public void asyncBackupCausesOOME() throws ExecutionException, InterruptedException {
         HazelcastInstance[] cluster = this.createHazelcastInstanceFactory(5).newInstances();
@@ -30,13 +56,13 @@ public class BackPressureTest extends HazelcastTestSupport {
         Node node = getNode(hz1);
         OperationService operationService = node.getNodeEngine().getOperationService();
 
-        for(int k=0;k<100000000;k++){
+        for (int k = 0; k < 100000000; k++) {
             SomeOperation operation = new SomeOperation(0, 1, 1000000);
             Future f = operationService.invokeOnPartition("don'tcare", operation, 0);
             f.get();
 
-            if(k%10000 == 0){
-                System.out.println("At: "+k);
+            if (k % 10000 == 0) {
+                System.out.println("At: " + k);
             }
         }
     }
@@ -50,12 +76,12 @@ public class BackPressureTest extends HazelcastTestSupport {
         Node node = getNode(hz1);
         OperationService operationService = node.getNodeEngine().getOperationService();
 
-        for(int k=0;k<100000000;k++){
+        for (int k = 0; k < 100000000; k++) {
             SomeOperation operation = new SomeOperation(0, 0, 1000000);
             operationService.invokeOnPartition("don'tcare", operation, 0);
 
-            if(k%10000 == 0){
-                System.out.println("At: "+k);
+            if (k % 10000 == 0) {
+                System.out.println("At: " + k);
             }
         }
     }
@@ -69,12 +95,12 @@ public class BackPressureTest extends HazelcastTestSupport {
         Node node = getNode(hz1);
         OperationService operationService = node.getNodeEngine().getOperationService();
 
-        for(int k=0;k<100000000;k++){
+        for (int k = 0; k < 100000000; k++) {
             SomeOperation operation = new SomeOperation(1, 0, 1000000);
             operationService.invokeOnPartition("don'tcare", operation, 0);
 
-            if(k%10000 == 0){
-                System.out.println("At: "+k);
+            if (k % 10000 == 0) {
+                System.out.println("At: " + k);
             }
         }
     }
@@ -88,13 +114,13 @@ public class BackPressureTest extends HazelcastTestSupport {
         Node node = getNode(hz1);
         OperationService operationService = node.getNodeEngine().getOperationService();
 
-        for(int k=0;k<100000000;k++){
+        for (int k = 0; k < 100000000; k++) {
             SomeOperation operation = new SomeOperation(1, 0, 1000000);
             Future f = operationService.invokeOnPartition("don'tcare", operation, 0);
             f.get();
 
-            if(k%10000 == 0){
-                System.out.println("At: "+k);
+            if (k % 10000 == 0) {
+                System.out.println("At: " + k);
             }
         }
     }
@@ -104,7 +130,8 @@ public class BackPressureTest extends HazelcastTestSupport {
         private int asyncBackupCount;
         private long backupOperationDelayNanos;
 
-        public SomeOperation(){}
+        public SomeOperation() {
+        }
 
         public SomeOperation(int syncBackupCount, int asyncBackupCount, long backupOperationDelayNanos) {
             this.syncBackupCount = syncBackupCount;
@@ -137,7 +164,7 @@ public class BackPressureTest extends HazelcastTestSupport {
         @Override
         public void run() throws Exception {
             //do nothing
-         }
+        }
 
         @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {
@@ -160,7 +187,8 @@ public class BackPressureTest extends HazelcastTestSupport {
     public static class SomeBackupOperation extends AbstractOperation implements BackupOperation, PartitionAwareOperation {
         private long delayNs;
 
-        public SomeBackupOperation(){}
+        public SomeBackupOperation() {
+        }
 
         public SomeBackupOperation(long delayNs) {
             this.delayNs = delayNs;
@@ -169,7 +197,7 @@ public class BackPressureTest extends HazelcastTestSupport {
         @Override
         public void run() throws Exception {
             LockSupport.parkNanos(delayNs);
-         }
+        }
 
         @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {

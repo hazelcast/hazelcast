@@ -40,6 +40,8 @@ public interface Connection {
      */
     WriteResult write(SocketWritable packet);
 
+    WriteResult writeBackup(Packet packet);
+
     /**
      * Checks if the Connection is still alive.
      *
@@ -122,4 +124,5 @@ public interface Connection {
     int getPort();
 
     void setAvailableSlots(int claimResponse);
+
 }

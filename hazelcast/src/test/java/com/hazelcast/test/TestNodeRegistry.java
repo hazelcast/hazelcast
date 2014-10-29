@@ -334,6 +334,11 @@ final class TestNodeRegistry {
             return 0;
         }
 
+        @Override
+        public WriteResult writeBackup(Packet packet) {
+            return write(packet);
+        }
+
         public WriteResult write(SocketWritable socketWritable) {
             final Packet packet = (Packet) socketWritable;
             if (nodeEngine.getNode().isActive()) {
