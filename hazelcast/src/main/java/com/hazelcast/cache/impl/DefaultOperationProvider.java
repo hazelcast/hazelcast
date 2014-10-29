@@ -14,7 +14,6 @@ import com.hazelcast.cache.impl.operation.CachePutOperation;
 import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
-import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;

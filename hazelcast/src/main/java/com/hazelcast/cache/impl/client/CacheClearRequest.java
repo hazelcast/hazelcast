@@ -21,7 +21,6 @@ import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
-import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;

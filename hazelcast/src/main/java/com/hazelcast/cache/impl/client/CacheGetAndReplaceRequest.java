@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
