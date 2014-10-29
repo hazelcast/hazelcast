@@ -246,7 +246,7 @@ public class MapContainer extends MapContainerSupport {
     }
 
     public String addInterceptor(MapInterceptor interceptor) {
-        String id = interceptor.getClass().getName();
+        String id = interceptor.getClass().getName() + interceptor.hashCode();
 
         addInterceptor(id, interceptor);
 
