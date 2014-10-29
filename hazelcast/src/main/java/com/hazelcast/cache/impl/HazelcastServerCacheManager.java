@@ -76,7 +76,7 @@ public class HazelcastServerCacheManager
             throw new NullPointerException();
         }
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        cacheService.setManagementEnabled(cacheNameWithPrefix, enabled);
+        cacheService.setManagementEnabled(null, cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
         enableStatisticManagementOnOtherNodes(cacheName, false, enabled);
     }
@@ -90,7 +90,7 @@ public class HazelcastServerCacheManager
             throw new NullPointerException();
         }
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        cacheService.setStatisticsEnabled(cacheNameWithPrefix, enabled);
+        cacheService.setStatisticsEnabled(null, cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
         enableStatisticManagementOnOtherNodes(cacheName, true, enabled);
     }

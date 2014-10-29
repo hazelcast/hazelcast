@@ -54,9 +54,9 @@ public class CacheManagementConfigOperation
             throws Exception {
         final CacheService service = getService();
         if (isStat) {
-            service.setStatisticsEnabled(name, enabled);
+            service.setStatisticsEnabled(null, name, enabled);
         } else {
-            service.setManagementEnabled(name, enabled);
+            service.setManagementEnabled(null, name, enabled);
         }
     }
 

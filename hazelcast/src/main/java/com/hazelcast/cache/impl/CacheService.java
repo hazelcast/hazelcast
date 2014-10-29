@@ -198,15 +198,15 @@ public class CacheService
      * @param callerUuid the uuid of the node that called this method.
      */
     public void destroyCache(String objectName, boolean isLocal, String callerUuid) {
-        deleteCacheConfig(objectName);
+        CacheConfig config = deleteCacheConfig(objectName);
         for (CachePartitionSegment segment : segments) {
             segment.deleteCache(objectName);
         }
         if (!isLocal) {
             deregisterAllListener(objectName);
         }
-        setStatisticsEnabled(objectName, false);
-        setManagementEnabled(objectName, false);
+        setStatisticsEnabled(config, objectName, false);
+        setManagementEnabled(config, objectName, false);
         deleteCacheStat(objectName);
         if (!isLocal) {
             destroyCacheOnAllMembers(objectName, callerUuid);
@@ -236,10 +236,10 @@ public class CacheService
         final boolean created = localConfig == null;
         if (created) {
             if (config.isStatisticsEnabled()) {
-                setStatisticsEnabled(config.getNameWithPrefix(), true);
+                setStatisticsEnabled(config, config.getNameWithPrefix(), true);
             }
             if (config.isManagementEnabled()) {
-                setManagementEnabled(config.getNameWithPrefix(), true);
+                setManagementEnabled(config, config.getNameWithPrefix(), true);
             }
             if (!isLocal) {
                 createConfigOnAllMembers(config);
@@ -264,8 +264,8 @@ public class CacheService
      * Removes the cache configuration with the provided name.
      * @param name distributed cache name.
      */
-    public void deleteCacheConfig(String name) {
-        configs.remove(name);
+    public CacheConfig deleteCacheConfig(String name) {
+        return configs.remove(name);
     }
 
     /**
@@ -286,8 +286,8 @@ public class CacheService
         statistics.remove(name);
     }
 
-    public void setStatisticsEnabled(String cacheNameWithPrefix, boolean enabled) {
-        final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
+    public void setStatisticsEnabled(CacheConfig cacheConfig, String cacheNameWithPrefix, boolean enabled) {
+        cacheConfig = cacheConfig != null ? cacheConfig : configs.get(cacheNameWithPrefix);
         if (cacheConfig != null) {
             final String cacheManagerName = cacheConfig.getUriString();
             cacheConfig.setStatisticsEnabled(enabled);
@@ -303,8 +303,8 @@ public class CacheService
         }
     }
 
-    public void setManagementEnabled(String cacheNameWithPrefix, boolean enabled) {
-        final CacheConfig cacheConfig = configs.get(cacheNameWithPrefix);
+    public void setManagementEnabled(CacheConfig cacheConfig, String cacheNameWithPrefix, boolean enabled) {
+        cacheConfig = cacheConfig != null ? cacheConfig : configs.get(cacheNameWithPrefix);
         if (cacheConfig != null) {
             final String cacheManagerName = cacheConfig.getUriString();
             cacheConfig.setManagementEnabled(enabled);
