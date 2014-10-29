@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordMap;
 import com.hazelcast.config.CacheConfig;
@@ -80,11 +81,9 @@ public abstract class AbstractCacheRecordStore<
     public AbstractCacheRecordStore(final String name,
                                     final int partitionId,
                                     final NodeEngine nodeEngine,
-                                    final AbstractCacheService cacheService,
-                                    final ExpiryPolicy expiryPolicy) {
-        this(name, partitionId, nodeEngine, cacheService, expiryPolicy,
-             null, DEFAULT_EVICTION_PERCENTAGE,
-             DEFAULT_EVICTION_THRESHOLD_PERCENTAGE, DEFAULT_IS_EVICTION_TASK_ENABLE);
+                                    final AbstractCacheService cacheService) {
+        this(name, partitionId, nodeEngine, cacheService, null,
+                DEFAULT_EVICTION_PERCENTAGE, DEFAULT_EVICTION_THRESHOLD_PERCENTAGE, DEFAULT_IS_EVICTION_TASK_ENABLE);
     }
 
     //CHECKSTYLE:OFF
@@ -92,7 +91,6 @@ public abstract class AbstractCacheRecordStore<
                                     final int partitionId,
                                     final NodeEngine nodeEngine,
                                     final AbstractCacheService cacheService,
-                                    final ExpiryPolicy expiryPolicy,
                                     final EvictionPolicy evictionPolicy,
                                     final int evictionPercentage,
                                     final int evictionThresholdPercentage,
@@ -102,8 +100,8 @@ public abstract class AbstractCacheRecordStore<
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
         this.cacheConfig = cacheService.getCacheConfig(name);
-        if (this.cacheConfig == null) {
-            throw new IllegalStateException("Cache is not exist !");
+        if (cacheConfig == null) {
+            throw new CacheNotExistsException("Cache already destroyed, node " + nodeEngine.getLocalMember());
         }
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
@@ -116,10 +114,8 @@ public abstract class AbstractCacheRecordStore<
         if (cacheConfig.isStatisticsEnabled()) {
             this.statistics = cacheService.createCacheStatIfAbsent(name);
         }
-        this.defaultExpiryPolicy =
-                expiryPolicy != null
-                        ? expiryPolicy
-                        : (ExpiryPolicy) cacheConfig.getExpiryPolicyFactory().create();
+        Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
+        this.defaultExpiryPolicy = expiryPolicyFactory.create();
         this.evictionPolicy =
                 evictionPolicy != null
                         ? evictionPolicy

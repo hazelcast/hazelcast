@@ -39,8 +39,8 @@ Latest tested versions are **7.6.16.v20140903**, **8.1.16.v20140903** and **9.2.
 
  - Jetty instance must be running with Java 1.6 or higher.
  - Session objects that need to be clustered have to be Serializable.
- - Hazelcast Jetty Web Session Replication is built on top of `jetty-nosql` module. This module (`jetty-nosql-<*jettyversion*>.jar`) needs to be added to `$JETTY_HOME/lib/ext`.
-   This module can be found [here](http://mvnrepository.com/artifact/org.eclipse.jetty/jetty-nosql)
+ - Hazelcast Jetty based Web Session Replication is built on top of `jetty-nosql` module. This module (`jetty-nosql-<*jettyversion*>.jar`) needs to be added to `$JETTY_HOME/lib/ext`.
+   This module can be found [here](http://mvnrepository.com/artifact/org.eclipse.jetty/jetty-nosql).
 
 #### How Jetty Session Replication works
 
