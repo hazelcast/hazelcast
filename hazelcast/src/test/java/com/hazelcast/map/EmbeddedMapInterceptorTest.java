@@ -153,6 +153,11 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         @Override
         public void afterRemove(Object value) {
         }
+
+        @Override
+        public int hashCode() {
+            return 123456;
+        }
     }
 
 }
