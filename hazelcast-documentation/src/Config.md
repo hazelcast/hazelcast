@@ -127,11 +127,11 @@ Or a queue '`com.hazelcast.test.myqueue`';
 </queue>
 ```
 
-## XML Configuration Composition
+## Composing XML Configuration
 
-You can compose your Hazelcast XML Configuration file from multiple XML configuration snippets. In order to compose XML configuration, you can use `<import/>` element to load different XML configuration files. For example:  
+You can compose your Hazelcast XML Configuration file from multiple XML configuration snippets. In order to compose XML configuration, you can use `<import/>` element to load different XML configuration files. Please see the following samples.   
 
-hazelcast-config.xml:
+`hazelcast-config.xml`:
 
 ```xml
 <hazelcast>
@@ -140,7 +140,7 @@ hazelcast-config.xml:
 </hazelcast>
 ```
 
-development-group-config.xml:
+`development-group-config.xml`:
 
 ```xml
 <hazelcast>
@@ -151,7 +151,7 @@ development-group-config.xml:
 </hazelcast>
 ```
 
-development-network-config.xml:
+`development-network-config.xml`:
 
 ```xml
 <hazelcast>
