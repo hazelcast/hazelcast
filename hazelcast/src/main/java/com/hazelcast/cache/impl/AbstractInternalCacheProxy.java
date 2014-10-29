@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -117,9 +118,9 @@ abstract class AbstractInternalCacheProxy<K, V>
         final Data valueData = serializationService.toData(oldValue);
         final Operation operation;
         if (isGet) {
-            operation = operationProvider.createGetAndRemoveOperation(keyData);
+            operation = operationProvider.createGetAndRemoveOperation(keyData, IGNORE_COMPLETION);
         } else {
-            operation = operationProvider.createRemoveOperation(keyData, valueData);
+            operation = operationProvider.createRemoveOperation(keyData, valueData, IGNORE_COMPLETION);
         }
         return invoke(operation, keyData, withCompletionEvent);
     }
@@ -140,9 +141,10 @@ abstract class AbstractInternalCacheProxy<K, V>
         final Data newValueData = serializationService.toData(newValue);
         final Operation operation;
         if (isGet) {
-            operation = operationProvider.createGetAndReplaceOperation(keyData, newValueData, expiryPolicy);
+            operation = operationProvider.createGetAndReplaceOperation(keyData, newValueData, expiryPolicy, IGNORE_COMPLETION);
         } else {
-            operation = operationProvider.createReplaceOperation(keyData, oldValueData, newValueData, expiryPolicy);
+            operation = operationProvider.createReplaceOperation(keyData, oldValueData, newValueData,
+                    expiryPolicy, IGNORE_COMPLETION);
         }
         return invoke(operation, keyData, withCompletionEvent);
     }
@@ -154,7 +156,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = serializationService.toData(key);
         final Data valueData = serializationService.toData(value);
-        final Operation op = operationProvider.createPutOperation(keyData, valueData, expiryPolicy, isGet);
+        final Operation op = operationProvider.createPutOperation(keyData, valueData, expiryPolicy, isGet, IGNORE_COMPLETION);
         return invoke(op, keyData, withCompletionEvent);
     }
 
@@ -166,7 +168,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         final Data keyData = serializationService.toData(key);
         final Data valueData = serializationService.toData(value);
 //        final Operation op = new CachePutIfAbsentOperation(getDistributedObjectName(), keyData, valueData, expiryPolicy);
-        Operation operation = operationProvider.createPutIfAbsentOperation(keyData, valueData, expiryPolicy);
+        Operation operation = operationProvider.createPutIfAbsentOperation(keyData, valueData, expiryPolicy, IGNORE_COMPLETION);
         return invoke(operation, keyData, withCompletionEvent);
     }
 
@@ -263,7 +265,7 @@ abstract class AbstractInternalCacheProxy<K, V>
             syncLocks.put(id, countDownLatch);
             return id;
         }
-        return MutableOperation.IGNORE_COMPLETION;
+        return IGNORE_COMPLETION;
     }
 
     protected void deregisterCompletionLatch(Integer countDownLatchId) {

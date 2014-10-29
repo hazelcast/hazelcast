@@ -16,11 +16,14 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
@@ -34,16 +37,14 @@ import java.util.Map;
  * @see com.hazelcast.cache.impl.operation.CacheSizeOperationFactory
  */
 public class CacheSizeRequest
-        extends AllPartitionsClientRequest
+        extends AbstractCacheAllPartitionsRequest
         implements RetryableRequest {
-
-    private String name;
 
     public CacheSizeRequest() {
     }
 
-    public CacheSizeRequest(String name) {
-        this.name = name;
+    public CacheSizeRequest(String name, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
     }
 
     public String getServiceName() {
@@ -59,19 +60,11 @@ public class CacheSizeRequest
         return CachePortableHook.SIZE;
     }
 
-    public void write(PortableWriter writer)
-            throws IOException {
-        writer.writeUTF("n", name);
-    }
-
-    public void read(PortableReader reader)
-            throws IOException {
-        name = reader.readUTF("n");
-    }
-
     @Override
     protected OperationFactory createOperationFactory() {
-        return new CacheSizeOperationFactory(name);
+        ICacheService service = getService();
+        CacheOperationProvider cacheOperationProvider = service.getCacheOperationProvider(name, inMemoryFormat);
+        return cacheOperationProvider.createSizeOperationFactory();
     }
 
     @Override

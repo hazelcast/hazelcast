@@ -16,8 +16,11 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -44,8 +47,8 @@ public class CacheEntryProcessorRequest
     }
 
     public CacheEntryProcessorRequest(String name, Data key, javax.cache.processor.EntryProcessor entryProcessor,
-                                      Object... arguments) {
-        super(name);
+                                      InMemoryFormat inMemoryFormat, Object... arguments) {
+        super(name, inMemoryFormat);
         this.key = key;
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;
@@ -61,12 +64,14 @@ public class CacheEntryProcessorRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheEntryProcessorOperation(name, key, completionId, entryProcessor, arguments);
+        ICacheService service = getService();
+        CacheOperationProvider cacheOperationProvider = service.getCacheOperationProvider(name, inMemoryFormat);
+        return cacheOperationProvider.createEntryProcessorOperation(key, completionId, entryProcessor, arguments);
     }
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
@@ -82,7 +87,7 @@ public class CacheEntryProcessorRequest
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();

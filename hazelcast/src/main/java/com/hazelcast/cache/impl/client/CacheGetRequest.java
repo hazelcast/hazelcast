@@ -16,8 +16,10 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -41,13 +43,8 @@ public class CacheGetRequest
     public CacheGetRequest() {
     }
 
-    public CacheGetRequest(String name, Data key) {
-        super(name);
-        this.key = key;
-    }
-
-    public CacheGetRequest(String name, Data key, ExpiryPolicy expiryPolicy) {
-        super(name);
+    public CacheGetRequest(String name, Data key, ExpiryPolicy expiryPolicy, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
         this.expiryPolicy = expiryPolicy;
     }
@@ -62,12 +59,13 @@ public class CacheGetRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheGetOperation(name, key, expiryPolicy);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createGetOperation(key, expiryPolicy);
     }
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
         out.writeObject(expiryPolicy);
@@ -76,7 +74,7 @@ public class CacheGetRequest
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();
         this.expiryPolicy = in.readObject();

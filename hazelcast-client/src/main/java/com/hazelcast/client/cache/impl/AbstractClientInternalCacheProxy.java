@@ -149,9 +149,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data oldValueData = oldValue != null ? toData(oldValue) : null;
         ClientRequest request;
         if (isGet) {
-            request = new CacheGetAndRemoveRequest(nameWithPrefix, keyData);
+            request = new CacheGetAndRemoveRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
         } else {
-            request = new CacheRemoveRequest(nameWithPrefix, keyData, oldValueData);
+            request = new CacheRemoveRequest(nameWithPrefix, keyData, oldValueData, cacheConfig.getInMemoryFormat());
         }
         ICompletableFuture future;
         try {
@@ -178,10 +178,11 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data oldValueData = oldValue != null ? toData(oldValue) : null;
         final Data newValueData = newValue != null ? toData(newValue) : null;
         ClientRequest request;
+        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
         if (isGet) {
-            request = new CacheGetAndReplaceRequest(nameWithPrefix, keyData, newValueData, expiryPolicy);
+            request = new CacheGetAndReplaceRequest(nameWithPrefix, keyData, newValueData, expiryPolicy, inMemoryFormat);
         } else {
-            request = new CacheReplaceRequest(nameWithPrefix, keyData, oldValueData, newValueData, expiryPolicy);
+            request = new CacheReplaceRequest(nameWithPrefix, keyData, oldValueData, newValueData, expiryPolicy, inMemoryFormat);
         }
         ICompletableFuture future;
         try {
@@ -201,7 +202,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        CachePutRequest request = new CachePutRequest(nameWithPrefix, keyData, valueData, expiryPolicy, isGet);
+        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
+        CachePutRequest request = new CachePutRequest(nameWithPrefix, keyData, valueData, expiryPolicy, isGet, inMemoryFormat);
         ICompletableFuture future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -223,7 +225,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        final CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData, expiryPolicy);
+        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
+        CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData,
+                expiryPolicy, inMemoryFormat);
         ICompletableFuture<Boolean> future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -251,7 +255,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
         final int partitionCount = clientContext.getPartitionService().getPartitionCount();
         final Integer completionId = registerCompletionLatch(partitionCount);
-        CacheClearRequest request = new CacheClearRequest(nameWithPrefix, keysData, isRemoveAll, completionId);
+        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
+        CacheClearRequest request = new CacheClearRequest(nameWithPrefix, keysData, isRemoveAll, completionId, inMemoryFormat);
         try {
             final Map<Integer, Object> results = invoke(request);
             int completionCount = 0;

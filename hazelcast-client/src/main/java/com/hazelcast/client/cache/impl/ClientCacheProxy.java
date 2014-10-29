@@ -31,6 +31,7 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
@@ -101,7 +102,7 @@ public class ClientCacheProxy<K, V>
         if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
             return true;
         }
-        CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData);
+        CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
         ICompletableFuture future;
         try {
             future = invoke(request, keyData, false);
@@ -123,7 +124,8 @@ public class ClientCacheProxy<K, V>
         for (K key : keys) {
             keysData.add(toData(key));
         }
-        final CacheLoadAllRequest request = new CacheLoadAllRequest(nameWithPrefix, keysData, replaceExistingValues);
+        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
+        CacheLoadAllRequest request = new CacheLoadAllRequest(nameWithPrefix, keysData, replaceExistingValues, inMemoryFormat);
         try {
             submitLoadAllTask(request, completionListener);
         } catch (Exception e) {
@@ -237,7 +239,7 @@ public class ClientCacheProxy<K, V>
         }
         final Data keyData = toData(key);
         final CacheEntryProcessorRequest request = new CacheEntryProcessorRequest(nameWithPrefix, keyData, entryProcessor,
-                arguments);
+                cacheConfig.getInMemoryFormat(), arguments);
         try {
             final ICompletableFuture<Data> f = invoke(request, keyData, true);
             final Data data = getSafely(f);

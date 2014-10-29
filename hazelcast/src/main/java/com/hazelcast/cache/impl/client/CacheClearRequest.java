@@ -16,11 +16,14 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -39,10 +42,9 @@ import java.util.Set;
  * @see com.hazelcast.cache.impl.operation.CacheClearOperationFactory
  */
 public class CacheClearRequest
-        extends AllPartitionsClientRequest
+        extends AbstractCacheAllPartitionsRequest
         implements RetryableRequest {
 
-    private String name;
     private Set<Data> keys;
     private boolean isRemoveAll;
     private int completionId;
@@ -50,8 +52,8 @@ public class CacheClearRequest
     public CacheClearRequest() {
     }
 
-    public CacheClearRequest(String name, Set<Data> keys, boolean isRemoveAll, int completionId) {
-        this.name = name;
+    public CacheClearRequest(String name, Set<Data> keys, boolean isRemoveAll, int completionId, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.keys = keys;
         this.isRemoveAll = isRemoveAll;
         this.completionId = completionId;
@@ -72,7 +74,7 @@ public class CacheClearRequest
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeInt("c", completionId);
         writer.writeBoolean("r", isRemoveAll);
         writer.writeBoolean("k", keys != null);
@@ -89,7 +91,7 @@ public class CacheClearRequest
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         completionId = reader.readInt("c");
         isRemoveAll = reader.readBoolean("r");
         final boolean isKeysNotNull = reader.readBoolean("k");
@@ -108,7 +110,9 @@ public class CacheClearRequest
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new CacheClearOperationFactory(name, keys, isRemoveAll, completionId);
+        ICacheService service = getService();
+        CacheOperationProvider cacheOperationProvider = service.getCacheOperationProvider(name, inMemoryFormat);
+        return cacheOperationProvider.createClearOperationFactory(keys, isRemoveAll, completionId);
     }
 
     @Override

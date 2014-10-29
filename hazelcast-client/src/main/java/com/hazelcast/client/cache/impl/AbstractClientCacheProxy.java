@@ -25,6 +25,7 @@ import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.impl.MapEntrySet;
@@ -75,7 +76,7 @@ abstract class AbstractClientCacheProxy<K, V>
         if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
             return createCompletedFuture(cached);
         }
-        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy);
+        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
         ClientCallFuture future;
         final ClientContext context = clientContext;
         try {
@@ -197,7 +198,8 @@ abstract class AbstractClientCacheProxy<K, V>
         if (keySet.isEmpty()) {
             return result;
         }
-        final CacheGetAllRequest request = new CacheGetAllRequest(nameWithPrefix, keySet, expiryPolicy);
+        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
+        final CacheGetAllRequest request = new CacheGetAllRequest(nameWithPrefix, keySet, expiryPolicy, inMemoryFormat);
         final MapEntrySet mapEntrySet = toObject(invoke(request));
         final Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
         for (Map.Entry<Data, Data> dataEntry : entrySet) {
@@ -301,7 +303,7 @@ abstract class AbstractClientCacheProxy<K, V>
     public int size() {
         ensureOpen();
         try {
-            CacheSizeRequest request = new CacheSizeRequest(nameWithPrefix);
+            CacheSizeRequest request = new CacheSizeRequest(nameWithPrefix, cacheConfig.getInMemoryFormat());
             Integer result = invoke(request);
             if (result == null) {
                 return 0;

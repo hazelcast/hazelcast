@@ -13,21 +13,21 @@ import java.util.Set;
  */
 public interface CacheOperationProvider {
 
-    Operation createPutOperation(Data key, Data value, ExpiryPolicy policy, boolean get);
+    Operation createPutOperation(Data key, Data value, ExpiryPolicy policy, boolean get, int completionId);
 
     Operation createGetOperation(Data key, ExpiryPolicy policy);
 
     Operation createContainsKeyOperation(Data key);
 
-    Operation createPutIfAbsentOperation(Data key, Data value, ExpiryPolicy policy);
+    Operation createPutIfAbsentOperation(Data key, Data value, ExpiryPolicy policy, int completionId);
 
-    Operation createRemoveOperation(Data key, Data value);
+    Operation createRemoveOperation(Data key, Data value, int completionId);
 
-    Operation createGetAndRemoveOperation(Data key);
+    Operation createGetAndRemoveOperation(Data key, int completionId);
 
-    Operation createReplaceOperation(Data key, Data oldValue, Data newValue, ExpiryPolicy policy);
+    Operation createReplaceOperation(Data key, Data oldValue, Data newValue, ExpiryPolicy policy, int completionId);
 
-    Operation createGetAndReplaceOperation(Data key, Data value, ExpiryPolicy policy);
+    Operation createGetAndReplaceOperation(Data key, Data value, ExpiryPolicy policy, int completionId);
 
     Operation createEntryProcessorOperation(Data key, Integer completionId, EntryProcessor entryProcessor, Object... args);
 

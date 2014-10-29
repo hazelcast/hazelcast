@@ -14,6 +14,7 @@ import com.hazelcast.cache.impl.operation.CachePutOperation;
 import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
+import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
@@ -34,8 +35,8 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     }
 
     @Override
-    public Operation createPutOperation(Data key, Data value, ExpiryPolicy policy, boolean get) {
-        return new CachePutOperation(nameWithPrefix, key, value, policy, get);
+    public Operation createPutOperation(Data key, Data value, ExpiryPolicy policy, boolean get, int completionId) {
+        return new CachePutOperation(nameWithPrefix, key, value, policy, get, completionId);
     }
 
     @Override
@@ -49,28 +50,28 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     }
 
     @Override
-    public Operation createPutIfAbsentOperation(Data key, Data value, ExpiryPolicy policy) {
-        return new CachePutIfAbsentOperation(nameWithPrefix, key, value, policy);
+    public Operation createPutIfAbsentOperation(Data key, Data value, ExpiryPolicy policy, int completionId) {
+        return new CachePutIfAbsentOperation(nameWithPrefix, key, value, policy, completionId);
     }
 
     @Override
-    public Operation createRemoveOperation(Data key, Data oldValue) {
-        return new CacheRemoveOperation(nameWithPrefix, key, oldValue);
+    public Operation createRemoveOperation(Data key, Data oldValue, int completionId) {
+        return new CacheRemoveOperation(nameWithPrefix, key, oldValue, completionId);
     }
 
     @Override
-    public Operation createGetAndRemoveOperation(Data key) {
-        return new CacheGetAndRemoveOperation(nameWithPrefix, key);
+    public Operation createGetAndRemoveOperation(Data key, int completionId) {
+        return new CacheGetAndRemoveOperation(nameWithPrefix, key, completionId);
     }
 
     @Override
-    public Operation createReplaceOperation(Data key, Data oldValue, Data newValue, ExpiryPolicy policy) {
-        return new CacheReplaceOperation(nameWithPrefix, key, oldValue, newValue, policy);
+    public Operation createReplaceOperation(Data key, Data oldValue, Data newValue, ExpiryPolicy policy, int completionId) {
+        return new CacheReplaceOperation(nameWithPrefix, key, oldValue, newValue, policy, completionId);
     }
 
     @Override
-    public Operation createGetAndReplaceOperation(Data key, Data value, ExpiryPolicy policy) {
-        return new CacheGetAndReplaceOperation(nameWithPrefix, key, value, policy);
+    public Operation createGetAndReplaceOperation(Data key, Data value, ExpiryPolicy policy, int completionId) {
+        return new CacheGetAndReplaceOperation(nameWithPrefix, key, value, policy, completionId);
     }
 
     @Override

@@ -18,14 +18,12 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.spi.Operation;
-
-import java.io.IOException;
 
 /**
  * This client request  specifically calls {@link CacheGetConfigOperation} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheGetConfigOperation
  */
 public class CacheGetConfigRequest
@@ -35,7 +33,7 @@ public class CacheGetConfigRequest
     }
 
     public CacheGetConfigRequest(String cacheName) {
-        super(cacheName);
+        super(cacheName, InMemoryFormat.BINARY);
     }
 
     @Override
@@ -52,13 +50,4 @@ public class CacheGetConfigRequest
         return CachePortableHook.GET_CONFIG;
     }
 
-    public void write(PortableWriter writer)
-            throws IOException {
-        writer.writeUTF("n", name);
-    }
-
-    public void read(PortableReader reader)
-            throws IOException {
-        name = reader.readUTF("n");
-    }
 }

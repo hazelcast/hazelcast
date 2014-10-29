@@ -38,10 +38,6 @@ public class CacheRemoveOperation
     public CacheRemoveOperation() {
     }
 
-    public CacheRemoveOperation(String name, Data key, Data oldValue) {
-        this(name, key, oldValue, IGNORE_COMPLETION);
-    }
-
     public CacheRemoveOperation(String name, Data key, Data oldValue, int completionId) {
         super(name, key, completionId);
         this.oldValue = oldValue;
