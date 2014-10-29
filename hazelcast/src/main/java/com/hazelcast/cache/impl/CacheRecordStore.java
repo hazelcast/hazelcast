@@ -81,6 +81,7 @@ public class CacheRecordStore
                             ExpiryPolicy expiryPolicy) {
         super(name, partitionId, nodeEngine, cacheService, expiryPolicy);
         this.serializationService = nodeEngine.getSerializationService();
+        this.records = createRecordCacheMap();
         this.cacheRecordFactory = createCacheRecordFactory();
         this.evictionTaskFuture =
                 nodeEngine.getExecutionService()

@@ -120,7 +120,6 @@ public abstract class AbstractCacheRecordStore<
                 expiryPolicy != null
                         ? expiryPolicy
                         : (ExpiryPolicy) cacheConfig.getExpiryPolicyFactory().create();
-        this.records = createRecordCacheMap();
         this.evictionPolicy =
                 evictionPolicy != null
                         ? evictionPolicy
@@ -129,7 +128,6 @@ public abstract class AbstractCacheRecordStore<
         this.evictionPercentage = evictionPercentage;
         this.evictionThreshold = (float) Math.max(1, ONE_HUNDRED_PERCENT - evictionThresholdPercentage)
                                         / ONE_HUNDRED_PERCENT;
-        this.records = createRecordCacheMap();
         if (evictionTaskEnable) {
             this.evictionTaskFuture = createEvictionTaskFuture();
         } else {
