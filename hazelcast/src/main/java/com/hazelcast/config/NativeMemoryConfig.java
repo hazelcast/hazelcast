@@ -44,9 +44,13 @@ public class NativeMemoryConfig {
      */
     public static final float DEFAULT_METADATA_SPACE_PERCENTAGE = 12.5f;
     /**
+     * Minimum initial memory size in megabytes
+     */
+    public static final int MIN_INITIAL_MEMORY_SIZE = 512;
+    /**
      * Initial memory size in megabytes
      */
-    public static final int INITIAL_MEMORY_SIZE = 64;
+    public static final int INITIAL_MEMORY_SIZE = MIN_INITIAL_MEMORY_SIZE;
 
     private boolean enabled = true;
     private MemorySize size = new MemorySize(INITIAL_MEMORY_SIZE, MemoryUnit.MEGABYTES);
@@ -62,6 +66,10 @@ public class NativeMemoryConfig {
 
     public NativeMemoryConfig setSize(final MemorySize size) {
         ValidationUtil.isNotNull(size, "Memory size");
+        if (size.megaBytes() < MIN_INITIAL_MEMORY_SIZE) {
+            throw new IllegalArgumentException("Initiali memory size cannot be less than "
+                    + MIN_INITIAL_MEMORY_SIZE + " MB");
+        }
         this.size = size;
         return this;
     }

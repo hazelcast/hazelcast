@@ -43,10 +43,12 @@ import java.util.Set;
  */
 public interface ICacheRecordStore {
 
-    int MIN_FORCED_EVICT_PERCENTAGE = 10;
-    int DEFAULT_EVICTION_PERCENTAGE = 10;
-    int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = 95;
-    // 1 hour
+    // Defined as constant for check-style error
+    int ONE_HUNDRED_PERCENT = 100;
+
+    int MIN_FORCED_EVICT_PERCENTAGE = 20;
+    int DEFAULT_EVICTION_PERCENTAGE = 20;
+    int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = ONE_HUNDRED_PERCENT - DEFAULT_EVICTION_PERCENTAGE;
     int DEFAULT_TTL = 1000 * 60 * 60;
     int DEFAULT_INITIAL_CAPACITY = 1000;
 
@@ -418,5 +420,27 @@ public interface ICacheRecordStore {
      */
     void publishCompletedEvent(String cacheName, int completionId, Data dataKey, int orderKey);
 
+    /**
+     * Evict cache record store if eviction is required.
+     * <p>Eviction logic is handled as specified {@link com.hazelcast.config.EvictionPolicy}
+     * in {@link com.hazelcast.config.CacheConfig} for this record store</p>
+     * @return the number of evicted records.
+     */
+    int evictIfRequired();
+
+    /**
+     * Evict cache record store as <code>evictionPercentange</code>.
+     * <p>Eviction logic is handled as specified {@link com.hazelcast.config.EvictionPolicy}
+     * in {@link com.hazelcast.config.CacheConfig} for this record store</p>
+     * @param evictionPercentange The eviction percentage relative to cache record store capacity.
+     * @return the number of evicted records.
+     */
+    int evictExpiredRecords(int evictionPercentange);
+
+    /**
+     * Forcibly evict all expired records.
+     * @return the number of evicted records.
+     */
     int forceEvict();
+
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
+import com.hazelcast.config.EvictionPolicy;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -24,5 +25,7 @@ import java.util.Map;
 public interface CacheRecordMap<K, V> extends Map<K, V>, Serializable {
 
     CacheKeyIteratorResult fetchNext(int nextTableIndex, int size);
+    int evictExpiredRecords(int percentage);
+    int evictRecords(int percentage, EvictionPolicy policy);
 
 }

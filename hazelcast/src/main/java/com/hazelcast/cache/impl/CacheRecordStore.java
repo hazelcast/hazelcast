@@ -109,6 +109,8 @@ public class CacheRecordStore
 
     @Override
     protected <T> CacheRecord createRecord(T value, long creationTime, long expiryTime) {
+        evictIfRequired();
+
         return cacheRecordFactory.newRecordWithExpiry(value, expiryTime);
     }
 
@@ -175,6 +177,12 @@ public class CacheRecordStore
         } else {
             return serializationService.toData(obj);
         }
+    }
+
+    @Override
+    protected boolean isEvictionRequired() {
+        // TODO: Implement to check for eviction required
+        return false;
     }
 
     @Override
