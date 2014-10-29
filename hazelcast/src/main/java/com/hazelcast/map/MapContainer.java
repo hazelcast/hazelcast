@@ -35,7 +35,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -248,13 +247,17 @@ public class MapContainer extends MapContainerSupport {
     }
 
     public String addInterceptor(MapInterceptor interceptor) {
-        String id = UuidUtil.buildRandomUuidString();
-        interceptorMap.put(id, interceptor);
-        interceptors.add(interceptor);
+        String id = interceptor.getClass().getName();
+
+        addInterceptor(id, interceptor);
+
         return id;
     }
 
     public void addInterceptor(String id, MapInterceptor interceptor) {
+
+        removeInterceptor(id);
+
         interceptorMap.put(id, interceptor);
         interceptors.add(interceptor);
     }
