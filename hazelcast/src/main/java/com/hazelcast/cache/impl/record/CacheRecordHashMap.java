@@ -25,18 +25,25 @@ import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.FetchableConcurrentHashMap;
 
+<<<<<<< Updated upstream
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+=======
+import java.util.*;
+>>>>>>> Stashed changes
 
 public class CacheRecordHashMap<K, V>
         extends FetchableConcurrentHashMap<K, V>
         implements CacheRecordMap<K, V> {
 
+<<<<<<< Updated upstream
     // Defined as constant for check-style error
     private static final int ONE_HUNDRED_PERCENT = 100;
 
+=======
+>>>>>>> Stashed changes
     private static final int MIN_EVICTION_ELEMENT_COUNT = 100;
 
     private Callback<Data> evictionCallback;
@@ -50,7 +57,11 @@ public class CacheRecordHashMap<K, V>
                               int concurrencyLevel,
                               ConcurrentReferenceHashMap.ReferenceType keyType,
                               ConcurrentReferenceHashMap.ReferenceType valueType,
+<<<<<<< Updated upstream
                               EnumSet<Option> options) {
+=======
+                              EnumSet<ConcurrentReferenceHashMap.Option> options) {
+>>>>>>> Stashed changes
         this(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options, null);
     }
 
@@ -81,8 +92,12 @@ public class CacheRecordHashMap<K, V>
     @Override
     public int evictExpiredRecords(int percentage) {
         long now = Clock.currentTimeMillis();
+<<<<<<< Updated upstream
         int sizeLimitForEviction = (int) ((double) (size() * percentage)
                                         / (double) ONE_HUNDRED_PERCENT);
+=======
+        int sizeLimitForEviction = (int)((double)(size() * percentage) / (double)100);
+>>>>>>> Stashed changes
 
         if (sizeLimitForEviction < MIN_EVICTION_ELEMENT_COUNT) {
             return 0;
@@ -98,7 +113,11 @@ public class CacheRecordHashMap<K, V>
                     (value instanceof Expirable)
                             && ((Expirable) value).isExpiredAt(now);
             if (!isExpired) {
+<<<<<<< Updated upstream
                 expiredEntries.add((Map.Entry<K, Expirable>) entry);
+=======
+                expiredEntries.add((Map.Entry<K, Expirable>)entry);
+>>>>>>> Stashed changes
             }
             if (++expiredCount >= sizeLimitForEviction) {
                 break;
@@ -124,31 +143,46 @@ public class CacheRecordHashMap<K, V>
                 try {
                     return evictRecordsRandom(percentage);
                 } catch (Throwable e) {
+<<<<<<< Updated upstream
                     EmptyStatement.ignore(e);
                     break;
+=======
+                    return evictExpiredRecords(percentage);
+>>>>>>> Stashed changes
                 }
 
             case LRU:
                 try {
                     return evictRecordsLRU(percentage);
                 } catch (Throwable e) {
+<<<<<<< Updated upstream
                     EmptyStatement.ignore(e);
                     break;
+=======
+                    return evictExpiredRecords(percentage);
+>>>>>>> Stashed changes
                 }
 
             case LFU:
                 try {
                     return evictRecordsLFU(percentage);
                 } catch (Throwable e) {
+<<<<<<< Updated upstream
                     EmptyStatement.ignore(e);
                     break;
+=======
+                    return evictExpiredRecords(percentage);
+>>>>>>> Stashed changes
                 }
 
             default:
                 throw new IllegalArgumentException();
         }
+<<<<<<< Updated upstream
 
         return evictExpiredRecords(percentage);
+=======
+>>>>>>> Stashed changes
     }
 
     private int evictRecordsLRU(int percentage) {
@@ -162,8 +196,12 @@ public class CacheRecordHashMap<K, V>
     }
 
     private int evictRecordsRandom(int percentage) {
+<<<<<<< Updated upstream
         int sizeLimitForEviction = (int) ((double) (size() * percentage)
                                         / (double) ONE_HUNDRED_PERCENT);
+=======
+        int sizeLimitForEviction = (int)((double)(size() * percentage) / (double)100);
+>>>>>>> Stashed changes
 
         if (sizeLimitForEviction < MIN_EVICTION_ELEMENT_COUNT) {
             return 0;

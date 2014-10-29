@@ -87,7 +87,6 @@ public abstract class AbstractCacheRecordStore<
              DEFAULT_EVICTION_THRESHOLD_PERCENTAGE, DEFAULT_IS_EVICTION_TASK_ENABLE);
     }
 
-    //CHECKSTYLE:OFF
     public AbstractCacheRecordStore(final String name,
                                     final int partitionId,
                                     final NodeEngine nodeEngine,
