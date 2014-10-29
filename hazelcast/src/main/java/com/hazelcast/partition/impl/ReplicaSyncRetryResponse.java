@@ -24,7 +24,6 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
@@ -38,14 +37,18 @@ public class ReplicaSyncRetryResponse extends Operation
     }
 
     public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
+        final InternalPartitionServiceImpl partitionService = getService();
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
 
         partitionService.clearReplicaSync(partitionId, replicaIndex);
-        partitionService.triggerPartitionReplicaSync(partitionId, replicaIndex,
-                InternalPartitionService.REPLICA_SYNC_RETRY_DELAY);
+
+        InternalPartitionImpl partition = partitionService.getPartition(partitionId, false);
+        boolean isBackup = partition.isOwnerOrBackup(getNodeEngine().getThisAddress());
+        if (isBackup) {
+            partitionService.triggerPartitionReplicaSync(partitionId, replicaIndex,
+                    InternalPartitionService.REPLICA_SYNC_RETRY_DELAY);
+        }
     }
 
     public void afterRun() throws Exception {
@@ -60,7 +63,12 @@ public class ReplicaSyncRetryResponse extends Operation
     }
 
     public boolean validatesTarget() {
-        return true;
+        return false;
+    }
+
+    @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
     }
 
     public void logError(Throwable e) {
