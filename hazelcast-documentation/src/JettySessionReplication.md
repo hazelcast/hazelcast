@@ -87,7 +87,7 @@ You need to configure a `com.hazelcast.session.HazelcastSessionIdManager` instan
 *Configuring the HazelcastSessionManager*
   
 HazelcastSessionManager can be configured from a `context.xml` file. Each application has a context file under `$CATALINA_HOME$/contexts` folder. You need to create this file if it does not exist. 
-Filename must be the same as the application name, e.g. `example.war` should have context file named `example.xml`.
+Filename must be the same as the application name, e.g. `example.war` should have a context file named `example.xml`.
 
 The file `context.xml` should have the below content.
 
@@ -110,7 +110,7 @@ The file `context.xml` should have the below content.
 
 - Start Jetty instances with a configured load balancer and deploy the web application.
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *In Jetty 9 ,there is no folder with name *`contexts`*. You have to put the file *`context.xml`* file under *`webapps`* directory. And you need to add below lines to *`context.xml`*.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *In Jetty 9, there is no folder with name *`contexts`*. You have to put the file *`context.xml`* file under *`webapps`* directory. And you need to add below lines to *`context.xml`*.*
 
 
 ```xml
@@ -169,7 +169,7 @@ You need to configure a `com.hazelcast.session.HazelcastSessionIdManager` instan
 *Configuring the HazelcastSessionManager*
 
 HazelcastSessionManager can be configured from a `context.xml` file. Each application has a context file under `$CATALINA_HOME$/contexts` folder. You need to create this file if it does not exist. 
-Filename must be the same as the application name, e.g. `example.war` should have context file named `example.xml`.
+Filename must be the same as the application name, e.g. `example.war` should have a context file named `example.xml`.
 
 
 ```xml
@@ -189,7 +189,7 @@ Filename must be the same as the application name, e.g. `example.war` should hav
     </Set>
 ```
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *In Jetty 9 ,there is no folder with name *`contexts`*. You have to put the file *`context.xml`* file under *`webapps`* directory. And you need to add below lines to *`context.xml`*.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *In Jetty 9, there is no folder with name *`contexts`*. You have to put the file *`context.xml`* file under *`webapps`* directory. And you need to add below lines to *`context.xml`*.*
 
 ```xml
     <Ref name="Server" id="Server">
