@@ -84,7 +84,7 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
 
         final QueueStoreWrapper storeWrapper = new QueueStoreWrapper();
         storeWrapper.setSerializationService(serializationService);
-        if (storeConfig == null) {
+        if (storeConfig == null || !storeConfig.isEnabled()) {
             return storeWrapper;
         }
         // create queue store.

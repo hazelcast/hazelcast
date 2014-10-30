@@ -243,6 +243,31 @@ public class QueueStoreTest extends HazelcastTestSupport {
         assertEquals("Queue store size should be 1 but found " + size, 1, size);
     }
 
+    @Test
+    public void testQueueStoreFactoryIsNotInitialized_whenQueueStoreConfigDisabled() {
+        final String queueName = randomString();
+        final Config config = new Config();
+        final QueueConfig queueConfig = config.getQueueConfig(queueName);
+        final QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        queueStoreConfig.setEnabled(false);
+        final QueueStoreFactory queueStoreFactory = new SimpleQueueStoreFactory();
+        queueStoreConfig.setFactoryImplementation(queueStoreFactory);
+        queueConfig.setQueueStoreConfig(queueStoreConfig);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        final IQueue<Integer> queue = instance.getQueue(queueName);
+        queue.add(1);
+
+        final QueueStore queueStore = queueStoreFactory.newQueueStore(queueName, null);
+        final TestQueueStore testQueueStore = (TestQueueStore) queueStore;
+        final int size = testQueueStore.store.size();
+
+        assertEquals("Expected no queue store operation" +
+                " since we disabled it in queue store", 0, size);
+    }
+
+
     static class SimpleQueueStoreFactory implements QueueStoreFactory<Integer> {
 
         private final ConcurrentMap<String, QueueStore> stores = new ConcurrentHashMap<String, QueueStore>();
