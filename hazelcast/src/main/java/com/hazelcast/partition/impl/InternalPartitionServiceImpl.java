@@ -1363,7 +1363,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             replicaSyncRequests.set(k, null);
         }
         replicaSyncScheduler.cancelAll();
-//        replicaSyncProcessCount.set(0);
         // this is not sync with possibly running sync process
         // permit count can exceed allowed parallelization count.
         replicaSyncProcessLock.drainPermits();
