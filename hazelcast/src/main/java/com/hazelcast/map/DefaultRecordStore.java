@@ -42,6 +42,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.map.eviction.ExpirationTimeSetter.updateExpiryTime;
+
 /**
  * Default implementation of record-store.
  */
@@ -723,7 +725,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             setRecordValue(record, value, now);
             // then increase size.
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateTtl(record, ttl);
+            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
             saveIndex(record);
         }
         evictEntries(now, false);
@@ -754,7 +756,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             setRecordValue(record, value, now);
             // then increase size.
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateTtl(record, ttl);
+            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
         }
         saveIndex(record);
         evictEntries(now, false);
@@ -875,7 +877,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, value, now);
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateTtl(record, ttl);
+            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
         }
         saveIndex(record);
         evictEntries(now, false);
@@ -909,7 +911,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, value, now);
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateTtl(record, ttl);
+            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
         }
         saveIndex(record);
 
@@ -936,7 +938,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(-calculateRecordHeapCost(record));
             setRecordValue(record, value, now);
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateTtl(record, ttl);
+            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
         }
         saveIndex(record);
         evictEntries(now, false);
@@ -969,7 +971,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateTtl(record, ttl);
+            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
         }
         saveIndex(record);
         evictEntries(now, false);
