@@ -146,42 +146,6 @@ else
 fi
 }
 
-
-function createNoHeaderSingleHTML {
-
-MANIFEST_FILE_BODY="{\"title\": \"Documentation\",
-\"rootDir\": \".\",
-\"date\": \"$date\",
-\"version\": \"$version\",
-\"maxTocLevel\":3,
-\"files\":[\"./src/$MERGED_FILE_NAME\"]}"
-
-if [[ -e "./$MANIFEST_FILE_NAME" ]]; then
-	$(rm -rf "./$MANIFEST_FILE_NAME")
-fi
-writeManifest=$( echo $MANIFEST_FILE_BODY >> $MANIFEST_FILE_NAME)
-if [[ $? -eq 0 ]]; then
-	echo "Manifest file succesfully written."
-else
-	echo "Error writing manifest file"
-	echo $writeManifest
-	delete
-	exit -1
-fi
-
-echo "Creating no header single_html documentation"
-
-createHtml=$(bfdocs --theme=themes/no_header $MANIFEST_FILE_NAME "./"$OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR )
-if [[ $? -eq 0 ]]; then
-	echo "No Header Single HTML created succesfully "
-
-else
-	echo "Error creating No Header Single HTML documentation"
-	exit -1
-	delete
-fi
-}
-
 function createMancenterDocumentation {
 MANIFEST_FILE_BODY="{\"title\": \"Documentation\",
 \"rootDir\": \".\",
@@ -212,7 +176,7 @@ fi
 echo "Creating Management Center documentation"
 createHtml=$(bfdocs --theme=themes/no_header $MANIFEST_FILE_NAME "./"$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR )
 if [[ $? -eq 0 ]]; then
-  echo "Managemetn Center documentation created succesfully "
+  echo "Management Center documentation created succesfully "
 
 else
   echo "Error creating Management Center documentation"
@@ -228,7 +192,6 @@ function init {
 	MULTI_HTML_OUTPUT_DIR="html"
 	SINGLE_HTML_OUTPUT_DIR="html-single"
 	MANCENTER_OUTPUT_DIR="mancenter"
-	NO_HEADER_SINGLE_HTML_OUTPUT_DIR="no_header"
 	PDF_OUTPUT_DIR="pdf"
 	PDF_FILE_NAME="hazelcast-documentation-$version.pdf"
 	MANIFEST_FILE_NAME="manifest.json"
@@ -255,8 +218,6 @@ function cleanIfExists {
 	mkdir $OUTPUT_DIR/$MANCENTER_OUTPUT_DIR
 	echo "Creating $OUTPUT_DIR/$PDF_OUTPUT_DIR"
 	mkdir $OUTPUT_DIR/$PDF_OUTPUT_DIR
-	echo "Creating $OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR"
-	mkdir $OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR
 
 }
 
@@ -269,12 +230,10 @@ function moveImages {
     mkdir ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
     mkdir ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
     mkdir ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
-		mkdir ./$OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR"/images/"
 
     cp -aR ./images/ ./$OUTPUT_DIR/$MULTI_HTML_OUTPUT_DIR"/images/"
     cp -aR ./images/ ./$OUTPUT_DIR/$SINGLE_HTML_OUTPUT_DIR"/images/"
     cp -aR ./images/ ./$OUTPUT_DIR/$MANCENTER_OUTPUT_DIR"/images/"
-		cp -aR ./images/ ./$OUTPUT_DIR/$NO_HEADER_SINGLE_HTML_OUTPUT_DIR"/images/"
 
 }
 
@@ -294,7 +253,6 @@ createPDF
 moveCreatedPDF
 moveMergedMarkDown
 createSingleHTML
-createNoHeaderSingleHTML
 createMancenterDocumentation
 delete
 echo "Done"
