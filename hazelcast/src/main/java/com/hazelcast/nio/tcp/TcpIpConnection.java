@@ -169,7 +169,7 @@ public final class TcpIpConnection implements Connection {
                 sendClaim();
             } else {
 //                if (logger.isFinestEnabled()) {
-                logger.info("No slots to " + toString() + " are available, but I can only ask for new ones in " + askInMs + " ms.");
+//                logger.info("No slots to " + toString() + " are available, but I can only ask for new ones in " + askInMs + " ms.");
 //                }
                 waitingForSlotResponse.set(false);
             }
@@ -190,7 +190,7 @@ public final class TcpIpConnection implements Connection {
 
     private void sendClaim() {
         //todo: needs to be removed or put under debug
-        logger.info("Sending claim for " + toString());
+  //      logger.info("Sending claim for " + toString());
         IOService ioService = connectionManager.ioService;
         Data dummyData = ioService.toData(0);
         Packet slotRequestPacket = new Packet(dummyData, ioService.getPortableContext());
@@ -230,9 +230,9 @@ public final class TcpIpConnection implements Connection {
         if (claimResponse == 0) {
             backoffState = backoffPolicy.nextState(backoffState);
             dontAskForSlotsBefore = Clock.currentTimeMillis() + backoffState;
-            logger.info("Received empty claim response from " + toString() + ". Next attempt in " + backoffState + " ms.");
+        //    logger.info("Received empty claim response from " + toString() + ". Next attempt in " + backoffState + " ms.");
         } else {
-            logger.info("Received " + claimResponse + "slots for " + toString());
+        //    logger.info("Received " + claimResponse + "slots for " + toString());
             backoffState = BackoffPolicy.EMPTY_STATE;
         }
         availableSlots.set(claimResponse);
