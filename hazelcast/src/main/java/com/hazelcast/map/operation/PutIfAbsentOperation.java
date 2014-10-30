@@ -47,7 +47,7 @@ public class PutIfAbsentOperation extends BasePutOperation {
     }
 
     public boolean shouldBackup() {
-        return successful;
+        return successful && recordStore.getRecord(dataKey) != null;
     }
 
     @Override
