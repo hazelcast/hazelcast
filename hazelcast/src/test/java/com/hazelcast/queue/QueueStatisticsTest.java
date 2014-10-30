@@ -118,7 +118,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
 
     @Test
     public void testOtherOperationCount() {
-        IQueue queue = newQueue();
+        final IQueue queue = newQueue();
         for (int i = 0; i < 30; i++) {
             queue.offer("item" + i);
         }
@@ -127,8 +127,13 @@ public class QueueStatisticsTest extends AbstractQueueTest {
         queue.addAll(list);
         queue.removeAll(list);
 
-        LocalQueueStats stats = queue.getLocalQueueStats();
-        assertEquals(3, stats.getOtherOperationsCount());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                LocalQueueStats stats = queue.getLocalQueueStats();
+                assertEquals(3, stats.getOtherOperationsCount());
+            }
+        });
     }
 
     @Test
