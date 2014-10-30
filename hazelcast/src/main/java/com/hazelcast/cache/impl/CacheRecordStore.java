@@ -19,8 +19,6 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
-import com.hazelcast.memory.MemoryStatsSupport;
-import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -164,9 +162,7 @@ public class CacheRecordStore
 
     @Override
     protected boolean isEvictionRequired() {
-        LocalMemoryStats memoryStats = MemoryStatsSupport.getMemoryStats();
-        return (memoryStats.getMaxHeap() * evictionThreshold)
-                > memoryStats.getFreeHeap();
+        return false;
     }
 
     @Override
