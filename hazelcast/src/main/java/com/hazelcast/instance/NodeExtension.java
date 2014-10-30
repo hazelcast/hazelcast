@@ -27,7 +27,6 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
-import com.hazelcast.wan.WanReplicationService;
 
 /**
  * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
@@ -72,11 +71,12 @@ public interface NodeExtension {
     Storage<DataRef> getOffHeapStorage();
 
     /**
-     * Returns a <tt>WanReplicationService</tt> instance to be used by this <tt>Node</tt>.
-     *
-     * @return WanReplicationService
+     * Creates a service which is an implementation of given type parameter.
+     * @param type type of service
+     * @return service implementation
+     * @throws java.lang.IllegalArgumentException if type is not known
      */
-    WanReplicationService getWanReplicationService();
+    <T> T createService(Class<T> type);
 
 
     TimedMemberStateFactory getTimedMemberStateFactory();
@@ -136,4 +136,5 @@ public interface NodeExtension {
      * Destroys <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
      */
     void destroy();
+
 }

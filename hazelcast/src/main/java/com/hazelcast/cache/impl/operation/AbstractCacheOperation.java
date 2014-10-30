@@ -17,9 +17,10 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.CacheNotExistsException;
+import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,12 +40,12 @@ abstract class AbstractCacheOperation
         extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
-    Data key;
-    Object response;
+    protected Data key;
+    protected Object response;
 
-    transient ICacheRecordStore cache;
+    protected transient ICacheRecordStore cache;
 
-    transient CacheRecord backupRecord;
+    protected transient CacheRecord backupRecord;
 
     protected AbstractCacheOperation() {
     }
@@ -57,7 +58,7 @@ abstract class AbstractCacheOperation
     @Override
     public final void beforeRun()
             throws Exception {
-        CacheService service = getService();
+        AbstractCacheService service = getService();
         cache = service.getOrCreateCache(name, getPartitionId());
     }
 
@@ -74,7 +75,7 @@ abstract class AbstractCacheOperation
     @Override
     public ExceptionAction onException(Throwable throwable) {
         if (throwable instanceof CacheNotExistsException) {
-            CacheService cacheService = getService();
+            ICacheService cacheService = getService();
             if (cacheService.getCacheConfig(name) != null) {
                 getLogger().finest("Retry Cache Operation from node " + getNodeEngine().getLocalMember());
                 return ExceptionAction.RETRY_INVOCATION;

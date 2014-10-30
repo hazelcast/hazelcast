@@ -53,7 +53,7 @@ For Maven users, the coordinates look like the following code:
 ```
 With other build systems, you might need to describe the coordinates in a different way.
 
-#### Activating Hazelcast as JCache PRovider
+#### Activating Hazelcast as JCache Provider
 
 To activate Hazelcast as the JCache provider implementation, add either `hazelcast-all.jar` or
 `hazelcast.jar` to the classpath (if not already available) by either one of the following Maven snippets.
@@ -80,7 +80,7 @@ If you use `hazelcast.jar`:
 The users of other build systems have to adjust the way of
 defining the dependency to their needs.
 
-#### Adding hazelcast-client.jar Dependency for Connecting Clients to Remote Server
+#### Connecting Clients to Remote Server
 
 When the users want to use Hazelcast clients to connect to a remote cluster, the `hazelcast-client.jar` dependency is also required
 on the client side applications. This JAR is already included in `hazelcast-all.jar`. Or, you can add it to the classpath using the following
@@ -100,7 +100,7 @@ Hazelcast community website ([http://www.hazelcast.org](http://www.hazelcast.org
 
 ### Quick Example
 
-Before moving on to configuration, let's have a look at a basic introductry example. The following code shows how to use the Hazelcast JCache integration
+Before moving on to configuration, let's have a look at a basic introductory example. The following code shows how to use the Hazelcast JCache integration
 inside an application in an easy but typesafe way.
 
 ```java
@@ -176,7 +176,7 @@ Hazelcast JCache provides two different ways of cache configuration:
 You can declare your JCache cache configuration using the `hazelcast.xml` or `hazelcast-client.xml` configuration files. Using this declarative configuration makes the creation of the `javax.cache.Cache` fully transparent and automatically ensures internal thread safety. You do not need a call to `javax.cache.Cache::createCache` in this case: you can retrieve the cache using
 `javax.cache.Cache::getCache` overloads and by passing in the name defined in the configuration for the cache.
 
-To retrieve the cache defined in the declataion files, you need only do a simple call (example below) because the cache is created automatically by the implementation.
+To retrieve the cache defined in the declaration files, you need only perform a simple call (example below) because the cache is created automatically by the implementation.
 
 ```java
 CachingProvider cachingProvider = Caching.getCachingProvider();
@@ -239,7 +239,8 @@ the overall statistics.*
 
 #### JCache Programmatic Configuration
 
-To program your JCache configuration:
+To configure the JCache programmatically:
+
 - either instantiate `javax.cache.configuration.MutableConfiguration` if you will use 
 only the JCache standard configuration,
 - or instantiate `com.hazelcast.config.CacheConfig` for a deeper Hazelcast integration. 
@@ -249,9 +250,9 @@ Both classes share the same supertype interface `javax.cache.configuration.Compl
 standard.
 
 <br></br>
-![image](images/NoteSmall.jpg) ***NOTE:*** *To stay vendor independent, try to keep your code as near as possible to the standard JCache API. It is recommended that you configure those values using the declarative API,
-and you only use the `javax.cache.configuration.Configuration` or `javax.cache.configuration.CompleteConfiguration` interfaces in 
-your code when you need to pass the configuration instance.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *To stay vendor independent, try to keep your code as near as possible to the standard JCache API. We recommend you to use declarative configuration 
+and use the `javax.cache.configuration.Configuration` or `javax.cache.configuration.CompleteConfiguration` interfaces in 
+your code only when you need to pass the configuration instance throughout your code.*
 <br></br>
 
 If you don't need to configure Hazelcast specific properties, it is recommended that you instantiate
@@ -441,7 +442,7 @@ happens on the cache. Again we will look in the implementation of the listener i
 
 A full running example that is presented in this
 subsection is available in the 
-[samples repository](https://github.com/hazelcast/hazelcast-code-samples/tree/master/jcache/src/main/java/com/hazelcast/examples/application).
+[code samples repository](https://github.com/hazelcast/hazelcast-code-samples/tree/master/jcache/src/main/java/com/hazelcast/examples/application).
 The application is built to be a command line app. It offers a small shell to accept different commands. After startup, you can
 enter `help` to see all available commands and their descriptions.
 
@@ -528,7 +529,7 @@ yet found in the cache. If no value is found for a given key, it returns null.
 
 If the cache is not configured to be `read-through`, nothing is loaded automatically. However, the user code must call `javax.cache.Cache::loadAll` to load data for the given set of keys into the cache.
 
-For the bulk load operation, for every key found not to be part of the returned result set, a `javax.cache.integration.CompletionListener` parameter can be as an asynchronous callback after all the key-value pairs because loading many key-value pairs can take lots of time.
+For the bulk load operation (`loadAll()`), some keys may not be found in the returned result set. In this case, a `javax.cache.integration.CompletionListener` parameter can be used as an asynchronous callback after all the key-value pairs are loaded because loading many key-value pairs can take lots of time.
 
 Let's look at the `UserCacheLoader` implementation.
 
@@ -655,7 +656,7 @@ the object is big. Another option to prevent this is part of the Hazelcast ICach
 [BackupAwareEntryProcessor](#backupawareentryprocessor).
 
 An arbitrary number of arguments can be passed to the `Cache::invoke` and `Cache::invokeAll` methods. All of those arguments need
-to be fully serializable because in a distributed environment like Hazelcast, it is very likely that these arguements have to be passed around the cluster.
+to be fully serializable because in a distributed environment like Hazelcast, it is very likely that these arguments have to be passed around the cluster.
 
 ```java
 public class UserUpdateEntryProcessor
@@ -769,11 +770,11 @@ public class UserCacheEntryListener
 
 ### ExpirePolicy
 
-In JCache `javax.cache.expiry.ExpirePolicy` implementations are used to automatically expire cache entries based on different rules.
+In JCache, `javax.cache.expiry.ExpirePolicy` implementations are used to automatically expire cache entries based on different rules.
 
-Expiry timeouts are defined using `javax.cache.expiry.Duration`, which is a pair of `java.util.concurrent.TimeUnit` which 
+Expiry timeouts are defined using `javax.cache.expiry.Duration`, which is a pair of `java.util.concurrent.TimeUnit`, which 
 describes a time unit and a long, defining the timeout value. The minimum allowed `TimeUnit` is `TimeUnit.MILLISECONDS`.
-The long value `durationAmount` must be equal or greater than zero. A value of zero (or `Duration.ZERO`) indicatee that the
+The long value `durationAmount` must be equal or greater than zero. A value of zero (or `Duration.ZERO`) indicates that the
 cache entry expires immediately.
 
 By default, JCache delivers a set of predefined expiry strategies in the standard API.
@@ -896,7 +897,7 @@ Cache<Object, Object> cache = cacheManager.getCache( ... );
 ICache<Object, Object> unwrappedCache = cache.unwrap( ICache.class );
 ```
 
-After unwrapping the `Cache` instance into a `ICache` instance, you have access to all of the following operations, e.g. 
+After unwrapping the `Cache` instance into an `ICache` instance, you have access to all of the following operations, e.g. 
 [Async Operations](#async-operations) and [Additional Methods](#additional-methods).
 
 ### ICache Configuration

@@ -83,7 +83,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
-        wanReplicationService = node.getNodeExtension().getWanReplicationService();
+        wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
     }
 
     @PrivateApi

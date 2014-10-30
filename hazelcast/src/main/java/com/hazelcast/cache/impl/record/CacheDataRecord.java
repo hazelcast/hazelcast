@@ -34,8 +34,8 @@ class CacheDataRecord extends AbstractCacheRecord<Data> {
         super();
     }
 
-    CacheDataRecord(Data key, Data value, long expiryTime) {
-        super(key, expiryTime);
+    CacheDataRecord(Data value, long expiryTime) {
+        super(expiryTime);
         this.value = value;
     }
 

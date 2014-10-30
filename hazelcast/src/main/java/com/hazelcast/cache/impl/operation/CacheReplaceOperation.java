@@ -41,10 +41,6 @@ public class CacheReplaceOperation
     public CacheReplaceOperation() {
     }
 
-    public CacheReplaceOperation(String name, Data key, Data oldValue, Data newValue, ExpiryPolicy expiryPolicy) {
-        this(name, key, oldValue, newValue, expiryPolicy, IGNORE_COMPLETION);
-    }
-
     public CacheReplaceOperation(String name, Data key, Data oldValue, Data newValue, ExpiryPolicy expiryPolicy,
                                  int completionId) {
         super(name, key, completionId);
