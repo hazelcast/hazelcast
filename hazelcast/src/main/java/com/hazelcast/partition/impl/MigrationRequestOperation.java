@@ -142,10 +142,13 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         MigrationOperation operation = new MigrationOperation(migrationInfo, replicaVersions, tasks);
 
         NodeEngine nodeEngine = getNodeEngine();
+        InternalPartitionServiceImpl partitionService = getService();
+
         nodeEngine.getOperationService()
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, destination)
                 .setCallback(new MigrationCallback(migrationInfo, getResponseHandler()))
                 .setResultDeserialized(true)
+                .setCallTimeout(partitionService.getPartitionMigrationTimeout())
                 .setTryPauseMillis(TRY_PAUSE_MILLIS)
                 .setReplicaIndex(getReplicaIndex())
                 .invoke();
