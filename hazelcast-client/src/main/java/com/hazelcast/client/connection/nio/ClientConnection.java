@@ -144,6 +144,11 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
+    public WriteResult writeBackup(Packet packet) {
+        throw new RuntimeException();
+    }
+
+    @Override
     public WriteResult write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
