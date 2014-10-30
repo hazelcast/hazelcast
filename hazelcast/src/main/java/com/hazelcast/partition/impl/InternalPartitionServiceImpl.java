@@ -325,6 +325,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return size > 0 ? size : 1;
     }
 
+    @Override
+    public int getMaxBackupCount() {
+        return Math.min(getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT);
+    }
+
     public void memberAdded(MemberImpl member) {
         if (!member.localMember()) {
             updateMemberGroupsSize();
@@ -875,8 +880,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         final InternalPartitionImpl partition = getPartitionImpl(partitionId);
         final Address target = partition.getOwnerOrNull();
         if (target == null) {
-            logger.info("Sync replica target is null, no need to sync -> partition: " + partitionId
-                    + ", replica: " + replicaIndex);
+            logger.info("Sync replica target is null, no need to sync -> partition: " + partitionId + ", replica: "
+                    + replicaIndex);
             return false;
         }
 
@@ -1106,8 +1111,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return true;
         }
 
-        int memberGroupsSize = getMemberGroupsSize();
-        if (memberGroupsSize < 2) {
+        if (getMemberGroupsSize() < 2) {
             return true;
         }
 
@@ -1128,7 +1132,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         int ownedCount = submitSyncReplicaOperations(thisAddress, s, ok, callback);
         try {
             if (ok.get()) {
-                int permits = ownedCount * (memberGroupsSize - 1);
+                int permits = ownedCount * getMaxBackupCount();
                 return s.tryAcquire(permits, REPLICA_SYNC_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS) && ok.get();
             } else {
                 return false;
@@ -1142,7 +1146,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             Callback<Object> callback) {
 
         int ownedCount = 0;
-        int memberGroupsSize = getMemberGroupsSize();
         ILogger responseLogger = node.getLogger(SyncReplicaVersion.class);
         ResponseHandler responseHandler = ResponseHandlerFactory
                 .createErrorLoggingResponseHandler(responseLogger);
@@ -1150,7 +1153,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         for (InternalPartitionImpl partition : partitions) {
             Address owner = partition.getOwnerOrNull();
             if (thisAddress.equals(owner)) {
-                for (int i = 1; i < memberGroupsSize; i++) {
+                for (int i = 1; i <= getMaxBackupCount(); i++) {
                     if (partition.getReplicaAddress(i) != null) {
                         SyncReplicaVersion op = new SyncReplicaVersion(i, callback);
                         op.setService(this);
@@ -1699,8 +1702,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         private Boolean executeMigrateOperation(MigrationRequestOperation migrationRequestOp, MemberImpl fromMember) {
-            Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                    migrationRequestOp, migrationInfo.getSource())
+            Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, migrationRequestOp,
+                    migrationInfo.getSource())
                     .setCallTimeout(partitionMigrationTimeout)
                     .setTryPauseMillis(DEFAULT_PAUSE_MILLIS).invoke();
 

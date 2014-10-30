@@ -879,8 +879,7 @@ final class BasicOperationService implements InternalOperationService {
             long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(op.getPartitionId(),
                     totalRequestedBackupCount);
 
-            int maxPossibleBackupCount = min(partitionService.getMemberGroupsSize() - 1,
-                    InternalPartition.MAX_BACKUP_COUNT);
+            int maxPossibleBackupCount = partitionService.getMaxBackupCount();
             int syncBackupCount = min(maxPossibleBackupCount, requestedSyncBackupCount);
             int asyncBackupCount = min(maxPossibleBackupCount - syncBackupCount, requestedAsyncBackupCount);
 

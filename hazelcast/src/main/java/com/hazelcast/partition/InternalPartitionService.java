@@ -118,6 +118,8 @@ public interface InternalPartitionService extends CoreService {
 
     int getMemberGroupsSize();
 
+    int getMaxBackupCount();
+
     String addMigrationListener(MigrationListener migrationListener);
 
     boolean removeMigrationListener(String registrationId);
