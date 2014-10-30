@@ -826,7 +826,8 @@ String configFile = "classpath://my-configs/scoped-hazelcast.xml";
 Properties properties = HazelcastCachingProvider.byLocation( configFile );
 
 URI cacheManagerName = new URI( "my-cache-manager" );
-CacheManager cacheManager = cachingProvider.getCacheManager( cacheManager, null, properties );
+CacheManager cacheManager = cachingProvider
+    .getCacheManager( cacheManager, null, properties );
 ```
 
 The retrieved `CacheManager` is scoped to use the `HazelcastInstance` that was just created and was configured using the given XML
@@ -877,10 +878,12 @@ Hazelcast.newHazelcastInstance( config );
 CachingProvider cachingProvider = Caching.getCachingProvider();
 
 // Create Properties instance pointing to a named HazelcastInstance
-Properties properties = HazelcastCachingProvider.byInstanceName( "my-named-hazelcast-instance" );
+Properties properties = HazelcastCachingProvider
+    .byInstanceName( "my-named-hazelcast-instance" );
 
 URI cacheManagerName = new URI( "my-cache-manager" );
-CacheManager cacheManager = cachingProvider.getCacheManager( cacheManager, null, properties );
+CacheManager cacheManager = cachingProvider
+    .getCacheManager( cacheManager, null, properties );
 ```
 
 <br></br>
@@ -993,32 +996,32 @@ Following methods
 are available in asynchronous versions:
 
  - `get(key)`:
-	- `getAsync(key)`
-    - `getAsync(key, expiryPolicy)`
+  - `getAsync(key)`
+  - `getAsync(key, expiryPolicy)`
  - `put(key, value)`:
-    - `putAsync(key, value)`
-    - `putAsync(key, value, expiryPolicy)`
+  - `putAsync(key, value)`
+  - `putAsync(key, value, expiryPolicy)`
  - `putIfAbsent(key, value)`:
-    - `putIfAbsentAsync(key, value)`
-    - `putIfAbsentAsync(key, value, expiryPolicy)`
+  - `putIfAbsentAsync(key, value)`
+  - `putIfAbsentAsync(key, value, expiryPolicy)`
  - `getAndPut(key, value)`:
-    - `getAndPutAsync(key, value)`
-    - `getAndPutAsync(key, value, expiryPolicy)`
+  - `getAndPutAsync(key, value)`
+  - `getAndPutAsync(key, value, expiryPolicy)`
  - `remove(key)`:
-    - `removeAsync(key)`
+  - `removeAsync(key)`
  - `remove(key, value)`:
-    - `removeAsync(key, value)`
+  - `removeAsync(key, value)`
  - `getAndRemove(key)`:
-    - `getAndRemoveAsync(key)`
+  - `getAndRemoveAsync(key)`
  - `replace(key, value)`:
-    - `replaceAsync(key, value)`
-    - `replaceAsync(key, value, expiryPolicy)`
+  - `replaceAsync(key, value)`
+  - `replaceAsync(key, value, expiryPolicy)`
  - `replace(key, oldValue, newValue)`:
-    - `replaceAsync(key, oldValue, newValue)`
-    - `replaceAsync(key, oldValue, newValue, expiryPolicy)`
+  - `replaceAsync(key, oldValue, newValue)`
+  - `replaceAsync(key, oldValue, newValue, expiryPolicy)`
  - `getAndReplace(key, value)`: 
-    - `getAndReplaceAsync(key, value)`
-    - `getAndReplaceAsync(key, value, expiryPolicy)`
+  - `getAndReplaceAsync(key, value)`
+  - `getAndReplaceAsync(key, value, expiryPolicy)`
 
 The methods with a given `javax.cache.expiry.ExpiryPolicy` are further discussed in the section
 [Custom ExpiryPolicy](#custom-expirypolicy).
@@ -1055,23 +1058,23 @@ implementations can be marked as `java.io.Closeable`. The following list shows t
 by `com.hazelcast.cache.ICache` featuring the `ExpiryPolicy` parameter:
 
  - `get(key)`:
-  	- `get(key, expiryPolicy)`
+  - `get(key, expiryPolicy)`
  - `getAll(keys)`:
-  	- `getAll(keys, expirePolicy)`
+  - `getAll(keys, expirePolicy)`
  - `put(key, value)`:
- 	 - `put(key, value, expirePolicy)`
+  - `put(key, value, expirePolicy)`
  - `getAndPut(key, value)`:
-	  - `getAndPut(key, value, expirePolicy)`
+  - `getAndPut(key, value, expirePolicy)`
  - `putAll(map)`:
-	  - `putAll(map, expirePolicy)`
+  - `putAll(map, expirePolicy)`
  - `putIfAbsent(key, value)`:
-  	- `putIfAbsent(key, value, expirePolicy)`
+  - `putIfAbsent(key, value, expirePolicy)`
  - `replace(key, value)`:
-  	- `replace(key, value, expirePolicy)`
+  - `replace(key, value, expirePolicy)`
  - `replace(key, oldValue, newValue)`:
-  	- `replace(key, oldValue, newValue, expirePolicy)`
+  - `replace(key, oldValue, newValue, expirePolicy)`
  - `getAndReplace(key, value)`:
-  	- `getAndReplace(key, value, expirePolicy)`
+  - `getAndReplace(key, value, expirePolicy)`
   
 Asynchronous method overloads are not listed here. Please see [Async Operations](#async-operations) for the list of asynchronous method overloads.
 
