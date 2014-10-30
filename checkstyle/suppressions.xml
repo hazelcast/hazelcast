@@ -334,6 +334,7 @@
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
     <suppress checks="FileLengthCheck" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.partition.InternalPartitionService"/>
     <suppress checks="MethodCount" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
     <suppress checks="ExecutableStatementCount" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
     <!-- one method left -->
