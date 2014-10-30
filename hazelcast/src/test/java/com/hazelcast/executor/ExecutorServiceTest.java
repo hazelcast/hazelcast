@@ -38,13 +38,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -69,6 +62,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -213,8 +212,9 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(k);
         final ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
-                if (response == null)
+                if (response == null) {
                     count.incrementAndGet();
+                }
                 latch.countDown();
             }
 
@@ -316,8 +316,9 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(k * k);
         final MultiExecutionCallback callback = new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
-                if (value == null)
+                if (value == null) {
                     count.incrementAndGet();
+                }
                 latch.countDown();
             }
 
@@ -357,8 +358,9 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(k / 2);
         final ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
-                if ((Boolean) response)
+                if ((Boolean) response) {
                     count.incrementAndGet();
+                }
                 latch.countDown();
             }
 
@@ -385,7 +387,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         assertEquals(k / 2, count.get());
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testSubmitToMemberCallable() throws ExecutionException, InterruptedException, TimeoutException {
         final int k = simpleTestNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
@@ -394,8 +396,9 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(k / 2);
         final ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
-                if ((Boolean) response)
+                if ((Boolean) response) {
                     count.incrementAndGet();
+                }
                 latch.countDown();
             }
 
@@ -410,7 +413,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             map.put("memberUUID", instance.getCluster().getLocalMember().getUuid());
             if (i % 2 == 0) {
                 final Future f = service.submitToMember(new ScriptCallable(script, map), instance.getCluster().getLocalMember());
-                assertTrue((Boolean) f.get(5, TimeUnit.SECONDS));
+                assertTrue((Boolean) f.get());
             } else {
                 service.submitToMember(new ScriptCallable(script, map), instance.getCluster().getLocalMember(), callback);
             }
