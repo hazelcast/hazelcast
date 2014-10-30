@@ -352,7 +352,7 @@ final class BasicOperationService implements InternalOperationService {
 
         // todo: a hack to prevent urgent backup operations be kicked out of this method.
         if (op instanceof BackupOperation && !op.isUrgent()) {
-            System.out.println("Unexpected operation: "+op);
+            System.out.println("Unexpected operation: " + op);
             //throw new IllegalArgumentException("Can't send a Backup operation using the regular send method, op: " + op);
         }
 
@@ -1029,6 +1029,12 @@ final class BasicOperationService implements InternalOperationService {
 
                 if (result == WriteResult.FULL) {
                     fullConnectionEncountered = true;
+
+                    if (lastFullTimeMs + 10000 > System.currentTimeMillis()) {
+                        lastFullTimeMs = System.currentTimeMillis();
+
+                        logger.severe("Back pressure applied on async backup calls");
+                    }
                 }
 
                 if (isSyncBackup) {
@@ -1046,6 +1052,8 @@ final class BasicOperationService implements InternalOperationService {
 
             return syncBackups;
         }
+
+        private volatile long lastFullTimeMs = System.currentTimeMillis();
 
         private Backup newBackup(BackupAwareOperation backupAwareOp, long[] replicaVersions,
                                  int replicaIndex, boolean isSyncBackup) {
