@@ -72,7 +72,7 @@ public class SplitBrainHandlerTest {
 
     @Before
     @After
-    public  void killAllHazelcastInstances() throws IOException {
+    public void killAllHazelcastInstances() throws IOException {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -330,7 +330,7 @@ public class SplitBrainHandlerTest {
          * h4 to restart it will have to be notified by h3.
          */
         h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
-        h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().clear().setMembers(Collections.<String> emptyList());
+        h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().clear().setMembers(Collections.<String>emptyList());
 
         assertTrue(latch.await(60, TimeUnit.SECONDS));
 
@@ -411,7 +411,7 @@ public class SplitBrainHandlerTest {
         final CountDownLatch latch = new CountDownLatch(1);
         Config config1 = new Config();
         // bigger port to make sure address.hashCode() check pass during merge!
-        config1.getNetworkConfig().setPort(5901) ;
+        config1.getNetworkConfig().setPort(5901);
         config1.setProperties(props);
         config1.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
@@ -428,7 +428,7 @@ public class SplitBrainHandlerTest {
         Thread.sleep(5000);
 
         Config config2 = new Config();
-        config2.getNetworkConfig().setPort(5701) ;
+        config2.getNetworkConfig().setPort(5701);
         config2.setProperties(props);
         Hazelcast.newHazelcastInstance(config2);
 
@@ -617,4 +617,5 @@ public class SplitBrainHandlerTest {
         Node node = TestUtil.getNode(hz);
         return (FirewallingTcpIpConnectionManager) node.getConnectionManager();
     }
+
 }
