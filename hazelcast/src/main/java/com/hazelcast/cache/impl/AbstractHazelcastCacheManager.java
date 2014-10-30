@@ -17,6 +17,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -213,8 +214,13 @@ public abstract class AbstractHazelcastCacheManager
             names = Collections.emptySet();
         } else {
             names = new LinkedHashSet<String>();
-            for (String nameWithPrefix : caches.keySet()) {
-                final String name = nameWithPrefix.substring(nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length());
+            for (Map.Entry<String, ICache<?, ?>> entry : caches.entrySet()) {
+                if (entry.getValue().isClosed()) {
+                    continue;
+                }
+                String nameWithPrefix = entry.getKey();
+                int index = nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length();
+                final String name = nameWithPrefix.substring(index);
                 names.add(name);
             }
         }
