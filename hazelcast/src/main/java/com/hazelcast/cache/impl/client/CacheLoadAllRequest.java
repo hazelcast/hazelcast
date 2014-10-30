@@ -19,11 +19,9 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -40,6 +38,7 @@ import java.util.Set;
 
 /**
  * This client request  specifically calls {@link CacheLoadAllOperationFactory} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory
  */
 public class CacheLoadAllRequest
@@ -52,8 +51,8 @@ public class CacheLoadAllRequest
     public CacheLoadAllRequest() {
     }
 
-    public CacheLoadAllRequest(String name, Set<Data> keys, boolean replaceExistingValues, InMemoryFormat inMemoryFormat) {
-        super(name, inMemoryFormat);
+    public CacheLoadAllRequest(String name, Set<Data> keys, boolean replaceExistingValues) {
+        super(name);
         this.keys = keys;
         this.replaceExistingValues = replaceExistingValues;
     }
@@ -68,9 +67,8 @@ public class CacheLoadAllRequest
 
     @Override
     protected OperationFactory createOperationFactory() {
-        ICacheService service = getService();
-        CacheOperationProvider cacheOperationProvider = service.getCacheOperationProvider(name, inMemoryFormat);
-        return cacheOperationProvider.createLoadAllOperationFactory(keys, replaceExistingValues);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createLoadAllOperationFactory(keys, replaceExistingValues);
     }
 
     @Override

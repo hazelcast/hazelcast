@@ -25,7 +25,6 @@ import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.impl.MapEntrySet;
@@ -50,6 +49,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * {@link com.hazelcast.cache.ICache} is the designated interface.</p>
  * <p>AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.</p>
  * <p>Note: this partial implementation is used by client.</p>
+ *
  * @param <K> the type of key
  * @param <V> the type of value
  */
@@ -76,7 +76,7 @@ abstract class AbstractClientCacheProxy<K, V>
         if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
             return createCompletedFuture(cached);
         }
-        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
+        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy);
         ClientCallFuture future;
         final ClientContext context = clientContext;
         try {
@@ -198,8 +198,7 @@ abstract class AbstractClientCacheProxy<K, V>
         if (keySet.isEmpty()) {
             return result;
         }
-        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
-        final CacheGetAllRequest request = new CacheGetAllRequest(nameWithPrefix, keySet, expiryPolicy, inMemoryFormat);
+        final CacheGetAllRequest request = new CacheGetAllRequest(nameWithPrefix, keySet, expiryPolicy);
         final MapEntrySet mapEntrySet = toObject(invoke(request));
         final Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
         for (Map.Entry<Data, Data> dataEntry : entrySet) {
@@ -303,7 +302,7 @@ abstract class AbstractClientCacheProxy<K, V>
     public int size() {
         ensureOpen();
         try {
-            CacheSizeRequest request = new CacheSizeRequest(nameWithPrefix, cacheConfig.getInMemoryFormat());
+            CacheSizeRequest request = new CacheSizeRequest(nameWithPrefix);
             Integer result = invoke(request);
             if (result == null) {
                 return 0;
@@ -320,7 +319,6 @@ abstract class AbstractClientCacheProxy<K, V>
     }
 
     //endregion ICACHE: JCACHE EXTENSION
-
 
 
 }

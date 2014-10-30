@@ -11,9 +11,11 @@ import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
+import com.hazelcast.cache.impl.operation.CacheRemoveAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
@@ -23,7 +25,7 @@ import javax.cache.processor.EntryProcessor;
 import java.util.Set;
 
 /**
- * TODO add a proper JavaDoc
+ * Provide operations other then {@link InMemoryFormat#OFFHEAP}
  */
 public class DefaultOperationProvider implements CacheOperationProvider {
 
@@ -95,8 +97,13 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     }
 
     @Override
-    public OperationFactory createClearOperationFactory(Set<Data> keySet, boolean isRemoveAll, Integer completionId) {
-        return new CacheClearOperationFactory(nameWithPrefix, keySet, isRemoveAll, completionId);
+    public OperationFactory createClearOperationFactory(Integer completionId) {
+        return new CacheClearOperationFactory(nameWithPrefix, completionId);
+    }
+
+    @Override
+    public OperationFactory createRemoveAllOperationFactory(Set<Data> keySet, Integer completionId) {
+        return new CacheRemoveAllOperationFactory(nameWithPrefix, keySet, completionId);
     }
 
     @Override

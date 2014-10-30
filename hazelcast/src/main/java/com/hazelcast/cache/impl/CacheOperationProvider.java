@@ -9,7 +9,7 @@ import javax.cache.processor.EntryProcessor;
 import java.util.Set;
 
 /**
- * TODO add a proper JavaDoc
+ * Provide InMemoryFormat specific operations for cache
  */
 public interface CacheOperationProvider {
 
@@ -37,7 +37,9 @@ public interface CacheOperationProvider {
 
     OperationFactory createLoadAllOperationFactory(Set<Data> keySet, boolean replaceExistingValues);
 
-    OperationFactory createClearOperationFactory(Set<Data> keySet, boolean isRemoveAll, Integer completionId);
+    OperationFactory createClearOperationFactory(Integer completionId);
+
+    OperationFactory createRemoveAllOperationFactory(Set<Data> keySet, Integer completionId);
 
     OperationFactory createSizeOperationFactory();
 }

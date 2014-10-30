@@ -589,7 +589,6 @@ public abstract class AbstractCacheRecordStore<
 
             return record != null;
         } catch (Throwable error) {
-            error.printStackTrace();
             onDeleteRecordError(key, record, dataValue, error);
             throw ExceptionUtil.rethrow(error);
         }
@@ -1209,6 +1208,7 @@ public abstract class AbstractCacheRecordStore<
                             statistics.increaseCacheRemovals(1);
                         }
                     }
+                    keys.add(key);
                 } else {
                     keys.remove(key);
                 }

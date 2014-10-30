@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -32,6 +31,7 @@ import java.io.IOException;
 
 /**
  * This client request  specifically calls {@link CachePutOperation} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CachePutOperation
  */
 public class CachePutRequest
@@ -47,23 +47,22 @@ public class CachePutRequest
     public CachePutRequest() {
     }
 
-    public CachePutRequest(String name, Data key, Data value, InMemoryFormat inMemoryFormat) {
-        super(name, inMemoryFormat);
+    public CachePutRequest(String name, Data key, Data value) {
+        super(name);
         this.key = key;
         this.value = value;
         this.expiryPolicy = null;
     }
 
-    public CachePutRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy, InMemoryFormat inMemoryFormat) {
-        super(name, inMemoryFormat);
+    public CachePutRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
+        super(name);
         this.key = key;
         this.value = value;
         this.expiryPolicy = expiryPolicy;
     }
 
-    public CachePutRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy,
-                           boolean get, InMemoryFormat inMemoryFormat) {
-        super(name, inMemoryFormat);
+    public CachePutRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy, boolean get) {
+        super(name);
         this.key = key;
         this.value = value;
         this.expiryPolicy = expiryPolicy;

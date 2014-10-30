@@ -18,9 +18,7 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -33,6 +31,7 @@ import java.io.IOException;
 
 /**
  * This client request  specifically calls {@link CacheEntryProcessorOperation} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation
  */
 public class CacheEntryProcessorRequest
@@ -47,8 +46,8 @@ public class CacheEntryProcessorRequest
     }
 
     public CacheEntryProcessorRequest(String name, Data key, javax.cache.processor.EntryProcessor entryProcessor,
-                                      InMemoryFormat inMemoryFormat, Object... arguments) {
-        super(name, inMemoryFormat);
+                                      Object... arguments) {
+        super(name);
         this.key = key;
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;
@@ -64,9 +63,8 @@ public class CacheEntryProcessorRequest
 
     @Override
     protected Operation prepareOperation() {
-        ICacheService service = getService();
-        CacheOperationProvider cacheOperationProvider = service.getCacheOperationProvider(name, inMemoryFormat);
-        return cacheOperationProvider.createEntryProcessorOperation(key, completionId, entryProcessor, arguments);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createEntryProcessorOperation(key, completionId, entryProcessor, arguments);
     }
 
     public void write(PortableWriter writer)

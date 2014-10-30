@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -32,6 +31,7 @@ import java.io.IOException;
 
 /**
  * This client request  specifically calls {@link CacheGetAndReplaceOperation} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation
  */
 public class CacheGetAndReplaceRequest
@@ -46,8 +46,8 @@ public class CacheGetAndReplaceRequest
     }
 
     public CacheGetAndReplaceRequest(String name, Data key, Data value,
-                                     ExpiryPolicy expiryPolicy, InMemoryFormat inMemoryFormat) {
-        super(name, inMemoryFormat);
+                                     ExpiryPolicy expiryPolicy) {
+        super(name);
         this.key = key;
         this.value = value;
         this.expiryPolicy = expiryPolicy;

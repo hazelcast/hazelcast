@@ -52,9 +52,9 @@ public class NativeMemoryConfig {
      */
     public static final int INITIAL_MEMORY_SIZE = MIN_INITIAL_MEMORY_SIZE;
 
-    private boolean enabled = true;
+    private boolean enabled;
     private MemorySize size = new MemorySize(INITIAL_MEMORY_SIZE, MemoryUnit.MEGABYTES);
-    private MemoryAllocatorType allocatorType = MemoryAllocatorType.STANDARD;
+    private MemoryAllocatorType allocatorType = MemoryAllocatorType.POOLED;
 
     private int minBlockSize = DEFAULT_MIN_BLOCK_SIZE;
     private int pageSize = DEFAULT_PAGE_SIZE;

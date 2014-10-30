@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.spi.Operation;
 
 /**
@@ -33,7 +32,7 @@ public class CacheGetConfigRequest
     }
 
     public CacheGetConfigRequest(String cacheName) {
-        super(cacheName, InMemoryFormat.BINARY);
+        super(cacheName);
     }
 
     @Override

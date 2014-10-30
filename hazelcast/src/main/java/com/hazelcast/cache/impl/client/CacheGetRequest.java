@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -32,6 +31,7 @@ import java.io.IOException;
 
 /**
  * This client request  specifically calls {@link CacheGetOperation} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheGetOperation
  */
 public class CacheGetRequest
@@ -43,8 +43,8 @@ public class CacheGetRequest
     public CacheGetRequest() {
     }
 
-    public CacheGetRequest(String name, Data key, ExpiryPolicy expiryPolicy, InMemoryFormat inMemoryFormat) {
-        super(name, inMemoryFormat);
+    public CacheGetRequest(String name, Data key, ExpiryPolicy expiryPolicy) {
+        super(name);
         this.key = key;
         this.expiryPolicy = expiryPolicy;
     }

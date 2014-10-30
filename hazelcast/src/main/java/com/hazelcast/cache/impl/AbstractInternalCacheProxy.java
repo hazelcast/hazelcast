@@ -171,7 +171,33 @@ abstract class AbstractInternalCacheProxy<K, V>
         return invoke(operation, keyData, withCompletionEvent);
     }
 
-    protected void removeAllInternal(Set<? extends K> keys, boolean isRemoveAll) {
+    protected void clearInternal() {
+        final int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
+        final Integer completionId = registerCompletionLatch(partitionCount);
+        final OperationService operationService = getNodeEngine().getOperationService();
+        OperationFactory operationFactory = operationProvider.createClearOperationFactory(completionId);
+        try {
+            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
+            int completionCount = 0;
+            for (Object result : results.values()) {
+                if (result != null && result instanceof CacheClearResponse) {
+                    final Object response = ((CacheClearResponse) result).getResponse();
+                    if (response instanceof Boolean) {
+                        completionCount++;
+                    }
+                    if (response instanceof Throwable) {
+                        throw (Throwable) response;
+                    }
+                }
+            }
+            waitCompletionLatch(completionId, partitionCount - completionCount);
+        } catch (Throwable t) {
+            deregisterCompletionLatch(completionId);
+            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
+        }
+    }
+
+    protected void removeAllInternal(Set<? extends K> keys) {
         final Set<Data> keysData;
         if (keys != null) {
             keysData = new HashSet<Data>();
@@ -184,7 +210,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         final int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
         final Integer completionId = registerCompletionLatch(partitionCount);
         final OperationService operationService = getNodeEngine().getOperationService();
-        OperationFactory operationFactory = operationProvider.createClearOperationFactory(keysData, isRemoveAll, completionId);
+        OperationFactory operationFactory = operationProvider.createRemoveAllOperationFactory(keysData, completionId);
         try {
             final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
             int completionCount = 0;

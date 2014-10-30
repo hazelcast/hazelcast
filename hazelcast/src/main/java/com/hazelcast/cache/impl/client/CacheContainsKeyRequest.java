@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,6 +30,7 @@ import java.io.IOException;
 
 /**
  * This client request  specifically calls {@link CacheContainsKeyOperation} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheContainsKeyOperation
  */
 public class CacheContainsKeyRequest
@@ -41,8 +41,8 @@ public class CacheContainsKeyRequest
     public CacheContainsKeyRequest() {
     }
 
-    public CacheContainsKeyRequest(String name, Data key, InMemoryFormat inMemoryFormat) {
-        super(name, inMemoryFormat);
+    public CacheContainsKeyRequest(String name, Data key) {
+        super(name);
         this.key = key;
     }
 

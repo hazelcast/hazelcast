@@ -19,10 +19,8 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
@@ -30,6 +28,7 @@ import java.util.Map;
 
 /**
  * This client request  specifically calls {@link CacheSizeOperationFactory} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheSizeOperationFactory
  */
 public class CacheSizeRequest
@@ -39,8 +38,8 @@ public class CacheSizeRequest
     public CacheSizeRequest() {
     }
 
-    public CacheSizeRequest(String name, InMemoryFormat inMemoryFormat) {
-        super(name, inMemoryFormat);
+    public CacheSizeRequest(String name) {
+        super(name);
     }
 
     public String getServiceName() {
@@ -58,9 +57,8 @@ public class CacheSizeRequest
 
     @Override
     protected OperationFactory createOperationFactory() {
-        ICacheService service = getService();
-        CacheOperationProvider cacheOperationProvider = service.getCacheOperationProvider(name, inMemoryFormat);
-        return cacheOperationProvider.createSizeOperationFactory();
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createSizeOperationFactory();
     }
 
     @Override

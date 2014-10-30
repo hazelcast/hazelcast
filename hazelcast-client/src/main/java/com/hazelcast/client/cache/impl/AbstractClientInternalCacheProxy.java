@@ -65,8 +65,9 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
  * of cache operations like put, replace, remove and invoke. These internal implementations are delegated
  * by actual cache methods.
- *
+ * <p/>
  * <p>Note: this partial implementation is used by client.</p>
+ *
  * @param <K> the type of key
  * @param <V> the type of value
  */
@@ -149,9 +150,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data oldValueData = oldValue != null ? toData(oldValue) : null;
         ClientRequest request;
         if (isGet) {
-            request = new CacheGetAndRemoveRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
+            request = new CacheGetAndRemoveRequest(nameWithPrefix, keyData);
         } else {
-            request = new CacheRemoveRequest(nameWithPrefix, keyData, oldValueData, cacheConfig.getInMemoryFormat());
+            request = new CacheRemoveRequest(nameWithPrefix, keyData, oldValueData);
         }
         ICompletableFuture future;
         try {
@@ -178,11 +179,10 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data oldValueData = oldValue != null ? toData(oldValue) : null;
         final Data newValueData = newValue != null ? toData(newValue) : null;
         ClientRequest request;
-        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
         if (isGet) {
-            request = new CacheGetAndReplaceRequest(nameWithPrefix, keyData, newValueData, expiryPolicy, inMemoryFormat);
+            request = new CacheGetAndReplaceRequest(nameWithPrefix, keyData, newValueData, expiryPolicy);
         } else {
-            request = new CacheReplaceRequest(nameWithPrefix, keyData, oldValueData, newValueData, expiryPolicy, inMemoryFormat);
+            request = new CacheReplaceRequest(nameWithPrefix, keyData, oldValueData, newValueData, expiryPolicy);
         }
         ICompletableFuture future;
         try {
@@ -202,8 +202,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
-        CachePutRequest request = new CachePutRequest(nameWithPrefix, keyData, valueData, expiryPolicy, isGet, inMemoryFormat);
+        CachePutRequest request = new CachePutRequest(nameWithPrefix, keyData, valueData, expiryPolicy, isGet);
         ICompletableFuture future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -225,9 +224,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
-        CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData,
-                expiryPolicy, inMemoryFormat);
+        CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData, expiryPolicy);
         ICompletableFuture<Boolean> future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -255,8 +252,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
         final int partitionCount = clientContext.getPartitionService().getPartitionCount();
         final Integer completionId = registerCompletionLatch(partitionCount);
-        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
-        CacheClearRequest request = new CacheClearRequest(nameWithPrefix, keysData, isRemoveAll, completionId, inMemoryFormat);
+        CacheClearRequest request = new CacheClearRequest(nameWithPrefix, keysData, isRemoveAll, completionId);
         try {
             final Map<Integer, Object> results = invoke(request);
             int completionCount = 0;

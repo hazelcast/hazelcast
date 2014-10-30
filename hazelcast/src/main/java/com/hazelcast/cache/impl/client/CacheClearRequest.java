@@ -19,10 +19,8 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -38,6 +36,7 @@ import java.util.Set;
 
 /**
  * This client request  specifically calls {@link CacheClearOperationFactory} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheClearOperationFactory
  */
 public class CacheClearRequest
@@ -51,8 +50,8 @@ public class CacheClearRequest
     public CacheClearRequest() {
     }
 
-    public CacheClearRequest(String name, Set<Data> keys, boolean isRemoveAll, int completionId, InMemoryFormat inMemoryFormat) {
-        super(name, inMemoryFormat);
+    public CacheClearRequest(String name, Set<Data> keys, boolean isRemoveAll, int completionId) {
+        super(name);
         this.keys = keys;
         this.isRemoveAll = isRemoveAll;
         this.completionId = completionId;
@@ -109,9 +108,11 @@ public class CacheClearRequest
 
     @Override
     protected OperationFactory createOperationFactory() {
-        ICacheService service = getService();
-        CacheOperationProvider cacheOperationProvider = service.getCacheOperationProvider(name, inMemoryFormat);
-        return cacheOperationProvider.createClearOperationFactory(keys, isRemoveAll, completionId);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        if (isRemoveAll) {
+            return operationProvider.createRemoveAllOperationFactory(keys, completionId);
+        }
+        return operationProvider.createClearOperationFactory(completionId);
     }
 
     @Override

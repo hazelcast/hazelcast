@@ -19,11 +19,9 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -42,6 +40,7 @@ import java.util.Set;
 
 /**
  * This client request  specifically calls {@link CacheGetAllOperationFactory} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory
  */
 public class CacheGetAllRequest
@@ -55,8 +54,8 @@ public class CacheGetAllRequest
     public CacheGetAllRequest() {
     }
 
-    public CacheGetAllRequest(String name, Set<Data> keys, ExpiryPolicy expiryPolicy, InMemoryFormat inMemoryFormat) {
-        super(name, inMemoryFormat);
+    public CacheGetAllRequest(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {
+        super(name);
         this.keys = keys;
         this.expiryPolicy = expiryPolicy;
     }
@@ -71,9 +70,8 @@ public class CacheGetAllRequest
 
     @Override
     protected OperationFactory createOperationFactory() {
-        ICacheService service = getService();
-        CacheOperationProvider cacheOperationProvider = service.getCacheOperationProvider(name, inMemoryFormat);
-        return cacheOperationProvider.createGetAllOperationFactory(keys, expiryPolicy);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createGetAllOperationFactory(keys, expiryPolicy);
     }
 
     @Override

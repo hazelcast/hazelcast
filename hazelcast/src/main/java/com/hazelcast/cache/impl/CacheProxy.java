@@ -197,19 +197,19 @@ public class CacheProxy<K, V>
     public void removeAll(Set<? extends K> keys) {
         ensureOpen();
         validateNotNull(keys);
-        removeAllInternal(keys, true);
+        removeAllInternal(keys);
     }
 
     @Override
     public void removeAll() {
         ensureOpen();
-        removeAllInternal(null, true);
+        removeAllInternal(null);
     }
 
     @Override
     public void clear() {
         ensureOpen();
-        removeAllInternal(null, false);
+        clearInternal();
     }
 
     @Override
