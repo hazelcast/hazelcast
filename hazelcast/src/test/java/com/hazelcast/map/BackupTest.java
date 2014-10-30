@@ -106,7 +106,7 @@ public class BackupTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getMapConfig(MAP_NAME).setBackupCount(2);
 
-        TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(6);
+        TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(8);
         final HazelcastInstance hz = f.newHazelcastInstance(config);
 
         final IMap<Integer, Integer> map = hz.getMap(MAP_NAME);
@@ -135,8 +135,16 @@ public class BackupTest extends HazelcastTestSupport {
         final HazelcastInstance hz6 = f.newHazelcastInstance(config);
         final IMap<Integer, Integer> map6 = hz6.getMap(MAP_NAME);
 
+        final HazelcastInstance hz7 = f.newHazelcastInstance(config);
+        final IMap<Integer, Integer> map7 = hz7.getMap(MAP_NAME);
+
+        final HazelcastInstance hz8 = f.newHazelcastInstance(config);
+        final IMap<Integer, Integer> map8 = hz8.getMap(MAP_NAME);
+
         checkSizeEventually(size, map5);
         checkSizeEventually(size, map6);
+        checkSizeEventually(size, map7);
+        checkSizeEventually(size, map8);
 
         hz.shutdown();
         hz2.shutdown();
@@ -145,11 +153,24 @@ public class BackupTest extends HazelcastTestSupport {
         checkSizeEventually(size, map4);
         checkSizeEventually(size, map5);
         checkSizeEventually(size, map6);
+        checkSizeEventually(size, map7);
+        checkSizeEventually(size, map8);
 
         hz3.shutdown();
         hz4.shutdown();
 
         checkSizeEventually(size, map5);
+        checkSizeEventually(size, map6);
+        checkSizeEventually(size, map7);
+        checkSizeEventually(size, map8);
+
+        hz7.shutdown();
+        hz8.shutdown();
+
+        checkSizeEventually(size, map5);
+        checkSizeEventually(size, map6);
+
+        hz5.shutdown();
         checkSizeEventually(size, map6);
     }
 
@@ -158,7 +179,7 @@ public class BackupTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getMapConfig(MAP_NAME).setBackupCount(1);
 
-        TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(6);
+        TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(8);
         final HazelcastInstance hz = f.newHazelcastInstance(config);
 
         final IMap<Integer, Integer> map = hz.getMap(MAP_NAME);
@@ -182,11 +203,19 @@ public class BackupTest extends HazelcastTestSupport {
         final HazelcastInstance hz6 = f.newHazelcastInstance(config);
         final IMap<Integer, Integer> map6 = hz6.getMap(MAP_NAME);
 
+        final HazelcastInstance hz7 = f.newHazelcastInstance(config);
+        final IMap<Integer, Integer> map7 = hz7.getMap(MAP_NAME);
+
+        final HazelcastInstance hz8 = f.newHazelcastInstance(config);
+        final IMap<Integer, Integer> map8 = hz8.getMap(MAP_NAME);
+
         checkSizeEventually(size, map2);
         checkSizeEventually(size, map3);
         checkSizeEventually(size, map4);
         checkSizeEventually(size, map5);
         checkSizeEventually(size, map6);
+        checkSizeEventually(size, map7);
+        checkSizeEventually(size, map8);
 
         hz6.shutdown();
         checkSizeEventually(size, map);
@@ -194,24 +223,41 @@ public class BackupTest extends HazelcastTestSupport {
         checkSizeEventually(size, map3);
         checkSizeEventually(size, map4);
         checkSizeEventually(size, map5);
+        checkSizeEventually(size, map7);
+        checkSizeEventually(size, map8);
 
         hz2.shutdown();
         checkSizeEventually(size, map);
         checkSizeEventually(size, map3);
         checkSizeEventually(size, map4);
         checkSizeEventually(size, map5);
+        checkSizeEventually(size, map7);
+        checkSizeEventually(size, map8);
 
         hz5.shutdown();
         checkSizeEventually(size, map);
         checkSizeEventually(size, map3);
         checkSizeEventually(size, map4);
+        checkSizeEventually(size, map7);
+        checkSizeEventually(size, map8);
 
         hz3.shutdown();
         checkSizeEventually(size, map);
         checkSizeEventually(size, map4);
+        checkSizeEventually(size, map7);
+        checkSizeEventually(size, map8);
 
         hz4.shutdown();
         checkSizeEventually(size, map);
+        checkSizeEventually(size, map7);
+        checkSizeEventually(size, map8);
+
+        hz.shutdown();
+        checkSizeEventually(size, map7);
+        checkSizeEventually(size, map8);
+
+        hz7.shutdown();
+        checkSizeEventually(size, map8);
     }
 
     /**
@@ -227,7 +273,7 @@ public class BackupTest extends HazelcastTestSupport {
      */
     @Test
     public void testBackupMigrationAndRecovery2() throws Exception {
-        testBackupMigrationAndRecovery(6, 2, 5000);
+        testBackupMigrationAndRecovery(7, 2, 5000);
     }
 
     private void testBackupMigrationAndRecovery(int nodeCount, int backupCount, int mapSize) throws Exception {
