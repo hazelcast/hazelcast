@@ -75,7 +75,7 @@ public abstract class AbstractCacheRecordStore<
     protected volatile boolean hasExpiringEntry;
     protected final boolean evictionEnabled;
     protected final int evictionPercentage;
-    protected final float evictionThreshold;
+    protected final int evictionThresholdPercentage;
     protected Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
     protected final ScheduledFuture<?> evictionTaskFuture;
 
@@ -102,6 +102,7 @@ public abstract class AbstractCacheRecordStore<
         this.partitionId = partitionId;
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
+        this.evictionThresholdPercentage = evictionThresholdPercentage;
         this.cacheConfig = cacheService.getCacheConfig(name);
         if (cacheConfig == null) {
             throw new CacheNotExistsException("Cache already destroyed, node " + nodeEngine.getLocalMember());
@@ -125,8 +126,7 @@ public abstract class AbstractCacheRecordStore<
                         : cacheConfig.getEvictionPolicy();
         this.evictionEnabled = evictionPolicy != EvictionPolicy.NONE;
         this.evictionPercentage = evictionPercentage;
-        this.evictionThreshold = (float) Math.max(1, ONE_HUNDRED_PERCENT - evictionThresholdPercentage)
-                                        / ONE_HUNDRED_PERCENT;
+
         if (evictionTaskEnable) {
             this.evictionTaskFuture = createEvictionTaskFuture();
         } else {

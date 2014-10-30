@@ -100,8 +100,8 @@ public interface PartitionService {
     boolean isClusterSafe();
 
     /**
-     * Check if the given member is safe to shutdown, means check if 1st backups of partitions
-     * those owned by given member are sync with primary.
+     * Check if the given member is safe to shutdown, means check if at least one backup of the partitions
+     * those owned by given member are in sync with primary.
      *
      * @param member Cluster member to query.
      * @return <code>true</code> if member in a safe state, other wise <code>false</code>.
@@ -110,15 +110,16 @@ public interface PartitionService {
     boolean isMemberSafe(Member member);
 
     /**
-     * Check if local member is safe to shutdown, means check if 1st backups of partitions
-     * those owned by local member are sync with primary.
+     * Check if local member is safe to shutdown, means check if at least one backup of the partitions
+     * those owned by local member are in sync with primary.
      *
      * @since 3.3
      */
     boolean isLocalMemberSafe();
 
     /**
-     * Force local member to be safe by checking and syncing owned partitions with 1st backups.
+     * Force local member to be safe by checking and syncing partitions those owned by local member
+     * with at least one of the backups.
      *
      * @since 3.3
      */
