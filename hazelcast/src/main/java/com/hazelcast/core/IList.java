@@ -21,6 +21,9 @@ import java.util.List;
 /**
  * Concurrent, distributed implementation of {@link List}
  *
+ * The Hazelcast IList is not a partitioned data-structure. So all the content of the IList is stored in a single machine (and
+ * in the backup). So the IList will not scale by adding more members in the cluster.
+ *
  * @param <E>
  * @see List
  */

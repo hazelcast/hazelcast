@@ -2,10 +2,8 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-import java.io.IOException;
+
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -78,26 +76,6 @@ public class NearCacheStatsImpl
 
     public void incrementHits() {
         HITS_UPDATER.incrementAndGet(this);
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        out.writeLong(ownedEntryCount);
-        out.writeLong(ownedEntryMemoryCost);
-        out.writeLong(hits);
-        out.writeLong(misses);
-        out.writeLong(creationTime);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        this.ownedEntryCount = in.readLong();
-        this.ownedEntryMemoryCost = in.readLong();
-        HITS_UPDATER.set(this, in.readLong());
-        MISSES_UPDATER.set(this, in.readLong());
-        this.creationTime = in.readLong();
     }
 
     @Override

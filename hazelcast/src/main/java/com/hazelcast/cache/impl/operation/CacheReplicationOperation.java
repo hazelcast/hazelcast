@@ -36,7 +36,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Cache Replication Operation for migration
+ * Replication operation is the data migration operation of {@link com.hazelcast.cache.impl.CacheRecordStore}.
+ *
+ * <p>Cache record store's records and configurations will be migrated into their new nodes.
+ *
+ * Steps;
+ * <ul>
+ *     <li>Serialize all non expired data.</li>
+ *     <li>Deserialize the data and config.</li>
+ *     <li>Create the configuration in the new node service.</li>
+ *     <li>Insert each record into {@link ICacheRecordStore}.</li>
+ * </ul>
+ * </p>
+ * <p><b>Note:</b> This operation is a per partition operation.</p>
  */
 public final class CacheReplicationOperation
         extends AbstractOperation {

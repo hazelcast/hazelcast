@@ -61,15 +61,17 @@ class ExecutionCallbackAdapterFactory {
     }
 
     private void triggerOnComplete() {
-        if (members.size() == responses.size() && setDone()) {
-            Map<Member, Object> realResponses = new HashMap<Member, Object>(members.size());
-            for (Map.Entry<Member, ValueWrapper> entry : responses.entrySet()) {
-                Member key = entry.getKey();
-                Object value = entry.getValue().value;
-                realResponses.put(key, value);
-            }
-            multiExecutionCallback.onComplete(realResponses);
+        if (members.size() != responses.size() || !setDone()) {
+            return;
         }
+
+        Map<Member, Object> realResponses = new HashMap<Member, Object>(members.size());
+        for (Map.Entry<Member, ValueWrapper> entry : responses.entrySet()) {
+            Member key = entry.getKey();
+            Object value = entry.getValue().value;
+            realResponses.put(key, value);
+        }
+        multiExecutionCallback.onComplete(realResponses);
     }
 
     private boolean setDone() {

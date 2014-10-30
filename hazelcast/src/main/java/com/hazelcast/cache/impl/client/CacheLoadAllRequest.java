@@ -36,6 +36,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * This client request  specifically calls {@link CacheLoadAllOperationFactory} on the server side.
+ * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory
+ */
 public class CacheLoadAllRequest
         extends AllPartitionsClientRequest
         implements Portable, RetryableRequest, SecureRequest {

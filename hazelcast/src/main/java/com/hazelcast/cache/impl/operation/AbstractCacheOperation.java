@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
@@ -24,13 +25,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 
 /**
- * Base Cache Operation
+ * Base Cache Operation. Cache operations are named operations. Key based operations are subclasses of this base
+ * class providing a cacheRecordStore access and partial backup support.
  */
 abstract class AbstractCacheOperation
         extends AbstractNamedOperation
@@ -66,6 +69,18 @@ abstract class AbstractCacheOperation
     @Override
     public final Object getResponse() {
         return response;
+    }
+
+    @Override
+    public ExceptionAction onException(Throwable throwable) {
+        if (throwable instanceof CacheNotExistsException) {
+            CacheService cacheService = getService();
+            if (cacheService.getCacheConfig(name) != null) {
+                getLogger().finest("Retry Cache Operation from node " + getNodeEngine().getLocalMember());
+                return ExceptionAction.RETRY_INVOCATION;
+            }
+        }
+        return super.onException(throwable);
     }
 
     @Override

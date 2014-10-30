@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -44,12 +45,19 @@ import java.util.concurrent.Future;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * Abstract ICache implementation excluding javax.cache.Cache
+ * <p>Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
+ * {@link com.hazelcast.cache.ICache} is the designated interface.</p>
+ * <p>AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.</p>
+ * <p>Note: this partial implementation is used by server or embedded mode cache.</p>
+ * @param <K> the type of key.
+ * @param <V> the type of value.
+ * @see com.hazelcast.cache.impl.CacheProxy
+ * @see com.hazelcast.cache.ICache
  */
-abstract class AbstractCacheProxyExtension<K, V>
-        extends AbstractCacheProxyInternal<K, V> {
+abstract class AbstractCacheProxy<K, V>
+        extends AbstractInternalCacheProxy<K, V> {
 
-    protected AbstractCacheProxyExtension(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService) {
+    protected AbstractCacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
     }
 
@@ -79,17 +87,22 @@ abstract class AbstractCacheProxyExtension<K, V>
     }
 
     @Override
+    public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value) {
+        return putIfAbsentAsyncInternal(key, value, null, false);
+    }
+
+    @Override
     public InternalCompletableFuture<Boolean> putIfAbsentAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return putIfAbsentAsyncInternal(key, value, expiryPolicy, false);
     }
 
     @Override
-    public Future<V> getAndPutAsync(K key, V value) {
+    public ICompletableFuture<V> getAndPutAsync(K key, V value) {
         return getAndPutAsync(key, value, null);
     }
 
     @Override
-    public Future<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public ICompletableFuture<V> getAndPutAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return putAsyncInternal(key, value, expiryPolicy, true, false);
     }
 
@@ -104,37 +117,37 @@ abstract class AbstractCacheProxyExtension<K, V>
     }
 
     @Override
-    public Future<V> getAndRemoveAsync(K key) {
+    public ICompletableFuture<V> getAndRemoveAsync(K key) {
         return removeAsyncInternal(key, null, false, true, false);
     }
 
     @Override
-    public Future<Boolean> replaceAsync(K key, V value) {
+    public ICompletableFuture<Boolean> replaceAsync(K key, V value) {
         return replaceAsyncInternal(key, null, value, null, false, false, false);
     }
 
     @Override
-    public Future<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public ICompletableFuture<Boolean> replaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return replaceAsyncInternal(key, null, value, expiryPolicy, false, false, false);
     }
 
     @Override
-    public Future<Boolean> replaceAsync(K key, V oldValue, V newValue) {
+    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue) {
         return replaceAsyncInternal(key, oldValue, newValue, null, true, false, false);
     }
 
     @Override
-    public Future<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
+    public ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
         return replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, false);
     }
 
     @Override
-    public Future<V> getAndReplaceAsync(K key, V value) {
+    public ICompletableFuture<V> getAndReplaceAsync(K key, V value) {
         return replaceAsyncInternal(key, null, value, null, false, true, false);
     }
 
     @Override
-    public Future<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
+    public ICompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy) {
         return replaceAsyncInternal(key, null, value, expiryPolicy, false, true, false);
     }
 
@@ -288,7 +301,6 @@ abstract class AbstractCacheProxyExtension<K, V>
     private Set<Integer> getPartitionsForKeys(Set<Data> keys) {
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         final int partitions = partitionService.getPartitionCount();
-        //todo: is there better way to estimate size?
         final int capacity = Math.min(partitions, keys.size());
         final Set<Integer> partitionIds = new HashSet<Integer>(capacity);
 

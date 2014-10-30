@@ -26,7 +26,9 @@ import com.hazelcast.spi.ReadonlyOperation;
 import java.io.IOException;
 
 /**
- * Cache GetConfig Operation
+ * Cache GetConfig Operation.
+ * <p>Gets the already created cache configuration from the related partition.</p>
+ * @see CacheCreateConfigOperation
  */
 public class CacheGetConfigOperation
         extends PartitionWideCacheOperation

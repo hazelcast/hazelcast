@@ -27,7 +27,6 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.ArrayList;
@@ -52,6 +51,7 @@ import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
+import static com.hazelcast.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
@@ -216,7 +216,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 if (e instanceof TargetNotMemberException) {
                     nodeEngine.getLogger(Transaction.class).warning("Member left while replicating tx begin: " + e);
                 } else {
-                    throw ExceptionUtil.rethrow(e);
+                    RETHROW_TRANSACTION_EXCEPTION.handleException(e);
                 }
             }
         }
@@ -253,7 +253,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             for (TransactionLog txLog : txLogs) {
                 futures.add(txLog.prepare(nodeEngine));
             }
-            waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, FutureUtil.RETHROW_EVERYTHING);
+            waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             futures.clear();
             state = PREPARED;
             if (durability > 0) {
@@ -275,7 +275,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 futures.add(f);
             }
         }
-        waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, FutureUtil.RETHROW_EVERYTHING);
+        waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
         futures.clear();
     }
 

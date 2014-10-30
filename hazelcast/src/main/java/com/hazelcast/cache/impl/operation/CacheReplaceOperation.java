@@ -26,7 +26,9 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * Cache Replace Operation
+ * Operator implementation for cache replace functionality.
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, ExpiryPolicy, String)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, Object, ExpiryPolicy, String)
  */
 public class CacheReplaceOperation
         extends AbstractMutatingCacheOperation {

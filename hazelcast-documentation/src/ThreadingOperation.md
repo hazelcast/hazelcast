@@ -11,7 +11,7 @@ Each of these types has a different threading model explained below.
 #### Partition-aware Operations
 
 To execute partition-aware operations, an array of operation threads is created. The size of this array is by default two 
-times the number of cores. It can be changed using the `hazelcast.operation.thread.count` property.
+times the number of cores with a minimum of 2. It can be changed using the `hazelcast.operation.thread.count` property.
 
 Each operation-thread has its own work queue and it will consume messages from this work queue. If a partition-aware 
 operation needs to be scheduled, the right thread is found using the below formula:
@@ -61,8 +61,8 @@ say you have one CPU and 4 cores per CPU. By default, 8 operation threads will b
 
 To execute non partition-aware operations, e.g. `IExecutorService.executeOnMember(command,member)`, generic operation 
 threads are used. When the Hazelcast instance is started, an array of operation threads is created. Size of this array 
-also is by default two times the number of cores. It can be changed using the `hazelcast.operation.generic.thread.count` 
-property.
+is by default number of cores divided by two with a minimum of 2. It can be changed using the 
+`hazelcast.operation.generic.thread.count` property.
 
 This means that:
 

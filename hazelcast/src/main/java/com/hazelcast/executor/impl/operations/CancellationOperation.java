@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor.impl;
+package com.hazelcast.executor.impl.operations;
 
+import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;

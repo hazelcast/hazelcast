@@ -347,16 +347,16 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_BOXED_PRIMITIVE_FOR_PARSING")
-    protected void fillOffHeapMemoryConfig(Node node, OffHeapMemoryConfig offHeapMemoryConfig) {
+    protected void fillNativeMemoryConfig(Node node, NativeMemoryConfig nativeMemoryConfig) {
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
         final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
-        offHeapMemoryConfig.setEnabled(enabled);
+        nativeMemoryConfig.setEnabled(enabled);
 
         final Node allocTypeNode = atts.getNamedItem("allocator-type");
         final String allocType = getTextContent(allocTypeNode);
         if (allocType != null && !"".equals("")) {
-            offHeapMemoryConfig.setAllocatorType(OffHeapMemoryConfig.MemoryAllocatorType.valueOf(upperCaseInternal(allocType)));
+            nativeMemoryConfig.setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.valueOf(upperCaseInternal(allocType)));
         }
 
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
@@ -366,18 +366,18 @@ public abstract class AbstractXmlConfigHelper {
                 final String value = getTextContent(attrs.getNamedItem("value"));
                 final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(attrs.getNamedItem("unit")));
                 MemorySize memorySize = new MemorySize(Long.valueOf(value), unit);
-                offHeapMemoryConfig.setSize(memorySize);
+                nativeMemoryConfig.setSize(memorySize);
             } else if ("min-block-size".equals(nodeName)) {
                 String value = getTextContent(n);
-                offHeapMemoryConfig.setMinBlockSize(Integer.parseInt(value));
+                nativeMemoryConfig.setMinBlockSize(Integer.parseInt(value));
             } else if ("page-size".equals(nodeName)) {
                 String value = getTextContent(n);
-                offHeapMemoryConfig.setPageSize(Integer.parseInt(value));
+                nativeMemoryConfig.setPageSize(Integer.parseInt(value));
             } else if ("metadata-space-percentage".equals(nodeName)) {
                 String value = getTextContent(n);
                 try {
                     Number percentage = new DecimalFormat("##.#").parse(value);
-                    offHeapMemoryConfig.setMetadataSpacePercentage(percentage.floatValue());
+                    nativeMemoryConfig.setMetadataSpacePercentage(percentage.floatValue());
                 } catch (ParseException e) {
                     LOGGER.info("Metadata space percentage, [" + value
                             + "], is not a proper value. Default value will be used!");

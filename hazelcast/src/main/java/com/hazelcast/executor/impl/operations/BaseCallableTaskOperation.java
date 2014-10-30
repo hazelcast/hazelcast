@@ -14,15 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor.impl;
+package com.hazelcast.executor.impl.operations;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.TraceableOperation;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -31,19 +36,21 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
 
     protected String name;
     protected String uuid;
-    protected Callable callable;
+    protected transient Callable callable;
+    private Data callableData;
 
     public BaseCallableTaskOperation() {
     }
 
-    public BaseCallableTaskOperation(String name, String uuid, Callable callable) {
+    public BaseCallableTaskOperation(String name, String uuid, Data callableData) {
         this.name = name;
         this.uuid = uuid;
-        this.callable = callable;
+        this.callableData = callableData;
     }
 
     @Override
     public final void beforeRun() throws Exception {
+        callable = getCallable();
         ManagedContext managedContext = getManagedContext();
 
         if (callable instanceof RunnableAdapter) {
@@ -52,6 +59,19 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
             adapter.setRunnable(runnable);
         } else {
             callable = (Callable) managedContext.initialize(callable);
+        }
+    }
+
+    /**
+     * since this operation handles responses in an async way, we need to handle serialization exceptions too
+     * @return
+     */
+    private Callable getCallable() {
+        try {
+            return getNodeEngine().toObject(callableData);
+        } catch (HazelcastSerializationException e) {
+            getResponseHandler().sendResponse(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
@@ -91,13 +111,13 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(uuid);
-        out.writeObject(callable);
+        out.writeData(callableData);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         uuid = in.readUTF();
-        callable = in.readObject();
+        callableData = in.readData();
     }
 }

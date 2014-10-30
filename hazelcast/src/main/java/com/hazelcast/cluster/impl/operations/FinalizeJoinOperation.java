@@ -51,6 +51,12 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         this.postJoinOp = postJoinOp;
     }
 
+    public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp,
+                                 long masterTime, boolean sendResponse) {
+        super(members, masterTime, sendResponse);
+        this.postJoinOp = postJoinOp;
+    }
+
     @Override
     public void run() throws Exception {
         if (!isValid()) {

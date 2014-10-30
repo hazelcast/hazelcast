@@ -36,11 +36,19 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
+/**
+ * Hazelcast {@link javax.cache.CacheManager} for server implementation. This subclass of
+ * {@link AbstractHazelcastCacheManager} is managed by {@link HazelcastServerCachingProvider}.
+ * <p>As it lives on a node JVM, it has reference to {@link CacheService} and {@link NodeEngine} where this
+ * manager make calls.</p>
+ * <p>When JCache server implementation is configured, an instance of this class will be returned when
+ * {@link javax.cache.spi.CachingProvider#getCacheManager()} is called.</p>
+ */
 public class HazelcastServerCacheManager
-        extends HazelcastCacheManager {
+        extends AbstractHazelcastCacheManager {
 
-    private NodeEngine nodeEngine;
-    private CacheService cacheService;
+    private final NodeEngine nodeEngine;
+    private final CacheService cacheService;
 
     public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
@@ -68,7 +76,7 @@ public class HazelcastServerCacheManager
             throw new NullPointerException();
         }
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        cacheService.enableManagement(cacheNameWithPrefix, enabled);
+        cacheService.setManagementEnabled(null, cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
         enableStatisticManagementOnOtherNodes(cacheName, false, enabled);
     }
@@ -82,7 +90,7 @@ public class HazelcastServerCacheManager
             throw new NullPointerException();
         }
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        cacheService.enableStatistics(cacheNameWithPrefix, enabled);
+        cacheService.setStatisticsEnabled(null, cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
         enableStatisticManagementOnOtherNodes(cacheName, true, enabled);
     }
@@ -139,6 +147,12 @@ public class HazelcastServerCacheManager
         final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
                                                                    .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.getSafely();
+    }
+
+    @Override
+    protected void removeCacheConfigFromLocal(String cacheName) {
+        cacheService.deleteCacheConfig(cacheName);
+        super.removeCacheConfigFromLocal(cacheName);
     }
 
     protected void postClose() {

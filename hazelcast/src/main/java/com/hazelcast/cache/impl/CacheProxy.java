@@ -53,22 +53,29 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * ICache implementation:
- *
+ * <h1>ICache implementation</h1>
+ *<p>
  * This proxy is the implementation of ICache and javax.cache.Cache which is returned by
- * HazelcastServerCacheManager. Represent a cache on server or embedded mode.
+ * HazelcastServerCacheManager. It represents a cache for server or embedded mode.
+ *</p>
+ *<p>
+ *Each cache method actually is an operation which is sent to related partition(s) or node(s).
+ * Operations are executed on partition's or node's executor pools and the results are delivered to the user.
+ *</p>
+ * <p>
+ *     In order to access a {@linkplain CacheProxy} by name, a cacheManager should be used. It's advised to use
+ *     {@link com.hazelcast.cache.ICache} instead.
+ * </p>
  *
- * Each cache operation is basically a simple cache operation send to related partition(s) or node(s)
- *
- * @param <K> key type
- * @param <V> value type
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  */
 public class CacheProxy<K, V>
-        extends AbstractCacheProxyExtension<K, V> {
+        extends AbstractCacheProxy<K, V> {
 
     protected final ILogger logger;
 
-    private HazelcastCacheManager cacheManager;
+    private AbstractHazelcastCacheManager cacheManager;
 
     protected CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService,
                          HazelcastServerCacheManager cacheManager) {

@@ -15,7 +15,7 @@
  */
 
 /**
- * Provides classes/interfaces for memory utilities, on-heap/off-heap memory storage support.
+ * Provides classes/interfaces for memory utilities, heap/native memory storage support.
  *
  * @since 3.4
  */

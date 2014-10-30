@@ -3,7 +3,7 @@ package com.hazelcast.core;
 import java.util.EventObject;
 
 /**
- * Abstract map event.
+ * An abstract {@link com.hazelcast.core.IMapEvent}.
  */
 public abstract class AbstractIMapEvent extends EventObject implements IMapEvent {
 

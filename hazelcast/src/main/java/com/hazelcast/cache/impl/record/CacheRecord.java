@@ -20,7 +20,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * Record of the {@link com.hazelcast.cache.impl.ICacheRecordStore}
+ * <p>
+ * An expirable data object which represents a cache entry.
+ * </p>
+ * Record of {@link com.hazelcast.cache.impl.ICacheRecordStore}.
  *
  * @param <V>
  */

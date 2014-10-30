@@ -89,6 +89,9 @@ import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
+/**
+ * The {@link InternalPartitionService} implementation.
+ */
 public class InternalPartitionServiceImpl implements InternalPartitionService, ManagedService,
         EventPublishingService<MigrationEvent, MigrationListener> {
 
@@ -244,7 +247,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     public Address getPartitionOwnerOrWait(int partition) throws InterruptedException {
         Address owner = getPartitionOwner(partition);
         while (owner == null) {
-            Thread.sleep(100);
+            Thread.sleep(PARTITION_OWNERSHIP_WAIT_MILLIS);
             owner = getPartitionOwner(partition);
         }
         return owner;
@@ -512,8 +515,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private List<Future> firePartitionStateOperation(Collection<MemberImpl> members,
-                                                                        PartitionRuntimeState partitionState,
-                                                                        OperationService operationService) {
+                                                     PartitionRuntimeState partitionState,
+                                                     OperationService operationService) {
         List<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
@@ -1359,6 +1362,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public String addMigrationListener(MigrationListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("listener can't be null");
+        }
+
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration = eventService.registerListener(SERVICE_NAME, SERVICE_NAME, listener);
         return registration.getId();
@@ -1366,6 +1373,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public boolean removeMigrationListener(String registrationId) {
+        if (registrationId == null) {
+            throw new NullPointerException("registrationId can't be null");
+        }
+
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }

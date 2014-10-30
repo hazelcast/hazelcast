@@ -17,6 +17,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,14 +25,20 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * The Hazelcast CacheManager base class. Hazelcast supports two modes:
+ * Abstract {@link CacheManager} implementation provides shared functionality to server and client cache managers.
+ * There are two cache managers which can be accessed via their providers.
  * <ul>
- *     <li>Client -  HazelcastClientCacheManager</li>
- *     <li>Server - HazelcastServerCacheManager</li>
+ *     <li>Client: HazelcastClientCacheManager.</li>
+ *     <li>Server: HazelcastServerCacheManager.</li>
  * </ul>
+ * <p>
+ *    {@link AbstractHazelcastCacheManager} manages the lifecycle of the caches created or accessed through itself.
+ * </p>
  * @see CacheManager
  */
-public abstract class HazelcastCacheManager implements CacheManager {
+//todo AbstractHazelcastCacheManager would be better
+public abstract class AbstractHazelcastCacheManager
+        implements CacheManager {
 
     protected final ConcurrentMap<String, ICache<?, ?>> caches = new ConcurrentHashMap<String, ICache<?, ?>>();
     protected final URI uri;
@@ -48,7 +55,8 @@ public abstract class HazelcastCacheManager implements CacheManager {
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
-    public HazelcastCacheManager(CachingProvider cachingProvider, URI uri, ClassLoader classLoader, Properties properties) {
+    public AbstractHazelcastCacheManager(CachingProvider cachingProvider, URI uri,
+                                         ClassLoader classLoader, Properties properties) {
         if (cachingProvider == null) {
             throw new NullPointerException("CachingProvider missing");
         }
@@ -66,9 +74,6 @@ public abstract class HazelcastCacheManager implements CacheManager {
         this.cacheNamePrefix = cacheNamePrefix();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration)
             throws IllegalArgumentException {
@@ -97,6 +102,7 @@ public abstract class HazelcastCacheManager implements CacheManager {
             registerListeners(newCacheConfig, cacheProxy);
             return cacheProxy;
         } else {
+            // TODO: Might race in terms we don't check existing config and given config to be similar
             final ICache<?, ?> entries = caches.putIfAbsent(newCacheConfig.getNameWithPrefix(), cacheProxy);
             if (entries == null) {
                 //REGISTER LISTENERS
@@ -107,41 +113,26 @@ public abstract class HazelcastCacheManager implements CacheManager {
         throw new CacheException("A cache named " + cacheName + " already exists.");
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public CachingProvider getCachingProvider() {
         return cachingProvider;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public URI getURI() {
         return this.uri;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ClassLoader getClassLoader() {
         return classLoaderReference.get();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Properties getProperties() {
         return properties;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <K, V> ICache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType) {
         if (isClosed()) {
@@ -173,9 +164,7 @@ public abstract class HazelcastCacheManager implements CacheManager {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public <K, V> ICache<K, V> getCache(String cacheName) {
         if (isClosed()) {
             throw new IllegalStateException();
@@ -196,9 +185,6 @@ public abstract class HazelcastCacheManager implements CacheManager {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     protected <K, V> ICache<?, ?> getCacheUnchecked(String cacheName) {
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
@@ -221,9 +207,6 @@ public abstract class HazelcastCacheManager implements CacheManager {
         return cache;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Iterable<String> getCacheNames() {
         Set<String> names;
@@ -231,17 +214,19 @@ public abstract class HazelcastCacheManager implements CacheManager {
             names = Collections.emptySet();
         } else {
             names = new LinkedHashSet<String>();
-            for (String nameWithPrefix : caches.keySet()) {
-                final String name = nameWithPrefix.substring(nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length());
+            for (Map.Entry<String, ICache<?, ?>> entry : caches.entrySet()) {
+                if (entry.getValue().isClosed()) {
+                    continue;
+                }
+                String nameWithPrefix = entry.getKey();
+                int index = nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length();
+                final String name = nameWithPrefix.substring(index);
                 names.add(name);
             }
         }
         return Collections.unmodifiableCollection(names);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void destroyCache(String cacheName) {
         if (isClosed()) {
@@ -259,15 +244,14 @@ public abstract class HazelcastCacheManager implements CacheManager {
     }
 
     /**
-     * todo Why is this empty?
-     * @param cacheName
+     * Removes the local copy of the cache configuration if one exists.
+     * Default implementation does not require it. But client implementation overrides this to track a local copy
+     * of the config.
+     * @param cacheName cache name.
      */
     protected void removeCacheConfigFromLocal(String cacheName) {
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close() {
         if (isDestroyed.get() || !isClosed.compareAndSet(false, true)) {
@@ -284,7 +268,7 @@ public abstract class HazelcastCacheManager implements CacheManager {
     protected abstract void postClose();
 
     /**
-     * todo what does this do?
+     * Destroy all managed caches.
      */
     public void destroy() {
         if (!isDestroyed.compareAndSet(false, true)) {
@@ -297,28 +281,19 @@ public abstract class HazelcastCacheManager implements CacheManager {
         caches.clear();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isClosed() {
         return isClosed.get() || !hazelcastInstance.getLifecycleService().isRunning();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> T unwrap(Class<T> clazz) {
-        if (clazz.isAssignableFrom(HazelcastCacheManager.class)) {
+        if (clazz.isAssignableFrom(AbstractHazelcastCacheManager.class)) {
             return (T) this;
         }
         throw new IllegalArgumentException();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("HazelcastCacheManager{");
@@ -328,6 +303,12 @@ public abstract class HazelcastCacheManager implements CacheManager {
         return sb.toString();
     }
 
+    /**
+     * This method calculates a fixed string based on the URI and classloader using the formula:
+     * <p>/hz[/uri][/classloader]/</p>
+     * <p>URI and classloader are dropped if they have default values.</p>
+     * @return the calculated cache prefix.
+     */
     protected String cacheNamePrefix() {
         final StringBuilder sb = new StringBuilder("/hz");
         final ClassLoader classLoader = getClassLoader();

@@ -24,10 +24,14 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
+import com.hazelcast.executor.impl.operations.CallableTaskOperation;
+import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
+import com.hazelcast.executor.impl.operations.ShutdownOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -63,20 +67,22 @@ public class ExecutorServiceProxy
         extends AbstractDistributedObject<DistributedExecutorService>
         implements IExecutorService {
 
+    public static final int SYNC_FREQUENCY = 100;
+    public static final int SYNC_DELAY_MS = 10;
+
     private static final AtomicIntegerFieldUpdater<ExecutorServiceProxy> CONSECUTIVE_SUBMITS_UPDATER = AtomicIntegerFieldUpdater
             .newUpdater(ExecutorServiceProxy.class, "consecutiveSubmits");
 
     private static final ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
             logAllExceptions("Exception while ExecutorService shutdown", Level.FINEST);
 
-    public static final int SYNC_FREQUENCY = 100;
     private final String name;
     private final Random random = new Random(-System.currentTimeMillis());
     private final int partitionCount;
     private final ILogger logger;
 
-    // This field is never accessed directly but by the UPDATER above
-    private volatile int consecutiveSubmits = 0;
+    // This field is never accessed directly but by the CONSECUTIVE_SUBMITS_UPDATER above
+    private volatile int consecutiveSubmits;
 
     private volatile long lastSubmitTime;
 
@@ -191,12 +197,13 @@ public class ExecutorServiceProxy
             throw new RejectedExecutionException(getRejectionMessage());
         }
 
-        Callable<T> callable = createRunnableAdapter(task);
         NodeEngine nodeEngine = getNodeEngine();
+        Callable<T> callable = createRunnableAdapter(task);
+        Data callableData = nodeEngine.toData(callable);
         String uuid = buildRandomUuidString();
         int partitionId = getTaskPartitionId(callable);
 
-        CallableTaskOperation op = new CallableTaskOperation(name, uuid, callable);
+        CallableTaskOperation op = new CallableTaskOperation(name, uuid, callableData);
         ICompletableFuture future = invoke(partitionId, op);
         boolean sync = checkSync();
         if (sync) {
@@ -224,16 +231,17 @@ public class ExecutorServiceProxy
 
     private <T> Future<T> submitToPartitionOwner(Callable<T> task, int partitionId, boolean preventSync) {
         if (task == null) {
-            throw new NullPointerException();
+            throw new NullPointerException("task can't be null");
         }
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
         }
         NodeEngine nodeEngine = getNodeEngine();
+        Data taskData = nodeEngine.toData(task);
         String uuid = buildRandomUuidString();
 
         boolean sync = !preventSync && checkSync();
-        CallableTaskOperation op = new CallableTaskOperation(name, uuid, task);
+        CallableTaskOperation op = new CallableTaskOperation(name, uuid, taskData);
         ICompletableFuture future = invoke(partitionId, op);
         if (sync) {
             Object response;
@@ -255,7 +263,7 @@ public class ExecutorServiceProxy
         boolean sync = false;
         long last = lastSubmitTime;
         long now = Clock.currentTimeMillis();
-        if (last + 10 < now) {
+        if (last + SYNC_DELAY_MS < now) {
             CONSECUTIVE_SUBMITS_UPDATER.set(this, 0);
         } else if (CONSECUTIVE_SUBMITS_UPDATER.incrementAndGet(this) % SYNC_FREQUENCY == 0) {
             sync = true;
@@ -284,17 +292,18 @@ public class ExecutorServiceProxy
     @Override
     public <T> Future<T> submitToMember(Callable<T> task, Member member) {
         if (task == null) {
-            throw new NullPointerException();
+            throw new NullPointerException("task can't be null");
         }
         if (isShutdown()) {
             throw new RejectedExecutionException(getRejectionMessage());
         }
         NodeEngine nodeEngine = getNodeEngine();
+        Data taskData = nodeEngine.toData(task);
         String uuid = buildRandomUuidString();
         Address target = ((MemberImpl) member).getAddress();
 
         boolean sync = checkSync();
-        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, task);
+        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
         InternalCompletableFuture future = nodeEngine.getOperationService()
                 .invokeOnTarget(DistributedExecutorService.SERVICE_NAME, op, target);
         if (sync) {
@@ -359,7 +368,8 @@ public class ExecutorServiceProxy
             throw new RejectedExecutionException(getRejectionMessage());
         }
         NodeEngine nodeEngine = getNodeEngine();
-        CallableTaskOperation op = new CallableTaskOperation(name, null, task);
+        Data taskData = nodeEngine.toData(task);
+        CallableTaskOperation op = new CallableTaskOperation(name, null, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
                 .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
@@ -382,7 +392,8 @@ public class ExecutorServiceProxy
             throw new RejectedExecutionException(getRejectionMessage());
         }
         NodeEngine nodeEngine = getNodeEngine();
-        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, null, task);
+        Data taskData = nodeEngine.toData(task);
+        MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, null, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         Address address = ((MemberImpl) member).getAddress();
         operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
@@ -457,43 +468,52 @@ public class ExecutorServiceProxy
                     return result;
                 }
             }
-            for (int i = 0, size = futures.size(); i < size; i++) {
-                long start = System.nanoTime();
-                Object value;
-                try {
-                    Future<T> future = futures.get(i);
-                    value = future.get(timeoutNanos, TimeUnit.NANOSECONDS);
-                } catch (ExecutionException e) {
-                    value = e;
-                } catch (TimeoutException e) {
-                    done = false;
-                    for (int l = i; l < size; l++) {
-                        Future<T> f = futures.get(i);
-                        if (!f.isDone()) {
-                            result.add(f);
-                        } else {
-                            Object v;
-                            try {
-                                v = f.get();
-                            } catch (ExecutionException ex) {
-                                v = ex;
-                            }
-                            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), v, getAsyncExecutor()));
-                        }
-                    }
-                    break;
-                }
-                result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
-                timeoutNanos -= System.nanoTime() - start;
-            }
+            done = wait(timeoutNanos, futures, result);
+            return result;
         } catch (Throwable t) {
             logger.severe(t);
+            // todo: should an exception not be thrown?
+            return result;
         } finally {
             if (!done) {
                 cancelAll(result);
             }
-            return result;
         }
+    }
+
+    private <T> boolean wait(long timeoutNanos, List<Future<T>> futures, List<Future<T>> result) throws InterruptedException {
+        boolean done = true;
+        for (int i = 0, size = futures.size(); i < size; i++) {
+            long start = System.nanoTime();
+            Object value;
+            try {
+                Future<T> future = futures.get(i);
+                value = future.get(timeoutNanos, TimeUnit.NANOSECONDS);
+            } catch (ExecutionException e) {
+                value = e;
+            } catch (TimeoutException e) {
+                done = false;
+                for (int l = i; l < size; l++) {
+                    Future<T> f = futures.get(i);
+                    if (!f.isDone()) {
+                        result.add(f);
+                    } else {
+                        Object v;
+                        try {
+                            v = f.get();
+                        } catch (ExecutionException ex) {
+                            v = ex;
+                        }
+                        result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), v, getAsyncExecutor()));
+                    }
+                }
+                break;
+            }
+
+            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
+            timeoutNanos -= System.nanoTime() - start;
+        }
+        return done;
     }
 
     private static <T> void cancelAll(List<Future<T>> result) {

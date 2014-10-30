@@ -24,11 +24,14 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
 /**
- * Entry of Entry Processor for {@link CacheEntry}.
- *
- * @param <K>
- * @param <V>
- * @see com.hazelcast.map.EntryProcessor
+ * This class is an implementation of {@link MutableEntry} which is provided into
+ * {@link javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)}.
+ * <p>CacheEntryProcessorEntry may face multiple mutating operations like setValue, remove or CacheLoading, etc.</p>
+ * <p>This implementation may handle multiple operations executed on this entry and persist the resultant state into
+ * {@link CacheRecordStore} after entry processor get completed.</p>
+ * @param <K> the type of key.
+ * @param <V> the type of value.
+ * @see javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)
  */
 public class CacheEntryProcessorEntry<K, V>
         implements MutableEntry<K, V> {
@@ -129,6 +132,10 @@ public class CacheEntryProcessorEntry<K, V>
         return (V) objValue;
     }
 
+    /**
+     * Provides a similar functionality as committing a transaction. So, at the end of the process method, applyChanges
+     * will be called to apply latest data into {@link CacheRecordStore}.
+     */
     public void applyChanges() {
         final boolean isStatisticsEnabled = cacheRecordStore.cacheConfig.isStatisticsEnabled();
         final CacheStatisticsImpl statistics = cacheRecordStore.statistics;
@@ -141,7 +148,7 @@ public class CacheEntryProcessorEntry<K, V>
                 cacheRecordStore.updateRecordWithExpiry(keyData, value, record, expiryPolicy, now, false);
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
-                    statistics.addGetTimeNano(System.nanoTime() - start);
+                    statistics.addGetTimeNanos(System.nanoTime() - start);
                 }
                 break;
             case REMOVE:
@@ -150,7 +157,7 @@ public class CacheEntryProcessorEntry<K, V>
             case CREATE:
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
-                    statistics.addGetTimeNano(System.nanoTime() - start);
+                    statistics.addGetTimeNanos(System.nanoTime() - start);
                 }
                 cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, false);
                 break;

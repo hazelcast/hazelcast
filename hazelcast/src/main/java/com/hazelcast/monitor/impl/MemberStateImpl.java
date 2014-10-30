@@ -24,6 +24,7 @@ import com.hazelcast.management.SerializableMXBeans;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalTopicStats;
@@ -55,6 +56,7 @@ public class MemberStateImpl implements MemberState {
     private List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
     private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
     private SerializableMXBeans beans = new SerializableMXBeans();
+    private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
 
     public MemberStateImpl() {
     }
@@ -109,6 +111,7 @@ public class MemberStateImpl implements MemberState {
         }
         root.add("clients", clientsArray);
         root.add("beans", beans.toJson());
+        root.add("memoryStats", memoryStats.toJson());
         return root;
     }
 
@@ -160,6 +163,7 @@ public class MemberStateImpl implements MemberState {
         }
         beans = new SerializableMXBeans();
         beans.fromJson(getObject(json, "beans"));
+        memoryStats.fromJson(getObject(json, "memoryStats"));
     }
 
     public void clearPartitions() {
@@ -267,6 +271,15 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public LocalMemoryStats getLocalMemoryStats() {
+        return memoryStats;
+    }
+
+    public void setLocalMemoryStats(LocalMemoryStats memoryStats) {
+        this.memoryStats = memoryStats;
+    }
+
+    @Override
     public int hashCode() {
         int result = address != null ? address.hashCode() : 0;
         result = 31 * result + (mapStats != null ? mapStats.hashCode() : 0);
@@ -317,6 +330,9 @@ public class MemberStateImpl implements MemberState {
         if (cacheStats != null ? !cacheStats.equals(that.cacheStats) : that.cacheStats != null) {
             return false;
         }
+        if (memoryStats != null ? !memoryStats.equals(that.memoryStats) : that.memoryStats != null) {
+            return false;
+        }
 
         return true;
     }
@@ -334,6 +350,7 @@ public class MemberStateImpl implements MemberState {
                 + ", executorStats=" + executorStats
                 + ", cacheStats=" + cacheStats
                 + ", partitions=" + partitions
+                + ", memoryStats=" + memoryStats
                 + '}';
     }
 }

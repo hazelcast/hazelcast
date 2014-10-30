@@ -49,9 +49,17 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * Base Cache Proxy
+ * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
+ * of cache operations like put, replace, remove and invoke. These internal implementations are delegated
+ * by actual cache methods.
+ *
+ * <p>Note: this partial implementation is used by server or embedded mode cache.</p>
+ * @param <K> the type of key.
+ * @param <V> the type of value.
+ * @see com.hazelcast.cache.impl.CacheProxy
+ * @see com.hazelcast.cache.ICache
  */
-abstract class AbstractCacheProxyInternal<K, V>
+abstract class AbstractInternalCacheProxy<K, V>
         extends AbstractCacheProxyBase<K, V>
         implements ICache<K, V> {
 
@@ -63,7 +71,7 @@ abstract class AbstractCacheProxyInternal<K, V>
     private final Object completionRegistrationMutex = new Object();
     private volatile String completionRegistrationId;
 
-    protected AbstractCacheProxyInternal(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService) {
+    protected AbstractInternalCacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
@@ -90,12 +98,12 @@ abstract class AbstractCacheProxyInternal<K, V>
             if (e instanceof IllegalStateException) {
                 close();
             }
+            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+        } finally {
             if (completionOperation) {
                 deregisterCompletionLatch(completionId);
             }
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
-
     }
 
     //region internal base operations
@@ -206,6 +214,7 @@ abstract class AbstractCacheProxyInternal<K, V>
     protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration.isSynchronous()) {
             syncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
+            //todo Should that be called if it wasn't registered because it's already there?
             registerCompletionListener();
         } else {
             asyncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);

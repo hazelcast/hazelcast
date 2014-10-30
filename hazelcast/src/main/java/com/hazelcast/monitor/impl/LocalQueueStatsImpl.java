@@ -18,10 +18,8 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalQueueStats;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-import java.io.IOException;
+
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getInt;
@@ -93,41 +91,6 @@ public class LocalQueueStatsImpl
         NUMBER_OF_EMPTY_POLLS_UPDATER.set(this, getLong(json, "numberOfEmptyPolls", -1L));
         NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, getLong(json, "numberOfOtherOperations", -1L));
         NUMBER_OF_EVENTS_UPDATER.set(this, getLong(json, "numberOfEvents", -1L));
-    }
-
-
-    @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        out.writeInt(ownedItemCount);
-        out.writeInt(backupItemCount);
-        out.writeLong(minAge);
-        out.writeLong(maxAge);
-        out.writeLong(aveAge);
-        out.writeLong(creationTime);
-        out.writeLong(numberOfOffers);
-        out.writeLong(numberOfPolls);
-        out.writeLong(numberOfRejectedOffers);
-        out.writeLong(numberOfEmptyPolls);
-        out.writeLong(numberOfOtherOperations);
-        out.writeLong(numberOfEvents);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        ownedItemCount = in.readInt();
-        backupItemCount = in.readInt();
-        minAge = in.readLong();
-        maxAge = in.readLong();
-        aveAge = in.readLong();
-        creationTime = in.readLong();
-        NUMBER_OF_OFFERS_UPDATER.set(this, in.readLong());
-        NUMBER_OF_POLLS_UPDATER.set(this, in.readLong());
-        NUMBER_OF_REJECTED_OFFERS_UPDATER.set(this, in.readLong());
-        NUMBER_OF_EMPTY_POLLS_UPDATER.set(this, in.readLong());
-        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, in.readLong());
-        NUMBER_OF_EVENTS_UPDATER.set(this, in.readLong());
     }
 
     @Override

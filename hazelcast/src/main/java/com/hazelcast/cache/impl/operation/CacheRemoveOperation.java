@@ -25,7 +25,9 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * Cache Remove Operation
+ * Operation implementation for cache remove functionality.
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, Object, String)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, String)
  */
 public class CacheRemoveOperation
         extends AbstractMutatingCacheOperation {

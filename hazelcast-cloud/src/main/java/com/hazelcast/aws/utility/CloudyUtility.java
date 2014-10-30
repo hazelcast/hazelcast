@@ -135,7 +135,7 @@ public final class CloudyUtility {
                 final String publicIp = getIp("ipaddress", nodeHolder);
                 final String instanceName = getInstanceName(nodeHolder);
 
-                if (privateIp != null && publicIp != null) {
+                if (privateIp != null) {
                     if (!acceptState(state)) {
                         LOGGER.finest(format("Ignoring EC2 instance [%s][%s] reason:"
                                 + " the instance is not running but %s", instanceName, privateIp, state));

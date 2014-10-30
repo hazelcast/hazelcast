@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.management.TimedMemberStateFactory;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -75,7 +76,10 @@ public interface NodeExtension {
      *
      * @return WanReplicationService
      */
-    WanReplicationService geWanReplicationService();
+    WanReplicationService getWanReplicationService();
+
+
+    TimedMemberStateFactory getTimedMemberStateFactory();
 
     /**
      * Returns <tt>MemberSocketInterceptor</tt> for this <tt>Node</tt> if available,

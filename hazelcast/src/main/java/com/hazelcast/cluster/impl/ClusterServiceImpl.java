@@ -271,10 +271,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return validJoinRequest;
     }
 
-    private void logIfConnectionToEndpointIsMissing(MemberImpl member) {
-        Connection conn = node.connectionManager.getOrConnect(member.getAddress());
-        if (conn == null || !conn.isAlive()) {
-            logger.warning("This node does not have a connection to " + member);
+    private void logIfConnectionToEndpointIsMissing(long now, MemberImpl member) {
+        if ((now - member.getLastRead()) >= PING_INTERVAL && (now - member.getLastPing()) >= PING_INTERVAL) {
+            Connection conn = node.connectionManager.getOrConnect(member.getAddress());
+            if (conn == null || !conn.isAlive()) {
+                logger.warning("This node does not have a connection to " + member);
+            }
         }
     }
 
@@ -296,7 +298,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 try {
-                    logIfConnectionToEndpointIsMissing(member);
+                    logIfConnectionToEndpointIsMissing(now, member);
                     if (removeMemberIfNotHeartBeating(now, member)) {
                         continue;
                     }
@@ -343,7 +345,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 try {
-                    logIfConnectionToEndpointIsMissing(member);
+                    logIfConnectionToEndpointIsMissing(now, member);
 
                     if (isMaster(member)) {
                         if (removeMemberIfNotHeartBeating(now, member)) {
@@ -451,7 +453,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
         final Collection<MemberImpl> members = getMemberList();
-        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members, false), getClusterTime(), false);
+        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members), getClusterTime(), false);
         for (MemberImpl member : members) {
             if (member.equals(thisMember)) {
                 continue;
@@ -673,7 +675,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     logger.finest(message);
                 }
                 // send members update back to node trying to join again...
-                Operation op = new MemberInfoUpdateOperation(createMemberInfos(getMemberList(), true),
+                final Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
+                final PostJoinOperation postJoinOp = postJoinOps != null && postJoinOps.length > 0
+                        ? new PostJoinOperation(postJoinOps) : null;
+
+                Operation op = new FinalizeJoinOperation(createMemberInfos(getMemberList()), postJoinOp,
                         getClusterTime(), false);
                 nodeEngine.getOperationService().send(op, target);
             } else {
@@ -890,7 +896,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 // pause migrations until join, member-update and post-join operations are completed.
                 node.getPartitionService().pauseMigration();
                 final Collection<MemberImpl> members = getMemberList();
-                final Collection<MemberInfo> memberInfos = createMemberInfos(members, true);
+                final Collection<MemberInfo> memberInfos = createMemberInfos(members);
                 for (MemberInfo memberJoining : setJoins) {
                     memberInfos.add(memberJoining);
                 }
@@ -921,14 +927,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    private static Collection<MemberInfo> createMemberInfos(Collection<MemberImpl> members, boolean joinOperation) {
+    private static Collection<MemberInfo> createMemberInfos(Collection<MemberImpl> members) {
         final Collection<MemberInfo> memberInfos = new LinkedList<MemberInfo>();
         for (MemberImpl member : members) {
-            if (joinOperation) {
-                memberInfos.add(new MemberInfo(member));
-            } else {
-                memberInfos.add(new MemberInfo(member.getAddress(), member.getUuid(), member.getAttributes()));
-            }
+            memberInfos.add(new MemberInfo(member));
         }
         return memberInfos;
     }
@@ -1266,23 +1268,34 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public String addMembershipListener(MembershipListener listener) {
+        if(listener == null){
+            throw new NullPointerException("listener can't be null");
+        }
+
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration;
         if (listener instanceof InitialMembershipListener) {
             lock.lock();
             try {
                 ((InitialMembershipListener) listener).init(new InitialMembershipEvent(getClusterProxy(), getMembers()));
-                final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
-                return registration.getId();
+                registration = eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
             } finally {
                 lock.unlock();
             }
         } else {
-            final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
-            return registration.getId();
+            registration = eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
         }
+
+        return registration.getId();
     }
 
-    public boolean removeMembershipListener(final String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
+    public boolean removeMembershipListener(String registrationId) {
+        if(registrationId == null){
+            throw new NullPointerException("registrationId can't be null");
+        }
+
+        EventService eventService = nodeEngine.getEventService();
+        return eventService.deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("BC_UNCONFIRMED_CAST")

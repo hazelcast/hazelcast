@@ -38,13 +38,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -66,8 +59,15 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -111,12 +111,12 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
     public void testManagedContextAndLocal() throws Exception {
         final Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
+        final AtomicBoolean initialized = new AtomicBoolean();
         config.setManagedContext(new ManagedContext() {
             @Override
             public Object initialize(Object obj) {
                 if (obj instanceof RunnableWithManagedContext) {
-                    RunnableWithManagedContext task = (RunnableWithManagedContext) obj;
-                    task.initializeCalled = true;
+                    initialized.set(true);
                 }
                 return obj;
             }
@@ -127,11 +127,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
         RunnableWithManagedContext task = new RunnableWithManagedContext();
         executor.submit(task).get();
-        assertTrue("The task should have been initialized by the ManagedContext", task.initializeCalled);
+        assertTrue("The task should have been initialized by the ManagedContext", initialized.get());
     }
 
-    static class RunnableWithManagedContext implements Runnable {
-        private volatile boolean initializeCalled = false;
+    static class RunnableWithManagedContext implements Runnable, Serializable {
 
         @Override
         public void run() {
@@ -146,15 +145,18 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         IExecutorService executor = instance.getExecutorService("test");
 
         HazelcastInstanceAwareRunnable task = new HazelcastInstanceAwareRunnable();
+        // if 'setHazelcastInstance' not called we expect a RuntimeException
         executor.submit(task).get();
-        assertTrue("The setHazelcastInstance should have been called", task.initializeCalled);
     }
 
-    static class HazelcastInstanceAwareRunnable implements Runnable, HazelcastInstanceAware {
-        private volatile boolean initializeCalled = false;
+    static class HazelcastInstanceAwareRunnable implements Runnable, HazelcastInstanceAware, Serializable {
+        private transient boolean initializeCalled = false;
 
         @Override
         public void run() {
+            if (!initializeCalled) {
+                throw new RuntimeException("The setHazelcastInstance should have been called");
+            }
         }
 
         @Override
@@ -210,8 +212,9 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(k);
         final ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
-                if (response == null)
+                if (response == null) {
                     count.incrementAndGet();
+                }
                 latch.countDown();
             }
 
@@ -221,10 +224,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         for (int i = 0; i < k; i++) {
             final HazelcastInstance instance = instances[i];
             final IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerRunnable");
-            final String script = "if(!hazelcast.getCluster().getLocalMember().equals(member)) " +
+            final String script = "if(!hazelcast.getCluster().getLocalMember().getUuid().equals(memberUUID)) " +
                     "hazelcast.getAtomicLong('testSubmitToKeyOwnerRunnable').incrementAndGet();";
             final HashMap map = new HashMap();
-            map.put("member", instance.getCluster().getLocalMember());
+            map.put("memberUUID", instance.getCluster().getLocalMember().getUuid());
             int key = 0;
             while (!instance.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++key).getOwner())) {
                 Thread.sleep(1);
@@ -257,10 +260,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         for (int i = 0; i < k; i++) {
             final HazelcastInstance instance = instances[i];
             final IExecutorService service = instance.getExecutorService("testSubmitToMemberRunnable");
-            final String script = "if(!hazelcast.getCluster().getLocalMember().equals(member)) " +
+            final String script = "if(!hazelcast.getCluster().getLocalMember().getUuid().equals(memberUUID)) " +
                     "hazelcast.getAtomicLong('testSubmitToMemberRunnable').incrementAndGet();";
             final HashMap map = new HashMap();
-            map.put("member", instance.getCluster().getLocalMember());
+            map.put("memberUUID", instance.getCluster().getLocalMember().getUuid());
             service.submitToMember(new ScriptRunnable(script, map), instance.getCluster().getLocalMember(), callback);
         }
         assertOpenEventually(latch);
@@ -313,8 +316,9 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(k * k);
         final MultiExecutionCallback callback = new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
-                if (value == null)
+                if (value == null) {
                     count.incrementAndGet();
+                }
                 latch.countDown();
             }
 
@@ -354,8 +358,9 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(k / 2);
         final ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
-                if ((Boolean) response)
+                if ((Boolean) response) {
                     count.incrementAndGet();
+                }
                 latch.countDown();
             }
 
@@ -365,10 +370,10 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         for (int i = 0; i < k; i++) {
             final HazelcastInstance instance = instances[i];
             final IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerCallable");
-            final String script = "hazelcast.getCluster().getLocalMember().equals(member)";
+            final String script = "hazelcast.getCluster().getLocalMember().getUuid().equals(memberUUID)";
             final HashMap map = new HashMap();
             final Member localMember = instance.getCluster().getLocalMember();
-            map.put("member", localMember);
+            map.put("memberUUID", localMember.getUuid());
             int key = 0;
             while (!localMember.equals(instance.getPartitionService().getPartition(++key).getOwner())) ;
             if (i % 2 == 0) {
@@ -382,7 +387,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         assertEquals(k / 2, count.get());
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testSubmitToMemberCallable() throws ExecutionException, InterruptedException, TimeoutException {
         final int k = simpleTestNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
@@ -391,8 +396,9 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(k / 2);
         final ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
-                if ((Boolean) response)
+                if ((Boolean) response) {
                     count.incrementAndGet();
+                }
                 latch.countDown();
             }
 
@@ -402,12 +408,12 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         for (int i = 0; i < k; i++) {
             final HazelcastInstance instance = instances[i];
             final IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
-            final String script = "hazelcast.getCluster().getLocalMember().equals(member); ";
+            final String script = "hazelcast.getCluster().getLocalMember().getUuid().equals(memberUUID); ";
             final HashMap map = new HashMap();
-            map.put("member", instance.getCluster().getLocalMember());
+            map.put("memberUUID", instance.getCluster().getLocalMember().getUuid());
             if (i % 2 == 0) {
                 final Future f = service.submitToMember(new ScriptCallable(script, map), instance.getCluster().getLocalMember());
-                assertTrue((Boolean) f.get(5, TimeUnit.SECONDS));
+                assertTrue((Boolean) f.get());
             } else {
                 service.submitToMember(new ScriptCallable(script, map), instance.getCluster().getLocalMember(), callback);
             }
@@ -765,27 +771,13 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         final HazelcastInstance instance = createHazelcastInstance(config);
         final IExecutorService executorService = instance.getExecutorService(name);
 
-        final CountDownLatch startLatch = new CountDownLatch(1);
-        final CountDownLatch sleepLatch = new CountDownLatch(1);
 
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                startLatch.countDown();
-                assertOpenEventually(sleepLatch);
-            }
-        });
+        executorService.execute(new SleepLatchRunnable());
 
-        assertTrue(startLatch.await(30, TimeUnit.SECONDS));
-        final Future waitingInQueue = executorService.submit(new Runnable() {
-            public void run() {
-            }
-        });
+        assertTrue(SleepLatchRunnable.startLatch.await(30, TimeUnit.SECONDS));
+        final Future waitingInQueue = executorService.submit(new EmptyRunnable());
 
-        final Future rejected = executorService.submit(new Runnable() {
-            public void run() {
-            }
-        });
+        final Future rejected = executorService.submit(new EmptyRunnable());
 
         try {
             rejected.get(1, TimeUnit.MINUTES);
@@ -795,7 +787,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
                 fail(e.toString());
             }
         } finally {
-            sleepLatch.countDown();
+            SleepLatchRunnable.sleepLatch.countDown();
         }
 
         waitingInQueue.get(1, TimeUnit.MINUTES);
@@ -805,27 +797,36 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         assertEquals(0, stats.getPendingTaskCount());
     }
 
+    static class SleepLatchRunnable implements Runnable, Serializable {
+
+        static CountDownLatch startLatch = new CountDownLatch(1);
+        static CountDownLatch sleepLatch = new CountDownLatch(1);
+
+        @Override
+        public void run() {
+            startLatch.countDown();
+            assertOpenEventually(sleepLatch);
+        }
+    }
+
+    static class EmptyRunnable implements Runnable, Serializable {
+        @Override
+        public void run() {
+
+        }
+    }
+
 
     @Test
     public void testExecutorServiceStats() throws InterruptedException, ExecutionException {
         final IExecutorService executorService = createSingleNodeExecutorService("testExecutorServiceStats");
         final int k = 10;
-        final CountDownLatch latch = new CountDownLatch(k);
-        final int executionTime = 200;
-        for (int i = 0; i < k; i++) {
-            executorService.execute(new Runnable() {
-                public void run() {
-                    try {
-                        Thread.sleep(executionTime);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    latch.countDown();
-                }
-            });
+        LatchRunnable.latch = new CountDownLatch(k);
 
+        for (int i = 0; i < k; i++) {
+            executorService.execute(new LatchRunnable());
         }
-        latch.await(2, TimeUnit.MINUTES);
+        LatchRunnable.latch.await(2, TimeUnit.MINUTES);
 
         final Future<Boolean> f = executorService.submit(new SleepingTask(10000));
         Thread.sleep(1000);
@@ -840,6 +841,22 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         assertEquals(k, stats.getCompletedTaskCount());
         assertEquals(0, stats.getPendingTaskCount());
         assertEquals(1, stats.getCancelledTaskCount());
+    }
+
+    static class LatchRunnable implements Runnable, Serializable {
+
+        static CountDownLatch latch;
+        final int executionTime = 200;
+
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(executionTime);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            latch.countDown();
+        }
     }
 
     @Test
@@ -1201,7 +1218,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         });
 
-        latch1.await(30, TimeUnit.SECONDS);
+        assertOpenEventually(latch1);
 
         final AtomicReference reference = new AtomicReference();
         final ICompletableFuture completableFuture = es.asCompletableFuture(future);
@@ -1219,7 +1236,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
             }
         });
 
-        latch2.await(30, TimeUnit.SECONDS);
+        assertOpenEventually(latch2);
         assertEquals("success", reference.get());
     }
 
@@ -1404,14 +1421,14 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         });
-        assertTrue(latch.await(10,TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
 
     public static class FailingTestTask implements Callable<String>, Serializable {
 
         public String call() throws Exception {
-            throw  new IllegalStateException();
+            throw new IllegalStateException();
         }
     }
 

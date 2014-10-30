@@ -17,7 +17,7 @@
 package com.hazelcast.executor.impl.client;
 
 import com.hazelcast.client.impl.client.InvocationClientRequest;
-import com.hazelcast.executor.impl.CancellationOperation;
+import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorPortableHook;
 import com.hazelcast.logging.ILogger;
@@ -62,11 +62,12 @@ public class CancellationRequest extends InvocationClientRequest {
     protected void invoke() {
         CancellationOperation op = new CancellationOperation(uuid, interrupt);
         InvocationBuilder builder;
-        if (target != null) {
-            builder = createInvocationBuilder(getServiceName(), op, target);
-        } else {
+        if (target == null) {
             builder = createInvocationBuilder(getServiceName(), op, partitionId);
+        } else {
+            builder = createInvocationBuilder(getServiceName(), op, target);
         }
+
         builder.setTryCount(CANCEL_TRY_COUNT).setTryPauseMillis(CANCEL_TRY_PAUSE_MILLIS);
         InternalCompletableFuture future = builder.invoke();
         boolean result = false;
