@@ -130,7 +130,6 @@
             <outputDirectory>/bin/</outputDirectory>
             <includes>
                 <include>*.bat</include>
-                <include>keystore</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -138,13 +137,6 @@
             <outputDirectory>/bin/</outputDirectory>
             <includes>
                 <include>hazelcast.xml</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>hazelcast/src/main/resources/</directory>
-            <outputDirectory>/bin/</outputDirectory>
-            <includes>
-                <include>keystore</include>
             </includes>
         </fileSet>
         <fileSet>
