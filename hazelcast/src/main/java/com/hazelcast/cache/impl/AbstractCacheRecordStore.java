@@ -521,7 +521,6 @@ public abstract class AbstractCacheRecordStore<
             }
             return record;
         } catch (Throwable error) {
-            error.printStackTrace();
             onUpdateRecordError(key, record, value, dataValue, dataOldValue, error);
             throw ExceptionUtil.rethrow(error);
         }
@@ -824,7 +823,6 @@ public abstract class AbstractCacheRecordStore<
 
             return oldValue;
         } catch (Throwable error) {
-            error.printStackTrace();
             onGetAndPutError(key, value, expiryPolicy, caller, getValue, disableWriteThrough,
                              record, oldValue, isOnNewPut, error);
             throw ExceptionUtil.rethrow(error);
@@ -914,7 +912,6 @@ public abstract class AbstractCacheRecordStore<
 
             return result;
         } catch (Throwable error) {
-            error.printStackTrace();
             onPutIfAbsentError(key, value, expiryPolicy, caller,
                                disableWriteThrough, record, error);
             throw ExceptionUtil.rethrow(error);
