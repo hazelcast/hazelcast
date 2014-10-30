@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -30,6 +31,7 @@ import java.io.IOException;
 
 /**
  * This client request  specifically calls {@link CacheGetAndReplaceOperation} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation
  */
 public class CacheGetAndReplaceRequest
@@ -43,7 +45,8 @@ public class CacheGetAndReplaceRequest
     public CacheGetAndReplaceRequest() {
     }
 
-    public CacheGetAndReplaceRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
+    public CacheGetAndReplaceRequest(String name, Data key, Data value,
+                                     ExpiryPolicy expiryPolicy) {
         super(name);
         this.key = key;
         this.value = value;
@@ -60,12 +63,13 @@ public class CacheGetAndReplaceRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheGetAndReplaceOperation(name, key, value, expiryPolicy, completionId);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createGetAndReplaceOperation(key, value, expiryPolicy, completionId);
     }
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
@@ -75,7 +79,7 @@ public class CacheGetAndReplaceRequest
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();

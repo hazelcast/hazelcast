@@ -43,6 +43,15 @@ import java.util.Set;
  */
 public interface ICacheRecordStore {
 
+    // Defined as constant for check-style error
+    int ONE_HUNDRED_PERCENT = 100;
+
+    int MIN_FORCED_EVICT_PERCENTAGE = 20;
+    int DEFAULT_EVICTION_PERCENTAGE = 20;
+    int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = ONE_HUNDRED_PERCENT - DEFAULT_EVICTION_PERCENTAGE;
+    int DEFAULT_TTL = 1000 * 60 * 60;
+    int DEFAULT_INITIAL_CAPACITY = 1000;
+
     /**
      * Gets the value to which the specified key is mapped,
      * or {@code null} if this cache contains no mapping for the key.
@@ -292,19 +301,16 @@ public interface ICacheRecordStore {
     int size();
 
     /**
-     * Provides two functionality depending on the isRemoveAll parameter.
-     * <p>
-     * If isRemoveAll is <tt>true</tt>, keys will be ignored and internal data will be removed without publishing
-     * any events.
-     * <p>
-     * If isRemoveAll is <tt>false</tt>, record of keys will be deleted one by one and publish a REMOVE event
-     * for each key.
-     * If the provided keys set is empty, then it will function as delete all keys to provide an easy shortcut.
-     * </p>
-     * @param keys set of keys to be cleaned.
-     * @param isRemoveAll <tt>true</tt> value forces a clean all without events.
+     * clears all internal data without publishing any events
      */
-    void clear(Set<Data> keys, boolean isRemoveAll);
+    void clear();
+
+    /**
+     * records of keys will be deleted one by one and will publish a REMOVE event
+     * for each key.
+     * @param keys set of keys to be cleaned.
+     */
+    void removeAll(Set<Data> keys);
 
     /**
      * Destroy is equivalent to below operations in the given order:
@@ -413,5 +419,28 @@ public interface ICacheRecordStore {
      * @param orderKey order key, all events of a method call will share same order key.
      */
     void publishCompletedEvent(String cacheName, int completionId, Data dataKey, int orderKey);
+
+    /**
+     * Evict cache record store if eviction is required.
+     * <p>Eviction logic is handled as specified {@link com.hazelcast.config.EvictionPolicy}
+     * in {@link com.hazelcast.config.CacheConfig} for this record store</p>
+     * @return the number of evicted records.
+     */
+    int evictIfRequired();
+
+    /**
+     * Evict cache record store as <code>evictionPercentange</code>.
+     * <p>Eviction logic is handled as specified {@link com.hazelcast.config.EvictionPolicy}
+     * in {@link com.hazelcast.config.CacheConfig} for this record store</p>
+     * @param evictionPercentange The eviction percentage relative to cache record store capacity.
+     * @return the number of evicted records.
+     */
+    int evictExpiredRecords(int evictionPercentange);
+
+    /**
+     * Forcibly evict all expired records.
+     * @return the number of evicted records.
+     */
+    int forceEvict();
 
 }

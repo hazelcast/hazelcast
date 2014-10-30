@@ -50,12 +50,11 @@ import java.util.Map;
  * </p>
  * <p><b>Note:</b> This operation is a per partition operation.</p>
  */
-public final class CacheReplicationOperation
-        extends AbstractOperation {
+public class CacheReplicationOperation extends AbstractOperation {
 
-    Map<String, Map<Data, CacheRecord>> data;
+    protected Map<String, Map<Data, CacheRecord>> data;
 
-    List<CacheConfig> configs;
+    protected List<CacheConfig> configs;
 
     public CacheReplicationOperation() {
         data = new HashMap<String, Map<Data, CacheRecord>>();
@@ -67,22 +66,18 @@ public final class CacheReplicationOperation
 
         Iterator<ICacheRecordStore> iter = segment.cacheIterator();
         while (iter.hasNext()) {
-            ICacheRecordStore next = iter.next();
-            CacheConfig cacheConfig = next.getConfig();
+            ICacheRecordStore cacheRecordStore = iter.next();
+            CacheConfig cacheConfig = cacheRecordStore.getConfig();
             if (cacheConfig.getAsyncBackupCount() + cacheConfig.getBackupCount() >= replicaIndex) {
-                data.put(next.getName(), next.getReadOnlyRecords());
+                data.put(cacheRecordStore.getName(), cacheRecordStore.getReadOnlyRecords());
             }
         }
 
-        configs = new ArrayList<CacheConfig>();
-        for (CacheConfig cacheConfig : segment.getCacheConfigs()) {
-            configs.add(cacheConfig);
-        }
+        configs = new ArrayList<CacheConfig>(segment.getCacheConfigs());
     }
 
     @Override
-    public void beforeRun()
-            throws Exception {
+    public void beforeRun() throws Exception {
         //        //migrate CacheConfigs first
         CacheService service = getService();
         for (CacheConfig config : configs) {
@@ -118,37 +113,30 @@ public final class CacheReplicationOperation
     @Override
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
-        super.writeInternal(out);
         int confSize = configs.size();
         out.writeInt(confSize);
-        if (confSize > 0) {
-            for (CacheConfig config : configs) {
-                out.writeObject(config);
-            }
+        for (CacheConfig config : configs) {
+            out.writeObject(config);
         }
         int count = data.size();
         out.writeInt(count);
-        if (count > 0) {
-            long now = Clock.currentTimeMillis();
-            for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
-                Map<Data, CacheRecord> cacheMap = entry.getValue();
-                int subCount = cacheMap.size();
-                out.writeInt(subCount);
-                if (subCount > 0) {
-                    out.writeUTF(entry.getKey());
-                    for (Map.Entry<Data, CacheRecord> e : cacheMap.entrySet()) {
-                        final Data key = e.getKey();
-                        final CacheRecord record = e.getValue();
-                        final long expirationTime = record.getExpirationTime();
-                        if (expirationTime > now) {
-                            out.writeData(key);
-                            out.writeObject(record);
-                        }
-                    }
-                    //empty data will terminate the iteration for read
-                    out.writeData(new HeapData());
+        long now = Clock.currentTimeMillis();
+        for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
+            Map<Data, CacheRecord> cacheMap = entry.getValue();
+            int subCount = cacheMap.size();
+            out.writeInt(subCount);
+            out.writeUTF(entry.getKey());
+            for (Map.Entry<Data, CacheRecord> e : cacheMap.entrySet()) {
+                final Data key = e.getKey();
+                final CacheRecord record = e.getValue();
+                final long expirationTime = record.getExpirationTime();
+                if (expirationTime > now) {
+                    out.writeData(key);
+                    out.writeObject(record);
                 }
             }
+            //empty data will terminate the iteration for read
+            out.writeData(new HeapData());
         }
     }
 
@@ -157,31 +145,24 @@ public final class CacheReplicationOperation
             throws IOException {
         super.readInternal(in);
         int confSize = in.readInt();
-        if (confSize > 0) {
-            configs = new ArrayList<CacheConfig>();
-            for (int i = 0; i < confSize; i++) {
-                final CacheConfig config = in.readObject();
-                configs.add(config);
-            }
+        for (int i = 0; i < confSize; i++) {
+            final CacheConfig config = in.readObject();
+            configs.add(config);
         }
         int count = in.readInt();
-        if (count > 0) {
-            for (int i = 0; i < count; i++) {
-                int subCount = in.readInt();
-                if (subCount > 0) {
-                    String name = in.readUTF();
-                    Map<Data, CacheRecord> m = new HashMap<Data, CacheRecord>(subCount);
-                    data.put(name, m);
-                    for (int j = 0; j < subCount; j++) {
-                        final Data key = in.readData();
-                        if (key.dataSize() == 0) {
-                            //empty data received so reading done here
-                            break;
-                        }
-                        final CacheRecord record = in.readObject();
-                        m.put(key, record);
-                    }
+        for (int i = 0; i < count; i++) {
+            int subCount = in.readInt();
+            String name = in.readUTF();
+            Map<Data, CacheRecord> m = new HashMap<Data, CacheRecord>(subCount);
+            data.put(name, m);
+            for (int j = 0; j < subCount; j++) {
+                Data key = in.readData();
+                if (key.dataSize() == 0) {
+                    //empty data received so reading done here
+                    break;
                 }
+                CacheRecord record = in.readObject();
+                m.put(key, record);
             }
         }
     }

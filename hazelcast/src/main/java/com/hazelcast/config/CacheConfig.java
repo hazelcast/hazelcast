@@ -33,13 +33,13 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  */
 public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
+    private String name;
+    private String managerPrefix;
+    private String uriString;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    private String name;
-    private String managerPrefix;
-    private String uriString;
     private NearCacheConfig nearCacheConfig;
 
     public CacheConfig() {
@@ -50,8 +50,12 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         super(configuration);
         if (configuration instanceof CacheConfig) {
             final CacheConfig config = (CacheConfig) configuration;
-            this.backupCount = config.backupCount;
+            this.name = config.name;
+            this.managerPrefix = config.managerPrefix;
+            this.uriString = config.uriString;
             this.asyncBackupCount = config.asyncBackupCount;
+            this.backupCount = config.backupCount;
+            this.inMemoryFormat = config.inMemoryFormat;
             this.evictionPolicy = config.evictionPolicy;
             if (config.nearCacheConfig != null) {
                 this.nearCacheConfig = new NearCacheConfig(config.nearCacheConfig);
@@ -246,7 +250,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 out.writeObject(cc);
             }
         }
-
     }
 
     @Override
@@ -287,7 +290,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
             }
         }
-
     }
 
     @Override
@@ -325,4 +327,13 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         return super.equals(o);
     }
 
+    @Override
+    public String toString() {
+        return "CacheConfig{"
+                + "name='" + name + '\''
+                + ", managerPrefix='" + managerPrefix + '\''
+                + ", inMemoryFormat=" + inMemoryFormat
+                + ", backupCount=" + backupCount
+                + '}';
+    }
 }

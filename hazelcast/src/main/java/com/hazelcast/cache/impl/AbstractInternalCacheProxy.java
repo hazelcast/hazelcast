@@ -17,19 +17,13 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.operation.AbstractMutatingCacheOperation;
-import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
-import com.hazelcast.cache.impl.operation.CacheGetAndRemoveOperation;
-import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
-import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
-import com.hazelcast.cache.impl.operation.CachePutOperation;
-import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
-import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
+import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -47,13 +41,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
  * of cache operations like put, replace, remove and invoke. These internal implementations are delegated
  * by actual cache methods.
- *
+ * <p/>
  * <p>Note: this partial implementation is used by server or embedded mode cache.</p>
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  * @see com.hazelcast.cache.impl.CacheProxy
@@ -71,7 +67,7 @@ abstract class AbstractInternalCacheProxy<K, V>
     private final Object completionRegistrationMutex = new Object();
     private volatile String completionRegistrationId;
 
-    protected AbstractInternalCacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService) {
+    protected AbstractInternalCacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
@@ -82,8 +78,8 @@ abstract class AbstractInternalCacheProxy<K, V>
         Integer completionId = null;
         if (completionOperation) {
             completionId = registerCompletionLatch(1);
-            if (op instanceof AbstractMutatingCacheOperation) {
-                ((AbstractMutatingCacheOperation) op).setCompletionId(completionId);
+            if (op instanceof MutableOperation) {
+                ((MutableOperation) op).setCompletionId(completionId);
             }
         }
         try {
@@ -118,12 +114,12 @@ abstract class AbstractInternalCacheProxy<K, V>
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
         }
         final Data keyData = serializationService.toData(key);
-        final Data valueData = oldValue != null ? serializationService.toData(oldValue) : null;
+        final Data valueData = serializationService.toData(oldValue);
         final Operation operation;
         if (isGet) {
-            operation = new CacheGetAndRemoveOperation(getDistributedObjectName(), keyData);
+            operation = operationProvider.createGetAndRemoveOperation(keyData, IGNORE_COMPLETION);
         } else {
-            operation = new CacheRemoveOperation(getDistributedObjectName(), keyData, valueData);
+            operation = operationProvider.createRemoveOperation(keyData, valueData, IGNORE_COMPLETION);
         }
         return invoke(operation, keyData, withCompletionEvent);
     }
@@ -140,13 +136,14 @@ abstract class AbstractInternalCacheProxy<K, V>
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, newValue);
         }
         final Data keyData = serializationService.toData(key);
-        final Data oldValueData = oldValue != null ? serializationService.toData(oldValue) : null;
+        final Data oldValueData = serializationService.toData(oldValue);
         final Data newValueData = serializationService.toData(newValue);
         final Operation operation;
         if (isGet) {
-            operation = new CacheGetAndReplaceOperation(getDistributedObjectName(), keyData, newValueData, expiryPolicy);
+            operation = operationProvider.createGetAndReplaceOperation(keyData, newValueData, expiryPolicy, IGNORE_COMPLETION);
         } else {
-            operation = new CacheReplaceOperation(getDistributedObjectName(), keyData, oldValueData, newValueData, expiryPolicy);
+            operation = operationProvider.createReplaceOperation(keyData, oldValueData, newValueData,
+                    expiryPolicy, IGNORE_COMPLETION);
         }
         return invoke(operation, keyData, withCompletionEvent);
     }
@@ -158,7 +155,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = serializationService.toData(key);
         final Data valueData = serializationService.toData(value);
-        final Operation op = new CachePutOperation(getDistributedObjectName(), keyData, valueData, expiryPolicy, isGet);
+        final Operation op = operationProvider.createPutOperation(keyData, valueData, expiryPolicy, isGet, IGNORE_COMPLETION);
         return invoke(op, keyData, withCompletionEvent);
     }
 
@@ -169,11 +166,38 @@ abstract class AbstractInternalCacheProxy<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = serializationService.toData(key);
         final Data valueData = serializationService.toData(value);
-        final Operation op = new CachePutIfAbsentOperation(getDistributedObjectName(), keyData, valueData, expiryPolicy);
-        return invoke(op, keyData, withCompletionEvent);
+//        final Operation op = new CachePutIfAbsentOperation(getDistributedObjectName(), keyData, valueData, expiryPolicy);
+        Operation operation = operationProvider.createPutIfAbsentOperation(keyData, valueData, expiryPolicy, IGNORE_COMPLETION);
+        return invoke(operation, keyData, withCompletionEvent);
     }
 
-    protected void removeAllInternal(Set<? extends K> keys, boolean isRemoveAll) {
+    protected void clearInternal() {
+        final int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
+        final Integer completionId = registerCompletionLatch(partitionCount);
+        final OperationService operationService = getNodeEngine().getOperationService();
+        OperationFactory operationFactory = operationProvider.createClearOperationFactory(completionId);
+        try {
+            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
+            int completionCount = 0;
+            for (Object result : results.values()) {
+                if (result != null && result instanceof CacheClearResponse) {
+                    final Object response = ((CacheClearResponse) result).getResponse();
+                    if (response instanceof Boolean) {
+                        completionCount++;
+                    }
+                    if (response instanceof Throwable) {
+                        throw (Throwable) response;
+                    }
+                }
+            }
+            waitCompletionLatch(completionId, partitionCount - completionCount);
+        } catch (Throwable t) {
+            deregisterCompletionLatch(completionId);
+            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
+        }
+    }
+
+    protected void removeAllInternal(Set<? extends K> keys) {
         final Set<Data> keysData;
         if (keys != null) {
             keysData = new HashSet<Data>();
@@ -186,8 +210,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         final int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
         final Integer completionId = registerCompletionLatch(partitionCount);
         final OperationService operationService = getNodeEngine().getOperationService();
-        final CacheClearOperationFactory operationFactory = new CacheClearOperationFactory(getDistributedObjectName(), keysData,
-                isRemoveAll, completionId);
+        OperationFactory operationFactory = operationProvider.createRemoveAllOperationFactory(keysData, completionId);
         try {
             final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
             int completionCount = 0;
@@ -232,7 +255,7 @@ abstract class AbstractInternalCacheProxy<K, V>
     }
 
     public void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
-        final CacheService service = getService();
+        final ICacheService service = getService();
         for (String regId : listenerRegistrations) {
             service.deregisterListener(nameWithPrefix, regId);
         }
@@ -267,7 +290,7 @@ abstract class AbstractInternalCacheProxy<K, V>
             syncLocks.put(id, countDownLatch);
             return id;
         }
-        return AbstractMutatingCacheOperation.IGNORE_COMPLETION;
+        return IGNORE_COMPLETION;
     }
 
     protected void deregisterCompletionLatch(Integer countDownLatchId) {
@@ -304,7 +327,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         if (!syncListenerRegistrations.isEmpty() && completionRegistrationId == null) {
             synchronized (completionRegistrationMutex) {
                 if (completionRegistrationId == null) {
-                    final CacheService service = getService();
+                    final ICacheService service = getService();
                     CacheEventListener entryListener = new CacheCompletionEventListener();
                     completionRegistrationId = service.registerListener(getDistributedObjectName(), entryListener);
                 }
@@ -316,7 +339,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         if (syncListenerRegistrations.isEmpty() && completionRegistrationId != null) {
             synchronized (completionRegistrationMutex) {
                 if (completionRegistrationId != null) {
-                    final CacheService service = getService();
+                    final ICacheService service = getService();
                     final boolean isDeregistered = service
                             .deregisterListener(getDistributedObjectName(), completionRegistrationId);
                     if (isDeregistered) {

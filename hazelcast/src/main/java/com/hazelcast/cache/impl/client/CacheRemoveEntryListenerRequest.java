@@ -24,6 +24,7 @@ import java.security.Permission;
 
 /**
  * Client request which unregisters the event listener on behalf of the client.
+ *
  * @see com.hazelcast.cache.impl.CacheService#deregisterListener(String, String)
  */
 public class CacheRemoveEntryListenerRequest

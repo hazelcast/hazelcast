@@ -19,45 +19,35 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * {@link OperationFactory} implementation for Clear Operations.
- * <p>Clear operation has two main purposes;
- * <ul>
- *     <li>Remove all internal data using <code>isRemoveAll</code>.</li>
- *     <li>Remove the entries of the provided keys.</li>
- * </ul></p>
+ * Clear operation will clear data without sending any events;
+ *
  * @see OperationFactory
  */
 public class CacheClearOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;
-    private Set<Data> keys;
-    private boolean isRemoveAll;
     private int completionId;
 
     public CacheClearOperationFactory() {
     }
 
-    public CacheClearOperationFactory(String name, Set<Data> keys, boolean isRemoveAll, int completionId) {
+    public CacheClearOperationFactory(String name, int completionId) {
         this.name = name;
-        this.keys = keys;
-        this.isRemoveAll = isRemoveAll;
         this.completionId = completionId;
     }
 
     @Override
     public Operation createOperation() {
-        return new CacheClearOperation(name, keys, isRemoveAll, completionId);
+        return new CacheClearOperation(name, completionId);
     }
 
     @Override
@@ -74,31 +64,13 @@ public class CacheClearOperationFactory
     public void writeData(ObjectDataOutput out)
             throws IOException {
         out.writeUTF(name);
-        out.writeBoolean(isRemoveAll);
         out.writeInt(completionId);
-        out.writeBoolean(keys != null);
-        if (keys != null) {
-            out.writeInt(keys.size());
-            for (Data key : keys) {
-                out.writeData(key);
-            }
-        }
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
         name = in.readUTF();
-        isRemoveAll = in.readBoolean();
         completionId = in.readInt();
-        boolean isKeysNotNull = in.readBoolean();
-        if (isKeysNotNull) {
-            int size = in.readInt();
-            keys = new HashSet<Data>(size);
-            for (int i = 0; i < size; i++) {
-                Data key = in.readData();
-                keys.add(key);
-            }
-        }
     }
 }

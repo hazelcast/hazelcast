@@ -27,12 +27,12 @@ import com.hazelcast.spi.NodeEngine;
  *</p>
  */
 public class CacheDistributedObject
-        extends AbstractDistributedObject<CacheService> {
+        extends AbstractDistributedObject<ICacheService> {
 
     private String name;
     private boolean isDestroy;
 
-    protected CacheDistributedObject(String name, NodeEngine nodeEngine, CacheService service) {
+    protected CacheDistributedObject(String name, NodeEngine nodeEngine, ICacheService service) {
         super(nodeEngine, service);
         this.name = name;
     }

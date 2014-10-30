@@ -44,9 +44,13 @@ public class NativeMemoryConfig {
      */
     public static final float DEFAULT_METADATA_SPACE_PERCENTAGE = 12.5f;
     /**
+     * Minimum initial memory size in megabytes
+     */
+    public static final int MIN_INITIAL_MEMORY_SIZE = 512;
+    /**
      * Initial memory size in megabytes
      */
-    public static final int INITIAL_MEMORY_SIZE = 64;
+    public static final int INITIAL_MEMORY_SIZE = MIN_INITIAL_MEMORY_SIZE;
 
     private boolean enabled;
     private MemorySize size = new MemorySize(INITIAL_MEMORY_SIZE, MemoryUnit.MEGABYTES);

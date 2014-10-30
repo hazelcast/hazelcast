@@ -31,7 +31,7 @@ import com.hazelcast.cache.impl.client.CachePutRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
-import com.hazelcast.cache.impl.operation.AbstractMutatingCacheOperation;
+import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
@@ -65,8 +65,9 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
  * of cache operations like put, replace, remove and invoke. These internal implementations are delegated
  * by actual cache methods.
- *
+ * <p/>
  * <p>Note: this partial implementation is used by client.</p>
+ *
  * @param <K> the type of key
  * @param <V> the type of value
  */
@@ -223,7 +224,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        final CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData, expiryPolicy);
+        CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData, expiryPolicy);
         ICompletableFuture<Boolean> future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -347,7 +348,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             syncLocks.put(id, countDownLatch);
             return id;
         }
-        return AbstractMutatingCacheOperation.IGNORE_COMPLETION;
+        return MutableOperation.IGNORE_COMPLETION;
     }
 
     protected void deregisterCompletionLatch(Integer countDownLatchId) {

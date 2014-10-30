@@ -26,35 +26,43 @@ import com.hazelcast.nio.serialization.SerializationService;
  * {@link com.hazelcast.cache.impl.record.AbstractCacheRecord}
  * depending on the configured inMemoryFormat.</p>
  */
-public class CacheRecordFactory {
+public class CacheRecordFactory<R extends CacheRecord> {
 
-    private InMemoryFormat inMemoryFormat;
-    private SerializationService serializationService;
+    protected InMemoryFormat inMemoryFormat;
+    protected SerializationService serializationService;
 
     public CacheRecordFactory(InMemoryFormat inMemoryFormat, SerializationService serializationService) {
         this.inMemoryFormat = inMemoryFormat;
         this.serializationService = serializationService;
     }
 
-    public CacheRecord newRecord(Data key, Object value) {
-        return newRecordWithExpiry(key, value, -1);
+    public R newRecord(Object value) {
+        return newRecordWithExpiry(value, -1);
     }
 
-    public CacheRecord newRecordWithExpiry(Data key, Object value, long expiryTime) {
-        final CacheRecord record;
+    public R newRecordWithExpiry(Object value, long expiryTime) {
+        final R record;
         switch (inMemoryFormat) {
             case BINARY:
                 Data dataValue = serializationService.toData(value);
-                record = new CacheDataRecord(key, dataValue, expiryTime);
+                record = (R) createCacheDataRecord(dataValue, expiryTime);
                 break;
             case OBJECT:
                 Object objectValue = serializationService.toObject(value);
-                record = new CacheObjectRecord(key, objectValue, expiryTime);
+                record = (R) createCacheObjectRecord(objectValue, expiryTime);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + inMemoryFormat);
         }
         return record;
+    }
+
+    protected CacheRecord createCacheDataRecord(Data dataValue, long expiryTime) {
+        return new CacheDataRecord(dataValue, expiryTime);
+    }
+
+    protected CacheRecord createCacheObjectRecord(Object objectValue, long expiryTime) {
+        return new CacheObjectRecord(objectValue, expiryTime);
     }
 
     /**

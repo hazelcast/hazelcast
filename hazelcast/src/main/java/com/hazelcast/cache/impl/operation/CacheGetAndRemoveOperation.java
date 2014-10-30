@@ -32,10 +32,6 @@ public class CacheGetAndRemoveOperation
     public CacheGetAndRemoveOperation() {
     }
 
-    public CacheGetAndRemoveOperation(String name, Data key) {
-        this(name, key, IGNORE_COMPLETION);
-    }
-
     public CacheGetAndRemoveOperation(String name, Data key, int completionId) {
         super(name, key, completionId);
     }

@@ -18,79 +18,52 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.serialization.HeapData;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.CacheException;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
- * Cache Clear is a "remove all" operation with or without a set of keys provided.
- * <p><code>isRemoveAll</code> will delete all internal cache data without doing anything but deletion.</p>
+ * Cache Clear will clear all internal cache data without sending any event
  */
 public class CacheClearOperation
         extends PartitionWideCacheOperation
         implements BackupAwareOperation {
 
-    private boolean isRemoveAll;
-    private Set<Data> keys;
+
     private int completionId;
-
-    private boolean shouldBackup;
-
-    private transient Set<Data> backupKeys = new HashSet<Data>();
 
     private transient ICacheRecordStore cache;
 
     public CacheClearOperation() {
     }
 
-    public CacheClearOperation(String name, Set<Data> keys, boolean isRemoveAll, int completionId) {
+    public CacheClearOperation(String name, int completionId) {
         super(name);
-        this.keys = keys;
-        this.isRemoveAll = isRemoveAll;
         this.completionId = completionId;
     }
 
     @Override
+    public void beforeRun() throws Exception {
+        ICacheService service = getService();
+        cache = service.getCacheRecordStore(name, getPartitionId());
+    }
+
+    @Override
     public void run() {
-        CacheService service = getService();
-        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
-
-        cache = service.getCache(name, getPartitionId());
-        if (cache != null) {
-            Set<Data> filteredKeys = new HashSet<Data>();
-            if (keys != null) {
-                for (Data k : keys) {
-                    if (partitionService.getPartitionId(k) == getPartitionId()) {
-                        filteredKeys.add(k);
-                    }
-                }
-            }
-            try {
-                if (keys == null || !filteredKeys.isEmpty()) {
-                    cache.clear(filteredKeys, isRemoveAll);
-                    response = new CacheClearResponse(Boolean.TRUE);
-                    int orderKey = keys != null ? keys.hashCode() : 1;
-                    cache.publishCompletedEvent(name, completionId, new HeapData(), orderKey);
-                }
-            } catch (CacheException e) {
-                response = new CacheClearResponse(e);
-            }
-            shouldBackup = !filteredKeys.isEmpty();
-            if (shouldBackup) {
-                for (Data key : filteredKeys) {
-                    backupKeys.add(key);
-                }
-            }
-
+        if (cache == null) {
+            return;
         }
+        try {
+            cache.clear();
+            response = new CacheClearResponse(Boolean.TRUE);
+        } catch (CacheException e) {
+            response = new CacheClearResponse(e);
+        }
+        cache.publishCompletedEvent(name, completionId, new HeapData(), 1);
     }
 
     @Override
@@ -100,7 +73,7 @@ public class CacheClearOperation
 
     @Override
     public boolean shouldBackup() {
-        return shouldBackup;
+        return true;
     }
 
     @Override
@@ -115,7 +88,7 @@ public class CacheClearOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new CacheClearBackupOperation(name, backupKeys);
+        return new CacheClearBackupOperation(name);
     }
 
 }

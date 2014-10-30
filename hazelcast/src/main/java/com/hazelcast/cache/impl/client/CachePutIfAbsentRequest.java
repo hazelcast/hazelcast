@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -30,6 +31,7 @@ import java.io.IOException;
 
 /**
  * This client request  specifically calls {@link CachePutIfAbsentOperation} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation
  */
 public class CachePutIfAbsentRequest
@@ -60,12 +62,13 @@ public class CachePutIfAbsentRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CachePutIfAbsentOperation(name, key, value, expiryPolicy, completionId);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createPutIfAbsentOperation(key, value, expiryPolicy, completionId);
     }
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
@@ -75,7 +78,7 @@ public class CachePutIfAbsentRequest
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();

@@ -66,8 +66,9 @@
     <suppress checks="MethodLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
     <suppress checks="AnonInnerLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.config.CacheConfig"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
+    <suppress checks="NPathComplexity|CyclomaticComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
+    <suppress checks="MethodCount|ParameterNumber" files="com.hazelcast.cache.impl.AbstractCacheRecordStore"/>
+    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractCacheService"/>
 
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>

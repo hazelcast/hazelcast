@@ -14,21 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.record;
+package com.hazelcast.cache.impl.operation;
 
-/**
- * <p>
- * An expirable data object which represents a cache entry.
- * </p>
- * Record of {@link com.hazelcast.cache.impl.ICacheRecordStore}.
- *
- * @param <V>
- */
-public interface CacheRecord<V>
-        extends Expirable {
+public interface MutableOperation {
 
-    V getValue();
+    /**
+     * Completion Id to be ignored.
+     */
+    int IGNORE_COMPLETION = -1;
 
-    void setValue(V value);
+    int getCompletionId();
+    void setCompletionId(int completionId);
 
 }

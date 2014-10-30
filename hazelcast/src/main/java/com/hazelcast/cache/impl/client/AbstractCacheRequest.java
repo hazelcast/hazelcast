@@ -16,11 +16,17 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 
+import java.io.IOException;
 import java.security.Permission;
 
 /**
@@ -50,9 +56,24 @@ public abstract class AbstractCacheRequest
     public void setCompletionId(Integer completionId) {
     }
 
+    protected CacheOperationProvider getOperationProvider() {
+        ICacheService service = getService();
+        CacheConfig cacheConfig = service.getCacheConfig(name);
+        return service.getCacheOperationProvider(name, cacheConfig.getInMemoryFormat());
+    }
+
     @Override
     public Permission getRequiredPermission() {
         return null;
     }
 
+    public void write(PortableWriter writer)
+            throws IOException {
+        writer.writeUTF("n", name);
+    }
+
+    public void read(PortableReader reader)
+            throws IOException {
+        name = reader.readUTF("n");
+    }
 }
