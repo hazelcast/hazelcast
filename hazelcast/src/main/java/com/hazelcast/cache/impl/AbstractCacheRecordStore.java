@@ -72,6 +72,7 @@ public abstract class AbstractCacheRecordStore<
     protected boolean isEventBatchingEnabled;
     protected ExpiryPolicy defaultExpiryPolicy;
     protected final EvictionPolicy evictionPolicy;
+    protected volatile boolean hasExpiringEntry;
     protected final boolean evictionEnabled;
     protected final int evictionPercentage;
     protected final float evictionThreshold;
@@ -167,6 +168,14 @@ public abstract class AbstractCacheRecordStore<
 
     protected abstract boolean isEvictionRequired();
 
+    protected void updateHasExpiringEntry(R record) {
+        if (record != null) {
+            if (!hasExpiringEntry && record.getExpirationTime() >= 0) {
+                hasExpiringEntry = true;
+            }
+        }
+    }
+
     @Override
     public int evictIfRequired() {
         if (evictionEnabled) {
@@ -185,7 +194,12 @@ public abstract class AbstractCacheRecordStore<
     @Override
     public int forceEvict() {
         int percentage = Math.max(MIN_FORCED_EVICT_PERCENTAGE, evictionPercentage);
-        return records.evictRecords(percentage, EvictionPolicy.RANDOM);
+        int evicted = 0;
+        if (hasExpiringEntry) {
+            evicted = records.evictExpiredRecords(ONE_HUNDRED_PERCENT);
+        }
+        evicted += records.evictRecords(percentage, EvictionPolicy.RANDOM);
+        return evicted;
     }
 
     protected ScheduledFuture<?> createEvictionTaskFuture() {
@@ -433,6 +447,7 @@ public abstract class AbstractCacheRecordStore<
 
     protected R createRecord(Data keyData, Object value, long expirationTime) {
         final R record = createRecord(value, expirationTime);
+        updateHasExpiringEntry(record);
         if (isEventsEnabled) {
             Data dataValue = toEventData(value);
             publishEvent(name, CacheEventType.CREATED, keyData, null, dataValue, false);
@@ -515,6 +530,8 @@ public abstract class AbstractCacheRecordStore<
             record.setValue(v);
             onAfterUpdateRecord(key, record, value, dataOldValue);
 
+            updateHasExpiringEntry(record);
+
             if (isEventsEnabled) {
                 publishEvent(name, CacheEventType.UPDATED, eventDataKey,
                         eventDataOldValue, eventDataValue, true);
@@ -580,6 +597,10 @@ public abstract class AbstractCacheRecordStore<
             Data eventDataValue = toEventData(dataValue);
 
             onDeleteRecord(key, record, dataValue, record != null);
+
+            if (records.size() == 0) {
+                hasExpiringEntry = false;
+            }
 
             if (isEventsEnabled) {
                 publishEvent(name, CacheEventType.REMOVED, eventDataKey,
@@ -821,6 +842,8 @@ public abstract class AbstractCacheRecordStore<
 
             updateGetAndPutStat(isSaveSucceed, getValue, oldValue == null, start);
 
+            updateHasExpiringEntry(record);
+
             return oldValue;
         } catch (Throwable error) {
             onGetAndPutError(key, value, expiryPolicy, caller, getValue, disableWriteThrough,
@@ -905,6 +928,8 @@ public abstract class AbstractCacheRecordStore<
             onAfterPutIfAbsent(key, value, expiryPolicy, caller,
                                disableWriteThrough, record, isExpired, result);
 
+            updateHasExpiringEntry(record);
+
             if (result && isStatisticsEnabled()) {
                 statistics.increaseCachePuts(1);
                 statistics.addPutTimeNanos(System.nanoTime() - start);
@@ -960,6 +985,8 @@ public abstract class AbstractCacheRecordStore<
         onAfterGetAndReplace(key, null, value, expiryPolicy, caller,
                              false, record, isExpired, result);
 
+        updateHasExpiringEntry(record);
+
         if (isStatisticsEnabled()) {
             statistics.addGetTimeNanos(System.nanoTime() - start);
             if (result) {
@@ -1009,6 +1036,8 @@ public abstract class AbstractCacheRecordStore<
 
         updateReplaceStat(result, isHit, start);
 
+        updateHasExpiringEntry(record);
+
         return result;
     }
 
@@ -1040,6 +1069,8 @@ public abstract class AbstractCacheRecordStore<
 
         onAfterGetAndReplace(key, null, value, expiryPolicy, caller,
                              false, record, isExpired, result);
+
+        updateHasExpiringEntry(record);
 
         if (isStatisticsEnabled()) {
             statistics.addGetTimeNanos(System.nanoTime() - start);
@@ -1078,6 +1109,10 @@ public abstract class AbstractCacheRecordStore<
 
         onRemove(key, null, caller, false, record, result);
 
+        if (records.size() == 0) {
+            hasExpiringEntry = false;
+        }
+
         if (result && isStatisticsEnabled()) {
             statistics.increaseCacheRemovals(1);
             statistics.addRemoveTimeNanos(System.nanoTime() - start);
@@ -1115,6 +1150,10 @@ public abstract class AbstractCacheRecordStore<
 
         onRemove(key, value, caller, false, record, result);
 
+        if (records.size() == 0) {
+            hasExpiringEntry = false;
+        }
+
         if (result && isStatisticsEnabled()) {
             statistics.increaseCacheRemovals(1);
             statistics.addRemoveTimeNanos(System.nanoTime() - start);
@@ -1149,6 +1188,10 @@ public abstract class AbstractCacheRecordStore<
         }
 
         onRemove(key, null, caller, false, record, result);
+
+        if (records.size() == 0) {
+            hasExpiringEntry = false;
+        }
 
         if (isStatisticsEnabled()) {
             statistics.addGetTimeNanos(System.nanoTime() - start);
@@ -1210,6 +1253,7 @@ public abstract class AbstractCacheRecordStore<
                     keys.remove(key);
                 }
                 isEventBatchingEnabled = false;
+                hasExpiringEntry = false;
                 int orderKey = keys.hashCode();
                 publishBatchedEvents(name, CacheEventType.REMOVED, orderKey);
             }

@@ -30,14 +30,10 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.util.EmptyStatement;
 
-import javax.cache.configuration.Factory;
-import javax.cache.integration.CacheLoader;
-import javax.cache.integration.CacheWriter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
@@ -68,30 +64,13 @@ public class CacheRecordStore
 
     protected SerializationService serializationService;
     protected CacheRecordFactory cacheRecordFactory;
-    protected boolean hasExpiringEntry;
-    protected final ScheduledFuture<?> evictionTaskFuture;
 
     public CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine,
                      AbstractCacheService cacheService) {
         super(name, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
-        if (cacheConfig.getCacheLoaderFactory() != null) {
-            final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
-            cacheLoader = cacheLoaderFactory.create();
-        }
-        if (cacheConfig.getCacheWriterFactory() != null) {
-            final Factory<CacheWriter> cacheWriterFactory = cacheConfig.getCacheWriterFactory();
-            cacheWriter = cacheWriterFactory.create();
-        }
         this.records = createRecordCacheMap();
         this.cacheRecordFactory = createCacheRecordFactory();
-        this.evictionTaskFuture =
-                nodeEngine.getExecutionService()
-                        .scheduleWithFixedDelay("hz:cache",
-                                new EvictionTask(),
-                                DEFAULT_EVICTION_TASK_INITIAL_DELAY,
-                                DEFAULT_EVICTION_TASK_PERIOD,
-                                TimeUnit.SECONDS);
     }
 
     @Override
@@ -233,25 +212,6 @@ public class CacheRecordStore
         ScheduledFuture<?> f = evictionTaskFuture;
         if (f != null) {
             f.cancel(true);
-        }
-    }
-
-    public int evictExpiredRecords() {
-        //TODO: Evict expired records and returns count of evicted records
-        return 0;
-    }
-
-    @Override
-    public int forceEvict() {
-        return evictExpiredRecords();
-    }
-
-    protected class EvictionTask implements Runnable {
-
-        public void run() {
-            if (hasExpiringEntry) {
-                evictExpiredRecords();
-            }
         }
     }
 
