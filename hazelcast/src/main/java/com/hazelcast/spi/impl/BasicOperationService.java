@@ -1029,7 +1029,7 @@ final class BasicOperationService implements InternalOperationService {
 
                 if (result == WriteResult.FULL) {
                     fullConnectionEncountered = true;
-
+                    logger.severe("Back pressure applied on async backup calls");
                     if (lastFullTimeMs + 10000 > System.currentTimeMillis()) {
                         lastFullTimeMs = System.currentTimeMillis();
 
