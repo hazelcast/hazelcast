@@ -141,9 +141,9 @@ public class HazelcastServerCacheManager
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix) {
+    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix, String cacheName) {
         //remote check
-        final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix);
+        final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix, cacheName);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
                 .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);

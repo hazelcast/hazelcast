@@ -133,8 +133,8 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName) {
-        ClientRequest request = new CacheGetConfigRequest(cacheName);
+    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName,String simpleCacheName) {
+        ClientRequest request = new CacheGetConfigRequest(cacheName, simpleCacheName);
         try {
             final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheName);
             return clientContext.getSerializationService().toObject(future.get());

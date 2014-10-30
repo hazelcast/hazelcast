@@ -18,7 +18,11 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
+
+import java.io.IOException;
 
 /**
  * This client request  specifically calls {@link CacheGetConfigOperation} on the server side.
@@ -28,11 +32,14 @@ import com.hazelcast.spi.Operation;
 public class CacheGetConfigRequest
         extends AbstractCacheRequest {
 
+    private String simpleName;
+
     public CacheGetConfigRequest() {
     }
 
-    public CacheGetConfigRequest(String cacheName) {
+    public CacheGetConfigRequest(String cacheName,String simpleName) {
         super(cacheName);
+        this.simpleName = simpleName;
     }
 
     @Override
@@ -42,11 +49,23 @@ public class CacheGetConfigRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheGetConfigOperation(name);
+        return new CacheGetConfigOperation(name, simpleName);
     }
 
     public int getClassId() {
         return CachePortableHook.GET_CONFIG;
+    }
+
+    public void write(PortableWriter writer)
+            throws IOException {
+        super.write(writer);
+        writer.writeUTF("s", simpleName);
+    }
+
+    public void read(PortableReader reader)
+            throws IOException {
+        super.read(reader);
+        simpleName = reader.readUTF("s");
     }
 
 }

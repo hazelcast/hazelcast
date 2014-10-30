@@ -17,13 +17,18 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.AbstractHazelcastCachingProvider;
+import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.net.URI;
+import java.net.URL;
 import java.util.Properties;
 
 /**
@@ -56,23 +61,30 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
     }
 
     @Override
-    protected HazelcastClientCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader,
-                                                                                         Properties managerProperties) {
+    protected HazelcastClientCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties properties) {
         final HazelcastInstance instance;
-        if (getDefaultURI().equals(uri) || uri == null) {
+        //uri is null or default or a non hazelcast one, then we use the internal shared instance
+        if (uri == null || uri.equals(getDefaultURI()) || !(HAZELCAST_CONFIG_URI_SCHEMA.equals(uri.getScheme())
+                || HAZELCAST_NAME_URI_SCHEMA.equals(uri.getScheme()))) {
             if (hazelcastInstance == null) {
                 initHazelcast();
             }
             instance = hazelcastInstance;
+        } else if (HAZELCAST_NAME_URI_SCHEMA.equals(uri.getScheme())) {
+            //named instance
+            instance = HazelcastClient.getHazelcastClientByName(uri.getRawSchemeSpecificPart());
         } else {
+            //it means that it is a Hazelcast config schema
+            final String rawURLStr = uri.getRawSchemeSpecificPart();
             try {
-                final ClientConfig clientConfig = new XmlClientConfigBuilder(uri.toURL()).build();
-                instance = HazelcastClient.newHazelcastClient(clientConfig);
+                URL configURL = new URL(rawURLStr);
+                final ClientConfig config = new XmlClientConfigBuilder(configURL).build();
+                instance = HazelcastClient.newHazelcastClient(config);
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
         }
-        return new HazelcastClientCacheManager(this, instance, uri, classLoader, managerProperties);
+        return new HazelcastClientCacheManager(this, instance, uri, classLoader, properties);
     }
 
     @Override

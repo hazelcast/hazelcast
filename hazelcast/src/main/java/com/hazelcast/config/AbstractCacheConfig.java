@@ -16,28 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Base class for {@link CacheConfig}
  */
-abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>, DataSerializable {
-
-    /**
-     * The number of minimum backup counter
-     */
-    public static final int MIN_BACKUP_COUNT = 0;
-    /**
-     * The number of maximum backup counter
-     */
-    public static final int MAX_BACKUP_COUNT = 6;
-    /**
-     * The number of default backup counter
-     */
-    public static final int DEFAULT_BACKUP_COUNT = 1;
-    /**
-     * Default InMemory Format.
-     */
-    public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
-    /**
-     * Default Eviction Policy.
-     */
-    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
+abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, DataSerializable {
 
 
     /**
@@ -143,7 +122,7 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
      * @throws IllegalArgumentException is the same CacheEntryListenerConfiguration
      *                                  is used more than once
      */
-    public CompleteConfiguration<K, V> addCacheEntryListenerConfiguration(
+    public CacheConfiguration<K, V> addCacheEntryListenerConfiguration(
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
 
         if (cacheEntryListenerConfiguration == null) {
@@ -162,7 +141,7 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
      * @param cacheEntryListenerConfiguration the {@link CacheEntryListenerConfiguration} to remove
      * @return the {@link CacheConfig}
      */
-    public CompleteConfiguration<K, V> removeCacheEntryListenerConfiguration(
+    public CacheConfiguration<K, V> removeCacheEntryListenerConfiguration(
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
@@ -182,8 +161,20 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
     }
 
     @Override
+    public CacheConfiguration<K, V> setReadThrough(boolean isReadThrough) {
+        this.isReadThrough = isReadThrough;
+        return this;
+    }
+
+    @Override
     public boolean isWriteThrough() {
         return isWriteThrough;
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setWriteThrough(boolean isWriteThrough) {
+        this.isWriteThrough = isWriteThrough;
+        return this;
     }
 
     @Override
@@ -200,7 +191,7 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
      * @param enabled true to enable statistics, false to disable.
      * @return the {@link CacheConfig}
      */
-    public CompleteConfiguration<K, V> setStatisticsEnabled(boolean enabled) {
+    public CacheConfiguration<K, V> setStatisticsEnabled(boolean enabled) {
         this.isStatisticsEnabled = enabled;
         return this;
     }
@@ -219,7 +210,7 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
      * @param enabled true to enable statistics, false to disable.
      * @return the {@link CacheConfig}
      */
-    public CompleteConfiguration<K, V> setManagementEnabled(boolean enabled) {
+    public CacheConfiguration<K, V> setManagementEnabled(boolean enabled) {
         this.isManagementEnabled = enabled;
         return this;
     }
@@ -227,6 +218,24 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
     @Override
     public Factory<CacheLoader<K, V>> getCacheLoaderFactory() {
         return cacheLoaderFactory;
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setCacheLoaderFactory(Factory<? extends CacheLoader<K, V>> cacheLoaderFactory) {
+        this.cacheLoaderFactory = (Factory<CacheLoader<K, V>>) cacheLoaderFactory;
+        return this;
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setExpiryPolicyFactory(Factory<? extends ExpiryPolicy> expiryPolicyFactory) {
+        this.expiryPolicyFactory = (Factory<ExpiryPolicy>) expiryPolicyFactory;
+        return this;
+    }
+
+    @Override
+    public CacheConfiguration<K, V> setCacheWriterFactory(Factory<? extends CacheWriter<? super K, ? super V>> cacheWriterFactory) {
+        this.cacheWriterFactory = (Factory<CacheWriter<? super K, ? super V>>) cacheWriterFactory;
+        return this;
     }
 
     @Override
@@ -267,7 +276,7 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
      * @throws NullPointerException should the key or value type be null
      * @see javax.cache.CacheManager#getCache(String, Class, Class)
      */
-    public CompleteConfiguration<K, V> setTypes(Class<K> keyType, Class<V> valueType) {
+    public CacheConfiguration<K, V> setTypes(Class<K> keyType, Class<V> valueType) {
         if (keyType == null || valueType == null) {
             throw new NullPointerException("keyType and/or valueType can't be null");
         }
@@ -281,6 +290,7 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
         return isStoreByValue;
     }
 
+
     /**
      * Set if a configured cache should use store-by-value or store-by-reference
      * semantics.
@@ -289,7 +299,7 @@ abstract class AbstractCacheConfig<K, V> implements CompleteConfiguration<K, V>,
      *                     <code>false</code> for store-by-reference
      * @return the {@link CacheConfig}
      */
-    public CompleteConfiguration<K, V> setStoreByValue(boolean storeByValue) {
+    public CacheConfiguration<K, V> setStoreByValue(boolean storeByValue) {
         this.isStoreByValue = storeByValue;
         return this;
     }

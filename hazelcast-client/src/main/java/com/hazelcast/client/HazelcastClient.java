@@ -21,6 +21,7 @@ import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.util.EmptyStatement;
 
@@ -57,8 +58,8 @@ public final class HazelcastClient {
         OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
     }
 
-    private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS
-            = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
+    private static final ConcurrentMap<String, HazelcastClientProxy> CLIENTS
+            = new ConcurrentHashMap<String, HazelcastClientProxy>(5);
 
     // we don't want instances.
     private HazelcastClient() {
@@ -81,12 +82,23 @@ public final class HazelcastClient {
             client.start();
             OutOfMemoryErrorDispatcher.register(client);
             proxy = new HazelcastClientProxy(client);
-            CLIENTS.put(client.getId(), proxy);
+            CLIENTS.put(client.getName(), proxy);
         } finally {
             Thread.currentThread().setContextClassLoader(tccl);
         }
         return proxy;
     }
+
+    /**
+     * Returns an existing HazelcastClient with instanceName.
+     * <p/>
+     * @param instanceName Name of the HazelcastInstance (client) which can be retrieved by {@link HazelcastInstance#getName()}
+     * @return HazelcastInstance
+     */
+    public static HazelcastInstance getHazelcastClientByName(String instanceName) {
+        return CLIENTS.get(instanceName);
+    }
+
 
     /**
      * Gets an immutable collection of all client HazelcastInstances created in this JVM.
