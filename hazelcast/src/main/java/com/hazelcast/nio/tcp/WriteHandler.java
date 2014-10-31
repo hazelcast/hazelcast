@@ -101,7 +101,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         return socketWriter;
     }
 
-    public void enqueueSocketWritable(SocketWritable socketWritable) {
+    public void enque(SocketWritable socketWritable) {
         if (socketWritable.isUrgent()) {
             urgencyWriteQueue.offer(socketWritable);
         } else {

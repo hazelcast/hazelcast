@@ -76,16 +76,17 @@ public final class TcpIpConnection implements Connection {
     private final BackoffPolicy backoffPolicy = new ExponentialBackoffPolicy();
     private volatile int backoffState;
     private volatile long dontAskForSlotsBefore;
-
+    private final boolean backPressureEnabled;
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
-                           int connectionId, SocketChannelWrapper socketChannel) {
+                           int connectionId, SocketChannelWrapper socketChannel, boolean backPressureEnabled) {
         this.connectionId = connectionId;
         this.logger = connectionManager.ioService.getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
         this.readHandler = new ReadHandler(this, in);
         this.writeHandler = new WriteHandler(this, out);
+        this.backPressureEnabled = backPressureEnabled;
     }
 
     @Override
@@ -104,6 +105,11 @@ public final class TcpIpConnection implements Connection {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
             }
             return WriteResult.FAILURE;
+        }
+
+        if(!backPressureEnabled){
+            writeHandler.enque(packet);
+            return WriteResult.SUCCESS;
         }
 
         boolean full = false;
@@ -136,7 +142,7 @@ public final class TcpIpConnection implements Connection {
 
         // we are going to the packet no matter the queue is full because we can't store it locally.
         // because the future will not be waiting for all backups to complete, it will provide the back pressure
-        writeHandler.enqueueSocketWritable(packet);
+        writeHandler.enque(packet);
         return full ? WriteResult.FULL : WriteResult.SUCCESS;
     }
 
@@ -149,15 +155,15 @@ public final class TcpIpConnection implements Connection {
             return WriteResult.FAILURE;
         }
 
-        if (packet.isBackpressureAllowed()) {
-            return writeWithBackPressureApplied(packet);
+        if (backPressureEnabled && packet.isBackpressureAllowed()) {
+            return enqueWithBackPressure(packet);
         } else {
-            writeHandler.enqueueSocketWritable(packet);
+            writeHandler.enque(packet);
             return WriteResult.SUCCESS;
         }
     }
 
-    private WriteResult writeWithBackPressureApplied(SocketWritable packet) {
+    private WriteResult enqueWithBackPressure(SocketWritable packet) {
         WriteResult result = writeIfSlotAvailable(packet);
         if (result != WriteResult.FULL) {
             return result;
@@ -182,7 +188,7 @@ public final class TcpIpConnection implements Connection {
     private WriteResult writeIfSlotAvailable(SocketWritable packet) {
         int availSlotsNow = availableSlots.decrementAndGet();
         if (availSlotsNow >= 0) {
-            writeHandler.enqueueSocketWritable(packet);
+            writeHandler.enque(packet);
             return WriteResult.SUCCESS;
         }
         return WriteResult.FULL;
@@ -196,7 +202,7 @@ public final class TcpIpConnection implements Connection {
         Packet slotRequestPacket = new Packet(dummyData, ioService.getPortableContext());
         slotRequestPacket.setHeader(Packet.HEADER_CLAIM);
         slotRequestPacket.setHeader(Packet.HEADER_URGENT);
-        writeHandler.enqueueSocketWritable(slotRequestPacket);
+        writeHandler.enque(slotRequestPacket);
     }
 
     @Override
