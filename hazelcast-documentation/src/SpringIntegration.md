@@ -8,7 +8,8 @@
 
 ### Spring Configuration
 
-Please see our sample application for [Spring Configuration](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-configuration).
+***Sample Code***: *Please see our [sample application](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-configuration) for Spring Configuration.*
+<br></br>
 
 
 #### Bean Declaration by Spring *beans* Namespace 
@@ -356,7 +357,8 @@ Assert.assertEquals(bean.value, f2.get().longValue());
 ### Spring Cache
 
 
-Please see our sample application for [Spring Cache](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-cache-manager).
+***Sample Code***: *Please see our sample application for [Spring Cache](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-cache-manager).*
+<br></br>
 
 As of version 3.1, Spring Framework provides support for adding caching into an existing Spring application. 
 
@@ -410,7 +412,8 @@ For more information about Spring Cache, please see [Spring Cache Abstraction](h
 
 ### Hibernate 2nd Level Cache Config
 
-Please see our sample application for [Hibernate 2nd Level Cache Config](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-hibernate-2ndlevel-cache).
+***Sample Code***: *Please see our [sample application](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-hibernate-2ndlevel-cache) for Hibernate 2nd Level Cache Config.*
+<br></br>
 
 If you are using Hibernate with Hazelcast as 2nd level cache provider, you can easily create `RegionFactory` instances within Spring configuration (by Spring version 3.1). That way, it is possible to use same `HazelcastInstance` as Hibernate L2 cache instance.
 
