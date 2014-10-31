@@ -7,9 +7,9 @@
 ### New Features
 This section provides the new features introduced with Hazelcast 3.4 release. 
 
-- **Breakout Memory Store**: Used with Hazelcast JCache implementation, Breakout Memory Store has been introduced with this release. It is the enterprise grade backend storage solution. This solution minimizes the garbage collection pressure and thus enables predictable application scaling and boosts performance. For more information, please see [Breakout Memory Store](#hazelcast-breakout-memory-store).
-- **Jetty Based Session Replication**: We have introduced Jetty based web session replication with this release. It is a feature of Hazelcast Enterprise. It enables session replication for Java EE web applications, that are deployed into Jetty servlet containers, without performing any changes in those applications. For more information, please see [Jetty Based Web Session Replication](#jetty-based-web-session-replication).
-- **Hazelcast Configuration Import**: This feature enables to compose the Hazelcast declarative (XML) configuration file out of smaller configuration snippets. We have introduced an element named `<import>` for this purpose. For more information, please see [Composing XML Configuration](#composing-xml-configuration).
+- **Breakout Memory Store**: Used with the Hazelcast JCache implementation, Breakout Memory Store is introduced with this release. Breakout Memory Store is the enterprise grade backend storage solution. This solution minimizes the garbage collection pressure and thus enables predictable application scaling and boosts performance. For more information, please see [Breakout Memory Store](#hazelcast-breakout-memory-store).
+- **Jetty Based Session Replication**: We have introduced Jetty-based web session replication with this release. This is a feature of Hazelcast Enterprise. It enables session replication for Java EE web applications that are deployed into Jetty servlet containers, without having to perform any changes in those applications. For more information, please see [Jetty Based Web Session Replication](#jetty-based-web-session-replication).
+- **Hazelcast Configuration Import**: This feature, which is an element named `<import>`, enables you to compose the Hazelcast declarative (XML) configuration file out of smaller configuration snippets. For more information, please see [Composing XML Configuration](#composing-xml-configuration).
 
 
 
