@@ -5,7 +5,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.HeapData;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -83,7 +83,7 @@ public class CacheRemoveAllOperation extends PartitionWideCacheOperation impleme
             }
             response = new CacheClearResponse(Boolean.TRUE);
             int orderKey = keys != null ? keys.hashCode() : 1;
-            cache.publishCompletedEvent(name, completionId, new HeapData(), orderKey);
+            cache.publishCompletedEvent(name, completionId, new DefaultData(), orderKey);
         } catch (CacheException e) {
             response = new CacheClearResponse(e);
         }

@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.nio.serialization.HeapData;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
@@ -63,7 +63,7 @@ public class CacheClearOperation
         } catch (CacheException e) {
             response = new CacheClearResponse(e);
         }
-        cache.publishCompletedEvent(name, completionId, new HeapData(), 1);
+        cache.publishCompletedEvent(name, completionId, new DefaultData(), 1);
     }
 
     @Override

@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.HeapData;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
@@ -44,7 +44,7 @@ public class CacheKeyIteratorOperation
     }
 
     public CacheKeyIteratorOperation(String name, int tableIndex, int size) {
-        super(name, new HeapData());
+        super(name, new DefaultData());
         this.tableIndex = tableIndex;
         this.size = size;
     }

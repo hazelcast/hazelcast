@@ -146,7 +146,7 @@ public class PortableClassVersionTest {
         byte[] header = ((PortableDataOutput) out).getPortableHeader();
 
         // emulate socket read by reading data from stream
-        BufferObjectDataInput in = serializationService2.createObjectDataInput(new HeapData(0, bytes, 0, header));
+        BufferObjectDataInput in = serializationService2.createObjectDataInput(new DefaultData(0, bytes, 0, header));
         data = in.readData();
 
         // read data

@@ -25,7 +25,7 @@ import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.HeapData;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.EventService;
@@ -263,7 +263,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
             ClientExceptionConverter converter = ClientExceptionConverters.get(getClientType());
             clientResponseObject = converter.convert((Throwable) response);
         } else {
-            clientResponseObject = response != null ? response : new HeapData();
+            clientResponseObject = response != null ? response : new DefaultData();
         }
         clientEngine.sendResponse(this, clientResponseObject, callId, isError, false);
     }

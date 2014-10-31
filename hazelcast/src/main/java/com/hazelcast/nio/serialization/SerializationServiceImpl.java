@@ -378,7 +378,7 @@ public class SerializationServiceImpl implements SerializationService {
                 data = new byte[dataSize];
                 in.readFully(data);
             }
-            return new HeapData(typeId, data, partitionHash, header);
+            return new DefaultData(typeId, data, partitionHash, header);
         } catch (Throwable e) {
             throw handleException(e);
         }

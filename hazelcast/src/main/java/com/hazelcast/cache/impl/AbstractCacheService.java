@@ -35,8 +35,6 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
-
 public abstract class AbstractCacheService implements ICacheService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
@@ -341,8 +339,8 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat) {
-        if (InMemoryFormat.OFFHEAP.equals(inMemoryFormat)) {
-            throw new IllegalArgumentException("OffHeap is available in Enterprise!!!");
+        if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
+            throw new IllegalArgumentException("Native memory is available only in Enterprise!");
         }
         return new DefaultOperationProvider(nameWithPrefix);
     }

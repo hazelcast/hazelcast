@@ -180,7 +180,7 @@ public class SerializationTest
 
     @Test
     public void testNullData() {
-        Data data = new HeapData();
+        Data data = new DefaultData();
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
         assertNull(ss.toObject(data));
     }
