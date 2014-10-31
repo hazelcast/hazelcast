@@ -143,6 +143,14 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
         }
     }
 
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        if (HazelcastClientCacheManager.class.isAssignableFrom(clazz)) {
+            return (T) this;
+        }
+        throw new IllegalArgumentException();
+    }
+
     protected void postClose() {
         if (!isDefaultURI) {
             hazelcastInstance.shutdown();

@@ -287,14 +287,6 @@ public abstract class AbstractHazelcastCacheManager
     }
 
     @Override
-    public <T> T unwrap(Class<T> clazz) {
-        if (clazz.isAssignableFrom(AbstractHazelcastCacheManager.class)) {
-            return (T) this;
-        }
-        throw new IllegalArgumentException();
-    }
-
-    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("HazelcastCacheManager{");
         sb.append("hazelcastInstance=").append(hazelcastInstance);
