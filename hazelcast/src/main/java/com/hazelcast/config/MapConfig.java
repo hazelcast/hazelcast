@@ -190,7 +190,7 @@ public class MapConfig {
      * Possible values:
      * BINARY (default): keys and values will be stored as binary data
      * OBJECT : values will be stored in their object forms
-     * OFFHEAP : values will be stored in non-heap region of JVM
+     * NATIVE : values will be stored in non-heap region of JVM
      *
      * @param inMemoryFormat the record type to set
      * @throws IllegalArgumentException if inMemoryFormat is null.

@@ -24,7 +24,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.HeapData;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.util.Clock;
 
@@ -136,7 +136,7 @@ public class CacheReplicationOperation extends AbstractOperation {
                 }
             }
             //empty data will terminate the iteration for read
-            out.writeData(new HeapData());
+            out.writeData(new DefaultData());
         }
     }
 

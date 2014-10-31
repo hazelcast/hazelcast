@@ -110,14 +110,14 @@ public class DataAdapter implements SocketWritable, SocketReadable {
 
     public boolean readFrom(ByteBuffer source) {
         if (data == null) {
-            data = new HeapData();
+            data = new DefaultData();
         }
         if (!isStatusSet(ST_TYPE)) {
             if (source.remaining() < INT_SIZE_IN_BYTES + 1) {
                 return false;
             }
             int type = source.getInt();
-            ((HeapData) data).setType(type);
+            ((DefaultData) data).setType(type);
             setStatus(ST_TYPE);
 
             boolean hasClassDefinition = source.get() != 0;
@@ -136,7 +136,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
             if (source.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
-            ((HeapData) data).setPartitionHash(source.getInt());
+            ((DefaultData) data).setPartitionHash(source.getInt());
             setStatus(ST_HASH);
         }
         if (!isStatusSet(ST_SIZE)) {
@@ -153,7 +153,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
                 return false;
             }
             buffer.flip();
-            ((HeapData) data).setData(buffer.array());
+            ((DefaultData) data).setData(buffer.array());
             setStatus(ST_VALUE);
         }
         setStatus(ST_ALL);

@@ -68,7 +68,7 @@ public interface NodeExtension {
      * @deprecated
      */
     @Deprecated
-    Storage<DataRef> getOffHeapStorage();
+    Storage<DataRef> getNativeDataStorage();
 
     /**
      * Creates a service which is an implementation of given type parameter.

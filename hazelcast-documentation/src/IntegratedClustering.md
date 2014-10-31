@@ -6,7 +6,7 @@ Hazelcast provides distributed second level cache for your Hibernate entities, c
 
 ### Sample Code for Hibernate
 
-Please see our sample application for [Hibernate Second Level Cache](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/hibernate-2ndlevel-cache).
+Please see our [sample application](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/hibernate-2ndlevel-cache) for Hibernate Second Level Cache.
 
 ### Supported Hibernate Versions
 
@@ -135,7 +135,7 @@ Hibernate 2nd Level Cache can use Hazelcast in two modes: P2P and Client/Server
 
 ##### P2P (Peer-to-Peer)
 
-With P2P mode, each Hibernate deployment launches its own Hazelcast Instance. You can also configure Hibernate to use an existing instance so instead of creating a new `HazelcastInstance` for each `SessionFactory`, an existing instance can be used by setting `hibernate.cache.hazelcast.instance_name` Hibernate property to `HazelcastInstance`'s name. For more information see [Named HazelcastInstance](#named-hazelcastinstance).
+With P2P mode, each Hibernate deployment launches its own Hazelcast Instance. You can also configure Hibernate to use an existing instance so instead of creating a new `HazelcastInstance` for each `SessionFactory`, an existing instance can be used by setting `hibernate.cache.hazelcast.instance_name` Hibernate property to `HazelcastInstance`'s name. For more information, please see [Named HazelcastInstance](#named-hazelcastinstance).
 
 **Disabling shutdown during SessionFactory.close()**
 
@@ -158,7 +158,7 @@ To setup Native Client properly, you should add Hazelcast **group-name**, **grou
 <property name="hibernate.cache.hazelcast.native_client_password">dev-pass</property>
 ```
 
-![image](images/NoteSmall.jpg) ***NOTE***: *To use Native Client, you should add `hazelcast-client-<version>.jar` into your classpath. Refer to [Native Clients](#native-client) for more information.*
+![image](images/NoteSmall.jpg) ***NOTE***: *To use Native Client, you should add `hazelcast-client-<version>.jar` into your classpath. Refer to [Clients](#clients) for more information.*
 
 ### Hibernate Concurrency Strategies
 

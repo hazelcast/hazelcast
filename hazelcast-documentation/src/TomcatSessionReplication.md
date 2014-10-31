@@ -7,7 +7,8 @@
 ![](images/enterprise-onlycopy.jpg)
 
 
-***Sample Code:*** *Please see our sample application for [Tomcat Based Web Session Replication](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/tomcat-session-replication).*
+***Sample Code:*** *Please see our [sample application](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/enterprise-session-replication) for Tomcat Based Web Session Replication.*
+<br></br>
 
 #### Overview
 

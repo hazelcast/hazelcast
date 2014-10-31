@@ -156,6 +156,14 @@ public class HazelcastServerCacheManager
         super.removeCacheConfigFromLocal(cacheName);
     }
 
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        if (HazelcastServerCacheManager.class.isAssignableFrom(clazz)) {
+            return (T) this;
+        }
+        throw new IllegalArgumentException();
+    }
+
     protected void postClose() {
     }
 }

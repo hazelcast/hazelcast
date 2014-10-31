@@ -277,7 +277,7 @@ public abstract class AbstractCacheRecordStore<
                 case OBJECT:
                     dataValue = toEventData(record);
                     break;
-                case OFFHEAP:
+                case NATIVE:
                     dataValue = toEventData(record);
                     break;
                 default:
@@ -307,7 +307,7 @@ public abstract class AbstractCacheRecordStore<
                 case OBJECT:
                     dataValue = toEventData(record);
                     break;
-                case OFFHEAP:
+                case NATIVE:
                     dataValue = toEventData(record);
                     break;
                 default:
@@ -512,7 +512,7 @@ public abstract class AbstractCacheRecordStore<
                     }
                     dataOldValue = toData(record);
                     break;
-                case OFFHEAP:
+                case NATIVE:
                     v = toData(value);
                     dataValue = (Data) v;
                     dataOldValue = toData(record);
@@ -585,7 +585,7 @@ public abstract class AbstractCacheRecordStore<
                 case OBJECT:
                     dataValue = toData(record);
                     break;
-                case OFFHEAP:
+                case NATIVE:
                     dataValue = toData(record);
                     break;
                 default:

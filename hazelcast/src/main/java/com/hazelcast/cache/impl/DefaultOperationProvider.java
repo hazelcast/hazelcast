@@ -25,7 +25,7 @@ import javax.cache.processor.EntryProcessor;
 import java.util.Set;
 
 /**
- * Provide operations other then {@link InMemoryFormat#OFFHEAP}
+ * Provide operations other then {@link InMemoryFormat#NATIVE}
  */
 public class DefaultOperationProvider implements CacheOperationProvider {
 

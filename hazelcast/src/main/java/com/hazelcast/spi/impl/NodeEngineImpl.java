@@ -377,7 +377,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     @Override
     public Storage<DataRef> getOffHeapStorage() {
-        return node.getNodeExtension().getOffHeapStorage();
+        return node.getNodeExtension().getNativeDataStorage();
     }
 
     @PrivateApi

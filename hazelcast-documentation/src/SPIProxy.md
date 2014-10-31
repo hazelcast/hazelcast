@@ -20,9 +20,9 @@ public interface Counter extends DistributedObject {
 }
 ```
 
-#### Making the CounterService Implementation ManagedService and RemoteService
+#### Making the CounterService Implement ManagedService and RemoteService
 
-Now, we need to make the `CounterService` implementation not only the `ManagedService` interface, but also the interface `com.hazelcast.spi.RemoteService`. This way, a client will be able to get a handle of a counter proxy.
+Now, we need to make the `CounterService` class implement not only the `ManagedService` interface, but also the interface `com.hazelcast.spi.RemoteService`. This way, a client will be able to get a handle of a counter proxy.
 
 
 ```java
@@ -202,7 +202,7 @@ class IncOperation extends AbstractOperation implements PartitionAwareOperation 
 }
 ```
 
-The method `run` does the actual execution. Since `IncOperation` will return a response, the method `returnsResponse` returns `true`. If your method is asynchronous and does not need to return a response, it is better to return `false` since it will be faster. The actual response is stored in the field `returnValue` field; you can retrieve it with the method `getResponse`.
+The method `run` does the actual execution. Since `IncOperation` will return a response, the method `returnsResponse` returns `true`. If your method is asynchronous and does not need to return a response, it is better to return `false` since it will be faster. The actual response is stored in the field `returnValue`; you can retrieve it with the method `getResponse`.
 
 There are two more methods in the above code: `writeInternal` and `readInternal`. Since `IncOperation` needs to be serialized, these two methods should be overwritten, and hence, `objectId` and `amount` will be serialized and available when those operations are executed. 
 

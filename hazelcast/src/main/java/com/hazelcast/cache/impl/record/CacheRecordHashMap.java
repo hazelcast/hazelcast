@@ -80,7 +80,7 @@ public class CacheRecordHashMap<K, V>
     public int evictExpiredRecords(int percentage) {
         long now = Clock.currentTimeMillis();
         int sizeLimitForEviction = (int) ((double) (size() * percentage)
-                                        / (double) ICacheRecordStore.ONE_HUNDRED_PERCENT);
+                / (double) ICacheRecordStore.ONE_HUNDRED_PERCENT);
 
         if (sizeLimitForEviction < MIN_EVICTION_ELEMENT_COUNT) {
             return 0;
@@ -95,11 +95,11 @@ public class CacheRecordHashMap<K, V>
             final boolean isExpired =
                     (value instanceof Expirable)
                             && ((Expirable) value).isExpiredAt(now);
-            if (!isExpired) {
+            if (isExpired) {
                 expiredEntries.add((Map.Entry<K, Expirable>) entry);
-            }
-            if (++expiredCount >= sizeLimitForEviction) {
-                break;
+                if (++expiredCount >= sizeLimitForEviction) {
+                    break;
+                }
             }
         }
         int actualExpiredCount = 0;
@@ -161,7 +161,7 @@ public class CacheRecordHashMap<K, V>
 
     private int evictRecordsRandom(int percentage) {
         int sizeLimitForEviction = (int) ((double) (size() * percentage)
-                                        / (double) ICacheRecordStore.ONE_HUNDRED_PERCENT);
+                / (double) ICacheRecordStore.ONE_HUNDRED_PERCENT);
 
         if (sizeLimitForEviction < MIN_EVICTION_ELEMENT_COUNT) {
             return 0;

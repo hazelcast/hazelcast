@@ -26,8 +26,8 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.record.DataRecordFactory;
+import com.hazelcast.map.impl.record.NativeRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
-import com.hazelcast.map.impl.record.OffHeapRecordFactory;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -123,8 +123,8 @@ public class MapContainer extends MapContainerSupport {
             case OBJECT:
                 recordFactory = new ObjectRecordFactory(mapConfig, nodeEngine.getSerializationService());
                 break;
-            case OFFHEAP:
-                recordFactory = new OffHeapRecordFactory(mapConfig, nodeEngine.getOffHeapStorage(),
+            case NATIVE:
+                recordFactory = new NativeRecordFactory(mapConfig, nodeEngine.getOffHeapStorage(),
                         nodeEngine.getSerializationService(), partitioningStrategy);
                 break;
             default:
