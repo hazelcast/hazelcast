@@ -267,5 +267,5 @@ Executing backup 3counter.inc() on: Address[192.168.1.103]:5705
 Finished
 ```
 
-You can seen that the counters have moved. `0counter` moved from *192.168.1.103:5702* to *192.168.1.103:5705* and it is incremented correctly. Our counters can now move around in the cluster. You will see the the counters will be redistributed once you add or remove a cluster member.
+You can see that the counters have moved. `0counter` moved from *192.168.1.103:5702* to *192.168.1.103:5705* and it is incremented correctly. Our counters can now move around in the cluster. You will see the the counters will be redistributed once you add or remove a cluster member.
 
