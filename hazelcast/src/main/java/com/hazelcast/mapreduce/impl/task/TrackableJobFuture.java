@@ -73,9 +73,7 @@ public class TrackableJobFuture<V>
     public void setResult(Object result) {
         Object finalResult = result;
         if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
-            if (!(finalResult instanceof CancellationException)) {
-                finalResult = new ExecutionException((Throwable) finalResult);
-            }
+            finalResult = new ExecutionException((Throwable) finalResult);
             super.setResult(finalResult);
             latch.countDown();
             return;
