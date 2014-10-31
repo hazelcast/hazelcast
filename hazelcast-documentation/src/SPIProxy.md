@@ -1,13 +1,15 @@
 
 ### Place a Remote Call - Proxy
 
-Until so far, we accomplished only to start `CounterService` as part of a HazelcastInstance startup.
+In the previous sections for the `CounterService` example, we started `CounterService` as part of a HazelcastInstance startup.
 
-Now, let's connect the Counter interface to CounterService and perform a remote call to the cluster member hosting the counter data. Then, we are going to return a dummy result. 
+Now, let's connect the `Counter` interface to `CounterService` and perform a remote call to the cluster member hosting the counter data. Then, we will return a dummy result. 
 
-Remote calls are performed via a proxy in Hazelcast. Proxies expose the methods at the client side. Once a method is called, proxy creates an operation object, sends this object to the cluster member responsible from executing that operation and then sends the result. 
+Remote calls are performed via a proxy in Hazelcast. Proxies expose the methods at the client side. Once a method is called, proxy creates an operation object, sends this object to the cluster member responsible from executing that operation, and then sends the result. 
 
-First, we need to make the Counter interface a distributed object. It should extend the `DistributedObject` interface for this purpose, as shown below.
+#### Making Counter a Distributed Object
+
+First, we need to make the `Counter` interface a distributed object by extending the `DistributedObject` interface, as shown below.
 
 
 ```java
@@ -18,7 +20,9 @@ public interface Counter extends DistributedObject {
 }
 ```
 
-Now, we need to make the CounterService implementing not only the ManagedService interface, but also the interface `com.hazelcast.spi.RemoteService`. This way, a client will be able to get a handle of a counter proxy.
+#### Making the CounterService Implementation ManagedService and RemoteService
+
+Now, we need to make the `CounterService` implementation not only the `ManagedService` interface, but also the interface `com.hazelcast.spi.RemoteService`. This way, a client will be able to get a handle of a counter proxy.
 
 
 ```java
@@ -64,6 +68,8 @@ The `CounterProxy` returned by the method `createDistributedObject` is a local r
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *Note that caching and removing the proxy instance are done outside of this service.*
 <br></br>
+
+#### Implementing CounterProxy
 
 Now, it is time to implement the `CounterProxy` as shown below.
 
@@ -111,14 +117,16 @@ public class CounterProxy extends AbstractDistributedObject<CounterService> impl
 ```
 
 
-`CounterProxy` is a local representation of remote data/functionality, it does not include the counter state. So, the method `inc` should be invoked on the cluster member hosting the real counter. This invocation can be performed using Hazelcast SPI. It will send the operations to the correct member and return the results.
+`CounterProxy` is a local representation of remote data/functionality. It does not include the counter state. Therefore, the method `inc` should be invoked on the cluster member hosting the real counter. You can invoke it using Hazelcast SPI; then it will send the operations to the correct member and return the results.
 
 Let's dig deeper into the method `inc`.
 
 - First, we create `IncOperation` with a given `name` and `amount`.
 - Then, we get the partition ID based on the `name`; by this way, all operations for a given name will result in the same partition ID.
 - Then, we create an `InvocationBuilder` where the connection between operation and partition is made.
-- Finally, we invoke the `InvocationBuilder` and wait for its result. This waiting is performed simply with a `future.get()`. Of course, in our case, timeout is not important. However, it is a good practice to use a timeout for a real system since operations should be completed in a certain amount of time. 
+- Finally, we invoke the `InvocationBuilder` and wait for its result. This waiting is performed with a `future.get()`. In our case, timeout is not important. However, it is a good practice to use a timeout for a real system since operations should complete in a certain amount of time. 
+
+#### Dealing with Exceptions
 
 Hazelcast's `ExceptionUtil` is a good solution when it comes to dealing with execution exceptions. When the execution of the operation fails with an exception, an `ExecutionException` is thrown and handled with the method `ExceptionUtil.rethrow(Throwable)`. 
 
@@ -136,8 +144,9 @@ If it is an `InterruptedException`, we have two options: Either propagating the 
   }
 ```
 
+#### Implementing the PartitionAwareOperation Interface
 
-Now, let's write the `IncOperation`. It implements `PartitionAwareOperation` interface, meaning that it will be executed on partition that hosts the counter.
+Now, let's write the `IncOperation`. It implements `PartitionAwareOperation` interface, meaning that it will be executed on the partition that hosts the counter.
 
 
 ```java
@@ -193,9 +202,13 @@ class IncOperation extends AbstractOperation implements PartitionAwareOperation 
 }
 ```
 
-The method `run` does the actual execution. Since `IncOperation` will return a response, the method `returnsResponse` returns `true`. If your method is asynchronous and does not need to return a response, it is better to return `false` since it will be faster. Actual response is stored in the field `returnValue` field and it is retrieved by the method `getResponse`.
+The method `run` does the actual execution. Since `IncOperation` will return a response, the method `returnsResponse` returns `true`. If your method is asynchronous and does not need to return a response, it is better to return `false` since it will be faster. The actual response is stored in the field `returnValue` field; you can retrieve it with the method `getResponse`.
 
-You see two other methods in the above code: `writeInternal` and `readInternal`. Since `IncOperation` needs to be serialized, these two methods should be overwritten. Hence, `objectId` and `amount` will be serialized and available when the operation is executed. For the deserialization, note that the operation must have a *no-arg* constructor.
+There are two more methods in the above code: `writeInternal` and `readInternal`. Since `IncOperation` needs to be serialized, these two methods should be overwritten, and hence, `objectId` and `amount` will be serialized and available when those operations are executed. 
+
+For the deserialization, note that the operation must have a *no-arg* constructor.
+
+#### Running the Code
 
 Now, let's run our code.
 
@@ -244,8 +257,8 @@ Once run, you will see the output as below.
 
 `Finished`
 
-As you see, counters are stored in different cluster members. Also note that, increment is not in its real action for now since the value remains as **0**. 
+Note that counters are stored in different cluster members. Also note that increment is not active for now since the value remains as **0**. 
 
-So, until now, we have made the basics up and running. In the next section, we will make a more real counter, cache the proxy instances and deal with proxy instance destruction.
+Until now, we have performed the basics to get this up and running. In the next section, we will make a real counter, cache the proxy instances and deal with proxy instance destruction.
 
 
