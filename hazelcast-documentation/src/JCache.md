@@ -839,7 +839,7 @@ as a placeholder that can be configured using a system property.
 
 ```java
 String configFile = "my-placeholder";
-Properties properties = HazelcastCachingProvider.byConfig( configFile );
+Properties properties = HazelcastCachingProvider.byLocation( configFile );
 ```
 
 Can be set on the command line by:
