@@ -12,7 +12,8 @@
 
 #### Overview
 
-Jetty Web Session Replication with Hazelcast Enterprise is a container specific module where no application change is required to enable session replication for JEE Web Applications. 
+Jetty Web Session Replication with Hazelcast Enterprise is a container specific module that enables session replication for JEE Web Applications without requiring changes to the application.
+
 
 ***Features***
 
@@ -26,7 +27,7 @@ Jetty Web Session Replication with Hazelcast Enterprise is a container specific 
 
 ***Supported Containers***
 
-Jetty Web Session Replication Module has been tested against following containers.
+Jetty Web Session Replication Module has been tested against the following containers.
 
 - Jetty 7  - It can be downloaded [here](http://download.eclipse.org/jetty/stable-7/dist/).
 - Jetty 8  - It can be downloaded [here](http://download.eclipse.org/jetty/stable-8/dist/).
@@ -40,41 +41,41 @@ Latest tested versions are **7.6.16.v20140903**, **8.1.16.v20140903** and **9.2.
 
  - Jetty instance must be running with Java 1.6 or higher.
  - Session objects that need to be clustered have to be Serializable.
- - Hazelcast Jetty based Web Session Replication is built on top of `jetty-nosql` module. This module (`jetty-nosql-<*jettyversion*>.jar`) needs to be added to `$JETTY_HOME/lib/ext`.
+ - Hazelcast Jetty-based Web Session Replication is built on top of the `jetty-nosql` module. This module (`jetty-nosql-<*jettyversion*>.jar`) needs to be added to `$JETTY_HOME/lib/ext`.
    This module can be found [here](http://mvnrepository.com/artifact/org.eclipse.jetty/jetty-nosql).
 
 #### How Jetty Session Replication works
 
 Jetty Session Replication in Hazelcast Enterprise is a Hazelcast Module where each created `HttpSession` Object's state is kept in Hazelcast Distributed Map. 
 
-As the session data are in Hazelcast Distributed Map, you can use all the available features offered by Hazelcast Distributed Map implementation such as MapStore and WAN Replication.
+Since the session data are in Hazelcast Distributed Map, you can use all the available features offered by Hazelcast Distributed Map implementation, such as MapStore and WAN Replication.
 
 Jetty Web Session Replication runs in two different modes:
 
-- **P2P** where all Jetty instances launch its own Hazelcast Instance and join to the Hazelcast Cluster and,
-- **Client/Server** mode where all Jetty instances put/retrieve the session data to/from an existing Hazelcast Cluster.
+- **P2P**: all Jetty instances launch its own Hazelcast Instance and join to the Hazelcast Cluster and,
+- **Client/Server**: all Jetty instances put/retrieve the session data to/from an existing Hazelcast Cluster.
 
 
 #### P2P (Peer-to-Peer) Deployment
 
-This launches embedded Hazelcast Node in each server instance.
+P2P deployment launches embedded Hazelcast Node in each server instance.
 
 ***Features***
 
-This type of deployment is the simplest approach. You can just configure your Jetty and launch. There is no need for an  external Hazelcast cluster.
+This type of deployment is simple: just configure your Jetty and launch. There is no need for an  external Hazelcast cluster.
 
 ***Sample P2P Configuration to use Hazelcast Session Replication***
 
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
 - Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
 - Update `$HAZELCAST_ENTERPRISE_ROOT/bin/hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
-- Put `hazelcast.xml` to the folder `$JETTY_HOME/etc`.
-- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar` to the folder `$JETTY_HOME/lib/ext`.
-- Configure Session ID Manager and Session Manager. Please see below explanations for configuring these managers.
+- Put `hazelcast.xml` in the folder `$JETTY_HOME/etc`.
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar` in the folder `$JETTY_HOME/lib/ext`.
+- Configure Session ID Manager and Session Manager. Please see the following explanations for configuring these managers.
 
 *Configuring the HazelcastSessionIdManager*
 
-You need to configure a `com.hazelcast.session.HazelcastSessionIdManager` instance in `jetty.xml`. Add below lines to your `jetty.xml`.
+You need to configure a `com.hazelcast.session.HazelcastSessionIdManager` instance in `jetty.xml`. Add the following lines to your `jetty.xml`.
 
 ```xml
 <Set name="sessionIdManager">
@@ -87,10 +88,10 @@ You need to configure a `com.hazelcast.session.HazelcastSessionIdManager` instan
 
 *Configuring the HazelcastSessionManager*
   
-HazelcastSessionManager can be configured from a `context.xml` file. Each application has a context file under `$CATALINA_HOME$/contexts` folder. You need to create this file if it does not exist. 
-Filename must be the same as the application name, e.g. `example.war` should have a context file named `example.xml`.
+`HazelcastSessionManager` can be configured from a `context.xml` file. Each application has a context file in the `$CATALINA_HOME$/contexts` folder. You need to create this context file if it does not exist. 
+The context filename must be the same as the application name, e.g. `example.war` should have a context file named `example.xml`.
 
-The file `context.xml` should have the below content.
+The file `context.xml` should have the following content.
 
 ```xml
 <Ref name="Server" id="Server">
@@ -111,7 +112,7 @@ The file `context.xml` should have the below content.
 
 - Start Jetty instances with a configured load balancer and deploy the web application.
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *In Jetty 9, there is no folder with name *`contexts`*. You have to put the file *`context.xml`* file under *`webapps`* directory. And you need to add below lines to *`context.xml`*.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *In Jetty 9, there is no folder with the name *`contexts`*. You have to put the file *`context.xml`* under the *`webapps`* directory. And you need to add the following lines to *`context.xml`*.*
 
 
 ```xml
@@ -136,7 +137,7 @@ The file `context.xml` should have the below content.
 
 #### Client/Server Deployment
 
-In this deployment type, Jetty instances work as clients to an existing Hazelcast Cluster.
+In client/server deployment type, Jetty instances work as clients to an existing Hazelcast Cluster.
 
 ***Features***
 
@@ -149,13 +150,13 @@ In this deployment type, Jetty instances work as clients to an existing Hazelcas
 - Go to [hazelcast.com](http://www.hazelcast.com/products/hazelcast-enterprise/) and download the latest Hazelcast Enterprise.
 - Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
 - Update `$HAZELCAST_ENTERPRISE_ROOT/bin/hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
-- Put `hazelcast.xml` to the folder `$JETTY_HOME/etc`.
-- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar`.
+- Put `hazelcast.xml` in the folder `$JETTY_HOME/etc`.
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar` in the folder `$JETTY_HOME/lib/ext`.
 - Configure Session ID Manager and Session Manager. Please see below explanations for configuring these managers.
 
 *Configuring the HazelcastSessionIdManager*
 
-You need to configure a `com.hazelcast.session.HazelcastSessionIdManager` instance in `jetty.xml`. Add below lines to your `jetty.xml`.
+You need to configure a `com.hazelcast.session.HazelcastSessionIdManager` instance in `jetty.xml`. Add the following lines to your `jetty.xml`.
 
 ```xml
 <Set name="sessionIdManager">
@@ -169,8 +170,8 @@ You need to configure a `com.hazelcast.session.HazelcastSessionIdManager` instan
 
 *Configuring the HazelcastSessionManager*
 
-HazelcastSessionManager can be configured from a `context.xml` file. Each application has a context file under `$CATALINA_HOME$/contexts` folder. You need to create this file if it does not exist. 
-Filename must be the same as the application name, e.g. `example.war` should have a context file named `example.xml`.
+`HazelcastSessionManager` can be configured from a `context.xml` file. Each application has a context file under the `$CATALINA_HOME$/contexts` folder. You need to create this context file if it does not exist. 
+The context filename must be the same as the application name, e.g. `example.war` should have a context file named `example.xml`.
 
 
 ```xml
@@ -217,20 +218,20 @@ Filename must be the same as the application name, e.g. `example.war` should hav
 
 #### Optional HazelcastSessionIdManager Parameters
 
-`HazelcastSessionIdManager` is used both in P2P and Client/Server mode. Following parameters are used to configure Jetty Session Replication Module to better serve your needs:
+`HazelcastSessionIdManager` is used both in P2P and Client/Server mode. Use the following parameters to configure the Jetty Session Replication Module to better serve your needs.
 
 - `workerName`: Set this attribute to a unique value for each Jetty instance to enable session affinity with a sticky-session configured load balancer.
 - `cleanUpPeriod`: Defines the working period of session clean-up task in milliseconds.
-- `configLocation`: You can specify location of `hazelcast.xml`.
+- `configLocation`: specifies the location of `hazelcast.xml`.
 
 <br></br>
 
 #### Optional HazelcastSessionManager Parameters
 
-`HazelcastSessionManager` is used both in P2P and Client/Server mode. Following parameters are used to configure Jetty Session Replication Module to better serve your needs:
+`HazelcastSessionManager` is used both in P2P and Client/Server mode. Use the following parameters to configure Jetty Session Replication Module to better serve your needs.
 
-- `savePeriod`: Sets the interval of saving session data to Hazelcast cluster. Jetty Web Session Replication Module has its own nature of caching. Attribute changes during the HTTP Request/HTTP Response cycle is cached by default. Distributing those changes to the Hazelcast Cluster is costly. Because of that, Session Replication is only done at the end of each request for updated and deleted attributes. The risk in this approach is to lose data in case a Jetty crash happens in the middle of HTTP Request operation.
-You can change that behavior by setting this attribute.
+- `savePeriod`: Sets the interval of saving session data to the Hazelcast cluster. Jetty Web Session Replication Module has its own nature of caching. Attribute changes during the HTTP Request/HTTP Response cycle is cached by default. Distributing those changes to the Hazelcast Cluster is costly, so Session Replication is only done at the end of each request for updated and deleted attributes. The risk with this approach is losing data if a Jetty crash happens in the middle of the HTTP Request operation.
+You can change that behavior by setting the `savePeriod` attribute.
 
 Notes:
 
@@ -244,20 +245,20 @@ Notes:
 
 #### Session Expiry
 
-Based on Tomcat configuration or `sessionTimeout` setting in `web.xml`, the sessions are expired over time. This requires a cleanup on Hazelcast Cluster as there is no need to keep expired sessions in it. 
+Based on Tomcat configuration or `sessionTimeout` setting in `web.xml`, the sessions are expired over time. This requires a cleanup on Hazelcast Cluster, since there is no need to keep expired sessions in it. 
 
-`cleanUpPeriod` which is defined in `HazelcastSessionIdManager` is the only setting to control the behavior of session expiry policy in Jetty Web Session Replication Module. By setting this, you can set the frequency of the session expiration checks in the Jetty Instance.
+`cleanUpPeriod`, which is defined in `HazelcastSessionIdManager`, is the only setting that controls the behavior of session expiry policy in Jetty Web Session Replication Module. By setting this, you can set the frequency of the session expiration checks in the Jetty Instance.
 
 
 #### Session Affinity 
 
 `HazelcastSessionIdManager` can work in sticky and non-sticky setups.
 
-The clustered session mechanism works in conjunction with a load balancer that supports stickiness. Stickiness can be based on various data items, such as source IP address or characteristics of the session ID or a load-balancer specific mechanism. 
+The clustered session mechanism works in conjunction with a load balancer that supports stickiness. Stickiness can be based on various data items, such as source IP address, or characteristics of the session ID, or a load-balancer specific mechanism. 
 For those load balancers that examine the session ID, `HazelcastSessionIdManager` appends a node ID to the session ID, which can be used for routing.
 You must configure the `HazelcastSessionIdManager` with a `workerName` that is unique across the cluster. 
 Typically the name relates to the physical node on which the instance is executed. If this name is not unique, your load balancer might fail to distribute your sessions correctly.
-If sticky sessions are enabled, `workerName` parameter has to be set, as shown below.
+If sticky sessions are enabled, the `workerName` parameter has to be set, as shown below.
 
 
 ```xml

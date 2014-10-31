@@ -16,7 +16,7 @@
 
 ***Classpath Configuration*** 
 
-This configuration requires following jar file in the classpath:
+This configuration requires the following jar file in the classpath:
 
 - `hazelcast-`<*version*>`.jar`
 
@@ -48,7 +48,7 @@ You can declare Hazelcast Objects using the default Spring *beans* namespace. Yo
 
 ***Classpath Configuration*** 
 
-Hazelcast-Spring integration requires following jar files in the classpath:
+Hazelcast-Spring integration requires the following jar files in the classpath:
 
 - `hazelcast-spring-`<*version*>`.jar`
 - `hazelcast-`<*version*>`.jar`
@@ -59,7 +59,7 @@ or
 
 ***Bean Declaration*** 
 
-Hazelcast has its own namespace **hazelcast** for bean definitions. You can easily add namespace declaration *xmlns:hz="http://www.hazelcast.com/schema/spring"* to `beans` tag in context file so that *hz* namespace shortcut can be used as a bean declaration.
+Hazelcast has its own namespace **hazelcast** for bean definitions. You can easily add the namespace declaration *xmlns:hz="http://www.hazelcast.com/schema/spring"* to the `beans` tag in the context file so that *hz* namespace shortcut can be used as a bean declaration.
 
 Here is an example schema definition for Hazelcast 3.3.x:
 
@@ -176,7 +176,7 @@ Hazelcast also supports `lazy-init`, `scope` and `depends-on` bean attributes.
 
 -   **MapStore and NearCache Configuration**
 
-For map-store, you should set either *class-name* or *implementation* attribute
+For map-store, you should set either the *class-name* or the *implementation* attribute.
 
 ```xml
 <hz:config>
@@ -199,13 +199,13 @@ For map-store, you should set either *class-name* or *implementation* attribute
 
 ### Spring Managed Context with @SpringAware
 
-Hazelcast Distributed Objects could be marked with @SpringAware if the object wants
+Hazelcast Distributed Objects could be marked with @SpringAware if the object wants:
 
 - to apply bean properties,
 - to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware`,
 - to apply bean post-processing annotations such as `InitializingBean`, `@PostConstruct`.
 
-Hazelcast Distributed `ExecutorService` or more generally any Hazelcast managed object can benefit from these features. To enable SpringAware objects, you have to first configure HazelcastInstance as explained in [Spring Configuration](#spring-configuration) section.
+Hazelcast Distributed `ExecutorService`, or more generally any Hazelcast managed object, can benefit from these features. To enable SpringAware objects, you must first configure `HazelcastInstance` as explained in [Spring Configuration](#spring-configuration) section.
 
 #### SpringAware Examples
 
@@ -248,7 +248,7 @@ Hazelcast Distributed `ExecutorService` or more generally any Hazelcast managed 
 ```
 **Distributed Map Example:**
 
-- Create a class called SomeValue which contains Spring Bean definitions like ApplicationContext, SomeBean.
+- Create a class called `SomeValue` which contains Spring Bean definitions like `ApplicationContext` and `SomeBean`.
 
 ```java
 @SpringAware
@@ -281,7 +281,7 @@ public class SomeValue implements Serializable, ApplicationContextAware {
 }
 ```
 
-- Get SomeValue Object from Context and put it into Hazelcast Distributed Map on Node-1.
+- Get `SomeValue` Object from Context and put it into Hazelcast Distributed Map on Node-1.
 
 ```java
 HazelcastInstance hazelcastInstance = 
@@ -291,7 +291,7 @@ IMap<String, SomeValue> map = hazelcastInstance.getMap( "values" );
 map.put( "key", value );
 ```
 
-- Read SomeValue Object from Hazelcast Distributed Map and assert that init method is called as it is annotated with `@PostConstruct`.
+- Read `SomeValue` Object from Hazelcast Distributed Map and assert that `init` method is called since it is annotated with `@PostConstruct`.
 
 ```java
 HazelcastInstance hazelcastInstance = 
@@ -303,7 +303,7 @@ Assert.assertTrue( value.init );
 
 **ExecutorService Example:**
 
-- Create a Callable Class called SomeTask which contains Spring Bean definitions like ApplicationContext, SomeBean.
+- Create a Callable Class called SomeTask which contains Spring Bean definitions like `ApplicationContext`, `SomeBean`.
 
 
 ```java
@@ -331,7 +331,7 @@ public class SomeTask
 }
 ```
 
-- Submit SomeTask to two Hazelcast Members and assert that `someBean` is autowired.
+- Submit `SomeTask` to two Hazelcast Members and assert that `someBean` is autowired.
 
 ```java
 HazelcastInstance hazelcastInstance =
@@ -415,7 +415,7 @@ For more information about Spring Cache, please see [Spring Cache Abstraction](h
 ***Sample Code***: *Please see our [sample application](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/spring-hibernate-2ndlevel-cache) for Hibernate 2nd Level Cache Config.*
 <br></br>
 
-If you are using Hibernate with Hazelcast as 2nd level cache provider, you can easily create `RegionFactory` instances within Spring configuration (by Spring version 3.1). That way, it is possible to use same `HazelcastInstance` as Hibernate L2 cache instance.
+If you are using Hibernate with Hazelcast as 2nd level cache provider, you can easily create `RegionFactory` instances within Spring configuration (by Spring version 3.1). That way, you can use the same `HazelcastInstance` as Hibernate L2 cache instance.
 
 ```xml
 <hz:hibernate-region-factory id="regionFactory" instance-ref="instance"
@@ -445,7 +445,7 @@ Spring tries to create a new `Map`/`Collection` instance and fill the new instan
 
 Since Hazelcast `Map`s/`Collection`s are designed to hold very large data which a single machine cannot carry, iterating through whole values can cause out of memory errors.
 
-To avoid this issue, either target property/attribute can be declared as un-typed `Map`/`Collection` as shown below.
+To avoid this issue, the target property/attribute can be declared as un-typed `Map`/`Collection` as shown below.
 
 ```java
 public class SomeBean {
