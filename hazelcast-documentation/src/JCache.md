@@ -1190,7 +1190,7 @@ You can test Hazelcast JCache for compliance by executing the TCK. Just perform 
   <!-- Change the following properties to your CacheManager and 
        Cache implementation. Used by the unwrap tests. -->
   <CacheManagerImpl>
-    com.hazelcast.cache.HazelcastCacheManager
+    com.hazelcast.client.cache.impl.HazelcastClientCacheManager
   </CacheManagerImpl>
   <CacheImpl>com.hazelcast.cache.ICache</CacheImpl>
   <CacheEntryImpl>
