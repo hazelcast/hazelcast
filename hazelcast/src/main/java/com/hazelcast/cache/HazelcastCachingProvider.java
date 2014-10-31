@@ -83,7 +83,7 @@ public final class HazelcastCachingProvider
         try {
             return ClassLoaderUtil.newInstance(getClass().getClassLoader(), CLIENT_CACHING_PROVIDER_CLASS);
         } catch (Exception e) {
-            LOGGER.warning("Could not load client CachingProvider! Fallback to server one... " + e.toString());
+            LOGGER.finest("Could not load client CachingProvider! Fallback to server one... " + e.toString());
         }
         return null;
     }
