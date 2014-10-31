@@ -20,7 +20,9 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,6 +36,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
+import java.util.Properties;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -42,7 +45,7 @@ import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.assertFalse;
 
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class CacheConfigTest {
 
@@ -85,17 +88,57 @@ public class CacheConfigTest {
     }
 
     @Test
-    public void cacheManagerByURITest()
+    public void cacheManagerByLocationClasspathTest()
             throws URISyntaxException {
-        URL resource = configUrl1;
-        URI uri1 = new URI("hazelcast+config:"+resource.toString());
+        URI uri1 = new URI("MY-SCOPE");
 
-        CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri1, null);
+        Properties properties = HazelcastCachingProvider.byLocation("classpath:test-hazelcast-jcache.xml");
+        CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri1, null, properties);
         assertNotNull(cacheManager);
 
         Cache<Integer, String> testCache = cacheManager.getCache("testCache", Integer.class, String.class);
         assertNotNull(testCache);
 
+        Caching.getCachingProvider().close();
+    }
+
+    @Test
+    public void cacheManagerByLocationFileTest()
+            throws URISyntaxException {
+        URI uri = new URI("MY-SCOPE");
+
+        String urlStr = configUrl1.toString();
+        assertEquals("file", urlStr.substring(0,4));
+        Properties properties = HazelcastCachingProvider.byLocation(urlStr);
+        CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri, null, properties);
+        assertNotNull(cacheManager);
+
+        URI uri2 = new URI("MY-SCOPE-OTHER");
+        String urlStr2 = configUrl2.toString();
+        assertEquals("file", urlStr2.substring(0,4));
+        Properties properties2 = HazelcastCachingProvider.byLocation(urlStr2);
+        CacheManager cacheManager2 = Caching.getCachingProvider().getCacheManager(uri2, null, properties2);
+        assertNotNull(cacheManager2);
+
+        assertEquals(2, Hazelcast.getAllHazelcastInstances().size() );
+        Caching.getCachingProvider().close();
+    }
+
+    @Test
+    public void cacheManagerByInstanceNameTest()
+            throws URISyntaxException {
+        final String instanceName= "instanceName66";
+        Config config = new Config();
+        config.setInstanceName(instanceName);
+        Hazelcast.newHazelcastInstance(config);
+
+        URI uri1 = new URI("MY-SCOPE");
+        Properties properties = HazelcastCachingProvider.byInstanceName(instanceName);
+        CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri1, null, properties);
+        assertNotNull(cacheManager);
+
+        assertEquals(1, Hazelcast.getAllHazelcastInstances().size() );
+        Caching.getCachingProvider().close();
     }
 
     @Test

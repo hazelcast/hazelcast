@@ -39,8 +39,8 @@ public class CacheSimpleEntryListenerConfig {
     }
 
     public CacheSimpleEntryListenerConfigReadOnly getAsReadOnly() {
-        if(readOnly == null) {
-            readOnly =new CacheSimpleEntryListenerConfigReadOnly(this);
+        if (readOnly == null) {
+            readOnly = new CacheSimpleEntryListenerConfigReadOnly(this);
         }
         return readOnly;
     }

@@ -19,7 +19,8 @@ package com.hazelcast.config;
 /**
  * Readonly version of CacheSimpleEntryListenerConfig
  */
-public class CacheSimpleEntryListenerConfigReadOnly extends CacheSimpleEntryListenerConfig{
+public class CacheSimpleEntryListenerConfigReadOnly
+        extends CacheSimpleEntryListenerConfig {
 
     public CacheSimpleEntryListenerConfigReadOnly(CacheSimpleEntryListenerConfig listenerConfig) {
         super(listenerConfig);
@@ -32,16 +33,16 @@ public class CacheSimpleEntryListenerConfigReadOnly extends CacheSimpleEntryList
 
     @Override
     public void setOldValueRequired(boolean oldValueRequired) {
-        throw new UnsupportedOperationException("This config is read-only" );
+        throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
     public void setCacheEntryEventFilterFactory(String cacheEntryEventFilterFactory) {
-        throw new UnsupportedOperationException("This config is read-only" );
+        throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
     public void setCacheEntryListenerFactory(String cacheEntryListenerFactory) {
-        throw new UnsupportedOperationException("This config is read-only" );
+        throw new UnsupportedOperationException("This config is read-only");
     }
 }

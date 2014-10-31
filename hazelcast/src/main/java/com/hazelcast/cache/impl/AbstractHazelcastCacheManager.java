@@ -5,7 +5,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 
-import javax.cache.Cache;
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -102,7 +101,7 @@ public abstract class AbstractHazelcastCacheManager
         } else {
             ICache<?, ?> cache = getCacheUnchecked(cacheName);
             CacheConfig cacheConfig = cache.getConfiguration(CacheConfig.class);
-            if(cacheConfig.equals(configuration)) {
+            if (cacheConfig.equals(configuration)) {
                 //If configuration matches it can return the already existing cache
                 return (ICache<K, V>) cache;
             }
@@ -339,7 +338,7 @@ public abstract class AbstractHazelcastCacheManager
 
     protected abstract <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig);
 
-    protected abstract <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName,String simpleCacheName);
+    protected abstract <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName, String simpleCacheName);
 
     protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
         //REGISTER LISTENERS

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheProxyUtil;
@@ -133,7 +134,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName,String simpleCacheName) {
+    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName, String simpleCacheName) {
         ClientRequest request = new CacheGetConfigRequest(cacheName, simpleCacheName);
         try {
             final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheName);
@@ -152,7 +153,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     protected void postClose() {
-        if (!isDefaultURI) {
+        if (properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION) != null) {
             hazelcastInstance.shutdown();
         }
     }

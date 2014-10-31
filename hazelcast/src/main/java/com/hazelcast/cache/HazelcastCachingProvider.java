@@ -52,6 +52,15 @@ import java.util.Properties;
 public final class HazelcastCachingProvider
         implements CachingProvider {
 
+    /**
+     * Hazelcast config location property
+     */
+    public static final String HAZELCAST_CONFIG_LOCATION = "hazelcast.config.location";
+    /**
+     * hazelcast instance name property
+     */
+    public static final String HAZELCAST_INSTANCE_NAME = "hazelcast.instance.name";
+
     private static final String CLIENT_CACHING_PROVIDER_CLASS = "com.hazelcast.client.cache.impl.HazelcastClientCachingProvider";
     private static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
 
@@ -77,6 +86,28 @@ public final class HazelcastCachingProvider
             }
         }
         delegate = cp;
+    }
+
+    /**
+     * create the properties with the provided config file location
+     * @param configFileLocation config file location
+     * @return properties
+     */
+    public static Properties byLocation(String configFileLocation) {
+        final Properties properties = new Properties();
+        properties.setProperty(HAZELCAST_CONFIG_LOCATION, configFileLocation);
+        return properties;
+    }
+
+    /**
+     * create the properties with the provided instance name
+     * @param instanceName instance name
+     * @return properties
+     */
+    public static Properties byInstanceName(String instanceName) {
+        final Properties properties = new Properties();
+        properties.setProperty(HAZELCAST_INSTANCE_NAME, instanceName);
+        return properties;
     }
 
     private CachingProvider createClientProvider() {

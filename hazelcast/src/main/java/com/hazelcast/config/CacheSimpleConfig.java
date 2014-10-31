@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Simple configuration to hold parsed xml configuration.
@@ -50,22 +49,22 @@ public class CacheSimpleConfig {
     /**
      * Minimum eviction percentage
      */
-    public final static int MIN_EVICTION_PERCENTAGE = 0;
+    public static final  int MIN_EVICTION_PERCENTAGE = 0;
 
     /**
      * Default eviction percentage
      */
-    public final static int DEFAULT_EVICTION_PERCENTAGE = 20;
+    public static final int DEFAULT_EVICTION_PERCENTAGE = 20;
 
     /**
      * The threshold default value for eviction
      */
-    public final static int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = 95;
+    public static final int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = 95;
 
     /**
      * Maximum eviction percentage
      */
-    public final static int MAX_EVICTION_PERCENTAGE = 100;
+    public static final int MAX_EVICTION_PERCENTAGE = 100;
 
     private String name;
 
@@ -95,30 +94,30 @@ public class CacheSimpleConfig {
 
     public CacheSimpleConfig(CacheSimpleConfig cacheSimpleConfig) {
         this.name = cacheSimpleConfig.name;
-        this.keyType= cacheSimpleConfig.keyType;
-        this.valueType= cacheSimpleConfig.valueType;
-        this.statisticsEnabled= cacheSimpleConfig.statisticsEnabled;
-        this.managementEnabled= cacheSimpleConfig.managementEnabled;
-        this.readThrough= cacheSimpleConfig.readThrough;
-        this.writeThrough= cacheSimpleConfig.writeThrough;
-        this.cacheLoaderFactory= cacheSimpleConfig.cacheLoaderFactory;
-        this.cacheWriterFactory= cacheSimpleConfig.cacheWriterFactory;
-        this.expiryPolicyFactory= cacheSimpleConfig.expiryPolicyFactory;
-        this.cacheEntryListeners= cacheSimpleConfig.cacheEntryListeners;
-        this.asyncBackupCount= cacheSimpleConfig.asyncBackupCount;
+        this.keyType = cacheSimpleConfig.keyType;
+        this.valueType = cacheSimpleConfig.valueType;
+        this.statisticsEnabled = cacheSimpleConfig.statisticsEnabled;
+        this.managementEnabled = cacheSimpleConfig.managementEnabled;
+        this.readThrough = cacheSimpleConfig.readThrough;
+        this.writeThrough = cacheSimpleConfig.writeThrough;
+        this.cacheLoaderFactory = cacheSimpleConfig.cacheLoaderFactory;
+        this.cacheWriterFactory = cacheSimpleConfig.cacheWriterFactory;
+        this.expiryPolicyFactory = cacheSimpleConfig.expiryPolicyFactory;
+        this.cacheEntryListeners = cacheSimpleConfig.cacheEntryListeners;
+        this.asyncBackupCount = cacheSimpleConfig.asyncBackupCount;
         this.backupCount = cacheSimpleConfig.backupCount;
         this.inMemoryFormat = cacheSimpleConfig.inMemoryFormat;
         this.evictionPolicy = cacheSimpleConfig.evictionPolicy;
-        this.evictionPercentage= cacheSimpleConfig.evictionPercentage;
-        this.evictionThresholdPercentage= cacheSimpleConfig.evictionThresholdPercentage;
+        this.evictionPercentage = cacheSimpleConfig.evictionPercentage;
+        this.evictionThresholdPercentage = cacheSimpleConfig.evictionThresholdPercentage;
     }
 
     public CacheSimpleConfig() {
 
     }
 
-    public CacheSimpleConfig getAsReadOnly(){
-        if(readOnly == null) {
+    public CacheSimpleConfig getAsReadOnly() {
+        if (readOnly == null) {
             readOnly = new CacheSimpleConfigReadOnly(this);
         }
         return readOnly;

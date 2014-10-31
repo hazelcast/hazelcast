@@ -16,18 +16,17 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.AbstractHazelcastCachingProvider;
-import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Properties;
 
@@ -53,38 +52,65 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
         return cachingProvider;
     }
 
-    protected synchronized void initHazelcast() {
-        //There is no HazelcastInstanceFactory for client so using synchronized
-        if (hazelcastInstance == null) {
-            hazelcastInstance = HazelcastClient.newHazelcastClient();
-        }
-    }
-
     @Override
     protected HazelcastClientCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties properties) {
         final HazelcastInstance instance;
         //uri is null or default or a non hazelcast one, then we use the internal shared instance
-        if (uri == null || uri.equals(getDefaultURI()) || !(HAZELCAST_CONFIG_URI_SCHEMA.equals(uri.getScheme())
-                || HAZELCAST_NAME_URI_SCHEMA.equals(uri.getScheme()))) {
+        if (uri == null || uri.equals(getDefaultURI())) {
             if (hazelcastInstance == null) {
-                initHazelcast();
+                try {
+                    hazelcastInstance = instanceFromProperties(classLoader, properties, true);
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
             }
             instance = hazelcastInstance;
-        } else if (HAZELCAST_NAME_URI_SCHEMA.equals(uri.getScheme())) {
-            //named instance
-            instance = HazelcastClient.getHazelcastClientByName(uri.getRawSchemeSpecificPart());
         } else {
-            //it means that it is a Hazelcast config schema
-            final String rawURLStr = uri.getRawSchemeSpecificPart();
             try {
-                URL configURL = new URL(rawURLStr);
-                final ClientConfig config = new XmlClientConfigBuilder(configURL).build();
-                instance = HazelcastClient.newHazelcastClient(config);
+                instance = instanceFromProperties(classLoader, properties, false);
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
         }
         return new HazelcastClientCacheManager(this, instance, uri, classLoader, properties);
+    }
+
+    private HazelcastInstance instanceFromProperties(ClassLoader classLoader, Properties properties, boolean isDefault)
+            throws URISyntaxException, IOException {
+        ClassLoader theClassLoader = classLoader == null ? getDefaultClassLoader() : classLoader;
+        HazelcastInstance instance = null;
+        String location = properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION);
+        if (location != null) {
+            URI uri = new URI(location);
+            String scheme = uri.getScheme();
+            if (scheme == null) {
+                //it is a place holder
+                uri = new URI(System.getProperty(uri.getRawSchemeSpecificPart()));
+            }
+            final URL configURL;
+            if ("classpath".equals(scheme)) {
+                configURL = theClassLoader.getResource(uri.getRawSchemeSpecificPart());
+            } else if ("file".equals(scheme) || "http".equals(scheme) || "https".equals(scheme)) {
+                configURL = uri.toURL();
+            } else {
+                throw new URISyntaxException(location, "Unsupported protocol in configuration location URL");
+            }
+            try {
+                final ClientConfig config = new XmlClientConfigBuilder(configURL).build();
+                config.setClassLoader(theClassLoader);
+                instance = HazelcastClient.newHazelcastClient(config);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+        String instanceName = properties.getProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME);
+        if (instanceName != null) {
+            instance = HazelcastClient.getHazelcastClientByName(instanceName);
+        }
+        if (isDefault) {
+            instance = HazelcastClient.newHazelcastClient();
+        }
+        return instance;
     }
 
     @Override

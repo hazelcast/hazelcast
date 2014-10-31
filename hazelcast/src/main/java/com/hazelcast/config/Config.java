@@ -246,17 +246,17 @@ public class Config {
     }
 
 
-    public CacheSimpleConfig findCacheConfig(String name){
+    public CacheSimpleConfig findCacheConfig(String name) {
         name = getBaseName(name);
-        CacheSimpleConfig config;
-        if ((config = lookupByPattern(cacheConfigs, name)) != null) return config.getAsReadOnly();
-        return getCacheConfig("default").getAsReadOnly();
+        return lookupByPattern(cacheConfigs, name);
     }
 
     public CacheSimpleConfig getCacheConfig(String name) {
-        name = getBaseName(name);
-        CacheSimpleConfig config;
-        if ((config = lookupByPattern(cacheConfigs, name)) != null) return config;
+        String baseName = getBaseName(name);
+        CacheSimpleConfig config = lookupByPattern(cacheConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
         CacheSimpleConfig defConfig = cacheConfigs.get("default");
         if (defConfig == null) {
             defConfig = new CacheSimpleConfig();

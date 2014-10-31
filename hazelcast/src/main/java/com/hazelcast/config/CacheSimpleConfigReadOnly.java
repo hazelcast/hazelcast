@@ -23,7 +23,8 @@ import java.util.List;
 /**
  * Readonly version of CacheSimpleConfig
  */
-public class CacheSimpleConfigReadOnly extends CacheSimpleConfig{
+public class CacheSimpleConfigReadOnly
+        extends CacheSimpleConfig {
 
     public CacheSimpleConfigReadOnly(CacheSimpleConfig cacheSimpleConfig) {
         super(cacheSimpleConfig);

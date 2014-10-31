@@ -233,7 +233,8 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     }
 
     @Override
-    public CacheConfiguration<K, V> setCacheWriterFactory(Factory<? extends CacheWriter<? super K, ? super V>> cacheWriterFactory) {
+    public CacheConfiguration<K, V> setCacheWriterFactory(
+            Factory<? extends CacheWriter<? super K, ? super V>> cacheWriterFactory) {
         this.cacheWriterFactory = (Factory<CacheWriter<? super K, ? super V>>) cacheWriterFactory;
         return this;
     }

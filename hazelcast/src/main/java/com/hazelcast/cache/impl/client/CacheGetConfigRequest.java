@@ -37,7 +37,7 @@ public class CacheGetConfigRequest
     public CacheGetConfigRequest() {
     }
 
-    public CacheGetConfigRequest(String cacheName,String simpleName) {
+    public CacheGetConfigRequest(String cacheName, String simpleName) {
         super(cacheName);
         this.simpleName = simpleName;
     }

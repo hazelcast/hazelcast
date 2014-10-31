@@ -24,7 +24,10 @@ import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheWriter;
 
 /**
- * interface of MutableConfiguration for jcache
+ * Mutable extension to {@link javax.cache.configuration.CompleteConfiguration}
+ *
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  */
 public interface CacheConfiguration<K, V>
         extends CompleteConfiguration<K, V> {

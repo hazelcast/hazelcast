@@ -139,4 +139,39 @@ public final class HazelcastClient {
         CLIENTS.clear();
     }
 
+    /**
+     * Shutdown the provided client and remove it prom the managed list
+     * @param instance the hazelcast client instance
+     */
+    public static void shutdown(HazelcastInstance instance) {
+        if(instance instanceof HazelcastClientProxy){
+            final HazelcastClientProxy proxy = (HazelcastClientProxy) instance;
+            String instanceName = proxy.client.getName();
+            try {
+                proxy.client.shutdown();
+            } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
+            }
+            proxy.client = null;
+            CLIENTS.remove(instanceName);
+        }
+    }
+
+    /**
+     * Shutdown the provided client and remove it prom the managed list
+     * @param instanceName the hazelcast client instance name
+     */
+    public static void shutdown(String instanceName) {
+        HazelcastClientProxy proxy = CLIENTS.remove(instanceName);
+        if(proxy != null) {
+            try {
+                proxy.client.shutdown();
+            } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
+            }
+            proxy.client = null;
+        }
+
+    }
+
 }

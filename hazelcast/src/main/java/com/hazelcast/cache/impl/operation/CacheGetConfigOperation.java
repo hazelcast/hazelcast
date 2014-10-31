@@ -51,19 +51,21 @@ public class CacheGetConfigOperation
             throws Exception {
         final CacheService service = getService();
         final CacheConfig cacheConfig = service.getCacheConfig(name);
-        if(cacheConfig == null) {
+        if (cacheConfig == null) {
             CacheSimpleConfig simpleConfig = service.findCacheConfig(simpleName);
-            try {
-                CacheConfig cacheConfigFromSimpleConfig = new CacheConfig(simpleConfig);
-                cacheConfigFromSimpleConfig.setName(name);
-                cacheConfigFromSimpleConfig.setManagerPrefix(name.substring(0,name.lastIndexOf(simpleName)));
-                if(service.createCacheConfigIfAbsent(cacheConfigFromSimpleConfig, false)) {
-                    response = cacheConfigFromSimpleConfig;
-                    return;
+            if (simpleConfig != null) {
+                try {
+                    CacheConfig cacheConfigFromSimpleConfig = new CacheConfig(simpleConfig);
+                    cacheConfigFromSimpleConfig.setName(name);
+                    cacheConfigFromSimpleConfig.setManagerPrefix(name.substring(0, name.lastIndexOf(simpleName)));
+                    if (service.createCacheConfigIfAbsent(cacheConfigFromSimpleConfig, false)) {
+                        response = cacheConfigFromSimpleConfig;
+                        return;
+                    }
+                } catch (Exception e) {
+                    //Cannot create the actual config from the declarative one
+                    throw new CacheException(e);
                 }
-            } catch (Exception e) {
-                //Cannot create the actual config from the declarative one
-                throw new CacheException(e);
             }
         }
         response = cacheConfig;
