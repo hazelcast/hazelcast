@@ -139,6 +139,8 @@ public class CacheConfigTest {
 
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size() );
         Caching.getCachingProvider().close();
+
+        Hazelcast.getHazelcastInstanceByName(instanceName).shutdown();
     }
 
     @Test
@@ -148,11 +150,8 @@ public class CacheConfigTest {
         assertNotNull(cacheManager);
 
         Cache testCache = cacheManager.getCache("default");
-        assertNotNull(testCache);
-
-        testCache.put("key", "value");
-
-        assertNotNull(testCache.get("key"));
+        assertNull(testCache);
+        Caching.getCachingProvider().close();
 
     }
 }
