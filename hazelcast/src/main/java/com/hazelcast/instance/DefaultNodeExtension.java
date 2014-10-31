@@ -83,8 +83,8 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public Storage<DataRef> getOffHeapStorage() {
-        throw new UnsupportedOperationException("Offheap feature is only available on Hazelcast Enterprise!");
+    public Storage<DataRef> getNativeDataStorage() {
+        throw new UnsupportedOperationException("Native memory feature is only available on Hazelcast Enterprise!");
     }
 
     public SerializationService createSerializationService() {

@@ -198,7 +198,7 @@ abstract class AbstractRecordStore implements RecordStore {
                 }
                 return;
 
-            case OFFHEAP:
+            case NATIVE:
                 Iterator<Record> iter = records.values().iterator();
                 while (iter.hasNext()) {
                     Record record = iter.next();

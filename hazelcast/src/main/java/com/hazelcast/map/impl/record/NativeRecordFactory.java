@@ -24,15 +24,15 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
 
-public class OffHeapRecordFactory implements RecordFactory<Data> {
+public class NativeRecordFactory implements RecordFactory<Data> {
 
     private final Storage<DataRef> storage;
     private final SerializationService serializationService;
     private final PartitioningStrategy partitionStrategy;
     private final boolean statisticsEnabled;
 
-    public OffHeapRecordFactory(MapConfig config, Storage<DataRef> storage, SerializationService serializationService,
-                                PartitioningStrategy partitionStrategy) {
+    public NativeRecordFactory(MapConfig config, Storage<DataRef> storage, SerializationService serializationService,
+            PartitioningStrategy partitionStrategy) {
         this.storage = storage;
         this.serializationService = serializationService;
         this.partitionStrategy = partitionStrategy;
@@ -41,13 +41,13 @@ public class OffHeapRecordFactory implements RecordFactory<Data> {
 
     @Override
     public InMemoryFormat getStorageFormat() {
-        return InMemoryFormat.OFFHEAP;
+        return InMemoryFormat.NATIVE;
     }
 
     @Override
     public Record<Data> newRecord(Data key, Object value) {
         Data v = serializationService.toData(value, partitionStrategy);
-        return statisticsEnabled ? new OffHeapRecordWithStats(storage, key, v) : new OffHeapRecord(storage, key, v);
+        return statisticsEnabled ? new NativeRecordWithStats(storage, key, v) : new NativeRecord(storage, key, v);
     }
 
     @Override

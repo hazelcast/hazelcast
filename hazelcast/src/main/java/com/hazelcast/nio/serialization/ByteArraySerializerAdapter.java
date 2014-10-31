@@ -47,7 +47,7 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
     @SuppressWarnings("unchecked")
     public Data toData(Object object, int partitionHash) throws IOException {
         byte[] data = serializer.write(object);
-        return new HeapData(serializer.getTypeId(), data, partitionHash);
+        return new DefaultData(serializer.getTypeId(), data, partitionHash);
     }
 
     public Object toObject(Data data) throws IOException {
