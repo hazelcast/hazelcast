@@ -136,6 +136,7 @@ public class GroupProperties {
     public static final String PROP_BACKPRESSURE_TOTAL_CAPACITY = "hazelcast.backpressure.total.capacity";
     public static final String PROP_BACKPRESSURE_MAX_CLAIM_SIZE = "hazelcast.backpressure.max.claim.size";
     public static final String PROP_BACKPRESSURE_MIN_CLAIM_SIZE = "hazelcast.backpressure.min.claim.size";
+    public static final String PROP_BACKPRESSURE_ENABLED = "hazelcast.backpressure.enabled";
 
     /**
      * forces the jcache provider which can have values client or server to force provider type,
@@ -291,6 +292,8 @@ public class GroupProperties {
 
     public final GroupProperty BACKPRESSURE_MIN_CLAIM_SIZE;
 
+    public final GroupProperty BACKPRESSURE_ENABLED;
+
     /**
      * @param config
      */
@@ -377,6 +380,7 @@ public class GroupProperties {
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
         BACKPRESSURE_TOTAL_CAPACITY = new GroupProperty(config, PROP_BACKPRESSURE_TOTAL_CAPACITY, "1000000");
         BACKPRESSURE_MAX_CLAIM_SIZE = new GroupProperty(config, PROP_BACKPRESSURE_MAX_CLAIM_SIZE, "50000");
+        BACKPRESSURE_ENABLED = new GroupProperty(config, PROP_BACKPRESSURE_ENABLED, "true");
         /* If calculated claim size is smaller than PROP_BACKPRESSURE_MIN_CLAIM_SIZE then Hazelcast will
         * treat it as exhausted capacity and we return 0 slots. The purpose is to prevent issuing many small
         * claims as it would cause extra over-head.*/
