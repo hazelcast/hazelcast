@@ -834,7 +834,7 @@ The retrieved `CacheManager` is scoped to use the `HazelcastInstance` that was j
 configuration file.
 
 Available protocols for config file URL include `classpath://` to point to a classpath location, `file://` to point to a filesystem
-location, `http://` an `https://` for remote web locations. In addition everything that does not specify a protocol is recognized
+location, `http://` an `https://` for remote web locations. In addition, everything that does not specify a protocol is recognized
 as a placeholder that can be configured using a system property.
 
 ```java
@@ -842,7 +842,7 @@ String configFile = "my-placeholder";
 Properties properties = HazelcastCachingProvider.byConfig( configFile );
 ```
 
-Can be set on the commandline by:
+Can be set on the command line by:
 
 ```plain
 -Dmy-placeholder=classpath://my-configs/scoped-hazelcast.xml
@@ -853,8 +853,8 @@ Can be set on the commandline by:
 configuration on different configuration files. If the same cluster is referred from different configuration files, multiple
 cluster members or clients are created.*
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *The configuration file location will not be part of the resulting identity of the
-`CacheManager`. A try to create a `CacheManager` with a different set of properties but an already used name will result in
+![image](images/NoteSmall.jpg) ***NOTE:*** *The configuration file location will not be a part of the resulting identity of the
+`CacheManager`. An attempt to create a `CacheManager` with a different set of properties but an already used name will result in
 undefined behavior.*
 <br></br>
 
@@ -863,7 +863,7 @@ undefined behavior.*
 A `CacheManager` can be bound to an existing and named `HazelcastInstance` instance. This requires that the instance was created using a `com.hazelcast.config.Config` and requires that an `instanceName` be set. Multiple
 `CacheManager`s created using an equal `java.net.URI` will share the same `HazelcastInstance`.
  
-A named scope is applied nearly the same way as the configuration scope so pass in the instance name using the instanceName
+A named scope is applied nearly the same way as the configuration scope: pass in the instance name using the `instanceName`
 property as a mapping inside a `java.util.Properties` instance to the
 `CachingProvider#getCacheManager(uri, classLoader, properties)` call.
 
@@ -887,8 +887,8 @@ CacheManager cacheManager = cachingProvider
 ```
 
 <br></br>
-![image](images/NoteSmall.jpg) ***NOTE:*** *The instanceName will not be part of the resulting identity of the `CacheManager`.
-A try to create a `CacheManager` with a different set of properties but an already used name will result in undefined behavior.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *The `instanceName` will not be a part of the resulting identity of the `CacheManager`.
+An attempt to create a `CacheManager` with a different set of properties but an already used name will result in undefined behavior.*
 <br></br>
 
 
