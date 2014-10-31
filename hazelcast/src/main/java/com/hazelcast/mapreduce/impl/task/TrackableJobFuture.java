@@ -16,14 +16,6 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.JobCompletableFuture;
@@ -37,6 +29,14 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ValidationUtil;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * This is the node based implementation of the job's reactive {@link com.hazelcast.core.ICompletableFuture}
