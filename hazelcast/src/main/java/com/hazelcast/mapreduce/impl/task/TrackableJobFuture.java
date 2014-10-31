@@ -16,6 +16,14 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.JobCompletableFuture;
@@ -29,14 +37,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ValidationUtil;
-
-import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * This is the node based implementation of the job's reactive {@link com.hazelcast.core.ICompletableFuture}
@@ -71,29 +71,31 @@ public class TrackableJobFuture<V>
 
     @Override
     public void setResult(Object result) {
-        Object finalResult = result;
-        if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
-            if (!(finalResult instanceof CancellationException)) {
+        try {
+            Object finalResult = result;
+            if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
+                if (!(finalResult instanceof CancellationException)) {
+                    finalResult = new ExecutionException((Throwable) finalResult);
+                }
+                super.setResult(finalResult);
+                return;
+            }
+            // If collator is available we need to execute it now
+            if (collator != null) {
+                try {
+                    finalResult = collator.collate(((Map) finalResult).entrySet());
+                } catch (Exception e) {
+                    // Possible exception while collating
+                    finalResult = e;
+                }
+            }
+            if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
                 finalResult = new ExecutionException((Throwable) finalResult);
             }
             super.setResult(finalResult);
+        } finally {
             latch.countDown();
-            return;
         }
-        // If collator is available we need to execute it now
-        if (collator != null) {
-            try {
-                finalResult = collator.collate(((Map) finalResult).entrySet());
-            } catch (Exception e) {
-                // Possible exception while collating
-                finalResult = e;
-            }
-        }
-        if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
-            finalResult = new ExecutionException((Throwable) finalResult);
-        }
-        super.setResult(finalResult);
-        latch.countDown();
     }
 
     @Override
