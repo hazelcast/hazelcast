@@ -16,12 +16,51 @@
 
 package com.hazelcast.map.mapstore;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapLoader;
+import com.hazelcast.core.MapLoaderLifecycleSupport;
+import com.hazelcast.core.MapStore;
+import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.core.PostProcessingMapStore;
+import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.MapStoreWrapper;
+import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.mapstore.writebehind.TestMapUsingMapStoreBuilder;
+import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.transaction.TransactionContext;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -46,52 +85,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import com.hazelcast.config.Config;
-import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapLoaderLifecycleSupport;
-import com.hazelcast.core.MapStore;
-import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.core.MapStoreFactory;
-import com.hazelcast.core.PostProcessingMapStore;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.instance.TestUtil;
-import com.hazelcast.map.AbstractEntryProcessor;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.map.impl.RecordStore;
-import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.map.mapstore.writebehind.TestMapUsingMapStoreBuilder;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.SampleObjects.Employee;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.transaction.TransactionContext;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -1021,24 +1020,49 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     // bug: store is called twice on loadAll
     @Test
-    public void testIssue1070() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
+    public void testIssue1070() {
+        final String mapName = randomMapName();
         final NoDuplicateMapStore myMapStore = new NoDuplicateMapStore();
         myMapStore.store.put(1, 2);
+
         Config config = new Config();
-        config
-                .getMapConfig("testIssue1070")
-                .setMapStoreConfig(new MapStoreConfig()
-                        .setImplementation(myMapStore));
+        final MapConfig mapConfig = config.getMapConfig(mapName);
+        final MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        final MapStoreConfig implementation = mapStoreConfig.setImplementation(myMapStore);
+        mapConfig.setMapStoreConfig(implementation);
+
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance hc2 = nodeFactory.newHazelcastInstance(config);
-        IMap<Object, Object> map = hc.getMap("testIssue1070");
-        for (int i = 0; i < 271; i++) {
-            map.get(i);
-        }
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        getWithRetries(instance1, mapName);
         assertFalse(myMapStore.failed);
     }
+
+    /**
+     * Retry get operations 3 times if a {@link RetryableHazelcastException} is raised.
+     */
+    private void getWithRetries(HazelcastInstance node, String mapName) throws RetryableHazelcastException {
+        final List<RetryableHazelcastException> throwables = new ArrayList<RetryableHazelcastException>(3);
+        int retryCount = 3;
+
+        while (retryCount-- > 0) {
+            try {
+                IMap<Object, Object> map = node.getMap(mapName);
+                for (int i = 0; i < 271; i++) {
+                    map.get(i);
+                }
+                break;
+            } catch (RetryableHazelcastException e) {
+                throwables.add(e);
+            }
+        }
+
+        if (throwables.size() > 0) {
+            throw throwables.get(0);
+        }
+    }
+
 
     static class NoDuplicateMapStore extends TestMapStore {
         boolean failed = false;
