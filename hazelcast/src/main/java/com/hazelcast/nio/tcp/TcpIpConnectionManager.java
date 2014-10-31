@@ -96,6 +96,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private final AtomicInteger allTextConnections = new AtomicInteger();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
+    private final boolean backPressureEnabled;
 
     private volatile boolean live;
 
@@ -121,6 +122,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
+<<<<<<< HEAD
     // the selectorImbalanceWorkaroundEnabled is a hack to make sure that selectors get an equal number of connections
     // to deal with this should only be used for the test lab. In the future we need to create a real fix to this problem,
     // but without this hack we can't do reliable benchmarking because the numbers have too much variation.
@@ -128,17 +130,30 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private final Map<String, Integer> selectorIndexPerHostMap;
 
     public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
+=======
+    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel, boolean backPressureEnabled) {
+>>>>>>> Added configuration option to enable/disable backpressure
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(TcpIpConnectionManager.class.getName());
+
+        logger.info("Back-pressure enabled: " + backPressureEnabled);
+
         this.socketReceiveBufferSize = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
         this.socketSendBufferSize = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
         this.socketLingerSeconds = ioService.getSocketLingerSeconds();
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
+<<<<<<< HEAD
         this.selectorThreadCount = ioService.getSelectorThreadCount();
         this.inSelectors = new InSelectorImpl[selectorThreadCount];
         this.outSelectors = new OutSelectorImpl[selectorThreadCount];
+=======
+        this.backPressureEnabled = backPressureEnabled;
+        selectorThreadCount = ioService.getSelectorThreadCount();
+        inSelectors = new IOSelector[selectorThreadCount];
+        outSelectors = new IOSelector[selectorThreadCount];
+>>>>>>> Added configuration option to enable/disable backpressure
         final Collection<Integer> ports = ioService.getOutboundPorts();
         this.outboundPortCount = ports == null ? 0 : ports.size();
         if (ports != null) {
@@ -335,14 +350,13 @@ public class TcpIpConnectionManager implements ConnectionManager {
         int index = getSelectorIndex(remoteHost);
 
         final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
-                outSelectors[index], connectionIdGen.incrementAndGet(), channel);
+                outSelectors[index], connectionIdGen.incrementAndGet(), channel, backPressureEnabled);
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
         connection.getReadHandler().register();
 
         logConnectionEstablished(channel, remoteSocketAddress, index);
-
         return connection;
     }
 
