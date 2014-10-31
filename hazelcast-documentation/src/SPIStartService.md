@@ -14,11 +14,11 @@ public class Member {
 }
 ```
 
-Once it is started, the `CounterService` `init` method prints the following output.
+Once it is started, the `CounterService#init` method prints the following output.
 
 `CounterService.init`
 
-Once the HazelcastInstance is shutdown (for example with Ctrl+C), the `CounterService` `shutdown` method prints the following output.
+Once the HazelcastInstance is shutdown (for example with Ctrl+C), the `CounterService#shutdown` method prints the following output.
 
 `CounterService.shutdown`
 
