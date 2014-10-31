@@ -292,6 +292,14 @@ public class JobSupervisor {
             NodeEngine nodeEngine = configuration.getNodeEngine();
             GetResultOperationFactory operationFactory = new GetResultOperationFactory(name, jobId);
 
+            // Get the initial future object to eventually set the result and cleanup
+            TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
+            if (future == null) {
+                // If already handled just return
+                return;
+            }
+
+            Object finalResult = null;
             try {
                 List<Map> results = MapReduceUtil.executeOperation(operationFactory, mapReduceService, nodeEngine, true);
                 boolean reducedResult = configuration.getReducerFactory() != null;
@@ -304,22 +312,15 @@ public class JobSupervisor {
                         }
                     }
 
-                    // Get the initial future object to eventually set the result and cleanup
-                    TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
-                    jobTracker.unregisterMapCombineTask(jobId);
-                    jobTracker.unregisterReducerTask(jobId);
-                    mapReduceService.destroyJobSupervisor(this);
-
-                    future.setResult(mergedResults);
+                    finalResult = mergedResults;
                 }
             } catch (Exception e) {
-                // Get the initial future object to eventually set the result and cleanup
-                TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
+                finalResult = e;
+            } finally {
                 jobTracker.unregisterMapCombineTask(jobId);
                 jobTracker.unregisterReducerTask(jobId);
                 mapReduceService.destroyJobSupervisor(this);
-
-                future.setResult(e);
+                future.setResult(finalResult);
             }
         }
     }
