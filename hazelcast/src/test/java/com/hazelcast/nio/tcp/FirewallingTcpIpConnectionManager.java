@@ -30,7 +30,7 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
     final Set<Address> blockedAddresses = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
     public FirewallingTcpIpConnectionManager(NodeIOService ioService, ServerSocketChannel serverSocketChannel) {
-        super(ioService, serverSocketChannel);
+        super(ioService, serverSocketChannel,false);
     }
 
     @Override
