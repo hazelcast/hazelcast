@@ -48,9 +48,6 @@ import java.util.WeakHashMap;
 public abstract class AbstractHazelcastCachingProvider
         implements CachingProvider {
 
-    protected static final String HAZELCAST_CONFIG_URI_SCHEMA = "hazelcast+config";
-    protected static final String HAZELCAST_NAME_URI_SCHEMA = "hazelcast+name";
-
     protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
     protected static volatile HazelcastInstance hazelcastInstance;
 

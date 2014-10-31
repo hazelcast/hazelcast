@@ -88,28 +88,6 @@ public final class HazelcastCachingProvider
         delegate = cp;
     }
 
-    /**
-     * create the properties with the provided config file location
-     * @param configFileLocation config file location
-     * @return properties
-     */
-    public static Properties byLocation(String configFileLocation) {
-        final Properties properties = new Properties();
-        properties.setProperty(HAZELCAST_CONFIG_LOCATION, configFileLocation);
-        return properties;
-    }
-
-    /**
-     * create the properties with the provided instance name
-     * @param instanceName instance name
-     * @return properties
-     */
-    public static Properties byInstanceName(String instanceName) {
-        final Properties properties = new Properties();
-        properties.setProperty(HAZELCAST_INSTANCE_NAME, instanceName);
-        return properties;
-    }
-
     private CachingProvider createClientProvider() {
         try {
             return ClassLoaderUtil.newInstance(getClass().getClassLoader(), CLIENT_CACHING_PROVIDER_CLASS);
