@@ -113,12 +113,10 @@ public final class TcpIpConnection implements Connection {
         }
 
         boolean full = false;
-        for (;;) {
+        for (; ; ) {
             int oldAvailableSlots = availableSlots.get();
 
-            if (oldAvailableSlots < 0) {
-                full = true;
-            }
+            full = oldAvailableSlots <= 0;
 
             int newAvailableSlots = oldAvailableSlots - 1;
             if (availableSlots.compareAndSet(oldAvailableSlots, newAvailableSlots)) {
@@ -242,8 +240,20 @@ public final class TcpIpConnection implements Connection {
             //    logger.info("Received " + claimResponse + "slots for " + toString());
             backoffState = BackoffPolicy.EMPTY_STATE;
         }
-        availableSlots.addAndGet(claimResponse);
-        waitingForSlotResponse.set(false);
+
+        for (; ; ) {
+            int currentAvailableSlots = this.availableSlots.get();
+            if (currentAvailableSlots > 0) {
+                //we are going to ignore any claimResponses if the availableSlots is bigger than zero
+                break;
+            } else {
+                int newAvailableSlots = currentAvailableSlots + claimResponse;
+                if (availableSlots.compareAndSet(currentAvailableSlots, newAvailableSlots)) {
+                    waitingForSlotResponse.set(false);
+                    break;
+                }
+            }
+        }
     }
 
     @Override
