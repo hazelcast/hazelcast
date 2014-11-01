@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
-import com.hazelcast.config.CacheConfig;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
 
@@ -49,13 +48,7 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 public class CacheService extends AbstractCacheService implements ICacheService {
 
     protected ICacheRecordStore createNewRecordStore(String name, int partitionId) {
-        CacheConfig cacheConfig = configs.get(name);
-        if (cacheConfig == null) {
-            throw new IllegalArgumentException("CacheConfig is null! " + name);
-        }
-        return new CacheRecordStore(name, partitionId, nodeEngine, CacheService.this,
-                cacheConfig.getEvictionPolicy(), cacheConfig.getEvictionPercentage(),
-                cacheConfig.getEvictionThresholdPercentage());
+        return new CacheRecordStore(name, partitionId, nodeEngine, CacheService.this);
     }
 
     @Override

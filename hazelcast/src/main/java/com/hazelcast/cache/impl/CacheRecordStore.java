@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -64,10 +63,8 @@ public class CacheRecordStore
     protected CacheRecordFactory cacheRecordFactory;
 
     public CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine,
-                    AbstractCacheService cacheService, EvictionPolicy evictionPolicy,
-                    int evictionPercentage, int evictionThresholdPercentage) {
-        super(name, partitionId, nodeEngine, cacheService, evictionPolicy,
-                evictionPercentage, evictionThresholdPercentage);
+                    AbstractCacheService cacheService) {
+        super(name, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
         this.records = createRecordCacheMap();
         this.cacheRecordFactory = createCacheRecordFactory();

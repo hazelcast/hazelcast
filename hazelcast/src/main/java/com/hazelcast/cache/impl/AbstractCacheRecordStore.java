@@ -79,15 +79,11 @@ public abstract class AbstractCacheRecordStore<
     public AbstractCacheRecordStore(final String name,
                                     final int partitionId,
                                     final NodeEngine nodeEngine,
-                                    final AbstractCacheService cacheService,
-                                    final EvictionPolicy evictionPolicy,
-                                    final int evictionPercentage,
-                                    final int evictionThresholdPercentage) {
+                                    final AbstractCacheService cacheService) {
         this.name = name;
         this.partitionId = partitionId;
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
-        this.evictionThresholdPercentage = evictionThresholdPercentage;
         this.cacheConfig = cacheService.getCacheConfig(name);
         if (cacheConfig == null) {
             throw new CacheNotExistsException("Cache already destroyed, node " + nodeEngine.getLocalMember());
@@ -105,9 +101,11 @@ public abstract class AbstractCacheRecordStore<
         }
         Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
         this.defaultExpiryPolicy = expiryPolicyFactory.create();
-        this.evictionPolicy = evictionPolicy != null ? evictionPolicy : cacheConfig.getEvictionPolicy();
+        this.evictionPolicy = cacheConfig.getEvictionPolicy() != null
+                ? cacheConfig.getEvictionPolicy() : EvictionPolicy.NONE;
         this.evictionEnabled = evictionPolicy != EvictionPolicy.NONE;
-        this.evictionPercentage = evictionPercentage;
+        this.evictionPercentage = cacheConfig.getEvictionPercentage();
+        this.evictionThresholdPercentage = cacheConfig.getEvictionThresholdPercentage();
     }
     //CHECKSTYLE:ON
 
