@@ -134,7 +134,6 @@ public final class TcpIpConnection implements Connection {
                     waitingForSlotResponse.set(false);
                 }
             }
-            return WriteResult.FULL;
         }
 
         // we are going to the packet no matter the queue is full because we can't store it locally.
