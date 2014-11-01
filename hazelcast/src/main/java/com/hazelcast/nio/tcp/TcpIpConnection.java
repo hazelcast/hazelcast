@@ -112,7 +112,7 @@ public final class TcpIpConnection implements Connection {
             return WriteResult.SUCCESS;
         }
 
-        boolean full = false;
+        boolean full;
         for (; ; ) {
             int oldAvailableSlots = availableSlots.get();
 
@@ -133,8 +133,8 @@ public final class TcpIpConnection implements Connection {
                 } else {
                     waitingForSlotResponse.set(false);
                 }
-                return WriteResult.FULL;
             }
+            return WriteResult.FULL;
         }
 
         // we are going to the packet no matter the queue is full because we can't store it locally.
