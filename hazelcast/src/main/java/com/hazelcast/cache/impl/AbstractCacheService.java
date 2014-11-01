@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
@@ -52,7 +53,6 @@ public abstract class AbstractCacheService implements ICacheService {
             segments[i] = new CachePartitionSegment(this, i);
         }
     }
-
     protected abstract ICacheRecordStore createNewRecordStore(String name, int partitionId);
     //endregion
 
@@ -176,10 +176,12 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public CacheStatisticsImpl createCacheStatIfAbsent(String name) {
-        if (!statistics.containsKey(name)) {
-            statistics.putIfAbsent(name, new CacheStatisticsImpl());
+        CacheStatisticsImpl statistics = new CacheStatisticsImpl();
+        CacheStatisticsImpl temp = this.statistics.putIfAbsent(name, statistics);
+        if (temp != null) {
+            statistics = temp;
         }
-        return statistics.get(name);
+        return statistics;
     }
 
     @Override
@@ -226,7 +228,10 @@ public abstract class AbstractCacheService implements ICacheService {
         return configs.get(name);
     }
 
-    @Override
+    public CacheSimpleConfig findCacheConfig(String simpleName) {
+        return nodeEngine.getConfig().findCacheConfig(simpleName);
+    }
+
     public Collection<CacheConfig> getCacheConfigs() {
         return configs.values();
     }

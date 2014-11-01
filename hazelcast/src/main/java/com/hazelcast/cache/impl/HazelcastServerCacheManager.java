@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
@@ -105,7 +106,7 @@ public class HazelcastServerCacheManager
                 final CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan,
                         enabled);
                 final Future future = nodeEngine.getOperationService()
-                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                                                .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
                 futures.add(future);
             }
         }
@@ -141,12 +142,12 @@ public class HazelcastServerCacheManager
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix) {
+    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix, String cacheName) {
         //remote check
-        final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix);
+        final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix, cacheName);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
-                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+                                                                   .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.getSafely();
     }
 
@@ -165,5 +166,8 @@ public class HazelcastServerCacheManager
     }
 
     protected void postClose() {
+        if (properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION) != null) {
+            hazelcastInstance.shutdown();
+        }
     }
 }

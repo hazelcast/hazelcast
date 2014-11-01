@@ -207,8 +207,125 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="cache-entry-listeners">
+        <xs:sequence>
+            <xs:element name="cache-entry-listener" type="cache-entry-listener" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="cache-entry-listener">
+        <xs:sequence>
+            <xs:element name="cache-entry-listener-factory" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="class-name" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="cache-entry-event-filter-factory" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="class-name" use="required"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="old-value-required" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="synchronous" type="xs:boolean" use="optional" default="false"/>
+    </xs:complexType>
     <xs:complexType name="cache">
         <xs:sequence>
+            <xs:element name="key-type" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            the type of keys provided as full class name
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:attribute name="class-name" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="value-type" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            the type of values provided as full class name
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:attribute name="class-name" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines whether statistics gathering is enabled on a cache.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="management-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines whether management is enabled on a cache.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="read-through" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Set if read-through caching should be used.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="write-through" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Set if write-through caching should be used.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="cache-loader-factory" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Defines the cache loader factory class name.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:attribute name="class-name" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="cache-writer-factory" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Defines the cache writer factory class name.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:attribute name="class-name" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="expiry-policy-factory" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Defines the expiry policy factory class name.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:attribute name="class-name" use="required"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="cache-entry-listeners" type="cache-entry-listeners" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        List of cache entry listeners
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY">
+                <xs:annotation>
+                    <xs:documentation>
+                        Data type that will be used for storing records.
+                        Possible values:
+                        BINARY (default): keys and values will be stored as binary data
+                        OBJECT : values will be stored in their object forms
+                        OFFHEAP : keys and values will be stored in native memory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -224,16 +341,6 @@
                         Number of async backups. If 1 is set as the backup-count for example,
                         then all entries of the map will be copied to another JVM for
                         fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Maximum number of seconds for each entry to stay in the cache. Entries that are
-                        older than &lt;time-to-live-seconds&gt; and not updated for &lt;time-to-live-seconds&gt;
-                        will get automatically evicted from the map.
-                        Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -278,9 +385,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the cache.
+                </xs:documentation>
+            </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>

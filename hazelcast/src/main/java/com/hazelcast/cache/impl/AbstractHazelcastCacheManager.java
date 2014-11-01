@@ -5,7 +5,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 
-import javax.cache.Cache;
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -36,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * </p>
  * @see CacheManager
  */
-//todo AbstractHazelcastCacheManager would be better
 public abstract class AbstractHazelcastCacheManager
         implements CacheManager {
 
@@ -75,9 +73,8 @@ public abstract class AbstractHazelcastCacheManager
     }
 
     @Override
-    public <K, V, C extends Configuration<K, V>> Cache<K, V> createCache(String cacheName, C configuration)
+    public <K, V, C extends Configuration<K, V>> ICache<K, V> createCache(String cacheName, C configuration)
             throws IllegalArgumentException {
-        //TODO: WARNING important method, handles dynamic cache config
         if (isClosed()) {
             throw new IllegalStateException();
         }
@@ -102,12 +99,11 @@ public abstract class AbstractHazelcastCacheManager
             registerListeners(newCacheConfig, cacheProxy);
             return cacheProxy;
         } else {
-            // TODO: Might race in terms we don't check existing config and given config to be similar
-            final ICache<?, ?> entries = caches.putIfAbsent(newCacheConfig.getNameWithPrefix(), cacheProxy);
-            if (entries == null) {
-                //REGISTER LISTENERS
-                registerListeners(newCacheConfig, cacheProxy);
-                return cacheProxy;
+            ICache<?, ?> cache = getCacheUnchecked(cacheName);
+            CacheConfig cacheConfig = cache.getConfiguration(CacheConfig.class);
+            if (cacheConfig.equals(configuration)) {
+                //If configuration matches it can return the already existing cache
+                return (ICache<K, V>) cache;
             }
         }
         throw new CacheException("A cache named " + cacheName + " already exists.");
@@ -189,11 +185,10 @@ public abstract class AbstractHazelcastCacheManager
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
         if (cache == null) {
-            //FIXME review getCache
             CacheConfig<K, V> cacheConfig = null;
             if (cacheConfig == null) {
                 //remote check
-                cacheConfig = getCacheConfigFromPartition(cacheNameWithPrefix);
+                cacheConfig = getCacheConfigFromPartition(cacheNameWithPrefix, cacheName);
             }
             if (cacheConfig == null) {
                 //no cache found
@@ -303,12 +298,12 @@ public abstract class AbstractHazelcastCacheManager
      */
     protected String cacheNamePrefix() {
         final StringBuilder sb = new StringBuilder("/hz");
+        if (!isDefaultURI) {
+            sb.append("/").append(uri.toASCIIString());
+        }
         final ClassLoader classLoader = getClassLoader();
         if (!isDefaultClassLoader && classLoader != null) {
             sb.append("/").append(classLoader.toString());
-        }
-        if (!isDefaultURI) {
-            sb.append("/").append(uri.toASCIIString());
         }
         sb.append("/");
         return sb.toString();
@@ -343,7 +338,7 @@ public abstract class AbstractHazelcastCacheManager
 
     protected abstract <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig);
 
-    protected abstract <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName);
+    protected abstract <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName, String simpleCacheName);
 
     protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
         //REGISTER LISTENERS

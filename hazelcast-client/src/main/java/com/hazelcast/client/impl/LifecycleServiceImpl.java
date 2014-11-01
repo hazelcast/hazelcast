@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -103,6 +104,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
         }
 
         fireLifecycleEvent(SHUTTING_DOWN);
+        HazelcastClient.shutdown(client.getName());
         client.doShutdown();
         fireLifecycleEvent(SHUTDOWN);
     }

@@ -29,6 +29,7 @@ enum XmlElements {
     EXECUTOR_SERVICE("executor-service", true),
     QUEUE("queue", true),
     MAP("map", true),
+    CACHE("cache", true),
     MULTIMAP("multimap", true),
     REPLICATED_MAP("replicatedmap", true),
     LIST("list", true),

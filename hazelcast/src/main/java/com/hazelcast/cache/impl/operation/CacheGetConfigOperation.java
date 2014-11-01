@@ -19,10 +19,12 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ReadonlyOperation;
 
+import javax.cache.CacheException;
 import java.io.IOException;
 
 /**
@@ -32,13 +34,16 @@ import java.io.IOException;
  */
 public class CacheGetConfigOperation
         extends PartitionWideCacheOperation
-        implements ReadonlyOperation /*implements BackupAwareOperation*/ {
+        implements ReadonlyOperation {
+
+    private String simpleName;
 
     public CacheGetConfigOperation() {
     }
 
-    public CacheGetConfigOperation(String name) {
+    public CacheGetConfigOperation(String name, String simpleName) {
         super(name);
+        this.simpleName = simpleName;
     }
 
     @Override
@@ -46,6 +51,23 @@ public class CacheGetConfigOperation
             throws Exception {
         final CacheService service = getService();
         final CacheConfig cacheConfig = service.getCacheConfig(name);
+        if (cacheConfig == null) {
+            CacheSimpleConfig simpleConfig = service.findCacheConfig(simpleName);
+            if (simpleConfig != null) {
+                try {
+                    CacheConfig cacheConfigFromSimpleConfig = new CacheConfig(simpleConfig);
+                    cacheConfigFromSimpleConfig.setName(name);
+                    cacheConfigFromSimpleConfig.setManagerPrefix(name.substring(0, name.lastIndexOf(simpleName)));
+                    if (service.createCacheConfigIfAbsent(cacheConfigFromSimpleConfig, false)) {
+                        response = cacheConfigFromSimpleConfig;
+                        return;
+                    }
+                } catch (Exception e) {
+                    //Cannot create the actual config from the declarative one
+                    throw new CacheException(e);
+                }
+            }
+        }
         response = cacheConfig;
     }
 
@@ -53,12 +75,14 @@ public class CacheGetConfigOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
+        out.writeUTF(simpleName);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
+        simpleName = in.readUTF();
     }
 
     @Override
