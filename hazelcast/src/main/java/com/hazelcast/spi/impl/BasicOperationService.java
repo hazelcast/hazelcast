@@ -417,7 +417,6 @@ final class BasicOperationService implements InternalOperationService {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-
         return nodeEngine.sendBackup(packet, connection);
     }
 
