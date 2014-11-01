@@ -66,7 +66,6 @@ public class HazelcastServerCacheManager
 
         //TODO: should we destroy the ref ?
         //setupRef.destroy();
-        logger = nodeEngine.getLogger(getClass());
     }
 
     @Override

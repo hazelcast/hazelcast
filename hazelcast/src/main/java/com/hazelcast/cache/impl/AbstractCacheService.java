@@ -30,6 +30,8 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.Properties;
@@ -43,7 +45,14 @@ public abstract class AbstractCacheService implements ICacheService {
     protected NodeEngine nodeEngine;
     protected CachePartitionSegment[] segments;
 
-    //region ManagedService
+    private final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction
+            = new ConstructorFunction<String, CacheStatisticsImpl>() {
+        @Override
+        public CacheStatisticsImpl createNew(String name) {
+            return new CacheStatisticsImpl();
+        }
+    };
+
     @Override
     public final void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
@@ -54,18 +63,15 @@ public abstract class AbstractCacheService implements ICacheService {
         }
     }
     protected abstract ICacheRecordStore createNewRecordStore(String name, int partitionId);
-    //endregion
 
-    //region RemoteService
     @Override
     public DistributedObject createDistributedObject(String objectName) {
         return new CacheDistributedObject(objectName, nodeEngine, this);
     }
 
-    //    @Override
+    @Override
     public void destroyDistributedObject(String objectName) {
     }
-    //endregion
 
     @Override
     public void beforeMigration(PartitionMigrationEvent event) { /*empty*/ }
@@ -88,8 +94,6 @@ public abstract class AbstractCacheService implements ICacheService {
     public void clearPartitionReplica(int partitionId) {
         segments[partitionId].clear();
     }
-
-    //region CacheService Impls
 
     @Override
     public ICacheRecordStore getOrCreateCache(String name, int partitionId) {
@@ -176,12 +180,7 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public CacheStatisticsImpl createCacheStatIfAbsent(String name) {
-        CacheStatisticsImpl statistics = new CacheStatisticsImpl();
-        CacheStatisticsImpl temp = this.statistics.putIfAbsent(name, statistics);
-        if (temp != null) {
-            statistics = temp;
-        }
-        return statistics;
+        return ConcurrencyUtil.getOrPutIfAbsent(statistics, name, cacheStatisticsConstructorFunction);
     }
 
     @Override
@@ -339,8 +338,6 @@ public abstract class AbstractCacheService implements ICacheService {
     public CacheStatisticsImpl getStatistics(String name) {
         return statistics.get(name);
     }
-
-    //endregion
 
     @Override
     public CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat) {

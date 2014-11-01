@@ -21,7 +21,6 @@ import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.util.EmptyStatement;
 
@@ -140,7 +139,7 @@ public final class HazelcastClient {
     }
 
     /**
-     * Shutdown the provided client and remove it prom the managed list
+     * Shutdown the provided client and remove it from the managed list
      * @param instance the hazelcast client instance
      */
     public static void shutdown(HazelcastInstance instance) {
@@ -158,7 +157,7 @@ public final class HazelcastClient {
     }
 
     /**
-     * Shutdown the provided client and remove it prom the managed list
+     * Shutdown the provided client and remove it from the managed list
      * @param instanceName the hazelcast client instance name
      */
     public static void shutdown(String instanceName) {

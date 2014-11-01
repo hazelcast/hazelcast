@@ -322,7 +322,7 @@
                         Possible values:
                         BINARY (default): keys and values will be stored as binary data
                         OBJECT : values will be stored in their object forms
-                        OFFHEAP : keys and values will be stored in native memory.
+                        NATIVE : keys and values will be stored in native memory.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

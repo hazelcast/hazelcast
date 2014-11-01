@@ -3,7 +3,6 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.logging.ILogger;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -46,7 +45,6 @@ public abstract class AbstractHazelcastCacheManager
     protected final boolean isDefaultURI;
     protected final boolean isDefaultClassLoader;
 
-    protected ILogger logger;
     protected CachingProvider cachingProvider;
     protected HazelcastInstance hazelcastInstance;
 

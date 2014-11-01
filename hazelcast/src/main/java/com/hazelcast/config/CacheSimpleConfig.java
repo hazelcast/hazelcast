@@ -54,7 +54,7 @@ public class CacheSimpleConfig {
     /**
      * Default eviction percentage
      */
-    public static final int DEFAULT_EVICTION_PERCENTAGE = 20;
+    public static final int DEFAULT_EVICTION_PERCENTAGE = 10;
 
     /**
      * The threshold default value for eviction
