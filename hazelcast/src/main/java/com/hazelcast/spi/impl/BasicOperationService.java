@@ -995,6 +995,7 @@ final class BasicOperationService implements InternalOperationService {
 
         private final AtomicLong backupCounter = new AtomicLong();
         private final AtomicLong fullCOunter = new AtomicLong();
+        private final AtomicLong notFullCounter = new AtomicLong();
 
         /**
          * Makes the actual backup.
@@ -1051,10 +1052,12 @@ final class BasicOperationService implements InternalOperationService {
             if (fullConnectionEncountered) {
                 syncBackups += asyncBackups;
                 fullCOunter.incrementAndGet();
+            }else{
+                notFullCounter.incrementAndGet();
             }
 
             if ((backupCounter.incrementAndGet() % 20000) == 0) {
-                logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCOunter);
+                logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCOunter+" notFullCounter: "+notFullCounter);
             }
 
             return syncBackups;
