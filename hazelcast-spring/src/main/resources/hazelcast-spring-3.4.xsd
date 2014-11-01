@@ -149,6 +149,36 @@
                                 <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="cache" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="cache-entry-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="cache-entry-listener" type="cache-entry-listener" minOccurs="0"
+                                                            maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                                <xs:attribute name="name" type="xs:string" use="required" />
+                                <xs:attribute name="key-type" type="non-space-string" use="optional" />
+                                <xs:attribute name="value-type" type="non-space-string" use="optional" />
+                                <xs:attribute name="statistics-enabled" type="xs:boolean" use="optional" />
+                                <xs:attribute name="management-enabled" type="xs:boolean" use="optional" />
+                                <xs:attribute name="read-through" type="xs:boolean" use="optional" />
+                                <xs:attribute name="write-through" type="xs:boolean" use="optional" />
+                                <xs:attribute name="in-memory-format" type="xs:string" use="optional" />
+                                <xs:attribute name="cache-loader-factory" type="xs:string" use="optional" />
+                                <xs:attribute name="cache-writer-factory" type="xs:string" use="optional" />
+                                <xs:attribute name="expiry-policy-factory" type="xs:string" use="optional" />
+                                <xs:attribute name="backup-count" use="optional" type="xs:unsignedByte"/>
+                                <xs:attribute name="async-backup-count" use="optional" type="xs:unsignedByte"/>
+                                <xs:attribute name="eviction-percentage" use="optional" type="xs:unsignedByte"/>
+                                <xs:attribute name="eviction-threshold-percentage" use="optional" type="xs:unsignedByte"/>
+                                <xs:attribute name="eviction-policy" use="optional" type="xs:string"/>
+                            </xs:complexType>
+                        </xs:element>
                         <xs:element name="multimap" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
@@ -735,7 +765,12 @@
         <xs:attribute name="url" type="xs:string" use="optional"/>
         <xs:attribute name="update-interval" type="xs:string" default="3" use="optional"/>
     </xs:complexType>
-
+    <xs:complexType name="cache-entry-listener">
+        <xs:attribute name="cache-entry-listener-factory" type="non-space-string" use="optional"/>
+        <xs:attribute name="cache-entry-event-filter-factory" type="non-space-string" use="optional"/>
+        <xs:attribute name="old-value-required" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="synchronous" type="xs:boolean" use="optional" default="false"/>
+    </xs:complexType>
     <xs:complexType name="listener">
         <xs:attribute name="class-name" type="xs:string" use="optional"/>
         <xs:attribute name="implementation" type="xs:string" use="optional"/>
