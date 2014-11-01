@@ -278,6 +278,30 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         return this;
     }
 
+    /**
+     * @return eviction percentage
+     */
+    public int getEvictionPercentage() {
+        return evictionPercentage;
+    }
+
+    public CacheConfig<K, V> setEvictionPercentage(int evictionPercentage) {
+        this.evictionPercentage = evictionPercentage;
+        return this;
+    }
+
+    /**
+     * @return eviction threshold percentage
+     */
+    public int getEvictionThresholdPercentage() {
+        return evictionThresholdPercentage;
+    }
+
+    public CacheConfig<K, V> setEvictionThresholdPercentage(int evictionThresholdPercentage) {
+        this.evictionThresholdPercentage = evictionThresholdPercentage;
+        return this;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {

@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
@@ -55,9 +54,7 @@ public abstract class AbstractCacheRecordStore<
             R extends CacheRecord, CRM extends CacheRecordMap<Data, R>>
         implements ICacheRecordStore {
 
-    protected static final long DEFAULT_EVICTION_TASK_INITIAL_DELAY = 5;
-    protected static final long DEFAULT_EVICTION_TASK_PERIOD = 5;
-    protected static final boolean DEFAULT_IS_EVICTION_TASK_ENABLE = false;
+    protected static final int DEFAULT_INITIAL_CAPACITY = 1000;
 
     protected final String name;
     protected final int partitionId;
@@ -76,33 +73,17 @@ public abstract class AbstractCacheRecordStore<
     protected final boolean evictionEnabled;
     protected final int evictionPercentage;
     protected final int evictionThresholdPercentage;
-    protected Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
-    protected final ScheduledFuture<?> evictionTaskFuture;
-
-    public AbstractCacheRecordStore(final String name,
-                                    final int partitionId,
-                                    final NodeEngine nodeEngine,
-                                    final AbstractCacheService cacheService) {
-        this(name, partitionId, nodeEngine, cacheService, null,
-             DEFAULT_EVICTION_PERCENTAGE,
-             DEFAULT_EVICTION_THRESHOLD_PERCENTAGE,
-             DEFAULT_IS_EVICTION_TASK_ENABLE);
-    }
+    protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
 
     //CHECKSTYLE:OFF
     public AbstractCacheRecordStore(final String name,
                                     final int partitionId,
                                     final NodeEngine nodeEngine,
-                                    final AbstractCacheService cacheService,
-                                    final EvictionPolicy evictionPolicy,
-                                    final int evictionPercentage,
-                                    final int evictionThresholdPercentage,
-                                    final boolean evictionTaskEnable) {
+                                    final AbstractCacheService cacheService) {
         this.name = name;
         this.partitionId = partitionId;
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
-        this.evictionThresholdPercentage = evictionThresholdPercentage;
         this.cacheConfig = cacheService.getCacheConfig(name);
         if (cacheConfig == null) {
             throw new CacheNotExistsException("Cache already destroyed, node " + nodeEngine.getLocalMember());
@@ -120,18 +101,11 @@ public abstract class AbstractCacheRecordStore<
         }
         Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
         this.defaultExpiryPolicy = expiryPolicyFactory.create();
-        this.evictionPolicy =
-                evictionPolicy != null
-                        ? evictionPolicy
-                        : cacheConfig.getEvictionPolicy();
+        this.evictionPolicy = cacheConfig.getEvictionPolicy() != null
+                ? cacheConfig.getEvictionPolicy() : EvictionPolicy.NONE;
         this.evictionEnabled = evictionPolicy != EvictionPolicy.NONE;
-        this.evictionPercentage = evictionPercentage;
-
-        if (evictionTaskEnable) {
-            this.evictionTaskFuture = createEvictionTaskFuture();
-        } else {
-            this.evictionTaskFuture = null;
-        }
+        this.evictionPercentage = cacheConfig.getEvictionPercentage();
+        this.evictionThresholdPercentage = cacheConfig.getEvictionThresholdPercentage();
     }
     //CHECKSTYLE:ON
 
@@ -200,20 +174,6 @@ public abstract class AbstractCacheRecordStore<
         }
         evicted += records.evictRecords(percentage, EvictionPolicy.RANDOM);
         return evicted;
-    }
-
-    protected ScheduledFuture<?> createEvictionTaskFuture() {
-        return
-            nodeEngine.getExecutionService()
-                .scheduleWithFixedDelay("hz:cache",
-                        createEvictionTask(),
-                        DEFAULT_EVICTION_TASK_INITIAL_DELAY,
-                        DEFAULT_EVICTION_TASK_PERIOD,
-                        TimeUnit.SECONDS);
-    }
-
-    protected EvictionTask createEvictionTask() {
-        return new EvictionTask();
     }
 
     protected Data toData(Object obj) {
@@ -1346,15 +1306,4 @@ public abstract class AbstractCacheRecordStore<
     public Map<Data, CacheRecord> getReadOnlyRecords() {
         return (Map<Data, CacheRecord>) Collections.unmodifiableMap(records);
     }
-
-    protected void onEvict() {
-        evictIfRequired();
-    }
-
-    protected class EvictionTask implements Runnable {
-        public void run() {
-            onEvict();
-        }
-    }
-
 }
