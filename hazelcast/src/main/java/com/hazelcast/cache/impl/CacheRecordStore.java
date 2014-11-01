@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -31,7 +32,6 @@ import com.hazelcast.util.EmptyStatement;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.concurrent.ScheduledFuture;
 
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
@@ -64,8 +64,10 @@ public class CacheRecordStore
     protected CacheRecordFactory cacheRecordFactory;
 
     public CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine,
-                     AbstractCacheService cacheService) {
-        super(name, partitionId, nodeEngine, cacheService);
+                    AbstractCacheService cacheService, EvictionPolicy evictionPolicy,
+                    int evictionPercentage, int evictionThresholdPercentage) {
+        super(name, partitionId, nodeEngine, cacheService, evictionPolicy,
+                evictionPercentage, evictionThresholdPercentage);
         this.serializationService = nodeEngine.getSerializationService();
         this.records = createRecordCacheMap();
         this.cacheRecordFactory = createCacheRecordFactory();
@@ -168,7 +170,6 @@ public class CacheRecordStore
     @Override
     public void destroy() {
         clear();
-        onDestroy();
         closeResources();
         //close the configured CacheEntryListeners
         EventService eventService = cacheService.getNodeEngine().getEventService();
@@ -203,12 +204,4 @@ public class CacheRecordStore
             IOUtil.closeResource((Closeable) defaultExpiryPolicy);
         }
     }
-
-    protected void onDestroy() {
-        ScheduledFuture<?> f = evictionTaskFuture;
-        if (f != null) {
-            f.cancel(true);
-        }
-    }
-
 }

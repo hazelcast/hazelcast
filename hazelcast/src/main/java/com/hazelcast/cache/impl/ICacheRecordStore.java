@@ -45,12 +45,7 @@ public interface ICacheRecordStore {
 
     // Defined as constant for check-style error
     int ONE_HUNDRED_PERCENT = 100;
-
     int MIN_FORCED_EVICT_PERCENTAGE = 20;
-    int DEFAULT_EVICTION_PERCENTAGE = 20;
-    int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = ONE_HUNDRED_PERCENT - DEFAULT_EVICTION_PERCENTAGE;
-    int DEFAULT_TTL = 1000 * 60 * 60;
-    int DEFAULT_INITIAL_CAPACITY = 1000;
 
     /**
      * Gets the value to which the specified key is mapped,
