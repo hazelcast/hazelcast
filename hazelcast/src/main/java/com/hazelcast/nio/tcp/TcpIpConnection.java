@@ -107,7 +107,7 @@ public final class TcpIpConnection implements Connection {
             return WriteResult.FAILURE;
         }
 
-        if(!backPressureEnabled){
+        if (!backPressureEnabled) {
             writeHandler.enque(packet);
             return WriteResult.SUCCESS;
         }
@@ -116,9 +116,8 @@ public final class TcpIpConnection implements Connection {
         for (;;) {
             int oldAvailableSlots = availableSlots.get();
 
-            if (oldAvailableSlots <= 0) {
+            if (oldAvailableSlots < 0) {
                 full = true;
-                break;
             }
 
             int newAvailableSlots = oldAvailableSlots - 1;
@@ -155,12 +154,14 @@ public final class TcpIpConnection implements Connection {
             return WriteResult.FAILURE;
         }
 
-        if (backPressureEnabled && packet.isBackpressureAllowed()) {
-            return enqueWithBackPressure(packet);
-        } else {
-            writeHandler.enque(packet);
-            return WriteResult.SUCCESS;
+        if (backPressureEnabled) {
+            if (packet.isBackpressureAllowed()) {
+                return enqueWithBackPressure(packet);
+            }
+
         }
+        writeHandler.enque(packet);
+        return WriteResult.SUCCESS;
     }
 
     private WriteResult enqueWithBackPressure(SocketWritable packet) {
@@ -196,7 +197,7 @@ public final class TcpIpConnection implements Connection {
 
     private void sendClaim() {
         //todo: needs to be removed or put under debug
-  //      logger.info("Sending claim for " + toString());
+        //      logger.info("Sending claim for " + toString());
         IOService ioService = connectionManager.ioService;
         Data dummyData = ioService.toData(0);
         Packet slotRequestPacket = new Packet(dummyData, ioService.getPortableContext());
@@ -236,12 +237,12 @@ public final class TcpIpConnection implements Connection {
         if (claimResponse == 0) {
             backoffState = backoffPolicy.nextState(backoffState);
             dontAskForSlotsBefore = Clock.currentTimeMillis() + backoffState;
-        //    logger.info("Received empty claim response from " + toString() + ". Next attempt in " + backoffState + " ms.");
+            //    logger.info("Received empty claim response from " + toString() + ". Next attempt in " + backoffState + " ms.");
         } else {
-        //    logger.info("Received " + claimResponse + "slots for " + toString());
+            //    logger.info("Received " + claimResponse + "slots for " + toString());
             backoffState = BackoffPolicy.EMPTY_STATE;
         }
-        availableSlots.set(claimResponse);
+        availableSlots.addAndGet(claimResponse);
         waitingForSlotResponse.set(false);
     }
 
