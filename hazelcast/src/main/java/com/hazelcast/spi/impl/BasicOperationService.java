@@ -990,7 +990,10 @@ final class BasicOperationService implements InternalOperationService {
             }
 
             return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackupCount, totalBackupCount);
+
         }
+
+        private final AtomicLong backupCounter = new AtomicLong();
 
         /**
          * Makes the actual backup.
@@ -1046,6 +1049,10 @@ final class BasicOperationService implements InternalOperationService {
             // the backups not only the synchronous ones.
             if (fullConnectionEncountered) {
                 syncBackups += asyncBackups;
+            }
+
+            if (backupCounter.incrementAndGet() % 5000 == 0) {
+                logger.info(backupCounter.get() + "  Backups sync = " + syncBackups);
             }
 
             return syncBackups;
