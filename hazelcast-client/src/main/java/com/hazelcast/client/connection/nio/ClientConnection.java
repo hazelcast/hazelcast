@@ -149,6 +149,11 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
+    public boolean isFull() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public WriteResult write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {

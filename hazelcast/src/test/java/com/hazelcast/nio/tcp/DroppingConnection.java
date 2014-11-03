@@ -48,6 +48,12 @@ class DroppingConnection implements Connection {
         return write(packet);
     }
 
+
+    @Override
+    public boolean isFull() {
+        return false;
+    }
+
     @Override
     public boolean isAlive() {
         return true;
