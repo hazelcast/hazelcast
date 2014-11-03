@@ -42,7 +42,7 @@ import static com.hazelcast.hibernate.HazelcastTimestamper.nextTimestamp;
  * <ul>
  *     <li>Multiple transactions can soft-lock an entry concurrently</li>
  *     <li>While an entry is soft-locked, the value of the cache entry is always {@code null}</li>
- *     <li>An entry is unlocked from a soft-lock when all transactions</li>
+ *     <li>An entry is unlocked from a soft-lock when all transactions complete</li>
  *     <li>An entry is unlocked if it reaches the configured lock timeout</li>
  * </ul>
  * These requirements are incompatible with IMap locks
@@ -85,7 +85,7 @@ public class IMapRegionCache implements RegionCache {
         // Ideally this would be an entry processor. Unfortunately there is no guarantee that
         // the versionComparator is Serializable.
         //
-        // An alternatively this could be implemented using a `map.get` followed by `map.set` wrapped inside a
+        // Alternatively this could be implemented using a `map.get` followed by `map.set` wrapped inside a
         // `map.tryLock` block. Unfortunately this implementation was prone to `IllegalMonitorStateException` when
         // the lock was released under heavy load or after network partitions. Hence this implementation now uses
         // a spin loop around atomic operations.
