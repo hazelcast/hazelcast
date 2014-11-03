@@ -4,7 +4,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
@@ -27,6 +26,7 @@ import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
 import com.hazelcast.transaction.impl.TransactionLog;
 import com.hazelcast.transaction.impl.TransactionSupport;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,7 +53,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMapGetIsUsed_withTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -84,7 +84,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMapGetIsUsed_withoutTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -107,7 +107,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMapContainsKeyIsUsed_withTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -137,7 +137,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMapContainsKeyIsUsed_withoutTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -159,7 +159,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMapGetEntryViewIsUsed_withoutTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {

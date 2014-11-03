@@ -18,21 +18,22 @@ package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SetConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
 import com.hazelcast.core.ISet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -274,7 +275,7 @@ public class SetTest extends HazelcastTestSupport {
     @Test
     public void testContainsAll_whenSetNotContains() {
         ISet set = newSet();
-        ILock lock = Hazelcast.newHazelcastInstance().getLock("asd");
+
         Set contains = new HashSet();
         contains.add("item1");
         contains.add("item100");
