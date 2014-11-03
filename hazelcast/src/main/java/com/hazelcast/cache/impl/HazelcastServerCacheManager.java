@@ -125,7 +125,7 @@ public class HazelcastServerCacheManager
         final OperationService operationService = nodeEngine.getOperationService();
 
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
-        final InternalCompletableFuture<CacheConfig<K,V>> f = operationService
+        final InternalCompletableFuture<CacheConfig<K, V>> f = operationService
                 .invokeOnPartition(CacheService.SERVICE_NAME, cacheCreateConfigOperation, partitionId);
         return f.getSafely();
     }
