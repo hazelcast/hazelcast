@@ -23,6 +23,9 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -30,10 +33,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -44,7 +43,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientLockTest extends HazelcastTestSupport{
+public class ClientLockTest extends HazelcastTestSupport {
 
     static final String name = "test";
     static HazelcastInstance hz;
@@ -153,6 +152,7 @@ public class ClientLockTest extends HazelcastTestSupport{
         assertTrue(lockWithZeroTTL);
 
     }
+
     @Test
     public void testTryLockwithZeroTTLWithExistingLock() throws Exception {
 
@@ -161,10 +161,10 @@ public class ClientLockTest extends HazelcastTestSupport{
         new Thread() {
             public void run() {
                 try {
-                    if (!l.tryLock(0,TimeUnit.SECONDS)) {
+                    if (!l.tryLock(0, TimeUnit.SECONDS)) {
                         latch.countDown();
                     }
-               } catch (InterruptedException e) {
+                } catch (InterruptedException e) {
                 }
             }
         }.start();
@@ -232,4 +232,5 @@ public class ClientLockTest extends HazelcastTestSupport{
 
         assertFalse("Lock obtained by 2 client ", lockObtained);
     }
+
 }
