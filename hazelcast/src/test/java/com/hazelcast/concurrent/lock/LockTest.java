@@ -26,15 +26,14 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.concurrent.lock.LockTestUtils.lockByOtherThread;
 import static org.junit.Assert.assertEquals;
@@ -404,8 +403,9 @@ public class LockTest extends HazelcastTestSupport {
 
         Runnable tryLockRunnable = new Runnable() {
             public void run() {
-                if (lock.tryLock())
+                if (lock.tryLock()) {
                     atomicInteger.incrementAndGet();
+                }
             }
         };
 
@@ -780,5 +780,29 @@ public class LockTest extends HazelcastTestSupport {
         lock1.unlock();
         assertFalse(lock1.isLocked());
         assertTrue(lock1.tryLock());
+    }
+
+    @Test
+    public void testLockInterruptibly() throws Exception {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        final ILock lock = h1.getLock(randomString());
+        final CountDownLatch latch = new CountDownLatch(1);
+        lock.lock();
+        Thread t = new Thread() {
+            public void run() {
+                try {
+                    lock.lockInterruptibly();
+                } catch (InterruptedException e) {
+                    latch.countDown();
+                }
+            }
+        };
+        t.start();
+        sleepMillis(5000);
+        t.interrupt();
+        assertTrue(latch.await(15, TimeUnit.SECONDS));
     }
 }
