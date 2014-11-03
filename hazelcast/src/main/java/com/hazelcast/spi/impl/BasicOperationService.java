@@ -1045,7 +1045,7 @@ final class BasicOperationService implements InternalOperationService {
                 notFullCounter.incrementAndGet();
             }
 
-            if ((backupCounter.incrementAndGet() % 20000) == 0) {
+            if ((backupCounter.incrementAndGet() % 20) == 0) {
                 logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCOunter + " notFullCounter: " + notFullCounter);
             }
 
