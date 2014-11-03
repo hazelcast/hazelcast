@@ -111,4 +111,12 @@ public class CacheEventDataImpl
     public int getFactoryId() {
         return CacheDataSerializerHook.F_ID;
     }
+
+    @Override
+    public String toString() {
+        return "CacheEventDataImpl{"
+                + "name='" + name + '\''
+                + ", eventType=" + eventType
+                + '}';
+    }
 }

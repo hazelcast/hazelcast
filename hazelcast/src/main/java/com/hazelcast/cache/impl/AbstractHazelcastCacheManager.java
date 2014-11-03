@@ -86,8 +86,8 @@ public abstract class AbstractHazelcastCacheManager
         final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
         //create proxy object
         final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
-        final boolean created = createConfigOnPartition(newCacheConfig);
-        if (created) {
+        CacheConfig<K, V> current = createConfigOnPartition(newCacheConfig);
+        if (current == null) {
             //single thread region because createConfigOnPartition is single threaded by partition thread
             //UPDATE LOCAL MEMBER
             addCacheConfigIfAbsentToLocal(newCacheConfig);
@@ -96,15 +96,22 @@ public abstract class AbstractHazelcastCacheManager
             //REGISTER LISTENERS
             registerListeners(newCacheConfig, cacheProxy);
             return cacheProxy;
-        } else {
-            ICache<?, ?> cache = getCacheUnchecked(cacheName);
-            CacheConfig cacheConfig = cache.getConfiguration(CacheConfig.class);
-            if (cacheConfig.equals(configuration)) {
-                //If configuration matches it can return the already existing cache
-                return (ICache<K, V>) cache;
-            }
+        }
+        ICache<?, ?> cache = getOrPutIfAbsent(current.getNameWithPrefix(), cacheProxy);
+        CacheConfig config = cache.getConfiguration(CacheConfig.class);
+        if (config.equals(configuration)) {
+            return (ICache<K, V>) cache;
         }
         throw new CacheException("A cache named " + cacheName + " already exists.");
+    }
+
+    private ICache<?, ?> getOrPutIfAbsent(String nameWithPrefix, ICache cacheProxy) {
+        ICache<?, ?> cache = caches.get(nameWithPrefix);
+        if (cache == null) {
+            ICache<?, ?> iCache = caches.putIfAbsent(nameWithPrefix, cacheProxy);
+            cache = iCache != null ? iCache : cacheProxy;
+        }
+        return cache;
     }
 
     @Override
@@ -240,6 +247,7 @@ public abstract class AbstractHazelcastCacheManager
      * Removes the local copy of the cache configuration if one exists.
      * Default implementation does not require it. But client implementation overrides this to track a local copy
      * of the config.
+     *
      * @param cacheName cache name.
      */
     protected void removeCacheConfigFromLocal(String cacheName) {
@@ -292,6 +300,7 @@ public abstract class AbstractHazelcastCacheManager
      * This method calculates a fixed string based on the URI and classloader using the formula:
      * <p>/hz[/uri][/classloader]/</p>
      * <p>URI and classloader are dropped if they have default values.</p>
+     *
      * @return the calculated cache prefix.
      */
     protected String cacheNamePrefix() {
@@ -330,7 +339,7 @@ public abstract class AbstractHazelcastCacheManager
 
     protected abstract <K, V> CacheConfig<K, V> getCacheConfigLocal(String cacheName);
 
-    protected abstract <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig);
+    protected abstract <K, V> CacheConfig<K, V> createConfigOnPartition(CacheConfig<K, V> cacheConfig);
 
     protected abstract <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig);
 

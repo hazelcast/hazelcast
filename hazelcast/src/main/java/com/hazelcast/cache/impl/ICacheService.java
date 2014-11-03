@@ -43,7 +43,7 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     void destroyCache(String objectName, boolean isLocal, String callerUuid);
 
-    boolean createCacheConfigIfAbsent(CacheConfig config, boolean isLocal);
+    CacheConfig createCacheConfigIfAbsent(CacheConfig config, boolean isLocal);
 
     CacheConfig deleteCacheConfig(String name);
 
