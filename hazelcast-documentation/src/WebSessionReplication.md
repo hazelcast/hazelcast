@@ -219,7 +219,7 @@ session.setAttribute("myKey", list1); // changes updated in the cluster
 
 #### SessionId Generation
 
-SessionId generation is done by by the Hazelcast Web Session Module if session replication is configured in the web application. The default cookie name for the sessionId is `hazelcast.sessionId`. This name is configurable with a `cookie-name` parameter in the `web.xml` file of the application.
+SessionId generation is done by the Hazelcast Web Session Module if session replication is configured in the web application. The default cookie name for the sessionId is `hazelcast.sessionId`. This name is configurable with a `cookie-name` parameter in the `web.xml` file of the application.
 `hazelcast.sessionId` is just a UUID prefixed with “HZ” character and without “-“ character, e.g. `HZ6F2D036789E4404893E99C05D8CA70C7`.
 
 When called by the target application, the value of `HttpSession.getId()` is the same as the value of `hazelcast.sessionId`.
