@@ -96,7 +96,7 @@ public abstract class AbstractHazelcastCacheManager
             //REGISTER LISTENERS
             registerListeners(newCacheConfig, cacheProxy);
             return cacheProxy;
-        } else if (current.equals(newCacheConfig)) {
+        } else if (current.equals(configuration)) {
             ICache<?, ?> cache = caches.get(current.getNameWithPrefix());
             if (cache == null) {
                 ICache<?, ?> iCache = caches.putIfAbsent(current.getNameWithPrefix(), cacheProxy);
