@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
@@ -38,11 +38,14 @@ public abstract class AbstractCacheRequest
 
     protected String name;
 
+    protected InMemoryFormat inMemoryFormat;
+
     public AbstractCacheRequest() {
     }
 
-    public AbstractCacheRequest(String name) {
+    public AbstractCacheRequest(String name, InMemoryFormat inMemoryFormat) {
         this.name = name;
+        this.inMemoryFormat = inMemoryFormat;
     }
 
     public final int getFactoryId() {
@@ -58,8 +61,7 @@ public abstract class AbstractCacheRequest
 
     protected CacheOperationProvider getOperationProvider() {
         ICacheService service = getService();
-        CacheConfig cacheConfig = service.getCacheConfig(name);
-        return service.getCacheOperationProvider(name, cacheConfig.getInMemoryFormat());
+        return service.getCacheOperationProvider(name, inMemoryFormat);
     }
 
     @Override
@@ -70,10 +72,12 @@ public abstract class AbstractCacheRequest
     public void write(PortableWriter writer)
             throws IOException {
         writer.writeUTF("n", name);
+        writer.writeUTF("i", inMemoryFormat.name());
     }
 
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
+        inMemoryFormat = InMemoryFormat.valueOf(reader.readUTF("i"));
     }
 }
