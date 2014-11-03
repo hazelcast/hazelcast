@@ -980,14 +980,14 @@ final class BasicOperationService implements InternalOperationService {
          * @param backupAwareOp
          * @param partitionId
          * @param replicaVersions
-         * @param syncBackupCount
+         * @param desiredSyncBackups
          * @param totalBackupCount
          * @return the number of sync backups. If one of the connections is full, the number of sync backups is not determined
-         * based on the syncBackupCount, but by the total number of backups done. Because the future is going to wait for every
+         * based on the desiredSyncBackups, but by the total number of backups done. Because the future is going to wait for every
          * backup to complete
          */
         private int makeBackups(BackupAwareOperation backupAwareOp, int partitionId, long[] replicaVersions,
-                                int syncBackupCount, int totalBackupCount) {
+                                int desiredSyncBackups, int totalBackupCount) {
 
             int syncBackups = 0;
             int asyncBackups = 0;
@@ -1012,7 +1012,7 @@ final class BasicOperationService implements InternalOperationService {
 
                 assertNoBackupOnPrimaryMember(partition, target);
 
-                boolean isSyncBackup = replicaIndex <= syncBackupCount;
+                boolean isSyncBackup = replicaIndex <= desiredSyncBackups;
                 if (!isSyncBackup) {
                     Connection connection = node.getConnectionManager().getOrConnect(target);
                     isSyncBackup = connection.isFull();
@@ -1045,6 +1045,8 @@ final class BasicOperationService implements InternalOperationService {
             if ((backupCounter.incrementAndGet() % 20000) == 0) {
                 logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCOunter + " notFullCounter: " + notFullCounter);
             }
+
+            System.out.println("syncBackup:" + syncBackups);
 
             return syncBackups;
         }
