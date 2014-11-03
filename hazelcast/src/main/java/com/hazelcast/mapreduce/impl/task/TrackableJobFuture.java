@@ -74,8 +74,7 @@ public class TrackableJobFuture<V>
         try {
             Object finalResult = result;
             if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
-                finalResult = new ExecutionException((Throwable) finalResult);
-                super.setResult(finalResult);
+                super.setResult(new ExecutionException((Throwable) finalResult));
                 return;
             }
             // If collator is available we need to execute it now
