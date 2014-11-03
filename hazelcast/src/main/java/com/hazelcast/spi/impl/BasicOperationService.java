@@ -1017,10 +1017,10 @@ final class BasicOperationService implements InternalOperationService {
                     Connection connection = node.getConnectionManager().getOrConnect(target);
                     //logger.severe("connection.isFull:"+connection.isFull());
 
-                    //if(connection.isFull()){
+                    if(connection.isFull()){
                         syncBackup = true;
                         fullConnectionEncountered = true;
-                    //}
+                    }
                 }
                 Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, syncBackup);
 
