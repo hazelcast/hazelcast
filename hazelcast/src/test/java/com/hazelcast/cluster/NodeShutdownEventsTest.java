@@ -25,6 +25,8 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,6 +39,11 @@ import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class NodeShutdownEventsTest {
+
+    @After
+    public void shutdown() {
+        Hazelcast.shutdownAll();
+    }
 
     /**
      * When a node fails due to a join time out, it will be shutdowned.
