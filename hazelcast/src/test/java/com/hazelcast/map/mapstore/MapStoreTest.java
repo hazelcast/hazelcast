@@ -1019,17 +1019,17 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     // bug: store is called twice on loadAll
-    @Test
+    @Test(timeout = 300000)
     public void testIssue1070() {
         final String mapName = randomMapName();
-        final NoDuplicateMapStore myMapStore = new NoDuplicateMapStore();
-        myMapStore.store.put(1, 2);
-
-        Config config = new Config();
+        final Config config = new Config();
         final MapConfig mapConfig = config.getMapConfig(mapName);
         final MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        final NoDuplicateMapStore myMapStore = new NoDuplicateMapStore();
         final MapStoreConfig implementation = mapStoreConfig.setImplementation(myMapStore);
         mapConfig.setMapStoreConfig(implementation);
+
+        myMapStore.store.put(1, 2);
 
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
