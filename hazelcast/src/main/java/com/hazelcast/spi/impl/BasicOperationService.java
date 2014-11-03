@@ -1031,7 +1031,7 @@ final class BasicOperationService implements InternalOperationService {
                 if (!isSyncBackup) {
                     Connection connection = node.getConnectionManager().getOrConnect(target);
                     if(connection.isFull()){
-                        isSyncBackup = true;
+                        //isSyncBackup = true;
                         fullConnectionEncountered = true;
                     }
                 }
@@ -1060,9 +1060,9 @@ final class BasicOperationService implements InternalOperationService {
                 notFullCounter.incrementAndGet();
             }
 
-           // if ((backupCounter.incrementAndGet() % 20) == 0) {
+            if ((backupCounter.incrementAndGet() % 20) == 0) {
                 logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCOunter + " notFullCounter: " + notFullCounter);
-           // }
+            }
 
             logger.severe("syncBackup:" + syncBackups);
 
