@@ -969,6 +969,7 @@ final class BasicOperationService implements InternalOperationService {
 
         }
 
+        // just for debugging.
         private final AtomicLong backupCounter = new AtomicLong();
         private final AtomicLong fullCOunter = new AtomicLong();
         private final AtomicLong notFullCounter = new AtomicLong();
@@ -995,6 +996,11 @@ final class BasicOperationService implements InternalOperationService {
             InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition partition = partitionService.getPartition(partitionId);
 
+            // todo: bug.
+            // assuming a single async backup. So this operation is created and the Backup (operation) is marked as async since
+            // that is what you want. When the backup is send to the connection, the connection figures out that it is full
+            // and eventually the future will be notified that it needs to wait for one backup. The problem is that the backup
+            // was configured as sync, and therefor will never contact that future.
             for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
                 Address target = partition.getReplicaAddress(replicaIndex);
                 if (target == null) {
