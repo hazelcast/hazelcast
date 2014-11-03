@@ -1038,19 +1038,22 @@ final class BasicOperationService implements InternalOperationService {
                 boolean isSyncBackup = replicaIndex <= desiredSyncBackups;
                 if (!isSyncBackup) {
                     Connection connection = node.getConnectionManager().getOrConnect(target);
-                    isSyncBackup = connection.isFull();
+                    if(connection.isFull()){
+                        isSyncBackup = true;
+                        fullConnectionEncountered = true;
+                    }
                 }
                 Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, isSyncBackup);
 
                 WriteResult result = sendBackup(backup, target);
-
-                if (result == WriteResult.FULL) {
-                    fullConnectionEncountered = true;
-                    if (lastFullTimeMs + 10000 < System.currentTimeMillis()) {
-                        lastFullTimeMs = System.currentTimeMillis();
-                        logger.severe("Back pressure applied on async backup calls");
-                    }
-                }
+//
+//                if (result == WriteResult.FULL) {
+//                    fullConnectionEncountered = true;
+//                    if (lastFullTimeMs + 10000 < System.currentTimeMillis()) {
+//                        lastFullTimeMs = System.currentTimeMillis();
+//                        logger.severe("Back pressure applied on async backup calls");
+//                    }
+//                }
 
                 if (isSyncBackup) {
                     syncBackups++;
@@ -1069,7 +1072,6 @@ final class BasicOperationService implements InternalOperationService {
                 logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCOunter + " notFullCounter: " + notFullCounter);
             }
 
-            //todo: remove me
             logger.severe("syncBackup:" + syncBackups);
 
             return syncBackups;
