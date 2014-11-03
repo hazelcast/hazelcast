@@ -33,7 +33,6 @@ public class ClaimAccounting implements ConnectionListener {
         this.totalCapacity = node.getGroupProperties().BACKPRESSURE_TOTAL_CAPACITY.getInteger();
         this.maximumClaimSize = node.getGroupProperties().BACKPRESSURE_MAX_CLAIM_SIZE.getInteger();
         this.minimumClaimSize = node.getGroupProperties().BACKPRESSURE_MIN_CLAIM_SIZE.getInteger();
-
     }
 
     public int claimSlots(Connection connection) {
