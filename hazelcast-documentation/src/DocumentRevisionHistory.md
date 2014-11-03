@@ -19,7 +19,7 @@
 |[Chapter 10 - Hazelcast JCache Implementation](#hazelcast-jcache-implementation)||Added as a new chapter.|
 |[Chapter 11 - Integrated Clustering](#integrated-clustering)|[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Added as a new section (Enterprise Only feature).|
 ||[Filter Based Web Session Replication](#filter-based-web-session-replication)|Updated by adding SpringAwareWebFilter related information.
-|[Chapter 13 - Clients](#clients)|[Java Client](#java-client)|Client configuration related to AWS added and the whole section enhanced.|
+|[Chapter 13 - Clients](#clients)|[Java Client](#java-client)|Client configuration related to AWS added and the whole section enhanced. Also, Load Balancer related configuration information added.|
 |[Chapter 14 - Serialization](#serialization)||All sections under this chapter re-written and enhanced. Also added HazelcastInstanceAware, Stream & ByteArray Serializer, Serializable & Externalizable sections. Chapter introduction enhanced by adding an overview, a section explaining serialization interfaces and a comparison table for these interfaces.|
 ||[Null Portable Serialization](#null-portable-serialization)| Added as a new section.|
 |[Chapter 15 - Management](#management)|[Clustered JMX](#clustered-jmx)|Added as a new section explaining how to monitor the statistics of distributed objects from a JMX interface (Enterprise Only feature).|
