@@ -97,6 +97,8 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     @Override
     public void afterRun() throws Exception {
+        getLogger().severe("valid:" + valid + " sync: " + sync + " callId:" + getCallId() + " originalCaller:" + originalCaller);
+
         if (valid && sync && getCallId() != 0 && originalCaller != null) {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             final long callId = getCallId();
