@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * Runs on backups.
  *
- * @see {@link PutFromLoadAllOperation}
+ * @see PutFromLoadAllOperation
  */
 public class PutFromLoadAllBackupOperation extends AbstractMapOperation implements BackupOperation, DataSerializable {
 

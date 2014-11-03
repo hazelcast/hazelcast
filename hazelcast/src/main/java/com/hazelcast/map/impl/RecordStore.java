@@ -113,7 +113,7 @@ public interface RecordStore {
      * @param value to put.
      * @return the previous value associated with <tt>key</tt>, or
      * <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     * @see {@link com.hazelcast.map.impl.operation.PutFromLoadAllOperation}
+     * @see com.hazelcast.map.impl.operation.PutFromLoadAllOperation
      */
     Object putFromLoad(Data key, Object value);
 
@@ -125,7 +125,7 @@ public interface RecordStore {
      * @param ttl   time to live seconds.
      * @return the previous value associated with <tt>key</tt>, or
      * <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     * @see {@link com.hazelcast.map.impl.operation.PutAllOperation}
+     * @see com.hazelcast.map.impl.operation.PutAllOperation
      */
     Object putFromLoad(Data key, Object value, long ttl);
 
@@ -139,7 +139,7 @@ public interface RecordStore {
      *
      * @param key    the data key to put record store.
      * @param record the value for record store.
-     * @see {@link com.hazelcast.map.impl.operation.MapReplicationOperation}
+     * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
     void putRecord(Data key, Record record);
 

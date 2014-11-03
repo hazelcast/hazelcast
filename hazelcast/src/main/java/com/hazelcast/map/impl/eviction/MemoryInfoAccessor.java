@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.eviction;
 /**
  * Used for providing runtime memory information of Java virtual machine.
  *
- * @see {@link com.hazelcast.map.impl.eviction.EvictionOperator#memoryInfoAccessor}
+ * @see com.hazelcast.map.impl.eviction.MaxSizeChecker#memoryInfoAccessor
  */
 public interface MemoryInfoAccessor {
 
