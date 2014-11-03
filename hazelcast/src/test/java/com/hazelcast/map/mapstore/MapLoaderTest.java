@@ -3,13 +3,13 @@ package com.hazelcast.map.mapstore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -62,7 +62,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         mapConfig.setMapStoreConfig(mapStoreConfig);
 
         config.addMapConfig(mapConfig);
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz = createHazelcastInstance(config);
         Map map = hz.getMap(mapConfig.getName());
 
         assertTrueAllTheTime(new AssertTask() {

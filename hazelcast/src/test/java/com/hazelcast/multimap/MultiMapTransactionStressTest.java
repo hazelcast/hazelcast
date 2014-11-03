@@ -19,7 +19,6 @@ package com.hazelcast.multimap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MultiMap;
@@ -30,11 +29,13 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
-import java.util.Collection;
-import java.util.concurrent.locks.LockSupport;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Collection;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -48,7 +49,7 @@ public class MultiMapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMultiMapGetIsUsed_withTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -79,7 +80,7 @@ public class MultiMapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMultiMapGetIsUsed_withoutTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -102,7 +103,7 @@ public class MultiMapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMultiMapContainsKeyIsUsed_withoutTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -124,7 +125,7 @@ public class MultiMapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMultiMapContainsEntryIsUsed_withoutTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -146,7 +147,7 @@ public class MultiMapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMultiMapValueCountIsUsed_withoutTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -168,7 +169,7 @@ public class MultiMapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMultiMapValueCountIsUsed_withTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
