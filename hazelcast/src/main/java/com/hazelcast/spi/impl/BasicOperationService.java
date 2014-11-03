@@ -1060,12 +1060,12 @@ final class BasicOperationService implements InternalOperationService {
             if (fullConnectionEncountered) {
                 syncBackups += asyncBackups;
                 fullCOunter.incrementAndGet();
-            }else{
+            } else {
                 notFullCounter.incrementAndGet();
             }
 
             if ((backupCounter.incrementAndGet() % 20000) == 0) {
-                logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCOunter+" notFullCounter: "+notFullCounter);
+                logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCOunter + " notFullCounter: " + notFullCounter);
             }
 
             return syncBackups;
