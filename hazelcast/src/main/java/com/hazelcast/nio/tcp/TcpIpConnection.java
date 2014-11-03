@@ -99,6 +99,11 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
+    public boolean isFull() {
+        return availableSlots.get() <= 0;
+    }
+
+    @Override
     public WriteResult writeBackup(Packet packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {

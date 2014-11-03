@@ -42,6 +42,8 @@ public interface Connection {
 
     WriteResult writeBackup(Packet packet);
 
+    boolean isFull();
+
     /**
      * Checks if the Connection is still alive.
      *

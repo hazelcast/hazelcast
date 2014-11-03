@@ -346,6 +346,11 @@ final class TestNodeRegistry {
             return write(packet);
         }
 
+        @Override
+        public boolean isFull() {
+            return false;
+        }
+
         public WriteResult write(SocketWritable socketWritable) {
             final Packet packet = (Packet) socketWritable;
             if (nodeEngine.getNode().isActive()) {

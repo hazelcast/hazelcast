@@ -113,6 +113,11 @@ public class MockSimpleClient implements SimpleClient {
         }
 
         @Override
+        public boolean isFull() {
+            return false;
+        }
+
+        @Override
         public Address getEndPoint() {
             return null;
         }
