@@ -1013,6 +1013,10 @@ final class BasicOperationService implements InternalOperationService {
                 assertNoBackupOnPrimaryMember(partition, target);
 
                 boolean isSyncBackup = replicaIndex <= syncBackupCount;
+                if (!isSyncBackup) {
+                    Connection connection = node.getConnectionManager().getOrConnect(target);
+                    isSyncBackup = connection.isFull();
+                }
                 Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, isSyncBackup);
 
                 WriteResult result = sendBackup(backup, target);
@@ -1032,10 +1036,7 @@ final class BasicOperationService implements InternalOperationService {
                 }
             }
 
-            // so if one of the backups complained about the connection being full, we are going to sync on all
-            // the backups not only the synchronous ones.
             if (fullConnectionEncountered) {
-                syncBackups += asyncBackups;
                 fullCOunter.incrementAndGet();
             } else {
                 notFullCounter.incrementAndGet();
