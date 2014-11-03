@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -78,7 +77,7 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
 
     @Override
     public void lockInterruptibly() throws InterruptedException {
-        lock();
+        lockSupport.lockInterruptly(getNodeEngine(), key);
     }
 
     @Override
