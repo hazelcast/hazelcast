@@ -452,6 +452,26 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 If the client is configured as a smart one, only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer. If it is not a smart client, `LoadBalancer` will be ignored.
 
 
+Load Balancer can be configured as follows:
+
+```java
+
+final ClientConfig clientConfig = new ClientConfig();
+final LoadBalancer yourLoadBalancer = new LoadBalancer() {
+    @Override
+    public void init(Cluster cluster, ClientConfig config) {
+
+    }
+
+    @Override
+    public Member next() {
+        return null;
+    }
+};
+clientConfig.setLoadBalancer(yourLoadBalancer);
+
+```
+
 
 ### Client Near Cache
 Hazelcast distributed map has a Near Cache feature to reduce network latencies. As the client always requests data from the cluster nodes, it can be helpful for some use cases to configure a near cache on the client side.
