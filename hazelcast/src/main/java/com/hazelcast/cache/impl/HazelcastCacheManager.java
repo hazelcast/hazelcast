@@ -309,7 +309,7 @@ public abstract class HazelcastCacheManager implements CacheManager {
      */
     @Override
     public <T> T unwrap(Class<T> clazz) {
-        if (clazz.isAssignableFrom(HazelcastCacheManager.class)) {
+        if (HazelcastCacheManager.class.isAssignableFrom(clazz)) {
             return (T) this;
         }
         throw new IllegalArgumentException();
