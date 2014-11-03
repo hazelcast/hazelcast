@@ -398,7 +398,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !(o instanceof CacheConfig)) {
             return false;
         }
 

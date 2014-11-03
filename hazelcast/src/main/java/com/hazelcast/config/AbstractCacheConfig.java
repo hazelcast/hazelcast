@@ -330,7 +330,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !(o instanceof AbstractCacheConfig)) {
             return false;
         }
         AbstractCacheConfig that = (AbstractCacheConfig) o;
