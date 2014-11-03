@@ -28,6 +28,7 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.util.ExceptionUtil;
@@ -133,7 +134,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName, String simpleCacheName) {
-        ClientRequest request = new CacheGetConfigRequest(cacheName, simpleCacheName);
+        ClientRequest request = new CacheGetConfigRequest(cacheName, simpleCacheName, InMemoryFormat.BINARY);
         try {
             final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheName);
             return clientContext.getSerializationService().toObject(future.get());
