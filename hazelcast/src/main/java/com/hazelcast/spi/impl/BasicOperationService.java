@@ -1035,15 +1035,15 @@ final class BasicOperationService implements InternalOperationService {
 
                 assertNoBackupOnPrimaryMember(partition, target);
 
-                boolean isSyncBackup = replicaIndex <= desiredSyncBackups;
-                if (!isSyncBackup) {
+                boolean syncBackup = replicaIndex <= desiredSyncBackups;
+                if (!syncBackup) {
                     Connection connection = node.getConnectionManager().getOrConnect(target);
                     if(connection.isFull()){
-                        //isSyncBackup = true;
+                        syncBackup = true;
                         fullConnectionEncountered = true;
                     }
                 }
-                Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, isSyncBackup);
+                Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, syncBackup);
 
                 WriteResult result = sendBackup(backup, target);
 //
@@ -1055,7 +1055,7 @@ final class BasicOperationService implements InternalOperationService {
 //                    }
 //                }
 
-                if (isSyncBackup) {
+                if (syncBackup) {
                     syncBackups++;
                 } else {
                     asyncBackups++;
@@ -1080,11 +1080,11 @@ final class BasicOperationService implements InternalOperationService {
         private volatile long lastFullTimeMs = System.currentTimeMillis();
 
         private Backup newBackup(BackupAwareOperation backupAwareOp, long[] replicaVersions,
-                                 int replicaIndex, boolean isSyncBackup) {
+                                 int replicaIndex, boolean syncBackup) {
             Operation op = (Operation) backupAwareOp;
             Operation backupOp = initBackupOperation(backupAwareOp, replicaIndex);
             Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
-            Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, isSyncBackup);
+            Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, syncBackup);
             backup.setPartitionId(op.getPartitionId())
                     .setReplicaIndex(replicaIndex)
                     .setServiceName(op.getServiceName())
