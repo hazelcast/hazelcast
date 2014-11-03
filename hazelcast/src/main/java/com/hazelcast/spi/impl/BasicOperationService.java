@@ -1046,7 +1046,8 @@ final class BasicOperationService implements InternalOperationService {
                 logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCOunter + " notFullCounter: " + notFullCounter);
             }
 
-            System.out.println("syncBackup:" + syncBackups);
+            //todo: remove me
+            logger.severe("syncBackup:" + syncBackups);
 
             return syncBackups;
         }
