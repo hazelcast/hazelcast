@@ -457,7 +457,7 @@ public interface IMap<K, V>
     V put(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
-     * Same as {@link #put(K, V, long, TimeUnit)} but MapStore, if defined,
+     * Same as {@link #put(K, V, long, java.util.concurrent.TimeUnit)} but MapStore, if defined,
      * will not be called to store/persist the entry.  If ttl is 0, then
      * the entry lives forever.
      * <p/>
@@ -593,7 +593,6 @@ public interface IMap<K, V>
      * @param ttl      maximum time for this entry to stay in the map
      *                 0 means infinite.
      * @param timeunit time unit for the ttl
-     * @return old value of the entry
      * @throws NullPointerException if the specified key or value is null
      */
     void set(K key, V value, long ttl, TimeUnit timeunit);

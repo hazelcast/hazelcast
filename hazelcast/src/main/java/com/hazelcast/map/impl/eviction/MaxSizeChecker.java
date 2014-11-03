@@ -35,7 +35,7 @@ import java.util.List;
  * according to configured {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy}
  * to start eviction process.
  *
- * @see {@link com.hazelcast.map.impl.eviction.EvictionOperator#maxSizeChecker}
+ * @see com.hazelcast.map.impl.eviction.EvictionOperator#maxSizeChecker
  */
 public class MaxSizeChecker {
 
