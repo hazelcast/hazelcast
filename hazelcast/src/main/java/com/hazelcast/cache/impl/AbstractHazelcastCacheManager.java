@@ -96,18 +96,22 @@ public abstract class AbstractHazelcastCacheManager
             //REGISTER LISTENERS
             registerListeners(newCacheConfig, cacheProxy);
             return cacheProxy;
-        } else {
-            ICache<?, ?> cache = caches.get(current.getNameWithPrefix());
-            if (cache == null) {
-                ICache<?, ?> iCache = caches.putIfAbsent(current.getNameWithPrefix(), cacheProxy);
-                cache = iCache != null ? iCache : cacheProxy;
-            }
-            CacheConfig config = cache.getConfiguration(CacheConfig.class);
-            if (config.equals(configuration)) {
-                return (ICache<K, V>) cache;
-            }
+        }
+        ICache<?, ?> cache = getOrPutIfAbsent(current.getNameWithPrefix(), cacheProxy);
+        CacheConfig config = cache.getConfiguration(CacheConfig.class);
+        if (config.equals(configuration)) {
+            return (ICache<K, V>) cache;
         }
         throw new CacheException("A cache named " + cacheName + " already exists.");
+    }
+
+    private ICache<?, ?> getOrPutIfAbsent(String nameWithPrefix, ICache cacheProxy) {
+        ICache<?, ?> cache = caches.get(nameWithPrefix);
+        if (cache == null) {
+            ICache<?, ?> iCache = caches.putIfAbsent(nameWithPrefix, cacheProxy);
+            cache = iCache != null ? iCache : cacheProxy;
+        }
+        return cache;
     }
 
     @Override
