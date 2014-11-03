@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
@@ -37,8 +38,8 @@ public class CacheGetConfigRequest
     public CacheGetConfigRequest() {
     }
 
-    public CacheGetConfigRequest(String cacheName, String simpleName) {
-        super(cacheName);
+    public CacheGetConfigRequest(String cacheName, String simpleName, InMemoryFormat inMemoryFormat) {
+        super(cacheName, inMemoryFormat);
         this.simpleName = simpleName;
     }
 

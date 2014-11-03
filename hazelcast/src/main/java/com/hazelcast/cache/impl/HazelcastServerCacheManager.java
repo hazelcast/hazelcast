@@ -119,13 +119,13 @@ public class HazelcastServerCacheManager
     }
 
     @Override
-    protected <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
+    protected <K, V> CacheConfig<K, V> createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
         //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
         final CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheConfig);
         final OperationService operationService = nodeEngine.getOperationService();
 
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
-        final InternalCompletableFuture<Boolean> f = operationService
+        final InternalCompletableFuture<CacheConfig<K, V>> f = operationService
                 .invokeOnPartition(CacheService.SERVICE_NAME, cacheCreateConfigOperation, partitionId);
         return f.getSafely();
     }

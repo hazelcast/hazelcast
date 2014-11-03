@@ -44,6 +44,8 @@ public abstract class AbstractCacheService implements ICacheService {
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
     protected NodeEngine nodeEngine;
     protected CachePartitionSegment[] segments;
+    private final ConcurrentMap<String, CacheOperationProvider> operationProviderCache
+            = new ConcurrentHashMap<String, CacheOperationProvider>();
 
     private final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction
             = new ConstructorFunction<String, CacheStatisticsImpl>() {
@@ -124,6 +126,7 @@ public abstract class AbstractCacheService implements ICacheService {
         if (!isLocal) {
             deregisterAllListener(objectName);
         }
+        operationProviderCache.remove(objectName);
         setStatisticsEnabled(config, objectName, false);
         setManagementEnabled(config, objectName, false);
         deleteCacheConfig(objectName);
@@ -145,10 +148,9 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
-    public boolean createCacheConfigIfAbsent(CacheConfig config, boolean isLocal) {
+    public CacheConfig createCacheConfigIfAbsent(CacheConfig config, boolean isLocal) {
         final CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
-        final boolean created = localConfig == null;
-        if (created) {
+        if (localConfig == null) {
             if (config.isStatisticsEnabled()) {
                 setStatisticsEnabled(config, config.getNameWithPrefix(), true);
             }
@@ -159,7 +161,7 @@ public abstract class AbstractCacheService implements ICacheService {
                 createConfigOnAllMembers(config);
             }
         }
-        return created;
+        return localConfig;
     }
 
     protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
@@ -344,7 +346,13 @@ public abstract class AbstractCacheService implements ICacheService {
         if (InMemoryFormat.NATIVE.equals(inMemoryFormat)) {
             throw new IllegalArgumentException("Native memory is available only in Enterprise!");
         }
-        return new DefaultOperationProvider(nameWithPrefix);
+        CacheOperationProvider cacheOperationProvider = operationProviderCache.get(nameWithPrefix);
+        if (cacheOperationProvider != null) {
+            return cacheOperationProvider;
+        }
+        cacheOperationProvider = new DefaultOperationProvider(nameWithPrefix);
+        CacheOperationProvider current = operationProviderCache.putIfAbsent(nameWithPrefix, cacheOperationProvider);
+        return current == null ? cacheOperationProvider : current;
     }
 
 }
