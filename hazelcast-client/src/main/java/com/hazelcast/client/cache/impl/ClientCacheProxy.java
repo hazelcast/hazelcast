@@ -101,7 +101,7 @@ public class ClientCacheProxy<K, V>
         if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
             return true;
         }
-        CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData);
+        CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
         ICompletableFuture future;
         try {
             future = invoke(request, keyData, false);
@@ -237,7 +237,7 @@ public class ClientCacheProxy<K, V>
         }
         final Data keyData = toData(key);
         final CacheEntryProcessorRequest request = new CacheEntryProcessorRequest(nameWithPrefix, keyData, entryProcessor,
-                arguments);
+                cacheConfig.getInMemoryFormat(), arguments);
         try {
             final ICompletableFuture<Data> f = invoke(request, keyData, true);
             final Data data = getSafely(f);

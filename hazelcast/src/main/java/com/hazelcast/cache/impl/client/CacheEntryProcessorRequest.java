@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -45,9 +46,9 @@ public class CacheEntryProcessorRequest
     public CacheEntryProcessorRequest() {
     }
 
-    public CacheEntryProcessorRequest(String name, Data key, javax.cache.processor.EntryProcessor entryProcessor,
+    public CacheEntryProcessorRequest(String name, Data key, EntryProcessor entryProcessor, InMemoryFormat inMemoryFormat,
                                       Object... arguments) {
-        super(name);
+        super(name, inMemoryFormat);
         this.key = key;
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;

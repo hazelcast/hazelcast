@@ -19,6 +19,7 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
+import com.hazelcast.cache.impl.CacheEventSet;
 import com.hazelcast.cache.impl.CacheEventType;
 import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
@@ -149,10 +150,11 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data keyData = toData(key);
         final Data oldValueData = oldValue != null ? toData(oldValue) : null;
         ClientRequest request;
+        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
         if (isGet) {
-            request = new CacheGetAndRemoveRequest(nameWithPrefix, keyData);
+            request = new CacheGetAndRemoveRequest(nameWithPrefix, keyData, inMemoryFormat);
         } else {
-            request = new CacheRemoveRequest(nameWithPrefix, keyData, oldValueData);
+            request = new CacheRemoveRequest(nameWithPrefix, keyData, oldValueData, inMemoryFormat);
         }
         ICompletableFuture future;
         try {
@@ -178,11 +180,12 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data keyData = toData(key);
         final Data oldValueData = oldValue != null ? toData(oldValue) : null;
         final Data newValueData = newValue != null ? toData(newValue) : null;
+        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
         ClientRequest request;
         if (isGet) {
-            request = new CacheGetAndReplaceRequest(nameWithPrefix, keyData, newValueData, expiryPolicy);
+            request = new CacheGetAndReplaceRequest(nameWithPrefix, keyData, newValueData, expiryPolicy, inMemoryFormat);
         } else {
-            request = new CacheReplaceRequest(nameWithPrefix, keyData, oldValueData, newValueData, expiryPolicy);
+            request = new CacheReplaceRequest(nameWithPrefix, keyData, oldValueData, newValueData, expiryPolicy, inMemoryFormat);
         }
         ICompletableFuture future;
         try {
@@ -202,7 +205,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        CachePutRequest request = new CachePutRequest(nameWithPrefix, keyData, valueData, expiryPolicy, isGet);
+        InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
+        CachePutRequest request = new CachePutRequest(nameWithPrefix, keyData, valueData, expiryPolicy, isGet, inMemoryFormat);
         ICompletableFuture future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -224,7 +228,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData, expiryPolicy);
+        CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData, expiryPolicy,
+                cacheConfig.getInMemoryFormat());
         ICompletableFuture<Boolean> future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -438,11 +443,19 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         @Override
         public void handle(Object eventObject) {
             if (eventObject instanceof CacheEventData) {
-                CacheEventData cacheEventData = (CacheEventData) eventObject;
-                if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
-                    Integer completionId = toObject(cacheEventData.getDataValue());
-                    countDownCompletionLatch(completionId);
+                handleEventData((CacheEventData) eventObject);
+            } else if (eventObject instanceof CacheEventSet) {
+                Set<CacheEventData> events = ((CacheEventSet) eventObject).getEvents();
+                for (CacheEventData event : events) {
+                    handleEventData(event);
                 }
+            }
+        }
+
+        private void handleEventData(CacheEventData cacheEventData) {
+            if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
+                Integer completionId = toObject(cacheEventData.getDataValue());
+                countDownCompletionLatch(completionId);
             }
         }
 

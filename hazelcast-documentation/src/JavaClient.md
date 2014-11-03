@@ -451,6 +451,7 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 
 If the client is configured as a smart one, only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer. If it is not a smart client, `LoadBalancer` will be ignored.
 
+For the configuration of client load balance, please see  [Load Balancer Config](#loadbalancerconfig) and [Java Client Declarative Configuration](#java-client-declarative-configuration).
 
 
 ### Client Near Cache
@@ -531,6 +532,7 @@ Below is a generic template of a declarative configuration.
     </proxy-factories>
 
     <!--load balancer configuration-->
+    <!-- type can be "round-robin" or "random" -->
     <load-balancer type="random"/>
 
     <near-cache name="mapName">
@@ -569,6 +571,12 @@ It can be configured using `GroupConfig`, as shown below.
 clientConfig.setGroupConfig(new GroupConfig("dev","dev-pass"));
 ```
 
+#### LoadBalancerConfig
+The following code snippet shows the programmatic configuration of load balancer.
+
+```java
+clientConfig.setLoadBalancer(yourLoadBalancer);
+```
 
 ##### ClientSecurityConfig
 

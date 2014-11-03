@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -45,8 +46,8 @@ public class CachePutIfAbsentRequest
     public CachePutIfAbsentRequest() {
     }
 
-    public CachePutIfAbsentRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
-        super(name);
+    public CachePutIfAbsentRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
         this.value = value;
         this.expiryPolicy = expiryPolicy;

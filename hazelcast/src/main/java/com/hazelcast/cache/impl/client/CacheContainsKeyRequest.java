@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -41,8 +42,8 @@ public class CacheContainsKeyRequest
     public CacheContainsKeyRequest() {
     }
 
-    public CacheContainsKeyRequest(String name, Data key) {
-        super(name);
+    public CacheContainsKeyRequest(String name, Data key, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
     }
 

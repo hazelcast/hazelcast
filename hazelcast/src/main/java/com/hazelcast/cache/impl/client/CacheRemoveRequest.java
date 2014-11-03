@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -43,13 +44,13 @@ public class CacheRemoveRequest
     public CacheRemoveRequest() {
     }
 
-    public CacheRemoveRequest(String name, Data key) {
-        super(name);
+    public CacheRemoveRequest(String name, Data key, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
     }
 
-    public CacheRemoveRequest(String name, Data key, Data currentValue) {
-        super(name);
+    public CacheRemoveRequest(String name, Data key, Data currentValue, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
         this.currentValue = currentValue;
     }
