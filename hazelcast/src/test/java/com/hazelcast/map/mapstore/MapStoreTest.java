@@ -49,7 +49,6 @@ import com.hazelcast.map.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.SampleObjects.Employee;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -1019,7 +1018,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     // bug: store is called twice on loadAll
-    @Test(timeout = 300000)
+    @Test
     public void testIssue1070() {
         final String mapName = randomMapName();
         final Config config = new Config();
@@ -1035,32 +1034,11 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
-        getWithRetries(instance1, mapName);
+        IMap<Object, Object> map = instance1.getMap(mapName);
+        for (int i = 0; i < 271; i++) {
+            map.get(i);
+        }
         assertFalse(myMapStore.failed);
-    }
-
-    /**
-     * Retry get operations 3 times if a {@link RetryableHazelcastException} is raised.
-     */
-    private void getWithRetries(HazelcastInstance node, String mapName) throws RetryableHazelcastException {
-        final List<RetryableHazelcastException> throwables = new ArrayList<RetryableHazelcastException>(3);
-        int retryCount = 3;
-
-        while (retryCount-- > 0) {
-            try {
-                IMap<Object, Object> map = node.getMap(mapName);
-                for (int i = 0; i < 271; i++) {
-                    map.get(i);
-                }
-                break;
-            } catch (RetryableHazelcastException e) {
-                throwables.add(e);
-            }
-        }
-
-        if (throwables.size() > 0) {
-            throw throwables.get(0);
-        }
     }
 
 
