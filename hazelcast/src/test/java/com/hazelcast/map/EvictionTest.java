@@ -25,7 +25,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
@@ -46,13 +45,11 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -73,12 +70,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class EvictionTest extends HazelcastTestSupport {
-
-    @BeforeClass
-    @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
-        Hazelcast.shutdownAll();
-    }
 
     @Test
     public void testTTL_entryShouldNotBeReachableAfterTTL() throws Exception {
