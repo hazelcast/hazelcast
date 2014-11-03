@@ -54,7 +54,7 @@ import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
  */
 abstract class BasicInvocation implements ResponseHandler, Runnable {
 
-    public static final long TIMEOUT = 5;
+    public static final long TIMEOUT = 3600;
 
     /**
      * A response indicating the 'null' value.
