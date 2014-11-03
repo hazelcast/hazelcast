@@ -53,9 +53,7 @@ public abstract class AbstractHazelcastCacheManager
 
     public AbstractHazelcastCacheManager(CachingProvider cachingProvider, URI uri,
                                          ClassLoader classLoader, Properties properties) {
-        if (cachingProvider == null) {
-            throw new NullPointerException("CachingProvider missing");
-        }
+        checkIfNotNull(cachingProvider, "CachingProvider missing");
         this.cachingProvider = cachingProvider;
 
         isDefaultURI = uri == null || cachingProvider.getDefaultURI().equals(uri);
@@ -73,19 +71,17 @@ public abstract class AbstractHazelcastCacheManager
     @Override
     public <K, V, C extends Configuration<K, V>> ICache<K, V> createCache(String cacheName, C configuration)
             throws IllegalArgumentException {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException("cacheName must not be null");
-        }
-        if (configuration == null) {
-            throw new NullPointerException("configuration must not be null");
-        }
-        //CREATE THE CONFIG ON PARTITION
+        checkIfManagerNotClosed();
+        checkIfNotNull(cacheName, "cacheName must not be null");
+        checkIfNotNull(configuration, "configuration must not be null");
+
         final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
+        if (caches.containsKey(newCacheConfig.getNameWithPrefix())) {
+            throw new CacheException("A cache named " + cacheName + " already exists.");
+        }
         //create proxy object
         final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
+        //CREATE THE CONFIG ON PARTITION
         CacheConfig<K, V> current = createConfigOnPartition(newCacheConfig);
         if (current == null) {
             //single thread region because createConfigOnPartition is single threaded by partition thread
@@ -99,7 +95,7 @@ public abstract class AbstractHazelcastCacheManager
         }
         ICache<?, ?> cache = getOrPutIfAbsent(current.getNameWithPrefix(), cacheProxy);
         CacheConfig config = cache.getConfiguration(CacheConfig.class);
-        if (config.equals(configuration)) {
+        if (config.equals(newCacheConfig)) {
             return (ICache<K, V>) cache;
         }
         throw new CacheException("A cache named " + cacheName + " already exists.");
@@ -136,15 +132,9 @@ public abstract class AbstractHazelcastCacheManager
 
     @Override
     public <K, V> ICache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (keyType == null) {
-            throw new NullPointerException("keyType can not be null");
-        }
-        if (valueType == null) {
-            throw new NullPointerException("valueType can not be null");
-        }
+        checkIfManagerNotClosed();
+        checkIfNotNull(keyType, "keyType can not be null");
+        checkIfNotNull(valueType, "valueType can not be null");
         final ICache<?, ?> cache = getCacheUnchecked(cacheName);
         if (cache != null) {
             Configuration<?, ?> configuration = cache.getConfiguration(CacheConfig.class);
@@ -167,9 +157,7 @@ public abstract class AbstractHazelcastCacheManager
 
     @Override
     public <K, V> ICache<K, V> getCache(String cacheName) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
+        checkIfManagerNotClosed();
         final ICache<?, ?> cache = getCacheUnchecked(cacheName);
         if (cache != null) {
             Configuration<?, ?> configuration = cache.getConfiguration(CacheConfig.class);
@@ -215,9 +203,6 @@ public abstract class AbstractHazelcastCacheManager
         } else {
             names = new LinkedHashSet<String>();
             for (Map.Entry<String, ICache<?, ?>> entry : caches.entrySet()) {
-                if (entry.getValue().isClosed()) {
-                    continue;
-                }
                 String nameWithPrefix = entry.getKey();
                 int index = nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length();
                 final String name = nameWithPrefix.substring(index);
@@ -229,12 +214,8 @@ public abstract class AbstractHazelcastCacheManager
 
     @Override
     public void destroyCache(String cacheName) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException();
-        }
+        checkIfManagerNotClosed();
+        checkIfNotNull(cacheName, "cacheName cannot be null");
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         final ICache<?, ?> cache = caches.remove(cacheNameWithPrefix);
         if (cache != null) {
@@ -285,6 +266,18 @@ public abstract class AbstractHazelcastCacheManager
     @Override
     public boolean isClosed() {
         return isClosed.get() || !hazelcastInstance.getLifecycleService().isRunning();
+    }
+
+    protected void checkIfManagerNotClosed() {
+        if (isClosed()) {
+            throw new IllegalStateException();
+        }
+    }
+
+    protected void checkIfNotNull(Object o, String message) {
+        if (o == null) {
+            throw new NullPointerException(message);
+        }
     }
 
     @Override

@@ -56,9 +56,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     public HazelcastClientCacheManager(HazelcastClientCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
         super(cachingProvider, uri, classLoader, properties);
-        if (hazelcastInstance == null) {
-            throw new NullPointerException("hazelcastInstance missing");
-        }
+        checkIfNotNull(hazelcastInstance, "hazelcastInstance cannot be null");
         this.hazelcastInstance = hazelcastInstance;
         final ClientCacheDistributedObject setupRef = hazelcastInstance
                 .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
@@ -76,12 +74,8 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     private void enableStatisticManagementOnNodes(String cacheName, boolean statOrMan, boolean enabled) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException();
-        }
+        checkIfManagerNotClosed();
+        checkIfNotNull(cacheName, "cacheName cannot be null");
         final ClientInvocationService invocationService = clientContext.getInvocationService();
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
         final Collection<Future> futures = new ArrayList<Future>();

@@ -55,9 +55,7 @@ public class HazelcastServerCacheManager
     public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
         super(cachingProvider, uri, classLoader, properties);
-        if (hazelcastInstance == null) {
-            throw new NullPointerException("hazelcastInstance missing");
-        }
+        checkIfNotNull(hazelcastInstance, "hazelcastInstance cannot be null");
         this.hazelcastInstance = hazelcastInstance;
         //just to get a reference to nodeEngine and cacheService
         final CacheDistributedObject setupRef = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
@@ -70,12 +68,8 @@ public class HazelcastServerCacheManager
 
     @Override
     public void enableManagement(String cacheName, boolean enabled) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException();
-        }
+        checkIfManagerNotClosed();
+        checkIfNotNull(cacheName, "cacheName cannot be null");
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         cacheService.setManagementEnabled(null, cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
@@ -84,12 +78,8 @@ public class HazelcastServerCacheManager
 
     @Override
     public void enableStatistics(String cacheName, boolean enabled) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException();
-        }
+        checkIfManagerNotClosed();
+        checkIfNotNull(cacheName, "cacheName cannot be null");
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         cacheService.setStatisticsEnabled(null, cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
