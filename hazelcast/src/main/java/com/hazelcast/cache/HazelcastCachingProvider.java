@@ -56,8 +56,9 @@ public final class HazelcastCachingProvider
      * Hazelcast config location property
      */
     public static final String HAZELCAST_CONFIG_LOCATION = "hazelcast.config.location";
+
     /**
-     * hazelcast instance name property
+     * Hazelcast instance name property
      */
     public static final String HAZELCAST_INSTANCE_NAME = "hazelcast.instance.name";
 
@@ -98,9 +99,11 @@ public final class HazelcastCachingProvider
     }
 
     /**
-     * create the properties with the provided config file location
-     * @param configFileLocation config file location
-     * @return properties
+     * Create the {@link java.util.Properties} with the provided config file location.
+     *
+     * @param configFileLocation config file location to configure
+     *
+     * @return properties instance pre-configured with the configuration location
      */
     public static Properties propertiesByLocation(String configFileLocation) {
         final Properties properties = new Properties();
@@ -109,9 +112,11 @@ public final class HazelcastCachingProvider
     }
 
     /**
-     * create the properties with the provided instance name
-     * @param instanceName instance name
-     * @return properties
+     * Create the {@link java.util.Properties} with the provided instance name.
+     *
+     * @param instanceName instance name to configure
+     *
+     * @return properties instance pre-configured with the instance name
      */
     public static Properties propertiesByInstanceName(String instanceName) {
         final Properties properties = new Properties();
