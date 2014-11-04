@@ -25,6 +25,7 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.ClaimAccounting;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -88,6 +89,8 @@ public class HealthMonitor extends Thread {
     private final ConnectionManager connectionManager;
     private final ClientEngineImpl clientEngine;
     private final ThreadMXBean threadMxBean;
+    private final ClaimAccounting claimAccounting;
+    private final boolean backpressureEnabled;
 
     public HealthMonitor(HazelcastInstanceImpl hazelcastInstance, HealthMonitorLevel logLevel, int delaySeconds) {
         super(hazelcastInstance.node.threadGroup, hazelcastInstance.node.getThreadNamePrefix("HealthMonitor"));
@@ -104,8 +107,10 @@ public class HealthMonitor extends Thread {
         this.eventService = node.nodeEngine.getEventService();
         this.operationService = node.nodeEngine.getOperationService();
         this.proxyService = node.nodeEngine.getProxyService();
+        this.claimAccounting = node.nodeEngine.getClaimAccounting();
         this.clientEngine = node.clientEngine;
         this.connectionManager = node.connectionManager;
+        this.backpressureEnabled = node.groupProperties.BACKPRESSURE_ENABLED.getBoolean();
     }
 
     @Override
@@ -151,6 +156,8 @@ public class HealthMonitor extends Thread {
         private final long memoryTotal;
         private final long memoryUsed;
         private final long memoryMax;
+        private final long backpressureAppliedCount;
+        private final long backpressureForcedSyncBackupsCount;
         private final double memoryUsedOfTotalPercentage;
         private final double memoryUsedOfMaxPercentage;
         //following three load variables are always between 0 and 100.
@@ -176,6 +183,7 @@ public class HealthMonitor extends Thread {
         private final int currentClientConnectionCount;
         private final int connectionCount;
         private final int ioExecutorQueueSize;
+        private final int backpressureRemainingCapacity;
         private final GcMetrics gcMetrics;
 
         //CHECKSTYLE:OFF
@@ -213,6 +221,15 @@ public class HealthMonitor extends Thread {
             currentClientConnectionCount = connectionManager.getCurrentClientConnections();
             connectionCount = connectionManager.getConnectionCount();
             gcMetrics = new GcMetrics();
+            if (backpressureEnabled) {
+                backpressureForcedSyncBackupsCount = operationService.getNoOfForcedSyncBackups();
+                backpressureAppliedCount = operationService.getNoOfBackpressuredOperations();
+                backpressureRemainingCapacity = claimAccounting.getRemainingCapacity();
+            } else {
+                backpressureForcedSyncBackupsCount = -1;
+                backpressureAppliedCount = -1;
+                backpressureRemainingCapacity = -1;
+            }
         }
         //CHECKSTYLE:ON
 
@@ -271,6 +288,11 @@ public class HealthMonitor extends Thread {
             sb.append("executor.q.response.size=").append(operationServiceOperationResponseQueueSize).append(", ");
             sb.append("operations.remote.size=").append(remoteOperationsCount).append(", ");
             sb.append("operations.running.size=").append(runningOperationsCount).append(", ");
+            if (backpressureEnabled) {
+                sb.append("operations.backpressure.count=").append(backpressureAppliedCount).append(", ");
+                sb.append("operations.backpressure.forcedSyncBackups=").append(backpressureForcedSyncBackupsCount).append(", ");
+                sb.append("operations.backpressure.remainingCapacity=").append(backpressureRemainingCapacity).append(", ");
+            }
             sb.append("proxy.count=").append(proxyCount).append(", ");
             sb.append("clientEndpoint.count=").append(clientEndpointCount).append(", ");
             sb.append("connection.active.count=").append(activeConnectionCount).append(", ");

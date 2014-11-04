@@ -125,6 +125,7 @@ final class BasicOperationService implements InternalOperationService {
     private final Node node;
     private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(1);
+    private final AtomicLong backpressuredOpsCounter = new AtomicLong();
 
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
 
@@ -350,7 +351,7 @@ final class BasicOperationService implements InternalOperationService {
         if (sent != WriteResult.FULL) {
             return sent == WriteResult.SUCCESS;
         }
-
+        backpressuredOpsCounter.incrementAndGet();
         int maxAttempts = 1000; //TODO: Refactor it to GroupProperties
         int state = BackoffPolicy.EMPTY_STATE;
         for (int i = 0; i < maxAttempts; i++) {
@@ -928,6 +929,16 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+    @Override
+    public long getNoOfForcedSyncBackups() {
+        return operationBackupHandler.asyncDowngradedCounter.get();
+    }
+
+    @Override
+    public long getNoOfBackpressuredOperations() {
+        return backpressuredOpsCounter.get();
+    }
+
     /**
      * Responsible for creating a backups of an operation.
      */
@@ -974,6 +985,9 @@ final class BasicOperationService implements InternalOperationService {
         private final AtomicLong fullCOunter = new AtomicLong();
         private final AtomicLong notFullCounter = new AtomicLong();
 
+        //a counter tracking how many times was async backup downgraded to sync to enforce back-pressure
+        private final AtomicLong asyncDowngradedCounter = new AtomicLong();
+
         /**
          * Makes the actual backup.
          *
@@ -1011,6 +1025,7 @@ final class BasicOperationService implements InternalOperationService {
                     if (connection.isFull()) {
                         syncBackup = true;
                         fullConnectionEncountered = true;
+                        asyncDowngradedCounter.incrementAndGet();
                     }
                 }
                 Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, syncBackup);
