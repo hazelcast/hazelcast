@@ -700,14 +700,6 @@ public final class UTFEncoderDecoder {
 
     private static UTFEncoderDecoder buildUTFUtil() {
         UtfWriter utfWriter = createUtfWriter();
-        try {
-            Class<?> clazz = Class.forName("com.hazelcast.nio.utf8.EnterpriseStringCreator");
-            Method method = clazz.getDeclaredMethod("findBestStringCreator");
-            return new UTFEncoderDecoder((StringCreator) method.invoke(clazz), utfWriter, true);
-        } catch (Throwable t) {
-            Logger.getLogger(UTFEncoderDecoder.class).
-                    finest("EnterpriseStringCreator not available on classpath", t);
-        }
         StringCreator stringCreator = createStringCreator();
         return new UTFEncoderDecoder(stringCreator, utfWriter, false);
     }
