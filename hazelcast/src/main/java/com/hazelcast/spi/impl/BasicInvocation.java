@@ -528,7 +528,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     private void waitForBackups(int backupCount, long timeout, TimeUnit unit, NormalResponse response) {
         //todo: remove me
-        logger.severe("Waiting for backups");
+        //logger.severe("Waiting for backups");
 
         synchronized (this) {
             this.backupsExpected = backupCount;
