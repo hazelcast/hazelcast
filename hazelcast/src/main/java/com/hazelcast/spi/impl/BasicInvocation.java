@@ -606,5 +606,4 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         sb.append('}');
         return sb.toString();
     }
-
 }
