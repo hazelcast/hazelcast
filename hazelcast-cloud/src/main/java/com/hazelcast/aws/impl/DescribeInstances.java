@@ -23,16 +23,10 @@ import com.hazelcast.config.AwsConfig;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TimeZone;
 
-import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
-import static com.hazelcast.aws.impl.Constants.GET;
-import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD;
-import static com.hazelcast.aws.impl.Constants.SIGNATURE_VERSION;
+import static com.hazelcast.aws.impl.Constants.*;
 
 public class DescribeInstances {
 
@@ -48,25 +42,17 @@ public class DescribeInstances {
         if (awsConfig.getAccessKey() == null) {
             throw new IllegalArgumentException("AWS access key is required!");
         }
-        rs = new EC2RequestSigner(awsConfig.getSecretKey());
+
+        rs = new EC2RequestSigner();
+        attributes.put("SignatureMethod", SIGNATURE_METHOD_V4);
+        attributes.put("X-Amz-Date", rs.getFormattedTimestamp());
+        attributes.put("Region", awsConfig.getRegion());
+        attributes.put("Service", "ec2");
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
-        attributes.put("SignatureVersion", SIGNATURE_VERSION);
-        attributes.put("SignatureMethod", SIGNATURE_METHOD);
-        attributes.put("AWSAccessKeyId", awsConfig.getAccessKey());
-        attributes.put("Timestamp", getFormattedTimestamp());
+
         this.awsConfig = awsConfig;
     }
-
-    /**
-     * Formats date as ISO 8601 timestamp
-     */
-    private String getFormattedTimestamp() {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        df.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return df.format(new Date());
-    }
-
 
     public String getQueryString() {
         return CloudyUtility.getQueryString(attributes);
@@ -76,22 +62,19 @@ public class DescribeInstances {
         return attributes;
     }
 
-    public void putSignature(String value) {
-        attributes.put("Signature", value);
-    }
-
     public Map<String, String> execute(String endpoint) throws Exception {
-        rs.sign(this, endpoint);
-        InputStream stream = callService(endpoint);
+        final String authorization = rs.sign(awsConfig, this, endpoint);
+        InputStream stream = callService(endpoint, authorization);
         return CloudyUtility.unmarshalTheResponse(stream, awsConfig);
     }
 
-    private InputStream callService(String endpoint) throws Exception {
+    private InputStream callService(String endpoint, String authorization) throws Exception {
         String query = getQueryString();
         URL url = new URL("https", endpoint, -1, "/" + query);
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
         httpConnection.setRequestMethod(GET);
         httpConnection.setDoOutput(true);
+        httpConnection.setRequestProperty("Authorization", authorization);
         httpConnection.connect();
         return httpConnection.getInputStream();
     }
