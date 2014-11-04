@@ -426,4 +426,8 @@ public class NodeEngineImpl implements NodeEngine {
         wanReplicationService.shutdown();
         executionService.shutdown();
     }
+
+    public ClaimAccounting getClaimAccounting() {
+        return claimAccounting;
+    }
 }

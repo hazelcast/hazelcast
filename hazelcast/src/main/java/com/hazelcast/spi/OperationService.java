@@ -50,6 +50,21 @@ public interface OperationService {
     long getExecutedOperationCount();
 
     /**
+     * A counter with a number originally asynchronous backups forced to be synchronous by a partition owner
+     * to enforce back-pressure on a caller.
+     *
+     * @return a counter with number of forced synchronous backup
+     */
+    long getNoOfForcedSyncBackups();
+
+    /**
+     * A counter with number of back-pressured operations
+     *
+     * @return a number of back-pressured operations
+     */
+    long getNoOfBackpressuredOperations();
+
+    /**
      * Runs operation in calling thread.
      *
      * @param op the operation to execute.

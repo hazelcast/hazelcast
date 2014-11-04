@@ -74,6 +74,12 @@ public class ClaimAccounting implements ConnectionListener {
         return newClaim;
     }
 
+    public int getRemainingCapacity() {
+        int noOfScheduledOperations = internalOperationService.getNoOfScheduledOperations();
+        int bookedCapacityNow = bookedCapacity.get();
+        return totalCapacity - noOfScheduledOperations - bookedCapacityNow;
+    }
+
     @Override
     public void connectionAdded(Connection connection) {
 
