@@ -990,20 +990,11 @@ final class BasicOperationService implements InternalOperationService {
                                 int desiredSyncBackups, int totalBackupCount) {
 
             int syncBackups = 0;
-            int asyncBackups = 0;
 
             boolean fullConnectionEncountered = false;
             InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition partition = partitionService.getPartition(partitionId);
 
-            // bug:
-            // assuming a single async backup. So this operation is created and the Backup (operation) is marked as async since
-            // that is what you want. When the backup is send to the connection, the connection figures out that it is full
-            // and eventually the future will be notified that it needs to wait for one backup. The problem is that the backup
-            // was configured as sync, and therefor will never contact that future.
-            // fix:
-            // we should check the connection before we are going to send backup. If the connection is full, the backup and the
-            // future are now configured as sync. This way the backup and the future are always configured the same.
             for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
                 Address target = partition.getReplicaAddress(replicaIndex);
                 if (target == null) {
@@ -1012,27 +1003,30 @@ final class BasicOperationService implements InternalOperationService {
 
                 assertNoBackupOnPrimaryMember(partition, target);
 
-                boolean isSyncBackup = replicaIndex <= desiredSyncBackups;
-                if (!isSyncBackup) {
+                boolean syncBackup = replicaIndex <= desiredSyncBackups;
+                if (!syncBackup) {
                     Connection connection = node.getConnectionManager().getOrConnect(target);
-                    isSyncBackup = connection.isFull();
-                }
-                Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, isSyncBackup);
+                    //logger.severe("connection.isFull:"+connection.isFull());
 
-                WriteResult result = sendBackup(backup, target);
-
-                if (result == WriteResult.FULL) {
-                    fullConnectionEncountered = true;
-                    if (lastFullTimeMs + 10000 < System.currentTimeMillis()) {
-                        lastFullTimeMs = System.currentTimeMillis();
-                        logger.severe("Back pressure applied on async backup calls");
+                    if (connection.isFull()) {
+                        syncBackup = true;
+                        fullConnectionEncountered = true;
                     }
                 }
+                Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, syncBackup);
 
-                if (isSyncBackup) {
+                WriteResult result = sendBackup(backup, target);
+//
+//                if (result == WriteResult.FULL) {
+//                    fullConnectionEncountered = true;
+//                    if (lastFullTimeMs + 10000 < System.currentTimeMillis()) {
+//                        lastFullTimeMs = System.currentTimeMillis();
+//                        logger.severe("Back pressure applied on async backup calls");
+//                    }
+//                }
+
+                if (syncBackup) {
                     syncBackups++;
-                } else {
-                    asyncBackups++;
                 }
             }
 
@@ -1042,12 +1036,11 @@ final class BasicOperationService implements InternalOperationService {
                 notFullCounter.incrementAndGet();
             }
 
-            if ((backupCounter.incrementAndGet() % 20000) == 0) {
+            if ((backupCounter.incrementAndGet() % 20) == 0) {
                 logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCOunter + " notFullCounter: " + notFullCounter);
             }
 
-            //todo: remove me
-            logger.severe("syncBackup:" + syncBackups);
+            //logger.severe("syncBackup:" + syncBackups);
 
             return syncBackups;
         }
@@ -1055,11 +1048,11 @@ final class BasicOperationService implements InternalOperationService {
         private volatile long lastFullTimeMs = System.currentTimeMillis();
 
         private Backup newBackup(BackupAwareOperation backupAwareOp, long[] replicaVersions,
-                                 int replicaIndex, boolean isSyncBackup) {
+                                 int replicaIndex, boolean syncBackup) {
             Operation op = (Operation) backupAwareOp;
             Operation backupOp = initBackupOperation(backupAwareOp, replicaIndex);
             Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
-            Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, isSyncBackup);
+            Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, syncBackup);
             backup.setPartitionId(op.getPartitionId())
                     .setReplicaIndex(replicaIndex)
                     .setServiceName(op.getServiceName())

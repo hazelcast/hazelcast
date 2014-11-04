@@ -100,6 +100,7 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public boolean isFull() {
+        //logger.severe("availableSlots:"+availableSlots.get());
         return availableSlots.get() <= 0;
     }
 
