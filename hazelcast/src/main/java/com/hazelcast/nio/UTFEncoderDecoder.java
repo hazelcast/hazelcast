@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.UTFDataFormatException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 /**
  * Class to encode/decode UTF-Strings to and from byte-arrays.
@@ -542,7 +541,7 @@ public final class UTFEncoderDecoder {
 
         if (allAscii) {
             while (bufferPos != bufferLimit) {
-                data[charArrCount++] = (char)(buffer[bufferPos++] & 0xFF);
+                data[charArrCount++] = (char) (buffer[bufferPos++] & 0xFF);
             }
 
             for (readCount = bufferPos - 1; readCount < utfLength; readCount++) {
