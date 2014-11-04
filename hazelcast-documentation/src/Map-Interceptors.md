@@ -7,6 +7,9 @@ You can add intercept operations and then execute your own business logic synchr
 
 Interceptors are different from listeners. With listeners, you take an action after the operation has been completed. Interceptor actions are synchronous and you can alter the behavior of operation, change the values, or totally cancel it.
 
+MapInterceptors are chained, so adding the same interceptor multiple times to the same map can result in duplicate effects. This can easily happen when the interceptor is added to the map on node initialization, so that each node add the same interceptor. When adding the interceptor in this way, be sure that the hashCode()`method is implemented to return the same value for every instance of the interceptor. 
+
+
 IMap API has two methods for adding and removing interceptor to the map.
 
 ```java
