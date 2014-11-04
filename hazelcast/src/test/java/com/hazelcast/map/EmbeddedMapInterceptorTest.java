@@ -110,10 +110,7 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         //Now terminate one node
         i2.shutdown();
 
-        //NOTE: I commented the following line because it makes the test fail. I want
-        //      it to carry on a little more to illustrate the point.
-        //      Once it is fixed delete these comments and uncomment the below line
-        //assertGet(map1, "-foo", cities);
+        assertGet(map1, "-foo", cities);
 
         //Now adding the node back in
         i2 = startNode(nodeFactory);
