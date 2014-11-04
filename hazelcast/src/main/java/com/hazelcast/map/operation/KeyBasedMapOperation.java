@@ -26,6 +26,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 
 public abstract class KeyBasedMapOperation extends Operation implements PartitionAwareOperation {
@@ -120,6 +122,11 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
                 && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
             mapService.getMapServiceContext().getNearCacheProvider().invalidateAllNearCaches(name, dataKey);
         }
+    }
+
+    protected void evict(boolean backup) {
+        final long now = Clock.currentTimeMillis();
+        recordStore.evictEntries(now, backup);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

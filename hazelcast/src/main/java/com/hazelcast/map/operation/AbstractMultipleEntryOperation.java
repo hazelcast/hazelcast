@@ -288,4 +288,9 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
         return partitionService.getPartitionId(key) != getPartitionId();
     }
 
+    protected void evict(boolean backup) {
+        final long now = Clock.currentTimeMillis();
+        recordStore.evictEntries(now, backup);
+    }
+
 }

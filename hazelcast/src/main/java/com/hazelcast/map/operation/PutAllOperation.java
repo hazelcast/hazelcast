@@ -34,6 +34,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
     private boolean initialLoad;
     private List<Map.Entry<Data, Data>> backupEntrySet;
     private List<RecordInfo> backupRecordInfos;
+    private transient RecordStore recordStore;
 
     public PutAllOperation(String name, MapEntrySet entrySet) {
         super(name);
@@ -68,7 +70,8 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         backupEntrySet = new ArrayList<Map.Entry<Data, Data>>();
         int partitionId = getPartitionId();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
+        this.recordStore = mapServiceContext.getRecordStore(partitionId, name);
+        RecordStore recordStore = this.recordStore;
         Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
         InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         Set<Data> keysToInvalidate = new HashSet<Data>();
@@ -101,6 +104,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 backupEntrySet.add(entry);
                 RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));
                 backupRecordInfos.add(replicationInfo);
+                evict(false);
             }
         }
         invalidateNearCaches(keysToInvalidate);
@@ -111,6 +115,11 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         if (nearCacheProvider.isNearCacheAndInvalidationEnabled(name)) {
             nearCacheProvider.invalidateAllNearCaches(name, keys);
         }
+    }
+
+    protected void evict(boolean backup) {
+        final long now = Clock.currentTimeMillis();
+        recordStore.evictEntries(now, backup);
     }
 
     @Override
