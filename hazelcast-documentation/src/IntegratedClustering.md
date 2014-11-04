@@ -127,6 +127,9 @@ Entity and Collection are invalidated on update. When they are updated on a node
 
 Timestamp cache is replicated. On every update, a replication message is sent to all the other nodes.
 
+Eviction support is limited to max-size and TTL only. When max-size is hit, 20% of the entries will be evicted automatically. 
+
+
 
 
 ### Hazelcast Modes for Hibernate Usage
