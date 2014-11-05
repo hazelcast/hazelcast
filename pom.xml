@@ -224,8 +224,8 @@
                         -Dhazelcast.test.use.network=false
                         -Djavax.management.builder.initial=${javax.management.builder.initial}
                         -DCacheManagerImpl=${CacheManagerImpl}
-                        -DCacheImpl=${CacheImpl}
-                        -DCacheEntryImpl=${CacheEntryImpl}
+                        -Djavax.cache.Cache=${CacheImpl}
+                        -Djavax.cache.Cache.Entry=${CacheEntryImpl}
                         -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                         -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                     </argLine>
@@ -315,8 +315,8 @@
                     -Dhazelcast.test.use.network=false
                     -Djavax.management.builder.initial=${javax.management.builder.initial}
                     -DCacheManagerImpl=${CacheManagerImpl}
-                    -DCacheImpl=${CacheImpl}
-                    -DCacheEntryImpl=${CacheEntryImpl}
+                    -Djavax.cache.Cache=${CacheImpl}
+                    -Djavax.cache.Cache.Entry=${CacheEntryImpl}
                     -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                     -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                 </argLine>
@@ -667,8 +667,8 @@
                                 -Dhazelcast.test.use.network=true
                                 -Djavax.management.builder.initial=${javax.management.builder.initial}
                                 -DCacheManagerImpl=${CacheManagerImpl}
-                                -DCacheImpl=${CacheImpl}
-                                -DCacheEntryImpl=${CacheEntryImpl}
+                                -Djavax.cache.Cache=${CacheImpl}
+                                -Djavax.cache.Cache.Entry=${CacheEntryImpl}
                                 -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                                 -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                             </argLine>
