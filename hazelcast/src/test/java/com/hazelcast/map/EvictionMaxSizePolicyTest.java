@@ -302,72 +302,78 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     }
 
 
-    private void assertPerNodePolicyWorks(Collection<IMap> maps, final int perNodeMaxSize, final int nodeCount) {
-        final int mapSize = getSize(maps);
-        final String message = String.format("map size is %d and it should be smaller "
-                        + "than perNodeMaxSize * nodeCount which is %d",
-                mapSize, perNodeMaxSize * nodeCount);
+    private void assertPerNodePolicyWorks(final Collection<IMap> maps, final int perNodeMaxSize, final int nodeCount) {
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
+                final int mapSize = getSize(maps);
+                final String message = String.format("map size is %d and it should be smaller "
+                                + "than perNodeMaxSize * nodeCount which is %d",
+                        mapSize, perNodeMaxSize * nodeCount);
+
                 assertTrue(message, mapSize <= perNodeMaxSize * nodeCount);
             }
         });
     }
 
 
-    private void assertPerPartitionPolicyWorks(Collection<IMap> maps, final int perPartitionMaxSize) {
-        final int mapSize = getSize(maps);
-        final String message = String.format("map size is %d and it should be smaller "
-                        + "than perPartitionMaxSize * PARTITION_COUNT which is %d",
-                mapSize, perPartitionMaxSize * PARTITION_COUNT);
+    private void assertPerPartitionPolicyWorks(final Collection<IMap> maps, final int perPartitionMaxSize) {
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
+                final int mapSize = getSize(maps);
+                final String message = String.format("map size is %d and it should be smaller "
+                                + "than perPartitionMaxSize * PARTITION_COUNT which is %d",
+                        mapSize, perPartitionMaxSize * PARTITION_COUNT);
+
                 assertTrue(message, mapSize <= perPartitionMaxSize * PARTITION_COUNT);
             }
         });
     }
 
-    private void assertUsedHeapSizePolicyWorks(Collection<IMap> maps, final int maxSizeInMegaBytes) {
-        final long heapCost = getHeapCost(maps);
-        final String message = String.format("heap cost is %d and it should be smaller "
-                        + "than allowed max heap size %d in bytes",
-                heapCost, convertMegaBytesToBytes(maxSizeInMegaBytes));
+    private void assertUsedHeapSizePolicyWorks(final Collection<IMap> maps, final int maxSizeInMegaBytes) {
 
         assertTrueEventually(new AssertTask() {
+
             @Override
             public void run() throws Exception {
+                final long heapCost = getHeapCost(maps);
+                final String message = String.format("heap cost is %d and it should be smaller "
+                                + "than allowed max heap size %d in bytes",
+                        heapCost, convertMegaBytesToBytes(maxSizeInMegaBytes));
+
                 assertTrue(message, heapCost <= convertMegaBytesToBytes(maxSizeInMegaBytes));
             }
         });
 
     }
 
-    private void assertUsedHeapPercentagePolicyTriggersEviction(Collection<IMap> maps, final int putCount) {
-        final int size = getSize(maps);
-        final long heapCost = getHeapCost(maps);
-        final String message = String.format("map size is %d, heap cost is %d in "
-                        + "bytes but total memory is %d in bytes",
-                size, heapCost, Runtime.getRuntime().totalMemory());
+    private void assertUsedHeapPercentagePolicyTriggersEviction(final Collection<IMap> maps, final int putCount) {
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
+                final int size = getSize(maps);
+                final long heapCost = getHeapCost(maps);
+                final String message = String.format("map size is %d, heap cost is %d in "
+                                + "bytes but total memory is %d in bytes",
+                        size, heapCost, Runtime.getRuntime().totalMemory());
+
                 assertTrue(message, size < putCount);
             }
         });
     }
 
-    private void assertUsedFreeHeapPolicyTriggersEviction(Collection<IMap> maps) {
-        final int size = getSize(maps);
-        final String message = String.format("map size is %d", size);
+    private void assertUsedFreeHeapPolicyTriggersEviction(final Collection<IMap> maps) {
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
+                final int size = getSize(maps);
+                final String message = String.format("map size is %d", size);
+
                 assertEquals(message, 0, size);
             }
         });
