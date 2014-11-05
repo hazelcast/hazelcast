@@ -81,7 +81,7 @@ public final class TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance[] newInstances(Config config, int nodeCount) {
-        final HazelcastInstance[] instances = new HazelcastInstance[count];
+        final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
             instances[i] = newHazelcastInstance(config);
         }
