@@ -159,7 +159,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
             throws Exception {
 
         RequestPartitionResult result = mapReduceService
-                .processRequest(supervisor.getJobOwner(), new RequestPartitionReducing(name, jobId, partitionId), name);
+                .processRequest(supervisor.getJobOwner(), new RequestPartitionReducing(name, jobId, partitionId));
 
         if (result.getResultState() == SUCCESSFUL) {
             // If we have a reducer defined just send it over
@@ -180,8 +180,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
         // If nothing to reduce we just set partition to processed
         RequestPartitionResult result = mapReduceService
-                .processRequest(supervisor.getJobOwner(), new RequestPartitionProcessed(name, jobId, partitionId, REDUCING),
-                        name);
+                .processRequest(supervisor.getJobOwner(), new RequestPartitionProcessed(name, jobId, partitionId, REDUCING));
 
         if (result.getResultState() != SUCCESSFUL) {
             throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);
@@ -222,7 +221,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
             throws Exception {
 
         RequestPartitionResult result = mapReduceService
-                .processRequest(supervisor.getJobOwner(), new PostPonePartitionProcessing(name, jobId, partitionId), name);
+                .processRequest(supervisor.getJobOwner(), new PostPonePartitionProcessing(name, jobId, partitionId));
 
         if (result.getResultState() != SUCCESSFUL) {
             throw new RuntimeException(
@@ -304,7 +303,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         private Integer findNewPartitionProcessing() {
             try {
                 RequestPartitionResult result = mapReduceService
-                        .processRequest(supervisor.getJobOwner(), new RequestPartitionMapping(name, jobId), name);
+                        .processRequest(supervisor.getJobOwner(), new RequestPartitionMapping(name, jobId));
 
                 // JobSupervisor doesn't exists anymore on jobOwner, job done?
                 if (result.getResultState() == NO_SUPERVISOR) {
@@ -336,7 +335,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 MapReduceUtil.enforcePartitionTableWarmup(mapReduceService);
 
                 RequestPartitionResult result = mapReduceService
-                        .processRequest(supervisor.getJobOwner(), new RequestMemberIdAssignment(name, jobId), name);
+                        .processRequest(supervisor.getJobOwner(), new RequestMemberIdAssignment(name, jobId));
 
                 // JobSupervisor doesn't exists anymore on jobOwner, job done?
                 if (result.getResultState() == NO_SUPERVISOR) {
