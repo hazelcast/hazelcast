@@ -127,8 +127,12 @@ public class QueryIndexingTest extends HazelcastTestSupport {
     private static Map<Integer, Employee> newEmployees(int employeeCount) {
         Map<Integer, Employee> employees = new HashMap<Integer, Employee>();
         for (int i = 0; i < employeeCount; i++) {
-            boolean hasNull = i % 2 == 0;
-            Employee val = new Employee(i, hasNull ? null : "name" + i, hasNull ? null : "city" + i, i % 60, true, i);
+            Employee val;
+            if(i % 2 == 0) {
+                val = new Employee(i, null, null, 0, true, i);
+            } else {
+                val = new Employee(i, "name" + i, "city" + i, 0, true, i);
+            }
             employees.put(i, Mockito.spy(val));
         }
         return employees;
