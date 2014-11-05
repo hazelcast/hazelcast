@@ -328,6 +328,8 @@ Default value is *3000*.
 
 #### Socket Interceptor
 
+![](images/enterprise-onlycopy.jpg)
+
 Client configuration to set a socket intercepter. Any class implementing `com.hazelcast.nio.SocketInterceptor` is a socket Interceptor.
 
 
@@ -397,6 +399,9 @@ socketOptions.setLingerSeconds(3);
 ```
 
 #### SSL
+
+![](images/enterprise-onlycopy.jpg)
+
 SSL can be used to secure the connection between client and the nodes. Please see  [SSLConfig](#sslconfig) section on how to configure it.
 
 #### Configuration for AWS
@@ -460,6 +465,8 @@ Hazelcast distributed map has a Near Cache feature to reduce network latencies. 
 The client supports the exact same near cache used in Hazelcast distributed map. 
 
 ### Client SSLConfig
+
+![](images/enterprise-onlycopy.jpg)
 
 If SSL is desired to be enabled for the client-cluster connection, this parameter should be set. Once set, the connection (socket) is established out of an SSL factory defined either by a factory class name or factory implementation. Please see SSLConfig class in `com.hazelcast.config` package at the JavaDocs page of [Hazelcast Documentation](http://www.hazelcast.org/documentation/) web page.
 
