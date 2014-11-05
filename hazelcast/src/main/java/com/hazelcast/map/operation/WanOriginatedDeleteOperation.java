@@ -39,12 +39,14 @@ public class WanOriginatedDeleteOperation extends BaseRemoveOperation {
         return success;
     }
 
+    @Override
     public void afterRun() {
         if (success) {
             mapService.getMapServiceContext().interceptAfterRemove(name, dataValue);
             mapService.getMapServiceContext().getMapEventPublisher()
                     .publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
             invalidateNearCaches();
+            evict(false);
         }
     }
 

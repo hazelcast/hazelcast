@@ -110,7 +110,7 @@ abstract class AbstractRecordStore implements RecordStore {
         sizeEstimator.reset();
     }
 
-    protected void setRecordValue(Record record, Object value, long now) {
+    protected void updateRecord(Record record, Object value, long now) {
         accessRecord(record, now);
         record.setLastUpdateTime(now);
         record.onUpdate();

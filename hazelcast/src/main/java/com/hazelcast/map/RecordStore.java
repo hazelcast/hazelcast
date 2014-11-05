@@ -268,4 +268,6 @@ public interface RecordStore {
      */
     Record getRecordOrNull(Data key);
 
+    void evictEntries(long now, boolean backup);
+
 }
