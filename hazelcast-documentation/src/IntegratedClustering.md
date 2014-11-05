@@ -107,7 +107,7 @@ With `HazelcastCacheRegionFactory`, all of the following caches are distributed 
 
 ##### HazelcastLocalCacheRegionFactory
 
-With `HazelcastLocalCacheRegionFactory`, each cluster member has a local map and each of them is registered to a Hazelcast Topic (ITopic). Whenever a `put` or `remove` operation is performed on a member, an invalidation message is generated on the ITopic and sent to the other members. Those other members remove the related key-value pair on their local maps as soon as they get these invalidation messages. The new value is only updated on this member when a `get` operation is run for that key. In the case of `get` operations, invalidation messages are not generated and reads are performed on the local map.
+With `HazelcastLocalCacheRegionFactory`, each cluster member has a local map and each of them is registered to a Hazelcast Topic (ITopic). Whenever a `put` or `remove` operation is performed on a member, an invalidation message is generated on the ITopic and sent to the other members. Those other members remove the related key-value pair on their local maps as soon as they get these invalidation messages. The new value is only updated on this member when a `get` operation runs on that key. In the case of `get` operations, invalidation messages are not generated and reads are performed on the local map.
 
 An illustration of the above logic is shown below.
 
@@ -127,7 +127,7 @@ Entity and Collection are invalidated on update. When they are updated on a node
 
 Timestamp cache is replicated. On every update, a replication message is sent to all the other nodes.
 
-Eviction support is limited to max-size and TTL only. When max-size is hit, 20% of the entries will be evicted automatically. 
+Eviction support is limited to maximum size of the map (defined by `max-size` configuration element) and TTL only. When maximum size is hit, 20% of the entries will be evicted automatically. 
 
 
 
