@@ -178,11 +178,8 @@ public abstract class AbstractHazelcastCacheManager
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
         if (cache == null) {
-            CacheConfig<K, V> cacheConfig = null;
-            if (cacheConfig == null) {
-                //remote check
-                cacheConfig = getCacheConfigFromPartition(cacheNameWithPrefix, cacheName);
-            }
+            //remote check
+            CacheConfig<K, V> cacheConfig = getCacheConfigFromPartition(cacheNameWithPrefix, cacheName);
             if (cacheConfig == null) {
                 //no cache found
                 return null;
