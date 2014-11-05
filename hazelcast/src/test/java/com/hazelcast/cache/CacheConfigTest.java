@@ -16,15 +16,20 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,6 +37,7 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
+import javax.cache.spi.CachingProvider;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -40,22 +46,24 @@ import java.util.List;
 import java.util.Properties;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.assertFalse;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class CacheConfigTest {
 
-    private URL configUrl1 = getClass().getClassLoader().getResource("test-hazelcast-jcache.xml");
-    private URL configUrl2 = getClass().getClassLoader().getResource("test-hazelcast-jcache2.xml");
+    private final URL configUrl1 = getClass().getClassLoader().getResource("test-hazelcast-jcache.xml");
+    private final URL configUrl2 = getClass().getClassLoader().getResource("test-hazelcast-jcache2.xml");
 
-    @BeforeClass
-    public static void setupClass() {
-        Hazelcast.shutdownAll();
+    @Before
+    @After
+    public void cleanup() {
+        HazelcastInstanceFactory.terminateAll();
+        Caching.getCachingProvider().close();
     }
 
     @Test
@@ -105,7 +113,6 @@ public class CacheConfigTest {
         Cache<Integer, String> testCache = cacheManager.getCache("testCache", Integer.class, String.class);
         assertNotNull(testCache);
 
-        Caching.getCachingProvider().close();
     }
 
     @Test
@@ -128,8 +135,7 @@ public class CacheConfigTest {
         CacheManager cacheManager2 = Caching.getCachingProvider().getCacheManager(uri2, null, properties2);
         assertNotNull(cacheManager2);
 
-        assertEquals(2, Hazelcast.getAllHazelcastInstances().size() );
-        Caching.getCachingProvider().close();
+        assertEquals(2, Hazelcast.getAllHazelcastInstances().size());
     }
 
     @Test
@@ -146,10 +152,7 @@ public class CacheConfigTest {
         CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri1, null, properties);
         assertNotNull(cacheManager);
 
-        assertEquals(1, Hazelcast.getAllHazelcastInstances().size() );
-        Caching.getCachingProvider().close();
-
-        Hazelcast.getHazelcastInstanceByName(instanceName).shutdown();
+        assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
     }
 
     @Test
@@ -159,6 +162,22 @@ public class CacheConfigTest {
 
         Cache testCache = cacheManager.getCache("default");
         assertNull(testCache);
-        Caching.getCachingProvider().close();
+    }
+
+    @Test
+    public void testGetPreConfiguredCache() {
+        Config config = new Config();
+        config.addCacheConfig(new CacheSimpleConfig().setName("test"));
+
+        int count = 4;
+        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(count);
+        for (int i = 0; i < count; i++) {
+            HazelcastInstance instance = factory.newHazelcastInstance(config);
+            CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(instance);
+            CacheManager cacheManager = provider.getCacheManager();
+
+            Cache<Object, Object> cache = cacheManager.getCache("test");
+            Assert.assertNotNull("Pre-configured cache cannot be retrieved on instance: " + i, cache);
+        }
     }
 }

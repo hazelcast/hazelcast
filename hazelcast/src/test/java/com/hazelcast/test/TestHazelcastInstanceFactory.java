@@ -80,12 +80,16 @@ public final class TestHazelcastInstanceFactory {
         return newInstances(new Config());
     }
 
-    public HazelcastInstance[] newInstances(Config config) {
-        final HazelcastInstance[] instances = new HazelcastInstance[count];
-        for (int i = 0; i < count; i++) {
+    public HazelcastInstance[] newInstances(Config config, int nodeCount) {
+        final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+        for (int i = 0; i < nodeCount; i++) {
             instances[i] = newHazelcastInstance(config);
         }
         return instances;
+    }
+
+    public HazelcastInstance[] newInstances(Config config) {
+        return newInstances(config, count);
     }
 
     public Collection<HazelcastInstance> getAllHazelcastInstances() {

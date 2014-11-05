@@ -48,6 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
@@ -119,8 +120,14 @@ public class JobSupervisor {
             ReducerTask reducerTask = jobTracker.getReducerTask(lcn.getJobId());
             reducerTask.processChunk(lcn.getPartitionId(), lcn.getSender(), lcn.getChunk());
         } else if (notification instanceof ReducingFinishedNotification) {
-            ReducingFinishedNotification rfn = (ReducingFinishedNotification) notification;
-            processReducerFinished(rfn);
+            final ReducingFinishedNotification rfn = (ReducingFinishedNotification) notification;
+            // Just offload it to free the event queue
+            executorService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    processReducerFinished0(rfn);
+                }
+            });
         }
     }
 
@@ -131,11 +138,11 @@ public class JobSupervisor {
         // Notify all other nodes about cancellation
         Set<Address> addresses = collectRemoteAddresses();
 
-        // Now notify all involved members to cancel the job
-        cancelRemoteOperations(addresses);
-
         // Cancel local job
         TrackableJobFuture future = cancel();
+
+        // Now notify all involved members to cancel the job
+        asyncCancelRemoteOperations(addresses);
 
         if (future != null) {
             // Might be already cancelled by another members exception
@@ -152,11 +159,11 @@ public class JobSupervisor {
         // Notify all other nodes about cancellation
         Set<Address> addresses = collectRemoteAddresses();
 
-        // Now notify all involved members to cancel the job
-        cancelRemoteOperations(addresses);
-
         // Cancel local job
         TrackableJobFuture future = cancel();
+
+        // Now notify all involved members to cancel the job
+        asyncCancelRemoteOperations(addresses);
 
         if (future != null) {
             // Might be already cancelled by another members exception
@@ -175,7 +182,7 @@ public class JobSupervisor {
         Set<Address> addresses = collectRemoteAddresses();
 
         // Now notify all involved members to cancel the job
-        cancelRemoteOperations(addresses);
+        asyncCancelRemoteOperations(addresses);
 
         // Kill local tasks
         String jobId = getConfiguration().getJobId();
@@ -397,28 +404,26 @@ public class JobSupervisor {
         return addresses;
     }
 
-    private void cancelRemoteOperations(Set<Address> addresses) {
-        String name = getConfiguration().getName();
-        String jobId = getConfiguration().getJobId();
-        for (Address address : addresses) {
-            try {
-                CancelJobSupervisorOperation operation = new CancelJobSupervisorOperation(name, jobId);
-                mapReduceService.processRequest(address, operation, name);
-            } catch (Exception ignore) {
-                // We can ignore this exception since we just want to cancel the job
-                // and the member may be crashed or unreachable in some way
-                ILogger logger = mapReduceService.getNodeEngine().getLogger(JobSupervisor.class);
-                logger.finest("Remote node may already be down", ignore);
-            }
-        }
-    }
+    private void asyncCancelRemoteOperations(final Set<Address> addresses) {
+        final NodeEngine nodeEngine = mapReduceService.getNodeEngine();
+        ScheduledExecutorService executor = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
+        executor.submit(new Runnable() {
 
-    private void processReducerFinished(final ReducingFinishedNotification notification) {
-        // Just offload it to free the event queue
-        executorService.submit(new Runnable() {
             @Override
             public void run() {
-                processReducerFinished0(notification);
+                String name = getConfiguration().getName();
+                String jobId = getConfiguration().getJobId();
+                for (Address address : addresses) {
+                    try {
+                        CancelJobSupervisorOperation operation = new CancelJobSupervisorOperation(name, jobId);
+                        mapReduceService.processRequest(address, operation);
+                    } catch (Exception ignore) {
+                        // We can ignore this exception since we just want to cancel the job
+                        // and the member may be crashed or unreachable in some way
+                        ILogger logger = nodeEngine.getLogger(JobSupervisor.class);
+                        logger.finest("Remote node may already be down", ignore);
+                    }
+                }
             }
         });
     }
@@ -441,7 +446,7 @@ public class JobSupervisor {
         if (checkPartitionReductionCompleted(partitionId, reducerAddress)) {
             try {
                 RequestPartitionResult result = mapReduceService
-                        .processRequest(jobOwner, new RequestPartitionProcessed(name, jobId, partitionId, REDUCING), name);
+                        .processRequest(jobOwner, new RequestPartitionProcessed(name, jobId, partitionId, REDUCING));
 
                 if (result.getResultState() != SUCCESSFUL) {
                     throw new RuntimeException("Could not finalize processing for partitionId " + partitionId);

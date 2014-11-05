@@ -109,7 +109,7 @@ class KeyValueSourceFacade<K, V>
                 String name = supervisor.getConfiguration().getName();
                 String jobId = supervisor.getConfiguration().getJobId();
                 Address jobOwner = supervisor.getJobOwner();
-                mapReduceService.processRequest(jobOwner, new ProcessStatsUpdateOperation(name, jobId, processedRecords), name);
+                mapReduceService.processRequest(jobOwner, new ProcessStatsUpdateOperation(name, jobId, processedRecords));
             } catch (Exception ignore) {
                 // Don't care if wasn't executed properly
                 logger.finest("ProcessedRecords update couldn't be executed", ignore);

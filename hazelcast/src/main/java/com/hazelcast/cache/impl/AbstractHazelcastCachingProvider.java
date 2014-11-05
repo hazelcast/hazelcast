@@ -37,12 +37,13 @@ import java.util.WeakHashMap;
  * providers.
  * <p>This class encapsulates following details:
  * <ul>
- *     <li>Hazelcast instance for default uri and default class loader.</li>
- *     <li>default uri.</li>
- *     <li>default class loader.</li>
- *     <li>accessing the singleton {@link CacheManager} by uri and class loader.</li>
- *     <li>managing lifecycle of cache managers.</li>
+ * <li>Hazelcast instance for default uri and default class loader.</li>
+ * <li>default uri.</li>
+ * <li>default class loader.</li>
+ * <li>accessing the singleton {@link CacheManager} by uri and class loader.</li>
+ * <li>managing lifecycle of cache managers.</li>
  * </ul></p>
+ *
  * @see CachingProvider
  */
 public abstract class AbstractHazelcastCachingProvider
@@ -85,7 +86,7 @@ public abstract class AbstractHazelcastCachingProvider
                     cacheManager = createHazelcastCacheManager(uri, classLoader, managerProperties);
                     cacheManagersByURI.put(managerURI, cacheManager);
                 } catch (Exception e) {
-                    throw new CacheException("Error opening URI " + managerURI.toString(), e);
+                    throw new CacheException("Error opening URI [" + managerURI.toString() + "]", e);
                 }
             }
             return cacheManager;
@@ -195,5 +196,5 @@ public abstract class AbstractHazelcastCachingProvider
     }
 
     protected abstract <T extends AbstractHazelcastCacheManager> T createHazelcastCacheManager(URI uri, ClassLoader classLoader,
-                                                                         Properties managerProperties);
+                                                                                               Properties managerProperties);
 }
