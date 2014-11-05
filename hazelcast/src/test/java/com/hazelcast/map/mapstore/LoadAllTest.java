@@ -10,9 +10,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -26,6 +23,10 @@ import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -132,7 +133,7 @@ public class LoadAllTest extends HazelcastTestSupport {
         final int rangeEnd = 9001;
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
-        final TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = instanceFactory.newHazelcastInstance(config);
         final HazelcastInstance node2 = instanceFactory.newHazelcastInstance(config);
         final IMap<Object, Object> map1 = node1.getMap(mapName);

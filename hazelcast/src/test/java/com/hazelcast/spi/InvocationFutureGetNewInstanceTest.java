@@ -8,12 +8,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -24,6 +19,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 /**
  * This test verifies that instances returned by the InvocationFuture, are always copied instances.
  * We don't want instances to be shared unexpectedly. In the future there might be some sharing going
@@ -33,13 +33,13 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
 
-    private static HazelcastInstance[] instances;
-    private static HazelcastInstance local;
-    private static HazelcastInstance remote;
+    private HazelcastInstance[] instances;
+    private HazelcastInstance local;
+    private HazelcastInstance remote;
 
-    @BeforeClass
-    public static void setUp() {
-        instances = new TestHazelcastInstanceFactory(2).newInstances();
+    @Before
+    public void setUp() {
+        instances = createHazelcastInstanceFactory(2).newInstances();
         warmUpPartitions(instances);
         local = instances[0];
         remote = instances[1];

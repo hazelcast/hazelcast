@@ -1,16 +1,10 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -19,17 +13,22 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class MapInstanceSharingTest extends HazelcastTestSupport {
 
-    private static HazelcastInstance[] instances;
-    private static HazelcastInstance local;
-    private static HazelcastInstance remote;
+    private HazelcastInstance[] instances;
+    private HazelcastInstance local;
+    private HazelcastInstance remote;
 
-    @BeforeClass
-    public static void setUp() {
-        instances = new TestHazelcastInstanceFactory(2).newInstances();
+    @Before
+    public void setUp() {
+        instances = createHazelcastInstanceFactory(2).newInstances();
         warmUpPartitions(instances);
         local = instances[0];
         remote = instances[1];

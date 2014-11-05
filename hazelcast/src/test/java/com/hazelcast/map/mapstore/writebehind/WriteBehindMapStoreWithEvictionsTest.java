@@ -5,9 +5,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +13,10 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -27,6 +28,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withBackupCount(0)
                 .withWriteDelaySeconds(100)
                 .withPartitionCount(1)
@@ -44,6 +46,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withBackupCount(0)
                 .withWriteDelaySeconds(3)
                 .withPartitionCount(1)
@@ -63,6 +66,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withBackupCount(0)
                 .withWriteDelaySeconds(100)
                 .withPartitionCount(1)
@@ -83,6 +87,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withBackupCount(0)
                 .withWriteDelaySeconds(100)
                 .withPartitionCount(1)
@@ -104,6 +109,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withBackupCount(0)
                 .withWriteDelaySeconds(100)
                 .withPartitionCount(1)
@@ -131,6 +137,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withBackupCount(0)
                 .withWriteDelaySeconds(100)
                 .withPartitionCount(1)
