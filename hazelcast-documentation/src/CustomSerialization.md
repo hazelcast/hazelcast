@@ -57,7 +57,7 @@ And now, as the last step, let's register the `EmployeeStreamSerializer` in the 
 ```xml
 <serialization>
   <serializers>
-    <serializer type-class="Employee">EmployeeStreamSerializer</serializer>
+    <serializer type-class="Employee" class-name="EmployeeStreamSerializer" />
   </serializers>
 </serialization>
 ```
