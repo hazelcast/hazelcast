@@ -49,7 +49,7 @@ public abstract class AbstractHazelcastCachingProvider
         implements CachingProvider {
 
     protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
-    protected static volatile HazelcastInstance hazelcastInstance;
+    protected volatile HazelcastInstance hazelcastInstance;
 
     protected final ClassLoader defaultClassLoader;
     protected final URI defaultURI;
