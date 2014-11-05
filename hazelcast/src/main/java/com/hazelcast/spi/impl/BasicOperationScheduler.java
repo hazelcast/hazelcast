@@ -74,13 +74,14 @@ public final class BasicOperationScheduler {
     private final Node node;
     private final ExecutionService executionService;
     private final BasicDispatcher dispatcher;
+    private final ResponseThread responseThread;
 
     //the generic workqueues are shared between all generic operation threads, so that work can be stolen
     //and a task gets processed as quickly as possible.
     private final BlockingQueue genericWorkQueue = new LinkedBlockingQueue();
     private final ConcurrentLinkedQueue genericPriorityWorkQueue = new ConcurrentLinkedQueue();
-
     private final AtomicInteger noOfScheduledOperations = new AtomicInteger();
+    private final boolean responseDirectDispatch;
 
     private volatile boolean shutdown;
 
@@ -114,6 +115,14 @@ public final class BasicOperationScheduler {
 
         logger.info("Starting with " + genericOperationThreads.length + " generic operation threads and "
                 + partitionOperationThreads.length + " partition operation threads.");
+
+        responseDirectDispatch = node.getGroupProperties().RESPONSE_DIRECT_DISPATCH.getBoolean();
+        if (responseDirectDispatch) {
+            this.responseThread = null;
+        } else {
+            this.responseThread = new ResponseThread();
+            responseThread.start();
+        }
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings({ "NP_NONNULL_PARAM_VIOLATION" })
@@ -233,6 +242,10 @@ public final class BasicOperationScheduler {
         return size;
     }
 
+    public int getResponseQueueSize() {
+        return responseDirectDispatch ? 0 : responseThread.workQueue.size();
+    }
+
     public void execute(Operation op) {
         String executorName = op.getExecutorName();
         if (executorName == null) {
@@ -276,10 +289,11 @@ public final class BasicOperationScheduler {
     public void execute(Packet packet) {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-                // It is a response packet.
-                // The response is directly dispatched on the IO thread. The amount of work that needs
-                // to be done is very little and there is not a lot of contention.
-                dispatcher.dispatch(packet);
+                if (responseDirectDispatch) {
+                    dispatcher.dispatch(packet);
+                } else {
+                    responseThread.workQueue.add(packet);
+                }
             } else {
                 // It is an operation packet.
                 int partitionId = packet.getPartitionId();
@@ -483,6 +497,53 @@ public final class BasicOperationScheduler {
                 dispatcher.dispatch(op);
             } finally {
                 noOfScheduledOperations.decrementAndGet();
+            }
+        }
+    }
+
+    private class ResponseThread extends Thread {
+        private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
+
+        public ResponseThread() {
+            super(node.threadGroup, node.getThreadNamePrefix("response"));
+            setContextClassLoader(node.getConfigClassLoader());
+        }
+
+        public void run() {
+            try {
+                doRun();
+            } catch (OutOfMemoryError e) {
+                onOutOfMemory(e);
+            } catch (Throwable t) {
+                logger.severe(t);
+            }
+        }
+
+        private void doRun() {
+            for ( ;; ) {
+                Object task;
+                try {
+                    task = workQueue.take();
+                } catch (InterruptedException e) {
+                    if (shutdown) {
+                        return;
+                    }
+                    continue;
+                }
+
+                if (shutdown) {
+                    return;
+                }
+
+                process(task);
+            }
+        }
+
+        private void process(Object task) {
+            try {
+                dispatcher.dispatch(task);
+            } catch (Exception e) {
+                logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
             }
         }
     }

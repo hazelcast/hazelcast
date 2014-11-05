@@ -118,6 +118,7 @@ public class GroupProperties {
     public static final String PROP_PARTITIONING_STRATEGY_CLASS = "hazelcast.partitioning.strategy.class";
     public static final String PROP_GRACEFUL_SHUTDOWN_MAX_WAIT = "hazelcast.graceful.shutdown.max.wait";
     public static final String PROP_SYSTEM_LOG_ENABLED = "hazelcast.system.log.enabled";
+    public static final String PROP_RESPONSE_DIRECT_DISPATCH = "hazelcast.response.direct.dispatch";
 
     // OLD ELASTIC MEMORY PROPS
     public static final String PROP_ELASTIC_MEMORY_ENABLED = "hazelcast.elastic.memory.enabled";
@@ -294,6 +295,8 @@ public class GroupProperties {
 
     public final GroupProperty BACKPRESSURE_ENABLED;
 
+    public final GroupProperty RESPONSE_DIRECT_DISPATCH;
+
     /**
      * @param config
      */
@@ -385,8 +388,9 @@ public class GroupProperties {
         * treat it as exhausted capacity and we return 0 slots. The purpose is to prevent issuing many small
         * claims as it would cause extra over-head.*/
         BACKPRESSURE_MIN_CLAIM_SIZE = new GroupProperty(config, PROP_BACKPRESSURE_MIN_CLAIM_SIZE, "10");
-
-
+        /* When true then IOThread does direct dispatch of responses. Otherwise the responses are
+         * put to a queue and a dedicated response thread is responsible for dispatching them. */
+        RESPONSE_DIRECT_DISPATCH = new GroupProperty(config, PROP_RESPONSE_DIRECT_DISPATCH, "false");
     }
 
     public static class GroupProperty {
