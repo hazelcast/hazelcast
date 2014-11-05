@@ -153,7 +153,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      *
      * @param now now in time.
      */
-    protected void evictEntries(long now, boolean backup) {
+    public void evictEntries(long now, boolean backup) {
         if (evictionEnabled) {
             cleanUp(now, backup);
         }

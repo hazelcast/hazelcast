@@ -67,6 +67,7 @@ public class MergeOperation extends BasePutOperation {
     public void afterRun() {
         if (merged) {
             invalidateNearCaches();
+            evict(false);
         }
     }
 

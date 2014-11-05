@@ -66,6 +66,8 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
                 continue;
             }
             entryAddedOrUpdatedBackup(entry, dataKey);
+
+            evict(true);
         }
     }
 

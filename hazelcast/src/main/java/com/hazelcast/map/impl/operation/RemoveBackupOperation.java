@@ -55,6 +55,11 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
     }
 
     @Override
+    public void afterRun() throws Exception {
+        evict(true);
+    }
+
+    @Override
     public Object getResponse() {
         return Boolean.TRUE;
     }
