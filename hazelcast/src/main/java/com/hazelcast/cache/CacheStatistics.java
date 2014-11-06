@@ -25,8 +25,8 @@ package com.hazelcast.cache;
  * <p>
  *     Sample code for accessing to node's local cache statistics:
  *     <pre>
- *         <code>ICache&lt;String , SessionData&gt; iCache =  cache.unwrap( ICache.class );
- *         CacheStatistics nodeLocalCacheStatistics = iCache.getLocalCacheStatistics();
+ *         <code>ICache&lt;String , SessionData&gt; unwrappedCache =  cache.unwrap( ICache.class );
+ *         CacheStatistics nodeLocalCacheStatistics = unwrappedCache.getLocalCacheStatistics();
  *         long cacheHits = nodeLocalCacheStatistics.getCacheHits();
  *         </code>
  *     </pre>

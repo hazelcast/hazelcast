@@ -23,33 +23,70 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Hazelcast {@link javax.cache.Cache} extension
- *<p>
- *     Hazelcast provides extension methods to {@link javax.cache.Cache}.
- * </p>
- * <p>
- *     There are three set of extensions:
- *     <ul>
- *         <li>asynchronous version of all cache operations.</li>
- *         <li>cache operations with custom ExpiryPolicy parameter to apply on that specific operation.</li>
- *         <li>uncategorized like {@link #size()}.</li>
- *     </ul>
- *</p>
- *<p>
- *     A method ending with Async is the asynchronous version of that method (for example {@link #getAsync(K)},
- *     {@link #replaceAsync(K,V)} ).<br/>
- *     These methods return a Future where you can get the result or wait for the operation to be completed.
+ * This {@link com.hazelcast.cache.ICache} interfaces is the {@link javax.cache.Cache} extension offered by
+ * Hazelcast JCache.<br>
+ * In addition to the standard set of JCache methods defined in the JSR 107 specification, Hazelcast provides
+ * additional operations to support a broader range of programing styles.<p>
  *
- *     <pre>
- *         <code>ICache&lt;String , SessionData&gt; icache =  cache.unwrap( ICache.class );
- *         Future&lt;SessionData&gt; future = icache.getAsync(&quot;key-1&quot; ) ;
- *         SessionData sessionData = future.get();
- *         </code>
- *     </pre>
- *</p>
- *<p>
- *     This interface can be accessed through {@link javax.cache.Cache#unwrap(Class)}.
- *</p>
+ * There are three different types of extensions methods provided:
+ * <ul>
+ *   <li>asynchronous version of typical blocking cache operations (due to remote calls)</li>
+ *   <li>typical cache operations, providing a custom {@link javax.cache.expiry.ExpiryPolicy} parameter
+ *       to apply a special expiration to that specific operation</li>
+ *   <li>common collection-like operations (e.g. {@link #size()}) or typical Hazelcast-list additions
+ *       (e.g. {@link #destroy()})</li>
+ * </ul><p>
+ *
+ * To take advantage of the methods of this interface, the {@link javax.cache.Cache} instance needs to be
+ * unwrapped as defined in the JSR 107 standard ({@link javax.cache.Cache#unwrap(Class)}) by providing the
+ * {@link com.hazelcast.cache.ICache} interface parameter.
+ * <pre>
+ *   ICache&lt;Key , Value&gt; unwrappedCache =  cache.unwrap( ICache.class );
+ * </pre>
+ * The unwrapped cache instance can now be used for both ICache and Cache operations.<p><p>
+ *
+ * <b>Asynchronous operations:</b><br>
+ * For most of the typical operations, Hazelcast provides asynchronous versions to program in a more reactive
+ * styled way. All asynchronous operations follow the same naming pattern: the operation's name from JCache
+ * extended by the term <tt>Async</tt>, e.g. the asynchronous version of {@link javax.cache.Cache#get(Object)}
+ * is {@link #getAsync(Object)}.<br>
+ * These methods return an {@link com.hazelcast.core.ICompletableFuture} that can be used to get the result by
+ * implementing a callback based on {@link com.hazelcast.core.ExecutionCallback} or wait for the operation to be
+ * completed in a blocking fashion {@link java.util.concurrent.Future#get()} or
+ * {@link java.util.concurrent.Future#get(long, java.util.concurrent.TimeUnit)}.<p>
+ * In a reactive way:
+ * <pre>
+ *   ICompletableFuture&lt;Value&gt; future = unwrappedCache.getAsync( &quot;key-1&quot; ) ;
+ *   future.andThen( new ExecutionCallback() {
+ *     public void onResponse( Value value ) {
+ *         System.out.println( value );
+ *     }
+ *
+ *     public void onFailure( Throwable throwable ) {
+ *         throwable.printStackTrace();
+ *     }
+ *   } );
+ * </pre>
+ * Or in a blocking way:
+ * <pre>
+ *   ICompletableFuture&lt;Value&gt; future = unwrappedCache.getAsync( &quot;key-1&quot; ) ;
+ *   Value value = future.get();
+ *   System.out.println( value );
+ * </pre><p><p>
+ *
+ * <b>Custom ExpirePolicy:</b><br>
+ * Again for most of the typical operations, Hazelcast provides overloaded versions with an additional
+ * {@link javax.cache.expiry.ExpiryPolicy} parameter to configure a different expiration policy from the
+ * default one set in the {@link javax.cache.configuration.CompleteConfiguration} passed to the cache
+ * creation. Therefore the {@link javax.cache.Cache#put(Object, Object)} operation has an overload
+ * {@link com.hazelcast.cache.ICache#put(Object, Object, javax.cache.expiry.ExpiryPolicy)} to pass in the
+ * special policy.<p>
+ * <b><i>Important to note: The overloads use an instance of {@link javax.cache.expiry.ExpiryPolicy} and not
+ * a {@link javax.cache.configuration.Factory} instance as used in the configuration.</i></b>
+ * <pre>
+ *   unwrappedCache.put( "key", "value", new AccessedExpiryPolicy( Duration.ONE_DAY ) );
+ * </pre>
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  * @see javax.cache.Cache
