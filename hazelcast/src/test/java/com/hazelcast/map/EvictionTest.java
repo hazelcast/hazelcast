@@ -85,11 +85,11 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTTL_affectedByUpdates() throws Exception {
+    public void testTTL_zeroIsInfinity() throws Exception {
         IMap<Integer, String> map = createSimpleMap();
 
         map.put(1, "value0", 2, TimeUnit.SECONDS);
-        map.put(1, "value1", 100, TimeUnit.SECONDS);
+        map.put(1, "value1", 0, TimeUnit.SECONDS);
         sleepSeconds(3);
 
         assertTrue(map.containsKey(1));
@@ -99,14 +99,15 @@ public class EvictionTest extends HazelcastTestSupport {
      * We are defining TTL as time being passed since creation time of an entry.
      */
     @Test
-    public void testTTL_appliedFromCreationTime() throws Exception {
+    public void testTTL_appliedFromLastUpdate() throws Exception {
         IMap<Integer, String> map = createSimpleMap();
 
-        map.put(1, "value0");
-        sleepSeconds(2);
+        map.put(1, "value0", 1, TimeUnit.SECONDS);
         map.put(1, "value1", 2, TimeUnit.SECONDS);
+        map.put(1, "value2", 300, TimeUnit.SECONDS);
+        sleepSeconds(2);
 
-        assertFalse(map.containsKey(1));
+        assertTrue(map.containsKey(1));
     }
 
     @Test
