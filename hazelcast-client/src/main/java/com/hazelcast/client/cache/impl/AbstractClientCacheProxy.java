@@ -81,6 +81,7 @@ abstract class AbstractClientCacheProxy<K, V>
         final ClientContext context = clientContext;
         try {
             future = (ClientCallFuture) context.getInvocationService().invokeOnKeyOwner(request, keyData);
+            future = registerReturnedValueTypeCheck(future);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

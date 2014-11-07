@@ -7,6 +7,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationResultVerifier;
 import com.hazelcast.spi.TraceableOperation;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 import static java.lang.Math.min;
 
@@ -34,6 +36,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
     volatile boolean interrupted;
     private BasicInvocation invocation;
+    private volatile OperationResultVerifier<E> operationResultVerifier;
     private volatile ExecutionCallbackNode<E> callbackHead;
     private volatile Object response;
     private final BasicOperationService operationService;
@@ -82,7 +85,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                 @Override
                 public void run() {
                     try {
-                        Object resp = resolveApplicationResponse(response);
+                        Object resp = verifyResponse(resolveApplicationResponse(response));
 
                         if (resp == null || !(resp instanceof Throwable)) {
                             callback.onResponse((E) resp);
@@ -98,6 +101,13 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         } catch (RejectedExecutionException e) {
             invocation.logger.warning("Execution of callback: " + callback + " is rejected!", e);
         }
+    }
+
+    private Object verifyResponse(Object response) {
+        if (operationResultVerifier != null) {
+            response = operationResultVerifier.verify((E) response);
+        }
+        return response;
     }
 
     /**
@@ -179,6 +189,11 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         Object unresolvedResponse = waitForResponse(timeout, unit);
         return (E) resolveApplicationResponseOrThrowException(unresolvedResponse);
+    }
+
+    @Override
+    public void setOperationResultVerifier(OperationResultVerifier<E> operationResultVerifier) {
+        this.operationResultVerifier = operationResultVerifier;
     }
 
     private Object waitForResponse(long time, TimeUnit unit) {
@@ -289,6 +304,10 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         Object response = resolveApplicationResponse(unresolvedResponse);
 
         if (response == null || !(response instanceof Throwable)) {
+            response = verifyResponse(response);
+            if (response instanceof Throwable) {
+                sneakyThrow((Throwable) response);
+            }
             return response;
         }
 

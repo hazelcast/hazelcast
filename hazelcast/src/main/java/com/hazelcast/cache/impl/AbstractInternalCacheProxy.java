@@ -24,6 +24,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.OperationResultVerifier;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -67,11 +68,19 @@ abstract class AbstractInternalCacheProxy<K, V>
     private final Object completionRegistrationMutex = new Object();
     private volatile String completionRegistrationId;
 
+    private final OperationResultVerifier operationResultVerifier;
+
     protected AbstractInternalCacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
+        operationResultVerifier = new TypeCheckingOperationResultVerifier<K, V>(cacheConfig);
+    }
+
+    protected <T> InternalCompletableFuture<T> registerReturnedValueTypeCheck(InternalCompletableFuture<T> future) {
+        future.setOperationResultVerifier(operationResultVerifier);
+        return future;
     }
 
     protected <T> InternalCompletableFuture<T> invoke(Operation op, Data keyData, boolean completionOperation) {
@@ -111,7 +120,7 @@ abstract class AbstractInternalCacheProxy<K, V>
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, oldValue);
         } else {
             validateNotNull(key);
-            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
+            CacheProxyUtil.validateConfiguredKeyType(cacheConfig, key);
         }
         final Data keyData = serializationService.toData(key);
         final Data valueData = serializationService.toData(oldValue);
@@ -121,7 +130,11 @@ abstract class AbstractInternalCacheProxy<K, V>
         } else {
             operation = operationProvider.createRemoveOperation(keyData, valueData, IGNORE_COMPLETION);
         }
-        return invoke(operation, keyData, withCompletionEvent);
+        InternalCompletableFuture<T> future = invoke(operation, keyData, withCompletionEvent);
+        if (isGet) {
+            future = registerReturnedValueTypeCheck(future);
+        }
+        return future;
     }
 
     protected <T> InternalCompletableFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
@@ -145,7 +158,11 @@ abstract class AbstractInternalCacheProxy<K, V>
             operation = operationProvider.createReplaceOperation(keyData, oldValueData, newValueData,
                     expiryPolicy, IGNORE_COMPLETION);
         }
-        return invoke(operation, keyData, withCompletionEvent);
+        InternalCompletableFuture<T> future = invoke(operation, keyData, withCompletionEvent);
+        if (isGet) {
+            future = registerReturnedValueTypeCheck(future);
+        }
+        return future;
     }
 
     protected <T> InternalCompletableFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean isGet,
@@ -156,7 +173,11 @@ abstract class AbstractInternalCacheProxy<K, V>
         final Data keyData = serializationService.toData(key);
         final Data valueData = serializationService.toData(value);
         final Operation op = operationProvider.createPutOperation(keyData, valueData, expiryPolicy, isGet, IGNORE_COMPLETION);
-        return invoke(op, keyData, withCompletionEvent);
+        InternalCompletableFuture<T> future = invoke(op, keyData, withCompletionEvent);
+        if (isGet) {
+            future = registerReturnedValueTypeCheck(future);
+        }
+        return future;
     }
 
     protected InternalCompletableFuture<Boolean> putIfAbsentAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,

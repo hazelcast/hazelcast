@@ -38,6 +38,7 @@ import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -145,7 +146,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, oldValue);
         } else {
             validateNotNull(key);
-            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
+            CacheProxyUtil.validateConfiguredKeyType(cacheConfig, key);
         }
         final Data keyData = toData(key);
         final Data oldValueData = oldValue != null ? toData(oldValue) : null;
@@ -162,6 +163,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             invalidateNearCache(keyData);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
+        }
+        if (isGet) {
+            future = registerReturnedValueTypeCheck((ClientCallFuture<V>) future);
         }
         return new DelegatingFuture<T>(future, clientContext.getSerializationService());
     }

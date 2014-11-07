@@ -73,7 +73,8 @@ abstract class AbstractCacheProxy<K, V>
         validateNotNull(key);
         final Data keyData = serializationService.toData(key);
         final Operation op = operationProvider.createGetOperation(keyData, expiryPolicy);
-        return invoke(op, keyData, false);
+        InternalCompletableFuture<V> future = invoke(op, keyData, false);
+        return registerReturnedValueTypeCheck(future);
     }
 
     @Override
@@ -153,9 +154,9 @@ abstract class AbstractCacheProxy<K, V>
 
     @Override
     public V get(K key, ExpiryPolicy expiryPolicy) {
-        final Future<V> f = getAsync(key, expiryPolicy);
+        final InternalCompletableFuture<V> f = getAsync(key, expiryPolicy);
         try {
-            return f.get();
+            return registerReturnedValueTypeCheck(f).get();
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
@@ -208,7 +209,7 @@ abstract class AbstractCacheProxy<K, V>
     public V getAndPut(K key, V value, ExpiryPolicy expiryPolicy) {
         final InternalCompletableFuture<V> f = putAsyncInternal(key, value, expiryPolicy, true, true);
         try {
-            return f.get();
+            return registerReturnedValueTypeCheck(f).get();
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
@@ -256,7 +257,7 @@ abstract class AbstractCacheProxy<K, V>
 
     @Override
     public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
-        final Future<V> f = replaceAsyncInternal(key, null, value, expiryPolicy, false, true, true);
+        final InternalCompletableFuture<V> f = replaceAsyncInternal(key, null, value, expiryPolicy, false, true, true);
         try {
             return f.get();
         } catch (Throwable e) {

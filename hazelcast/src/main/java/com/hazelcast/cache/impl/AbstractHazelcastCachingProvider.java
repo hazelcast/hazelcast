@@ -52,15 +52,22 @@ public abstract class AbstractHazelcastCachingProvider
     protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
     protected volatile HazelcastInstance hazelcastInstance;
 
+    protected HazelcastInstance defaultHazelcastInstance;
+
     protected final ClassLoader defaultClassLoader;
     protected final URI defaultURI;
 
     private final Map<ClassLoader, Map<URI, AbstractHazelcastCacheManager>> cacheManagers;
 
     public AbstractHazelcastCachingProvider() {
+        this(null);
+    }
+
+    public AbstractHazelcastCachingProvider(HazelcastInstance defaultHazelcastInstance) {
         //we use a WeakHashMap to prevent strong references to a classLoader to avoid memory leak.
         this.cacheManagers = new WeakHashMap<ClassLoader, Map<URI, AbstractHazelcastCacheManager>>();
         this.defaultClassLoader = this.getClass().getClassLoader();
+        this.defaultHazelcastInstance = defaultHazelcastInstance;
         try {
             defaultURI = new URI("hazelcast");
             //            defaultURI = new URI(this.getClass().getName());
@@ -137,11 +144,11 @@ public abstract class AbstractHazelcastCachingProvider
     }
 
     protected void shutdownHazelcastInstance() {
-        final HazelcastInstance localInstanceRef = hazelcastInstance;
+        final HazelcastInstance localInstanceRef = defaultHazelcastInstance;
         if (localInstanceRef != null) {
             localInstanceRef.shutdown();
         }
-        hazelcastInstance = null;
+        defaultHazelcastInstance = null;
     }
 
     @Override

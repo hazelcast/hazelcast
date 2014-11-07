@@ -16,16 +16,19 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.impl.TypeCheckingOperationResultVerifier;
 import com.hazelcast.cache.impl.client.CacheDestroyRequest;
 import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.OperationResultVerifier;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -60,6 +63,8 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
     private final CacheLoader<K, V> cacheLoader;
 
+    private final OperationResultVerifier operationResultVerifier;
+
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
@@ -68,6 +73,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
         this.clientContext = clientContext;
+        this.operationResultVerifier = new TypeCheckingOperationResultVerifier<K, V>(cacheConfig);
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
@@ -75,6 +81,12 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             cacheLoader = null;
         }
     }
+
+    protected <T> ClientCallFuture<T> registerReturnedValueTypeCheck(ClientCallFuture<T> future) {
+        future.setOperationResultVerifier(operationResultVerifier);
+        return future;
+    }
+
     //region close&destroy
     protected void ensureOpen() {
         if (isClosed()) {

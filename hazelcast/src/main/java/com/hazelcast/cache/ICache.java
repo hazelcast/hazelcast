@@ -102,6 +102,11 @@ public interface ICache<K, V>
      * If the cache is configured for <tt>read-through</tt> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheLoader} might be called to retrieve
      * the value of the key from any kind of external resource.
+     * <p>
+     * The resulting {@link com.hazelcast.core.ICompletableFuture} instance may throw a
+     * {@link java.lang.ClassCastException} as the operations result if the {@link javax.cache.Cache}
+     * is configured to perform runtime-type-checking, and the key or value types are incompatible
+     * with those that have been configured for the {@link javax.cache.Cache}.
      *
      * @param key the key whose associated value is to be returned
      *
@@ -110,6 +115,7 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
      *
      * @see javax.cache.Cache#get(K)
      * @see com.hazelcast.core.ICompletableFuture
@@ -122,6 +128,11 @@ public interface ICache<K, V>
      * If the cache is configured for <tt>read-through</tt> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheLoader} might be called to retrieve
      * the value of the key from any kind of external resource.
+     * <p>
+     * The resulting {@link com.hazelcast.core.ICompletableFuture} instance may throw a
+     * {@link java.lang.ClassCastException} as the operations result if the {@link javax.cache.Cache}
+     * is configured to perform runtime-type-checking, and the key or value types are incompatible
+     * with those that have been configured for the {@link javax.cache.Cache}.
      *
      * @param key the key whose associated value is to be returned
      * @param expiryPolicy custom expiry policy for this operation,
@@ -132,6 +143,7 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
      *
      * @see javax.cache.Cache#get(K)
      * @see com.hazelcast.core.ICompletableFuture
@@ -156,6 +168,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#put(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -183,6 +200,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#put(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -216,6 +238,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#putIfAbsent(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -253,6 +280,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#putIfAbsent(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -279,6 +311,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#getAndPut(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -307,6 +344,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#getAndPut(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -319,6 +361,11 @@ public interface ICache<K, V>
      * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
+     * <p>
+     * The resulting {@link com.hazelcast.core.ICompletableFuture} instance may throw a
+     * {@link java.lang.ClassCastException} as the operations result if the {@link javax.cache.Cache}
+     * is configured to perform runtime-type-checking, and the key or value types are incompatible
+     * with those that have been configured for the {@link javax.cache.Cache}.
      *
      * @param key the key whose associated value is to be returned
      *
@@ -327,6 +374,7 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
      *
      * @see javax.cache.Cache#remove(K)
      * @see com.hazelcast.core.ICompletableFuture
@@ -351,6 +399,11 @@ public interface ICache<K, V>
      * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
+     * <p>
+     * The resulting {@link com.hazelcast.core.ICompletableFuture} instance may throw a
+     * {@link java.lang.ClassCastException} as the operations result if the {@link javax.cache.Cache}
+     * is configured to perform runtime-type-checking, and the key or value types are incompatible
+     * with those that have been configured for the {@link javax.cache.Cache}.
      *
      * @param key the key whose associated value is to be returned.
      * @param oldValue the value expected to be associated with the specified key.
@@ -360,6 +413,7 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or oldValue is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
      *
      * @see javax.cache.Cache#remove(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -373,6 +427,11 @@ public interface ICache<K, V>
      * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
+     * <p>
+     * The resulting {@link com.hazelcast.core.ICompletableFuture} instance may throw a
+     * {@link java.lang.ClassCastException} as the operations result if the {@link javax.cache.Cache}
+     * is configured to perform runtime-type-checking, and the key or value types are incompatible
+     * with those that have been configured for the {@link javax.cache.Cache}.
      *
      * @param key the key whose associated value is to be returned
      *
@@ -381,6 +440,7 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
      *
      * @see javax.cache.Cache#getAndRemove(K)
      * @see com.hazelcast.core.ICompletableFuture
@@ -402,6 +462,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#replace(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -426,6 +491,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#replace(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -451,6 +521,11 @@ public interface ICache<K, V>
      * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
+     * <p>
+     * The resulting {@link com.hazelcast.core.ICompletableFuture} instance may throw a
+     * {@link java.lang.ClassCastException} as the operations result if the {@link javax.cache.Cache}
+     * is configured to perform runtime-type-checking, and the key or value types are incompatible
+     * with those that have been configured for the {@link javax.cache.Cache}.
      *
      * @param key     the key with which the specified value is associated
      * @param oldValue the value expected to be associated with the specified key
@@ -461,6 +536,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key, oldValue or newValue is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#replace(K,V,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -486,6 +566,11 @@ public interface ICache<K, V>
      * If the cache is configured for <tt>write-through</tt> operation mode, the underlying
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
+     * <p>
+     * The resulting {@link com.hazelcast.core.ICompletableFuture} instance may throw a
+     * {@link java.lang.ClassCastException} as the operations result if the {@link javax.cache.Cache}
+     * is configured to perform runtime-type-checking, and the key or value types are incompatible
+     * with those that have been configured for the {@link javax.cache.Cache}.
      *
      * @param key      the key with which the specified value is associated
      * @param oldValue the value expected to be associated with the specified key
@@ -498,6 +583,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key, oldValue or newValue is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#replace(K,V,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -521,6 +611,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#getAndReplace(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -545,6 +640,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#getAndReplace(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -568,6 +668,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#get(K)
      */
@@ -591,6 +696,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given keys is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#getAll(java.util.Set)
      */
@@ -607,6 +717,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#put(K,V)
      */
@@ -626,6 +741,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#getAndPut(K,V)
      */
@@ -650,6 +770,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given map is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#putAll(java.util.Map)
      */
@@ -684,6 +809,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#putIfAbsent(K,V)
      */
@@ -720,6 +850,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key, oldValue or newValue is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#replace(K,V,V)
      */
@@ -743,6 +878,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key, oldValue or newValue is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#replace(K,V)
      */
@@ -766,6 +906,11 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws ClassCastException    if the implementation is configured to perform
+     *                               runtime-type-checking, and the key or value
+     *                               types are incompatible with those that have been
+     *                               configured for the {@link javax.cache.Cache}
      *
      * @see javax.cache.Cache#getAndReplace(K,V)
      */
