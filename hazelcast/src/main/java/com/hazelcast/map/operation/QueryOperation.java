@@ -118,9 +118,7 @@ public class QueryOperation extends AbstractMapOperation {
             lsFutures.add(f);
         }
 
-        final Collection<Collection<QueryableEntry>> returnedResults
-                = returnWithDeadline(lsFutures,
-                QUERY_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES, FutureUtil.RETHROW_EVERYTHING);
+        final Collection<Collection<QueryableEntry>> returnedResults = getResult(lsFutures);
         for (Collection<QueryableEntry> returnedResult : returnedResults) {
             if (returnedResult == null) {
                 continue;
@@ -129,6 +127,11 @@ public class QueryOperation extends AbstractMapOperation {
                 result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
             }
         }
+    }
+
+    private static Collection<Collection<QueryableEntry>> getResult(List<Future<Collection<QueryableEntry>>> lsFutures) {
+        return returnWithDeadline(lsFutures,
+                QUERY_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES, FutureUtil.RETHROW_EVERYTHING);
     }
 
     protected void runParallelForPaging(Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
@@ -144,9 +147,7 @@ public class QueryOperation extends AbstractMapOperation {
             lsFutures.add(f);
         }
         List<QueryableEntry> toMerge = new LinkedList<QueryableEntry>();
-        final Collection<Collection<QueryableEntry>> returnedResults
-                = returnWithDeadline(lsFutures,
-                QUERY_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES, FutureUtil.RETHROW_EVERYTHING);
+        final Collection<Collection<QueryableEntry>> returnedResults = getResult(lsFutures);
         for (Collection<QueryableEntry> returnedResult : returnedResults) {
             toMerge.addAll(returnedResult);
         }
