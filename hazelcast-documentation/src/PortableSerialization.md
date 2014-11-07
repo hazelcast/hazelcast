@@ -129,7 +129,7 @@ exception saying that `com.hazelcast.nio.serialization.HazelcastSerializationExc
 without explicitly registering class definition!`. 
 
 There are two solutions to get rid of this exception. Either put
-a non-null portable class of the same type before any other operation, or manually register a class definition in serialization config as shown below.
+a non-null portable class of the same type before any other operation, or manually register a class definition in serialization configuration as shown below.
 
 ```java
 Config config = new Config();

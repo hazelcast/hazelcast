@@ -5,7 +5,7 @@
 
 You can implement the `HazelcastInstanceAware` interface to access distributed objects for cases where an object is deserialized and needs access to HazelcastInstance.
 
-Let's implement it for the `Employee` class mentioned in the [StreamSerializer](customserialization.html) and [ByteArraySerializer](bytearrayserializer.html) sections.
+Let's implement it for the `Employee` class mentioned in the [Custom Serialization](#custom-serialization) section.
 
 ```java
 public class Employee
