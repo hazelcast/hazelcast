@@ -176,11 +176,11 @@ public class CacheStatisticsImpl
     @Override
     public float getAveragePutTime() {
         final long cachePutTimeTakenNanos = getCachePutTimeTakenNanos();
-        final long cacheGets = getCacheGets();
-        if (cachePutTimeTakenNanos == 0 || cacheGets == 0) {
+        final long cachePuts = getCachePuts();
+        if (cachePutTimeTakenNanos == 0 || cachePuts == 0) {
             return 0;
         }
-        return ((1f * cachePutTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
+        return ((1f * cachePutTimeTakenNanos) / cachePuts) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
     /**
