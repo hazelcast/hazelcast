@@ -57,7 +57,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
             }
         }
         numThreads.incrementAndGet();
-        new Thread(new TestRunner(method, notifier)).start();
+        new Thread(new TestRunner(method, notifier), method.getName()).start();
     }
 
     @Override
