@@ -1,12 +1,14 @@
 
 ## Custom Serialization
 
-Hazelcast lets you plug a custom serializer to be used for serialization of objects. `StreamSerializer` and `ByteArraySerializer` interfaces can be used for this purpose. Let's see the details in below subsections.
+Hazelcast lets you plug a custom serializer for serializing objects. You can use `StreamSerializer` and [`ByteArraySerializer`](bytearrayserializer.html) interfaces for this purpose.
 
 
 ### StreamSerializer
 
-You can use a stream in order to serialize and deserialize data by means of `StreamSerializer`. It is a good option for your own implementations and it can also be adapted to external serialization libraries like Kryo, JSON and protocol buffers.
+You can use a stream to serialize and deserialize data by using `StreamSerializer`. This is a good option for your own implementations. It can also be adapted to external serialization libraries like Kryo, JSON, and protocol buffers.
+
+#### StreamSerializer Example 1
 
 First, let's create a simple object.
 
@@ -50,9 +52,9 @@ public class EmployeeStreamSerializer
 }
 ```
 
-Of course, in practice, classes may have many fields. Just make sure the fields are read in the same order as they are written. Another consideration should be the type ID. It must be unique and greater than or equal to **1**. Uniqueness of it enables Hazelcast to determine which serializer will be used during deserialization. 
+In practice, classes may have many fields. Just make sure the fields are read in the same order as they are written. The type ID must be unique and greater than or equal to **1**. Uniqueness of the type ID enables Hazelcast to determine which serializer will be used during deserialization. 
 
-And now, as the last step, let's register the `EmployeeStreamSerializer` in the configuration file `hazelcast.xml`, as shown below.
+As the last step, let's register the `EmployeeStreamSerializer` in the configuration file `hazelcast.xml`, as shown below.
 
 ```xml
 <serialization>
@@ -67,8 +69,9 @@ And now, as the last step, let's register the `EmployeeStreamSerializer` in the 
 
 <br></br>
 
+#### StreamSerializer Example 2
 
-Let's take a look at another example implementing StreamSerializer.
+Let's take a look at another example implementing `StreamSerializer`.
 
 ```java
 public class Foo {
@@ -86,7 +89,7 @@ public class Foo {
 
 Assume that our custom serialization will serialize
 Foo into XML. First we need to implement a
-`com.hazelcast.nio.serialization.StreamSerializer`. A very simple one that uses XMLEncoder and XMLDecoder, would look like the following:
+`com.hazelcast.nio.serialization.StreamSerializer`. A very simple one that uses XMLEncoder and XMLDecoder could look like the following:
 
 ```java
 public static class FooXmlSerializer implements StreamSerializer<Foo> {
@@ -118,7 +121,7 @@ public static class FooXmlSerializer implements StreamSerializer<Foo> {
 }
 ```
 
-Note that `typeId` must be unique as Hazelcast will use it to lookup the StreamSerializer while it de-serializes the object. Now, the last required step is to register the StreamSerializer to the Configuration. Below are the programmatic and declarative configurations for this step in order.
+Note that `typeId` must be unique because Hazelcast will use it to look up the `StreamSerializer` while it de-serializes the object. The last required step is to register the `StreamSerializer` to the Configuration. Below are the programmatic and declarative configurations for this step.
 
 ```java
 SerializerConfig sc = new SerializerConfig()
