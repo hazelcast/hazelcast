@@ -9,7 +9,7 @@ Hazelcast Set is a distributed and concurrent implementation of `java.util.Set`.
 * Hazelcast Set is a non-partitioned data structure: all the data that belongs to a set will live on one single partition in that node.
 * Hazelcast Set cannot be scaled beyond the capacity of a single machine. Since the whole set lives on a single partition, storing large amount of data on a single set may cause memory pressure. Therefore, you should use multiple sets to store large amount of data; this way all the sets will be spread across the cluster, hence sharing the load.
 * A backup of Hazelcast Set is stored on a partition of another node in the cluster so that data is not lost in the event of a primary node failure.
-* No batching is performed while iterating over the set. All items are copied to local and iteration occurs locally.
+* All items are copied to local and iteration occurs locally.
 * Equals method implementation of Hazelcast Set uses serialized byte version of objects compared to `java.util.HashSet`.
 
 ### Sample Set Code

@@ -20,15 +20,16 @@ package com.hazelcast.cache;
  * Cache statistics
  * <p>
  *     Cache statistics are accumulated since the time a cache is created. <br/>
- *     Each CacheStatistics represents a named cache's per node statistics data.
+ *     An instance of this class represents local node values only! For an accumulated view
+ *     on cluster level the user has to retrieve all nodes statistics and aggregate values
+ *     on his own.
  * </p>
  * <p>
- *     Sample code for accessing to node's local cache statistics:
+ *     Sample code:
  *     <pre>
- *         <code>ICache&lt;String , SessionData&gt; unwrappedCache =  cache.unwrap( ICache.class );
- *         CacheStatistics nodeLocalCacheStatistics = unwrappedCache.getLocalCacheStatistics();
- *         long cacheHits = nodeLocalCacheStatistics.getCacheHits();
- *         </code>
+ *       ICache&lt;Key, Value&gt; unwrappedCache =  cache.unwrap( ICache.class );
+ *       CacheStatistics cacheStatistics = unwrappedCache.getLocalCacheStatistics();
+ *       long cacheHits = cacheStatistics.getCacheHits();
  *     </pre>
  * </p>
  *

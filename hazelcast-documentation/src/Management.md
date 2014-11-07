@@ -100,37 +100,37 @@ long getRemoveOperationCount();
 
 /**
  * Returns the total latency of put operations. To get the average latency,
- * divide to number of puts
+ * divide by number of puts
  */
 long getTotalPutLatency();
 
 /**
  * Returns the total latency of get operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getTotalGetLatency();
 
 /**
  * Returns the total latency of remove operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getTotalRemoveLatency();
 
 /**
  * Returns the maximum latency of put operations. To get the average latency,
- * divide to number of puts
+ * divide by number of puts
  */
 long getMaxPutLatency();
 
 /**
  * Returns the maximum latency of get operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getMaxGetLatency();
 
 /**
  * Returns the maximum latency of remove operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getMaxRemoveLatency();
 
@@ -296,37 +296,37 @@ long getRemoveOperationCount();
 
 /**
  * Returns the total latency of put operations. To get the average latency,
- * divide to number of puts
+ * divide by number of puts
  */
 long getTotalPutLatency();
 
 /**
  * Returns the total latency of get operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getTotalGetLatency();
 
 /**
  * Returns the total latency of remove operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getTotalRemoveLatency();
 
 /**
  * Returns the maximum latency of put operations. To get the average latency,
- * divide to number of puts
+ * divide by number of puts
  */
 long getMaxPutLatency();
 
 /**
  * Returns the maximum latency of get operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getMaxGetLatency();
 
 /**
  * Returns the maximum latency of remove operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getMaxRemoveLatency();
 

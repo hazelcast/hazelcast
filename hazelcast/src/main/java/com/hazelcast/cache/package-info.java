@@ -16,7 +16,8 @@
 
 /**
  * <p>
- *     Hazelcast JSR-107 aka JCache implementation
+ *     This package contains the public API extension for Hazelcast JCache,
+ *     the Hazelcast implementation of the JSR-107 commonly referred to as JCache.
  * </p>
  */
 package com.hazelcast.cache;

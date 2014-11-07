@@ -30,21 +30,25 @@ import java.net.URI;
 import java.util.Properties;
 
 /**
- * Main {@link CachingProvider} implementation to provide Hazelcast JCache Implementation.
- * <p>Main purpose of this provider implementation is delegating to selected internal actual provider
- * implementation.</p>
- * <p>There are two internal {@link CachingProvider}s:
- * <ol>
+ * This class is the Hazelcast JCache public {@link javax.cache.spi.CachingProvider} implementation. This provider
+ * class acts as the commonly used entry point for the JCache SPI to register Hazelcast JCache as an eligible JCache
+ * implementation.
+ * <p>Main purpose of this provider implementation is to delegate to the user-selected internal
+ * {@link javax.cache.spi.CachingProvider} implementation.</p>
+ * <p>Hazelcast uses two internal {@link javax.cache.spi.CachingProvider}s depending on the environment:
+ * <ul>
  *     <li>{@link com.hazelcast.cache.impl.HazelcastServerCachingProvider}</li>
- *     <li>{@link HazelcastClientCachingProvider}</li>
- * </ol>
+ *     <li>{@link com.hazelcast.client.cache.impl.HazelcastClientCachingProvider}</li>
+ * </ul>
  * </p>
  * <p>
  * <h3>Provider Type Selection:</h3>
  * First step is to check whether a selection exists using the system property
- * <pre>hazelcast.jcache.provider.type</pre> with values "client" or "server".
+ * <tt>hazelcast.jcache.provider.type</tt> with values <tt>client</tt> or <tt>server</tt>.
  * If no selection exists, then the default behavior for selecting the internal provider type is based on
- * which dependency found on classpath. Client and server provider classes are searched on classpath respectively.
+ * which dependency found on classpath. Client and server provider classes are searched on classpath. If
+ * both {@link javax.cache.spi.CachingProvider} implementations are found (client and server), the client
+ * provider has precedence. To select the server provider use the above mentioned property.
  * </p>
  *
  * @since 3.4
