@@ -191,19 +191,20 @@ public final class FutureUtil {
     }
 
     @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit) {
+    public static <V> Collection<V> returnWithDeadline(Collection<Future<V>> futures, long timeout, TimeUnit timeUnit) {
         return returnWithDeadline(futures, timeout, timeUnit, IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
     }
 
     @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit,
+    public static <V> Collection<V> returnWithDeadline(Collection<Future<V>> futures, long timeout, TimeUnit timeUnit,
                                                        ExceptionHandler exceptionHandler) {
 
         return returnWithDeadline(futures, timeout, timeUnit, timeout, timeUnit, exceptionHandler);
     }
 
     @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
+    public static <V> Collection<V> returnWithDeadline(Collection<Future<V>> futures,
+                                                       long overallTimeout, TimeUnit overallTimeUnit,
                                                        long perFutureTimeout, TimeUnit perFutureTimeUnit) {
 
         return returnWithDeadline(futures, overallTimeout, overallTimeUnit, perFutureTimeout, perFutureTimeUnit,
@@ -211,7 +212,8 @@ public final class FutureUtil {
     }
 
     @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
+    public static <V> Collection<V> returnWithDeadline(Collection<Future<V>> futures,
+                                                       long overallTimeout, TimeUnit overallTimeUnit,
                                                        long perFutureTimeout, TimeUnit perFutureTimeUnit,
                                                        ExceptionHandler exceptionHandler) {
 
