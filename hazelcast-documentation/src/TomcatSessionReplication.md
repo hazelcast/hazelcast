@@ -157,7 +157,7 @@ You can change that behavior by setting `deferredWrite=false` in your `<Manager>
 
 Based on Tomcat configuration or `sessionTimeout` setting in `web.xml`, sessions are expired over time. This requires a cleanup on the Hazelcast Cluster since there is no need to keep expired sessions in the cluster. 
 
-`processExpiresFrequency`, which is defined in `<Manager>`, is the only setting that controls the behavior of session expiry policy in the Tomcat Web Session Replication Module. By setting this, you can set the frequency of the session expiration checks in the Tomcat Instance.
+`processExpiresFrequency`, which is defined in [`<Manager>`](#optional-manager-tag-parameters), is the only setting that controls the behavior of session expiry policy in the Tomcat Web Session Replication Module. By setting this, you can set the frequency of the session expiration checks in the Tomcat Instance.
 
 #### Enabling Session Replication in Multi-App environment
 
