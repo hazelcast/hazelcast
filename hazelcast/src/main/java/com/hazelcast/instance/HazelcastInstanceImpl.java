@@ -83,7 +83,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 @SuppressWarnings("unchecked")
 @PrivateApi
-public final class HazelcastInstanceImpl
+public class HazelcastInstanceImpl
         implements HazelcastInstance {
 
     public final Node node;
