@@ -71,9 +71,9 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
 
         long TTL = TimeUnit.MINUTES.toMillis(1);
-        long creationTime = entryView.getCreationTime();
+        long lastUpdateTime = entryView.getLastUpdateTime();
 
-        long expectedExpirationTime = creationTime + TTL;
+        long expectedExpirationTime = lastUpdateTime + TTL;
 
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
 

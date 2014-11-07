@@ -311,15 +311,15 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (ttl < 1L) {
             return record;
         }
-        final long creationTime = record.getCreationTime();
+        final long lastUpdateTime = record.getLastUpdateTime();
 
         assert ttl > 0L : String.format("wrong ttl %d", ttl);
-        assert creationTime > 0L : String.format("wrong creationTime %d", creationTime);
+        assert lastUpdateTime > 0L : String.format("wrong lastUpdateTime %d", lastUpdateTime);
         assert time > 0L : String.format("wrong time %d", time);
-        assert time >= creationTime : String.format("time >= lastUpdateTime (%d >= %d)",
-                time, creationTime);
+        assert time >= lastUpdateTime : String.format("time >= lastUpdateTime (%d >= %d)",
+                time, lastUpdateTime);
 
-        result = time - creationTime >= calculateExpirationWithDelay(ttl, backup);
+        result = time - lastUpdateTime >= calculateExpirationWithDelay(ttl, backup);
         return result ? null : record;
     }
 
