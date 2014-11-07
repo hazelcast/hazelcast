@@ -968,8 +968,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private boolean hasOnGoingMigrationMaster(Level level) {
-        Operation operation = new HasOngoingMigration();
         Address masterAddress = node.getMasterAddress();
+        if (masterAddress == null) {
+            logger.log(level, "Cannot check ongoing migrations since the master node is not known yet");
+            return false;
+        }
+        Operation operation = new HasOngoingMigration();
         OperationService operationService = nodeEngine.getOperationService();
         InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(SERVICE_NAME, operation,
                 masterAddress);
