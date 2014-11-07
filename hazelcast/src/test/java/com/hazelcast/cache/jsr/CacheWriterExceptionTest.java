@@ -29,6 +29,6 @@ public class CacheWriterExceptionTest
 
     @AfterClass
     public static void cleanup(){
-        CleanupUtil.cleanup();
+        JstTestUtil.cleanup();
     }
 }

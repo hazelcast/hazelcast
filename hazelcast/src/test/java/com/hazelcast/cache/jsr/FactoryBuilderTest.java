@@ -29,6 +29,6 @@ public class FactoryBuilderTest
 
     @AfterClass
     public static void cleanup(){
-        CleanupUtil.cleanup();
+        JstTestUtil.cleanup();
     }
 }

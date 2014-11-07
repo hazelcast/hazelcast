@@ -30,7 +30,7 @@ public class CachingTest
 
     @AfterClass
     public static void cleanup(){
-        CleanupUtil.cleanup();
+        JstTestUtil.cleanup();
     }
 
     @Test
