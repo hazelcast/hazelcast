@@ -98,9 +98,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final int selectorThreadCount;
 
-    private final IOSelector[] inSelectors;
+    private final InSelectorImpl[] inSelectors;
 
-    private final IOSelector[] outSelectors;
+    private final OutSelectorImpl[] outSelectors;
 
     private final AtomicInteger nextSelectorIndex = new AtomicInteger();
 
@@ -126,8 +126,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
         selectorThreadCount = ioService.getSelectorThreadCount();
-        inSelectors = new IOSelector[selectorThreadCount];
-        outSelectors = new IOSelector[selectorThreadCount];
+        inSelectors = new InSelectorImpl[selectorThreadCount];
+        outSelectors = new OutSelectorImpl[selectorThreadCount];
         final Collection<Integer> ports = ioService.getOutboundPorts();
         outboundPortCount = ports == null ? 0 : ports.size();
         if (ports != null) {
@@ -311,7 +311,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
         connection.getReadHandler().register();
-        log(Level.INFO,  "Established socket connection between " + channel.socket().getLocalSocketAddress()
+        log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
                 + " and " + channel.socket().getRemoteSocketAddress());
         return connection;
     }
@@ -569,6 +569,19 @@ public class TcpIpConnectionManager implements ConnectionManager {
             final Integer port = outboundPorts.removeFirst();
             outboundPorts.addLast(port);
             return port;
+        }
+    }
+
+    @Override
+    public void dumpPerformanceMetrics(StringBuffer sb) {
+        for (int k = 0; k < inSelectors.length; k++) {
+            sb.append("inselector[").append(k).append("].readKeyCount=")
+                    .append(inSelectors[k].getReadKeyCount()).append("\n");
+        }
+
+        for (int k = 0; k < outSelectors.length; k++) {
+            sb.append("outSelectors[").append(k).append("].writeKeyCount=")
+                    .append(outSelectors[k].getWriteKeyCount()).append("\n");
         }
     }
 

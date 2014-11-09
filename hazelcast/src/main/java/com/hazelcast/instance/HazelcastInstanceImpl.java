@@ -74,6 +74,7 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.HealthMonitor;
 import com.hazelcast.util.HealthMonitorLevel;
+import com.hazelcast.util.PerformanceMonitor;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -131,6 +132,7 @@ public class HazelcastInstanceImpl
             managementService = new ManagementService(this);
             initManagedContext(configuredManagedContext);
             initHealthMonitor();
+            initPerformanceMonitor();
         } catch (Throwable e) {
             try {
                 // Terminate the node by terminating node engine,
@@ -159,6 +161,17 @@ public class HazelcastInstanceImpl
             int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
             new HealthMonitor(this, healthLevel, delaySeconds).start();
         }
+    }
+
+    private void initPerformanceMonitor() {
+        boolean enabled = node.getGroupProperties().PERFORMANCE_MONITORING_ENABLED.getBoolean();
+        if (!enabled) {
+            return;
+        }
+
+        logger.finest("Starting performance monitor");
+        int delaySeconds = node.getGroupProperties().PERFORMANCE_MONITORING_DELAY_SECONDS.getInteger();
+        new PerformanceMonitor(this, delaySeconds).start();
     }
 
     public ManagementService getManagementService() {

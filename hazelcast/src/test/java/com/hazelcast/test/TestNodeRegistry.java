@@ -16,9 +16,9 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.AbstractJoiner;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.cluster.Joiner;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.MemberImpl;
@@ -227,7 +227,7 @@ final class TestNodeRegistry {
         final Object joinerLock;
 
         MockConnectionManager(Address[] addresses, ConcurrentMap<Address, NodeEngineImpl> nodes,
-                Node node, Object joinerLock) {
+                              Node node, Object joinerLock) {
             this.addresses = addresses;
             this.nodes = nodes;
             this.node = node;
@@ -235,6 +235,10 @@ final class TestNodeRegistry {
             synchronized (this.joinerLock) {
                 this.nodes.put(node.getThisAddress(), node.nodeEngine);
             }
+        }
+
+        @Override
+        public void dumpPerformanceMetrics(StringBuffer sb) {
         }
 
         public Connection getConnection(Address address) {
@@ -288,6 +292,7 @@ final class TestNodeRegistry {
 
         public void destroyConnection(Connection conn) {
         }
+
 
         public void restart() {
         }

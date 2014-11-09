@@ -50,6 +50,14 @@ public interface OperationService {
     long getExecutedOperationCount();
 
     /**
+     * Returns all kinds of metrics, e.g. performance. This can be used for performance analysis. In the future we'll have a
+     * more formal (e.g map with key/value pairs) information.
+     *
+     * @return the metrics in String form. If the implementation doesn't support metrics, null is returned.
+     */
+    void dumpPerformanceMetrics(StringBuffer sb);
+
+    /**
      * Runs operation in calling thread.
      *
      * @param op the operation to execute.

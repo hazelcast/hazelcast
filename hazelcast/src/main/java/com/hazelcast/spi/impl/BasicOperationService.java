@@ -153,6 +153,11 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
+    public void dumpPerformanceMetrics(StringBuffer sb){
+         scheduler.dumpPerformanceMetrics(sb);
+    }
+
+    @Override
     public int getPartitionOperationThreadCount() {
         return scheduler.partitionOperationThreads.length;
     }
