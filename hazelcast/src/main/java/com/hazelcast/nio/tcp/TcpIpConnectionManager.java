@@ -34,6 +34,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedRunnable;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -116,6 +117,12 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
+    // the selectorHackEnabled is a hack to make sure that selectors get an equal number of connections to deal with
+    // this should only be used for the test lab. In the future we need to create a real fix to this problem, but
+    // without this hack we can't do reliable benchmarking because the numbers have too much variation.
+    private final boolean selectorHackEnabled;
+    private final ConcurrentMap<String, Integer> selectorIndexPerHostMap = new ConcurrentHashMap<String, Integer>();
+
     public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
@@ -125,16 +132,18 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketLingerSeconds = ioService.getSocketLingerSeconds();
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
-        selectorThreadCount = ioService.getSelectorThreadCount();
-        inSelectors = new InSelectorImpl[selectorThreadCount];
-        outSelectors = new OutSelectorImpl[selectorThreadCount];
+        this.selectorThreadCount = ioService.getSelectorThreadCount();
+        this.inSelectors = new InSelectorImpl[selectorThreadCount];
+        this.outSelectors = new OutSelectorImpl[selectorThreadCount];
         final Collection<Integer> ports = ioService.getOutboundPorts();
-        outboundPortCount = ports == null ? 0 : ports.size();
+        this.outboundPortCount = ports == null ? 0 : ports.size();
         if (ports != null) {
             outboundPorts.addAll(ports);
         }
-        socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
-        portableContext = ioService.getPortableContext();
+        this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
+        this.portableContext = ioService.getPortableContext();
+
+        this.selectorHackEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.selectorhack.enabled", "false"));
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
@@ -304,15 +313,40 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
-        final int index = nextSelectorIndex();
+        InetSocketAddress remoteSocketAddress = (InetSocketAddress) channel.socket().getRemoteSocketAddress();
+        String remoteHost = remoteSocketAddress.getHostName();
+        Integer index;
+        if (selectorHackEnabled) {
+            synchronized (selectorIndexPerHostMap) {
+                index = selectorIndexPerHostMap.get(remoteHost);
+                if (index == null) {
+                    index = nextSelectorIndex();
+                    selectorIndexPerHostMap.put(remoteHost, index);
+                    logger.info(remoteHost + " no selector index found, retrieving a new one: " + index);
+                } else {
+                    logger.info(remoteHost + " selector index found: " + index);
+                }
+            }
+        } else {
+            index = nextSelectorIndex();
+        }
+
         final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
                 outSelectors[index], connectionIdGen.incrementAndGet(), channel);
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
         connection.getReadHandler().register();
-        log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
-                + " and " + channel.socket().getRemoteSocketAddress());
+
+        if (selectorHackEnabled) {
+            log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
+                    + " and " + remoteSocketAddress
+                    + " using selectorIndex: " + index + " connectionCount: " + activeConnections.size());
+        } else {
+            log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
+                    + " and " + remoteSocketAddress);
+        }
+
         return connection;
     }
 
