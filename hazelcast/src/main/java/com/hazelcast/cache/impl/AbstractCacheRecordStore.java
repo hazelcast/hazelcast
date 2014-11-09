@@ -752,7 +752,8 @@ public abstract class AbstractCacheRecordStore<
             return value;
         } else {
             value = recordToValue(record);
-            onRecordAccess(record, expiryPolicy, now); // updateAccessDuration(record, expiryPolicy, now);
+            // updateAccessDuration(record, expiryPolicy, now);
+            onRecordAccess(record, expiryPolicy, now);
             if (isStatisticsEnabled()) {
                 statistics.increaseCacheHits(1);
             }
@@ -995,7 +996,8 @@ public abstract class AbstractCacheRecordStore<
                 result = updateRecordWithExpiry(key, newValue, record,
                                                 expiryPolicy, now, false);
             } else {
-                onRecordAccess(record, expiryPolicy, now); // updateAccessDuration(record, expiryPolicy, now);
+                // updateAccessDuration(record, expiryPolicy, now);
+                onRecordAccess(record, expiryPolicy, now);
                 result = false;
             }
         }

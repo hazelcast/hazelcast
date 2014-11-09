@@ -44,7 +44,8 @@ public class CacheRecordHashMap
                 @Override
                 protected CacheRecordSortArea initialValue() {
                     return new CacheRecordSortArea();
-                }};
+                }
+            };
 
     private Callback<Data> evictionCallback;
 
@@ -85,6 +86,7 @@ public class CacheRecordHashMap
         }
     }
 
+    //CHECKSTYLE:OFF
     @Override
     public int evictExpiredRecords(int percentage) {
         if (percentage <= 0) {
@@ -131,6 +133,7 @@ public class CacheRecordHashMap
 
         return actualEvictedCount;
     }
+    //CHECKSTYLE:ON
 
     @Override
     public int evictRecords(int percentage, EvictionPolicy policy) {
@@ -166,6 +169,7 @@ public class CacheRecordHashMap
         return evictExpiredRecords(percentage);
     }
 
+    //CHECKSTYLE:OFF
     private int evictRecordsLRU(int percentage) {
         if (percentage <= 0) {
             return 0;
@@ -215,7 +219,9 @@ public class CacheRecordHashMap
 
         return actualEvictedCount;
     }
+    //CHECKSTYLE:ON
 
+    //CHECKSTYLE:OFF
     private int evictRecordsLFU(int percentage) {
         if (percentage <= 0) {
             return 0;
@@ -264,7 +270,9 @@ public class CacheRecordHashMap
 
         return actualEvictedCount;
     }
+    //CHECKSTYLE:ON
 
+    //CHECKSTYLE:OFF
     private int evictRecordsRandom(int percentage) {
         if (percentage <= 0) {
             return 0;
@@ -304,5 +312,5 @@ public class CacheRecordHashMap
         }
         return actualEvictedCount;
     }
-
+    //CHECKSTYLE:ON
 }

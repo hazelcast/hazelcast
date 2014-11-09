@@ -34,7 +34,7 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSeri
     protected long creationTime = -1;
     protected volatile long expirationTime = -1;
     protected volatile long accessTime = -1;
-    protected volatile int accessHit = 0;
+    protected volatile int accessHit;
 
     protected AbstractCacheRecord() {
     }
