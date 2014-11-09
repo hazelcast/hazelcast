@@ -57,13 +57,13 @@ import java.util.Collection;
  * @see com.hazelcast.cache.impl.operation.AbstractCacheOperation
  */
 public class CacheRecordStore
-        extends AbstractCacheRecordStore<CacheRecord, CacheRecordHashMap<Data, CacheRecord>> {
+        extends AbstractCacheRecordStore<CacheRecord, CacheRecordHashMap> {
 
     protected SerializationService serializationService;
     protected CacheRecordFactory cacheRecordFactory;
 
     public CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine,
-                    AbstractCacheService cacheService) {
+                            AbstractCacheService cacheService) {
         super(name, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
         this.records = createRecordCacheMap();
@@ -72,7 +72,7 @@ public class CacheRecordStore
 
     @Override
     protected CacheRecordHashMap createRecordCacheMap() {
-        return new CacheRecordHashMap<Data, CacheRecord>(DEFAULT_INITIAL_CAPACITY);
+        return new CacheRecordHashMap(DEFAULT_INITIAL_CAPACITY);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class CacheRecordStore
     protected <T> CacheRecord createRecord(T value, long creationTime, long expiryTime) {
         evictIfRequired();
 
-        return cacheRecordFactory.newRecordWithExpiry(value, expiryTime);
+        return cacheRecordFactory.newRecordWithExpiry(value, creationTime, expiryTime);
     }
 
     @Override
@@ -201,4 +201,5 @@ public class CacheRecordStore
             IOUtil.closeResource((Closeable) defaultExpiryPolicy);
         }
     }
+
 }

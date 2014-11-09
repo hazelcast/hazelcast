@@ -27,16 +27,20 @@ import java.io.IOException;
  * expiration time as internal state.
  * <p>This implementation provides getter, setter and serialization methods.</p>
  *
- * @param <V>
+ * @param <V> the type of the value stored by this {@link AbstractCacheRecord}
  */
 public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSerializable {
 
-    protected long expirationTime = -1;
+    protected long creationTime = -1;
+    protected volatile long expirationTime = -1;
+    protected volatile long accessTime = -1;
+    protected volatile int accessHit = 0;
 
     protected AbstractCacheRecord() {
     }
 
-    public AbstractCacheRecord(long expirationTime) {
+    public AbstractCacheRecord(long creationTime, long expirationTime) {
+        this.creationTime = creationTime;
         this.expirationTime = expirationTime;
     }
 
@@ -50,17 +54,63 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSeri
     }
 
     @Override
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    @Override
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+    }
+
+    @Override
+    public long getAccessTime() {
+        return accessTime;
+    }
+
+    @Override
+    public void setAccessTime(long accessTime) {
+        this.accessTime = accessTime;
+    }
+
+    @Override
+    public int getAccessHit() {
+        return accessHit;
+    }
+
+    @Override
+    public void setAccessHit(int accessHit) {
+        this.accessHit = accessHit;
+    }
+
+    @Override
+    public void incrementAccessHit() {
+        accessHit++;
+    }
+
+    @Override
+    public void resetAccessHit() {
+        accessHit = 0;
+    }
+
+    @Override
     public boolean isExpiredAt(long now) {
         return expirationTime > -1 && expirationTime <= now;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(creationTime);
         out.writeLong(expirationTime);
+        out.writeLong(accessTime);
+        out.writeInt(accessHit);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        creationTime = in.readLong();
         expirationTime = in.readLong();
+        accessTime = in.readLong();
+        accessHit = in.readInt();
     }
 }

@@ -31,8 +31,8 @@ public class CacheObjectRecord extends AbstractCacheRecord<Object> {
     public CacheObjectRecord() {
     }
 
-    CacheObjectRecord(Object value, long expiryTime) {
-        super(expiryTime);
+    CacheObjectRecord(Object value, long creationTime, long expiryTime) {
+        super(creationTime, expiryTime);
         this.value = value;
     }
 

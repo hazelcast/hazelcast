@@ -280,7 +280,8 @@ public abstract class AbstractCacheRecordStore<
     }
 
     public R accessRecord(R record, ExpiryPolicy expiryPolicy, long now) {
-        updateAccessDuration(record, getExpiryPolicy(expiryPolicy), now);
+        onRecordAccess(record, getExpiryPolicy(expiryPolicy), now);
+        // updateAccessDuration(record, getExpiryPolicy(expiryPolicy), now);
         return record;
     }
 
@@ -302,8 +303,7 @@ public abstract class AbstractCacheRecordStore<
         }
     }
 
-    protected long updateAccessDuration(CacheRecord record, ExpiryPolicy expiryPolicy,
-                                        long now) {
+    protected long updateAccessDuration(R record, ExpiryPolicy expiryPolicy, long now) {
         long expiryTime = -1L;
         try {
             Duration expiryDuration = expiryPolicy.getExpiryForAccess();
@@ -316,6 +316,12 @@ public abstract class AbstractCacheRecordStore<
             //leave the expiry time untouched when we can't determine a duration
         }
         return expiryTime;
+    }
+
+    protected long onRecordAccess(R record, ExpiryPolicy expiryPolicy, long now) {
+        record.setAccessTime(now);
+        record.incrementAccessHit();
+        return updateAccessDuration(record, expiryPolicy, now);
     }
 
     protected void updateReplaceStat(boolean result, boolean isHit, long start) {
@@ -405,8 +411,11 @@ public abstract class AbstractCacheRecordStore<
         return createRecord(value, Clock.currentTimeMillis(), expiryTime);
     }
 
-    protected R createRecord(Data keyData, Object value, long expirationTime) {
-        final R record = createRecord(value, expirationTime);
+    protected R createRecord(Data keyData, Object value, long creationTime, long expirationTime) {
+        final R record = createRecord(value, creationTime, expirationTime);
+        if (record.getCreationTime() <= 0) {
+            record.setCreationTime(Clock.currentTimeMillis());
+        }
         updateHasExpiringEntry(record);
         if (isEventsEnabled) {
             Data dataValue = toEventData(value);
@@ -432,7 +441,7 @@ public abstract class AbstractCacheRecordStore<
         }
 
         if (!isExpiredAt(expiryTime, now)) {
-            R record = createRecord(key, value, expiryTime);
+            R record = createRecord(key, value, now, expiryTime);
             records.put(key, record);
             return record;
         }
@@ -591,7 +600,7 @@ public abstract class AbstractCacheRecordStore<
             return null;
         }
         //TODO below createRecord may fire create event, is it OK?
-        return createRecord(key, value, expiryTime);
+        return createRecord(key, value, now, expiryTime);
     }
 
     public Object readThroughCache(Data key) throws CacheLoaderException {
@@ -743,7 +752,7 @@ public abstract class AbstractCacheRecordStore<
             return value;
         } else {
             value = recordToValue(record);
-            updateAccessDuration(record, expiryPolicy, now);
+            onRecordAccess(record, expiryPolicy, now); // updateAccessDuration(record, expiryPolicy, now);
             if (isStatisticsEnabled()) {
                 statistics.increaseCacheHits(1);
             }
@@ -986,7 +995,7 @@ public abstract class AbstractCacheRecordStore<
                 result = updateRecordWithExpiry(key, newValue, record,
                                                 expiryPolicy, now, false);
             } else {
-                updateAccessDuration(record, expiryPolicy, now);
+                onRecordAccess(record, expiryPolicy, now); // updateAccessDuration(record, expiryPolicy, now);
                 result = false;
             }
         }
@@ -1102,7 +1111,8 @@ public abstract class AbstractCacheRecordStore<
                 deleteCacheEntry(key);
                 deleteRecord(key);
             } else {
-                long expiryTime = updateAccessDuration(record, defaultExpiryPolicy, now);
+                long expiryTime = onRecordAccess(record, defaultExpiryPolicy, now);
+                                    // updateAccessDuration(record, defaultExpiryPolicy, now);
                 processExpiredEntry(key, record, expiryTime, now);
                 result = false;
             }
