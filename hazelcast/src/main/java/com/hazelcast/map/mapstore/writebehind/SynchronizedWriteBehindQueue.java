@@ -20,9 +20,11 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Thread safe write behind queue.
+ * Wrapper for a not thread safe {@link WriteBehindQueue},
+ * only provides thread-safe access, if all accesses to the underlying wrapped {@link WriteBehindQueue}
+ * are from an instance of this wrapper sync queue.
  *
- * @param <E>
+ * @param <E> Type of entry to be stored.
  */
 class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
 
