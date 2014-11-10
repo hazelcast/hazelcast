@@ -75,10 +75,10 @@ public class CacheAddEntryListenerRequest
             Set<CacheEventData> events = ((CacheEventSet) eventObject).getEvents();
             if (events.size() > 1) {
                 partitionKey = new DefaultData();
-            } else if (events.size() == 1){
+            } else if (events.size() == 1) {
                 partitionKey = events.iterator().next().getDataKey();
             }
-        } else if (eventObject instanceof CacheEventData){
+        } else if (eventObject instanceof CacheEventData) {
             partitionKey = ((CacheEventData) eventObject).getDataKey();
         }
         return partitionKey;
