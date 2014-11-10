@@ -100,6 +100,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     private String namespace = "default";
 
+    private String executorNamespace = "Sample Executor";
+
     private boolean silent;
 
     private boolean echo;
@@ -459,7 +461,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
         long startMs = System.currentTimeMillis();
 
-        IExecutorService executor = hazelcast.getExecutorService("e" + threadCount);
+        IExecutorService executor = hazelcast.getExecutorService(executorNamespace + " " + threadCount);
         List<Future> futures = new LinkedList<Future>();
         List<Member> members = new LinkedList<Member>(hazelcast.getCluster().getMembers());
 

@@ -97,6 +97,8 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
 
     private String namespace = "default";
 
+    private final static String executorNamespace = "Sample Executor";
+
     private boolean silent;
 
     private boolean echo;
@@ -169,7 +171,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
         getMultiMap().size();
         hazelcast.getExecutorService("default").getLocalExecutorStats();
         for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
-            hazelcast.getExecutorService("e" + k).getLocalExecutorStats();
+            hazelcast.getExecutorService(executorNamespace + " " + k).getLocalExecutorStats();
         }
 
         if (lineReader == null) {
@@ -465,7 +467,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
 
         long startMs = System.currentTimeMillis();
 
-        IExecutorService executor = hazelcast.getExecutorService("e" + threadCount);
+        IExecutorService executor = hazelcast.getExecutorService(executorNamespace + " " + threadCount);
         List<Future> futures = new LinkedList<Future>();
         List<Member> members = new LinkedList<Member>(hazelcast.getCluster().getMembers());
 
@@ -1574,7 +1576,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
         }
         config.getManagementCenterConfig().setEnabled(true).setUrl("http://localhost:8083/mancenter");
         for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
-            config.addExecutorConfig(new ExecutorConfig("e" + k).setPoolSize(k));
+            config.addExecutorConfig(new ExecutorConfig(executorNamespace + " " + k).setPoolSize(k));
         }
         ConsoleApp consoleApp = new ConsoleApp(Hazelcast.newHazelcastInstance(config));
         consoleApp.start(args);
