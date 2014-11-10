@@ -159,7 +159,7 @@ public final class BasicOperationScheduler {
         return isInvocationAllowedFromCurrentThread(getPartitionIdForExecution(op));
     }
 
-    boolean isAllowedToRunInCurrentThread(int partitionId) {
+    private boolean isAllowedToRunInCurrentThread(int partitionId) {
         Thread currentThread = Thread.currentThread();
 
         // IO threads are not allowed to run any operation
@@ -190,7 +190,7 @@ public final class BasicOperationScheduler {
         return toPartitionThreadIndex(partitionId) == threadId;
     }
 
-    boolean isInvocationAllowedFromCurrentThread(int partitionId) {
+    private boolean isInvocationAllowedFromCurrentThread(int partitionId) {
         Thread currentThread = Thread.currentThread();
 
         if (currentThread instanceof OperationThread) {
