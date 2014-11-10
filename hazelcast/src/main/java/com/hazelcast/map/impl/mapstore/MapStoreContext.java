@@ -25,4 +25,6 @@ public interface MapStoreContext {
     void start();
 
     void stop();
+
+    boolean isWriteBehindMapStoreEnabled();
 }

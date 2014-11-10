@@ -86,6 +86,10 @@ public class MapReplicationOperation extends AbstractOperation {
         delayedEntries = new HashMap<String, List<DelayedEntry>>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
             RecordStore recordStore = entry.getValue();
+            MapContainer mapContainer = recordStore.getMapContainer();
+            if (!mapContainer.getMapStoreContext().isWriteBehindMapStoreEnabled()) {
+                continue;
+            }
             final WriteBehindQueue<DelayedEntry> writeBehindQueue = ((WriteBehindStore) recordStore.getMapDataStore())
                     .getWriteBehindQueue();
             final List<DelayedEntry> delayedEntries = writeBehindQueue.getSnapShot().asList();

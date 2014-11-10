@@ -82,6 +82,10 @@ public class MapContainer extends MapContainerSupport {
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         nearCacheSizeEstimator = createNearCacheSizeEstimator();
         mapStoreContext = createMapStoreContext(this);
+
+    }
+
+    public void init() {
         mapStoreContext.start();
     }
 

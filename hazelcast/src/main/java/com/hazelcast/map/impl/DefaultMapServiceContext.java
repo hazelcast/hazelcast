@@ -30,8 +30,10 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     private final AtomicReference<Collection<Integer>> ownedPartitions;
     private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
         public MapContainer createNew(String mapName) {
-            return new MapContainer(mapName, nodeEngine.getConfig().findMapConfig(mapName),
+            final MapContainer mapContainer = new MapContainer(mapName, nodeEngine.getConfig().findMapConfig(mapName),
                     getService().getMapServiceContext());
+            mapContainer.init();
+            return mapContainer;
         }
     };
     /**

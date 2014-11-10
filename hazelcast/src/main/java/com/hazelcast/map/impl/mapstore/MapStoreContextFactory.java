@@ -74,6 +74,11 @@ public final class MapStoreContextFactory {
         public void stop() {
 
         }
+
+        @Override
+        public boolean isWriteBehindMapStoreEnabled() {
+            return false;
+        }
     }
 
 

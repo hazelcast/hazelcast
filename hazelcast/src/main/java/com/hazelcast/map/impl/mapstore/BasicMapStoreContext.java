@@ -80,10 +80,6 @@ final class BasicMapStoreContext implements MapStoreContext {
 
         callLifecycleSupportInit(mapName, store, mapStoreConfig, nodeEngine);
 
-        final MapStoreManager mapStoreManager = createMapStoreManager(mapContainer);
-
-        basicMapStoreContext.setMapStoreManager(mapStoreManager);
-
         return basicMapStoreContext;
     }
 
@@ -117,17 +113,16 @@ final class BasicMapStoreContext implements MapStoreContext {
     private static Object getStoreFromFactoryOrNull(String name, MapStoreConfig mapStoreConfig, ClassLoader classLoader) {
         MapStoreFactory factory = (MapStoreFactory) mapStoreConfig.getFactoryImplementation();
         if (factory == null) {
-            return null;
-        }
-        final String factoryClassName = mapStoreConfig.getFactoryClassName();
-        if (isNullOrEmpty(factoryClassName)) {
-            return null;
-        }
+            final String factoryClassName = mapStoreConfig.getFactoryClassName();
+            if (isNullOrEmpty(factoryClassName)) {
+                return null;
+            }
 
-        try {
-            factory = ClassLoaderUtil.newInstance(classLoader, factoryClassName);
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            try {
+                factory = ClassLoaderUtil.newInstance(classLoader, factoryClassName);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
         }
         if (factory == null) {
             return null;
@@ -243,6 +238,10 @@ final class BasicMapStoreContext implements MapStoreContext {
 
     @Override
     public void start() {
+
+        final MapStoreManager mapStoreManager = createMapStoreManager(mapContainer);
+        setMapStoreManager(mapStoreManager);
+
         loadInitialKeys();
         mapStoreManager.start();
     }
@@ -250,6 +249,13 @@ final class BasicMapStoreContext implements MapStoreContext {
     @Override
     public void stop() {
         mapStoreManager.stop();
+    }
+
+    @Override
+    public boolean isWriteBehindMapStoreEnabled() {
+        final MapStoreConfig mapStoreConfig = getMapConfig().getMapStoreConfig();
+        return mapStoreConfig != null && mapStoreConfig.isEnabled()
+                && mapStoreConfig.getWriteDelaySeconds() > 0;
     }
 
     void setMapStoreManager(MapStoreManager mapStoreManager) {
