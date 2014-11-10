@@ -41,12 +41,15 @@ import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+
+import static java.lang.Boolean.parseBoolean;
 
 public class TcpIpConnectionManager implements ConnectionManager {
 
@@ -117,11 +120,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
-    // the selectorHackEnabled is a hack to make sure that selectors get an equal number of connections to deal with
+    // the selectorImbalancWorkaroundEnabled is a hack to make sure that selectors get an equal number of connections to deal with
     // this should only be used for the test lab. In the future we need to create a real fix to this problem, but
     // without this hack we can't do reliable benchmarking because the numbers have too much variation.
-    private final boolean selectorHackEnabled;
-    private final ConcurrentMap<String, Integer> selectorIndexPerHostMap = new ConcurrentHashMap<String, Integer>();
+    private final boolean selectorImbalancWorkaroundEnabled;
+    private final Map<String, Integer> selectorIndexPerHostMap;
 
     public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
@@ -143,7 +146,17 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
         this.portableContext = ioService.getPortableContext();
 
-        this.selectorHackEnabled = Boolean.parseBoolean(System.getProperty("hazelcast.selectorhack.enabled", "false"));
+        this.selectorImbalancWorkaroundEnabled = parseBoolean(System.getProperty("hazelcast.selectorhack.enabled", "false"));
+        if (selectorImbalancWorkaroundEnabled) {
+            selectorIndexPerHostMap = new ConcurrentHashMap<String, Integer>();
+            logger.severe("WARNING!!!! The 'hazelcast.selectorhack.enabled' has been enabled. This feature should not be used "
+                    + "in a production environment. It is a temporary work around to deal with imbalances between selector-load. "
+                    + "This issue will be fixed at some point in time. Using this feature in a production environment can lead "
+                    + "to other imbalance problems, e.g. when multiple members are on the same machine. Also this feature is not "
+                    + "100% reliable.  ");
+        } else {
+            selectorIndexPerHostMap = null;
+        }
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
@@ -316,7 +329,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         InetSocketAddress remoteSocketAddress = (InetSocketAddress) channel.socket().getRemoteSocketAddress();
         String remoteHost = remoteSocketAddress.getHostName();
         Integer index;
-        if (selectorHackEnabled) {
+        if (selectorImbalancWorkaroundEnabled) {
             synchronized (selectorIndexPerHostMap) {
                 index = selectorIndexPerHostMap.get(remoteHost);
                 if (index == null) {
@@ -338,7 +351,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         acceptedSockets.remove(channel);
         connection.getReadHandler().register();
 
-        if (selectorHackEnabled) {
+        if (selectorImbalancWorkaroundEnabled) {
             log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
                     + " and " + remoteSocketAddress
                     + " using selectorIndex: " + index + " connectionCount: " + activeConnections.size());
