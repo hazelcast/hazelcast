@@ -46,7 +46,17 @@ public class GroupProperties {
     public static final String PROP_HEALTH_MONITORING_LEVEL = "hazelcast.health.monitoring.level";
     public static final String PROP_HEALTH_MONITORING_DELAY_SECONDS = "hazelcast.health.monitoring.delay.seconds";
 
+    /**
+     * The performance monitor is a tool useful to see all kinds of internal performance metrics. Currently it is quite
+     * limited since it will only show read/write events per selector and operations executed per operation-thread. But in
+     * the future all kinds of new metrics will be added.
+     *
+     * The performance monitor logs all metrics into the log file.
+     */
     public static final String PROP_PERFORMANCE_MONITORING_ENABLED = "hazelcast.performance.monitoring.enabled";
+    /**
+     * The delay in seconds between monitoring of the performance.
+     */
     public static final String PROP_PERFORMANCE_MONITORING_DELAY_SECONDS = "hazelcast.performance.monitoring.delay.seconds";
 
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
