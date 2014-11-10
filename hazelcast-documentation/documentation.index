@@ -13,6 +13,7 @@ src/GettingStarted.md
 	src/ConfiguringHazelcast.md
 	src/UseCases.md
 	src/Resources.md
+#src/HazelcastClusterManagement.md
 src/Distributed_Data_Structures.md
 	src/Map.md
 		src/Map-Backups.md
