@@ -24,7 +24,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
@@ -40,9 +39,6 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.BufferedReader;
@@ -51,7 +47,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.util.Collection;
@@ -63,7 +58,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -501,43 +495,6 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
 
         long durationMs = System.currentTimeMillis() - startMs;
         println(format("Executed %s tasks in %s ms", taskCount, durationMs));
-    }
-
-    /**
-     * A simulated load test
-     */
-    private static final class SimulateLoadTask implements Callable, Serializable, HazelcastInstanceAware {
-
-        private static final long serialVersionUID = 1;
-
-        private final int delay;
-        private final int taskId;
-        private final String latchId;
-        private transient HazelcastInstance hz;
-
-        private SimulateLoadTask(int delay, int taskId, String latchId) {
-            this.delay = delay;
-            this.taskId = taskId;
-            this.latchId = latchId;
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.hz = hazelcastInstance;
-        }
-
-        @Override
-        public Object call() throws Exception {
-            try {
-                Thread.sleep(delay * ONE_THOUSAND);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
-            hz.getCountDownLatch(latchId).countDown();
-            System.out.println("Finished task:" + taskId);
-            return null;
-        }
     }
 
     private void handleColon(String command) {
@@ -1430,54 +1387,6 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
     }
 
     /**
-     * Echoes to screen
-     */
-    public static class Echo extends HazelcastInstanceAwareObject implements Callable<String>, DataSerializable {
-
-        String input;
-
-        public Echo() {
-        }
-
-        public Echo(String input) {
-            this.input = input;
-        }
-
-        @Override
-        public String call() {
-            getHazelcastInstance().getCountDownLatch("latch").countDown();
-            return getHazelcastInstance().getCluster().getLocalMember().toString() + ":" + input;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(input);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            input = in.readUTF();
-        }
-    }
-
-    /**
-     * A Hazelcast instance aware object
-     */
-    private static class HazelcastInstanceAwareObject implements HazelcastInstanceAware {
-
-        HazelcastInstance hazelcastInstance;
-
-        public HazelcastInstance getHazelcastInstance() {
-            return hazelcastInstance;
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.hazelcastInstance = hazelcastInstance;
-        }
-    }
-
-    /**
      * Handled the help command
      *
      * @param command
@@ -1663,7 +1572,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
         } catch (FileNotFoundException e) {
             config = new Config();
         }
-
+        config.getManagementCenterConfig().setEnabled(true).setUrl("http://localhost:8083/mancenter");
         for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
             config.addExecutorConfig(new ExecutorConfig("e" + k).setPoolSize(k));
         }
