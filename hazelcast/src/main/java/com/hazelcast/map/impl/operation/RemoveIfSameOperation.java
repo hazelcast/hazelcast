@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+
 import java.io.IOException;
 
 public class RemoveIfSameOperation extends BaseRemoveOperation {
@@ -40,6 +41,7 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
 
     public void afterRun() {
         if (successful) {
+            dataOldValue = testValue;
             super.afterRun();
         }
     }
