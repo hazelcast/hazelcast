@@ -121,10 +121,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
-    // the selectorImbalancWorkaroundEnabled is a hack to make sure that selectors get an equal number of connections to deal with
+    // the selectorImbalanceWorkaroundEnabled is a hack to make sure that selectors get an equal number of connections to deal with
     // this should only be used for the test lab. In the future we need to create a real fix to this problem, but
     // without this hack we can't do reliable benchmarking because the numbers have too much variation.
-    private final boolean selectorImbalancWorkaroundEnabled;
+    private final boolean selectorImbalanceWorkaroundEnabled;
     private final Map<String, Integer> selectorIndexPerHostMap;
 
     public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
@@ -147,8 +147,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
         this.portableContext = ioService.getPortableContext();
 
-        this.selectorImbalancWorkaroundEnabled = isSelectorImbalanceEnabled();
-        this.selectorIndexPerHostMap = selectorImbalancWorkaroundEnabled ? new HashMap<String, Integer>() : null;
+        this.selectorImbalanceWorkaroundEnabled = isSelectorImbalanceEnabled();
+        this.selectorIndexPerHostMap = selectorImbalanceWorkaroundEnabled ? new HashMap<String, Integer>() : null;
     }
 
     private boolean isSelectorImbalanceEnabled() {
@@ -348,7 +348,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private int getSelectorIndex(String remoteHost) {
         Integer index;
-        if (selectorImbalancWorkaroundEnabled) {
+        if (selectorImbalanceWorkaroundEnabled) {
             synchronized (selectorIndexPerHostMap) {
                 index = selectorIndexPerHostMap.get(remoteHost);
                 if (index == null) {
@@ -366,7 +366,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     private void logConnectionEstablished(SocketChannelWrapper channel, InetSocketAddress remoteSocketAddress, Integer index) {
-        if (selectorImbalancWorkaroundEnabled) {
+        if (selectorImbalanceWorkaroundEnabled) {
             log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
                     + " and " + remoteSocketAddress
                     + " using selectorIndex: " + index + " connectionCount: " + activeConnections.size());
