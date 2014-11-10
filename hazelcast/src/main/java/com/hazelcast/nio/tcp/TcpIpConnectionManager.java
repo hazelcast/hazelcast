@@ -40,6 +40,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -146,17 +147,20 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
         this.portableContext = ioService.getPortableContext();
 
-        this.selectorImbalancWorkaroundEnabled = parseBoolean(System.getProperty("hazelcast.selectorhack.enabled", "false"));
-        if (selectorImbalancWorkaroundEnabled) {
-            selectorIndexPerHostMap = new ConcurrentHashMap<String, Integer>();
+        this.selectorImbalancWorkaroundEnabled = isSelectorImbalanceEnabled();
+        this.selectorIndexPerHostMap = selectorImbalancWorkaroundEnabled ? new HashMap<String, Integer>() : null;
+    }
+
+    private boolean isSelectorImbalanceEnabled() {
+        boolean enabled = parseBoolean(System.getProperty("hazelcast.selectorhack.enabled", "false"));
+        if (enabled) {
             logger.severe("WARNING!!!! The 'hazelcast.selectorhack.enabled' has been enabled. This feature should not be used "
                     + "in a production environment. It is a temporary work around to deal with imbalances between selector-load. "
                     + "This issue will be fixed at some point in time. Using this feature in a production environment can lead "
                     + "to other imbalance problems, e.g. when multiple members are on the same machine. Also this feature is not "
                     + "100% reliable.  ");
-        } else {
-            selectorIndexPerHostMap = null;
         }
+        return enabled;
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
@@ -328,6 +332,21 @@ public class TcpIpConnectionManager implements ConnectionManager {
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
         InetSocketAddress remoteSocketAddress = (InetSocketAddress) channel.socket().getRemoteSocketAddress();
         String remoteHost = remoteSocketAddress.getHostName();
+        int index = getSelectorIndex(remoteHost);
+
+        final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
+                outSelectors[index], connectionIdGen.incrementAndGet(), channel);
+        connection.setEndPoint(endpoint);
+        activeConnections.add(connection);
+        acceptedSockets.remove(channel);
+        connection.getReadHandler().register();
+
+        logConnectionEstablished(channel, remoteSocketAddress, index);
+
+        return connection;
+    }
+
+    private int getSelectorIndex(String remoteHost) {
         Integer index;
         if (selectorImbalancWorkaroundEnabled) {
             synchronized (selectorIndexPerHostMap) {
@@ -343,14 +362,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
         } else {
             index = nextSelectorIndex();
         }
+        return index;
+    }
 
-        final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
-                outSelectors[index], connectionIdGen.incrementAndGet(), channel);
-        connection.setEndPoint(endpoint);
-        activeConnections.add(connection);
-        acceptedSockets.remove(channel);
-        connection.getReadHandler().register();
-
+    private void logConnectionEstablished(SocketChannelWrapper channel, InetSocketAddress remoteSocketAddress, Integer index) {
         if (selectorImbalancWorkaroundEnabled) {
             log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
                     + " and " + remoteSocketAddress
@@ -359,8 +374,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
             log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
                     + " and " + remoteSocketAddress);
         }
-
-        return connection;
     }
 
     void failedConnection(Address address, Throwable t, boolean silent) {
