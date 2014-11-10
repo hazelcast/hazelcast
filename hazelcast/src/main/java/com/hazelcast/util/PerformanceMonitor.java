@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
  * The PerformanceMonitor is responsible for logging all kinds of performance related information. Currently it only
  * shows the read/write events per selector and the operations executed per operation-thread, but new kinds of behavior
  * will be added.
- *
+ * <p/>
  * This tool is currently mostly used internally or unless you are an expert. In the future it will become more useful
  * for regular developers. It is also likely that most of the metrics we collect will be exposed through JMX at some
  * point in time.
@@ -25,7 +25,7 @@ public class PerformanceMonitor extends Thread {
     private final OperationService operationService;
     private final ConnectionManager connectionManager;
 
-    public PerformanceMonitor(HazelcastInstanceImpl hazelcastInstance,int delaySeconds) {
+    public PerformanceMonitor(HazelcastInstanceImpl hazelcastInstance, int delaySeconds) {
         super(hazelcastInstance.node.threadGroup, hazelcastInstance.node.getThreadNamePrefix("PerformanceMonitor"));
         setDaemon(true);
 

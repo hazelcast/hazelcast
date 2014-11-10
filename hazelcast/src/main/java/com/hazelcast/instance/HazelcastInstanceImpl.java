@@ -131,8 +131,7 @@ public class HazelcastInstanceImpl
 
             managementService = new ManagementService(this);
             initManagedContext(configuredManagedContext);
-            initHealthMonitor();
-            initPerformanceMonitor();
+            initMonitors();
         } catch (Throwable e) {
             try {
                 // Terminate the node by terminating node engine,
@@ -143,6 +142,11 @@ public class HazelcastInstanceImpl
             }
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    private void initMonitors() {
+        initHealthMonitor();
+        initPerformanceMonitor();
     }
 
     private void initManagedContext(ManagedContext configuredManagedContext) {

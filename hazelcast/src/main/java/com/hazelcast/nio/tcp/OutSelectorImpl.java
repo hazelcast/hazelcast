@@ -22,7 +22,7 @@ import java.nio.channels.SelectionKey;
 
 public final class OutSelectorImpl extends AbstractIOSelector {
 
-    private volatile long writeKeyCount = 0;
+    private volatile long writeKeyCount;
 
     public OutSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger, IOSelectorOutOfMemoryHandler oomeHandler) {
         super(threadGroup, tname, logger, oomeHandler);

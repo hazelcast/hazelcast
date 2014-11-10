@@ -153,8 +153,8 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
-    public void dumpPerformanceMetrics(StringBuffer sb){
-         scheduler.dumpPerformanceMetrics(sb);
+    public void dumpPerformanceMetrics(StringBuffer sb) {
+        scheduler.dumpPerformanceMetrics(sb);
     }
 
     @Override
@@ -440,7 +440,7 @@ final class BasicOperationService implements InternalOperationService {
         private final Map<Integer, Object> partitionResults;
 
         private InvokeOnPartitions(String serviceName, OperationFactory operationFactory,
-                                  Map<Address, List<Integer>> memberPartitions) {
+                                   Map<Address, List<Integer>> memberPartitions) {
             this.serviceName = serviceName;
             this.operationFactory = operationFactory;
             this.memberPartitions = memberPartitions;
@@ -901,7 +901,7 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private int makeBackups(BackupAwareOperation backupAwareOp, int partitionId, long[] replicaVersions,
-                int syncBackupCount, int totalBackupCount) {
+                                int syncBackupCount, int totalBackupCount) {
 
             int sentSyncBackupCount = 0;
             InternalPartitionService partitionService = node.getPartitionService();
@@ -926,7 +926,7 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private Backup newBackup(BackupAwareOperation backupAwareOp, long[] replicaVersions,
-                int replicaIndex, boolean isSyncBackup) {
+                                 int replicaIndex, boolean isSyncBackup) {
             Operation op = (Operation) backupAwareOp;
             Operation backupOp = initBackupOperation(backupAwareOp, replicaIndex);
             Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
