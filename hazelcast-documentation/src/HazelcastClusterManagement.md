@@ -1,3 +1,0 @@
-
-# Hazelcast Cluster Management
-
