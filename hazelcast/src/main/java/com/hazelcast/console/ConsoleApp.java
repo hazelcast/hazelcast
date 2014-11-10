@@ -80,6 +80,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
     private static final int ONE_THOUSAND = 1000;
     private static final int ONE_HUNDRED = 100;
     private static final int ONE_HOUR = 3600;
+    private static final String EXECUTOR_NAMESPACE = "Sample Executor";
 
     private IQueue<Object> queue;
 
@@ -96,8 +97,6 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
     private IAtomicLong atomicNumber;
 
     private String namespace = "default";
-
-    private final static String executorNamespace = "Sample Executor";
 
     private boolean silent;
 
@@ -171,7 +170,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
         getMultiMap().size();
         hazelcast.getExecutorService("default").getLocalExecutorStats();
         for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
-            hazelcast.getExecutorService(executorNamespace + " " + k).getLocalExecutorStats();
+            hazelcast.getExecutorService(EXECUTOR_NAMESPACE + " " + k).getLocalExecutorStats();
         }
 
         if (lineReader == null) {
@@ -467,7 +466,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
 
         long startMs = System.currentTimeMillis();
 
-        IExecutorService executor = hazelcast.getExecutorService(executorNamespace + " " + threadCount);
+        IExecutorService executor = hazelcast.getExecutorService(EXECUTOR_NAMESPACE + " " + threadCount);
         List<Future> futures = new LinkedList<Future>();
         List<Member> members = new LinkedList<Member>(hazelcast.getCluster().getMembers());
 
@@ -1576,7 +1575,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
         }
         config.getManagementCenterConfig().setEnabled(true).setUrl("http://localhost:8083/mancenter");
         for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
-            config.addExecutorConfig(new ExecutorConfig(executorNamespace + " " + k).setPoolSize(k));
+            config.addExecutorConfig(new ExecutorConfig(EXECUTOR_NAMESPACE + " " + k).setPoolSize(k));
         }
         ConsoleApp consoleApp = new ConsoleApp(Hazelcast.newHazelcastInstance(config));
         consoleApp.start(args);
