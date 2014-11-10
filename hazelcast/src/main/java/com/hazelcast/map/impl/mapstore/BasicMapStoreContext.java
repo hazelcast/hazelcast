@@ -72,7 +72,8 @@ final class BasicMapStoreContext implements MapStoreContext {
         final ClassLoader configClassLoader = nodeEngine.getConfigClassLoader();
         final Object store = createStore(mapName, mapStoreConfig, configClassLoader);
 
-        mapStoreConfig.setImplementation(store);
+        // get writable config (not read-only one) from node engine.
+        nodeEngine.getConfig().getMapConfig(mapName).getMapStoreConfig().setImplementation(store);
 
         final MapStoreWrapper storeWrapper = new MapStoreWrapper(mapName, store);
         basicMapStoreContext.setStoreWrapper(storeWrapper);
