@@ -246,6 +246,11 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
+    public boolean isAllowedToRunOnCallingThread(Operation op) {
+        return scheduler.isAllowedToRunInCurrentThread(op);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
         return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
