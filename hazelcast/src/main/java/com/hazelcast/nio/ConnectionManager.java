@@ -48,7 +48,7 @@ public interface ConnectionManager {
     void addConnectionListener(ConnectionListener connectionListener);
 
     /**
-     * Adds all kinds of performance metrics. It is up to the implementation to add anything.
+     * Dumps all kinds of performance metrics. It is up to the implementation to add anything.
      */
     void dumpPerformanceMetrics(StringBuffer sb);
 }
