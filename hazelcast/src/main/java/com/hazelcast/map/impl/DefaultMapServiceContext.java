@@ -124,7 +124,7 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     @Override
     public void destroyMapStores() {
         for (MapContainer mapContainer : mapContainers.values()) {
-            MapStoreWrapper store = mapContainer.getStore();
+            MapStoreWrapper store = mapContainer.getMapStoreContext().getStore();
             if (store != null) {
                 store.destroy();
             }

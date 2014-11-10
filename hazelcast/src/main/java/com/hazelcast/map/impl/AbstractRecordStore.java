@@ -183,7 +183,7 @@ abstract class AbstractRecordStore implements RecordStore {
     }
 
     protected RecordStoreLoader createRecordStoreLoader() {
-        return mapContainer.getStore() == null
+        return mapContainer.getMapStoreContext().getStore() == null
                 ? RecordStoreLoader.EMPTY_LOADER : new BasicRecordStoreLoader(this);
     }
 

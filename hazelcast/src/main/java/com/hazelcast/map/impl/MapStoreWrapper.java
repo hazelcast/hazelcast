@@ -20,24 +20,26 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.PostProcessingMapStore;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("unchecked")
 public class MapStoreWrapper implements MapStore {
 
     private final MapLoader mapLoader;
-    private final MapStore mapStore;
-    private final Object impl;
-    private final String mapName;
-    private final AtomicBoolean enabled = new AtomicBoolean(false);
 
-    public MapStoreWrapper(Object impl, String mapName, boolean enabled) {
-        this.impl = impl;
+    private final MapStore mapStore;
+
+    private final String mapName;
+
+    private final Object impl;
+
+    public MapStoreWrapper(String mapName, Object impl) {
         this.mapName = mapName;
+        this.impl = impl;
         MapLoader loader = null;
         MapStore store = null;
         if (impl instanceof MapStore) {
@@ -48,24 +50,11 @@ public class MapStoreWrapper implements MapStore {
         }
         this.mapLoader = loader;
         this.mapStore = store;
-        this.enabled.set(enabled);
     }
 
 
     public MapStore getMapStore() {
         return mapStore;
-    }
-
-    public void enable() {
-        enabled.set(true);
-    }
-
-    public void disable() {
-        enabled.set(false);
-    }
-
-    public boolean isEnabled() {
-        return enabled.get();
     }
 
     public void destroy() {
@@ -83,19 +72,19 @@ public class MapStoreWrapper implements MapStore {
     }
 
     public void delete(Object key) {
-        if (isMapStore() && enabled.get()) {
+        if (isMapStore()) {
             mapStore.delete(key);
         }
     }
 
     public void store(Object key, Object value) {
-        if (isMapStore() && enabled.get()) {
+        if (isMapStore()) {
             mapStore.store(key, value);
         }
     }
 
     public void storeAll(Map map) {
-        if (isMapStore() && enabled.get()) {
+        if (isMapStore()) {
             mapStore.storeAll(map);
         }
     }
@@ -104,20 +93,20 @@ public class MapStoreWrapper implements MapStore {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        if (isMapStore() && enabled.get()) {
+        if (isMapStore()) {
             mapStore.deleteAll(keys);
         }
     }
 
     public Set loadAllKeys() {
-        if (isMapLoader() && enabled.get()) {
+        if (isMapLoader()) {
             return mapLoader.loadAllKeys();
         }
         return null;
     }
 
     public Object load(Object key) {
-        if (isMapLoader() && enabled.get()) {
+        if (isMapLoader()) {
             return mapLoader.load(key);
         }
         return null;
@@ -127,7 +116,7 @@ public class MapStoreWrapper implements MapStore {
         if (keys == null || keys.isEmpty()) {
             return Collections.EMPTY_MAP;
         }
-        if (isMapLoader() && enabled.get()) {
+        if (isMapLoader()) {
             return mapLoader.loadAll(keys);
         }
         return null;
