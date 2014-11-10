@@ -26,9 +26,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -37,6 +40,11 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,10 +57,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.map.query.QueryBasicTest.doFunctionalQueryTest;
 import static com.hazelcast.map.query.QueryBasicTest.doFunctionalSQLQueryTest;
@@ -688,6 +692,59 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             }
         }
     }
+
+    @Test
+    public void testUnknownPortableField_notCausesQueryException_withoutIndex() {
+        final String mapName = randomMapName();
+
+        final Config config = new Config();
+        config.getSerializationConfig().addPortableFactory(666, new PortableFactory() {
+            public Portable create(int classId) {
+                return new SampleObjects.PortableEmployee();
+            }
+        });
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+
+        final IMap map = hazelcastInstance.getMap(mapName);
+
+
+        for (int i = 0; i < 5; i++) {
+            map.put(i, new SampleObjects.PortableEmployee(i, "name_" + i));
+        }
+
+        Collection values = map.values(new SqlPredicate("notExist = name_0 OR a > 1"));
+
+        assertEquals(3, values.size());
+    }
+
+    @Test
+    public void testUnknownPortableField_notCausesQueryException_withIndex() {
+        final String mapName = randomMapName();
+
+        final Config config = new Config();
+        config.getSerializationConfig().addPortableFactory(666, new PortableFactory() {
+            public Portable create(int classId) {
+                return new SampleObjects.PortableEmployee();
+            }
+        });
+        config.getMapConfig(mapName)
+                .addMapIndexConfig(new MapIndexConfig("notExist", false))
+                .addMapIndexConfig(new MapIndexConfig("n", false));
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+
+        final IMap map = hazelcastInstance.getMap(mapName);
+
+
+        for (int i = 0; i < 5; i++) {
+            map.put(i, new SampleObjects.PortableEmployee(i, "name_" + i));
+        }
+
+        Collection values = map.values(new SqlPredicate("n = name_2 OR notExist = name_0"));
+
+        assertEquals(1, values.size());
+    }
+
 
     private static class QueryValue implements Serializable {
         private String name;
