@@ -48,7 +48,8 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
     public String call() throws Exception {
         TopicService service = getService();
         ClientEndpoint endpoint = getEndpoint();
-        MessageListener listener = new MessageListenerImpl(endpoint, getCallId());
+        Data partitionKey = serializationService.toData(name);
+        MessageListener listener = new MessageListenerImpl(endpoint, partitionKey, getCallId());
         String registrationId = service.addMessageListener(name, listener);
         endpoint.setListenerRegistration(TopicService.SERVICE_NAME, name, registrationId);
         return registrationId;
@@ -87,9 +88,11 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
     private static class MessageListenerImpl implements MessageListener {
         private final ClientEndpoint endpoint;
         private final int callId;
+        private final Data partitionKey;
 
-        public MessageListenerImpl(ClientEndpoint endpoint, int callId) {
+        public MessageListenerImpl(ClientEndpoint endpoint, Data partitionKey, int callId) {
             this.endpoint = endpoint;
+            this.partitionKey = partitionKey;
             this.callId = callId;
         }
 
@@ -108,7 +111,7 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
             Data messageData = dataAwareMessage.getMessageData();
             String publisherUuid = message.getPublishingMember().getUuid();
             PortableMessage portableMessage = new PortableMessage(messageData, message.getPublishTime(), publisherUuid);
-            endpoint.sendEvent(portableMessage, callId);
+            endpoint.sendEvent(partitionKey, portableMessage, callId);
         }
     }
 

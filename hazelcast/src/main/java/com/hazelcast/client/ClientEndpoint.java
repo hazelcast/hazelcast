@@ -2,6 +2,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
 
@@ -22,7 +23,7 @@ public interface ClientEndpoint {
 
     void sendResponse(Object response, int callId);
 
-    void sendEvent(Object event, int callId);
+    void sendEvent(Data key, Object event, int callId);
 
     void setListenerRegistration(String service, String topic, String id);
 
