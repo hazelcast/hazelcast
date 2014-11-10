@@ -121,9 +121,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
-    // the selectorImbalanceWorkaroundEnabled is a hack to make sure that selectors get an equal number of connections to deal with
-    // this should only be used for the test lab. In the future we need to create a real fix to this problem, but
-    // without this hack we can't do reliable benchmarking because the numbers have too much variation.
+    // the selectorImbalanceWorkaroundEnabled is a hack to make sure that selectors get an equal number of connections
+    // to deal with this should only be used for the test lab. In the future we need to create a real fix to this problem,
+    // but without this hack we can't do reliable benchmarking because the numbers have too much variation.
     private final boolean selectorImbalanceWorkaroundEnabled;
     private final Map<String, Integer> selectorIndexPerHostMap;
 
