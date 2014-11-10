@@ -1,6 +1,30 @@
 
 ### Fixes
 
+**3.3.3 Fixes**
+
+This section lists issues solved for **Hazelcast 3.3.3** release.
+
+
+- JCache average put time statistics are not calculated correctly [[#4029]](https://github.com/hazelcast/hazelcast/issues/4029).
+- A null pointer exception may be thrown during the execution of an entry backup processor, due to an unsent previous backup operation [[#4001]](https://github.com/hazelcast/hazelcast/issues/4001).
+- The evicted event is sent before the added event to an EntryListener on a DistributedObject [[#3992]](https://github.com/hazelcast/hazelcast/issues/3992).
+- The default login credentials for management center cannot be deleted after custom credentials are created [[#3990]](https://github.com/hazelcast/hazelcast/issues/3990).
+- The logger for `NodeMulticastListener` does not belong to `com.hazelcast` hierarchy [[#3941]](https://github.com/hazelcast/hazelcast/issues/3941).
+- When a `MapInterceptor` is added on a running Hazelcast node (in embedded mode) and that node is stopped, then the interceptor is not removed. When the same node is started again, the effect of the interceptor is applied twice [[#3932]](https://github.com/hazelcast/hazelcast/issues/3932).
+- If a MapInterceptor is added to a map during node initialization and then the same code is run on another nodes, same behavior is duplicated when the MapInterceptor is invoked [[#3931]](https://github.com/hazelcast/hazelcast/issues/3931).
+- In Hazelcast 3.3.x, expiration time is calculated as the sum of creation time and TTL. Its value is updated on every set operation on a map, but Hazelcast uses only the first value set for `ExpirationTime`. So a `getExpirationTime()` operation returns a wrong and misleading value [[#3923]](https://github.com/hazelcast/hazelcast/issues/3923).
+- When using declarative configuration to configure a queue to use a `QueueStoreFactory`, a null pointer exception is thrown at `QueueStoreWrapper`. This is because `setConfig` calls `factoryImpl(name)` before `this.storeConfig` setting. This means that `storeConfig` will always be null when `factoryImpl(name)` is running. [[#3907]](https://github.com/hazelcast/hazelcast/issues/3907).
+- Excessive number of logs during the startup of Hazelcast [[#3869]](https://github.com/hazelcast/hazelcast/issues/3869).
+- `LifecycleService` should be terminated after the node could not join to the cluster [[#3843]](https://github.com/hazelcast/hazelcast/issues/3843).
+- The method `MapProxyImpl.aggregate` hangs sporadically [[#3824]](https://github.com/hazelcast/hazelcast/issues/3824).
+- Currently, there is no class named `com.hazelcast.nio.utf8.EnterpriseStringCreator` in both Hazelcast and Hazelcast Enterprise. The class and its log message should be removed from the code [[#3819]](https://github.com/hazelcast/hazelcast/issues/3819).
+- When monitoring Hazelcast using management center, the map list is unreadable and also unexpandable for maps with long names [[#3815]](https://github.com/hazelcast/hazelcast/issues/3815).
+- Management center queues the "Shutdown" commands [[#3718]](https://github.com/hazelcast/hazelcast/issues/3718).
+- E-mail notifications for management center are not sent [[#3693]](https://github.com/hazelcast/hazelcast/issues/3693).
+- EC2 instance discovery failure with Hazelcast 3.3 [[#3666]](https://github.com/hazelcast/hazelcast/issues/3666).
+
+
 **3.3.2 Fixes**
 
 This section lists issues solved for **Hazelcast 3.3.2** release.

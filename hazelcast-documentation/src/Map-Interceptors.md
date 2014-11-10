@@ -9,7 +9,7 @@ Interceptors are different from listeners. With listeners, you take an action af
 
 Map interceptors are chained, so adding the same interceptor multiple times to the same map can result in duplicate effects. This can easily happen when the interceptor is added to the map at node initialization, so that each node adds the same interceptor. When adding the interceptor in this way, be sure that the `hashCode()` method is implemented to return the same value for every instance of the interceptor. It is not strictly necessary, but it is a good idea to also implement `equals()` as this will ensure that the map interceptor can be removed reliably.
 
-IMap API has two methods for adding and removing an interceptor to the map,`addInterceptor` and `removeInterceptor`:
+IMap API has two methods for adding/removing an interceptor to/from the map:`addInterceptor` and `removeInterceptor`. The following are the extractions from IMap API for these two methods.
 
 ```java
 /**
