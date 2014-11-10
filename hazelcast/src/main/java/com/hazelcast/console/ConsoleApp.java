@@ -1573,7 +1573,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
         } catch (FileNotFoundException e) {
             config = new Config();
         }
-        config.getManagementCenterConfig().setEnabled(true).setUrl("http://localhost:8083/mancenter");
+        
         for (int k = 1; k <= LOAD_EXECUTORS_COUNT; k++) {
             config.addExecutorConfig(new ExecutorConfig(EXECUTOR_NAMESPACE + " " + k).setPoolSize(k));
         }
