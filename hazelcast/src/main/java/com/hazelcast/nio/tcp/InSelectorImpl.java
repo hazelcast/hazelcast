@@ -30,11 +30,11 @@ public final class InSelectorImpl extends AbstractIOSelector {
     }
 
     /**
-     * Returns the current number of write events that have been processed by this InSelectorImpl.
+     * Returns the current number of read events that have been processed by this InSelectorImpl.
      *
      * This method is thread-safe.
      *
-     * @return the number of write events.
+     * @return the number of read events.
      */
     public long getReadEvents() {
         return readEvents;
