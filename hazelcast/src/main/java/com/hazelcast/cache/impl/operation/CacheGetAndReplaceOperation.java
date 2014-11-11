@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * Cache GetAndReplace Operation.
  * <p>Operation to call the cache record store method.</p>
- * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndReplace(Data, Object, javax.cache.expiry.ExpiryPolicy, String)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndReplace(Data, Object, javax.cache.expiry.ExpiryPolicy, String, int)
  */
 public class CacheGetAndReplaceOperation
         extends AbstractMutatingCacheOperation {
@@ -48,7 +48,7 @@ public class CacheGetAndReplaceOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.getAndReplace(key, value, expiryPolicy, getCallerUuid());
+        response = cache.getAndReplace(key, value, expiryPolicy, getCallerUuid(), completionId);
         backupRecord = cache.getRecord(key);
     }
 

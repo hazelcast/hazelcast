@@ -34,16 +34,13 @@ public class CacheClearOperation
         implements BackupAwareOperation {
 
 
-    private int completionId;
-
     private transient ICacheRecordStore cache;
 
     public CacheClearOperation() {
     }
 
-    public CacheClearOperation(String name, int completionId) {
+    public CacheClearOperation(String name) {
         super(name);
-        this.completionId = completionId;
     }
 
     @Override
@@ -63,7 +60,6 @@ public class CacheClearOperation
         } catch (CacheException e) {
             response = new CacheClearResponse(e);
         }
-        cache.publishCompletedEvent(name, completionId, new DefaultData(), 1);
     }
 
     @Override

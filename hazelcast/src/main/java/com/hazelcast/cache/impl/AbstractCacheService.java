@@ -261,7 +261,7 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue,
-                             Data dataOldValue, boolean isOldValueAvailable, int orderKey) {
+                             Data dataOldValue, boolean isOldValueAvailable, int orderKey, int completionId) {
         final EventService eventService = getNodeEngine().getEventService();
         final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
 
@@ -276,7 +276,7 @@ public abstract class AbstractCacheService implements ICacheService {
             case EXPIRED:
                 final CacheEventData cacheEventData = new CacheEventDataImpl(cacheName, eventType, dataKey, dataValue,
                         dataOldValue, isOldValueAvailable);
-                CacheEventSet eventSet = new CacheEventSet(eventType);
+                CacheEventSet eventSet = new CacheEventSet(eventType, completionId);
                 eventSet.addEventData(cacheEventData);
                 eventData = eventSet;
                 break;
@@ -287,7 +287,11 @@ public abstract class AbstractCacheService implements ICacheService {
                 eventData = new CacheEventDataImpl(cacheName, CacheEventType.INVALIDATED, dataKey, null, null, false);
                 break;
             case COMPLETED:
-                eventData = new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED, dataKey, dataValue, null, false);
+                CacheEventData completedEventData = new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED,
+                        dataKey, dataValue, null, false);
+                eventSet = new CacheEventSet(eventType, completionId);
+                eventSet.addEventData(completedEventData);
+                eventData = eventSet;
                 break;
             default:
                 throw new IllegalArgumentException(

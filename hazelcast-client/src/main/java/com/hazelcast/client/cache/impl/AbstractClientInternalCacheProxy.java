@@ -16,14 +16,11 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.CacheCompleter;
 import com.hazelcast.cache.impl.CacheClearResponse;
-import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
-import com.hazelcast.cache.impl.CacheEventSet;
-import com.hazelcast.cache.impl.CacheEventType;
 import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
-import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndReplaceRequest;
@@ -73,7 +70,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * @param <V> the type of value
  */
 abstract class AbstractClientInternalCacheProxy<K, V>
-        extends AbstractClientCacheProxyBase<K, V> {
+        extends AbstractClientCacheProxyBase<K, V> implements CacheCompleter {
 
     protected final ClientNearCache<Data, Object> nearCache;
 
@@ -83,8 +80,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
 
     private final AtomicInteger completionIdCounter = new AtomicInteger();
-    private final Object completionRegistrationMutex = new Object();
-    private volatile String completionRegistrationId;
 
     protected AbstractClientInternalCacheProxy(CacheConfig cacheConfig, ClientContext clientContext) {
         super(cacheConfig, clientContext);
@@ -256,7 +251,10 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             keysData = null;
         }
         final int partitionCount = clientContext.getPartitionService().getPartitionCount();
-        final Integer completionId = registerCompletionLatch(partitionCount);
+        int completionId = -1;
+        if (isRemoveAll) {
+            completionId = registerCompletionLatch(partitionCount);
+        }
         CacheClearRequest request = new CacheClearRequest(nameWithPrefix, keysData, isRemoveAll, completionId);
         try {
             final Map<Integer, Object> results = invoke(request);
@@ -272,9 +270,13 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     }
                 }
             }
-            waitCompletionLatch(completionId, partitionCount - completionCount);
+            if (isRemoveAll) {
+                waitCompletionLatch(completionId, partitionCount - completionCount);
+            }
         } catch (Throwable t) {
-            deregisterCompletionLatch(completionId);
+            if (isRemoveAll) {
+                deregisterCompletionLatch(completionId);
+            }
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
@@ -301,7 +303,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration.isSynchronous()) {
             syncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
-            registerCompletionListener();
         } else {
             asyncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
         }
@@ -331,11 +332,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
         syncListenerRegistrations.clear();
         asyncListenerRegistrations.clear();
-
-        deregisterCompletionListener();
     }
 
-    protected void countDownCompletionLatch(int id) {
+    public void countDownCompletionLatch(int id) {
         final CountDownLatch countDownLatch = syncLocks.get(id);
         if (countDownLatch == null) {
             return;
@@ -349,7 +348,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected Integer registerCompletionLatch(int count) {
         if (!syncListenerRegistrations.isEmpty()) {
             final int id = completionIdCounter.incrementAndGet();
-            CountDownLatch countDownLatch = new CountDownLatch(count);
+            int size = syncListenerRegistrations.size();
+            CountDownLatch countDownLatch = new CountDownLatch(count * size);
             syncLocks.put(id, countDownLatch);
             return id;
         }
@@ -386,34 +386,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected void registerCompletionListener() {
-        if (!syncListenerRegistrations.isEmpty() && completionRegistrationId == null) {
-            synchronized (completionRegistrationMutex) {
-                if (completionRegistrationId == null) {
-                    final EventHandler<Object> handler = new CacheCompletionEventHandler();
-                    final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(nameWithPrefix);
-                    completionRegistrationId = clientContext.getListenerService().listen(registrationRequest, null, handler);
-                }
-            }
-        }
-    }
-
-    protected void deregisterCompletionListener() {
-        if (syncListenerRegistrations.isEmpty() && completionRegistrationId != null) {
-            synchronized (completionRegistrationMutex) {
-                if (completionRegistrationId != null) {
-                    CacheRemoveEntryListenerRequest removeRequest = new CacheRemoveEntryListenerRequest(nameWithPrefix,
-                            completionRegistrationId);
-                    boolean isDeregistered = clientContext.getListenerService()
-                            .stopListening(removeRequest, completionRegistrationId);
-                    if (isDeregistered) {
-                        completionRegistrationId = null;
-                    }
-                }
-            }
-        }
-    }
-
     protected EventHandler<Object> createHandler(final CacheEventListenerAdaptor adaptor) {
         return new EventHandler<Object>() {
             @Override
@@ -435,37 +407,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected ICompletableFuture createCompletedFuture(Object value) {
         return new CompletedFuture(clientContext.getSerializationService(), value,
                 clientContext.getExecutionService().getAsyncExecutor());
-    }
-
-    private final class CacheCompletionEventHandler
-            implements EventHandler<Object> {
-
-        @Override
-        public void handle(Object eventObject) {
-            if (eventObject instanceof CacheEventData) {
-                handleEventData((CacheEventData) eventObject);
-            } else if (eventObject instanceof CacheEventSet) {
-                Set<CacheEventData> events = ((CacheEventSet) eventObject).getEvents();
-                for (CacheEventData event : events) {
-                    handleEventData(event);
-                }
-            }
-        }
-
-        private void handleEventData(CacheEventData cacheEventData) {
-            if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
-                Integer completionId = toObject(cacheEventData.getDataValue());
-                countDownCompletionLatch(completionId);
-            }
-        }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-        }
     }
 
 }

@@ -7,6 +7,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+
 /**
  * Backup operation of {@link com.hazelcast.cache.impl.operation.CacheClearOperation}.
  * <p>It simply clears the records.</p>

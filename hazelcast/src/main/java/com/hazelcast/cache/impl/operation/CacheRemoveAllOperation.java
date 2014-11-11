@@ -77,13 +77,13 @@ public class CacheRemoveAllOperation extends PartitionWideCacheOperation impleme
             if (keys == null) {
                 // Here the filteredKeys is empty, this means we will remove all data
                 // filteredKeys will get filled with removed keys
-                cache.removeAll(filteredKeys);
+                cache.removeAll(filteredKeys, completionId);
             } else if (!filteredKeys.isEmpty()) {
-                cache.removeAll(filteredKeys);
+                cache.removeAll(filteredKeys, completionId);
             }
             response = new CacheClearResponse(Boolean.TRUE);
             int orderKey = keys != null ? keys.hashCode() : 1;
-            cache.publishCompletedEvent(name, completionId, new DefaultData(), orderKey);
+//            cache.publishCompletedEvent(name, completionId, new DefaultData(), orderKey);
         } catch (CacheException e) {
             response = new CacheClearResponse(e);
         }

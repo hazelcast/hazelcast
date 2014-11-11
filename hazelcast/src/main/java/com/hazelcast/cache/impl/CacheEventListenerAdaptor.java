@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheCompleter;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -107,7 +108,13 @@ public class CacheEventListenerAdaptor<K, V>
     public void handleEvent(Object eventObject) {
         if (eventObject instanceof CacheEventSet) {
             CacheEventSet cacheEventSet = (CacheEventSet) eventObject;
-            handleEvent(cacheEventSet);
+            try {
+                if (cacheEventSet.getEventType() != CacheEventType.COMPLETED) {
+                    handleEvent(cacheEventSet);
+                }
+            } finally {
+                ((CacheCompleter)source).countDownCompletionLatch(cacheEventSet.getCompletionId());
+            }
         }
     }
 

@@ -75,7 +75,7 @@ public class CacheEntryProcessorOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.invoke(key, entryProcessor, arguments);
+        response = cache.invoke(key, entryProcessor, arguments, completionId);
         if (entryProcessor instanceof BackupAwareEntryProcessor) {
             BackupAwareEntryProcessor processor = (BackupAwareEntryProcessor) entryProcessor;
             backupEntryProcessor = processor.createBackupEntryProcessor();

@@ -323,7 +323,6 @@ public class ClientCacheProxy<K, V>
 
             if (isDeregistered) {
                 cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-                deregisterCompletionListener();
                 //REMOVE ON OTHERS TOO
                 updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
             } else {

@@ -320,7 +320,6 @@ public class CacheProxy<K, V>
                 addListenerLocally(regId, cacheEntryListenerConfiguration);
             } else {
                 cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-                deregisterCompletionListener();
                 //REMOVE ON OTHERS TOO
                 updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
             }

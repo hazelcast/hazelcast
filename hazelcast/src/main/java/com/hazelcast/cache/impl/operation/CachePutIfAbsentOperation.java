@@ -27,9 +27,9 @@ import java.io.IOException;
 
 /**
  * Operation implementation for calling
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String)}.
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String, int)}.
  *
- * @see com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String, int)
  */
 public class CachePutIfAbsentOperation
         extends AbstractMutatingCacheOperation {
@@ -49,7 +49,7 @@ public class CachePutIfAbsentOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.putIfAbsent(key, value, expiryPolicy, getCallerUuid());
+        response = cache.putIfAbsent(key, value, expiryPolicy, getCallerUuid(), completionId);
         if (Boolean.TRUE.equals(response)) {
             backupRecord = cache.getRecord(key);
         }

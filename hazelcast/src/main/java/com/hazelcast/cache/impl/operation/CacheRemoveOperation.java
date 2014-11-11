@@ -26,8 +26,8 @@ import java.io.IOException;
 
 /**
  * Operation implementation for cache remove functionality.
- * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, Object, String)
- * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, String)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, Object, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, String, int)
  */
 public class CacheRemoveOperation
         extends AbstractMutatingCacheOperation {
@@ -47,9 +47,9 @@ public class CacheRemoveOperation
     public void run()
             throws Exception {
         if (oldValue == null) {
-            response = cache.remove(key, getCallerUuid());
+            response = cache.remove(key, getCallerUuid(), completionId);
         } else {
-            response = cache.remove(key, oldValue, getCallerUuid());
+            response = cache.remove(key, oldValue, getCallerUuid(), completionId);
         }
     }
 

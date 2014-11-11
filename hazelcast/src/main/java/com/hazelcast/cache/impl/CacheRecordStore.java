@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
@@ -78,8 +79,8 @@ public class CacheRecordStore
     @Override
     protected CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key,
                                                                       CacheRecord record,
-                                                                      long now) {
-        return new CacheEntryProcessorEntry(key, record, this, now);
+                                                                      long now, int completionId) {
+        return new CacheEntryProcessorEntry(key, record, this, now, completionId);
     }
 
     protected CacheRecordFactory createCacheRecordFactory() {

@@ -79,7 +79,7 @@ public interface ICacheRecordStore {
      * @param expiryPolicy custom expiry policy or null to use configured default value.
      * @param caller  uuid of the calling node or client.
      */
-    void put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
+    void put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
 
     /**
      * Associates the specified value with the specified key in this cache,
@@ -101,7 +101,7 @@ public interface ICacheRecordStore {
      * @return the value associated with the key at the start of the operation or
      *         null if none was associated.
      */
-    Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
+    Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
 
     /**
      * Removes the mapping for a key from this cache if it is present.
@@ -123,7 +123,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return true if a value was set..
      */
-    boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
+    boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
 
     /**
      * Atomically removes the entry for a key only if it is currently mapped to some
@@ -145,7 +145,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return the value if one existed or null if no mapping existed for this key.
      */
-    Object getAndRemove(Data key, String caller);
+    Object getAndRemove(Data key, String caller, int completionId);
 
     /**
      * Removes the mapping for a key from this cache if it is present.
@@ -165,7 +165,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return returns false if there was no matching key.
      */
-    boolean remove(Data key, String caller);
+    boolean remove(Data key, String caller, int completionId);
 
     /**
      * Atomically removes the mapping for a key only if currently mapped to the
@@ -187,7 +187,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return returns false if there was no matching key.
      */
-    boolean remove(Data key, Object value, String caller);
+    boolean remove(Data key, Object value, String caller, int completionId);
 
     /**
      * Atomically replaces the entry for a key only if currently mapped to some
@@ -209,7 +209,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return <tt>true</tt> if the value was replaced.
      */
-    boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
+    boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
 
     /**
      * Atomically replaces the entry for a key only if currently mapped to a
@@ -233,7 +233,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return <tt>true</tt> if the value was replaced.
      */
-    boolean replace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy, String caller);
+    boolean replace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy, String caller, int completionId);
 
     /**
      * Atomically replaces the value for a given key if and only if there is a
@@ -258,7 +258,7 @@ public interface ICacheRecordStore {
      * @return the previous value associated with the specified key, or
      *         <tt>null</tt> if there was no mapping for the key.
      */
-    Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller);
+    Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
 
     /**
      * Determines if this store contains an entry for the specified key.
@@ -305,7 +305,7 @@ public interface ICacheRecordStore {
      * for each key.
      * @param keys set of keys to be cleaned.
      */
-    void removeAll(Set<Data> keys);
+    void removeAll(Set<Data> keys, int completionId);
 
     /**
      * Destroy is equivalent to below operations in the given order:
@@ -381,7 +381,7 @@ public interface ICacheRecordStore {
      * @return the result of the processing, if any, defined by the
      *         {@link EntryProcessor} implementation.
      */
-    Object invoke(Data key, EntryProcessor entryProcessor, Object[] arguments);
+    Object invoke(Data key, EntryProcessor entryProcessor, Object[] arguments, int completionId);
 
     /**
      * Synchronously loads the specified entries into the cache using the
@@ -403,17 +403,6 @@ public interface ICacheRecordStore {
      * @return {@link CacheStatisticsImpl} cache statistics.
      */
     CacheStatisticsImpl getCacheStats();
-
-    /**
-     * Publish a Completion Event.
-     * <p>Synchronous Event Listeners require Completion Event to understand all events are executed and it is ready to proceed
-     * the method call as this Completion events are always received at the end.</p>
-     * @param cacheName  cache name.
-     * @param completionId completion id of the caller method.
-     * @param dataKey  the key.
-     * @param orderKey order key, all events of a method call will share same order key.
-     */
-    void publishCompletedEvent(String cacheName, int completionId, Data dataKey, int orderKey);
 
     /**
      * Evict cache record store if eviction is required.
