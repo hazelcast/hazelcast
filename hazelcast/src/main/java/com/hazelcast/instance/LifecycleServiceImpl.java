@@ -20,6 +20,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.UuidUtil;
 
@@ -80,7 +81,10 @@ public class LifecycleServiceImpl implements LifecycleService {
     public void shutdown() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            instance.managementService.destroy();
+            ManagementService managementService = instance.managementService;
+            if (managementService != null) {
+                managementService.destroy();
+            }
             final Node node = instance.node;
             if (node != null) {
                 final NodeShutdownLatch shutdownLatch = new NodeShutdownLatch(node);
@@ -101,7 +105,10 @@ public class LifecycleServiceImpl implements LifecycleService {
     public void terminate() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            instance.managementService.destroy();
+            ManagementService managementService = instance.managementService;
+            if (managementService != null) {
+                managementService.destroy();
+            }
             final Node node = instance.node;
             if (node != null) {
                 node.shutdown(true);

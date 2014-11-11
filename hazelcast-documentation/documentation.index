@@ -13,6 +13,7 @@ src/GettingStarted.md
 	src/ConfiguringHazelcast.md
 	src/UseCases.md
 	src/Resources.md
+#src/HazelcastClusters.md
 src/Distributed_Data_Structures.md
 	src/Map.md
 		src/Map-Backups.md
@@ -90,6 +91,28 @@ src/Transactions.md
 		src/SampleJBossConfiguration.md
 		src/SampleJBoss7Configuration.md
 src/JCache.md
+	src/JCache-Setup.md
+	src/JCache-QuickExample.md
+	src/JCache-JCacheConfiguration.md
+	src/JCache-Providers.md
+	src/JCache-ClientProvider.md
+	src/JCache-ServerProvider.md
+	src/JCache-API.md
+	src/JCache-APIBasics.md
+	src/JCache-APIFactory.md
+	src/JCache-APICacheLoader.md
+	src/JCache-APICacheWriter.md
+	src/JCache-EP.md
+	src/JCache-CacheEntryListener.md
+	src/JCache-ExpirePolicy.md
+	src/JCache-ICache.md
+	src/JCache-RetrievingICacheInstance.md
+	src/JCache-ICacheConf.md
+	src/JCache-AsyncOperations.md
+	src/JCache-CustomExpiryPolicy.md
+	src/JCache-AdditionalMethods.md
+	src/JCache-BackupAwareEP.md
+	src/JCache-SpecCompliance.md
 src/IntegratedClustering.md
 	src/WebSessionReplication.md
 		src/TomcatSessionReplication.md

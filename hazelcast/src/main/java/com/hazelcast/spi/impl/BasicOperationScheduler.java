@@ -118,7 +118,7 @@ public final class BasicOperationScheduler {
                 + partitionOperationThreads.length + " partition operation threads.");
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({ "NP_NONNULL_PARAM_VIOLATION" })
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"NP_NONNULL_PARAM_VIOLATION" })
     private static void initOperationThreads(OperationThread[] operationThreads, ThreadFactory threadFactory) {
         for (int threadId = 0; threadId < operationThreads.length; threadId++) {
             OperationThread operationThread = (OperationThread) threadFactory.newThread(null);
@@ -159,7 +159,7 @@ public final class BasicOperationScheduler {
         return isInvocationAllowedFromCurrentThread(getPartitionIdForExecution(op));
     }
 
-    boolean isAllowedToRunInCurrentThread(int partitionId) {
+    private boolean isAllowedToRunInCurrentThread(int partitionId) {
         Thread currentThread = Thread.currentThread();
 
         // IO threads are not allowed to run any operation
@@ -190,7 +190,7 @@ public final class BasicOperationScheduler {
         return toPartitionThreadIndex(partitionId) == threadId;
     }
 
-    boolean isInvocationAllowedFromCurrentThread(int partitionId) {
+    private boolean isInvocationAllowedFromCurrentThread(int partitionId) {
         Thread currentThread = Thread.currentThread();
 
         if (currentThread instanceof OperationThread) {
@@ -358,6 +358,17 @@ public final class BasicOperationScheduler {
                 + '}';
     }
 
+    public void dumpPerformanceMetrics(StringBuffer sb) {
+        for (int k = 0; k < partitionOperationThreads.length; k++) {
+            OperationThread operationThread = partitionOperationThreads[k];
+            sb.append(operationThread.getName()).append(".processedCount=").append(operationThread.processedCount).append("\n");
+        }
+        for (int k = 0; k < genericOperationThreads.length; k++) {
+            OperationThread operationThread = genericOperationThreads[k];
+            sb.append(operationThread.getName()).append(".processedCount=").append(operationThread.processedCount).append("\n");
+        }
+    }
+
     private class GenericOperationThreadFactory implements ThreadFactory {
         private int threadId;
 
@@ -393,6 +404,7 @@ public final class BasicOperationScheduler {
         private final boolean isPartitionSpecific;
         private final BlockingQueue workQueue;
         private final Queue priorityWorkQueue;
+        private volatile long processedCount;
 
         public OperationThread(String name, boolean isPartitionSpecific,
                                int threadId, BlockingQueue workQueue, Queue priorityWorkQueue) {
@@ -440,6 +452,7 @@ public final class BasicOperationScheduler {
         }
 
         private void process(Object task) {
+            processedCount++;
             try {
                 dispatcher.dispatch(task);
             } catch (Exception e) {

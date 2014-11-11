@@ -5,7 +5,7 @@
 
 ### Cluster Interface
 
-Hazelcast allows you to register for membership events to get notified when members added or removed. You can also get the set of cluster members.
+Hazelcast allows you to register for membership events so you will be notified when members are added or removed. You can also get the set of cluster members.
 
 ```java
 import com.hazelcast.core.*;
