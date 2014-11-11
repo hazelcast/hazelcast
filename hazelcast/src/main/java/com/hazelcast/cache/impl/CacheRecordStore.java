@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
@@ -44,15 +43,16 @@ import java.util.Collection;
  * <p>CacheRecordStore is accessed through {@linkplain com.hazelcast.cache.impl.CachePartitionSegment} and
  * {@linkplain com.hazelcast.cache.impl.CacheService}.</p>
  * CacheRecordStore is managed by {@linkplain com.hazelcast.cache.impl.CachePartitionSegment}.
- *<p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation:
- *     <pre>
+ * <p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation:
+ * <pre>
  *         <code>CacheService service = getService();
  *         ICacheRecordStore cache = service.getOrCreateCache(name, partitionId);
  *         cache.get(key, expiryPolicy);
  *         </code>
  *     </pre>
  * See {@link com.hazelcast.cache.impl.operation.AbstractCacheOperation} subclasses for actual examples.
- *</p>
+ * </p>
+ *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
  * @see com.hazelcast.cache.impl.CacheService
  * @see com.hazelcast.cache.impl.operation.AbstractCacheOperation
@@ -64,7 +64,7 @@ public class CacheRecordStore
     protected CacheRecordFactory cacheRecordFactory;
 
     public CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine,
-                    AbstractCacheService cacheService) {
+                            AbstractCacheService cacheService) {
         super(name, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
         this.records = createRecordCacheMap();
@@ -85,7 +85,7 @@ public class CacheRecordStore
 
     protected CacheRecordFactory createCacheRecordFactory() {
         return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                                      nodeEngine.getSerializationService());
+                nodeEngine.getSerializationService());
     }
 
     @Override

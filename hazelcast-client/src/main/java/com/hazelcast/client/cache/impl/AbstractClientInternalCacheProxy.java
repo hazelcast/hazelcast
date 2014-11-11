@@ -251,10 +251,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             keysData = null;
         }
         final int partitionCount = clientContext.getPartitionService().getPartitionCount();
-        int completionId = -1;
-        if (isRemoveAll) {
-            completionId = registerCompletionLatch(partitionCount);
-        }
+        int completionId = registerCompletionLatch(partitionCount);
         CacheClearRequest request = new CacheClearRequest(nameWithPrefix, keysData, isRemoveAll, completionId);
         try {
             final Map<Integer, Object> results = invoke(request);
@@ -270,13 +267,26 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     }
                 }
             }
-            if (isRemoveAll) {
-                waitCompletionLatch(completionId, partitionCount - completionCount);
+            waitCompletionLatch(completionId, partitionCount - completionCount);
+        } catch (Throwable t) {
+            deregisterCompletionLatch(completionId);
+            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
+        }
+    }
+
+    protected void clearInternal() {
+        CacheClearRequest request = new CacheClearRequest(nameWithPrefix, null, false, -1);
+        try {
+            final Map<Integer, Object> results = invoke(request);
+            for (Object result : results.values()) {
+                if (result != null && result instanceof CacheClearResponse) {
+                    final Object response = ((CacheClearResponse) result).getResponse();
+                    if (response instanceof Throwable) {
+                        throw (Throwable) response;
+                    }
+                }
             }
         } catch (Throwable t) {
-            if (isRemoveAll) {
-                deregisterCompletionLatch(completionId);
-            }
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }

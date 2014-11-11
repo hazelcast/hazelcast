@@ -216,7 +216,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public void clear() {
         ensureOpen();
-        removeAllInternal(null, false);
+        clearInternal();
     }
 
     @Override
