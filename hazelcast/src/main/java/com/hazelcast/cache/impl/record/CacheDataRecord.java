@@ -25,16 +25,16 @@ import java.io.IOException;
 /**
  * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} where value has an internal serialized format.
  */
-class CacheDataRecord extends AbstractCacheRecord<Data> {
+public class CacheDataRecord extends AbstractCacheRecord<Data> {
 
     private Data value;
 
     // Deserialization constructor
-    CacheDataRecord() {
+    public CacheDataRecord() {
         super();
     }
 
-    CacheDataRecord(Data value, long creationTime, long expiryTime) {
+    public CacheDataRecord(Data value, long creationTime, long expiryTime) {
         super(creationTime, expiryTime);
         this.value = value;
     }
