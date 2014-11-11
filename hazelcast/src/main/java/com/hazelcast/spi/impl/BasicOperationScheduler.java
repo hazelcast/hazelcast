@@ -274,7 +274,7 @@ public final class BasicOperationScheduler {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                 //it is an response packet.
-                responseThread.workQueue.add(packet);
+                responseThread.process(packet);
             } else {
                 //it is an must be an operation packet
                 int partitionId = packet.getPartitionId();

@@ -53,8 +53,10 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,6 +115,8 @@ final class BasicOperationService implements InternalOperationService {
 
     final ConcurrentMap<Long, BasicInvocation> invocations;
     final BasicOperationScheduler scheduler;
+    final ILogger invocationLogger;
+    final ManagedExecutorService asyncExecutor;
     private final AtomicLong executedOperationsCount = new AtomicLong();
 
     private final NodeEngineImpl nodeEngine;
@@ -122,18 +126,24 @@ final class BasicOperationService implements InternalOperationService {
 
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
 
-    private final long defaultCallTimeout;
+    private final long defaultCallTimeoutMillis;
+    private final long backupOperationTimeoutMillis;
     private final ExecutionService executionService;
     private final OperationHandler operationHandler;
     private final OperationBackupHandler operationBackupHandler;
     private final OperationPacketHandler operationPacketHandler;
     private final ResponsePacketHandler responsePacketHandler;
+    private final BackupTimeoutHandlerThread backupTimeoutHandlerThread;
+    private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
-        this.defaultCallTimeout = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+        this.invocationLogger = nodeEngine.getLogger(BasicInvocation.class);
+        this.defaultCallTimeoutMillis = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+        this.backupOperationTimeoutMillis = node.getGroupProperties().OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
+
         this.executionService = nodeEngine.getExecutionService();
 
         int coreSize = Runtime.getRuntime().availableProcessors();
@@ -148,8 +158,11 @@ final class BasicOperationService implements InternalOperationService {
         this.operationPacketHandler = new OperationPacketHandler();
         this.responsePacketHandler = new ResponsePacketHandler();
 
-        executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
+        this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
+
+        this.backupTimeoutHandlerThread = new BackupTimeoutHandlerThread();
+        this.backupTimeoutHandlerThread.start();
     }
 
     @Override
@@ -375,8 +388,8 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @PrivateApi
-    long getDefaultCallTimeout() {
-        return defaultCallTimeout;
+    long getDefaultCallTimeoutMillis() {
+        return defaultCallTimeoutMillis;
     }
 
     @PrivateApi
@@ -417,6 +430,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public void shutdown() {
+        shutdown = true;
         logger.finest("Stopping operation threads...");
         final Object response = new HazelcastInstanceNotActiveException();
         for (BasicInvocation invocation : invocations.values()) {
@@ -1023,6 +1037,61 @@ final class BasicOperationService implements InternalOperationService {
             sb.append(", time=").append(time);
             sb.append('}');
             return sb.toString();
+        }
+    }
+
+
+    /**
+     * The HandleBackupTimeoutThread periodically iterates over all invocations in this BasicOperationService and calls the
+     * {@link BasicInvocation#handleBackupTimeout(long)} method. This gives each invocation the opportunity to handle with a
+     * backup not completing in time.
+     * <p/>
+     * The previous approach was that for each BackupAwareOperation a task was scheduled to deal with the timeout. The problem
+     * is that the actual operation already could be completed, but the task is still scheduled and this can lead to an OOME.
+     * Apart from that it also had quite an impact on performance since there is more interaction with concurrent data-structures
+     * (e.g. the priority-queue of the scheduled-executor).
+     * <p/>
+     * We use a dedicates thread instead of a shared ScheduledThreadPool because there will not be that many of these threads
+     * (each member-HazelcastInstance gets 1) and we don't want problems in 1 member causing problems in the other.
+     */
+    private final class BackupTimeoutHandlerThread extends Thread {
+
+        public static final int DELAY_MILLIS = 1000;
+
+        private BackupTimeoutHandlerThread() {
+            super(node.getThreadNamePrefix("BackupTimeoutHandlerThread"));
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!shutdown) {
+                    scan();
+
+                    try {
+                        Thread.sleep(DELAY_MILLIS);
+                    } catch (InterruptedException ignore) {
+                        // can safely be ignored. If this thread wants to shut down, we'll read the shutdown variable.
+                        EmptyStatement.ignore(ignore);
+                    }
+                }
+            } catch (Throwable t) {
+                logger.severe("Failed to run", t);
+            }
+        }
+
+        private void scan() {
+            if (invocations.isEmpty()) {
+                return;
+            }
+
+            for (BasicInvocation invocation : invocations.values()) {
+                try {
+                    invocation.handleBackupTimeout(backupOperationTimeoutMillis);
+                } catch (Throwable t) {
+                    logger.severe("Failed to handle backup timeout of invocation:" + invocation, t);
+                }
+            }
         }
     }
 }
