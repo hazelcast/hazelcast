@@ -18,7 +18,6 @@ package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
@@ -31,21 +30,23 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 /**
  * @author ali 3/6/13
@@ -57,7 +58,7 @@ public class ListTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void testIsEmpty_whenEmpty() {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         List list = instance.getList(randomString());
         assertTrue(list.isEmpty());
     }
@@ -65,7 +66,7 @@ public class ListTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void testIsEmpty_whenNotEmpty() {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance();
         List list = instance.getList(randomString());
         list.add(randomString());
         assertFalse(list.isEmpty());
