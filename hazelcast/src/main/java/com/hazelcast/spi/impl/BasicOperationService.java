@@ -133,7 +133,7 @@ final class BasicOperationService implements InternalOperationService {
     private final OperationBackupHandler operationBackupHandler;
     private final OperationPacketHandler operationPacketHandler;
     private final ResponsePacketHandler responsePacketHandler;
-    private final HandleBackupTimeoutThread handleBackupTimeoutThread;
+    private final BackupTimeoutHandlerThread backupTimeoutHandlerThread;
     private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
@@ -161,8 +161,8 @@ final class BasicOperationService implements InternalOperationService {
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
-        this.handleBackupTimeoutThread = new HandleBackupTimeoutThread();
-        this.handleBackupTimeoutThread.start();
+        this.backupTimeoutHandlerThread = new BackupTimeoutHandlerThread();
+        this.backupTimeoutHandlerThread.start();
     }
 
     @Override
@@ -1049,12 +1049,12 @@ final class BasicOperationService implements InternalOperationService {
      * We use a dedicates thread instead of a shared ScheduledThreadPool because there will not be that many of these threads
      * (each member-HazelcastInstance gets 1) and we don't want problems in 1 member causing problems in the other.
      */
-    private final class HandleBackupTimeoutThread extends Thread {
+    private final class BackupTimeoutHandlerThread extends Thread {
 
         public static final int DELAY_MILLIS = 1000;
 
-        private HandleBackupTimeoutThread() {
-            super(node.getName() + "-HandleBackupTimeoutThread");
+        private BackupTimeoutHandlerThread() {
+            super(node.getThreadNamePrefix("BackupTimeoutHandlerThread"));
         }
 
         @Override

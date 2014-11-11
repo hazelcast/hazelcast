@@ -110,9 +110,9 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     private static final int LOG_INVOCATION_COUNT_MOD = 10;
 
     /**
-     * The time in millis when this invocation started to be executed.
+     * The time in millis when the response of the primary has been received.
      */
-    protected long startTimeMillis = System.currentTimeMillis();
+    protected long pendingResponseReceivedMillis = -1;
     protected final long callTimeout;
     protected final NodeEngineImpl nodeEngine;
     protected final String serviceName;
@@ -127,16 +127,16 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     volatile NormalResponse pendingResponse;
 
+    //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
+    private volatile Boolean responseReceived = Boolean.FALSE;
+
     volatile int backupsExpected;
     volatile int backupsCompleted;
 
     private final BasicInvocationFuture invocationFuture;
     private final BasicOperationService operationService;
 
-    //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
-    private volatile Boolean responseReceived = Boolean.FALSE;
-
-    //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
+     //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
     private volatile int invokeCount;
 
     private final String executorName;
@@ -240,15 +240,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         } else {
             throw ExceptionUtil.rethrow(e);
         }
-    }
-
-    private void resetAndReInvoke() {
-        invokeCount = 0;
-        pendingResponse = null;
-        backupsExpected = 0;
-        backupsCompleted = 0;
-        startTimeMillis = System.currentTimeMillis();
-        doInvoke();
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
@@ -431,6 +422,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             // So the invocation has backups and since not all backups have completed, we need to wait.
             // It could be that backups arrive earlier than the response.
 
+            this.pendingResponseReceivedMillis = System.currentTimeMillis();
+
             this.backupsExpected = backupsExpected;
 
             // It is very important that the response is set after the backupsExpected is set. Else the system
@@ -521,12 +514,11 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
         final NormalResponse pendingResponse = this.pendingResponse;
         if (pendingResponse == null) {
-            // No potential response has been set, so we are done since the invocation on the primary needs to complete first.
+            // No pendingResponse has been set, so we are done since the invocation on the primary needs to complete first.
             return;
         }
 
-        // If the response is set, then the backupsExpected has been set. So we can now safely read backupsExpected since its
-        // value is set correctly.
+        // If a pendingResponse is set, then the backupsExpected has been set. So we can now safely read backupsExpected.
         final int backupsExpected = this.backupsExpected;
         if (backupsExpected < newBackupsCompleted) {
             // the backups have not yet completed. So we are done.
@@ -551,26 +543,45 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             return;
         }
 
-        boolean expired = startTimeMillis + timeoutMillis < System.currentTimeMillis();
+        long responseReceivedMillis = this.pendingResponseReceivedMillis;
+        if (responseReceivedMillis == -1) {
+            // no response has yet been received, so we we are done. We are only going to re-invoke an operation
+            // if the response of the primary has been received, but the backups have not replied.
+            return;
+        }
+
+        boolean expired = responseReceivedMillis + timeoutMillis < System.currentTimeMillis();
         if (!expired) {
             // This invocation has not yet expired (so has not been in the system for a too long period) we ignore it.
             return;
         }
 
-        boolean targetNotExist = nodeEngine.getClusterService().getMember(invTarget) == null;
-        if (targetNotExist) {
-            // The target doesn't exist, we are going to re-invoke this invocation.
-            // todo: This logic is a bit strange since only backup-aware operations are going to be retried, but
-            // other operations are not.
+        boolean targetDead = nodeEngine.getClusterService().getMember(invTarget) == null;
+        if (targetDead) {
+            // The target doesn't exist, we are going to re-invoke this invocation. The reason why this operation is being invoked
+            // is that otherwise it would be possible to loose data. In this particular case it could have happened that e.g.
+            // a map.put was done, the primary has returned the response but has not yet completed the backups and then the
+            // primary fails. The consequence is that the backups never will be made and the effects of the map.put, even though
+            // it returned a value, will never be visible. So if we would complete the future, a response is send even though
+            // its changes never made it into the system.
             resetAndReInvoke();
             return;
         }
 
-        // The backups have not yet completed, but we are going to release the future anyway if a potential response has been set.
+        // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
         final Response pendingResponse = this.pendingResponse;
         if (pendingResponse != null) {
             invocationFuture.set(pendingResponse);
         }
+    }
+
+    private void resetAndReInvoke() {
+        invokeCount = 0;
+        pendingResponse = null;
+        pendingResponseReceivedMillis = -1;
+        backupsExpected = 0;
+        backupsCompleted = 0;
+        doInvoke();
     }
 
     @Override
