@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.MigrationAwareService;
@@ -111,8 +112,8 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     private void afterMigrate() {
         if (success) {
-            InternalPartitionServiceImpl partitionService = getService();
-            partitionService.setPartitionReplicaVersions(migrationInfo.getPartitionId(), replicaVersions);
+            InternalPartitionService partitionService = getService();
+            partitionService.setPartitionReplicaVersions(migrationInfo.getPartitionId(), replicaVersions, 1);
         }
 
         migrationInfo.doneProcessing();

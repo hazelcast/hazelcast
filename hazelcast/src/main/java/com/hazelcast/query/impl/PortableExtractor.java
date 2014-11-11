@@ -58,12 +58,15 @@ final class PortableExtractor {
         FIELD_EXTRACTORS[FieldType.DOUBLE_ARRAY.getId()] = new PortableUnsupportedFieldExtractor();
     }
 
+    private static final FieldDefinition NULL_PORTABLE_FIELD_DEFINITION = createNullPortableFieldDefinition();
+
+    private static final PortableFieldExtractor NULL_PORTABLE_FIELD_EXTRACTOR = createNullPortableFieldExtractor();
+
     private PortableExtractor() {
     }
 
     static Comparable extractValue(SerializationService serializationService, Data data, String fieldName)
             throws IOException {
-
         PortableContext portableContext = serializationService.getPortableContext();
         PortableFieldExtractor fieldExtractor = getFieldExtractor(data, fieldName, portableContext);
         PortableReader reader = serializationService.createPortableReader(data);
@@ -71,9 +74,12 @@ final class PortableExtractor {
     }
 
     private static PortableFieldExtractor getFieldExtractor(Data data, String fieldName,
-            PortableContext portableContext) {
+                                                            PortableContext portableContext) {
 
         FieldDefinition fieldDefinition = getFieldDefinition(data, fieldName, portableContext);
+        if (fieldDefinition instanceof NullPortableFieldDefinition) {
+            return NULL_PORTABLE_FIELD_EXTRACTOR;
+        }
         int fieldType = fieldDefinition.getType().getId();
         if (fieldType < 0 || fieldType >= FIELD_EXTRACTORS.length) {
             throw new ArrayIndexOutOfBoundsException("Invalid fieldType: " + fieldType);
@@ -89,15 +95,51 @@ final class PortableExtractor {
     private static FieldDefinition getFieldDefinition(Data data, String fieldName, PortableContext portableContext) {
         ClassDefinition classDefinition = portableContext.lookupClassDefinition(data);
         FieldDefinition fieldDefinition = portableContext.getFieldDefinition(classDefinition, fieldName);
-        if (fieldDefinition == null) {
-            throw new QueryException("Unknown Portable field: " + fieldName);
-        }
-        return fieldDefinition;
+        return fieldDefinition == null ? NULL_PORTABLE_FIELD_DEFINITION : fieldDefinition;
     }
 
     static AttributeType getAttributeType(PortableContext portableContext, Data data, String fieldName) {
         PortableFieldExtractor fieldExtractor = getFieldExtractor(data, fieldName, portableContext);
         return fieldExtractor.getAttributeType();
+    }
+
+    private static PortableFieldExtractor createNullPortableFieldExtractor() {
+        return new NullPortableFieldExtractor();
+    }
+
+    private static FieldDefinition createNullPortableFieldDefinition() {
+        return new NullPortableFieldDefinition();
+    }
+
+    /**
+     * Represent an unknown {@link com.hazelcast.nio.serialization.Portable} field.
+     */
+    private static final class NullPortableFieldDefinition implements FieldDefinition {
+
+        @Override
+        public FieldType getType() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getName() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getIndex() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getClassId() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getFactoryId() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private static class PortableIntegerFieldExtractor implements PortableFieldExtractor {
@@ -220,8 +262,29 @@ final class PortableExtractor {
         }
     }
 
+    /**
+     * A {@link com.hazelcast.query.impl.PortableExtractor.PortableFieldExtractor} which's methods always return null.
+     * Used in cases that a portable field exists on one node but not exists on another one. In those cases returning null
+     * makes a {@link com.hazelcast.query.Predicate} to return false.
+     */
+    private static final class NullPortableFieldExtractor implements PortableFieldExtractor {
+
+        @Override
+        public Comparable extract(PortableReader reader, String fieldName) throws IOException {
+            return null;
+        }
+
+        @Override
+        public AttributeType getAttributeType() {
+            return null;
+        }
+
+    }
+
     private interface PortableFieldExtractor {
+
         Comparable extract(PortableReader reader, String fieldName) throws IOException;
+
         AttributeType getAttributeType();
     }
 }

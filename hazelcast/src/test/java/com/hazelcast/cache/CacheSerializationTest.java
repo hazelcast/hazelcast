@@ -54,8 +54,7 @@ public class CacheSerializationTest extends HazelcastTestSupport {
 
     private CacheRecord createRecord(InMemoryFormat format) {
         CacheRecordFactory factory = new CacheRecordFactory(format, service);
-        Data key = service.toData(randomString());
-        return factory.newRecord(key, randomString());
+        return factory.newRecord(randomString());
     }
 
 

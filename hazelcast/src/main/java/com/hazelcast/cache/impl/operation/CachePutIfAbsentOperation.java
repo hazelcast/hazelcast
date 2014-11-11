@@ -40,10 +40,6 @@ public class CachePutIfAbsentOperation
     public CachePutIfAbsentOperation() {
     }
 
-    public CachePutIfAbsentOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
-        this(name, key, value, expiryPolicy, IGNORE_COMPLETION);
-    }
-
     public CachePutIfAbsentOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, int completionId) {
         super(name, key, completionId);
         this.value = value;

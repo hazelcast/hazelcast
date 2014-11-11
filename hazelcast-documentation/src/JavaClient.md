@@ -328,6 +328,8 @@ Default value is *3000*.
 
 #### Socket Interceptor
 
+![](images/enterprise-onlycopy.jpg)
+
 Client configuration to set a socket intercepter. Any class implementing `com.hazelcast.nio.SocketInterceptor` is a socket Interceptor.
 
 
@@ -397,6 +399,10 @@ socketOptions.setLingerSeconds(3);
 ```
 
 #### SSL
+
+![](images/enterprise-onlycopy.jpg)
+
+
 SSL can be used to secure the connection between client and the nodes. Please see  [SSLConfig](#sslconfig) section on how to configure it.
 
 #### Configuration for AWS
@@ -451,6 +457,7 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 
 If the client is configured as a smart one, only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer. If it is not a smart client, `LoadBalancer` will be ignored.
 
+For the configuration of client load balance, please see  [Load Balancer Config](#loadbalancerconfig) and [Java Client Declarative Configuration](#java-client-declarative-configuration).
 
 
 ### Client Near Cache
@@ -458,6 +465,8 @@ Hazelcast distributed map has a Near Cache feature to reduce network latencies. 
 The client supports the exact same near cache used in Hazelcast distributed map. 
 
 ### Client SSLConfig
+
+![](images/enterprise-onlycopy.jpg)
 
 If SSL is desired to be enabled for the client-cluster connection, this parameter should be set. Once set, the connection (socket) is established out of an SSL factory defined either by a factory class name or factory implementation. Please see SSLConfig class in `com.hazelcast.config` package at the JavaDocs page of [Hazelcast Documentation](http://www.hazelcast.org/documentation/) web page.
 
@@ -531,6 +540,7 @@ Below is a generic template of a declarative configuration.
     </proxy-factories>
 
     <!--load balancer configuration-->
+    <!-- type can be "round-robin" or "random" -->
     <load-balancer type="random"/>
 
     <near-cache name="mapName">
@@ -569,6 +579,12 @@ It can be configured using `GroupConfig`, as shown below.
 clientConfig.setGroupConfig(new GroupConfig("dev","dev-pass"));
 ```
 
+#### LoadBalancerConfig
+The following code snippet shows the programmatic configuration of load balancer.
+
+```java
+clientConfig.setLoadBalancer(yourLoadBalancer);
+```
 
 ##### ClientSecurityConfig
 

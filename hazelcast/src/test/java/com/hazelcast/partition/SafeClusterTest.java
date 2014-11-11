@@ -48,7 +48,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
 
     @Test
     public void isClusterSafe_multiNode() throws Exception {
-        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = factory.newHazelcastInstance();
         final HazelcastInstance node2 = factory.newHazelcastInstance();
         final boolean safe1 = node1.getPartitionService().isClusterSafe();
@@ -144,7 +144,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
 
     @Test
     public void isLocalMemberSafe_multiNode() throws Exception {
-        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = factory.newHazelcastInstance();
         final HazelcastInstance node2 = factory.newHazelcastInstance();
         final boolean safe1 = node1.getPartitionService().isLocalMemberSafe();

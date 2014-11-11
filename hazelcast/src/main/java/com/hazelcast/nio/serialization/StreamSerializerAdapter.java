@@ -53,7 +53,7 @@ class StreamSerializerAdapter implements SerializerAdapter {
             if (out instanceof PortableDataOutput) {
                 header = ((PortableDataOutput) out).getPortableHeader();
             }
-            return new HeapData(serializer.getTypeId(), out.toByteArray(), partitionHash, header);
+            return new DefaultData(serializer.getTypeId(), out.toByteArray(), partitionHash, header);
         } finally {
             service.push(out);
         }

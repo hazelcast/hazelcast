@@ -453,7 +453,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
         final Collection<MemberImpl> members = getMemberList();
-        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members, false), getClusterTime(), false);
+        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members), getClusterTime(), false);
         for (MemberImpl member : members) {
             if (member.equals(thisMember)) {
                 continue;
@@ -675,7 +675,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     logger.finest(message);
                 }
                 // send members update back to node trying to join again...
-                Operation op = new MemberInfoUpdateOperation(createMemberInfos(getMemberList(), true),
+                final Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
+                final PostJoinOperation postJoinOp = postJoinOps != null && postJoinOps.length > 0
+                        ? new PostJoinOperation(postJoinOps) : null;
+
+                Operation op = new FinalizeJoinOperation(createMemberInfos(getMemberList()), postJoinOp,
                         getClusterTime(), false);
                 nodeEngine.getOperationService().send(op, target);
             } else {
@@ -892,7 +896,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 // pause migrations until join, member-update and post-join operations are completed.
                 node.getPartitionService().pauseMigration();
                 final Collection<MemberImpl> members = getMemberList();
-                final Collection<MemberInfo> memberInfos = createMemberInfos(members, true);
+                final Collection<MemberInfo> memberInfos = createMemberInfos(members);
                 for (MemberInfo memberJoining : setJoins) {
                     memberInfos.add(memberJoining);
                 }
@@ -923,14 +927,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    private static Collection<MemberInfo> createMemberInfos(Collection<MemberImpl> members, boolean joinOperation) {
+    private static Collection<MemberInfo> createMemberInfos(Collection<MemberImpl> members) {
         final Collection<MemberInfo> memberInfos = new LinkedList<MemberInfo>();
         for (MemberImpl member : members) {
-            if (joinOperation) {
-                memberInfos.add(new MemberInfo(member));
-            } else {
-                memberInfos.add(new MemberInfo(member.getAddress(), member.getUuid(), member.getAttributes()));
-            }
+            memberInfos.add(new MemberInfo(member));
         }
         return memberInfos;
     }

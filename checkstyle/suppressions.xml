@@ -54,7 +54,8 @@
     <suppress checks="JavadocType" files="com.hazelcast.cache.impl[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.cache.impl[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.cache.impl[\\/]"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.client.cache.impl.AbstractClientCacheProxyInternal"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.cache.impl.AbstractClientCacheProxy"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheRecordStore"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
@@ -65,8 +66,11 @@
     <suppress checks="MethodLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
     <suppress checks="AnonInnerLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.config.CacheConfig"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.cache.impl.HazelcastServerCachingProvider"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.client.cache.impl.HazelcastClientCachingProvider"/>
+    <suppress checks="NPathComplexity|CyclomaticComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
+    <suppress checks="MethodCount|ParameterNumber" files="com.hazelcast.cache.impl.AbstractCacheRecordStore"/>
+    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractCacheService"/>
 
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
@@ -85,6 +89,8 @@
     <suppress checks="BooleanExpressionComplexity" files="com.hazelcast.config.MapConfig"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.config.MapConfig"/>
     <suppress checks="MethodCount" files="com.hazelcast.config.MapConfig"/>
+    <suppress checks="MethodCount" files="com.hazelcast.config.CacheSimpleConfig"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.config.CacheConfig"/>
     <!---->
     <suppress checks="MethodCount" files="com.hazelcast.config.SerializationConfig"/>
     <suppress checks="MethodCount" files="com.hazelcast.config.XmlConfigBuilder"/>
@@ -333,6 +339,7 @@
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
     <suppress checks="FileLengthCheck" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.partition.InternalPartitionService"/>
     <suppress checks="MethodCount" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
     <suppress checks="ExecutableStatementCount" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
     <!-- one method left -->

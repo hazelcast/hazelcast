@@ -23,7 +23,7 @@ System.out.println( "number of entries owned on this node = "
     + mapStatistics.getOwnedEntryCount() );
 ```
 
-Below is the list of metrics that can be accessed via `LocalMapStats` object.
+Below is the list of metrics that you can access via the `LocalMapStats` object.
 
 ```java
 /**
@@ -100,37 +100,37 @@ long getRemoveOperationCount();
 
 /**
  * Returns the total latency of put operations. To get the average latency,
- * divide to number of puts
+ * divide by number of puts
  */
 long getTotalPutLatency();
 
 /**
  * Returns the total latency of get operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getTotalGetLatency();
 
 /**
  * Returns the total latency of remove operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getTotalRemoveLatency();
 
 /**
  * Returns the maximum latency of put operations. To get the average latency,
- * divide to number of puts
+ * divide by number of puts
  */
 long getMaxPutLatency();
 
 /**
  * Returns the maximum latency of get operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getMaxGetLatency();
 
 /**
  * Returns the maximum latency of remove operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getMaxRemoveLatency();
 
@@ -162,8 +162,8 @@ NearCacheStats getNearCacheStats();
 ```
 
 #### Near Cache Statistics
-Near Cache statistics can be accessed from `LocalMapStats` via
-`getNearCacheStats()` method which will return a `NearCacheStats` object.
+You can access Near Cache statistics from the `LocalMapStats` object via the
+`getNearCacheStats()` method, which returns a `NearCacheStats` object.
 
 ```java
 HazelcastInstance node = Hazelcast.newHazelcastInstance();
@@ -173,7 +173,7 @@ NearCacheStats nearCacheStatistics = mapStatistics.getNearCacheStats();
 System.out.println( "near cache hit/miss ratio= "
     + nearCacheStatistics.getRatio() );
 ```
-Below is the list of metrics that can be accessed via `NearCacheStats` object.
+Below is the list of metrics that you can access via the `NearCacheStats` object.
 This behavior applies to both client and node near caches.
 
 ```java
@@ -219,7 +219,7 @@ LocalMultiMapStats multiMapStatistics = customers.getLocalMultiMapStats();
 System.out.println( "last update time =  "
     + multiMapStatistics.getLastUpdateTime() );
 ```
-Below is the list of metrics that can be accessed via `LocalMultiMapStats` object.
+Below is the list of metrics that you can access via the `LocalMultiMapStats` object.
 
 ```java
 /**
@@ -275,7 +275,7 @@ long getLockedEntryCount();
 /**
  * Returns the number of entries that the member owns and are dirty (updated
  * but not persisted yet).
- * dirty entry count is meaningful when there is a persistence defined.
+ * dirty entry count is meaningful when a persistence is defined.
  */
 long getDirtyEntryCount();
 
@@ -296,37 +296,37 @@ long getRemoveOperationCount();
 
 /**
  * Returns the total latency of put operations. To get the average latency,
- * divide to number of puts
+ * divide by number of puts
  */
 long getTotalPutLatency();
 
 /**
  * Returns the total latency of get operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getTotalGetLatency();
 
 /**
  * Returns the total latency of remove operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getTotalRemoveLatency();
 
 /**
  * Returns the maximum latency of put operations. To get the average latency,
- * divide to number of puts
+ * divide by number of puts
  */
 long getMaxPutLatency();
 
 /**
  * Returns the maximum latency of get operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getMaxGetLatency();
 
 /**
  * Returns the maximum latency of remove operations. To get the average latency,
- * divide to number of gets
+ * divide by number of gets
  */
 long getMaxRemoveLatency();
 
@@ -365,7 +365,7 @@ System.out.println( "average age of items = "
     + queueStatistics.getAvgAge() );
 ```
 
-Below is the list of metrics that can be accessed via `LocalQueueStats` object.
+Below is the list of metrics that you can access via the `LocalQueueStats` object.
 
 ```java
 /**
@@ -447,7 +447,7 @@ System.out.println( "number of publish operations = "
     + topicStatistics.getPublishOperationCount() );
 ```
 
-Below is the list of metrics that can be accessed via `LocalTopicStats` object.
+Below is the list of metrics that you can access via the `LocalTopicStats` object.
 
 ```java
 /**
@@ -478,7 +478,7 @@ System.out.println( "completed task count = "
     + executorStatistics.getCompletedTaskCount() );
 ```
 
-Below is the list of metrics that can be accessed via `LocalExecutorStats` object.
+Below is the list of metrics that you can access via the `LocalExecutorStats` object.
 
 ```java
 /**

@@ -3,7 +3,7 @@
 
 There are currently three ways to connect to a running Hazelcast cluster:
 
-- [Native Clients](#native-clients)
+- Native Clients ([Java](#java-client), [C++](#c-+-+-client), [.NET](#.net-client))
 
 - [Memcache Clients](#memcache-client)
 

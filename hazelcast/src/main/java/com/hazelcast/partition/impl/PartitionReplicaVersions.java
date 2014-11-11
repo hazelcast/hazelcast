@@ -32,14 +32,16 @@ final class PartitionReplicaVersions {
         long next = newVersions[index];
         boolean valid = (current == next - 1);
         if (valid) {
-            arraycopy(newVersions, 0, versions, 0, newVersions.length);
+            set(newVersions, currentReplica);
             current = next;
         }
         return current >= next;
     }
 
-    void set(long[] newVersions) {
-        arraycopy(newVersions, 0, versions, 0, newVersions.length);
+    void set(long[] newVersions, int fromReplica) {
+        int fromIndex = fromReplica - 1;
+        int len = newVersions.length - fromIndex;
+        arraycopy(newVersions, fromIndex, versions, fromIndex, len);
     }
 
     void clear() {

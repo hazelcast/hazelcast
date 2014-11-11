@@ -2,15 +2,15 @@
 
 ## Set
 
-Hazelcast Set is distributed and concurrent implementation of `java.util.Set`.
+Hazelcast Set is a distributed and concurrent implementation of `java.util.Set`.
 
 * Hazelcast Set does not allow duplicate elements.
 * Hazelcast Set does not preserve the order of elements.
-* Hazelcast Set is non-partitioned data structure which means all the data that belongs to a Set will live on one single partition in that node.
-* Hazelcast Set cannot be scaled beyond the capacity of a single machine. Since the whole Set lives on a single partition, storing large amount of data on a single Set may result in causing memory pressures. Therefore, it is advisable to use multiple sets to store large amount of data; this way all the sets will be spread across the cluster, hence sharing the load.
-* Backup of Hazelcast Set is stored on partition of another node in the cluster so that data is not lost in the event of primary node failure.
-* There is no batching while iterating over Set. All items will be copied to local and iteration will occur locally.
-* Equals method implementation of Hazelcast Set uses serialized byte version of objects compared to `java.util.HashSet`.
+* Hazelcast Set is a non-partitioned data structure: all the data that belongs to a set will live on one single partition in that node.
+* Hazelcast Set cannot be scaled beyond the capacity of a single machine. Since the whole set lives on a single partition, storing large amount of data on a single set may cause memory pressure. Therefore, you should use multiple sets to store large amount of data; this way all the sets will be spread across the cluster, hence sharing the load.
+* A backup of Hazelcast Set is stored on a partition of another node in the cluster so that data is not lost in the event of a primary node failure.
+* All items are copied to the local node and iteration occurs locally.
+* The equals method implemented in Hazelcast Set uses a serialized byte version of objects, as opposed to `java.util.HashSet`.
 
 ### Sample Set Code
 
@@ -36,7 +36,7 @@ while ( iterator.hasNext() ) {
 
 ### Event Registration and Configuration for Set
 
-Hazelcast Set uses ItemListener to listen to events which occur when items are added and removed.
+Hazelcast Set uses `ItemListener` to listen to events which occur when items are added and removed.
 
 ```java
 import java.util.Queue;

@@ -38,6 +38,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -56,6 +57,7 @@ import static com.hazelcast.config.XmlElements.LIST;
 import static com.hazelcast.config.XmlElements.LISTENERS;
 import static com.hazelcast.config.XmlElements.MANAGEMENT_CENTER;
 import static com.hazelcast.config.XmlElements.MAP;
+import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.MEMBER_ATTRIBUTES;
 import static com.hazelcast.config.XmlElements.MULTIMAP;
 import static com.hazelcast.config.XmlElements.NETWORK;
@@ -115,6 +117,18 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             throw new IllegalArgumentException("inputStream can't be null");
         }
         this.in = inputStream;
+    }
+
+    /**
+     * Constructs a XMLConfigBuilder that read from the given URL
+     * @param url
+     * @throws IOException
+     */
+    public XmlConfigBuilder(URL url) throws IOException {
+        if (url == null) {
+            throw new NullPointerException("URL is null!");
+        }
+        in = url.openStream();
     }
 
     /**
@@ -256,6 +270,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             handleSet(node);
         } else if (TOPIC.isEqual(nodeName)) {
             handleTopic(node);
+        } else if (CACHE.isEqual(nodeName)) {
+            handleCache(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
             fillNativeMemoryConfig(node, config.getNativeMemoryConfig());
         } else if (JOB_TRACKER.isEqual(nodeName)) {
@@ -879,6 +895,73 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         this.config.addMapConfig(mapConfig);
+    }
+
+    private void handleCache(final org.w3c.dom.Node node)
+            throws Exception {
+        final String name = getAttribute(node, "name");
+        final CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
+        cacheConfig.setName(name);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            final String value = getTextContent(n).trim();
+            if ("key-type".equals(nodeName)) {
+                cacheConfig.setKeyType(getAttribute(n, "class-name"));
+            } else if ("value-type".equals(nodeName)) {
+                cacheConfig.setValueType(getAttribute(n, "class-name"));
+            } else if ("statistics-enabled".equals(nodeName)) {
+                cacheConfig.setStatisticsEnabled(checkTrue(value));
+            } else if ("management-enabled".equals(nodeName)) {
+                cacheConfig.setManagementEnabled(checkTrue(value));
+            } else if ("read-through".equals(nodeName)) {
+                cacheConfig.setReadThrough(checkTrue(value));
+            } else if ("write-through".equals(nodeName)) {
+                cacheConfig.setWriteThrough(checkTrue(value));
+            } else if ("cache-loader-factory".equals(nodeName)) {
+                cacheConfig.setCacheLoaderFactory(getAttribute(n, "class-name"));
+            } else if ("cache-writer-factory".equals(nodeName)) {
+                cacheConfig.setCacheWriterFactory(getAttribute(n, "class-name"));
+            } else if ("expiry-policy-factory".equals(nodeName)) {
+                cacheConfig.setExpiryPolicyFactory(getAttribute(n, "class-name"));
+            } else if ("cache-entry-listeners".equals(nodeName)) {
+                cacheListenerHandle(n, cacheConfig);
+            } else if ("in-memory-format".equals(nodeName)) {
+                cacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+            } else if ("backup-count".equals(nodeName)) {
+                cacheConfig.setBackupCount(getIntegerValue("backup-count", value, CacheSimpleConfig.DEFAULT_BACKUP_COUNT));
+            } else if ("async-backup-count".equals(nodeName)) {
+                cacheConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, CacheSimpleConfig.MIN_BACKUP_COUNT));
+            } else if ("eviction-percentage".equals(nodeName)) {
+                cacheConfig.setEvictionPercentage(
+                        getIntegerValue("eviction-percentage", value, CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE));
+            } else if ("eviction-threshold-percentage".equals(nodeName)) {
+                cacheConfig.setEvictionThresholdPercentage(
+                        getIntegerValue("eviction-threshold-percentage", value, CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE));
+            } else if ("eviction-policy".equals(nodeName)) {
+                cacheConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
+            }
+        }
+        this.config.addCacheConfig(cacheConfig);
+    }
+
+    private void cacheListenerHandle(Node n, CacheSimpleConfig cacheSimpleConfig) {
+        for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+            if ("cache-entry-listener".equals(cleanNodeName(listenerNode))) {
+                CacheSimpleEntryListenerConfig listenerConfig = new CacheSimpleEntryListenerConfig();
+                for (org.w3c.dom.Node listenerChildNode : new IterableNodeList(listenerNode.getChildNodes())) {
+                    if ("cache-entry-listener-factory".equals(cleanNodeName(listenerChildNode))) {
+                        listenerConfig.setCacheEntryListenerFactory(getAttribute(listenerChildNode, "class-name"));
+                    }
+                    if ("cache-entry-event-filter-factory".equals(cleanNodeName(listenerChildNode))) {
+                        listenerConfig.setCacheEntryEventFilterFactory(getAttribute(listenerChildNode, "class-name"));
+                    }
+                }
+                final NamedNodeMap attrs = listenerNode.getAttributes();
+                listenerConfig.setOldValueRequired(checkTrue(getTextContent(attrs.getNamedItem("old-value-required"))));
+                listenerConfig.setSynchronous(checkTrue(getTextContent(attrs.getNamedItem("synchronous"))));
+                cacheSimpleConfig.addEntryListenerConfig(listenerConfig);
+            }
+        }
     }
 
     private void mapWanReplicationRefHandle(Node n, MapConfig mapConfig) {

@@ -37,7 +37,7 @@ public class NodeMulticastListener implements MulticastListener {
         this.node = node;
         this.trustedInterfaces = node.getConfig().getNetworkConfig()
                 .getJoin().getMulticastConfig().getTrustedInterfaces();
-        this.logger = node.getLogger("NodeMulticastListener");
+        this.logger = node.getLogger(NodeMulticastListener.class.getName());
         this.ourConfig = node.createConfigCheck();
     }
 
@@ -58,7 +58,7 @@ public class NodeMulticastListener implements MulticastListener {
 
     private void logDroppedMessage(Object msg) {
         if (logger.isFinestEnabled()) {
-            logger.info("Dropped: " + msg);
+            logger.finest("Dropped: " + msg);
         }
     }
 

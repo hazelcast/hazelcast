@@ -23,7 +23,7 @@ package com.hazelcast.cache.impl;
  * <p>Note: This interface is for internal usage and shouldn't be used in user code.</p>
  *
  * @see com.hazelcast.cache.impl.CacheEventListenerAdaptor
- * @see com.hazelcast.cache.impl.AbstractCacheProxyInternal.CacheCompletionEventListener
+ * @see AbstractInternalCacheProxy.CacheCompletionEventListener
  *
  */
 public interface CacheEventListener {

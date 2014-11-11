@@ -79,7 +79,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
         AtomicBoolean waitLock = new AtomicBoolean(true);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-        List<Future> futures = new ArrayList<Future>();
+        List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {
             futures.add(executorService.submit(new SimpleCallable(waitLock, i + 1)));
         }
@@ -97,7 +97,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
         AtomicBoolean waitLock = new AtomicBoolean(true);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-        List<Future> futures = new ArrayList<Future>();
+        List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {
             futures.add(executorService.submit(new SimpleCallable(waitLock, i + 1)));
         }
@@ -115,9 +115,10 @@ public class FutureUtilTest extends HazelcastTestSupport {
         AtomicBoolean waitLock = new AtomicBoolean(true);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-        List<Future> futures = new ArrayList<Future>();
+        List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {
-            futures.add(executorService.submit(new TimeoutingTask(waitLock)));
+            Future<Integer> submit = (Future<Integer>) executorService.submit(new TimeoutingTask(waitLock));
+            futures.add(submit);
         }
 
         returnWithDeadline(futures, 1, TimeUnit.SECONDS, new ExceptionHandler() {
@@ -155,7 +156,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
         AtomicBoolean waitLock = new AtomicBoolean(true);
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-        List<Future> futures = new ArrayList<Future>();
+        List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {
             futures.add(executorService.submit(new FailingCallable(waitLock)));
         }

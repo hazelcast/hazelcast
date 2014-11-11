@@ -110,7 +110,7 @@ abstract class AbstractRecordStore implements RecordStore {
         sizeEstimator.reset();
     }
 
-    protected void setRecordValue(Record record, Object value, long now) {
+    protected void updateRecord(Record record, Object value, long now) {
         accessRecord(record, now);
         record.setLastUpdateTime(now);
         record.onUpdate();
@@ -130,17 +130,6 @@ abstract class AbstractRecordStore implements RecordStore {
             SerializationService ss = mapServiceContext.getNodeEngine().getSerializationService();
             QueryableEntry queryableEntry = new QueryEntry(ss, dataKey, dataKey, record.getValue());
             indexService.saveEntryIndex(queryableEntry);
-        }
-    }
-
-    protected void updateTtl(Record record, long ttl) {
-        if (ttl < 0L) {
-            return;
-        }
-        record.setTtl(ttl);
-        if (record.getStatistics() != null) {
-            final long expirationTime = mapServiceContext.getExpirationTime(ttl, getNow());
-            record.getStatistics().setExpirationTime(expirationTime);
         }
     }
 
@@ -209,7 +198,7 @@ abstract class AbstractRecordStore implements RecordStore {
                 }
                 return;
 
-            case OFFHEAP:
+            case NATIVE:
                 Iterator<Record> iter = records.values().iterator();
                 while (iter.hasNext()) {
                     Record record = iter.next();

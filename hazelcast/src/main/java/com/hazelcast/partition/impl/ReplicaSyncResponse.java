@@ -19,8 +19,10 @@ package com.hazelcast.partition.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ResponseHandler;
@@ -54,32 +56,56 @@ public class ReplicaSyncResponse extends Operation
 
     @Override
     public void run() throws Exception {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
+        NodeEngine nodeEngine = getNodeEngine();
+        InternalPartitionServiceImpl partitionService = getService();
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
+
+        InternalPartitionImpl partition = partitionService.getPartition(partitionId, false);
+        boolean isBackup = partition.isOwnerOrBackup(nodeEngine.getThisAddress());
         try {
-            if (tasks != null && tasks.size() > 0) {
-                logApplyReplicaSync(partitionId, replicaIndex);
-                for (Operation op : tasks) {
-                    try {
-                        ErrorLoggingResponseHandler responseHandler
-                                = new ErrorLoggingResponseHandler(nodeEngine.getLogger(op.getClass()));
-                        op.setNodeEngine(nodeEngine)
-                                .setPartitionId(partitionId)
-                                .setReplicaIndex(replicaIndex)
-                                .setResponseHandler(responseHandler);
-                        op.beforeRun();
-                        op.run();
-                        op.afterRun();
-                    } catch (Throwable e) {
-                        logException(op, e);
-                    }
+            if (isBackup) {
+                executeTasks();
+            } else {
+                ILogger logger = getLogger();
+                if (logger.isFinestEnabled()) {
+                    logger.finest("This node is not backup replica of partition: " + partitionId
+                            + ", replica: " + replicaIndex + " anymore.");
                 }
+            }
+            if (tasks != null) {
                 tasks.clear();
             }
         } finally {
-            partitionService.finalizeReplicaSync(partitionId, replicaIndex, replicaVersions);
+            if (isBackup) {
+                partitionService.finalizeReplicaSync(partitionId, replicaIndex, replicaVersions);
+            } else {
+                partitionService.clearReplicaSync(partitionId, replicaIndex);
+            }
+        }
+    }
+
+    private void executeTasks() {
+        int partitionId = getPartitionId();
+        int replicaIndex = getReplicaIndex();
+        if (tasks != null && tasks.size() > 0) {
+            NodeEngine nodeEngine = getNodeEngine();
+            logApplyReplicaSync(partitionId, replicaIndex);
+            for (Operation op : tasks) {
+                try {
+                    ErrorLoggingResponseHandler responseHandler
+                            = new ErrorLoggingResponseHandler(nodeEngine.getLogger(op.getClass()));
+                    op.setNodeEngine(nodeEngine)
+                            .setPartitionId(partitionId)
+                            .setReplicaIndex(replicaIndex)
+                            .setResponseHandler(responseHandler);
+                    op.beforeRun();
+                    op.run();
+                    op.afterRun();
+                } catch (Throwable e) {
+                    logException(op, e);
+                }
+            }
         }
     }
 
@@ -117,7 +143,12 @@ public class ReplicaSyncResponse extends Operation
 
     @Override
     public boolean validatesTarget() {
-        return true;
+        return false;
+    }
+
+    @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
     }
 
     @Override

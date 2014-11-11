@@ -16,8 +16,10 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,6 +31,7 @@ import java.io.IOException;
 
 /**
  * This client request  specifically calls {@link CacheRemoveOperation} on the server side.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheRemoveOperation
  */
 public class CacheRemoveRequest
@@ -41,13 +44,13 @@ public class CacheRemoveRequest
     public CacheRemoveRequest() {
     }
 
-    public CacheRemoveRequest(String name, Data key) {
-        super(name);
+    public CacheRemoveRequest(String name, Data key, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
     }
 
-    public CacheRemoveRequest(String name, Data key, Data currentValue) {
-        super(name);
+    public CacheRemoveRequest(String name, Data key, Data currentValue, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
         this.currentValue = currentValue;
     }
@@ -62,12 +65,13 @@ public class CacheRemoveRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheRemoveOperation(name, key, currentValue, completionId);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createRemoveOperation(key, currentValue, completionId);
     }
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
@@ -76,7 +80,7 @@ public class CacheRemoveRequest
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();

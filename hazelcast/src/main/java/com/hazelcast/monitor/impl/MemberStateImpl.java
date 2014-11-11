@@ -163,7 +163,10 @@ public class MemberStateImpl implements MemberState {
         }
         beans = new SerializableMXBeans();
         beans.fromJson(getObject(json, "beans"));
-        memoryStats.fromJson(getObject(json, "memoryStats"));
+        JsonObject jsonMemoryStats = getObject(json, "memoryStats", null);
+        if (jsonMemoryStats != null) {
+            memoryStats.fromJson(jsonMemoryStats);
+        }
     }
 
     public void clearPartitions() {

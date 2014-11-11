@@ -57,8 +57,8 @@ public final class HazelcastClient {
         OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
     }
 
-    private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS
-            = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
+    private static final ConcurrentMap<String, HazelcastClientProxy> CLIENTS
+            = new ConcurrentHashMap<String, HazelcastClientProxy>(5);
 
     // we don't want instances.
     private HazelcastClient() {
@@ -81,12 +81,23 @@ public final class HazelcastClient {
             client.start();
             OutOfMemoryErrorDispatcher.register(client);
             proxy = new HazelcastClientProxy(client);
-            CLIENTS.put(client.getId(), proxy);
+            CLIENTS.put(client.getName(), proxy);
         } finally {
             Thread.currentThread().setContextClassLoader(tccl);
         }
         return proxy;
     }
+
+    /**
+     * Returns an existing HazelcastClient with instanceName.
+     * <p/>
+     * @param instanceName Name of the HazelcastInstance (client) which can be retrieved by {@link HazelcastInstance#getName()}
+     * @return HazelcastInstance
+     */
+    public static HazelcastInstance getHazelcastClientByName(String instanceName) {
+        return CLIENTS.get(instanceName);
+    }
+
 
     /**
      * Gets an immutable collection of all client HazelcastInstances created in this JVM.
@@ -125,6 +136,41 @@ public final class HazelcastClient {
             proxy.client = null;
         }
         CLIENTS.clear();
+    }
+
+    /**
+     * Shutdown the provided client and remove it from the managed list
+     * @param instance the hazelcast client instance
+     */
+    public static void shutdown(HazelcastInstance instance) {
+        if(instance instanceof HazelcastClientProxy){
+            final HazelcastClientProxy proxy = (HazelcastClientProxy) instance;
+            String instanceName = proxy.client.getName();
+            try {
+                proxy.client.shutdown();
+            } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
+            }
+            proxy.client = null;
+            CLIENTS.remove(instanceName);
+        }
+    }
+
+    /**
+     * Shutdown the provided client and remove it from the managed list
+     * @param instanceName the hazelcast client instance name
+     */
+    public static void shutdown(String instanceName) {
+        HazelcastClientProxy proxy = CLIENTS.remove(instanceName);
+        if(proxy != null) {
+            try {
+                proxy.client.shutdown();
+            } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
+            }
+            proxy.client = null;
+        }
+
     }
 
 }

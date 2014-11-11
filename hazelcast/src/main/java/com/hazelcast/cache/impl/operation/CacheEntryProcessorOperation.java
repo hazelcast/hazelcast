@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.BackupAwareEntryProcessor;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
@@ -39,6 +40,7 @@ public class CacheEntryProcessorOperation
     private Object[] arguments;
 
     private transient CacheRecord backupRecord;
+    private transient EntryProcessor backupEntryProcessor;
 
     public CacheEntryProcessorOperation() {
     }
@@ -58,8 +60,11 @@ public class CacheEntryProcessorOperation
 
     @Override
     public Operation getBackupOperation() {
-        // TODO: Add sub-interface to backup using same entry processor instead of put backup
-        return new CachePutBackupOperation(name, key, backupRecord);
+        if (backupEntryProcessor != null) {
+            return new CacheBackupEntryProcessorOperation(name, key, backupEntryProcessor, arguments);
+        } else {
+            return new CachePutBackupOperation(name, key, backupRecord);
+        }
     }
 
     @Override
@@ -71,7 +76,13 @@ public class CacheEntryProcessorOperation
     public void run()
             throws Exception {
         response = cache.invoke(key, entryProcessor, arguments);
-        backupRecord = cache.getRecord(key);
+        if (entryProcessor instanceof BackupAwareEntryProcessor) {
+            BackupAwareEntryProcessor processor = (BackupAwareEntryProcessor) entryProcessor;
+            backupEntryProcessor = processor.createBackupEntryProcessor();
+        }
+        if (backupEntryProcessor == null) {
+            backupRecord = cache.getRecord(key);
+        }
     }
 
     @Override

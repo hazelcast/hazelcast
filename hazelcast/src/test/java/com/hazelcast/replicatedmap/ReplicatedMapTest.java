@@ -22,7 +22,6 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
@@ -34,6 +33,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,6 +42,7 @@ import java.lang.reflect.Field;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -169,8 +170,7 @@ public class ReplicatedMapTest
         final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
         final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
 
-        HazelcastInstance testInstance = Hazelcast.newHazelcastInstance();
-        final Map<String, String> mapTest = testInstance.getMap("test");
+        final Map<String, String> mapTest = new HashMap<String, String>();
         for (int i = 0; i < 100; i++) {
             mapTest.put("foo-" + i, "bar");
         }

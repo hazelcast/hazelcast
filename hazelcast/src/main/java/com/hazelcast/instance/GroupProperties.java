@@ -45,6 +45,20 @@ public class GroupProperties {
 
     public static final String PROP_HEALTH_MONITORING_LEVEL = "hazelcast.health.monitoring.level";
     public static final String PROP_HEALTH_MONITORING_DELAY_SECONDS = "hazelcast.health.monitoring.delay.seconds";
+
+    /**
+     * The performance monitor is a tool useful to see all kinds of internal performance metrics. Currently it is quite
+     * limited since it will only show read/write events per selector and operations executed per operation-thread. But in
+     * the future all kinds of new metrics will be added.
+     *
+     * The performance monitor logs all metrics into the log file.
+     */
+    public static final String PROP_PERFORMANCE_MONITORING_ENABLED = "hazelcast.performance.monitoring.enabled";
+    /**
+     * The delay in seconds between monitoring of the performance.
+     */
+    public static final String PROP_PERFORMANCE_MONITORING_DELAY_SECONDS = "hazelcast.performance.monitoring.delay.seconds";
+
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
@@ -149,6 +163,10 @@ public class GroupProperties {
     public final GroupProperty HEALTH_MONITORING_LEVEL;
 
     public final GroupProperty HEALTH_MONITORING_DELAY_SECONDS;
+
+    public final GroupProperty PERFORMANCE_MONITORING_ENABLED;
+
+    public final GroupProperty PERFORMANCE_MONITORING_DELAY_SECONDS;
 
     public final GroupProperty IO_THREAD_COUNT;
 
@@ -287,6 +305,11 @@ public class GroupProperties {
         HEALTH_MONITORING_LEVEL
                 = new GroupProperty(config, PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
         HEALTH_MONITORING_DELAY_SECONDS = new GroupProperty(config, PROP_HEALTH_MONITORING_DELAY_SECONDS, "30");
+
+        PERFORMANCE_MONITORING_ENABLED
+                = new GroupProperty(config, PROP_PERFORMANCE_MONITORING_ENABLED, "false");
+        PERFORMANCE_MONITORING_DELAY_SECONDS = new GroupProperty(config, PROP_PERFORMANCE_MONITORING_DELAY_SECONDS, "30");
+
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");

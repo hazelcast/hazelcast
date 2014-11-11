@@ -78,7 +78,7 @@ This also is not a real MapReduce phase but is the final step in Hazelcast after
 
 The Internet is full of useful resources to find deeper information on MapReduce. Below is a short collection of some more introduction material. In addition, there are a lot of amazing books written about all kinds of MapReduce patterns and how to write a MapReduce function for your use case. To name them all is sadly out of scope of this documentation.
 
- - <http://labs.google.com/papers/mapreduce.html>
+ - <http://research.google.com/archive/mapreduce.html>
  - <http://en.wikipedia.org/wiki/MapReduce>
  - <http://hci.stanford.edu/courses/cs448g/a2/files/map_reduce_tutorial.pdf>
  - <http://ksat.me/map-reduce-a-really-simple-introduction-kloudo/>

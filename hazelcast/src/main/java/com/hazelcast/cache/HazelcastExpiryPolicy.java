@@ -24,32 +24,42 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
 /**
- * <p>Hazelcast provides custom expiry policy on each cache operation. This class comes in handy for that
- * functionality.
+ * <p>Hazelcast provides overloads of the typical cache operations with a custom
+ * {@link javax.cache.expiry.ExpiryPolicy} parameter.<br>
+ * This class provides a custom implementation of an {@link javax.cache.expiry.ExpiryPolicy} to
+ * react on all three types of policies:
+ * <ul>
+ *     <li>Create</li>
+ *     <li>Access</li>
+ *     <li>Update</li>
+ * </ul>
  * <p>
  *     Sample usage:
  * <pre>
- *     <code>ICache&lt;String , SessionData&gt; icache =  cache.unwrap( ICache.class );
- *     HazelcastExpiryPolicy customExpiry = new HazelcastExpiryPolicy(20, 30, 40, TimeUnit.SECONDS);
- *     icache.put(&quot;key1&quot;, sessionData, customExpiry );
- *     </code>
+ *   ICache&lt;Key, Value&gt; unwrappedCache =  cache.unwrap( ICache.class );
+ *   HazelcastExpiryPolicy customExpiry = new HazelcastExpiryPolicy(20, 30, 40, TimeUnit.SECONDS);
+ *   unwrappedCache.put(&quot;key1&quot;, value, customExpiry );
  * </pre>
  * </p>
+ *
+ * @since 3.3.1
  */
-public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable {
+public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerializable, Serializable {
 
     private Duration create;
     private Duration access;
     private Duration update;
 
     /**
-     * Constructs an expiry policy with provided values in milliseconds.
-     * @param createMillis
-     * @param accessMillis
-     * @param updateMillis
+     * Constructs an expiry policy with provided values for creation, access and update in milliseconds.
+     *
+     * @param createMillis expiry time in milliseconds after creation
+     * @param accessMillis expiry time in milliseconds after last access
+     * @param updateMillis expiry time in milliseconds after last update
      */
     public HazelcastExpiryPolicy(long createMillis, long accessMillis, long updateMillis) {
         this(new Duration(TimeUnit.MILLISECONDS, createMillis), new Duration(TimeUnit.MILLISECONDS, accessMillis),
@@ -57,11 +67,13 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     }
 
     /**
-     * Constructs an expiry policy with provided values and TimeUnit.
-     * @param createDurationAmount
-     * @param accessDurationAmount
-     * @param updateDurationAmount
-     * @param timeUnit
+     * Constructs an expiry policy with provided values for creation, access and update as well as a
+     * {@link java.util.concurrent.TimeUnit} to convert those values to internally used time unites.
+     *
+     * @param createDurationAmount expiry time after creation
+     * @param accessDurationAmount expiry time after last access
+     * @param updateDurationAmount expiry time after last update
+     * @param timeUnit time unit of the previous value parameters
      */
     public HazelcastExpiryPolicy(long createDurationAmount, long accessDurationAmount, long updateDurationAmount,
                                  TimeUnit timeUnit) {
@@ -70,8 +82,10 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     }
 
     /**
-     * Expiry policy wrapper.
-     * @param expiryPolicy
+     * Copy Constructor for an already existing {@link javax.cache.expiry.ExpiryPolicy}. Values are
+     * copied to the internal state as is.
+     *
+     * @param expiryPolicy expiry policy to copy
      */
     public HazelcastExpiryPolicy(ExpiryPolicy expiryPolicy) {
         if (expiryPolicy != null) {
@@ -82,10 +96,12 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     }
 
     /**
-     * Constructs an expiry policy with provided values in Duration.
-     * @param create
-     * @param access
-     * @param update
+     * Constructs an expiry policy with provided values for creation, access and update by providing
+     * instances of the {@link javax.cache.expiry.Duration} class.
+     *
+     * @param create expiry duration after creation
+     * @param access expiry duration after last access
+     * @param update expiry duration after last update
      */
     public HazelcastExpiryPolicy(Duration create, Duration access, Duration update) {
         this.create = create;

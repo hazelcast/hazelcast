@@ -20,18 +20,20 @@ package com.hazelcast.cache;
  * Cache statistics
  * <p>
  *     Cache statistics are accumulated since the time a cache is created. <br/>
- *     Each CacheStatistics represents a named cache's per node statistics data.
+ *     An instance of this class represents local node values only! For an accumulated view
+ *     on cluster level the user has to retrieve all nodes statistics and aggregate values
+ *     on his own.
  * </p>
  * <p>
- *     Sample code for accessing to node's local cache statistics:
+ *     Sample code:
  *     <pre>
- *         <code>ICache&lt;String , SessionData&gt; iCache =  cache.unwrap( ICache.class );
- *         CacheStatistics nodeLocalCacheStatistics = iCache.getLocalCacheStatistics();
- *         long cacheHits = nodeLocalCacheStatistics.getCacheHits();
- *         </code>
+ *       ICache&lt;Key, Value&gt; unwrappedCache =  cache.unwrap( ICache.class );
+ *       CacheStatistics cacheStatistics = unwrappedCache.getLocalCacheStatistics();
+ *       long cacheHits = cacheStatistics.getCacheHits();
  *     </pre>
  * </p>
  *
+ * @since 3.3.1
  */
 public interface CacheStatistics {
 
@@ -49,7 +51,7 @@ public interface CacheStatistics {
      * methods of {@link javax.cache.Cache.Entry} or
      * {@link javax.cache.processor.MutableEntry} are called.
      *
-     * @return the number of hits.
+     * @return the number of hits
      */
     long getCacheHits();
 
@@ -59,7 +61,7 @@ public interface CacheStatistics {
      * It is calculated as:
      * {@link #getCacheHits} divided by {@link #getCacheGets ()} * 100.
      *
-     * @return the percentage of successful hits, as a decimal, e.g 75.
+     * @return the percentage of successful hits, as a decimal, e.g 75
      */
     float getCacheHitPercentage();
 
@@ -84,7 +86,7 @@ public interface CacheStatistics {
      * <p>
      * Refer to the implementation for precise semantics.
      *
-     * @return the number of misses.
+     * @return the number of misses
      */
     long getCacheMisses();
 
@@ -95,7 +97,7 @@ public interface CacheStatistics {
      * This is calculated as {@link #getCacheMisses()} divided by
      * {@link #getCacheGets()} * 100.
      *
-     * @return the percentage of accesses that failed to find anything.
+     * @return the percentage of accesses that failed to find anything
      */
     float getCacheMissPercentage();
 
@@ -109,7 +111,7 @@ public interface CacheStatistics {
      * In caches with multiple tiered storage, a get may be implemented as a get
      * to the cache or to the first tier.
      *
-     * @return the number of gets.
+     * @return the number of gets
      */
     long getCacheGets();
 
@@ -121,7 +123,7 @@ public interface CacheStatistics {
      * Replaces, where a put occurs which overrides an existing mapping is counted
      * as a put.
      *
-     * @return the number of puts.
+     * @return the number of puts
      */
     long getCachePuts();
 
@@ -129,7 +131,7 @@ public interface CacheStatistics {
      * The total number of removals from the cache. This does not include evictions,
      * where the cache itself initiates the removal to make space.
      *
-     * @return the number of removals.
+     * @return the number of removals
      */
     long getCacheRemovals();
 
@@ -138,7 +140,7 @@ public interface CacheStatistics {
      * initiated by the cache itself to free up space. An eviction is not treated as
      * a removal and does not appear in the removal counts.
      *
-     * @return the number of evictions.
+     * @return the number of evictions
      */
     long getCacheEvictions();
 
@@ -148,21 +150,21 @@ public interface CacheStatistics {
      * In a read-through cache, the time taken to load an entry on miss is not
      * included in get time.
      *
-     * @return the time in µs.
+     * @return the time in µs
      */
     float getAverageGetTime();
 
     /**
      * The mean time to execute puts.
      *
-     * @return the time in µs.
+     * @return the time in µs
      */
     float getAveragePutTime();
 
     /**
      * The mean time to execute removes.
      *
-     * @return the time in µs.
+     * @return the time in µs
      */
     float getAverageRemoveTime();
 
