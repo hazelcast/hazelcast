@@ -18,7 +18,6 @@ package com.hazelcast.util;
 
 import java.util.Arrays;
 
-@edu.umd.cs.findbugs.annotations.SuppressWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
 public final class HashUtil {
 
     /**
@@ -27,6 +26,4 @@ public final class HashUtil {
     public static int hashCode(Object ... objects) {
         return Arrays.hashCode(objects);
     }
-
-    private HashUtil(){}
 }
