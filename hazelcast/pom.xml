@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.4-SNAPSHOT</version>
+        <version>3.4-RC1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -55,11 +55,7 @@
                     <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     <abbrevLength>7</abbrevLength>
                     <gitDescribe>
-                        <skip>false</skip>
-                        <always>false</always>
-                        <abbrev>7</abbrev>
-                        <dirty>-dirty</dirty>
-                        <forceLongFormat>false</forceLongFormat>
+                        <skip>true</skip>
                     </gitDescribe>
                 </configuration>
             </plugin>

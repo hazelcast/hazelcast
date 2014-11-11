@@ -17,11 +17,12 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.helpers.DummyMapStore;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -29,18 +30,13 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.List;
+
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.xml.sax.SAXException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,10 +45,18 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import org.xml.sax.SAXException;
+
 //it needs to run serial because some tests are relying on System properties they are setting themselves.
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class XMLConfigBuilderTest {
+public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @After
     @Before
@@ -528,7 +532,7 @@ public class XMLConfigBuilderTest {
                         "</hazelcast>\n";
 
         Config config = buildConfig(xml);
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz = createHazelcastInstance(config);
         hz.getMap(mapName);
 
         MapConfig mapConfig = hz.getConfig().getMapConfig(mapName);

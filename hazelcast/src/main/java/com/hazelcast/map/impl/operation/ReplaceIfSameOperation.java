@@ -53,7 +53,7 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     }
 
     public boolean shouldBackup() {
-        return successful;
+        return successful && recordStore.getRecord(dataKey) != null;
     }
 
     @Override

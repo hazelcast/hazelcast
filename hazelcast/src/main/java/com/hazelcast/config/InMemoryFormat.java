@@ -21,15 +21,16 @@ package com.hazelcast.config;
 */
 public enum InMemoryFormat {
     /**
-     * As a Binary
+     * As Binary
      */
     BINARY,
     /**
-     * As a Object
+     * As Object
      */
     OBJECT,
+
     /**
-     * As a OffHeap
+     * As native storage
      */
-    OFFHEAP
+    NATIVE
 }

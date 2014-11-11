@@ -16,17 +16,16 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.concurrent.lock.operations.GetLockCountOperation;
 import com.hazelcast.concurrent.lock.operations.GetRemainingLeaseTimeOperation;
 import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
-
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
@@ -79,6 +78,20 @@ public final class LockProxySupport {
         InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
         if (!f.getSafely()) {
             throw new IllegalStateException();
+        }
+    }
+
+    public void lockInterruptly(NodeEngine nodeEngine, Data key) throws InterruptedException {
+        lockInterruptly(nodeEngine, key, -1);
+    }
+
+    public void lockInterruptly(NodeEngine nodeEngine, Data key, long ttl) throws InterruptedException {
+        LockOperation operation = new LockOperation(namespace, key, getThreadId(), ttl, -1);
+        InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
+        try {
+            f.get();
+        } catch (Throwable t) {
+            throw rethrowAllowInterrupted(t);
         }
     }
 

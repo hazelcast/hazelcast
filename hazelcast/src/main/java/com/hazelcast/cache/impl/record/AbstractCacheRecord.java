@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
@@ -29,23 +29,15 @@ import java.io.IOException;
  *
  * @param <V>
  */
-abstract class AbstractCacheRecord<V> implements CacheRecord<V> {
+public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSerializable {
 
-    private Data key;
+    protected long expirationTime = -1;
 
-    private long expirationTime = -1;
-
-    public AbstractCacheRecord() {
+    protected AbstractCacheRecord() {
     }
 
-    AbstractCacheRecord(Data key, long expirationTime) {
-        this.key = key;
+    public AbstractCacheRecord(long expirationTime) {
         this.expirationTime = expirationTime;
-    }
-
-    @Override
-    public Data getKey() {
-        return key;
     }
 
     public long getExpirationTime() {
@@ -64,13 +56,11 @@ abstract class AbstractCacheRecord<V> implements CacheRecord<V> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeData(key);
         out.writeLong(expirationTime);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = in.readData();
         expirationTime = in.readLong();
     }
 }

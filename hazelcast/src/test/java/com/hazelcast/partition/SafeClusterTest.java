@@ -6,13 +6,14 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 // TODO tests are not sufficient. add more tests.
 /**
@@ -32,7 +33,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
 
     @Test
     public void isClusterSafe_multiNode() throws Exception {
-        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = factory.newHazelcastInstance();
         final HazelcastInstance node2 = factory.newHazelcastInstance();
         final boolean safe1 = node1.getPartitionService().isClusterSafe();
@@ -52,7 +53,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
 
     @Test
     public void isLocalMemberSafe_multiNode() throws Exception {
-        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = factory.newHazelcastInstance();
         final HazelcastInstance node2 = factory.newHazelcastInstance();
         final boolean safe1 = node1.getPartitionService().isLocalMemberSafe();

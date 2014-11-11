@@ -110,7 +110,7 @@ abstract class AbstractRecordStore implements RecordStore {
         sizeEstimator.reset();
     }
 
-    protected void setRecordValue(Record record, Object value, long now) {
+    protected void updateRecord(Record record, Object value, long now) {
         accessRecord(record, now);
         record.setLastUpdateTime(now);
         record.onUpdate();
@@ -198,7 +198,7 @@ abstract class AbstractRecordStore implements RecordStore {
                 }
                 return;
 
-            case OFFHEAP:
+            case NATIVE:
                 Iterator<Record> iter = records.values().iterator();
                 while (iter.hasNext()) {
                     Record record = iter.next();

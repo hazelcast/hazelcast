@@ -29,11 +29,12 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -55,6 +56,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
                 .mapName(mapName)
                 .withMapStore(mapStore)
                 .withNodeCount(2)
+                .withNodeFactory(createHazelcastInstanceFactory(2))
                 .withWriteDelaySeconds(1)
                 .withBackupCount(1)
                 .withPartitionCount(1)

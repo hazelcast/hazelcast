@@ -99,8 +99,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     }
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
-    private static final ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS
-            = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
 
     private final ClientProperties clientProperties;
@@ -450,7 +448,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     }
 
     public void doShutdown() {
-        CLIENTS.remove(id);
         proxyManager.destroy();
         executionService.shutdown();
         partitionService.stop();

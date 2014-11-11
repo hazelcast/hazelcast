@@ -39,10 +39,6 @@ public class CacheGetAndReplaceOperation
     public CacheGetAndReplaceOperation() {
     }
 
-    public CacheGetAndReplaceOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
-        this(name, key, value, expiryPolicy, IGNORE_COMPLETION);
-    }
-
     public CacheGetAndReplaceOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, int completionId) {
         super(name, key, completionId);
         this.value = value;

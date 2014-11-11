@@ -83,7 +83,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
-        wanReplicationService = node.getNodeExtension().getWanReplicationService();
+        wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
     }
 
     @PrivateApi
@@ -377,7 +377,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     @Override
     public Storage<DataRef> getOffHeapStorage() {
-        return node.getNodeExtension().getOffHeapStorage();
+        return node.getNodeExtension().getNativeDataStorage();
     }
 
     @PrivateApi

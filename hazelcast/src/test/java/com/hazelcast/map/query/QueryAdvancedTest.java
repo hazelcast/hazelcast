@@ -26,17 +26,24 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.query.SampleObjects.Value;
+import com.hazelcast.query.SampleObjects.ValueType;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,21 +56,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.map.query.QueryBasicTest.doFunctionalQueryTest;
+import static com.hazelcast.map.query.QueryBasicTest.doFunctionalSQLQueryTest;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.map.query.QueryBasicTest.doFunctionalQueryTest;
-import static com.hazelcast.map.query.QueryBasicTest.doFunctionalSQLQueryTest;
-import static com.hazelcast.query.SampleObjects.Employee;
-import static com.hazelcast.query.SampleObjects.Value;
-import static com.hazelcast.query.SampleObjects.ValueType;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class QueryAdvancedTest extends HazelcastTestSupport {
 
@@ -324,59 +329,6 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("active", false);
         doFunctionalSQLQueryTest(imap);
     }
-
-    @Test(timeout = 1000 * 60)
-    public void testNullIndexing() {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-
-        EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate predicate = e.is("active").and(e.get("name").equal(null).and(e.get("city").isNull()));
-
-        IMap imap1 = h1.getMap("employees");
-        IMap imap2 = h2.getMap("employees");
-
-        for (int i = 0; i < 5000; i++) {
-            boolean test = i % 2 == 0;
-            imap1.put(String.valueOf(i), new Employee(test ? null : "name" + i,
-                    test ? null : "city" + i, i % 60, true, (double) i));
-        }
-        long start = Clock.currentTimeMillis();
-        Set<Map.Entry> entries = imap2.entrySet(predicate);
-        long tookWithout = (Clock.currentTimeMillis() - start);
-        assertEquals(2500, entries.size());
-        for (Map.Entry entry : entries) {
-            Employee c = (Employee) entry.getValue();
-            assertNull(c.getName());
-            assertNull(c.getCity());
-        }
-        imap1.destroy();
-
-        imap1 = h1.getMap("employees2");
-        imap2 = h2.getMap("employees2");
-        imap1.addIndex("name", false);
-        imap1.addIndex("city", true);
-        imap1.addIndex("age", true);
-        imap1.addIndex("active", false);
-
-        for (int i = 0; i < 5000; i++) {
-            boolean test = i % 2 == 0;
-            imap1.put(String.valueOf(i), new Employee(test ? null : "name" + i,
-                    test ? null : "city" + i, i % 60, true, (double) i));
-        }
-        start = Clock.currentTimeMillis();
-        entries = imap2.entrySet(predicate);
-        long tookWithIndex = (Clock.currentTimeMillis() - start);
-        assertEquals(2500, entries.size());
-        for (Map.Entry entry : entries) {
-            Employee c = (Employee) entry.getValue();
-            assertNull(c.getName());
-            assertNull(c.getCity());
-        }
-        assertTrue("WithIndex: " + tookWithIndex + ", without: " + tookWithout, tookWithIndex < tookWithout);
-    }
-
 
     @Test(timeout = 1000 * 60)
     public void testTwoMembers() {
@@ -688,6 +640,59 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
             }
         }
     }
+
+    @Test
+    public void testUnknownPortableField_notCausesQueryException_withoutIndex() {
+        final String mapName = randomMapName();
+
+        final Config config = new Config();
+        config.getSerializationConfig().addPortableFactory(666, new PortableFactory() {
+            public Portable create(int classId) {
+                return new SampleObjects.PortableEmployee();
+            }
+        });
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+
+        final IMap map = hazelcastInstance.getMap(mapName);
+
+
+        for (int i = 0; i < 5; i++) {
+            map.put(i, new SampleObjects.PortableEmployee(i, "name_" + i));
+        }
+
+        Collection values = map.values(new SqlPredicate("notExist = name_0 OR a > 1"));
+
+        assertEquals(3, values.size());
+    }
+
+    @Test
+    public void testUnknownPortableField_notCausesQueryException_withIndex() {
+        final String mapName = randomMapName();
+
+        final Config config = new Config();
+        config.getSerializationConfig().addPortableFactory(666, new PortableFactory() {
+            public Portable create(int classId) {
+                return new SampleObjects.PortableEmployee();
+            }
+        });
+        config.getMapConfig(mapName)
+                .addMapIndexConfig(new MapIndexConfig("notExist", false))
+                .addMapIndexConfig(new MapIndexConfig("n", false));
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+
+        final IMap map = hazelcastInstance.getMap(mapName);
+
+
+        for (int i = 0; i < 5; i++) {
+            map.put(i, new SampleObjects.PortableEmployee(i, "name_" + i));
+        }
+
+        Collection values = map.values(new SqlPredicate("n = name_2 OR notExist = name_0"));
+
+        assertEquals(1, values.size());
+    }
+
 
     private static class QueryValue implements Serializable {
         private String name;

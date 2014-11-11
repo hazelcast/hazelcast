@@ -16,6 +16,8 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
@@ -81,8 +83,8 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public Storage<DataRef> getOffHeapStorage() {
-        throw new UnsupportedOperationException("Offheap feature is only available on Hazelcast Enterprise!");
+    public Storage<DataRef> getNativeDataStorage() {
+        throw new UnsupportedOperationException("Native memory feature is only available on Hazelcast Enterprise!");
     }
 
     public SerializationService createSerializationService() {
@@ -120,8 +122,13 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public WanReplicationService getWanReplicationService() {
-        return new WanReplicationServiceImpl(node);
+    public <T> T createService(Class<T> clazz) {
+        if (WanReplicationService.class.isAssignableFrom(clazz)) {
+            return (T) new WanReplicationServiceImpl(node);
+        } else if (ICacheService.class.isAssignableFrom(clazz)) {
+            return (T) new CacheService();
+        }
+        throw new IllegalArgumentException("Unknown service class: " + clazz);
     }
 
     @Override
@@ -162,4 +169,5 @@ public class DefaultNodeExtension implements NodeExtension {
     public void destroy() {
         logger.info("Destroying node NodeExtension.");
     }
+
 }

@@ -22,28 +22,28 @@ import com.hazelcast.util.HashUtil;
 import java.nio.ByteOrder;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
-public final class HeapData implements MutableData {
+public final class DefaultData implements MutableData {
 
     private int type = SerializationConstants.CONSTANT_TYPE_NULL;
     private byte[] header;
     private byte[] data;
     private int partitionHash;
 
-    public HeapData() {
+    public DefaultData() {
     }
 
-    public HeapData(int type, byte[] data) {
+    public DefaultData(int type, byte[] data) {
         this.data = data;
         this.type = type;
     }
 
-    public HeapData(int type, byte[] data, int partitionHash) {
+    public DefaultData(int type, byte[] data, int partitionHash) {
         this.data = data;
         this.partitionHash = partitionHash;
         this.type = type;
     }
 
-    public HeapData(int type, byte[] data, int partitionHash, byte[] header) {
+    public DefaultData(int type, byte[] data, int partitionHash, byte[] header) {
         this.type = type;
         this.data = data;
         this.partitionHash = partitionHash;

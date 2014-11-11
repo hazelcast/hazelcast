@@ -49,6 +49,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * {@link com.hazelcast.cache.ICache} is the designated interface.</p>
  * <p>AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.</p>
  * <p>Note: this partial implementation is used by client.</p>
+ *
  * @param <K> the type of key
  * @param <V> the type of value
  */
@@ -75,7 +76,7 @@ abstract class AbstractClientCacheProxy<K, V>
         if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
             return createCompletedFuture(cached);
         }
-        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy);
+        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
         ClientCallFuture future;
         final ClientContext context = clientContext;
         try {
@@ -318,7 +319,6 @@ abstract class AbstractClientCacheProxy<K, V>
     }
 
     //endregion ICACHE: JCACHE EXTENSION
-
 
 
 }

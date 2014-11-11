@@ -60,10 +60,10 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
  * ICache implementation for client
- *
+ * <p/>
  * This proxy is the implementation of ICache and javax.cache.Cache which is returned by
  * HazelcastClientCacheManager. Represent a cache on client.
- *
+ * <p/>
  * This implementation is a thin proxy implementation using hazelcast client infrastructure
  *
  * @param <K> key type
@@ -101,7 +101,7 @@ public class ClientCacheProxy<K, V>
         if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
             return true;
         }
-        CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData);
+        CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
         ICompletableFuture future;
         try {
             future = invoke(request, keyData, false);
@@ -123,7 +123,7 @@ public class ClientCacheProxy<K, V>
         for (K key : keys) {
             keysData.add(toData(key));
         }
-        final CacheLoadAllRequest request = new CacheLoadAllRequest(nameWithPrefix, keysData, replaceExistingValues);
+        CacheLoadAllRequest request = new CacheLoadAllRequest(nameWithPrefix, keysData, replaceExistingValues);
         try {
             submitLoadAllTask(request, completionListener);
         } catch (Exception e) {
@@ -237,7 +237,7 @@ public class ClientCacheProxy<K, V>
         }
         final Data keyData = toData(key);
         final CacheEntryProcessorRequest request = new CacheEntryProcessorRequest(nameWithPrefix, keyData, entryProcessor,
-                arguments);
+                cacheConfig.getInMemoryFormat(), arguments);
         try {
             final ICompletableFuture<Data> f = invoke(request, keyData, true);
             final Data data = getSafely(f);

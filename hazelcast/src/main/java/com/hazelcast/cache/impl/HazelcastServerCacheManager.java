@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
@@ -26,6 +27,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -48,33 +50,26 @@ public class HazelcastServerCacheManager
         extends AbstractHazelcastCacheManager {
 
     private final NodeEngine nodeEngine;
-    private final CacheService cacheService;
+    private final ICacheService cacheService;
 
     public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
         super(cachingProvider, uri, classLoader, properties);
-        if (hazelcastInstance == null) {
-            throw new NullPointerException("hazelcastInstance missing");
-        }
+        checkIfNotNull(hazelcastInstance, "hazelcastInstance cannot be null");
         this.hazelcastInstance = hazelcastInstance;
         //just to get a reference to nodeEngine and cacheService
         final CacheDistributedObject setupRef = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
-        nodeEngine = setupRef.getNodeEngine();
+        nodeEngine = (NodeEngineImpl) setupRef.getNodeEngine();
         cacheService = setupRef.getService();
 
         //TODO: should we destroy the ref ?
         //setupRef.destroy();
-        logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
     public void enableManagement(String cacheName, boolean enabled) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException();
-        }
+        checkIfManagerNotClosed();
+        checkIfNotNull(cacheName, "cacheName cannot be null");
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         cacheService.setManagementEnabled(null, cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
@@ -83,12 +78,8 @@ public class HazelcastServerCacheManager
 
     @Override
     public void enableStatistics(String cacheName, boolean enabled) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException();
-        }
+        checkIfManagerNotClosed();
+        checkIfNotNull(cacheName, "cacheName cannot be null");
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         cacheService.setStatisticsEnabled(null, cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
@@ -118,13 +109,13 @@ public class HazelcastServerCacheManager
     }
 
     @Override
-    protected <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
+    protected <K, V> CacheConfig<K, V> createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
         //CREATE THE CONFIG ON PARTITION BY cacheNamePrefix using a request
         final CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheConfig);
         final OperationService operationService = nodeEngine.getOperationService();
 
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
-        final InternalCompletableFuture<Boolean> f = operationService
+        final InternalCompletableFuture<CacheConfig<K, V>> f = operationService
                 .invokeOnPartition(CacheService.SERVICE_NAME, cacheCreateConfigOperation, partitionId);
         return f.getSafely();
     }
@@ -140,9 +131,9 @@ public class HazelcastServerCacheManager
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix) {
+    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix, String cacheName) {
         //remote check
-        final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix);
+        final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix, cacheName);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
                                                                    .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
@@ -155,6 +146,17 @@ public class HazelcastServerCacheManager
         super.removeCacheConfigFromLocal(cacheName);
     }
 
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        if (HazelcastServerCacheManager.class.isAssignableFrom(clazz)) {
+            return (T) this;
+        }
+        throw new IllegalArgumentException();
+    }
+
     protected void postClose() {
+        if (properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION) != null) {
+            hazelcastInstance.shutdown();
+        }
     }
 }

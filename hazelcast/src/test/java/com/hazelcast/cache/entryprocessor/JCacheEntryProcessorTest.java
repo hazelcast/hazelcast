@@ -105,8 +105,8 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         final Data key = serializationService.toData(1);
         final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
 
-        final ICacheRecordStore recordStore1 = cacheServiceHz1.getCache("/hz/" + cacheName, partitionId);
-        final ICacheRecordStore recordStore2 = cacheServiceHz2.getCache("/hz/" + cacheName, partitionId);
+        final ICacheRecordStore recordStore1 = cacheServiceHz1.getOrCreateCache("/hz/" + cacheName, partitionId);
+        final ICacheRecordStore recordStore2 = cacheServiceHz2.getOrCreateCache("/hz/" + cacheName, partitionId);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -142,8 +142,8 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         final Data key = serializationService.toData(1);
         final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
 
-        final ICacheRecordStore recordStore1 = cacheServiceHz1.getCache("/hz/" + cacheName, partitionId);
-        final ICacheRecordStore recordStore2 = cacheServiceHz2.getCache("/hz/" + cacheName, partitionId);
+        final ICacheRecordStore recordStore1 = cacheServiceHz1.getOrCreateCache("/hz/" + cacheName, partitionId);
+        final ICacheRecordStore recordStore2 = cacheServiceHz2.getOrCreateCache("/hz/" + cacheName, partitionId);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -179,8 +179,8 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         final Data key = serializationService.toData(1);
         final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
 
-        final ICacheRecordStore recordStore1 = cacheServiceHz1.getCache("/hz/" + cacheName, partitionId);
-        final ICacheRecordStore recordStore2 = cacheServiceHz2.getCache("/hz/" + cacheName, partitionId);
+        final ICacheRecordStore recordStore1 = cacheServiceHz1.getOrCreateCache("/hz/" + cacheName, partitionId);
+        final ICacheRecordStore recordStore2 = cacheServiceHz2.getOrCreateCache("/hz/" + cacheName, partitionId);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -216,8 +216,8 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         final Data key = serializationService.toData(1);
         final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
 
-        final ICacheRecordStore recordStore1 = cacheServiceHz1.getCache("/hz/" + cacheName, partitionId);
-        final ICacheRecordStore recordStore2 = cacheServiceHz2.getCache("/hz/" + cacheName, partitionId);
+        final ICacheRecordStore recordStore1 = cacheServiceHz1.getOrCreateCache("/hz/" + cacheName, partitionId);
+        final ICacheRecordStore recordStore2 = cacheServiceHz2.getOrCreateCache("/hz/" + cacheName, partitionId);
 
         assertTrueEventually(new AssertTask() {
             @Override

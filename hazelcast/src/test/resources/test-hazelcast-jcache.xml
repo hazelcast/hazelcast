@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.4.xsd"
+           xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <group>
+        <name>test-group1</name>
+        <password>test-pass1</password>
+    </group>
+
+
+
+    <cache name="cache1">
+        <key-type class-name="java.lang.Object" />
+        <value-type class-name="java.lang.Object"/>
+        <statistics-enabled>true</statistics-enabled>
+        <management-enabled>true</management-enabled>
+
+        <read-through>true</read-through>
+        <write-through>true</write-through>
+        <cache-loader-factory class-name="com.hazelcast.cache.MyCacheLoaderFactory" />
+        <cache-writer-factory class-name="com.hazelcast.cache.MyCacheWriterFactory"/>
+        <expiry-policy-factory class-name="com.hazelcast.cache.MyExpirePolicyFactory"/>
+
+        <cache-entry-listeners>
+            <cache-entry-listener old-value-required="false" synchronous="false" >
+                <cache-entry-listener-factory class-name="com.hazelcast.cache.MyEntryListenerFactory" />
+                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.MyEntryEventFilterFactory" />
+            </cache-entry-listener>
+           <cache-entry-listener old-value-required="true" synchronous="true" >
+                <cache-entry-listener-factory class-name="com.hazelcast.cache.MySyncEntryListenerFactory" />
+                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.MySyncEntryEventFilterFactory" />
+            </cache-entry-listener>
+        </cache-entry-listeners>
+
+        <backup-count>3</backup-count>
+        <async-backup-count>2</async-backup-count>
+        <eviction-policy>LRU</eviction-policy>
+
+    </cache>
+
+    <cache name="testCache">
+        <key-type class-name="java.lang.Integer" />
+        <value-type class-name="java.lang.String"/>
+        <statistics-enabled>false</statistics-enabled>
+        <management-enabled>false</management-enabled>
+
+    </cache>
+
+</hazelcast>

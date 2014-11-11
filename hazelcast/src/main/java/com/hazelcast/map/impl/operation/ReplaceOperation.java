@@ -36,7 +36,7 @@ public class ReplaceOperation extends BasePutOperation {
     }
 
     public boolean shouldBackup() {
-        return successful;
+        return successful && recordStore.getRecord(dataKey) != null;
     }
 
     public void afterRun() {

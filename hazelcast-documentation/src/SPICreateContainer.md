@@ -2,7 +2,7 @@
 
 ### Create the Containers
 
-First, let's create a Container for every partition in the system, that will contain all counters and proxies.
+Let's create a Container for every partition in the system. This container will contain all counters and proxies.
 
 
 ```java
@@ -34,11 +34,13 @@ class Container {
 }
 ```
 
-Hazelcast guarantees that a single thread will be active in a single partition. So, when accessing a container, concurrency control will not be an issue. 
+Hazelcast guarantees that a single thread will be active in a single partition. Therefore, when accessing a container, concurrency control will not be an issue. 
 
-This section uses Container instance per partition approach. In this way, there will not be any mutable shared state between partitions. It also makes operations on partitions simpler since you do not need to filter out data that does not belong to a certain partition.
+The code in our example uses a `Container` instance per partition approach. With this approach, there will not be any mutable shared state between partitions. This approach also makes operations on partitions simpler since you do not need to filter out data that does not belong to a certain partition.
 
-Now, let's integrate the Container in the CounterService, as shown below.
+#### Integrating the Container in the CounterService
+
+Let's integrate the `Container` in the `CounterService`, as shown below.
 
 ```java
 import com.hazelcast.spi.ManagedService;
@@ -100,10 +102,11 @@ public class CounterService implements ManagedService, RemoteService {
 ```
     
 
-As you see, a container for every partition is created with the method `init`. Then, we create the proxy with the method `createDistributedObject`. And finally, we need to remove the value of the object, using the method `destroyDistributedObject`. Otherwise, we may get OutOfMemory exception.
+We create a container for every partition with the method `init`. Then we create the proxy with the method `createDistributedObject`. And finally, we need to remove the value of the object with the method `destroyDistributedObject`, otherwise we may get an OutOfMemory exception.
 
+#### Connecting the IncOperation.run Method to the Container
 
-And now, as the last step in creating a Container, we will connect the method `IncOperation.run` to the Container, as shown below.
+As the last step in creating a Container, we connect the method `IncOperation.run` to the Container, as shown below.
 
 ```java
 import com.hazelcast.nio.ObjectDataInput;
@@ -165,9 +168,11 @@ class IncOperation extends AbstractOperation implements PartitionAwareOperation 
 }
 ```
 
-`partitionId` has a range between **0** and **partitionCount** and can be used as an index for the container array. Therefore, `partitionId` can easily be used to retrieve the container. And once the container has been retrieved, we can access the value. 
+`partitionId` has a range between **0** and **partitionCount** and can be used as an index for the container array. Therefore, you can use `partitionId` to retrieve the container, and once the container has been retrieved, you can access the value. 
 
-Let's run the below sample code.
+#### Running the Sample Code
+
+Let's run the following sample code.
 
 ```java
 import com.hazelcast.core.Hazelcast;
@@ -197,7 +202,7 @@ public class Member {
 }
 ```
 
-The output will be seen as follows.
+The output will be as follows. It indicates that we have now a basic distributed counter up and running.
 
 ```
 Round 1
@@ -221,6 +226,4 @@ Executing 3counter.inc() on: Address[192.168.1.103]:5701
 Finished
 ```
 
-
-Above output indicates that we have now a basic distributed counter up and running.
 

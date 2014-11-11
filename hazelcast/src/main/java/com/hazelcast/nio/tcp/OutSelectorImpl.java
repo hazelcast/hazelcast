@@ -22,13 +22,20 @@ import java.nio.channels.SelectionKey;
 
 public final class OutSelectorImpl extends AbstractIOSelector {
 
+    private volatile long writeKeyCount;
+
     public OutSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger, IOSelectorOutOfMemoryHandler oomeHandler) {
         super(threadGroup, tname, logger, oomeHandler);
+    }
+
+    public long getWriteKeyCount() {
+        return writeKeyCount;
     }
 
     @Override
     protected void handleSelectionKey(SelectionKey sk) {
         if (sk.isValid() && sk.isWritable()) {
+            writeKeyCount++;
             sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
             SelectionHandler handler = (SelectionHandler) sk.attachment();
             handler.handle();

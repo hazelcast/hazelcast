@@ -9,9 +9,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -22,6 +19,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -50,6 +51,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
         final TestMapUsingMapStoreBuilder builder = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withBackupCount(0)
                 .withWriteDelaySeconds(3)
                 .withInMemoryFormat(InMemoryFormat.OBJECT);

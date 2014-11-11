@@ -1,7 +1,7 @@
 
 ### Start the Service
 
-Now, let's start a HazelcastInstance as shown below, which will eagerly start the CounterService.
+Now, let's start a `HazelcastInstance` as shown below, which will start the `CounterService`.
 
 
 ```java
@@ -14,11 +14,11 @@ public class Member {
 }
 ```
 
-Once it is started, below output will be seen.
+Once it is started, the `CounterService#init` method prints the following output.
 
 `CounterService.init`
 
-Once the HazelcastInstance is shutdown (for example with Ctrl+C), below output will be seen.
+Once the HazelcastInstance is shutdown (for example with Ctrl+C), the `CounterService#shutdown` method prints the following output.
 
 `CounterService.shutdown`
 

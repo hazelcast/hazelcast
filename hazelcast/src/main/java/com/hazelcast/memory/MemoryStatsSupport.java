@@ -32,13 +32,16 @@ import java.lang.management.MemoryUsage;
  */
 public final class MemoryStatsSupport {
 
+    private static final MBeanServer PLATFORM_M_BEAN_SERVER = ManagementFactory.getPlatformMBeanServer();
+    private static final long TOTAL_PHYSICAL_MEMORY = queryPhysicalMemory("TotalPhysicalMemorySize");
+
     /**
      * No public constructor is needed for utility classes
      */
     private MemoryStatsSupport() { }
 
     public static long totalPhysicalMemory() {
-        return queryPhysicalMemory("TotalPhysicalMemorySize");
+        return TOTAL_PHYSICAL_MEMORY;
     }
 
     public static long freePhysicalMemory() {
@@ -47,9 +50,8 @@ public final class MemoryStatsSupport {
 
     private static long queryPhysicalMemory(String type) {
         try {
-            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
             ObjectName name = new ObjectName("java.lang", "type", "OperatingSystem");
-            Object attribute = mBeanServer.getAttribute(name, type);
+            Object attribute = PLATFORM_M_BEAN_SERVER.getAttribute(name, type);
             if (attribute != null) {
                 return Long.parseLong(attribute.toString());
             }

@@ -73,7 +73,8 @@ public abstract class AbstractXmlConfigHelper {
             return new Iterator<Node>() {
                 private int index;
                 private Node next;
-                private boolean findNext() {
+
+                public boolean hasNext() {
                     next = null;
                     for (; index < maximum; index++) {
                         final Node item = parent.item(index);
@@ -85,16 +86,14 @@ public abstract class AbstractXmlConfigHelper {
                     return false;
                 }
 
-                public boolean hasNext() {
-                    return findNext();
-                }
                 public Node next() {
-                    if (findNext()) {
+                    if (hasNext()) {
                         index++;
                         return next;
                     }
                     throw new NoSuchElementException();
                 }
+
                 public void remove() {
                     throw new UnsupportedOperationException();
                 }
@@ -355,7 +354,7 @@ public abstract class AbstractXmlConfigHelper {
 
         final Node allocTypeNode = atts.getNamedItem("allocator-type");
         final String allocType = getTextContent(allocTypeNode);
-        if (allocType != null && !"".equals("")) {
+        if (allocType != null && !"".equals(allocType)) {
             nativeMemoryConfig.setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.valueOf(upperCaseInternal(allocType)));
         }
 

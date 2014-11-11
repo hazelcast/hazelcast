@@ -313,3 +313,37 @@ For additional information please see:
 
  - [Using TCP keepalive under Linux](http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html)
  - [Microsoft TechNet](http://technet.microsoft.com/en-us/library/cc957549.aspx)
+
+## How to get rid of "java.lang.OutOfMemoryError: unable to create new native thread"
+
+If you encounter an error of `java.lang.OutOfMemoryError: unable to create new native thread`, it may be caused by exceeding the available file descriptors on your operating system, especially if it is Linux. This exception is usually thrown on a running node, after a period of time when thread count exhausts file descriptor availability.
+
+The JVM on Linux consumes a file descriptor for each thread created.  The default number of file descriptors available in Linux is usually 1024, so if you have many JVMs running on a single machine it is possible to exceed this.
+
+You can view the limit using the following command
+
+`# ulimit -a`
+
+At operating system level, Linux users can control the amount of resources (and in particular file descriptors) used via one of the following options.
+
+1 - Editing the `limits.conf` file:
+
+`# vi /etc/security/limits.conf` 
+
+```
+testuser soft nofile 4096<br>
+testuser hard nofile 10240<br>
+```
+
+2 - Or, using the `ulimit` commnand:
+
+`# ulimit -Hn`
+
+```
+10240
+```
+
+The default number of process per users is 1024. So adding the following to your `$HOME/.profile` could solve the issue:
+
+`# ulimit -u 4096`
+
