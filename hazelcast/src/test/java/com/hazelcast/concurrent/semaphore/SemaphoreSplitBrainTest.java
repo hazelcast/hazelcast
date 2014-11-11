@@ -14,9 +14,11 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +29,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -43,11 +46,19 @@ public class SemaphoreSplitBrainTest extends HazelcastTestSupport {
         Config config = newConfig();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
         final String key = generateKeyOwnedBy(h3);
         ISemaphore semaphore = h3.getSemaphore(key);
         semaphore.init(5);
         semaphore.acquire(3);
+        assertEquals(2, semaphore.availablePermits());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(h3.getPartitionService().isLocalMemberSafe());
+            }
+        });
 
         TestMemberShipListener memberShipListener = new TestMemberShipListener(2);
         h3.getCluster().addMembershipListener(memberShipListener);
@@ -86,8 +97,8 @@ public class SemaphoreSplitBrainTest extends HazelcastTestSupport {
 
     private Config newConfig() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "30");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "3");
+        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "1");
         return config;
     }
 
