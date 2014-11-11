@@ -26,7 +26,7 @@ public class AtomicReferenceMigrationTest extends HazelcastTestSupport {
     @Test
     public void testWhenInstancesShutdown() {
         Config config = new Config();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         IAtomicReference<SimpleObject> reference1 = instance1.getAtomicReference("test");
         SimpleObject object = new SimpleObject(1);
@@ -37,12 +37,6 @@ public class AtomicReferenceMigrationTest extends HazelcastTestSupport {
         IAtomicReference<SimpleObject> reference2 = instance2.getAtomicReference("test");
         SimpleObject objectTest1 = reference2.get();
         assertEquals(object, objectTest1);
-
-        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
-        instance2.shutdown();
-        IAtomicReference<SimpleObject> reference3 = instance3.getAtomicReference("test");
-        SimpleObject objectTest2 = reference3.get();
-        assertEquals(object, objectTest2);
     }
 
     @Test
