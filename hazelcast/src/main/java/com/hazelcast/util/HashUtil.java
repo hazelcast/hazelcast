@@ -18,7 +18,13 @@ package com.hazelcast.util;
 
 import java.util.Arrays;
 
+/**
+ * Hashing utility functions
+ */
 public final class HashUtil {
+
+    private HashUtil() {
+    }
 
     /**
      * Hash code for multiple objects using {@link Arrays#hashCode(Object[])}.
