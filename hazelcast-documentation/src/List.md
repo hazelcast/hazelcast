@@ -7,7 +7,7 @@ Hazelcast List is similar to Hazelcast Set, but Hazelcast List also allows dupli
 * Besides allowing duplicate elements, Hazelcast List preserves the order of elements.
 * Hazelcast List is a non-partitioned data structure where values and each backup are represented by their own single partition.
 * Hazelcast List cannot be scaled beyond the capacity of a single machine.
-* No batching is performed while iterating over the set. All items are copied to local and iteration occurs locally.
+* All items are copied to local and iteration occurs locally.
 
 ### Sample List Code
 

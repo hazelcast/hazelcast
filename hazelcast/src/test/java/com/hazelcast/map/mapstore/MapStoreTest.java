@@ -56,10 +56,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -90,6 +86,11 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 
 /**
@@ -1393,6 +1394,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
                 .build();
 
         try {
@@ -1408,6 +1410,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
                 .build();
 
         map.remove(1);

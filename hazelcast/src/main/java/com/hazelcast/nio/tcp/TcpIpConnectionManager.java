@@ -34,18 +34,23 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedRunnable;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+
+import static java.lang.Boolean.parseBoolean;
 
 public class TcpIpConnectionManager implements ConnectionManager {
 
@@ -98,9 +103,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final int selectorThreadCount;
 
-    private final IOSelector[] inSelectors;
+    private final InSelectorImpl[] inSelectors;
 
-    private final IOSelector[] outSelectors;
+    private final OutSelectorImpl[] outSelectors;
 
     private final AtomicInteger nextSelectorIndex = new AtomicInteger();
 
@@ -116,6 +121,12 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
+    // the selectorImbalanceWorkaroundEnabled is a hack to make sure that selectors get an equal number of connections
+    // to deal with this should only be used for the test lab. In the future we need to create a real fix to this problem,
+    // but without this hack we can't do reliable benchmarking because the numbers have too much variation.
+    private final boolean selectorImbalanceWorkaroundEnabled;
+    private final Map<String, Integer> selectorIndexPerHostMap;
+
     public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
@@ -125,16 +136,31 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketLingerSeconds = ioService.getSocketLingerSeconds();
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
-        selectorThreadCount = ioService.getSelectorThreadCount();
-        inSelectors = new IOSelector[selectorThreadCount];
-        outSelectors = new IOSelector[selectorThreadCount];
+        this.selectorThreadCount = ioService.getSelectorThreadCount();
+        this.inSelectors = new InSelectorImpl[selectorThreadCount];
+        this.outSelectors = new OutSelectorImpl[selectorThreadCount];
         final Collection<Integer> ports = ioService.getOutboundPorts();
-        outboundPortCount = ports == null ? 0 : ports.size();
+        this.outboundPortCount = ports == null ? 0 : ports.size();
         if (ports != null) {
             outboundPorts.addAll(ports);
         }
-        socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
-        portableContext = ioService.getPortableContext();
+        this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
+        this.portableContext = ioService.getPortableContext();
+
+        this.selectorImbalanceWorkaroundEnabled = isSelectorImbalanceEnabled();
+        this.selectorIndexPerHostMap = selectorImbalanceWorkaroundEnabled ? new HashMap<String, Integer>() : null;
+    }
+
+    private boolean isSelectorImbalanceEnabled() {
+        boolean enabled = parseBoolean(System.getProperty("hazelcast.selectorhack.enabled", "false"));
+        if (enabled) {
+            logger.severe("WARNING!!!! The 'hazelcast.selectorhack.enabled' has been enabled. This feature should not be used "
+                    + "in a production environment. It is a temporary work around to deal with imbalances between selector-load. "
+                    + "This issue will be fixed at some point in time. Using this feature in a production environment can lead "
+                    + "to other imbalance problems, e.g. when multiple members are on the same machine. Also this feature is not "
+                    + "100% reliable.  ");
+        }
+        return enabled;
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
@@ -304,16 +330,50 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
-        final int index = nextSelectorIndex();
+        InetSocketAddress remoteSocketAddress = (InetSocketAddress) channel.socket().getRemoteSocketAddress();
+        String remoteHost = remoteSocketAddress.getHostName();
+        int index = getSelectorIndex(remoteHost);
+
         final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
                 outSelectors[index], connectionIdGen.incrementAndGet(), channel);
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
         connection.getReadHandler().register();
-        log(Level.INFO,  "Established socket connection between " + channel.socket().getLocalSocketAddress()
-                + " and " + channel.socket().getRemoteSocketAddress());
+
+        logConnectionEstablished(channel, remoteSocketAddress, index);
+
         return connection;
+    }
+
+    private int getSelectorIndex(String remoteHost) {
+        Integer index;
+        if (selectorImbalanceWorkaroundEnabled) {
+            synchronized (selectorIndexPerHostMap) {
+                index = selectorIndexPerHostMap.get(remoteHost);
+                if (index == null) {
+                    index = nextSelectorIndex();
+                    selectorIndexPerHostMap.put(remoteHost, index);
+                    logger.info(remoteHost + " no selector index found, retrieving a new one: " + index);
+                } else {
+                    logger.info(remoteHost + " selector index found: " + index);
+                }
+            }
+        } else {
+            index = nextSelectorIndex();
+        }
+        return index;
+    }
+
+    private void logConnectionEstablished(SocketChannelWrapper channel, InetSocketAddress remoteSocketAddress, Integer index) {
+        if (selectorImbalanceWorkaroundEnabled) {
+            log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
+                    + " and " + remoteSocketAddress
+                    + " using selectorIndex: " + index + " connectionCount: " + activeConnections.size());
+        } else {
+            log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
+                    + " and " + remoteSocketAddress);
+        }
     }
 
     void failedConnection(Address address, Throwable t, boolean silent) {
@@ -569,6 +629,19 @@ public class TcpIpConnectionManager implements ConnectionManager {
             final Integer port = outboundPorts.removeFirst();
             outboundPorts.addLast(port);
             return port;
+        }
+    }
+
+    @Override
+    public void dumpPerformanceMetrics(StringBuffer sb) {
+        for (int k = 0; k < inSelectors.length; k++) {
+            sb.append("inselector[").append(k).append("].readKeyCount=")
+                    .append(inSelectors[k].getReadKeyCount()).append("\n");
+        }
+
+        for (int k = 0; k < outSelectors.length; k++) {
+            sb.append("outSelectors[").append(k).append("].writeKeyCount=")
+                    .append(outSelectors[k].getWriteKeyCount()).append("\n");
         }
     }
 

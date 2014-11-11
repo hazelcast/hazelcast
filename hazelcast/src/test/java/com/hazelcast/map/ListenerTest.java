@@ -30,15 +30,18 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -470,6 +473,41 @@ public class ListenerTest extends HazelcastTestSupport {
             }
         });
     }
+
+    /**
+     * test for issue 4037
+     */
+    @Test
+    public void testEntryEvent_includesOldValue_afterRemoveIfSameOperation() {
+        final String mapName = randomMapName();
+        final HazelcastInstance node = createHazelcastInstance();
+        final IMap<String, String> map = node.getMap(mapName);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        final String key = "key";
+        final String value = "value";
+
+        final ConcurrentMap<String, String> resultHolder = new ConcurrentHashMap<String, String>(1);
+
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryRemoved(EntryEvent<String, String> event) {
+                final String oldValue = event.getOldValue();
+                resultHolder.put(key, oldValue);
+                latch.countDown();
+            }
+        }, true);
+
+        map.put(key, value);
+
+        map.remove(key, value);
+
+        assertOpenEventually(latch);
+
+        final String oldValueFromEntryEvent = resultHolder.get(key);
+        assertEquals(value, oldValueFromEntryEvent);
+    }
+
 
 
     private Predicate<String, String> matchingPredicate() {

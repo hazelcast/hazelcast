@@ -37,10 +37,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -69,6 +65,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -1158,11 +1159,9 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testIfWeCarryRecordVersionInfoToReplicas() {
         final String mapName = randomMapName();
         final int mapSize = 1000;
-        final int nodeCount = 2;
         final int expectedRecordVersion = 3;
-        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(nodeCount);
-        final Config config = new Config();
-        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+
+        final HazelcastInstance node1 = instances[1];
 
         final IMap<Integer, Integer> map1 = node1.getMap(mapName);
         for (int i = 0; i < mapSize; i++) {
@@ -1171,7 +1170,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             map1.put(i, 2);//version 2.
             map1.put(i, 3);//version 3.
         }
-        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance node2 = instances[2];
 
         node1.shutdown();
 

@@ -72,6 +72,10 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         entryAddedOrUpdatedBackup(entry);
     }
 
+    @Override
+    public void afterRun() throws Exception {
+        evict(true);
+    }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {

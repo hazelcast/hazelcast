@@ -47,7 +47,7 @@ final class ExpirationTimeSetter {
     private static long calculateExpirationTime(Record record, long maxIdleMillis) {
         // 1. Calculate TTL expiration time.
         final long ttl = checkedTime(record.getTtl());
-        final long ttlExpirationTime = sumForExpiration(ttl, record.getCreationTime());
+        final long ttlExpirationTime = sumForExpiration(ttl, record.getLastUpdateTime());
 
         // 2. Calculate idle expiration time.
         maxIdleMillis = checkedTime(maxIdleMillis);
@@ -115,9 +115,14 @@ final class ExpirationTimeSetter {
      * Updates records TTL and expiration time.
      */
     public static void updateExpiryTime(Record record, long ttl, long maxIdleMillis) {
-        if (ttl < 0L) {
+
+        // Preserve previously set TTL, if TTL < 0.
+        if (ttl < 0) {
             return;
         }
+        // If TTL == 0, convert it to Long.MAX_VALUE.
+        ttl = checkedTime(ttl);
+
         record.setTtl(ttl);
 
         setExpirationTime(record, maxIdleMillis);

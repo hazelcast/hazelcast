@@ -1,15 +1,26 @@
 package com.hazelcast.jmx;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
+
+import java.io.Serializable;
+
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.io.Serializable;
 
 /**
  * This is the test that just tests if the mbeans get created. Tests in this class only exist for types that don't have
@@ -18,11 +29,11 @@ import java.io.Serializable;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class MBeanTest extends HazelcastTestSupport {
-    private static JmxTestDataHolder holder;
+    private JmxTestDataHolder holder;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
-        holder = new JmxTestDataHolder();
+    @Before
+    public void setUp() throws Exception {
+        holder = new JmxTestDataHolder(createHazelcastInstanceFactory(1));
     }
 
     @Test
