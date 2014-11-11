@@ -335,7 +335,7 @@ testuser soft nofile 4096<br>
 testuser hard nofile 10240<br>
 ```
 
-2 - Or, using the `ulimit` commnand:
+2 - Or, using the `ulimit` command:
 
 `# ulimit -Hn`
 
@@ -346,4 +346,12 @@ testuser hard nofile 10240<br>
 The default number of process per users is 1024. So adding the following to your `$HOME/.profile` could solve the issue:
 
 `# ulimit -u 4096`
+
+## Which virtualization should I use on AWS
+
+AWS uses two virtualization types to launch the EC2 instances: Para-Virtualization (PV) and Hardware-assisted Virtual Machine (HVM). According to the tests we performed, HVM provided up to three times higher throughput than PV. Therefore, we recommend you to use HVM when you run Hazelcast on EC2.
+
+
+
+
 
