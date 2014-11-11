@@ -635,13 +635,15 @@ public class TcpIpConnectionManager implements ConnectionManager {
     @Override
     public void dumpPerformanceMetrics(StringBuffer sb) {
         for (int k = 0; k < inSelectors.length; k++) {
-            sb.append("inselector[").append(k).append("].readKeyCount=")
-                    .append(inSelectors[k].getReadKeyCount()).append("\n");
+            InSelectorImpl inSelector = inSelectors[k];
+            sb.append(inSelector.getName()).append(".readEvents=")
+                    .append(inSelector.getReadEvents()).append("\n");
         }
 
         for (int k = 0; k < outSelectors.length; k++) {
-            sb.append("outSelectors[").append(k).append("].writeKeyCount=")
-                    .append(outSelectors[k].getWriteKeyCount()).append("\n");
+            OutSelectorImpl outSelector = outSelectors[k];
+            sb.append(outSelector.getName()).append(".writeEvents=")
+                    .append(outSelector.getWriteEvents()).append("\n");
         }
     }
 
