@@ -1,6 +1,17 @@
 
 ### Fixes
 
+**3.4-RC1 Fixes**
+
+This section lists issues solved for **Hazelcast 3.4-RC1** (Release Candidate 1) release.
+
+- AWS joiner classname should be fixed since EC2 discovery is not working after the restructure [[#4025]](https://github.com/hazelcast/hazelcast/issues/4025).
+- Getting a pre-configured Cache instance is not working as expected [[#4009]](https://github.com/hazelcast/hazelcast/issues/4009).
+- Bounded Queue section in the Reference Manual is unclear and wrong [[#3995]](https://github.com/hazelcast/hazelcast/issues/3995).
+- The method `checkFullyProcessed` of MapReduce throws null pointer exception. The reason may be that multiple threads attempt to start the final processing state in the JobSupervisor [[#3952]](https://github.com/hazelcast/hazelcast/issues/3952).
+
+
+
 **3.4-EA Fixes**
 
 This section lists issues solved for **Hazelcast 3.4-EA** (Early Access) release.
