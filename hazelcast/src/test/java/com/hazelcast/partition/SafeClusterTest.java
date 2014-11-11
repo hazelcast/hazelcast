@@ -61,7 +61,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
 
     @Test
     public void isClusterSafe_whenMigration() {
-        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = factory.newHazelcastInstance(createConfigWithDummyMigrationService());
 
         IMap<Object, Object> map = node1.getMap("migrationMap");
@@ -97,7 +97,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
 
     @Test
     public void isMemberSafe_multiNode() {
-        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = factory.newHazelcastInstance();
         final HazelcastInstance node2 = factory.newHazelcastInstance();
         Member member = node2.getCluster().getLocalMember();
@@ -108,7 +108,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
 
     @Test
     public void isMemberSafe_whenNodeShutdown() {
-        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = factory.newHazelcastInstance();
         final HazelcastInstance node2 = factory.newHazelcastInstance();
         Member member = node2.getCluster().getLocalMember();
@@ -119,7 +119,7 @@ public class SafeClusterTest extends HazelcastTestSupport {
 
     @Test
     public void isMemberSafe_whenMigration() {
-        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = factory.newHazelcastInstance(createConfigWithDummyMigrationService());
 
         IMap<Object, Object> map = node1.getMap("migrationMap");
