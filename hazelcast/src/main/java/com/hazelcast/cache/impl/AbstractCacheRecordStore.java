@@ -154,7 +154,10 @@ public abstract class AbstractCacheRecordStore<
     public int evictIfRequired() {
         if (evictionEnabled) {
             if (isEvictionRequired()) {
-                return records.evictRecords(evictionPercentage, evictionPolicy);
+                int evictedCount = records.evictRecords(evictionPercentage, evictionPolicy);
+                if (isStatisticsEnabled()) {
+                    statistics.increaseCacheEvictions(evictedCount);
+                }
             }
         }
         return 0;
@@ -162,17 +165,32 @@ public abstract class AbstractCacheRecordStore<
 
     @Override
     public int evictExpiredRecords(int percentage) {
-        return records.evictExpiredRecords(percentage);
+        int expiredCount = records.evictExpiredRecords(percentage);
+        if (isStatisticsEnabled()) {
+            statistics.increaseCacheExpiries(expiredCount);
+        }
+        return expiredCount;
     }
 
     @Override
     public int forceEvict() {
-        int percentage = Math.max(MIN_FORCED_EVICT_PERCENTAGE, evictionPercentage);
         int evicted = 0;
+        int percentage = Math.max(MIN_FORCED_EVICT_PERCENTAGE, evictionPercentage);
+
         if (hasExpiringEntry) {
-            evicted = records.evictExpiredRecords(ONE_HUNDRED_PERCENT);
+            int expiredCount = records.evictExpiredRecords(ONE_HUNDRED_PERCENT);
+            if (isStatisticsEnabled()) {
+                statistics.increaseCacheExpiries(expiredCount);
+            }
+            evicted += expiredCount;
         }
-        evicted += records.evictRecords(percentage, EvictionPolicy.RANDOM);
+
+        int evictedCount = records.evictRecords(percentage, EvictionPolicy.RANDOM);
+        if (isStatisticsEnabled()) {
+            statistics.increaseCacheEvictions(evictedCount);
+        }
+        evicted += evictedCount;
+
         return evicted;
     }
 
