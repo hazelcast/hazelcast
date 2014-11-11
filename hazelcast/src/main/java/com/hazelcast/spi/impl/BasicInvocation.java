@@ -127,14 +127,15 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     volatile NormalResponse pendingResponse;
 
-    //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
-    private volatile Boolean responseReceived = Boolean.FALSE;
 
     volatile int backupsExpected;
     volatile int backupsCompleted;
 
     private final BasicInvocationFuture invocationFuture;
     private final BasicOperationService operationService;
+
+    //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
+    private volatile Boolean responseReceived = Boolean.FALSE;
 
      //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
     private volatile int invokeCount;
