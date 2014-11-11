@@ -27,6 +27,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.Member;
@@ -103,6 +104,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -123,6 +125,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.util.IterableUtil.nullToEmpty;
 
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
@@ -492,10 +495,13 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
      * @param keys
      * @param replaceExistingValues
      */
-    protected void loadAllInternal(List<Data> keys, boolean replaceExistingValues) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Map<Integer, List<Data>> partitionIdToKeys = getPartitionIdToKeysMap(keys);
-        final Set<Entry<Integer, List<Data>>> entries = partitionIdToKeys.entrySet();
+    protected void loadAllInternal(Iterable keys, boolean replaceExistingValues) {
+
+        Iterable<Data> dataKeys = convertToData(keys);
+        NodeEngine nodeEngine = getNodeEngine();
+        Map<Integer, List<Data>> partitionIdToKeys = getPartitionIdToKeysMap(dataKeys);
+        Iterable<Entry<Integer, List<Data>>> entries = partitionIdToKeys.entrySet();
+
         for (final Entry<Integer, List<Data>> entry : entries) {
             final Integer partitionId = entry.getKey();
             final List<Data> correspondingKeys = entry.getValue();
@@ -503,6 +509,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
         }
         waitUntilLoaded();
+    }
+
+    private <K> Iterable<Data> convertToData(Iterable<K> keys) {
+        return IterableUtil.map(nullToEmpty(keys), new IFunction<K, Data>() {
+            public Data apply(K key) {
+                return toData(key);
+            }
+        });
     }
 
     private Operation createLoadAllOperation(final List<Data> keys, boolean replaceExistingValues) {
@@ -720,8 +734,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return partitionIds;
     }
 
-    private Map<Integer, List<Data>> getPartitionIdToKeysMap(List<Data> keys) {
-        if (keys == null || keys.isEmpty()) {
+    private Map<Integer, List<Data>> getPartitionIdToKeysMap(Iterable<Data> keys) {
+        if (keys == null) {
             return Collections.emptyMap();
         }
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();

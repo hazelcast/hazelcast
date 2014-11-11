@@ -50,17 +50,16 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.util.IterableUtil.nullToEmpty;
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
 /**
@@ -500,31 +499,19 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public void loadAll(boolean replaceExistingValues) {
-        final MapStore store = getMapStore();
-        if (store == null) {
-            throw new NullPointerException("First you should configure a map store");
-        }
+        MapStore<K, V> store = checkNotNull(getMapStore(), "First you should configure a map store");
 
-        final Set keys = store.loadAllKeys();
-        if (keys == null || keys.isEmpty()) {
-            return;
-        }
-        loadAll(keys, replaceExistingValues);
+        Iterable<K> keys = nullToEmpty(store.loadAllKeys());
+
+        loadAllInternal(keys, replaceExistingValues);
     }
 
     @Override
     public void loadAll(Set<K> keys, boolean replaceExistingValues) {
-        if (getMapStore() == null) {
-            throw new NullPointerException("First you should configure a map store");
-        }
-        if (keys == null) {
-            throw new NullPointerException("Parameter keys should not be null.");
-        }
-        if (keys.isEmpty()) {
-            return;
-        }
-        final List<Data> dataKeys = convertKeysToData(keys);
-        loadAllInternal(dataKeys, replaceExistingValues);
+        checkNotNull(getMapStore(), "First you should configure a map store");
+        checkNotNull(keys, "Parameter keys should not be null.");
+
+        loadAllInternal(keys, replaceExistingValues);
     }
 
     /**
@@ -695,21 +682,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw (Throwable) returnObj;
         }
         return returnObj;
-    }
-
-    private <K> List<Data> convertKeysToData(Set<K> keys) {
-        if (keys == null || keys.isEmpty()) {
-            return Collections.emptyList();
-        }
-        final List<Data> dataKeys = new ArrayList<Data>(keys.size());
-        for (K key : keys) {
-            if (key == null) {
-                throw new NullPointerException("Null key is not allowed");
-            }
-            final Data dataKey = toData(key);
-            dataKeys.add(dataKey);
-        }
-        return dataKeys;
     }
 
     @Override

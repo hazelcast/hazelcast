@@ -35,7 +35,6 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -220,8 +219,8 @@ final class BasicMapStoreContext implements MapStoreContext {
 
     private void loadInitialKeys() {
         // load all keys.
-        Set keys = storeWrapper.loadAllKeys();
-        if (keys == null || keys.isEmpty()) {
+        Iterable keys = storeWrapper.loadAllKeys();
+        if (keys == null) {
             return;
         }
 
@@ -240,10 +239,9 @@ final class BasicMapStoreContext implements MapStoreContext {
         }, INITIAL_KEYS_REMOVE_DELAY_MINUTES, TimeUnit.MINUTES);
     }
 
-    private void selectOwnedKeys(Set loadedKeys, MapServiceContext mapServiceContext) {
-        final Map<Data, Object> initialKeys = this.initialKeys;
+    private void selectOwnedKeys(Iterable loadedKeys, MapServiceContext mapServiceContext) {
+
         initialKeys.clear();
-        final PartitioningStrategy partitioningStrategy = this.partitioningStrategy;
         int maxSizePerNode = getApproximateMaxSize(getMaxSizePerNode()) - 1;
 
         for (Object key : loadedKeys) {
