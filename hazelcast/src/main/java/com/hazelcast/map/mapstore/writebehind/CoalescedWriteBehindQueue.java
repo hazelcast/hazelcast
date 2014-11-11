@@ -16,7 +16,7 @@ import java.util.Set;
  */
 class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
-    protected final Map<Data, DelayedEntry> queue;
+    protected Map<Data, DelayedEntry> queue;
 
     public CoalescedWriteBehindQueue() {
         queue = new LinkedHashMap<Data, DelayedEntry>();
@@ -89,6 +89,7 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             newQueue.put((Data) next.getKey(), next);
         }
         newQueue.putAll(queue);
+        queue = newQueue;
     }
 
     @Override
