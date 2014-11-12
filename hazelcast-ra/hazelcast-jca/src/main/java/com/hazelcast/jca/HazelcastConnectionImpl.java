@@ -186,6 +186,57 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     }
 
     @Override
+    public Collection<DistributedObject> getDistributedObjects() {
+        return getHazelcastInstance().getDistributedObjects();
+    }
+
+    @Override
+    public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+        return getHazelcastInstance().addDistributedObjectListener(distributedObjectListener);
+    }
+
+    @Override
+    public boolean removeDistributedObjectListener(String registrationId) {
+        return getHazelcastInstance().removeDistributedObjectListener(registrationId);
+    }
+
+    @Override
+    public Config getConfig() {
+        return getHazelcastInstance().getConfig();
+    }
+
+    @Override
+    public PartitionService getPartitionService() {
+        return getHazelcastInstance().getPartitionService();
+    }
+
+    @Override
+    public ClientService getClientService() {
+        return getHazelcastInstance().getClientService();
+    }
+
+    @Override
+    public LoggingService getLoggingService() {
+        return getHazelcastInstance().getLoggingService();
+    }
+
+    @Override
+    @Deprecated
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
+        return getHazelcastInstance().getDistributedObject(serviceName, id);
+    }
+
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+        return getHazelcastInstance().getDistributedObject(serviceName, name);
+    }
+
+    @Override
+    public ConcurrentMap<String, Object> getUserContext() {
+        return getHazelcastInstance().getUserContext();
+    }
+
+    @Override
     public <K, V> TransactionalMap<K, V> getTransactionalMap(String name) {
         final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
         if (txContext == null) {
@@ -261,80 +312,33 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
         return getHazelcastInstance().getLock(key);
     }
 
+    @Deprecated
     @Override
     public ILock getLock(Object key) {
         return getHazelcastInstance().getLock(key);
     }
 
+    @Override
+    public Cluster getCluster() {
+        return getHazelcastInstance().getCluster();
+    }
+
+    @Override
+    public Endpoint getLocalEndpoint() {
+        return getHazelcastInstance().getLocalEndpoint();
+    }
+
 
     // unsupported operations
-    @Override
-    public LoggingService getLoggingService() {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public LifecycleService getLifecycleService() {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ConcurrentMap<String, Object> getUserContext() {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public void shutdown() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean removeDistributedObjectListener(String registrationId) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Config getConfig() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public PartitionService getPartitionService() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ClientService getClientService() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Collection<DistributedObject> getDistributedObjects() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Cluster getCluster() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Endpoint getLocalEndpoint() {
         throw new UnsupportedOperationException();
     }
 

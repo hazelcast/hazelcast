@@ -7,9 +7,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 /**
- * This test class is to ensure a contract of {@link com.hazelcast.jca.HazelcastConnection} is aligned with
- * {@link com.hazelcast.core.HazelcastInstance}
- *
+ * This test class is to ensure that lifecycle and transaction methods are not exposed in {@link com.hazelcast.jca.HazelcastConnection}
  */
 @Category(QuickTest.class)
 public class HazecastConnectionContractTest {
@@ -22,73 +20,13 @@ public class HazecastConnectionContractTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddDistributedObjectListener() {
-        connection.addDistributedObjectListener(null);
-   }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testRemoveDistributedObjectListener() {
-        connection.removeDistributedObjectListener(null);
-    }
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetClientService() {
-        connection.getClientService();
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetLoggingService() {
-        connection.getLoggingService();
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void testGetLifecycleService() {
         connection.getLifecycleService();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testGetDistributedObject() {
-        connection.getDistributedObject(null,null);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetDistributedObjectAsString() {
-        connection.getDistributedObject(null,"");
-    }
-
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetUserContext() {
-        connection.getUserContext();
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
     public void testShutdown() {
         connection.shutdown();
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetConfig() {
-        connection.getConfig();
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetPartitionService() {
-        connection.getPartitionService();
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetDistributedObjects() {
-        connection.getDistributedObjects();
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetCluster() {
-        connection.getCluster();
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetLocalEndpoint() {
-        connection.getLocalEndpoint();
     }
 
     @Test(expected = UnsupportedOperationException.class)
