@@ -218,6 +218,8 @@
     <suppress checks="MethodCount" files="com.hazelcast.queue.impl.QueueContainer"/>
 
     <!-- jca -->
+    <suppress checks="ClassFanOutComplexityCheck" files="HazelcastConnectionImpl.java"/>
+    <suppress checks="MethodCount" files="HazelcastConnectionImpl.java"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.jca[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.jca[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.jca[\\/]"/>

@@ -16,25 +16,41 @@
 
 package com.hazelcast.jca;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.ClientService;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IList;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.PartitionService;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.logging.LoggingService;
+import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.transaction.TransactionContext;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalTask;
+
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
 import javax.resource.cci.ConnectionMetaData;
@@ -42,6 +58,10 @@ import javax.resource.cci.Interaction;
 import javax.resource.cci.ResultSetInfo;
 import javax.resource.spi.ConnectionEvent;
 import javax.security.auth.Subject;
+import java.util.Collection;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 /**
  * Implementation class of {@link com.hazelcast.jca.HazelcastConnectionImpl}
@@ -66,15 +86,14 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
         id = idGen.incrementAndGet();
     }
 
-    /* (non-Javadoc)
-         * @see javax.resource.cci.Connection#close()
-         */
+    @Override
     public void close() throws ResourceException {
         managedConnection.log(Level.FINEST, "close");
         //important: inform the container!
         managedConnection.fireConnectionEvent(ConnectionEvent.CONNECTION_CLOSED, this);
     }
 
+    @Override
     public Interaction createInteraction() throws ResourceException {
         //TODO
         return null;
@@ -83,16 +102,19 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     /**
      * @throws NotSupportedException as this is not supported by this resource adapter
      */
+    @Override
     public ResultSetInfo getResultSetInfo() throws NotSupportedException {
         //as per spec 15.11.3
         throw new NotSupportedException();
     }
 
+    @Override
     public HazelcastTransaction getLocalTransaction() throws ResourceException {
         managedConnection.log(Level.FINEST, "getLocalTransaction");
         return managedConnection.getLocalTransaction();
     }
 
+    @Override
     public ConnectionMetaData getMetaData() throws ResourceException {
         return managedConnection.getMetaData();
     }
@@ -112,77 +134,58 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
         return managedConnection.getHazelcastInstance();
     }
 
-    /* (non-Javadoc)
-     * @see com.hazelcast.jca.HazelcastConnection#getMap(java.lang.String)
-     */
+    @Override
     public <K, V> IMap<K, V> getMap(String name) {
         return getHazelcastInstance().getMap(name);
     }
 
-    /* (non-Javadoc)
-     * @see com.hazelcast.jca.HazelcastConnection#getQueue(java.lang.String)
-     */
+    @Override
     public <E> IQueue<E> getQueue(String name) {
         return getHazelcastInstance().getQueue(name);
     }
 
-    /* (non-Javadoc)
-     * @see com.hazelcast.jca.HazelcastConnection#getTopic(java.lang.String)
-     */
+    @Override
     public <E> ITopic<E> getTopic(String name) {
         return getHazelcastInstance().getTopic(name);
     }
 
-    /* (non-Javadoc)
-     * @see com.hazelcast.jca.HazelcastConnection#getSet(java.lang.String)
-     */
+    @Override
     public <E> ISet<E> getSet(String name) {
         return getHazelcastInstance().getSet(name);
     }
 
-    /* (non-Javadoc)
-     * @see com.hazelcast.jca.HazelcastConnection#getList(java.lang.String)
-     */
+    @Override
     public <E> IList<E> getList(String name) {
         return getHazelcastInstance().getList(name);
     }
 
-    /* (non-Javadoc)
-     * @see com.hazelcast.jca.HazelcastConnection#getMultiMap(java.lang.String)
-     */
+
+    @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         return getHazelcastInstance().getMultiMap(name);
     }
 
-    /* (non-Javadoc)
-     * @see com.hazelcast.jca.HazelcastConnection#getExecutorService(java.lang.String)
-     */
+    @Override
     public IExecutorService getExecutorService(String name) {
         return getHazelcastInstance().getExecutorService(name);
     }
 
-    /* (non-Javadoc)
-     * @see com.hazelcast.jca.HazelcastConnection#getAtomicLong(java.lang.String)
-     */
+    @Override
     public IAtomicLong getAtomicLong(String name) {
         return getHazelcastInstance().getAtomicLong(name);
     }
 
-    /* (non-Javadoc)
-     * @see com.hazelcast.jca.HazelcastConnection#getCountDownLatch(java.lang.String)
-     */
+    @Override
     public ICountDownLatch getCountDownLatch(String name) {
         return getHazelcastInstance().getCountDownLatch(name);
     }
 
-    /* (non-Javadoc)
-     * @see com.hazelcast.jca.HazelcastConnection#getSemaphore(java.lang.String)
-     */
+    @Override
     public ISemaphore getSemaphore(String name) {
         return getHazelcastInstance().getSemaphore(name);
     }
 
-
+    @Override
     public <K, V> TransactionalMap<K, V> getTransactionalMap(String name) {
         final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
         if (txContext == null) {
@@ -191,6 +194,7 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
         return txContext.getMap(name);
     }
 
+    @Override
     public <E> TransactionalQueue<E> getTransactionalQueue(String name) {
         final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
         if (txContext == null) {
@@ -199,6 +203,7 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
         return txContext.getQueue(name);
     }
 
+    @Override
     public <K, V> TransactionalMultiMap<K, V> getTransactionalMultiMap(String name) {
         final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
         if (txContext == null) {
@@ -207,6 +212,7 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
         return txContext.getMultiMap(name);
     }
 
+    @Override
     public <E> TransactionalList<E> getTransactionalList(String name) {
         final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
         if (txContext == null) {
@@ -215,12 +221,141 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
         return txContext.getList(name);
     }
 
+    @Override
     public <E> TransactionalSet<E> getTransactionalSet(String name) {
         final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
         if (txContext == null) {
             throw new IllegalStateException("Transaction is not active");
         }
         return txContext.getSet(name);
+    }
+
+    @Override
+    public IdGenerator getIdGenerator(String name) {
+        return getHazelcastInstance().getIdGenerator(name);
+    }
+
+    @Override
+    public <E> IAtomicReference<E> getAtomicReference(String name) {
+        return getHazelcastInstance().getAtomicReference(name);
+    }
+
+    @Override
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+        return getHazelcastInstance().getReplicatedMap(name);
+    }
+
+    @Override
+    public JobTracker getJobTracker(String name) {
+        return getHazelcastInstance().getJobTracker(name);
+    }
+
+    @Override
+    public String getName() {
+        return getHazelcastInstance().getName();
+    }
+
+
+    @Override
+    public ILock getLock(String key) {
+        return getHazelcastInstance().getLock(key);
+    }
+
+    @Override
+    public ILock getLock(Object key) {
+        return getHazelcastInstance().getLock(key);
+    }
+
+
+    // unsupported operations
+    @Override
+    public LoggingService getLoggingService() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public LifecycleService getLifecycleService() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ConcurrentMap<String, Object> getUserContext() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void shutdown() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean removeDistributedObjectListener(String registrationId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Config getConfig() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public PartitionService getPartitionService() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ClientService getClientService() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Collection<DistributedObject> getDistributedObjects() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Cluster getCluster() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Endpoint getLocalEndpoint() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TransactionContext newTransactionContext() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TransactionContext newTransactionContext(TransactionOptions options) {
+        throw new UnsupportedOperationException();
     }
 
 }
