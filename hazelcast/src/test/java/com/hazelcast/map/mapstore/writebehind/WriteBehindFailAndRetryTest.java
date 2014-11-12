@@ -77,23 +77,6 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
         }
     }
 
-
-    @Test
-    public void testName() throws Exception {
-        TemporarySuccessProducer temporarySuccessProducer
-                = new TemporarySuccessProducer(10);
-        for (int i = 0; i < 1000; i++) {
-            Thread.sleep(1000);
-            try {
-                temporarySuccessProducer.successOrException();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
-
-    }
-
     /**
      * Produces periodic success, otherwise there will be many exceptions.
      */
