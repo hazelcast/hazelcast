@@ -23,8 +23,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.concurrent.ScheduledFuture;
-
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
  * <p>
@@ -155,12 +153,6 @@ public class CacheRecordStore
     protected boolean isEvictionRequired() {
         // Eviction is not supported by CacheRecordStore
         return false;
-    }
-
-    @Override
-    protected ScheduledFuture<?> scheduleExpirationTask() {
-        // Expiration task is not supported by CacheRecordStore
-        return null;
     }
 
 }
