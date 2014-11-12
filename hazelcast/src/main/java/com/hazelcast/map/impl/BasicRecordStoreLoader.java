@@ -2,6 +2,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.operation.PutAllOperation;
 import com.hazelcast.map.impl.operation.PutFromLoadAllOperation;
 import com.hazelcast.map.impl.record.Record;
@@ -16,6 +17,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -80,7 +82,9 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             setLoaded(true);
             return;
         }
-        final Map<Data, Object> loadedKeys = recordStore.getMapContainer().getInitialKeys();
+        final MapContainer mapContainer = recordStore.getMapContainer();
+        final MapStoreContext basicMapStoreContext = mapContainer.getMapStoreContext();
+        final Map<Data, Object> loadedKeys = basicMapStoreContext.getInitialKeys();
         if (loadedKeys == null || loadedKeys.isEmpty()) {
             setLoaded(true);
             return;

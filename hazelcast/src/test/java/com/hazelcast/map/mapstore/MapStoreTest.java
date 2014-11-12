@@ -56,6 +56,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -86,11 +90,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 
 /**
@@ -1482,7 +1481,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapProxyImpl map = (MapProxyImpl) hz.getMap(mapName);
         MapService mapService = (MapService) map.getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
-        MapStoreWrapper mapStoreWrapper = mapContainer.getStore();
+        MapStoreWrapper mapStoreWrapper = mapContainer.getMapStoreContext().getStore();
         Set keys = mapStoreWrapper.loadAllKeys();
         assertEquals(2, keys.size());
         assertEquals("true", mapStoreWrapper.load("my-prop-1"));

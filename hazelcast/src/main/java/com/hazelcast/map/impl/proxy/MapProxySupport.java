@@ -1132,7 +1132,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final MapService service = getService();
         final MapServiceContext mapServiceContext = service.getMapServiceContext();
         final MapContainer mapContainer = mapServiceContext.getMapContainer(name);
-        return mapContainer.getStore();
+        return mapContainer.getMapStoreContext().getStore();
 
     }
 
