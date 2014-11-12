@@ -9,10 +9,9 @@
 
 
 
-Hazelcast has an extensible, JAAS based security feature which can be used to authenticate both cluster members and clients and to perform access control checks on client operations. Access control can be done according to endpoint principal and/or endpoint address. 
+Hazelcast has an extensible, JAAS based security feature you can use to authenticate both cluster members and clients, and to perform access control checks on client operations. Access control can be done according to endpoint principal and/or endpoint address. 
 
-Security can be enabled as stated in the below programmatic or declarative configuration.
-
+You can enable security declaratively or programmatically, as shown below.
 
 
 ```xml
@@ -37,5 +36,5 @@ SecurityConfig securityCfg = cfg.getSecurityConfig();
 securityCfg.setEnabled( true );
 ```
 
-Also, please see [Setting License Key](#setting-the-license-key-for-hazelcast-enterprise).
+Also, see [Setting License Key](#setting-the-license-key-for-hazelcast-enterprise).
 
