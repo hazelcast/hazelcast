@@ -23,6 +23,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
@@ -1206,7 +1207,7 @@ public abstract class AbstractCacheRecordStore<
                 if (localKeys.contains(key) && record != null) {
                     final boolean isExpired = processExpiredEntry(key, record, now);
                     if (!isExpired) {
-                        deleteRecord(key, completionId);
+                        deleteRecord(key, IGNORE_COMPLETION);
                         if (isStatisticsEnabled()) {
                             statistics.increaseCacheRemovals(1);
                         }
@@ -1217,9 +1218,10 @@ public abstract class AbstractCacheRecordStore<
                 }
                 isEventBatchingEnabled = false;
                 hasExpiringEntry = false;
-                int orderKey = keys.hashCode();
-                publishBatchedEvents(name, CacheEventType.REMOVED, orderKey);
             }
+            int orderKey = keys.hashCode();
+            publishBatchedEvents(name, CacheEventType.REMOVED, orderKey);
+            publishEvent(CacheEventType.COMPLETED, new DefaultData(), null, null, false, completionId);
         }
     }
 

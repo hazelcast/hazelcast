@@ -81,8 +81,6 @@ public class CacheRemoveAllOperation extends PartitionWideCacheOperation impleme
                 cache.removeAll(filteredKeys, completionId);
             }
             response = new CacheClearResponse(Boolean.TRUE);
-            int orderKey = keys != null ? keys.hashCode() : 1;
-//            cache.publishCompletedEvent(name, completionId, new DefaultData(), orderKey);
         } catch (CacheException e) {
             response = new CacheClearResponse(e);
         }
