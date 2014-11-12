@@ -342,22 +342,26 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
 
     @Override
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
-        throw new UnsupportedOperationException("getTransactional*() methods are only methods allowed for transactional operations!");
+        throw new UnsupportedOperationException("getTransactional*() methods are "
+                + "only methods allowed for transactional operations!");
     }
 
     @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
-        throw new UnsupportedOperationException("getTransactional*() methods are only methods allowed for transactional operations!");
+        throw new UnsupportedOperationException("getTransactional*() methods are "
+                + "only methods allowed for transactional operations!");
     }
 
     @Override
     public TransactionContext newTransactionContext() {
-        throw new UnsupportedOperationException("getTransactional*() methods are only methods allowed for transactional operations!");
+        throw new UnsupportedOperationException("getTransactional*() methods are "
+                + "only methods allowed for transactional operations!");
     }
 
     @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
-        throw new UnsupportedOperationException("getTransactional*() methods are only methods allowed for transactional operations!");
+        throw new UnsupportedOperationException("getTransactional*() methods are "
+                + "only methods allowed for transactional operations!");
     }
 
 }
