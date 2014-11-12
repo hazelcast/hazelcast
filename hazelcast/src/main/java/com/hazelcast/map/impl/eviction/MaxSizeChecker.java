@@ -44,8 +44,8 @@ public class MaxSizeChecker {
     private static final int ONE_KILOBYTE = 1024;
     private static final int ONE_MEGABYTE = ONE_KILOBYTE * ONE_KILOBYTE;
 
-    private MemoryInfoAccessor memoryInfoAccessor;
-    private MapServiceContext mapServiceContext;
+    private final MemoryInfoAccessor memoryInfoAccessor;
+    private final MapServiceContext mapServiceContext;
 
 
     public MaxSizeChecker(MapServiceContext mapServiceContext) {

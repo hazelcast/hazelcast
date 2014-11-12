@@ -90,6 +90,7 @@ public class JCacheListenerTest extends HazelcastTestSupport {
 
         HazelcastTestSupport.assertOpenEventually(latch);
         Assert.assertEquals(threadCount * putCount, counter.get());
+        cachingProvider.close();
     }
 
     public static class TestListener

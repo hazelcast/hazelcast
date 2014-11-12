@@ -17,14 +17,11 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.core.MapLoaderLifecycleSupport;
-import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.impl.mapstore.MapStoreManager;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.NativeRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
@@ -41,37 +38,38 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
-import static com.hazelcast.map.impl.mapstore.MapStoreManagers.createWriteBehindManager;
-import static com.hazelcast.map.impl.mapstore.MapStoreManagers.createWriteThroughManager;
-import static com.hazelcast.map.impl.mapstore.MapStoreManagers.emptyMapStoreManager;
+import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
+import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 
 /**
  * Map container.
  */
 public class MapContainer extends MapContainerSupport {
 
-    private static final int INITIAL_KEYS_REMOVE_DELAY_MINUTES = 20;
-
     private final RecordFactory recordFactory;
-    private final MapServiceContext mapServiceContext;
-    private final List<MapInterceptor> interceptors;
-    private final Map<String, MapInterceptor> interceptorMap;
-    private final IndexService indexService = new IndexService();
-    private final SizeEstimator nearCacheSizeEstimator;
-    private final PartitioningStrategy partitioningStrategy;
-    private WanReplicationPublisher wanReplicationPublisher;
-    private MapMergePolicy wanMergePolicy;
-    private final Map<Data, Object> initialKeys = new ConcurrentHashMap<Data, Object>();
-    private MapStoreWrapper storeWrapper;
-    private MapStoreManager mapStoreManager;
 
+    private final MapServiceContext mapServiceContext;
+
+    private final List<MapInterceptor> interceptors;
+
+    private final Map<String, MapInterceptor> interceptorMap;
+
+    private final IndexService indexService = new IndexService();
+
+    private final SizeEstimator nearCacheSizeEstimator;
+
+    private final PartitioningStrategy partitioningStrategy;
+
+    private final MapStoreContext mapStoreContext;
+
+    private WanReplicationPublisher wanReplicationPublisher;
+
+    private MapMergePolicy wanMergePolicy;
 
     public MapContainer(final String name, final MapConfig mapConfig, final MapServiceContext mapServiceContext) {
         super(name, mapConfig);
@@ -79,38 +77,16 @@ public class MapContainer extends MapContainerSupport {
         this.partitioningStrategy = createPartitioningStrategy();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         recordFactory = createRecordFactory(nodeEngine);
-        initMapStoreOperations(nodeEngine);
         initWanReplication(nodeEngine);
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
-        nearCacheSizeEstimator = SizeEstimators.createNearCacheSizeEstimator();
-        mapStoreManager = createMapStoreManager(this);
-        mapStoreManager.start();
+        nearCacheSizeEstimator = createNearCacheSizeEstimator();
+        mapStoreContext = createMapStoreContext(this);
+
     }
 
-    public MapStoreManager createMapStoreManager(MapContainer mapContainer) {
-        if (!isMapStoreEnabled()) {
-            return emptyMapStoreManager();
-        }
-        if (isWriteBehindMapStoreEnabled()) {
-            return createWriteBehindManager(mapContainer);
-        } else {
-            return createWriteThroughManager(mapContainer);
-        }
-    }
-
-    public MapStoreManager getMapStoreManager() {
-        return mapStoreManager;
-    }
-
-    private void initMapStoreOperations(NodeEngine nodeEngine) {
-        if (!isMapStoreEnabled()) {
-            return;
-        }
-        storeWrapper = createMapStoreWrapper(mapConfig.getMapStoreConfig(), nodeEngine);
-        if (storeWrapper != null) {
-            initMapStore(storeWrapper.getImpl(), mapConfig.getMapStoreConfig(), nodeEngine);
-        }
+    public void init() {
+        mapStoreContext.start();
     }
 
     private RecordFactory createRecordFactory(NodeEngine nodeEngine) {
@@ -130,41 +106,6 @@ public class MapContainer extends MapContainerSupport {
                 throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
         }
         return recordFactory;
-    }
-
-    private MapStoreWrapper createMapStoreWrapper(MapStoreConfig mapStoreConfig, NodeEngine nodeEngine) {
-        final String name = getName();
-        Object store;
-        MapStoreWrapper storeWrapper;
-        try {
-            MapStoreFactory factory = (MapStoreFactory) mapStoreConfig.getFactoryImplementation();
-            if (factory == null) {
-                String factoryClassName = mapStoreConfig.getFactoryClassName();
-                if (factoryClassName != null && !"".equals(factoryClassName)) {
-                    factory = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), factoryClassName);
-                }
-            }
-            store = (factory == null ? mapStoreConfig.getImplementation()
-                    : factory.newMapStore(name, mapStoreConfig.getProperties()));
-            if (store == null) {
-                String mapStoreClassName = mapStoreConfig.getClassName();
-                store = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), mapStoreClassName);
-            }
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-        nodeEngine.getConfig().getMapConfig(name).getMapStoreConfig().setImplementation(store);
-        storeWrapper = new MapStoreWrapper(store, name, mapStoreConfig.isEnabled());
-        return storeWrapper;
-    }
-
-    private void initMapStore(Object store, MapStoreConfig mapStoreConfig, NodeEngine nodeEngine) {
-        if (store instanceof MapLoaderLifecycleSupport) {
-            ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(),
-                    mapStoreConfig.getProperties(), getName());
-        }
-
-        loadInitialKeys();
     }
 
 
@@ -194,42 +135,6 @@ public class MapContainer extends MapContainerSupport {
             }
         }
         return strategy;
-    }
-
-    private void loadInitialKeys() {
-        initialKeys.clear();
-        Set keys = storeWrapper.loadAllKeys();
-        if (keys == null || keys.isEmpty()) {
-            return;
-        }
-
-        int maxSizePerNode = getMaxSizePerNode();
-
-        for (Object key : keys) {
-            Data dataKey = mapServiceContext.toData(key, partitioningStrategy);
-
-            // this node will load only owned keys
-            if (mapServiceContext.isOwnedKey(dataKey)) {
-
-                initialKeys.put(dataKey, key);
-
-                if (initialKeys.size() == maxSizePerNode) {
-                    break;
-                }
-            }
-        }
-
-        // remove the keys remains more than 20 minutes.
-        mapServiceContext.getNodeEngine().getExecutionService().schedule(new Runnable() {
-            @Override
-            public void run() {
-                initialKeys.clear();
-            }
-        }, INITIAL_KEYS_REMOVE_DELAY_MINUTES, TimeUnit.MINUTES);
-    }
-
-    public Map<Data, Object> getInitialKeys() {
-        return initialKeys;
     }
 
     public IndexService getIndexService() {
@@ -305,10 +210,6 @@ public class MapContainer extends MapContainerSupport {
         return mapConfig.getAsyncBackupCount();
     }
 
-    public MapStoreWrapper getStore() {
-        return storeWrapper != null && storeWrapper.isEnabled() ? storeWrapper : null;
-    }
-
     public PartitioningStrategy getPartitioningStrategy() {
         return partitioningStrategy;
     }
@@ -324,4 +225,10 @@ public class MapContainer extends MapContainerSupport {
     public MapServiceContext getMapServiceContext() {
         return mapServiceContext;
     }
+
+    public MapStoreContext getMapStoreContext() {
+        return mapStoreContext;
+    }
 }
+
+

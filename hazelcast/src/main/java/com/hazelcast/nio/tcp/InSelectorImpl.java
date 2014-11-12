@@ -22,20 +22,29 @@ import java.nio.channels.SelectionKey;
 
 public final class InSelectorImpl extends AbstractIOSelector {
 
-    private volatile long readKeyCount;
+    // This field will be incremented by a single thread --> the InSelectorImpl. It can be read by multiple threads.
+    private volatile long readEvents;
 
     public InSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger, IOSelectorOutOfMemoryHandler oomeHandler) {
         super(threadGroup, tname, logger, oomeHandler);
     }
 
-    public long getReadKeyCount() {
-        return readKeyCount;
+    /**
+     * Returns the current number of read events that have been processed by this InSelectorImpl.
+     *
+     * This method is thread-safe.
+     *
+     * @return the number of read events.
+     */
+    public long getReadEvents() {
+        return readEvents;
     }
 
     @Override
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
     protected void handleSelectionKey(SelectionKey sk) {
         if (sk.isValid() && sk.isReadable()) {
-            readKeyCount++;
+            readEvents++;
             SelectionHandler handler = (SelectionHandler) sk.attachment();
             handler.handle();
         }

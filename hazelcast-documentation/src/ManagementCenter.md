@@ -22,7 +22,7 @@ java -jar mancenter-*version*.war 8080 mancenter
 ```
 
 - Or, you can deploy it to your web server (Tomcat, Jetty, etc.). Let us say it is running at `http://localhost:8080/mancenter`.
-- After you perfrom the above steps, make sure that `http://localhost:8080/mancenter` is up.
+- After you perform the above steps, make sure that `http://localhost:8080/mancenter` is up.
 - Configure your Hazelcast nodes by adding the URL of your web application to your `hazelcast.xml`. Hazelcast nodes will send their states to this URL.
 
 
@@ -75,7 +75,7 @@ The Home page includes a menu on the left which lists the distributed data struc
 ![image](images/NoteSmall.jpg) ***NOTE:*** *Distributed data structures will be shown there when the proxies are created for them.*
 
 
-You can expand expand and collapse menu items by clicking on them. Below is the list of menu items with links to their explanations.
+You can expand and collapse menu items by clicking on them. Below is the list of menu items with links to their explanations.
 
 - [Caches](#caches)
 - [Maps](#maps)
@@ -416,7 +416,7 @@ Time Travel is used to check the status of the cluster at a time in the past. Wh
 
 ![](images/timetravel.jpg)
 
-To see the cluster status in a past time, Time Travel should be enabled first. Click on the area where it says **OFF** (on the right of Time Travel window). It will turn to **ON** after it asks whether to enable the Time Travel with a dialog: slick on **Enable** in the dialog to enable Time Travel.
+To see the cluster status in a past time, Time Travel should be enabled first. Click on the area where it says **OFF** (on the right of Time Travel window). It will turn to **ON** after it asks whether to enable the Time Travel with a dialog: click on **Enable** in the dialog to enable Time Travel.
 
 Once it is **ON**, the status of your cluster will be stored on your disk as long as your web server is alive.
 

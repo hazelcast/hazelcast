@@ -37,7 +37,7 @@ public final class MapDataStores {
     public static <K, V> MapDataStore<K, V> createWriteBehindStore(MapContainer mapContainer, int partitionId,
                                                                    WriteBehindProcessor writeBehindProcessor) {
         final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
-        final MapStoreWrapper store = mapContainer.getStore();
+        final MapStoreWrapper store = mapContainer.getMapStoreContext().getStore();
         final SerializationService serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         final int writeDelaySeconds = mapContainer.getMapConfig().getMapStoreConfig().getWriteDelaySeconds();
         final long writeDelayMillis = TimeUnit.SECONDS.toMillis(writeDelaySeconds);
@@ -67,7 +67,7 @@ public final class MapDataStores {
      * @return new write through store manager.
      */
     public static <K, V> MapDataStore<K, V> createWriteThroughStore(MapContainer mapContainer) {
-        return (MapDataStore<K, V>) new WriteThroughStore(mapContainer.getStore(),
+        return (MapDataStore<K, V>) new WriteThroughStore(mapContainer.getMapStoreContext().getStore(),
                 mapContainer.getMapServiceContext().getNodeEngine().getSerializationService());
     }
 

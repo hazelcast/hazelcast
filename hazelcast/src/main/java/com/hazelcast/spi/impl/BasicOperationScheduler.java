@@ -274,7 +274,7 @@ public final class BasicOperationScheduler {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                 //it is an response packet.
-                responseThread.workQueue.add(packet);
+                responseThread.process(packet);
             } else {
                 //it is an must be an operation packet
                 int partitionId = packet.getPartitionId();
@@ -404,6 +404,7 @@ public final class BasicOperationScheduler {
         private final boolean isPartitionSpecific;
         private final BlockingQueue workQueue;
         private final Queue priorityWorkQueue;
+        // This field is updated by this OperationThread (so a single writer) and can be read by other threads.
         private volatile long processedCount;
 
         public OperationThread(String name, boolean isPartitionSpecific,
@@ -451,6 +452,7 @@ public final class BasicOperationScheduler {
             }
         }
 
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
         private void process(Object task) {
             processedCount++;
             try {

@@ -3,7 +3,7 @@
 
 ![](images/enterprise-onlycopy.jpg)
 
-Hazelcast allows you to use SSL socket communication among all Hazelcast members. You need to implement `com.hazelcast.nio.ssl.SSLContextFactory` and configure SSL section in network configuration.
+Hazelcast allows you to use SSL socket communication among all Hazelcast members. To use it, you need to implement `com.hazelcast.nio.ssl.SSLContextFactory` and configure the SSL section in network configuration.
 
 ```java
 public class MySSLContextFactory implements SSLContextFactory {
@@ -36,7 +36,7 @@ public class MySSLContextFactory implements SSLContextFactory {
 </hazelcast>
 ```
 
-Hazelcast provides a default SSLContextFactory; `com.hazelcast.nio.ssl.BasicSSLContextFactory` which uses configured keystore to initialize `SSLContext`. Just define `keyStore` and `keyStorePassword`, and also you can set `keyManagerAlgorithm` (default `SunX509`), `trustManagerAlgorithm` (default `SunX509`) and `protocol` (default `TLS`).
+Hazelcast provides a default SSLContextFactory, `com.hazelcast.nio.ssl.BasicSSLContextFactory`, which uses configured keystore to initialize `SSLContext`. You define `keyStore` and `keyStorePassword`, and you can set `keyManagerAlgorithm` (default `SunX509`), `trustManagerAlgorithm` (default `SunX509`) and `protocol` (default `TLS`).
 
 ```xml
 <hazelcast>
@@ -60,7 +60,7 @@ Hazelcast provides a default SSLContextFactory; `com.hazelcast.nio.ssl.BasicSSLC
 </hazelcast>
 ```
 
-Hazelcast client has SSL support too. Client SSL configuration can be defined using programmatic configuration as shown below.
+Hazelcast client also has SSL support. You can configure Client SSL programmatically as shown below.
 
 ```java
 Properties props = new Properties();
@@ -69,7 +69,7 @@ ClientConfig config = new ClientConfig();
 config.getSocketOptions().setSocketFactory( new SSLSocketFactory( props ) );
 ```
 
-You can also set `keyStore` and `keyStorePassword` through the following system properties:
+You can also set `keyStore` and `keyStorePassword` with the following system properties.
 
  - `javax.net.ssl.keyStore`
  - `javax.net.ssl.keyStorePassword` 

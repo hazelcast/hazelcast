@@ -87,7 +87,7 @@ public class MapReplicationOperation extends AbstractOperation {
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
             RecordStore recordStore = entry.getValue();
             MapContainer mapContainer = recordStore.getMapContainer();
-            if (!mapContainer.isWriteBehindMapStoreEnabled()) {
+            if (!mapContainer.getMapStoreContext().isWriteBehindMapStoreEnabled()) {
                 continue;
             }
             final WriteBehindQueue<DelayedEntry> writeBehindQueue = ((WriteBehindStore) recordStore.getMapDataStore())

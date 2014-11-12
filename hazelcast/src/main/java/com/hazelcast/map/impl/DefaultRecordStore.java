@@ -57,7 +57,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         super(mapContainer, partitionId);
         this.lockStore = createLockStore();
         this.mapDataStore
-                = mapContainer.getMapStoreManager().getMapDataStore(partitionId);
+                = mapContainer.getMapStoreContext().getMapStoreManager().getMapDataStore(partitionId);
         this.recordStoreLoader = createRecordStoreLoader();
         this.recordStoreLoader.loadAllKeys();
     }

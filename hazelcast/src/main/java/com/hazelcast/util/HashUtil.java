@@ -20,6 +20,7 @@ import com.hazelcast.nio.UnsafeHelper;
 import sun.misc.Unsafe;
 
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
 public final class HashUtil {
@@ -373,6 +374,13 @@ public final class HashUtil {
         k *= 0xc4ceb9fe1a85ec53L;
         k ^= k >>> 33;
         return k;
+    }
+
+    /**
+     * Hash code for multiple objects using {@link Arrays#hashCode(Object[])}.
+     **/
+    public static int hashCode(Object ... objects) {
+        return Arrays.hashCode(objects);
     }
 
     private HashUtil(){}
