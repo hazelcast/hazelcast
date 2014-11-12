@@ -100,7 +100,7 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public boolean isFull() {
-        logger.severe("availableSlots:"+availableSlots.get());
+        logger.severe("availableSlots:" + availableSlots.get());
         return availableSlots.get() <= 0;
     }
 
@@ -119,7 +119,7 @@ public final class TcpIpConnection implements Connection {
         }
 
         boolean full;
-        for (; ; ) {
+        for (;;) {
             int oldAvailableSlots = availableSlots.get();
 
             full = oldAvailableSlots <= 0;
@@ -179,7 +179,8 @@ public final class TcpIpConnection implements Connection {
                 sendClaim();
             } else {
 //                if (logger.isFinestEnabled()) {
-//                logger.info("No slots to " + toString() + " are available, but I can only ask for new ones in " + askInMs + " ms.");
+//                logger.info("No slots to " + toString() + " are available, but I can only ask for new ones in "
+//                      + askInMs + " ms.");
 //                }
                 waitingForSlotResponse.set(false);
             }
@@ -246,7 +247,7 @@ public final class TcpIpConnection implements Connection {
             backoffState = BackoffPolicy.EMPTY_STATE;
         }
 
-        for (; ; ) {
+        for (;;) {
             int currentAvailableSlots = this.availableSlots.get();
             if (currentAvailableSlots > 0) {
                 //we are going to ignore any claimResponses if the availableSlots is bigger than zero

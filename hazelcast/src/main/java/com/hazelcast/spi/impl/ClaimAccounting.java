@@ -14,11 +14,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Responsible for dealing with back-pressure claim requests.
  */
 public class ClaimAccounting implements ConnectionListener {
-    public final int totalCapacity;
-    public final int maximumClaimSize;
-    public final int minimumClaimSize;
+    private final int totalCapacity;
+    private final int maximumClaimSize;
+    private final int minimumClaimSize;
 
     private final AtomicInteger bookedCapacity = new AtomicInteger();
+    //todo: we need to get rid of stale connections, else OOME.
     private final ConcurrentMap<Connection, Integer> bookedCapacityPerMember = new ConcurrentHashMap<Connection, Integer>();
 
     private final InternalOperationService internalOperationService;
@@ -35,11 +36,23 @@ public class ClaimAccounting implements ConnectionListener {
         this.minimumClaimSize = node.getGroupProperties().BACKPRESSURE_MIN_CLAIM_SIZE.getInteger();
     }
 
+    public int getTotalCapacity() {
+        return totalCapacity;
+    }
+
+    public int getMaximumClaimSize() {
+        return maximumClaimSize;
+    }
+
+    public int getMinimumClaimSize() {
+        return minimumClaimSize;
+    }
+
     public int claimSlots(Connection connection) {
         ConnectionManager connectionManager = node.getConnectionManager();
 
         int newClaim;
-        for ( ;; ) {
+        for (;;) {
             int bookedCapacityBefore = bookedCapacity.get();
             Integer myClaimsBefore = bookedCapacityPerMember.get(connection);
             myClaimsBefore = myClaimsBefore != null ? myClaimsBefore : 0;
@@ -63,12 +76,13 @@ public class ClaimAccounting implements ConnectionListener {
             int reservedCapacityAfter = bookedCapacityWithoutMe + newClaim;
             if (bookedCapacity.compareAndSet(bookedCapacityBefore, reservedCapacityAfter)) {
                 break;
-            } else {
+            }
+            //else {
 //                if (logger.isFinestEnabled()) {
 //                logger.info("CAS has failed. I have to compute claim size for connection " + connection
 //                        + " once again.");
 //                }
-            }
+            //}
         }
         bookedCapacityPerMember.put(connection, newClaim);
         return newClaim;
