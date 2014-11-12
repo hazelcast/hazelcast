@@ -32,8 +32,8 @@ After the `threadIndex` is determined, the operation is put in the work queue of
 Because of this threading strategy, there are two forms of false sharing you need to be aware of:
 
 * false sharing of the partition: two completely independent data structures share the same partitions; e.g. if there
- is a map `employees` and a map `orders` it could be that an employees.get(peter) running on partition 25 is blocked
- by a map.get of orders.get(1234) also running on partition 25. If independent data structure share the same partition,
+ is a map `employees` and a map `orders`, the method `employees.get(peter)` running on partition 25 may be blocked
+ by a `map.get` of `orders.get(1234)` also running on partition 25. If independent data structure share the same partition,
  a slow operation on one data structure can slow down the other data structures.
  
 * false sharing of the partition-aware operation-thread: each operation-thread is responsible for executing
@@ -84,8 +84,8 @@ In some cases, the system needs to execute operations with a higher priority, e.
  needs to be executed, it is put in this `genericPriorityWorkQueue`. And just like the partition-aware operation threads, a generic
  operation thread will first check the `genericPriorityWorkQueue` for work. 
  
-Because a worker thread will block on the normal work queue (either partition specific or generic), it could be that a priority operation
-is not picked up because it will not be put on the queue where it is blocking. We always send a 'kick the worker' operation that does 
+Because a worker thread will block on the normal work queue (either partition specific or generic), a priority operation
+may not be picked up because it will not be put on the queue where it is blocking. We always send a 'kick the worker' operation that does 
 nothing else than trigger the worker to wake up and check the priority queue. 
 
 #### Operation-response and Invocation-future

@@ -10,7 +10,7 @@ Hazelcast uses a pool of threads for I/O. A single thread does not do all the IO
 * IO-threads that take care of reading data from other members/clients,
 * IO-threads that take care of writing data to other members/clients.
 
-You can configure the number of IO-threads using the `hazelcast.io.thread.count` system property, which defaults to 3 per member. 
+You can configure the number of IO-threads using the `hazelcast.io.thread.count` system property. Its default value is 3 per member. 
 This means that if 3 is used, in total there are 7 IO-threads; 1 accept-IO-thread, 3 read-IO-threads, and 3 write-IO-threads. Each IO-thread has its own Selector instance and waits on `Selector.select` if there is nothing to do.
 
 In case of the read-IO-thread, when sufficient bytes for a packet have been received, the Packet object is created. This Packet is 

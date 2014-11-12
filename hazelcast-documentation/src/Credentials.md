@@ -16,7 +16,7 @@ public interface Credentials extends Serializable {
 }
 ```
 
-Hazelcst calls the `Credentials.setEndpoint()` method when an authentication request arrives at the node before authentication takes place.
+Hazelcast calls the `Credentials.setEndpoint()` method when an authentication request arrives at the node before authentication takes place.
 
 ```java
 package com.hazelcast.security;
