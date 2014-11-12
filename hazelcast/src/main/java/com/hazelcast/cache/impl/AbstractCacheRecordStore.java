@@ -22,8 +22,12 @@ import com.hazelcast.cache.impl.record.CacheRecordMap;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
@@ -38,11 +42,15 @@ import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.processor.EntryProcessor;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
@@ -55,6 +63,9 @@ public abstract class AbstractCacheRecordStore<
         implements ICacheRecordStore {
 
     protected static final int DEFAULT_INITIAL_CAPACITY = 1000;
+
+    protected static final long DEFAULT_EXPIRATION_TASK_INITIAL_DELAY = 10;
+    protected static final long DEFAULT_EXPIRATION_TASK_PERIOD = 10;
 
     protected final String name;
     protected final int partitionId;
@@ -74,6 +85,7 @@ public abstract class AbstractCacheRecordStore<
     protected final int evictionPercentage;
     protected final int evictionThresholdPercentage;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
+    protected ScheduledFuture<?> expirationTaskScheduler;
 
     //CHECKSTYLE:OFF
     public AbstractCacheRecordStore(final String name,
@@ -106,6 +118,7 @@ public abstract class AbstractCacheRecordStore<
         this.evictionEnabled = evictionPolicy != EvictionPolicy.NONE;
         this.evictionPercentage = cacheConfig.getEvictionPercentage();
         this.evictionThresholdPercentage = cacheConfig.getEvictionThresholdPercentage();
+        this.expirationTaskScheduler = scheduleExpirationTask();
     }
     //CHECKSTYLE:ON
 
@@ -1319,4 +1332,78 @@ public abstract class AbstractCacheRecordStore<
     public Map<Data, CacheRecord> getReadOnlyRecords() {
         return (Map<Data, CacheRecord>) Collections.unmodifiableMap(records);
     }
+
+    @Override
+    public void destroy() {
+        closeScheduledTasks();
+        clear();
+        closeResources();
+        closeListeners();
+    }
+
+    protected void closeScheduledTasks() {
+        if (expirationTaskScheduler != null) {
+            expirationTaskScheduler.cancel(true);
+        }
+    }
+
+    protected void closeListeners() {
+        //close the configured CacheEntryListeners
+        EventService eventService = cacheService.getNodeEngine().getEventService();
+        Collection<EventRegistration> candidates =
+                eventService.getRegistrations(CacheService.SERVICE_NAME, name);
+
+        for (EventRegistration registration : candidates) {
+            if (((EventServiceImpl.Registration) registration).getListener() instanceof Closeable) {
+                try {
+                    ((Closeable) registration).close();
+                } catch (IOException e) {
+                    EmptyStatement.ignore(e);
+                }
+            }
+        }
+    }
+
+    protected void closeResources() {
+        //close the configured CacheWriter
+        if (cacheWriter instanceof Closeable) {
+            IOUtil.closeResource((Closeable) cacheWriter);
+        }
+
+        //close the configured CacheLoader
+        if (cacheLoader instanceof Closeable) {
+            IOUtil.closeResource((Closeable) cacheLoader);
+        }
+
+        //close the configured defaultExpiryPolicy
+        if (defaultExpiryPolicy instanceof Closeable) {
+            IOUtil.closeResource((Closeable) defaultExpiryPolicy);
+        }
+    }
+
+    protected ScheduledFuture<?> scheduleExpirationTask() {
+        return nodeEngine.getExecutionService()
+                .scheduleWithFixedDelay("hz:cache",
+                        new ExpirationTask(),
+                        DEFAULT_EXPIRATION_TASK_INITIAL_DELAY,
+                        DEFAULT_EXPIRATION_TASK_PERIOD,
+                        TimeUnit.SECONDS);
+    }
+
+    protected void onExpiry() {
+        if (hasExpiringEntry) {
+            evictExpiredRecords(evictionPercentage);
+        }
+    }
+
+    /**
+     * Task to evict expired records
+     */
+    protected class ExpirationTask implements Runnable {
+        @Override
+        public void run() {
+            onExpiry();
+        }
+    }
+
 }

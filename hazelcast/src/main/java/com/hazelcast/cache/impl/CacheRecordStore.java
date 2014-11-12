@@ -19,18 +19,11 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.EventServiceImpl;
-import com.hazelcast.util.EmptyStatement;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Collection;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
@@ -63,7 +56,7 @@ public class CacheRecordStore
     protected CacheRecordFactory cacheRecordFactory;
 
     public CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine,
-                            AbstractCacheService cacheService) {
+            AbstractCacheService cacheService) {
         super(name, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
         this.records = createRecordCacheMap();
@@ -77,8 +70,7 @@ public class CacheRecordStore
 
     @Override
     protected CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key,
-                                                                      CacheRecord record,
-                                                                      long now) {
+            CacheRecord record, long now) {
         return new CacheEntryProcessorEntry(key, record, this, now);
     }
 
@@ -161,45 +153,14 @@ public class CacheRecordStore
 
     @Override
     protected boolean isEvictionRequired() {
+        // Eviction is not supported by CacheRecordStore
         return false;
     }
 
     @Override
-    public void destroy() {
-        clear();
-        closeResources();
-        //close the configured CacheEntryListeners
-        EventService eventService = cacheService.getNodeEngine().getEventService();
-        Collection<EventRegistration> candidates =
-                eventService.getRegistrations(CacheService.SERVICE_NAME, name);
-
-        for (EventRegistration registration : candidates) {
-            if (((EventServiceImpl.Registration) registration).getListener() instanceof Closeable) {
-                try {
-                    ((Closeable) registration).close();
-                } catch (IOException e) {
-                    EmptyStatement.ignore(e);
-                    //log
-                }
-            }
-        }
-    }
-
-    protected void closeResources() {
-        //close the configured CacheWriter
-        if (cacheWriter instanceof Closeable) {
-            IOUtil.closeResource((Closeable) cacheWriter);
-        }
-
-        //close the configured CacheLoader
-        if (cacheLoader instanceof Closeable) {
-            IOUtil.closeResource((Closeable) cacheLoader);
-        }
-
-        //close the configured defaultExpiryPolicy
-        if (defaultExpiryPolicy instanceof Closeable) {
-            IOUtil.closeResource((Closeable) defaultExpiryPolicy);
-        }
+    protected ScheduledFuture<?> scheduleExpirationTask() {
+        // Expiration task is not supported by CacheRecordStore
+        return null;
     }
 
 }
