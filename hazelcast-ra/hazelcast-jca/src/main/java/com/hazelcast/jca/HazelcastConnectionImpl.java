@@ -333,33 +333,32 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
 
     @Override
     public LifecycleService getLifecycleService() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Hazelcast Lifecycle is only managed by JEE Container");
     }
-
 
     @Override
     public void shutdown() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Hazelcast Lifecycle is only managed by JEE Container");
     }
 
     @Override
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("getTransactional*() methods are only methods allowed for transactional operations!");
     }
 
     @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("getTransactional*() methods are only methods allowed for transactional operations!");
     }
 
     @Override
     public TransactionContext newTransactionContext() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("getTransactional*() methods are only methods allowed for transactional operations!");
     }
 
     @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("getTransactional*() methods are only methods allowed for transactional operations!");
     }
 
 }
