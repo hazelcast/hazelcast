@@ -171,7 +171,6 @@ public class HealthMonitor extends Thread {
         private final int connectionCount;
         private final int ioExecutorQueueSize;
         private final int backpressureRemainingCapacity;
-        private final GcMetrics gcMetrics;
 
         //CHECKSTYLE:OFF
         public HealthMetrics() {
@@ -207,7 +206,6 @@ public class HealthMonitor extends Thread {
             activeConnectionCount = connectionManager.getActiveConnectionCount();
             currentClientConnectionCount = connectionManager.getCurrentClientConnections();
             connectionCount = connectionManager.getConnectionCount();
-            gcMetrics = new GcMetrics();
             if (backpressureEnabled) {
                 backpressureForcedSyncBackupsCount = operationService.getNoOfForcedSyncBackups();
                 backpressureAppliedCount = operationService.getNoOfBackpressuredOperations();

@@ -169,7 +169,7 @@ final class BasicOperationService implements InternalOperationService {
 
         this.backoffPolicy = new ExponentialBackoffPolicy();
 
-        executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
+        this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
         this.backupTimeoutHandlerThread = new BackupTimeoutHandlerThread();
@@ -375,7 +375,8 @@ final class BasicOperationService implements InternalOperationService {
             return sent == WriteResult.SUCCESS;
         }
         backpressuredOpsCounter.incrementAndGet();
-        int maxAttempts = 1000; //TODO: Refactor it to GroupProperties
+        //TODO: Refactor it to GroupProperties
+        int maxAttempts = 1000;
         int state = BackoffPolicy.EMPTY_STATE;
         for (int i = 0; i < maxAttempts; i++) {
             state = backoffPolicy.apply(state);
@@ -405,8 +406,8 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         if (!(op instanceof BackupOperation)) {
-            throw new IllegalArgumentException("Only BackupOperations are allowed to be executed using the sendBackup method. " +
-                    "Operation = " + op);
+            throw new IllegalArgumentException("Only BackupOperations are allowed to be executed using the sendBackup method. "
+                    + "Operation = " + op);
         }
 
         Data data = nodeEngine.toData(op);
@@ -968,6 +969,16 @@ final class BasicOperationService implements InternalOperationService {
      */
     private final class OperationBackupHandler {
 
+        // just for debugging.
+        private final AtomicLong backupCounter = new AtomicLong();
+        private final AtomicLong fullCounter = new AtomicLong();
+        private final AtomicLong notFullCounter = new AtomicLong();
+
+        //a counter tracking how many times was async backup downgraded to sync to enforce back-pressure
+        private final AtomicLong asyncDowngradedCounter = new AtomicLong();
+
+        private volatile long lastFullTimeMs = System.currentTimeMillis();
+
         public int backup(BackupAwareOperation backupAwareOp) throws Exception {
             int requestedSyncBackupCount = backupAwareOp.getSyncBackupCount() > 0
                     ? min(InternalPartition.MAX_BACKUP_COUNT, backupAwareOp.getSyncBackupCount()) : 0;
@@ -1002,14 +1013,6 @@ final class BasicOperationService implements InternalOperationService {
             return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackupCount, totalBackupCount);
 
         }
-
-        // just for debugging.
-        private final AtomicLong backupCounter = new AtomicLong();
-        private final AtomicLong fullCOunter = new AtomicLong();
-        private final AtomicLong notFullCounter = new AtomicLong();
-
-        //a counter tracking how many times was async backup downgraded to sync to enforce back-pressure
-        private final AtomicLong asyncDowngradedCounter = new AtomicLong();
 
         /**
          * Makes the actual backup.
@@ -1054,7 +1057,7 @@ final class BasicOperationService implements InternalOperationService {
                     Connection connection = node.getConnectionManager().getOrConnect(target);
                     //logger.severe("connection.isFull:"+connection.isFull());
 
-                    if(connection.isFull()){
+                    if (connection.isFull()) {
                         syncBackup = true;
                         fullConnectionEncountered = true;
                         asyncDowngradedCounter.incrementAndGet();
@@ -1080,21 +1083,20 @@ final class BasicOperationService implements InternalOperationService {
             }
 
             if (fullConnectionEncountered) {
-                fullCOunter.incrementAndGet();
+                fullCounter.incrementAndGet();
             } else {
                 notFullCounter.incrementAndGet();
             }
 
             if ((backupCounter.incrementAndGet() % 10000) == 0) {
-                logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCOunter + " notFullCounter: " + notFullCounter);
+                logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCounter
+                        + " notFullCounter: " + notFullCounter);
             }
 
             logger.severe("syncBackup:" + syncBackups);
 
             return syncBackups;
         }
-
-        private volatile long lastFullTimeMs = System.currentTimeMillis();
 
         private Backup newBackup(BackupAwareOperation backupAwareOp, long[] replicaVersions,
                                  int replicaIndex, boolean syncBackup) {
