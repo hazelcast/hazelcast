@@ -79,12 +79,14 @@ public class GroupProperties {
     public static final String PROP_MERGE_FIRST_RUN_DELAY_SECONDS = "hazelcast.merge.first.run.delay.seconds";
     public static final String PROP_MERGE_NEXT_RUN_DELAY_SECONDS = "hazelcast.merge.next.run.delay.seconds";
     public static final String PROP_OPERATION_CALL_TIMEOUT_MILLIS = "hazelcast.operation.call.timeout.millis";
+    public static final String PROP_OPERATION_SKIP_RESPONSE_QUEUE = "hazelcast.operation.skip.response.queue";
 
     /**
      * If an operation has backups and the backups don't complete in time; then some cleanup logic can be executed. This
      * property specifies that timeout.
      */
     public static final String PROP_OPERATION_BACKUP_TIMEOUT_MILLIS = "hazelcast.operation.backup.timeout.millis";
+    public final GroupProperty OPERATION_SKIP_RESPONSE_QUEUE;
 
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_SERVER_BIND_ANY = "hazelcast.socket.server.bind.any";
@@ -354,6 +356,7 @@ public class GroupProperties {
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
         OPERATION_CALL_TIMEOUT_MILLIS = new GroupProperty(config, PROP_OPERATION_CALL_TIMEOUT_MILLIS, "60000");
         OPERATION_BACKUP_TIMEOUT_MILLIS = new GroupProperty(config, PROP_OPERATION_BACKUP_TIMEOUT_MILLIS, "5000");
+        OPERATION_SKIP_RESPONSE_QUEUE = new GroupProperty(config, PROP_OPERATION_SKIP_RESPONSE_QUEUE, "false");
 
         final GroupProperty SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SOCKET_SERVER_BIND_ANY = new GroupProperty(config, PROP_SOCKET_SERVER_BIND_ANY, SOCKET_BIND_ANY);

@@ -82,6 +82,9 @@ public final class BasicOperationScheduler {
 
     private final AtomicInteger noOfScheduledOperations = new AtomicInteger();
 
+    private final ResponseThread responseThread;
+    private final boolean skipResponseQueue;
+
     private volatile boolean shutdown;
 
     //The trigger is used when a priority message is send and offered to the operation-thread priority queue.
@@ -105,6 +108,7 @@ public final class BasicOperationScheduler {
         this.logger = node.getLogger(BasicOperationScheduler.class);
         this.node = node;
         this.dispatcher = dispatcher;
+        this.skipResponseQueue = node.getGroupProperties().OPERATION_SKIP_RESPONSE_QUEUE.getBoolean();
 
         this.genericOperationThreads = new OperationThread[getGenericOperationThreadCount()];
         initOperationThreads(genericOperationThreads, new GenericOperationThreadFactory());
@@ -112,8 +116,19 @@ public final class BasicOperationScheduler {
         this.partitionOperationThreads = new OperationThread[getPartitionOperationThreadCount()];
         initOperationThreads(partitionOperationThreads, new PartitionOperationThreadFactory());
 
+        this.responseThread = createResponseThreadIfNecessary();
+
         logger.info("Starting with " + genericOperationThreads.length + " generic operation threads and "
                 + partitionOperationThreads.length + " partition operation threads.");
+    }
+
+    private ResponseThread createResponseThreadIfNecessary() {
+        if (skipResponseQueue) {
+            return null;
+        }
+        ResponseThread t = new ResponseThread();
+        t.start();
+        return t;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings({"NP_NONNULL_PARAM_VIOLATION" })
@@ -277,9 +292,11 @@ public final class BasicOperationScheduler {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                 // It is a response packet.
-                // The response is directly dispatched on the IO thread. The amount of work that needs
-                // to be done is very little and there is not a lot of contention.
-                dispatcher.dispatch(packet);
+                if (skipResponseQueue) {
+                    dispatcher.dispatch(packet);
+                } else {
+                    responseThread.workQueue.add(packet);
+                }
             } else {
                 // It is an operation packet.
                 int partitionId = packet.getPartitionId();
@@ -369,6 +386,10 @@ public final class BasicOperationScheduler {
             OperationThread operationThread = genericOperationThreads[k];
             sb.append(operationThread.getName()).append(".processedCount=").append(operationThread.processedCount).append("\n");
         }
+    }
+
+    public int getResponseQueueSize() {
+        return skipResponseQueue ? 0 : responseThread.workQueue.size();
     }
 
     private class GenericOperationThreadFactory implements ThreadFactory {
@@ -479,6 +500,53 @@ public final class BasicOperationScheduler {
 
         public void awaitTermination(int timeout, TimeUnit unit) throws InterruptedException {
             join(unit.toMillis(timeout));
+        }
+    }
+
+    private class ResponseThread extends Thread {
+        private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
+
+        public ResponseThread() {
+            super(node.threadGroup, node.getThreadNamePrefix("response"));
+            setContextClassLoader(node.getConfigClassLoader());
+        }
+
+        public void run() {
+            try {
+                doRun();
+            } catch (OutOfMemoryError e) {
+                onOutOfMemory(e);
+            } catch (Throwable t) {
+                logger.severe(t);
+            }
+        }
+
+        private void doRun() {
+            for (; ; ) {
+                Object task;
+                try {
+                    task = workQueue.take();
+                } catch (InterruptedException e) {
+                    if (shutdown) {
+                        return;
+                    }
+                    continue;
+                }
+
+                if (shutdown) {
+                    return;
+                }
+
+                process(task);
+            }
+        }
+
+        private void process(Object task) {
+            try {
+                dispatcher.dispatch(task);
+            } catch (Exception e) {
+                logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
+            }
         }
     }
 
