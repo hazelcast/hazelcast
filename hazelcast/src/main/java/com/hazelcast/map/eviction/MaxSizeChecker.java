@@ -44,8 +44,8 @@ public class MaxSizeChecker {
     private static final int ONE_KILOBYTE = 1024;
     private static final int ONE_MEGABYTE = ONE_KILOBYTE * ONE_KILOBYTE;
 
-    private MemoryInfoAccessor memoryInfoAccessor;
-    private MapServiceContext mapServiceContext;
+    private final MemoryInfoAccessor memoryInfoAccessor;
+    private final MapServiceContext mapServiceContext;
 
 
     public MaxSizeChecker(MapServiceContext mapServiceContext) {
@@ -123,13 +123,6 @@ public class MaxSizeChecker {
         return maxSize < (usedHeapSize / ONE_MEGABYTE);
     }
 
-    private boolean isEvictableFreeHeapSize(final MapContainer mapContainer) {
-        final long currentFreeHeapSize = getAvailableMemory();
-        final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final int minFreeHeapSize = getApproximateMaxSize(maxSizeConfig.getSize());
-        return minFreeHeapSize > (currentFreeHeapSize / ONE_MEGABYTE);
-    }
-
     private boolean isEvictableHeapPercentage(final MapContainer mapContainer) {
         final long usedHeapSize = getUsedHeapSize(mapContainer);
         if (usedHeapSize == -1L) {
@@ -141,31 +134,8 @@ public class MaxSizeChecker {
         return maxSize < (1D * ONE_HUNDRED_PERCENT * usedHeapSize / total);
     }
 
-    private boolean isEvictableFreeHeapPercentage(final MapContainer mapContainer) {
-        final long currentFreeHeapSize = getAvailableMemory();
-        final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final int freeHeapPercentage = getApproximateMaxSize(maxSizeConfig.getSize());
-        final long total = getTotalMemory();
-        return freeHeapPercentage > (1D * ONE_HUNDRED_PERCENT * currentFreeHeapSize / total);
-    }
-
     private long getTotalMemory() {
         return memoryInfoAccessor.getTotalMemory();
-    }
-
-    private long getFreeMemory() {
-        return memoryInfoAccessor.getFreeMemory();
-    }
-
-    private long getMaxMemory() {
-        return memoryInfoAccessor.getMaxMemory();
-    }
-
-    private long getAvailableMemory() {
-        final long totalMemory = getTotalMemory();
-        final long freeMemory = getFreeMemory();
-        final long maxMemory = getMaxMemory();
-        return freeMemory + (maxMemory - totalMemory);
     }
 
     private long getUsedHeapSize(final MapContainer mapContainer) {
