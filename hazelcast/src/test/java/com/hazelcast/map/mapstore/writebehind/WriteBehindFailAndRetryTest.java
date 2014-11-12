@@ -22,6 +22,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -59,32 +60,73 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
     static class SelfHealingMapStore<K, V> extends MapStoreAdapter<K, V> {
 
-        private static final long DIFF = TimeUnit.SECONDS.toMillis(3);
+        private final ConcurrentMap<K, V> store = new ConcurrentHashMap<K, V>();
 
-        private ConcurrentMap<K, V> store = new ConcurrentHashMap<K, V>();
-
-        private ConcurrentMap<String, Long> timeHolder = new ConcurrentHashMap<String, Long>();
-
-        private static final String TIME_KEY = "time";
+        private final TemporarySuccessProducer temporarySuccessProducer
+                = new TemporarySuccessProducer(10);
 
         @Override
         public void store(K key, V value) {
-            final Object time = timeHolder.get(TIME_KEY);
-            if (time == null) {
-                timeHolder.put(TIME_KEY, System.currentTimeMillis());
-            } else {
-                final long now = System.currentTimeMillis();
-                final long diff = now - (Long) time;
-                if (diff > DIFF) {
-                    store.put(key, value);
-                    return;
-                }
-            }
-            throw new RuntimeException("Temporary map store failure");
+            temporarySuccessProducer.successOrException();
+
+            store.put(key, value);
         }
 
         public int size() {
             return store.size();
         }
     }
+
+
+    @Test
+    public void testName() throws Exception {
+        TemporarySuccessProducer temporarySuccessProducer
+                = new TemporarySuccessProducer(10);
+        for (int i = 0; i < 1000; i++) {
+            Thread.sleep(1000);
+            try {
+                temporarySuccessProducer.successOrException();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+
+    }
+
+    /**
+     * Produces periodic success, otherwise there will be many exceptions.
+     */
+    private static class TemporarySuccessProducer {
+
+        private final long successGenerationPeriodInMillis;
+
+        private volatile long startMillis;
+
+        public TemporarySuccessProducer(long secondsPeriod) {
+            this.successGenerationPeriodInMillis = TimeUnit.SECONDS.toMillis(secondsPeriod);
+            this.startMillis = Clock.currentTimeMillis();
+        }
+
+        public void successOrException() {
+            final long now = Clock.currentTimeMillis();
+            final long elapsedTime = now - startMillis;
+
+            if (elapsedTime > successGenerationPeriodInMillis) {
+                startMillis = Clock.currentTimeMillis();
+                return;
+            }
+
+            throw new TemporaryMapStoreException();
+        }
+    }
+
+    private static class TemporaryMapStoreException extends RuntimeException {
+
+        public TemporaryMapStoreException() {
+            super("Test exception");
+        }
+    }
+
+
 }
