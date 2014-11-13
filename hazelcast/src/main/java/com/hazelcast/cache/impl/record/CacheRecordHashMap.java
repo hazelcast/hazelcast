@@ -38,15 +38,6 @@ public class CacheRecordHashMap
 
     private static final int MIN_EVICTION_ELEMENT_COUNT = 100;
 
-    // TODO clear thread local at the end!
-    private static final ThreadLocal<CacheRecordSortArea> SORT_AREA_THREAD_LOCAL =
-            new ThreadLocal<CacheRecordSortArea>() {
-                @Override
-                protected CacheRecordSortArea initialValue() {
-                    return new CacheRecordSortArea();
-                }
-            };
-
     private Callback<Data> evictionCallback;
 
     public CacheRecordHashMap(int initialCapacity) {
@@ -187,7 +178,7 @@ public class CacheRecordHashMap
         // or maybe eviction can be done without a helper list to hold entries will be evicted
         List<Map.Entry<Data, CacheRecord>> entriesWillBeEvicted =
                 new ArrayList<Map.Entry<Data, CacheRecord>>(sizeLimitForEviction);
-        long[] sortArray = SORT_AREA_THREAD_LOCAL.get().getLongArray(size);
+        long[] sortArray = CacheRecordSortArea.SORT_AREA_THREAD_LOCAL.get().getLongArray(size);
 
         int i = 0;
         for (Map.Entry<Data, CacheRecord> entry : entrySet()) {
@@ -239,7 +230,7 @@ public class CacheRecordHashMap
         // or maybe eviction can be done without a helper list to hold entries will be evicted
         List<Map.Entry<Data, CacheRecord>> entriesWillBeEvicted =
                 new ArrayList<Map.Entry<Data, CacheRecord>>(sizeLimitForEviction);
-        int[] sortArray = SORT_AREA_THREAD_LOCAL.get().getIntArray(size);
+        int[] sortArray = CacheRecordSortArea.SORT_AREA_THREAD_LOCAL.get().getIntArray(size);
 
         int i = 0;
         for (Map.Entry<Data, CacheRecord> entry : entrySet()) {

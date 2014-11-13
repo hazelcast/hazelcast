@@ -9,14 +9,23 @@ import java.util.Arrays;
  */
 public class CacheRecordSortArea {
 
-    private static final int NORMALIZE_FACTORY = 50;
+    // TODO clear thread local at the end!
+    public static final ThreadLocal<CacheRecordSortArea> SORT_AREA_THREAD_LOCAL =
+            new ThreadLocal<CacheRecordSortArea>() {
+                @Override
+                protected CacheRecordSortArea initialValue() {
+                    return new CacheRecordSortArea();
+                }
+            };
+
+    private static final int NORMALIZE_FACTOR = 50;
 
     private long[] longArray;
     private int[] intArray;
 
     public int[] getIntArray(int len) {
         if (intArray == null || intArray.length < len) {
-            len = QuickMath.normalize(len, NORMALIZE_FACTORY);
+            len = QuickMath.normalize(len, NORMALIZE_FACTOR);
             intArray = new int[len];
         } else {
             Arrays.fill(intArray, 0, len, 0);
@@ -26,7 +35,7 @@ public class CacheRecordSortArea {
 
     public long[] getLongArray(int len) {
         if (longArray == null || longArray.length < len) {
-            len = QuickMath.normalize(len, NORMALIZE_FACTORY);
+            len = QuickMath.normalize(len, NORMALIZE_FACTOR);
             longArray = new long[len];
         } else {
             Arrays.fill(longArray, 0, len, 0L);
