@@ -153,6 +153,8 @@ public class GroupProperties {
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
+    public static final String PROP_BACKPRESSURE_ENABLED = "hazelcast.backpressure.enabled";
+    public static final String PROP_BACKPRESSURE_SYNCWINDOW = "hazelcast.backpressure.syncwindow";
 
     /**
      * forces the jcache provider which can have values client or server to force provider type,
@@ -310,6 +312,9 @@ public class GroupProperties {
 
     public final GroupProperty MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS;
 
+    public final GroupProperty BACKPRESSURE_ENABLED;
+    public final GroupProperty BACKPRESSURE_SYNCWINDOW;
+
     /**
      * @param config
      */
@@ -402,6 +407,9 @@ public class GroupProperties {
         CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
+
+        BACKPRESSURE_ENABLED = new GroupProperty(config, PROP_BACKPRESSURE_ENABLED, "false");
+        BACKPRESSURE_SYNCWINDOW = new GroupProperty(config, PROP_BACKPRESSURE_SYNCWINDOW, "1000");
     }
 
     public static class GroupProperty {

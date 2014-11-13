@@ -133,6 +133,7 @@ final class BasicOperationService implements InternalOperationService {
     private final OperationPacketHandler operationPacketHandler;
     private final ResponsePacketHandler responsePacketHandler;
     private final OperationTimeoutHandlerThread operationTimeoutHandlerThread;
+    private final BasicBackPressureService backpressureService;
     private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
@@ -144,6 +145,7 @@ final class BasicOperationService implements InternalOperationService {
         this.backupOperationTimeoutMillis = node.getGroupProperties().OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
 
         this.executionService = nodeEngine.getExecutionService();
+        this.backpressureService = new BasicBackPressureService(node.getGroupProperties(), logger);
 
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
@@ -160,8 +162,13 @@ final class BasicOperationService implements InternalOperationService {
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
-        this.operationTimeoutHandlerThread = new OperationTimeoutHandlerThread();
-        this.operationTimeoutHandlerThread.start();
+        this.operationTimeoutHandlerThread = newOperationTimeoutHandlerThread();
+    }
+
+    private OperationTimeoutHandlerThread newOperationTimeoutHandlerThread() {
+        OperationTimeoutHandlerThread t = new OperationTimeoutHandlerThread();
+        t.start();
+        return t;
     }
 
     @Override
@@ -913,7 +920,7 @@ final class BasicOperationService implements InternalOperationService {
 
         private int makeBackups(BackupAwareOperation backupAwareOp, int partitionId, long[] replicaVersions,
                                 int syncBackupCount, int totalBackupCount) {
-
+            Boolean backPressureNeeded = null;
             int sentSyncBackupCount = 0;
             InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition partition = partitionService.getPartition(partitionId);
@@ -925,7 +932,22 @@ final class BasicOperationService implements InternalOperationService {
 
                 assertNoBackupOnPrimaryMember(partition, target);
 
-                boolean isSyncBackup = replicaIndex <= syncBackupCount;
+                boolean isSyncBackup = true;
+                if (replicaIndex > syncBackupCount) {
+                    // it is an async-backup
+
+                    if (backPressureNeeded == null) {
+                        // back-pressure was not yet calculated, so lets calculate it. Once it is calculated
+                        // we'll use that value for all the backups for the 'backupAwareOp'.
+                        backPressureNeeded = backpressureService.isBackPressureNeeded((Operation) backupAwareOp);
+                    }
+
+                    if (!backPressureNeeded) {
+                        // only when no back-pressure is needed, then the async-backup is allowed to be async.
+                        isSyncBackup = false;
+                    }
+                }
+
                 Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, isSyncBackup);
                 send(backup, target);
 
@@ -973,6 +995,7 @@ final class BasicOperationService implements InternalOperationService {
             }
         }
     }
+
 
     private static final class RemoteCallKey {
         private final long time = Clock.currentTimeMillis();
@@ -1059,22 +1082,27 @@ final class BasicOperationService implements InternalOperationService {
         public void run() {
             try {
                 while (!shutdown) {
-                    scan();
-
-                    try {
-                        Thread.sleep(DELAY_MILLIS);
-                    } catch (InterruptedException ignore) {
-                        // can safely be ignored. If this thread wants to shut down, we'll read the shutdown variable.
-                        EmptyStatement.ignore(ignore);
-                    }
+                    scanHandleOperationTimeout();
+                    backpressureService.cleanup();
+                    sleep();
                 }
+
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
                 logger.severe("Failed to run", t);
             }
         }
 
-        private void scan() {
+        private void sleep() {
+            try {
+                Thread.sleep(DELAY_MILLIS);
+            } catch (InterruptedException ignore) {
+                // can safely be ignored. If this thread wants to shut down, we'll read the shutdown variable.
+                EmptyStatement.ignore(ignore);
+            }
+        }
+
+        private void scanHandleOperationTimeout() {
             if (invocations.isEmpty()) {
                 return;
             }
