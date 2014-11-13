@@ -88,7 +88,8 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             }
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
-            endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED), getCallId());
+            ClientMembershipEvent event = new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED);
+            endpoint.sendEvent(null, event, getCallId());
         }
 
         @Override
@@ -98,7 +99,8 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             }
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
-            endpoint.sendEvent(new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED), getCallId());
+            ClientMembershipEvent event = new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED);
+            endpoint.sendEvent(null, event, getCallId());
         }
 
         @Override
@@ -113,7 +115,8 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             String key = memberAttributeEvent.getKey();
             Object value = memberAttributeEvent.getValue();
             MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
-            endpoint.sendEvent(new ClientMembershipEvent(member, memberAttributeChange), getCallId());
+            ClientMembershipEvent event = new ClientMembershipEvent(member, memberAttributeChange);
+            endpoint.sendEvent(null, event, getCallId());
         }
     }
 }

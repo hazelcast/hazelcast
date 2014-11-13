@@ -26,6 +26,8 @@ import com.hazelcast.spi.BackupOperation;
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
 
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+
 /**
  * Operation of the Cache Backup Entry Processor.
  * <p>{@link com.hazelcast.cache.BackupAwareEntryProcessor} is executed on the partition.
@@ -58,7 +60,7 @@ public class CacheBackupEntryProcessorOperation
     @Override
     public void run()
             throws Exception {
-        cache.invoke(key, entryProcessor, arguments);
+        cache.invoke(key, entryProcessor, arguments, IGNORE_COMPLETION);
     }
 
     @Override

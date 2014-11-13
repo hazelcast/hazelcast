@@ -34,15 +34,16 @@ import com.hazelcast.spi.NodeEngine;
  * <p>CacheRecordStore is accessed through {@linkplain com.hazelcast.cache.impl.CachePartitionSegment} and
  * {@linkplain com.hazelcast.cache.impl.CacheService}.</p>
  * CacheRecordStore is managed by {@linkplain com.hazelcast.cache.impl.CachePartitionSegment}.
- *<p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation:
- *     <pre>
+ * <p>Sample code accessing a CacheRecordStore and getting a value. Typical operation implementation:
+ * <pre>
  *         <code>CacheService service = getService();
  *         ICacheRecordStore cache = service.getOrCreateCache(name, partitionId);
  *         cache.get(key, expiryPolicy);
  *         </code>
  *     </pre>
  * See {@link com.hazelcast.cache.impl.operation.AbstractCacheOperation} subclasses for actual examples.
- *</p>
+ * </p>
+ *
  * @see com.hazelcast.cache.impl.CachePartitionSegment
  * @see com.hazelcast.cache.impl.CacheService
  * @see com.hazelcast.cache.impl.operation.AbstractCacheOperation
@@ -74,7 +75,7 @@ public class CacheRecordStore
 
     protected CacheRecordFactory createCacheRecordFactory() {
         return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                                      nodeEngine.getSerializationService());
+                nodeEngine.getSerializationService());
     }
 
     @Override

@@ -57,7 +57,8 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(8);
         final String value = "hello";
         final HazelcastInstance instance = createHazelcastInstance();
-        IQueue<String> queue = instance.getQueue("testQueueItemListener");
+        IQueue queue = instance.getQueue("testQueueItemListener");
+
         queue.addItemListener(new ItemListener<String>() {
             public void itemAdded(ItemEvent<String> itemEvent) {
                 assertEquals(value, itemEvent.getItem());

@@ -35,19 +35,17 @@ public class CacheClearOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;
-    private int completionId;
 
     public CacheClearOperationFactory() {
     }
 
-    public CacheClearOperationFactory(String name, int completionId) {
+    public CacheClearOperationFactory(String name) {
         this.name = name;
-        this.completionId = completionId;
     }
 
     @Override
     public Operation createOperation() {
-        return new CacheClearOperation(name, completionId);
+        return new CacheClearOperation(name);
     }
 
     @Override
@@ -64,13 +62,11 @@ public class CacheClearOperationFactory
     public void writeData(ObjectDataOutput out)
             throws IOException {
         out.writeUTF(name);
-        out.writeInt(completionId);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
         name = in.readUTF();
-        completionId = in.readInt();
     }
 }

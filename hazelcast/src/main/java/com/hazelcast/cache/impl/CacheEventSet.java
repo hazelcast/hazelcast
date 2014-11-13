@@ -39,6 +39,7 @@ public class CacheEventSet
 
     private CacheEventType eventType;
     private Set<CacheEventData> events;
+    private int completionId;
 
     public CacheEventSet() {
     }
@@ -48,8 +49,9 @@ public class CacheEventSet
         this.events = events;
     }
 
-    public CacheEventSet(CacheEventType eventType) {
+    public CacheEventSet(CacheEventType eventType, int completionId) {
         this.eventType = eventType;
+        this.completionId = completionId;
     }
 
     /**
@@ -64,6 +66,13 @@ public class CacheEventSet
      */
     public CacheEventType getEventType() {
         return eventType;
+    }
+
+    /**
+     * @return completion id for sync listeners
+     */
+    public int getCompletionId() {
+        return completionId;
     }
 
     /**
@@ -82,6 +91,7 @@ public class CacheEventSet
     public void writeData(ObjectDataOutput out)
             throws IOException {
         out.writeInt(eventType.getType());
+        out.writeInt(completionId);
         out.writeInt(events.size());
         for (CacheEventData ced : events) {
             out.writeObject(ced);
@@ -92,6 +102,7 @@ public class CacheEventSet
     public void readData(ObjectDataInput in)
             throws IOException {
         eventType = CacheEventType.getByType(in.readInt());
+        completionId = in.readInt();
         final int size = in.readInt();
         events = new HashSet<CacheEventData>(size);
         for (int i = 0; i < size; i++) {

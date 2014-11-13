@@ -24,7 +24,7 @@ import com.hazelcast.spi.Operation;
  * Cache GetAndRemove Operation.
  * <p>Operation to call the record store's functionality. Backup is also triggered by this operation
  * if a record is removed.</p>
- * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndRemove(com.hazelcast.nio.serialization.Data, String)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndRemove(com.hazelcast.nio.serialization.Data, String, int)
  */
 public class CacheGetAndRemoveOperation
         extends AbstractMutatingCacheOperation {
@@ -39,7 +39,7 @@ public class CacheGetAndRemoveOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.getAndRemove(key, getCallerUuid());
+        response = cache.getAndRemove(key, getCallerUuid(), completionId);
     }
 
     @Override
