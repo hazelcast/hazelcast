@@ -71,7 +71,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, null, type, uuid);
-                    endpoint.sendEvent(portableEntryEvent, getCallId());
+                    endpoint.sendEvent(key, portableEntryEvent, getCallId());
                 }
             }
 
@@ -82,7 +82,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
                     final String uuid = event.getMember().getUuid();
                     PortableEntryEvent portableEntryEvent =
                             new PortableEntryEvent(type, uuid, event.getNumberOfEntriesAffected());
-                    endpoint.sendEvent(portableEntryEvent, getCallId());
+                    endpoint.sendEvent(null, portableEntryEvent, getCallId());
                 }
             }
         };

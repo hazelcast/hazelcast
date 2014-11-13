@@ -83,7 +83,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                     Data oldValue = dataAwareEntryEvent.getOldValueData();
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue,
                             event.getEventType(), event.getMember().getUuid());
-                    endpoint.sendEvent(portableEntryEvent, getCallId());
+                    endpoint.sendEvent(key, portableEntryEvent, getCallId());
                 }
             }
 
@@ -94,7 +94,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                     final String uuid = event.getMember().getUuid();
                     PortableEntryEvent portableEntryEvent =
                             new PortableEntryEvent(type, uuid, event.getNumberOfEntriesAffected());
-                    endpoint.sendEvent(portableEntryEvent, getCallId());
+                    endpoint.sendEvent(null, portableEntryEvent, getCallId());
                 }
             }
         };
