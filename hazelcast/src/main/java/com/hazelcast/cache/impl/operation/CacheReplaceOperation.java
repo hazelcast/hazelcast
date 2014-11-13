@@ -27,8 +27,8 @@ import java.io.IOException;
 
 /**
  * Operator implementation for cache replace functionality.
- * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, ExpiryPolicy, String)
- * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, Object, ExpiryPolicy, String)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, ExpiryPolicy, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, Object, ExpiryPolicy, String, int)
  */
 public class CacheReplaceOperation
         extends AbstractMutatingCacheOperation {
@@ -53,9 +53,9 @@ public class CacheReplaceOperation
     public void run()
             throws Exception {
         if (oldValue == null) {
-            response = cache.replace(key, newValue, expiryPolicy, getCallerUuid());
+            response = cache.replace(key, newValue, expiryPolicy, getCallerUuid(), completionId);
         } else {
-            response = cache.replace(key, oldValue, newValue, expiryPolicy, getCallerUuid());
+            response = cache.replace(key, oldValue, newValue, expiryPolicy, getCallerUuid(), completionId);
         }
         if (Boolean.TRUE.equals(response)) {
             backupRecord = cache.getRecord(key);

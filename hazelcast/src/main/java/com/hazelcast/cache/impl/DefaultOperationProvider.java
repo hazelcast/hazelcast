@@ -97,8 +97,8 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     }
 
     @Override
-    public OperationFactory createClearOperationFactory(Integer completionId) {
-        return new CacheClearOperationFactory(nameWithPrefix, completionId);
+    public OperationFactory createClearOperationFactory() {
+        return new CacheClearOperationFactory(nameWithPrefix);
     }
 
     @Override

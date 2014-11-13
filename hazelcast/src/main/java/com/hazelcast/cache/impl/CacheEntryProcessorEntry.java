@@ -49,15 +49,17 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
     protected final long now;
     protected final long start;
     protected final ExpiryPolicy expiryPolicy;
+    protected final int completionId;
 
     public CacheEntryProcessorEntry(Data keyData,
                                     R record,
                                     AbstractCacheRecordStore cacheRecordStore,
-                                    long now) {
+                                    long now, int completionId) {
         this.keyData = keyData;
         this.record = record;
         this.cacheRecordStore = cacheRecordStore;
         this.now = now;
+        this.completionId = completionId;
         this.start = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? System.nanoTime() : 0;
 
         final Factory<ExpiryPolicy> expiryPolicyFactory =
@@ -149,27 +151,27 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
                 cacheRecordStore.accessRecord(record, expiryPolicy, now);
                 break;
             case UPDATE:
-                cacheRecordStore.updateRecordWithExpiry(keyData, value, record, expiryPolicy, now, false);
+                cacheRecordStore.updateRecordWithExpiry(keyData, value, record, expiryPolicy, now, false, completionId);
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
                     statistics.addGetTimeNanos(System.nanoTime() - start);
                 }
                 break;
             case REMOVE:
-                cacheRecordStore.remove(keyData, null);
+                cacheRecordStore.remove(keyData, null, completionId);
                 break;
             case CREATE:
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
                     statistics.addGetTimeNanos(System.nanoTime() - start);
                 }
-                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, false);
+                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, false, completionId);
                 break;
             case LOAD:
-                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, true);
+                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, true, completionId);
                 break;
             case NONE:
-                //NOOP
+                cacheRecordStore.publishEvent(CacheEventType.COMPLETED, keyData, null, null, false, completionId);
                 break;
             default:
                 break;

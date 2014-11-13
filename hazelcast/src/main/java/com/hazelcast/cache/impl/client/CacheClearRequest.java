@@ -112,7 +112,7 @@ public class CacheClearRequest
         if (isRemoveAll) {
             return operationProvider.createRemoveAllOperationFactory(keys, completionId);
         }
-        return operationProvider.createClearOperationFactory(completionId);
+        return operationProvider.createClearOperationFactory();
     }
 
     @Override

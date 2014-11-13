@@ -57,15 +57,13 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
  */
 abstract class AbstractInternalCacheProxy<K, V>
         extends AbstractCacheProxyBase<K, V>
-        implements ICache<K, V> {
+        implements ICache<K, V>, CacheSyncListenerCompleter {
 
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
 
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
     private final AtomicInteger completionIdCounter = new AtomicInteger();
-    private final Object completionRegistrationMutex = new Object();
-    private volatile String completionRegistrationId;
 
     protected AbstractInternalCacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
@@ -172,27 +170,19 @@ abstract class AbstractInternalCacheProxy<K, V>
     }
 
     protected void clearInternal() {
-        final int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
-        final Integer completionId = registerCompletionLatch(partitionCount);
         final OperationService operationService = getNodeEngine().getOperationService();
-        OperationFactory operationFactory = operationProvider.createClearOperationFactory(completionId);
+        OperationFactory operationFactory = operationProvider.createClearOperationFactory();
         try {
             final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
-            int completionCount = 0;
             for (Object result : results.values()) {
                 if (result != null && result instanceof CacheClearResponse) {
                     final Object response = ((CacheClearResponse) result).getResponse();
-                    if (response instanceof Boolean) {
-                        completionCount++;
-                    }
                     if (response instanceof Throwable) {
                         throw (Throwable) response;
                     }
                 }
             }
-            waitCompletionLatch(completionId, partitionCount - completionCount);
         } catch (Throwable t) {
-            deregisterCompletionLatch(completionId);
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
@@ -237,8 +227,6 @@ abstract class AbstractInternalCacheProxy<K, V>
     protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration.isSynchronous()) {
             syncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
-            //todo Should that be called if it wasn't registered because it's already there?
-            registerCompletionListener();
         } else {
             asyncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
         }
@@ -268,11 +256,9 @@ abstract class AbstractInternalCacheProxy<K, V>
 
         syncListenerRegistrations.clear();
         asyncListenerRegistrations.clear();
-
-        deregisterCompletionListener();
     }
 
-    protected void countDownCompletionLatch(int id) {
+    public void countDownCompletionLatch(int id) {
         final CountDownLatch countDownLatch = syncLocks.get(id);
         if (countDownLatch == null) {
             return;
@@ -286,7 +272,8 @@ abstract class AbstractInternalCacheProxy<K, V>
     protected Integer registerCompletionLatch(int count) {
         if (!syncListenerRegistrations.isEmpty()) {
             final int id = completionIdCounter.incrementAndGet();
-            CountDownLatch countDownLatch = new CountDownLatch(count);
+            int size = syncListenerRegistrations.size();
+            CountDownLatch countDownLatch = new CountDownLatch(count * size);
             syncLocks.put(id, countDownLatch);
             return id;
         }
@@ -323,47 +310,6 @@ abstract class AbstractInternalCacheProxy<K, V>
         }
     }
 
-    protected void registerCompletionListener() {
-        if (!syncListenerRegistrations.isEmpty() && completionRegistrationId == null) {
-            synchronized (completionRegistrationMutex) {
-                if (completionRegistrationId == null) {
-                    final ICacheService service = getService();
-                    CacheEventListener entryListener = new CacheCompletionEventListener();
-                    completionRegistrationId = service.registerListener(getDistributedObjectName(), entryListener);
-                }
-            }
-        }
-    }
-
-    protected void deregisterCompletionListener() {
-        if (syncListenerRegistrations.isEmpty() && completionRegistrationId != null) {
-            synchronized (completionRegistrationMutex) {
-                if (completionRegistrationId != null) {
-                    final ICacheService service = getService();
-                    final boolean isDeregistered = service
-                            .deregisterListener(getDistributedObjectName(), completionRegistrationId);
-                    if (isDeregistered) {
-                        completionRegistrationId = null;
-                    }
-                }
-            }
-        }
-    }
-
-    private final class CacheCompletionEventListener
-            implements CacheEventListener {
-
-        @Override
-        public void handleEvent(Object eventObject) {
-            if (eventObject instanceof CacheEventData) {
-                CacheEventData cacheEventData = (CacheEventData) eventObject;
-                if (cacheEventData.getCacheEventType() == CacheEventType.COMPLETED) {
-                    Integer completionId = serializationService.toObject(cacheEventData.getDataValue());
-                    countDownCompletionLatch(completionId);
-                }
-            }
-        }
-    }
 
     //endregion Listener operations
 }
