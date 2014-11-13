@@ -1,60 +1,70 @@
 
 # Network Partitioning - Split Brain Syndrome
 
-Imagine that you have 10-node cluster and for some reason the network is divided into two in a way that 4 servers cannot see the other 6. As a result, you ended up having two separate clusters; 4-node cluster and 6-node cluster. Members in each sub-cluster are thinking that the other nodes are dead even though they are not. This situation is called Network Partitioning (a.k.a. *Split-Brain Syndrome*).
+Imagine that you have 10-node cluster and that the network is divided into two in a way that 4 servers cannot see the other 6. As a result, you end up having two separate clusters: 4-node cluster and 6-node cluster. Members in each sub-cluster think that the other nodes are dead even though they are not. This situation is called Network Partitioning (a.k.a. *Split-Brain Syndrome*).
 
 However, these two clusters have a combination of the 271 (using default) primary and backup partitions. It’s very likely that not all of the 271 partitions, including both primaries and backups, exist in both mini-clusters.
 Therefore, from each mini-cluster’s perspective, data has been lost as some partitions no longer exist (they exist on the other segment).
 
+## Understanding Partition Recreation
+
 If a MapStore was in use, those lost partitions would be reloaded from some database, making each mini-cluster complete.
 Each mini-cluster will then recreate the missing primary partitions and continue to store data in them, including backups on the other nodes.
+
+## Understanding Backup Partition Creation
 
 When primary partitions exist without a backup, a backup version problem will be detected and a backup partition will be created.
 When backups exist without a primary, the backups will be promoted to primary partitions and new backups will be created with proper versioning.
 At this time, both mini-clusters have repaired themselves with all 271 partitions with backups, and continue to handle traffic without any knowledge of each other.
 Given that they have enough remaining memory (assumption), they are just smaller and can handle less throughput.
 
-If a MapStore is in use and the network to the database is available, one or both of the mini-clusters are now writing updates to the same database.
-There is a potential for them to overwrite the same cache entry records if modified in both mini-clusters.
+## Understanding The Update Overwrite Scenario
+
+If a MapStore is in use and the network to the database is available, one or both of the mini-clusters will write updates to the same database.
+There is a potential for the mini-clusters to overwrite the same cache entry records if modified in both mini-clusters.
 This overwrite scenario represents a potential data loss, and thus the database design should consider an insert and aggregate on read or version strategy rather than update records in place.
 
-If the network to the database is not available, then based on the configured or coded consistency level or transaction, entry updates are just held in cache or updates are rejected (fully synchronous and consistent).
-When held in cache, the updates will be considered dirty and will be written to the database when it becomes available. Dirty entry counts per cluster member can be viewed in the Management Center web console (please see [Map Monitoring](#map-monitoring)).
+If the network to the database is not available, then based on the configured or coded consistency level or transaction, entry updates are held in cache or updates are rejected (fully synchronous and consistent).
+When held in cache, the updates will be considered dirty and will be written to the database when it becomes available. You can view the dirty entry counts per cluster member in the Management Center web console (please see [Map Monitoring](#map-monitoring)).
 
-Since it is a network failure, there is no way to avoid it programmatically and your application will run as two separate independent clusters.
-But we should be able to answer the following questions: "What will happen after the network failure is fixed and connectivity is restored between these two clusters?
-Will these two clusters merge into one again? If they do, how are the data conflicts resolved, because you might end up having two different values for the same key in the same map?"
+## What Happens When The Network Failure Is Fixed
 
-When the network is restored, you should expect all 271 partitions to exist in both mini-clusters and for them all to undergo the merge. Once all primaries are merged,
-all backups will be rewritten so their versions are correct. You may want to write a merge policy using the `MapMergePolicy` interface that rebuilds the entry from the database rather than from memory.
+Since it is a network failure, there is no way to programmatically avoid your application running as two separate independent clusters.
+But what will happen after the network failure is fixed and connectivity is restored between these two clusters?
+Will these two clusters merge into one again? If they do, how are the data conflicts resolved, because you might end up having two different values for the same key in the same map?
 
-The only meta data available for merge decisions are from the `EntryView` interface that includes object size (cost), hits count, last updated/stored dates, and a version number that starts at zero and is incremented for each entry update.
+When the network is restored, all 271 partitions should exist in both mini-clusters and they should all undergo the merge. Once all primaries are merged,
+all backups are rewritten so their versions are correct. You may want to write a merge policy using the `MapMergePolicy` interface that rebuilds the entry from the database rather than from memory.
+
+The only metadata available for merge decisions are from the `EntryView` interface that includes object size (cost), hits count, last updated/stored dates, and a version number that starts at zero and is incremented for each entry update.
 You could also create your own versioning scheme or capture a time series of deltas to reconstruct an entry.
+
+## How Hazelcast Split Brain Merge Happens
 
 Here is, step by step, how Hazelcast split brain merge happens:
 
 1.  The oldest member of the cluster checks if there is another cluster with the same *group-name* and *group-password* in the network.
 
-2.  If the oldest member finds such cluster, then it figures out which cluster should merge to the other.
+2.  If the oldest member finds such a cluster, then it figures out which cluster should merge to the other.
 
-3.  Each member of the merging cluster will do the following:
+3.  Each member of the merging cluster will do the following.
 
-	-   pause
+	-   Pause.
 
-	-   take locally owned map entries
+	-   Take locally owned map entries.
 
-	-   close all of its network connections (detach from its cluster)
+	-   Close all of its network connections (detach from its cluster).
 
-	-   join to the new cluster
+	-   Join to the new cluster.
 
-	-   send merge request for each of its locally owned map entry
+	-   Send merge request for each of its locally owned map entry.
 
-	-   resume
+	-   Resume.
 
-So each member of the merging cluster is actually rejoining to the new cluster and sending merge request for each of its locally owned map entry. Two important points:
+Each member of the merging cluster rejoins the new cluster and sends a merge request for each of its locally owned map entries. Two important points:
 
--	Smaller cluster will merge into the bigger one. If they have equal number of members then a hashing algorithm determines the merging cluster.
--	Each cluster may have different versions of the same key in the same map. Destination cluster will decide how to handle merging entry based on the `MergePolicy` set for that map. There are built-in merge policies such as `PassThroughMergePolicy`, `PutIfAbsentMapMergePolicy`, `HigherHitsMapMergePolicy` and `LatestUpdateMapMergePolicy`. But you can develop your own merge policy by implementing `com.hazelcast.map.merge.MapMergePolicy`. You should set the full class name of your implementation to the `merge-policy` configuration.
+-	The smaller cluster will merge into the bigger one. If they have equal number of members then a hashing algorithm determines the merging cluster.
+-	Each cluster may have different versions of the same key in the same map. The destination cluster will decide how to handle merging entry based on the `MergePolicy` set for that map. There are built-in merge policies such as `PassThroughMergePolicy`, `PutIfAbsentMapMergePolicy`, `HigherHitsMapMergePolicy` and `LatestUpdateMapMergePolicy`. You can develop your own merge policy by implementing `com.hazelcast.map.merge.MapMergePolicy`. You should set the full class name of your implementation to the `merge-policy` configuration.
 
 
 ```java
@@ -72,6 +82,8 @@ public interface MergePolicy {
   Object merge( String mapName, EntryView mergingEntry, EntryView existingEntry );
 }
 ```
+
+## Specifying Merge Policies
 
 Here is how merge policies are specified per map:
 
