@@ -71,10 +71,6 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        if (executorService == null) {
-            return;
-        }
-
         executorService.shutdown();
     }
 
