@@ -151,29 +151,30 @@ public class IMapRegionCache implements RegionCache {
 
     private boolean compareVersion(Object key, Object value) {
         final CacheEntry currentEntry = (CacheEntry) value;
-        try {
-            return compareVersionUnderRowLock(key, value, currentEntry);
-        } catch (InterruptedException e) {
-            return false;
-        }
-    }
 
-    private boolean compareVersionUnderRowLock(Object key, Object value, CacheEntry currentEntry) throws InterruptedException {
-        if (map.tryLock(key, tryLockAndGetTimeout, TimeUnit.MILLISECONDS)) {
-            try {
-                final CacheEntry previousEntry = (CacheEntry) map.get(key);
-                if (previousEntry == null
-                        || versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
-                    map.set(key, value);
+        // Ideally this would be an entry processor. Unfortunately there is no guarantee that
+        // the versionComparator is Serializable.
+        //
+        // Previously, this was implemented using a `map.get` followed by `map.set` wrapped inside a `map.tryLock`
+        // block.  Unfortunately this implementation was prone to `IllegalMonitorStateException` when the lock was
+        // released under heavy load or after network partitions.  Hence this implementation now uses a spin loop
+        // around atomic operations.
+        long timeout = System.currentTimeMillis() + tryLockAndGetTimeout;
+        do {
+            final CacheEntry previousEntry = (CacheEntry) map.get(key);
+            if (previousEntry == null) {
+                if (map.putIfAbsent(key, value) == null) {
                     return true;
-                } else {
-                    return false;
                 }
-            } finally {
-                map.unlock(key);
+            } else if (versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                if (map.replace(key, previousEntry, value)) {
+                    return true;
+                }
+            } else {
+                return false;
             }
-        } else {
-            return false;
-        }
+        } while (System.currentTimeMillis() < timeout);
+
+        return false;
     }
 }

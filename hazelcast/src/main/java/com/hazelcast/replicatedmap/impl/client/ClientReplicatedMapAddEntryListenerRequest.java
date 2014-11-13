@@ -23,6 +23,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -84,7 +85,8 @@ public class ClientReplicatedMapAddEntryListenerRequest
                 EntryEventType eventType = event.getEventType();
                 String uuid = event.getMember().getUuid();
                 Portable portableEntryEvent = new ReplicatedMapPortableEntryEvent(key, value, oldValue, eventType, uuid);
-                endpoint.sendEvent(portableEntryEvent, getCallId());
+                Data partitionKey = serializationService.toData(key);
+                endpoint.sendEvent(partitionKey, portableEntryEvent, getCallId());
             }
         }
 

@@ -10,7 +10,7 @@ Hazelcast Management Center enables you to monitor and manage your nodes running
 
 #### Installation
 
-You have two options for installing Hazelcast Management Center. You can either deploy the `mancenter`-*version*`.war` application into your Java application server/container or you can start Hazelcast Management Center directly from the command line and then have the Hazelcast nodes communicate with that web application. This means that your Hazelcast nodes should know the URL of the `mancenter` application before they start.
+You have two options for installing Hazelcast Management Center. You can either deploy the `mancenter`-*version*`.war` application into your Java application server/container or you can start Hazelcast Management Center from the command line and then have the Hazelcast nodes communicate with that web application. This means that your Hazelcast nodes should know the URL of the `mancenter` application before they start.
 
 Here are the steps:
 
@@ -34,7 +34,7 @@ java -jar mancenter-*version*.war 8080 mancenter
 
 -   Browse to `http://localhost:8080/mancenter` and login. **Initial login username/password is `admin/admin`**
 
-The Management Center creates a directory with the name "mancenter" under your "user/home" directory to save data files. You can change the data directory by setting the `hazelcast.mancenter.home` system property.
+The Management Center creates a folder with the name "mancenter" under your "user/home" folder to save data files. You can change the data folder by setting the `hazelcast.mancenter.home` system property.
 
 
 
@@ -49,14 +49,14 @@ This page provides the fundamental properties of the selected cluster which are 
 #### Toolbar
 The toolbar has the following buttons:
 
--	**Home**: When pressed, loads the home page shown above. Please see [Home Page](#homepage).
--	**Scripting**: When pressed, loads the page used to write and execute user`s own scripts on the cluster. Please see [Scripting](#scripting).
--	**Console**: When pressed, loads the page used to execute commands on the cluster. Please see [Console](#console).
+-	**Home**: Loads the home page shown above. Please see [Home Page](#homepage).
+-	**Scripting**: Loads the page used to write and execute user`s own scripts on the cluster. Please see [Scripting](#scripting).
+-	**Console**: Loads the page used to execute commands on the cluster. Please see [Console](#console).
 -	**Alerts**: Creates alerts by specifying filters. Please see [Alerts](#alerts).
 -	**Documentation**: Opens the Management Center documentation in a window inside the tool. Please see [Documentation](#documentation).
 -	**Administration**: Used by the admin users to manage users in the system. Please see [Administration](#administration).
--	**Time Travel**: Used to see the cluster's situation at a time in the past. Please see [Time Travel](#time-travel).
--	**Cluster Selector**: Used to switch between clusters. When the mouse is moved onto this item, a drop down list of clusters appears.
+-	**Time Travel**: Sees the cluster's situation at a time in the past. Please see [Time Travel](#time-travel).
+-	**Cluster Selector**: Switches between clusters. When the mouse is moved onto this item, a drop down list of clusters appears.
 
   ![](images/4ChangeCluster.jpg)
 
@@ -345,7 +345,7 @@ Select the **Cluster Alerts** check box to create a cluster wise filter. Once se
 
 ![](images/ClusterAlert1.jpg)
 
-Select the desired items and click the **Next** button. On the next page (shown below), specify the frequency of checks in **hour** and **min** fields, give a name for the filter, select whether notification e-mails will be sent (to no one, only admin or to all users) and select whether the alert data will be written to the disk (if checked, you can see the alert log at the directory */users/<your user>/mancenter<version>*).
+Select the desired items and click the **Next** button. On the next page (shown below), specify the frequency of checks in **hour** and **min** fields, give a name for the filter, select whether notification e-mails will be sent (to no one, only admin or to all users) and select whether the alert data will be written to the disk (if checked, you can see the alert log at the folder */users/<your user>/mancenter<version>*).
 
 ![](images/ClusterAlert2.jpg)
 
@@ -370,7 +370,7 @@ Alerts can be created when:
 
 When two or more criteria is specified they will be bound with the logical operator **AND**.
 
-On the next page, give a name for the filter, select whether notification e-mails will be sent (to no one, only admin, or to all users) and select whether the alert data will be written to the disk (if checked, you can see the alert log at the directory */users/<your user>/mancenter<version>*).
+On the next page, give a name for the filter, select whether notification e-mails will be sent (to no one, only admin, or to all users) and select whether the alert data will be written to the disk (if checked, you can see the alert log at the folder */users/<your user>/mancenter<version>*).
 
 Click on the **Save** button; your filter will be saved and put into the **Filters** part of the page. To edit the filter, click on the ![](images/EditIcon.jpg) icon. To delete it, click on the ![](images/DeleteIcon.jpg) icon.
 
@@ -384,7 +384,7 @@ The next screen, as shown below, is the one where you specify the criteria for t
 
 As the screen shown above shows, you will select an item from the left combo box, select the operator in the middle one, specify a value in the input field, and click on the **Add** button. You can create more than one criteria in this page; those will be bound by the logical operator **AND**.
 
-After you specify the criteria and click the **Next** button, give a name for the filter, select whether notification e-mails will be sent (to no one, only admin or to all users) and select whether the alert data will be written to the disk (if checked, you can see the alert log at the directory */users/<your user>/mancenter<version>*).
+After you specify the criteria and click the **Next** button, give a name for the filter, select whether notification e-mails will be sent (to no one, only admin or to all users) and select whether the alert data will be written to the disk (if checked, you can see the alert log at the folder */users/<your user>/mancenter<version>*).
 
 Click on the **Save** button; your filter will be saved and put into the **Filters** part of the page. To edit the filter, click on the ![](images/EditIcon.jpg) icon. To delete it, click on the ![](images/DeleteIcon.jpg) icon.
 
@@ -422,7 +422,7 @@ Once it is **ON**, the status of your cluster will be stored on your disk as lon
 
 You can go back in time using the slider and/or calendar and check your cluster's situation at the selected time. All data structures and members can be monitored as if you are using the management center normally (charts and data tables for each data structure and members). Using the arrow buttons placed at both sides of the slider, you can go back or further with steps of 5 seconds. It will show status if Time Travel has been **ON** at the selected time in past; otherwise, all the charts and tables will be shown as empty.
 
-The historical data collected with Time Travel feature are stored in a file database on the disk. These files can be found on the directory specified by `hazelcast.mancenter.home` (by default `mancenter3` directory in the user home folder).
+The historical data collected with Time Travel feature are stored in a file database on the disk. These files can be found on the folder specified by `hazelcast.mancenter.home` (by default `mancenter3` folder in the user home folder).
 
 ### Documentation
 
