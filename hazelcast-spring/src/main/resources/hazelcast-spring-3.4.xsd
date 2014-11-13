@@ -38,18 +38,20 @@
                             <xs:complexType>
                                 <xs:sequence/>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="pool-size" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        The number of executor threads per Member for the Executor.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="queue-capacity" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Executor's task queue capacity. 0 means Integer.MAX_VALUE.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                <xs:attribute name="pool-size" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The number of executor threads per Member for the Executor.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="queue-capacity" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Executor's task queue capacity. 0 means Integer.MAX_VALUE.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="queue" minOccurs="0" maxOccurs="unbounded">
@@ -79,27 +81,30 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="max-size" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Value of maximum size of items in the Queue.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Count of synchronous backups. Remember that, Queue is a non-partitioned
-                                        data structure, i.e. all entries of a Set resides in one partition. When
-                                        this parameter is '1', it means there will be a backup of that Set in
-                                        another node in the cluster. When it is '2', 2 nodes will have the backup.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Count of asynchronous backups.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                <xs:attribute name="max-size" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Value of maximum size of items in the Queue.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="backup-count" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Count of synchronous backups. Remember that, Queue is a non-partitioned
+                                            data structure, i.e. all entries of a Set resides in one partition. When
+                                            this parameter is '1', it means there will be a backup of that Set in
+                                            another node in the cluster. When it is '2', 2 nodes will have the backup.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="async-backup-count" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Count of asynchronous backups.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="map" minOccurs="0" maxOccurs="unbounded">
@@ -112,36 +117,41 @@
                                                             maxOccurs="1"/>
                                             </xs:sequence>
                                             <xs:attribute name="enabled" use="required" type="xs:string"/>
-                                            <xs:attribute name="class-name" use="optional" type="xs:string"/>
-                                              <xs:annotation>
-                                                <xs:documentation>
-                                                    Name of the class implementing MapLoader and/or MapStore.
-                                                </xs:documentation>
-                                              </xs:annotation>
+                                            <xs:attribute name="class-name" use="optional" type="xs:string">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Name of the class implementing MapLoader and/or MapStore.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
                                             <xs:attribute name="factory-class-name" use="optional" type="xs:string"/>
                                             <xs:attribute name="implementation" use="optional" type="xs:string"/>
                                             <xs:attribute name="factory-implementation" use="optional"
                                                           type="xs:string"/>
-                                            <xs:attribute name="write-delay-seconds" use="required" type="xs:string"/>
-                                              <xs:annotation>
-                                                <xs:documentation>
-                                                    Number of seconds to delay to call the MapStore.store(key, value).
-                                                    If the value is zero then it is write-through so
-                                                    MapStore.store(key, value) will be called as soon as the
-                                                    entry is updated. Otherwise it is write-behind so updates will
-                                                    be stored after write-delay-seconds value by calling
-                                                    Hazelcast.storeAll(map). Default value is 0.
-                                                </xs:documentation>
-                                              </xs:annotation>
-                                            <xs:attribute name="write-batch-size" use="optional" type="xs:string"/>
-                                              <xs:annotation>
-                                                <xs:documentation>
-                                                    Used to create batch chunks when writing map store. In default
-                                                    mode all entries will be tried to persist in one go. To create
-                                                    batch chunks, minimum meaningful value for write-batch-size is 2.
-                                                    For values smaller than 2, it works as in default mode.
-                                                </xs:documentation>
-                                              </xs:annotation>
+                                            <xs:attribute name="write-delay-seconds" use="required" type="xs:string">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Number of seconds to delay to call the MapStore.store(key,
+                                                        value).
+                                                        If the value is zero then it is write-through so
+                                                        MapStore.store(key, value) will be called as soon as the
+                                                        entry is updated. Otherwise it is write-behind so updates will
+                                                        be stored after write-delay-seconds value by calling
+                                                        Hazelcast.storeAll(map). Default value is 0.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                            <xs:attribute name="write-batch-size" use="optional" type="xs:string">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Used to create batch chunks when writing map store. In default
+                                                        mode all entries will be tried to persist in one go. To create
+                                                        batch chunks, minimum meaningful value for write-batch-size is
+                                                        2.
+                                                        For values smaller than 2, it works as in default mode.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
                                             <xs:attribute name="initial-mode">
                                                 <xs:simpleType>
                                                     <xs:restriction base="non-space-string">
@@ -201,142 +211,163 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        It is used to determine how the data will be stored in memory. It has two
-                                        values: BINARY and OBJECT. BINARY is the default option and enables to
-                                        store the data in serialized binary format. If OBJECT is set as the value,
-                                        data will be stored in deserialized form.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            It is used to determine how the data will be stored in memory. It has two
+                                            values: BINARY and OBJECT. BINARY is the default option and enables to
+                                            store the data in serialized binary format. If OBJECT is set as the value,
+                                            data will be stored in deserialized form.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+
                                 <xs:attribute name="statistics-enabled" use="optional" type="xs:boolean"
-                                              default="true"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        You can retrieve some statistics like owned entry count, backup entry count,
-                                        last update time, locked entry count by setting this parameter's value
-                                        as "true". The method for retrieving the statistics is `getLocalMapStats()`.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                              default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            You can retrieve some statistics like owned entry count, backup entry count,
+                                            last update time, locked entry count by setting this parameter's value
+                                            as "true". The method for retrieving the statistics is `getLocalMapStats()`.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="optimize-queries" use="optional" type="xs:boolean"
-                                              default="false"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        This parameter is used to increase the speed of query processes in the map.
-                                        It only works when `in-memory-format` is set as `BINARY` and performs
-                                        a pre-caching on the entries queried.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Number of sync backups. If 1 is set as the backup-count for example, then all
-                                        entries of the map will be copied to another JVM for fail-safety. Valid
-                                        numbers are 0 (no backup), 1, 2 ... 6.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Number of async backups. If 1 is set as the backup-count for example, then all
-                                        entries of the map will be copied to another JVM for fail-safety. Valid
-                                        numbers are 0 (no backup), 1, 2 ... 6.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Maximum number of seconds for each entry to stay in the map. Entries that
-                                        are older than <time-to-live-seconds> and not updated for
-                                        <time-to-live-seconds> will get automatically evicted from the map. Any
-                                        integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="max-size" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Maximum size. Any integer between 0 and Integer.MAX_VALUE. 0 means
-                                        Integer.MAX_VALUE. Default is 0.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="max-size-policy" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        When maximum size is reached, map is evicted based on the eviction policy
-                                        defined. It has four attributes: PER_NODE (Maximum number of map entries in
-                                        each JVM), PER_PARTITION (Maximum number of map entries within each partition),
-                                        USED_HEAP_SIZE (Maximum used heap size in megabytes for each JVM) and
-                                        USED_HEAP_PERCENTAGE (Maximum used heap size percentage for each JVM).
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="max-idle-seconds" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Maximum number of seconds for each entry to stay idle in the map. Entries
-                                        that are idle(not touched) for more than max-idle-seconds will get
-                                        automatically evicted from the map. Entry is touched if get, put or
-                                        containsKey is called. Any integer between 0 and Integer.MAX_VALUE. 0 means
-                                        infinite. Default is 0.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="eviction-percentage" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        When max. size is reached, specified percentage of the map will be evicted.
-                                        Any integer between 0 and 100. If 25 is set for example, 25% of the
-                                        entries will get evicted.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="min-eviction-check-millis" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Minimum time in milliseconds which should pass before checking if a
-                                        partition of this map is evictable or not. Default value is 100 millis.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="eviction-policy" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Valid values are: NONE (no eviction), LRU (Least Recently Used), LFU
-                                        (Least Frequently Used). NONE is the default.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="merge-policy" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        While recovering from split-brain (network partitioning), map entries in
-                                        the small cluster will merge into the bigger cluster based on the policy set
-                                        here. When an entry merge into the cluster, there might an existing entry
-                                        with the same key already. Values of these entries might be different for
-                                        that same key. Which value should be set for the key? Conflict is resolved
-                                        by the policy set here.
-                                        <p>
-                                            <br/>
-                                            There are built-in merge policies such as:
-                                            <br/>
-                                            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be added if
-                                            there is no existing entry for the key.
-                                            <br/>
-                                            com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if
-                                            the merging entry doesn't exist in the cluster.
-                                            <br/>
-                                            com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher
-                                            hits wins.
-                                            <br/>
-                                            com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest
-                                            update wins.
-                                            <br/>
-                                            Default policy is 'com.hazelcast.map.merge.PutIfAbsentMapMergePolicy'
-                                        </p>
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        This boolean parameter enables reading local backup entries when set as `true`.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                              default="false">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            This parameter is used to increase the speed of query processes in the map.
+                                            It only works when `in-memory-format` is set as `BINARY` and performs
+                                            a pre-caching on the entries queried.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="backup-count" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of sync backups. If 1 is set as the backup-count for example, then
+                                            all
+                                            entries of the map will be copied to another JVM for fail-safety. Valid
+                                            numbers are 0 (no backup), 1, 2 ... 6.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="async-backup-count" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of async backups. If 1 is set as the backup-count for example, then
+                                            all
+                                            entries of the map will be copied to another JVM for fail-safety. Valid
+                                            numbers are 0 (no backup), 1, 2 ... 6.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Maximum number of seconds for each entry to stay in the map. Entries that
+                                            are older than `time-to-live-seconds` and not updated for
+                                            `time-to-live-seconds` will get automatically evicted from the map. Any
+                                            integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="max-size" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Maximum size. Any integer between 0 and Integer.MAX_VALUE. 0 means
+                                            Integer.MAX_VALUE. Default is 0.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="max-size-policy" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            When maximum size is reached, map is evicted based on the eviction policy
+                                            defined. It has four attributes: PER_NODE (Maximum number of map entries in
+                                            each JVM), PER_PARTITION (Maximum number of map entries within each
+                                            partition),
+                                            USED_HEAP_SIZE (Maximum used heap size in megabytes for each JVM) and
+                                            USED_HEAP_PERCENTAGE (Maximum used heap size percentage for each JVM).
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="max-idle-seconds" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Maximum number of seconds for each entry to stay idle in the map. Entries
+                                            that are idle(not touched) for more than max-idle-seconds will get
+                                            automatically evicted from the map. Entry is touched if get, put or
+                                            containsKey is called. Any integer between 0 and Integer.MAX_VALUE. 0 means
+                                            infinite. Default is 0.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="eviction-percentage" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            When max. size is reached, specified percentage of the map will be evicted.
+                                            Any integer between 0 and 100. If 25 is set for example, 25% of the
+                                            entries will get evicted.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="min-eviction-check-millis" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Minimum time in milliseconds which should pass before checking if a
+                                            partition of this map is evictable or not. Default value is 100 millis.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="eviction-policy" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Valid values are: NONE (no eviction), LRU (Least Recently Used), LFU
+                                            (Least Frequently Used). NONE is the default.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="merge-policy" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            While recovering from split-brain (network partitioning), map entries in
+                                            the small cluster will merge into the bigger cluster based on the policy set
+                                            here. When an entry merge into the cluster, there might an existing entry
+                                            with the same key already. Values of these entries might be different for
+                                            that same key. Which value should be set for the key? Conflict is resolved
+                                            by the policy set here.
+                                            <p>
+                                                <br/>
+                                                There are built-in merge policies such as:
+                                                <br/>
+                                                com.hazelcast.map.merge.PassThroughMergePolicy; entry will be added if
+                                                there is no existing entry for the key.
+                                                <br/>
+                                                com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added
+                                                if
+                                                the merging entry doesn't exist in the cluster.
+                                                <br/>
+                                                com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher
+                                                hits wins.
+                                                <br/>
+                                                com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the
+                                                latest
+                                                update wins.
+                                                <br/>
+                                                Default policy is 'com.hazelcast.map.merge.PutIfAbsentMapMergePolicy'
+                                            </p>
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="read-backup-data" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            This boolean parameter enables reading local backup entries when set as
+                                            `true`.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="cache" minOccurs="0" maxOccurs="unbounded">
@@ -348,113 +379,134 @@
                                         </xs:annotation>
                                         <xs:complexType>
                                             <xs:sequence>
-                                                <xs:element name="cache-entry-listener" type="cache-entry-listener" minOccurs="0"
+                                                <xs:element name="cache-entry-listener" type="cache-entry-listener"
+                                                            minOccurs="0"
                                                             maxOccurs="unbounded"/>
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
                                 </xs:sequence>
-                                <xs:attribute name="name" type="xs:string" use="required" />
-                                  <xs:annotation>
-                                    <xs:documentation>Name of the cache.</xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="key-type" type="non-space-string" use="optional" />
-                                  <xs:annotation>
-                                    <xs:documentation>the type of keys provided as full class name</xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="value-type" type="non-space-string" use="optional" />
-                                  <xs:annotation>
-                                    <xs:documentation>the type of values provided as full class name</xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="statistics-enabled" type="xs:boolean" use="optional" />
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Defines whether statistics gathering is enabled on a cache.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="management-enabled" type="xs:boolean" use="optional" />
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Defines whether management is enabled on a cache.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="read-through" type="xs:boolean" use="optional" />
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Set if read-through caching should be used.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="write-through" type="xs:boolean" use="optional" />
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Set if write-through caching should be used.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="in-memory-format" type="xs:string" use="optional" />
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Data type that will be used for storing records. Possible values:
-                                        BINARY (default): keys and values will be stored as binary data
-                                        OBJECT : values will be stored in their object forms
-                                        NATIVE : keys and values will be stored in native memory.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="cache-loader-factory" type="xs:string" use="optional" />
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Defines the cache loader factory class name.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="cache-writer-factory" type="xs:string" use="optional" />
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Defines the cache writer factory class name.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="expiry-policy-factory" type="xs:string" use="optional" />
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Defines the expiry policy factory class name.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="backup-count" use="optional" type="xs:unsignedByte"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Number of sync backups. If 1 is set as the backup-count for example, then
-                                        all entries of the map will be copied to another JVM for fail-safety. Valid
-                                        numbers are 0 (no backup), 1, 2 ... 6.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:unsignedByte"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Number of async backups. If 1 is set as the backup-count for example, then
-                                        all entries of the map will be copied to another JVM for fail-safety. Valid
-                                        numbers are 0 (no backup), 1, 2 ... 6.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="eviction-percentage" use="optional" type="xs:unsignedByte"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        When max. size is reached, specified percentage of the cache will be evicted.
-                                        Any integer between 0 and 100. If 25 is set for example, 25% of the
-                                        entries will get evicted.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="eviction-threshold-percentage" use="optional" type="xs:unsignedByte"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        When size reaches threshold percentage, eviction will be fired. Any integer
-                                        between 0 and 100.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="eviction-policy" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Valid values are: NONE (no eviction), RANDOM, LRU (Least Recently Used),
-                                        LFU (Least Frequently Used). NONE is the default.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                <xs:attribute name="name" type="xs:string" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>Name of the cache.</xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="key-type" type="non-space-string" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>the type of keys provided as full class name
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="value-type" type="non-space-string" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>the type of values provided as full class name
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="statistics-enabled" type="xs:boolean" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Defines whether statistics gathering is enabled on a cache.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="management-enabled" type="xs:boolean" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Defines whether management is enabled on a cache.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="read-through" type="xs:boolean" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Set if read-through caching should be used.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="write-through" type="xs:boolean" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Set if write-through caching should be used.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="in-memory-format" type="xs:string" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Data type that will be used for storing records. Possible values:
+                                            BINARY (default): keys and values will be stored as binary data
+                                            OBJECT : values will be stored in their object forms
+                                            NATIVE : keys and values will be stored in native memory.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="cache-loader-factory" type="xs:string" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Defines the cache loader factory class name.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="cache-writer-factory" type="xs:string" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Defines the cache writer factory class name.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="expiry-policy-factory" type="xs:string" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Defines the expiry policy factory class name.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="backup-count" use="optional" type="xs:unsignedByte">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of sync backups. If 1 is set as the backup-count for example, then
+                                            all entries of the map will be copied to another JVM for fail-safety. Valid
+                                            numbers are 0 (no backup), 1, 2 ... 6.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="async-backup-count" use="optional" type="xs:unsignedByte">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of async backups. If 1 is set as the backup-count for example, then
+                                            all entries of the map will be copied to another JVM for fail-safety. Valid
+                                            numbers are 0 (no backup), 1, 2 ... 6.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="eviction-percentage" use="optional" type="xs:unsignedByte">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            When max. size is reached, specified percentage of the cache will be
+                                            evicted.
+                                            Any integer between 0 and 100. If 25 is set for example, 25% of the
+                                            entries will get evicted.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="eviction-threshold-percentage" use="optional"
+                                              type="xs:unsignedByte">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            When size reaches threshold percentage, eviction will be fired. Any integer
+                                            between 0 and 100.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="eviction-policy" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Valid values are: NONE (no eviction), RANDOM, LRU (Least Recently Used),
+                                            LFU (Least Frequently Used). NONE is the default.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="multimap" minOccurs="0" maxOccurs="unbounded">
@@ -470,29 +522,34 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Number of sync backups. If 1 is set as the backup-count for example, then all
-                                        entries of the map will be copied to another JVM for fail-safety. Valid
-                                        numbers are 0 (no backup), 1, 2 ... 6.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Number of async backups. If 1 is set as the backup-count for example, then all
-                                        entries of the map will be copied to another JVM for fail-safety. Valid
-                                        numbers are 0 (no backup), 1, 2 ... 6.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                <xs:attribute name="backup-count" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of sync backups. If 1 is set as the backup-count for example, then
+                                            all
+                                            entries of the map will be copied to another JVM for fail-safety. Valid
+                                            numbers are 0 (no backup), 1, 2 ... 6.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="async-backup-count" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Number of async backups. If 1 is set as the backup-count for example, then
+                                            all
+                                            entries of the map will be copied to another JVM for fail-safety. Valid
+                                            numbers are 0 (no backup), 1, 2 ... 6.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="value-collection-type" type="xs:string" use="optional"
-                                              default="SET"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Type of value collection. It can be Set or List.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                              default="SET">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Type of value collection. It can be Set or List.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="list" minOccurs="0" maxOccurs="unbounded">
@@ -508,28 +565,31 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="max-size" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Maximum size. Any integer between 0 and Integer.MAX_VALUE. 0 means
-                                        Integer.MAX_VALUE. Default is 0.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Count of synchronous backups. Remember that, List is a non-partitioned data
-                                        structure, i.e. all entries of a List resides in one partition. When this
-                                        parameter is '1', it means there will be a backup of that List in another
-                                        node in the cluster. When it is '2', 2 nodes will have the backup.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Count of asynchronous backups.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                <xs:attribute name="max-size" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Maximum size. Any integer between 0 and Integer.MAX_VALUE. 0 means
+                                            Integer.MAX_VALUE. Default is 0.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="backup-count" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Count of synchronous backups. Remember that, List is a non-partitioned data
+                                            structure, i.e. all entries of a List resides in one partition. When this
+                                            parameter is '1', it means there will be a backup of that List in another
+                                            node in the cluster. When it is '2', 2 nodes will have the backup.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="async-backup-count" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Count of asynchronous backups.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="set" minOccurs="0" maxOccurs="unbounded">
@@ -545,49 +605,55 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="max-size" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Maximum size. Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Count of synchronous backups. Remember that, Set is a non-partitioned data
-                                        structure, i.e. all entries of a List resides in one partition. When this
-                                        parameter is '1', it means there will be a backup of that List in another
-                                        node in the cluster. When it is '2', 2 nodes will have the backup.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        Count of asynchronous backups.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                <xs:attribute name="max-size" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Maximum size. Any integer between 0 and Integer.MAX_VALUE. 0 means
+                                            Integer.MAX_VALUE. Default is 0.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="backup-count" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Count of synchronous backups. Remember that, Set is a non-partitioned data
+                                            structure, i.e. all entries of a List resides in one partition. When this
+                                            parameter is '1', it means there will be a backup of that List in another
+                                            node in the cluster. When it is '2', 2 nodes will have the backup.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="async-backup-count" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Count of asynchronous backups.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="topic" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
                                     <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
-                                                default="true"/>
-                                      <xs:annotation>
-                                        <xs:documentation>
-                                            If set as `true`, you can retrieve statistics for the topic using the
-                                            method `getLocalTopicStats()`.
-                                        </xs:documentation>
-                                      </xs:annotation>
+                                                default="true">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                If set as `true`, you can retrieve statistics for the topic using the
+                                                method `getLocalTopicStats()`.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
                                     <xs:element name="global-ordering-enabled" type="xs:boolean" minOccurs="0"
                                                 maxOccurs="1"
-                                                default="false"/>
-                                      <xs:annotation>
-                                        <xs:documentation>
-                                            By default, it is false, meaning there is no global order
-                                            guarantee by default.
-                                        </xs:documentation>
-                                      </xs:annotation>
+                                                default="false">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                By default, it is false, meaning there is no global order
+                                                guarantee by default.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
                                     <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
                                             <xs:sequence>
@@ -613,63 +679,69 @@
                             <xs:complexType>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="max-thread-size" use="optional" type="xs:nonNegativeInteger"
-                                              default="0"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        The max-thread-size setting configures the maximum thread pool size of the
-                                        JobTracker.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                              default="0">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The max-thread-size setting configures the maximum thread pool size of the
+                                            JobTracker.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="queue-size" use="optional" type="xs:nonNegativeInteger"
-                                              default="0"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        The queue-size defines the maximum number of tasks are able to wait to be
-                                        processed. A value of 0 means unbounded queue.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                              default="0">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The queue-size defines the maximum number of tasks are able to wait to be
+                                            processed. A value of 0 means unbounded queue.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="retry-count" use="optional" type="xs:nonNegativeInteger"
-                                              default="0"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        retry-count is currently not used but reserved for later use where the
-                                        framework will automatically try to restart / retry operations from an
-                                        available savepoint.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                              default="0">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            retry-count is currently not used but reserved for later use where the
+                                            framework will automatically try to restart / retry operations from an
+                                            available savepoint.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="chunk-size" use="optional" type="xs:nonNegativeInteger"
-                                              default="1000"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        The chunk-size defined the number of emitted values before a chunk is sent
-                                        to the reducers. If your emitted values are big or you want to better
-                                        balance your work you might want to change this to a lower or higher value.
-                                        A value of 0 means immediate transmission but remember that low values
-                                        mean higher traffic costs. A very high value might cause an OutOfMemoryError
-                                        to occur if emitted values not fit into heap memory before being send to
-                                        reducers. To prevent this you might want to use a combiner to pre-reduce
-                                        values on mapping nodes.
-                                    </xs:documentation>
-                                  </xs:annotation>
-                                <xs:attribute name="communicate-stats" use="optional" type="xs:boolean" default="true"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        The communicate-stats setting defines if statistics (for example about
-                                        processed entries) are transmitted to the job emitter. This might be used
-                                        to show any kind of progress to an user inside of an UI system but produces
-                                        additional traffic. If not needed you might want to deactivate this.
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                              default="1000">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The chunk-size defined the number of emitted values before a chunk is sent
+                                            to the reducers. If your emitted values are big or you want to better
+                                            balance your work you might want to change this to a lower or higher value.
+                                            A value of 0 means immediate transmission but remember that low values
+                                            mean higher traffic costs. A very high value might cause an OutOfMemoryError
+                                            to occur if emitted values not fit into heap memory before being send to
+                                            reducers. To prevent this you might want to use a combiner to pre-reduce
+                                            values on mapping nodes.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="communicate-stats" use="optional" type="xs:boolean" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The communicate-stats setting defines if statistics (for example about
+                                            processed entries) are transmitted to the job emitter. This might be used
+                                            to show any kind of progress to an user inside of an UI system but produces
+                                            additional traffic. If not needed you might want to deactivate this.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="topology-changed-strategy" use="optional"
-                                              type="topology-changed-strategy" default="CANCEL_RUNNING_OPERATION"/>
-                                  <xs:annotation>
-                                    <xs:documentation>
-                                        The topology-changed-strategy defines how the map reduce framework will
-                                        react on topology changes while executing a job. Currently only
-                                        CANCEL_RUNNING_OPERATION is fully supported which throws an exception to the
-                                        job emitter (throws com.hazelcast.mapreduce.TopologyChangedException).
-                                    </xs:documentation>
-                                  </xs:annotation>
+                                              type="topology-changed-strategy" default="CANCEL_RUNNING_OPERATION">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The topology-changed-strategy defines how the map reduce framework will
+                                            react on topology changes while executing a job. Currently only
+                                            CANCEL_RUNNING_OPERATION is fully supported which throws an exception to the
+                                            job emitter (throws com.hazelcast.mapreduce.TopologyChangedException).
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
@@ -678,12 +750,13 @@
                         <xs:element name="member-attributes" minOccurs="0" maxOccurs="1">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="attribute" type="attribute" maxOccurs="unbounded"/>
-                                      <xs:annotation>
-                                        <xs:documentation>
-                                            Specify the name, type and value of your attribute here.
-                                        </xs:documentation>
-                                      </xs:annotation>
+                                    <xs:element name="attribute" type="attribute" maxOccurs="unbounded">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Specify the name, type and value of your attribute here.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
                                 </xs:sequence>
                             </xs:complexType>
                             <xs:unique name="uniqueAttributeConstraint">
@@ -701,12 +774,13 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="data-serializable-factory" type="serialization-factory" minOccurs="0"
-                            maxOccurs="unbounded"/>
-                  <xs:annotation>
-                    <xs:documentation>
-                        DataSerializableFactory class to be registered.
-                    </xs:documentation>
-                  </xs:annotation>
+                            maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            DataSerializableFactory class to be registered.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -714,12 +788,13 @@
     <xs:element name="portable-factories">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="portable-factory" type="serialization-factory" minOccurs="0" maxOccurs="unbounded"/>
-                  <xs:annotation>
-                    <xs:documentation>
-                        PortableFactory class to be registered.
-                    </xs:documentation>
-                  </xs:annotation>
+                <xs:element name="portable-factory" type="serialization-factory" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            PortableFactory class to be registered.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -727,18 +802,20 @@
     <xs:element name="serializers">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="global-serializer" type="global-serializer" minOccurs="0" maxOccurs="1"/>
-                  <xs:annotation>
-                    <xs:documentation>
-                        Global serializer class to be registered if no other serializer is applicable.
-                    </xs:documentation>
-                  </xs:annotation>
-                <xs:element name="serializer" type="serializer" minOccurs="0" maxOccurs="unbounded"/>
-                  <xs:annotation>
-                    <xs:documentation>
-                        Defines the class name of the serializer implementation.
-                    </xs:documentation>
-                  </xs:annotation>
+                <xs:element name="global-serializer" type="global-serializer" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Global serializer class to be registered if no other serializer is applicable.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="serializer" type="serializer" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Defines the class name of the serializer implementation.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -874,13 +951,14 @@
             <xs:element name="interfaces" type="interfaces" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0" maxOccurs="1"/>
-              <xs:annotation>
-                <xs:documentation>
-                    Encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES, AES/CBC/PKCS5Padding,
-                    Blowfish, DESede.
-                </xs:documentation>
-              </xs:annotation>
+            <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES, AES/CBC/PKCS5Padding,
+                        Blowfish, DESede.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
         </xs:sequence>
         <xs:attribute name="public-address" type="xs:string" use="optional"/>
@@ -1071,9 +1149,9 @@
     <xs:complexType name="attribute">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-        		<xs:attribute name="name" use="required" type="attributeName"/>
-        		<!--xs:attribute name="name" use="required" type="xs:ID"/-->
-        		<xs:attribute name="type" use="optional" default="string" type="attributeTypeEnum"/>
+                <xs:attribute name="name" use="required" type="attributeName"/>
+                <!--xs:attribute name="name" use="required" type="xs:ID"/-->
+                <xs:attribute name="type" use="optional" default="string" type="attributeTypeEnum"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
