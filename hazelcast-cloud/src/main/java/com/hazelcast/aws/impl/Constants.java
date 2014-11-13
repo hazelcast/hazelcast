@@ -19,8 +19,7 @@ package com.hazelcast.aws.impl;
 public final class Constants {
 
     public static final String DATE_FORMAT = "yyyyMMdd'T'HHmmss'Z'";
-    public static final String DOC_VERSION = "2011-05-15";
+    public static final String DOC_VERSION = "2014-06-15";
     public static final String SIGNATURE_METHOD_V4 = "AWS4-HMAC-SHA256";
     public static final String GET = "GET";
-
 }
