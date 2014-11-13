@@ -33,7 +33,7 @@ public class CacheEntryListenerClientServerTest
         System.setProperty("javax.management.builder.initial", "com.hazelcast.cache.impl.TCKMBeanServerBuilder");
         System.setProperty("org.jsr107.tck.management.agentId", "TCKMbeanServer");
         System.setProperty(Cache.class.getName(), "com.hazelcast.cache.ICache");
-        System.setProperty(Cache.Entry.class.getName().replace('$', '.'), "com.hazelcast.cache.impl.CacheEntry");
+        System.setProperty(Cache.Entry.class.getCanonicalName(), "com.hazelcast.cache.impl.CacheEntry");
     }
     */
 

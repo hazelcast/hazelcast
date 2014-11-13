@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheCompleter;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -110,7 +109,7 @@ public class CacheEventListenerAdaptor<K, V>
                     handleEvent(cacheEventSet);
                 }
             } finally {
-                ((CacheCompleter) source).countDownCompletionLatch(cacheEventSet.getCompletionId());
+                ((CacheSyncListenerCompleter) source).countDownCompletionLatch(cacheEventSet.getCompletionId());
             }
         }
     }

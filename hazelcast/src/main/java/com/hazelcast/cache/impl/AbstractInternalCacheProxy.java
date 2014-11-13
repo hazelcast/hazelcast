@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheCompleter;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.config.CacheConfig;
@@ -58,7 +57,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
  */
 abstract class AbstractInternalCacheProxy<K, V>
         extends AbstractCacheProxyBase<K, V>
-        implements ICache<K, V>, CacheCompleter {
+        implements ICache<K, V>, CacheSyncListenerCompleter {
 
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;

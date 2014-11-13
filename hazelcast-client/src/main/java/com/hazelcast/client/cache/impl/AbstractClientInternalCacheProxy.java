@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.CacheCompleter;
+import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
@@ -70,7 +70,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * @param <V> the type of value
  */
 abstract class AbstractClientInternalCacheProxy<K, V>
-        extends AbstractClientCacheProxyBase<K, V> implements CacheCompleter {
+        extends AbstractClientCacheProxyBase<K, V> implements CacheSyncListenerCompleter {
 
     protected final ClientNearCache<Data, Object> nearCache;
 
