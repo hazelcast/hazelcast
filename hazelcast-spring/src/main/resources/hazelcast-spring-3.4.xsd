@@ -39,6 +39,11 @@
                                 <xs:sequence/>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="pool-size" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        The number of executor threads per Member for the Executor.
+                                    </xs:documentation>
+                                  </xs:annotation>
                                 <xs:attribute name="queue-capacity" use="optional" type="xs:string"/>
                                   <xs:annotation>
                                     <xs:documentation>
@@ -75,8 +80,26 @@
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="max-size" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        Value of maximum size of items in the Queue.
+                                    </xs:documentation>
+                                  </xs:annotation>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        Count of synchronous backups. Remember that, Queue is a non-partitioned
+                                        data structure, i.e. all entries of a Set resides in one partition. When
+                                        this parameter is '1', it means there will be a backup of that Set in
+                                        another node in the cluster. When it is '2', 2 nodes will have the backup.
+                                    </xs:documentation>
+                                  </xs:annotation>
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        Count of asynchronous backups.
+                                    </xs:documentation>
+                                  </xs:annotation>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="map" minOccurs="0" maxOccurs="unbounded">
@@ -90,12 +113,35 @@
                                             </xs:sequence>
                                             <xs:attribute name="enabled" use="required" type="xs:string"/>
                                             <xs:attribute name="class-name" use="optional" type="xs:string"/>
+                                              <xs:annotation>
+                                                <xs:documentation>
+                                                    Name of the class implementing MapLoader and/or MapStore.
+                                                </xs:documentation>
+                                              </xs:annotation>
                                             <xs:attribute name="factory-class-name" use="optional" type="xs:string"/>
                                             <xs:attribute name="implementation" use="optional" type="xs:string"/>
                                             <xs:attribute name="factory-implementation" use="optional"
                                                           type="xs:string"/>
                                             <xs:attribute name="write-delay-seconds" use="required" type="xs:string"/>
+                                              <xs:annotation>
+                                                <xs:documentation>
+                                                    Number of seconds to delay to call the MapStore.store(key, value).
+                                                    If the value is zero then it is write-through so
+                                                    MapStore.store(key, value) will be called as soon as the
+                                                    entry is updated. Otherwise it is write-behind so updates will
+                                                    be stored after write-delay-seconds value by calling
+                                                    Hazelcast.storeAll(map). Default value is 0.
+                                                </xs:documentation>
+                                              </xs:annotation>
                                             <xs:attribute name="write-batch-size" use="optional" type="xs:string"/>
+                                              <xs:annotation>
+                                                <xs:documentation>
+                                                    Used to create batch chunks when writing map store. In default
+                                                    mode all entries will be tried to persist in one go. To create
+                                                    batch chunks, minimum meaningful value for write-batch-size is 2.
+                                                    For values smaller than 2, it works as in default mode.
+                                                </xs:documentation>
+                                              </xs:annotation>
                                             <xs:attribute name="initial-mode">
                                                 <xs:simpleType>
                                                     <xs:restriction base="non-space-string">
@@ -108,12 +154,25 @@
                                     </xs:element>
                                     <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="wan-replication-ref" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Hazelcast can replicate some or all of the cluster data. For example,
+                                                you can have 5 different maps but you want only one of these maps
+                                                replicating across clusters. To achieve this you mark the maps
+                                                to be replicated by adding this element.
+                                            </xs:documentation>
+                                        </xs:annotation>
                                         <xs:complexType>
                                             <xs:attribute name="name" use="required" type="xs:string"/>
                                             <xs:attribute name="merge-policy" use="required" type="xs:string"/>
                                         </xs:complexType>
                                     </xs:element>
                                     <xs:element name="indexes" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                This configuration lets you index the attributes and also order them.
+                                            </xs:documentation>
+                                        </xs:annotation>
                                         <xs:complexType>
                                             <xs:sequence>
                                                 <xs:element name="index" minOccurs="0" maxOccurs="unbounded">
@@ -127,6 +186,12 @@
                                         </xs:complexType>
                                     </xs:element>
                                     <xs:element name="entry-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                This configuration lets you add listeners (listener classes) for the
+                                                map entries.
+                                            </xs:documentation>
+                                        </xs:annotation>
                                         <xs:complexType>
                                             <xs:sequence>
                                                 <xs:element name="entry-listener" type="entry-listener" minOccurs="0"
@@ -137,10 +202,32 @@
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        It is used to determine how the data will be stored in memory. It has two
+                                        values: BINARY and OBJECT. BINARY is the default option and enables to
+                                        store the data in serialized binary format. If OBJECT is set as the value,
+                                        data will be stored in deserialized form.
+                                    </xs:documentation>
+                                  </xs:annotation>
                                 <xs:attribute name="statistics-enabled" use="optional" type="xs:boolean"
                                               default="true"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        You can retrieve some statistics like owned entry count, backup entry count,
+                                        last update time, locked entry count by setting this parameter's value
+                                        as "true". The method for retrieving the statistics is `getLocalMapStats()`.
+                                    </xs:documentation>
+                                  </xs:annotation>
                                 <xs:attribute name="optimize-queries" use="optional" type="xs:boolean"
                                               default="false"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        This parameter is used to increase the speed of query processes in the map.
+                                        It only works when `in-memory-format` is set as `BINARY` and performs
+                                        a pre-caching on the entries queried.
+                                    </xs:documentation>
+                                  </xs:annotation>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
                                   <xs:annotation>
                                     <xs:documentation>
@@ -174,11 +261,20 @@
                                     </xs:documentation>
                                   </xs:annotation>
                                 <xs:attribute name="max-size-policy" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        When maximum size is reached, map is evicted based on the eviction policy
+                                        defined. It has four attributes: PER_NODE (Maximum number of map entries in
+                                        each JVM), PER_PARTITION (Maximum number of map entries within each partition),
+                                        USED_HEAP_SIZE (Maximum used heap size in megabytes for each JVM) and
+                                        USED_HEAP_PERCENTAGE (Maximum used heap size percentage for each JVM).
+                                    </xs:documentation>
+                                  </xs:annotation>
                                 <xs:attribute name="max-idle-seconds" use="optional" type="xs:string"/>
                                   <xs:annotation>
                                     <xs:documentation>
                                         Maximum number of seconds for each entry to stay idle in the map. Entries
-                                        that are idle(not touched) for more than <max-idle-seconds> will get
+                                        that are idle(not touched) for more than max-idle-seconds will get
                                         automatically evicted from the map. Entry is touched if get, put or
                                         containsKey is called. Any integer between 0 and Integer.MAX_VALUE. 0 means
                                         infinite. Default is 0.
@@ -236,6 +332,11 @@
                                     </xs:documentation>
                                   </xs:annotation>
                                 <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        This boolean parameter enables reading local backup entries when set as `true`.
+                                    </xs:documentation>
+                                  </xs:annotation>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="cache" minOccurs="0" maxOccurs="unbounded">
@@ -370,9 +471,28 @@
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        Number of sync backups. If 1 is set as the backup-count for example, then all
+                                        entries of the map will be copied to another JVM for fail-safety. Valid
+                                        numbers are 0 (no backup), 1, 2 ... 6.
+                                    </xs:documentation>
+                                  </xs:annotation>
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        Number of async backups. If 1 is set as the backup-count for example, then all
+                                        entries of the map will be copied to another JVM for fail-safety. Valid
+                                        numbers are 0 (no backup), 1, 2 ... 6.
+                                    </xs:documentation>
+                                  </xs:annotation>
                                 <xs:attribute name="value-collection-type" type="xs:string" use="optional"
                                               default="SET"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        Type of value collection. It can be Set or List.
+                                    </xs:documentation>
+                                  </xs:annotation>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="list" minOccurs="0" maxOccurs="unbounded">
@@ -396,7 +516,20 @@
                                     </xs:documentation>
                                   </xs:annotation>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        Count of synchronous backups. Remember that, List is a non-partitioned data
+                                        structure, i.e. all entries of a List resides in one partition. When this
+                                        parameter is '1', it means there will be a backup of that List in another
+                                        node in the cluster. When it is '2', 2 nodes will have the backup.
+                                    </xs:documentation>
+                                  </xs:annotation>
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        Count of asynchronous backups.
+                                    </xs:documentation>
+                                  </xs:annotation>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="set" minOccurs="0" maxOccurs="unbounded">
@@ -419,7 +552,20 @@
                                     </xs:documentation>
                                   </xs:annotation>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        Count of synchronous backups. Remember that, Set is a non-partitioned data
+                                        structure, i.e. all entries of a List resides in one partition. When this
+                                        parameter is '1', it means there will be a backup of that List in another
+                                        node in the cluster. When it is '2', 2 nodes will have the backup.
+                                    </xs:documentation>
+                                  </xs:annotation>
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
+                                  <xs:annotation>
+                                    <xs:documentation>
+                                        Count of asynchronous backups.
+                                    </xs:documentation>
+                                  </xs:annotation>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="topic" minOccurs="0" maxOccurs="unbounded">
@@ -427,9 +573,21 @@
                                 <xs:sequence>
                                     <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
                                                 default="true"/>
+                                      <xs:annotation>
+                                        <xs:documentation>
+                                            If set as `true`, you can retrieve statistics for the topic using the
+                                            method `getLocalTopicStats()`.
+                                        </xs:documentation>
+                                      </xs:annotation>
                                     <xs:element name="global-ordering-enabled" type="xs:boolean" minOccurs="0"
                                                 maxOccurs="1"
                                                 default="false"/>
+                                      <xs:annotation>
+                                        <xs:documentation>
+                                            By default, it is false, meaning there is no global order
+                                            guarantee by default.
+                                        </xs:documentation>
+                                      </xs:annotation>
                                     <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
                                             <xs:sequence>
@@ -521,6 +679,11 @@
                             <xs:complexType>
                                 <xs:sequence>
                                     <xs:element name="attribute" type="attribute" maxOccurs="unbounded"/>
+                                      <xs:annotation>
+                                        <xs:documentation>
+                                            Specify the name, type and value of your attribute here.
+                                        </xs:documentation>
+                                      </xs:annotation>
                                 </xs:sequence>
                             </xs:complexType>
                             <xs:unique name="uniqueAttributeConstraint">
@@ -539,6 +702,11 @@
             <xs:sequence>
                 <xs:element name="data-serializable-factory" type="serialization-factory" minOccurs="0"
                             maxOccurs="unbounded"/>
+                  <xs:annotation>
+                    <xs:documentation>
+                        DataSerializableFactory class to be registered.
+                    </xs:documentation>
+                  </xs:annotation>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -547,6 +715,11 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="portable-factory" type="serialization-factory" minOccurs="0" maxOccurs="unbounded"/>
+                  <xs:annotation>
+                    <xs:documentation>
+                        PortableFactory class to be registered.
+                    </xs:documentation>
+                  </xs:annotation>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -555,7 +728,17 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="global-serializer" type="global-serializer" minOccurs="0" maxOccurs="1"/>
+                  <xs:annotation>
+                    <xs:documentation>
+                        Global serializer class to be registered if no other serializer is applicable.
+                    </xs:documentation>
+                  </xs:annotation>
                 <xs:element name="serializer" type="serializer" minOccurs="0" maxOccurs="unbounded"/>
+                  <xs:annotation>
+                    <xs:documentation>
+                        Defines the class name of the serializer implementation.
+                    </xs:documentation>
+                  </xs:annotation>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -694,7 +877,7 @@
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0" maxOccurs="1"/>
               <xs:annotation>
                 <xs:documentation>
-                    encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES, AES/CBC/PKCS5Padding,
+                    Encryption algorithm such as DES/ECB/PKCS5Padding, PBEWithMD5AndDES, AES/CBC/PKCS5Padding,
                     Blowfish, DESede.
                 </xs:documentation>
               </xs:annotation>
