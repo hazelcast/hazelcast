@@ -20,6 +20,7 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
+import com.hazelcast.instance.DefaultOutOfMemoryHandler;
 import com.hazelcast.util.EmptyStatement;
 
 /**
@@ -28,13 +29,22 @@ import com.hazelcast.util.EmptyStatement;
 public class ClientOutOfMemoryHandler extends OutOfMemoryHandler {
 
     @Override
-    public void onOutOfMemory(OutOfMemoryError oom, HazelcastInstance[] hazelcastInstances) {
-        System.err.println(oom);
+    public void onOutOfMemory(OutOfMemoryError oome, HazelcastInstance[] hazelcastInstances) {
         for (HazelcastInstance instance : hazelcastInstances) {
             if (instance instanceof HazelcastClientInstanceImpl) {
                 ClientHelper.cleanResources((HazelcastClientInstanceImpl) instance);
             }
         }
+        try {
+            oome.printStackTrace(System.err);
+        } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+    }
+
+    @Override
+    public boolean shouldHandle(OutOfMemoryError oome) {
+        return DefaultOutOfMemoryHandler.shouldHandleOutOfMemory(oome);
     }
 
     private static final class ClientHelper {

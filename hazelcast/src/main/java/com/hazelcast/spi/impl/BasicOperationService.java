@@ -73,6 +73,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
@@ -1076,6 +1077,7 @@ final class BasicOperationService implements InternalOperationService {
                     }
                 }
             } catch (Throwable t) {
+                inspectOutputMemoryError(t);
                 logger.severe("Failed to run", t);
             }
         }
@@ -1089,6 +1091,7 @@ final class BasicOperationService implements InternalOperationService {
                 try {
                     invocation.handleBackupTimeout(backupOperationTimeoutMillis);
                 } catch (Throwable t) {
+                    inspectOutputMemoryError(t);
                     logger.severe("Failed to handle backup timeout of invocation:" + invocation, t);
                 }
             }

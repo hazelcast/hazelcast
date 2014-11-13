@@ -1,7 +1,6 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientExtension;
-import com.hazelcast.client.ClientOutOfMemoryHandler;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientAwsConfig;
@@ -63,7 +62,6 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
@@ -93,10 +91,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance {
-
-    static {
-        OutOfMemoryErrorDispatcher.setClientHandler(new ClientOutOfMemoryHandler());
-    }
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
