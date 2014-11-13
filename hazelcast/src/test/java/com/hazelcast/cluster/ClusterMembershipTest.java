@@ -16,18 +16,6 @@
 
 package com.hazelcast.cluster;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapIndexConfig;
@@ -46,6 +34,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,15 +52,31 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.After;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClusterMembershipTest extends HazelcastTestSupport {
 
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(10);
+
+    @AfterClass
+    public static void tearDown() throws Exception {
+        if (executorService == null) {
+            return;
+        }
+
+        executorService.shutdown();
+    }
 
     @Test(expected = NullPointerException.class)
     public void testAddMembershipListener_whenNullListener() {
@@ -139,10 +147,8 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
         // and verify that the listener isn't called.
-        verify(membershipListener,never()).memberAdded(any(MembershipEvent.class));
+        verify(membershipListener, never()).memberAdded(any(MembershipEvent.class));
     }
-
-    private ExecutorService ex;
 
     @Test
     public void testMembershipListener() {
@@ -175,10 +181,10 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
         final String mapName = randomMapName();
         // index config is added since it was blocking post join operations.
         config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
-        this.ex = Executors.newFixedThreadPool(instanceCount);
+
         final CountDownLatch latch = new CountDownLatch(instanceCount);
         for (int i = 0; i < instanceCount; i++) {
-            ex.execute(new Runnable() {
+            executorService.execute(new Runnable() {
                 public void run() {
                     final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
                     hz.getMap(mapName);
@@ -187,7 +193,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
                 }
             });
         }
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
     }
 
     @Test
@@ -200,14 +206,14 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
         final CountDownLatch nodeLatch = new CountDownLatch(nodeCount - 1);
 
         Config config = new Config()
-                    .addListenerConfig(new ListenerConfig().setImplementation(newAddMemberListener(eventLatch)));
+                .addListenerConfig(new ListenerConfig().setImplementation(newAddMemberListener(eventLatch)));
 
-        ex = Executors.newFixedThreadPool(nodeCount / 2);
+
         // first node has listener
         factory.newHazelcastInstance(config);
 
         for (int i = 1; i < nodeCount; i++) {
-            ex.execute(new Runnable() {
+            executorService.execute(new Runnable() {
                 public void run() {
                     factory.newHazelcastInstance(new Config());
                     nodeLatch.countDown();
@@ -215,8 +221,8 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
             });
         }
 
-        assertTrue("Remaining count: " + nodeLatch.getCount(), nodeLatch.await(30, SECONDS));
-        assertTrue("Remaining count: " + eventLatch.getCount(), eventLatch.await(30, SECONDS));
+        assertOpenEventually(nodeLatch);
+        assertOpenEventually(eventLatch);
     }
 
     private static MembershipAdapter newAddMemberListener(final CountDownLatch eventLatch) {
@@ -227,7 +233,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
 
             public void memberAdded(MembershipEvent membershipEvent) {
                 if (flag.compareAndSet(false, true)) {
-                    sleepMillis( (int) (Math.random() * 500) + 50);
+                    sleepMillis((int) (Math.random() * 500) + 50);
                     eventLatch.countDown();
                     flag.set(false);
                 }
@@ -314,13 +320,6 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
             if (System.currentTimeMillis() - startTimeMs > TimeUnit.SECONDS.toMillis(10)) {
                 fail("Timeout, size of the list didn't reach size: " + expectedSize + " in time");
             }
-        }
-    }
-
-    @After
-    public void shutdownExecutor() {
-        if( ex != null ) {
-            ex.shutdownNow();
         }
     }
 
