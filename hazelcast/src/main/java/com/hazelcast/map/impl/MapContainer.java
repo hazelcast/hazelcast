@@ -71,6 +71,11 @@ public class MapContainer extends MapContainerSupport {
 
     private MapMergePolicy wanMergePolicy;
 
+    /**
+     * Operations which are done in this constructor should obey the rules defined
+     * in the method comment {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}
+     * Otherwise undesired situations, like deadlocks, may appear.
+     */
     public MapContainer(final String name, final MapConfig mapConfig, final MapServiceContext mapServiceContext) {
         super(name, mapConfig);
         this.mapServiceContext = mapServiceContext;
@@ -82,10 +87,6 @@ public class MapContainer extends MapContainerSupport {
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         nearCacheSizeEstimator = createNearCacheSizeEstimator();
         mapStoreContext = createMapStoreContext(this);
-
-    }
-
-    public void init() {
         mapStoreContext.start();
     }
 

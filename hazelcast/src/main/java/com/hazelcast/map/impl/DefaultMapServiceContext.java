@@ -1,5 +1,7 @@
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
@@ -30,9 +32,10 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     private final AtomicReference<Collection<Integer>> ownedPartitions;
     private final ConstructorFunction<String, MapContainer> mapConstructor = new ConstructorFunction<String, MapContainer>() {
         public MapContainer createNew(String mapName) {
-            final MapContainer mapContainer = new MapContainer(mapName, nodeEngine.getConfig().findMapConfig(mapName),
-                    getService().getMapServiceContext());
-            mapContainer.init();
+            final MapServiceContext mapServiceContext = getService().getMapServiceContext();
+            final Config config = nodeEngine.getConfig();
+            final MapConfig mapConfig = config.findMapConfig(mapName);
+            final MapContainer mapContainer = new MapContainer(mapName, mapConfig, mapServiceContext);
             return mapContainer;
         }
     };
@@ -126,7 +129,7 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     @Override
     public void destroyMapStores() {
         for (MapContainer mapContainer : mapContainers.values()) {
-            MapStoreWrapper store = mapContainer.getMapStoreContext().getStore();
+            MapStoreWrapper store = mapContainer.getMapStoreContext().getMapStoreWrapper();
             if (store != null) {
                 store.destroy();
             }
