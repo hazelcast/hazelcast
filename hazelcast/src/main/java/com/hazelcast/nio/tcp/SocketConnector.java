@@ -98,8 +98,8 @@ public class SocketConnector implements Runnable {
         boolean connected = false;
         Exception error = null;
         int configuredTimeoutMillis = connectionManager.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND;
-        int timeoutMillis = configuredTimeoutMillis > 0 && configuredTimeoutMillis < Integer.MAX_VALUE ?
-                configuredTimeoutMillis : DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS * MILLIS_PER_SECOND;
+        int timeoutMillis = configuredTimeoutMillis > 0 && configuredTimeoutMillis < Integer.MAX_VALUE
+                ? configuredTimeoutMillis : DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS * MILLIS_PER_SECOND;
         for (Inet6Address inetAddress : possibleInetAddresses) {
             try {
                 tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), timeoutMillis);
