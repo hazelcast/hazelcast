@@ -29,6 +29,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.MemoryInfoAccessor;
 
 import java.util.Arrays;
 import java.util.Iterator;

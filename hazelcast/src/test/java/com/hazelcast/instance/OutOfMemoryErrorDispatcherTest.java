@@ -19,9 +19,11 @@ package com.hazelcast.instance;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.MemoryInfoAccessor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,6 +33,7 @@ import org.mockito.verification.VerificationMode;
 import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -144,11 +147,86 @@ public class OutOfMemoryErrorDispatcherTest extends HazelcastTestSupport {
         HazelcastInstance hz = mock(HazelcastInstance.class);
         OutOfMemoryErrorDispatcher.registerServer(hz);
 
-        OutOfMemoryHandler handler = mock(DefaultOutOfMemoryHandler.class);
+        OutOfMemoryHandler handler = spy(new DefaultOutOfMemoryHandler());
         when(handler.shouldHandle(oome)).thenCallRealMethod();
         OutOfMemoryErrorDispatcher.setServerHandler(handler);
 
         OutOfMemoryErrorDispatcher.onOutOfMemory(oome);
         verify(handler, never()).onOutOfMemory(oome, new HazelcastInstance[]{hz});
+    }
+
+    @Test
+    public void test_DefaultOutOfMemoryHandler_total_smallerThan_max() {
+        test_DefaultOutOfMemoryHandler_using_accessor(new MemoryInfoAccessor() {
+            @Override
+            public long getMaxMemory() {
+                return MemoryUnit.MEGABYTES.toBytes(100);
+            }
+
+            @Override
+            public long getTotalMemory() {
+                return MemoryUnit.MEGABYTES.toBytes(80);
+            }
+
+            @Override
+            public long getFreeMemory() {
+                return MemoryUnit.MEGABYTES.toBytes(10);
+            }
+        }, never());
+    }
+
+    @Test
+    public void test_DefaultOutOfMemoryHandler_total_equalTo_max() {
+        test_DefaultOutOfMemoryHandler_using_accessor(new MemoryInfoAccessor() {
+            @Override
+            public long getMaxMemory() {
+                return MemoryUnit.MEGABYTES.toBytes(100);
+            }
+
+            @Override
+            public long getTotalMemory() {
+                return MemoryUnit.MEGABYTES.toBytes(100);
+            }
+
+            @Override
+            public long getFreeMemory() {
+                return MemoryUnit.MEGABYTES.toBytes(20);
+            }
+        }, never());
+    }
+
+    @Test
+    public void test_DefaultOutOfMemoryHandler_not_enough_memory() {
+        test_DefaultOutOfMemoryHandler_using_accessor(new MemoryInfoAccessor() {
+            @Override
+            public long getMaxMemory() {
+                return MemoryUnit.MEGABYTES.toBytes(100);
+            }
+
+            @Override
+            public long getTotalMemory() {
+                return MemoryUnit.MEGABYTES.toBytes(100);
+            }
+
+            @Override
+            public long getFreeMemory() {
+                return MemoryUnit.MEGABYTES.toBytes(5);
+            }
+        }, times(1));
+    }
+
+    private void test_DefaultOutOfMemoryHandler_using_accessor(MemoryInfoAccessor memoryInfoAccessor,
+            VerificationMode verificationMode) {
+
+        OutOfMemoryError oome = new OutOfMemoryError();
+
+        HazelcastInstance hz = mock(HazelcastInstance.class);
+        OutOfMemoryErrorDispatcher.registerServer(hz);
+
+        OutOfMemoryHandler handler = spy(new DefaultOutOfMemoryHandler(0.1d, memoryInfoAccessor));
+        OutOfMemoryErrorDispatcher.setServerHandler(handler);
+
+        OutOfMemoryErrorDispatcher.onOutOfMemory(oome);
+        verify(handler, verificationMode).onOutOfMemory(oome, new HazelcastInstance[]{hz});
     }
 }

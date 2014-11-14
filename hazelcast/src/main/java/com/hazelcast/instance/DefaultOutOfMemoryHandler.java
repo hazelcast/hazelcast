@@ -20,6 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.MemoryInfoAccessor;
+import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 
 /**
  * Default OutOfMemoryHandler implementation that tries to release local resources (threads, connections, memory)
@@ -57,6 +59,22 @@ public class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
         FREE_MAX_RATIO = ((double) percentage) / HUNDRED_PERCENT;
     }
 
+    private final double freeVersusMaxRatio;
+    private final MemoryInfoAccessor memoryInfoAccessor;
+
+    public DefaultOutOfMemoryHandler() {
+        this(FREE_MAX_RATIO);
+    }
+
+    public DefaultOutOfMemoryHandler(double freeVersusMaxRatio) {
+        this.freeVersusMaxRatio = freeVersusMaxRatio;
+        this.memoryInfoAccessor = new RuntimeMemoryInfoAccessor();
+    }
+
+    public DefaultOutOfMemoryHandler(double freeVersusMaxRatio, MemoryInfoAccessor memoryInfoAccessor) {
+        this.freeVersusMaxRatio = freeVersusMaxRatio;
+        this.memoryInfoAccessor = memoryInfoAccessor;
+    }
 
     @Override
     public void onOutOfMemory(OutOfMemoryError oome, HazelcastInstance[] hazelcastInstances) {
@@ -76,18 +94,13 @@ public class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
 
     @Override
     public boolean shouldHandle(OutOfMemoryError oome) {
-        return shouldHandleOutOfMemory(oome);
-    }
-
-    public static boolean shouldHandleOutOfMemory(OutOfMemoryError oome) {
         try {
             if (GC_OVERHEAD_LIMIT_EXCEEDED.equals(oome.getMessage())) {
                 return true;
             }
 
-            Runtime runtime = Runtime.getRuntime();
-            long maxMemory = runtime.maxMemory();
-            long totalMemory = runtime.totalMemory();
+            long maxMemory = memoryInfoAccessor.getMaxMemory();
+            long totalMemory = memoryInfoAccessor.getTotalMemory();
 
             // if total-memory has not reached to max-memory
             // then no need to handle this
@@ -95,8 +108,11 @@ public class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
                 return false;
             }
 
-            long freeMemory = runtime.freeMemory();
-            if (freeMemory > maxMemory * FREE_MAX_RATIO) {
+            // since previous total vs max memory comparison
+            // freeMemory should return the same result
+            // with = (maxMemory - totalMemory + freeMemory)
+            long freeMemory = memoryInfoAccessor.getFreeMemory();
+            if (freeMemory > maxMemory * freeVersusMaxRatio) {
                 return false;
             }
 
