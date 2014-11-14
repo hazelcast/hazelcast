@@ -128,12 +128,16 @@ public final class HazelcastClient {
      */
     public static void shutdownAll() {
         for (HazelcastClientProxy proxy : CLIENTS.values()) {
-            try {
-                proxy.client.shutdown();
-            } catch (Exception ignored) {
-                EmptyStatement.ignore(ignored);
+            HazelcastClientInstanceImpl client = proxy.client;
+            if (client == null) {
+                continue;
             }
             proxy.client = null;
+            try {
+                client.shutdown();
+            } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
+            }
         }
         OutOfMemoryErrorDispatcher.clearClients();
         CLIENTS.clear();
@@ -144,20 +148,22 @@ public final class HazelcastClient {
      * @param instance the hazelcast client instance
      */
     public static void shutdown(HazelcastInstance instance) {
-        if(instance instanceof HazelcastClientProxy){
+        if (instance instanceof HazelcastClientProxy) {
             final HazelcastClientProxy proxy = (HazelcastClientProxy) instance;
-            if (proxy.client == null) {
+            HazelcastClientInstanceImpl client = proxy.client;
+            if (client == null) {
                 return;
             }
-            String instanceName = proxy.client.getName();
-            try {
-                proxy.client.shutdown();
-                OutOfMemoryErrorDispatcher.deregisterClient(proxy.client);
-            } catch (Exception ignored) {
-                EmptyStatement.ignore(ignored);
-            }
             proxy.client = null;
-            CLIENTS.remove(instanceName);
+            CLIENTS.remove(client.getName());
+
+            try {
+                client.shutdown();
+            } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
+            } finally {
+                OutOfMemoryErrorDispatcher.deregisterClient(client);
+            }
         }
     }
 
@@ -167,16 +173,21 @@ public final class HazelcastClient {
      */
     public static void shutdown(String instanceName) {
         HazelcastClientProxy proxy = CLIENTS.remove(instanceName);
-        if(proxy != null) {
-            try {
-                proxy.client.shutdown();
-                OutOfMemoryErrorDispatcher.deregisterClient(proxy.client);
-            } catch (Exception ignored) {
-                EmptyStatement.ignore(ignored);
-            }
-            proxy.client = null;
+        if (proxy == null) {
+            return;
         }
-
+        HazelcastClientInstanceImpl client = proxy.client;
+        if (client == null) {
+            return;
+        }
+        proxy.client = null;
+        try {
+            client.shutdown();
+        } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
+        } finally {
+            OutOfMemoryErrorDispatcher.deregisterClient(client);
+        }
     }
 
 }
