@@ -47,7 +47,6 @@ import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
@@ -755,9 +754,7 @@ final class BasicOperationService implements InternalOperationService {
 
         private boolean timeout(Operation op) {
             if (isCallTimedOut(op)) {
-                Object response = new CallTimeoutException(
-                        op.getClass().getName(), op.getInvocationTime(), op.getCallTimeout());
-                op.getResponseHandler().sendResponse(response);
+                op.getResponseHandler().sendResponse(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
                 return true;
             }
             return false;

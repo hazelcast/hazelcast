@@ -66,10 +66,10 @@ public interface ReplicatedMap<K, V>
      * be aware of the fact that this might be a slow operation.</p>
      * <p>If some node fails on executing the operation it is retried for at most of
      * 3 times (on the failing nodes only). If not working after the third time this
-     * method throws a {@link com.hazelcast.spi.exception.CallTimeoutException} back
+     * method throws a {@link com.hazelcast.core.OperationTimeoutException} back
      * to the caller.</p>
      *
-     * @throws com.hazelcast.spi.exception.CallTimeoutException thrown if clear could not
+     * @throws com.hazelcast.core.OperationTimeoutException thrown if clear could not
      *                                                          executed on remote nodes
      */
     void clear();

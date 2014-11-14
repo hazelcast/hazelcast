@@ -29,7 +29,6 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitNotifyService;
 import com.hazelcast.spi.WaitSupport;
-import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.util.Clock;
@@ -228,7 +227,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         final WaitSupport waitSupport;
         final long expirationTime;
         volatile boolean valid = true;
-        volatile Throwable error;
+        volatile Object cancelResponse;
 
         WaitingOp(Queue<WaitingOp> queue, WaitSupport waitSupport) {
             this.op = (Operation) waitSupport;
@@ -271,13 +270,13 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         }
 
         public boolean isCancelled() {
-            return error != null;
+            return cancelResponse != null;
         }
 
         public boolean isCallTimedOut() {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             if (nodeEngine.operationService.isCallTimedOut(op)) {
-                cancel(new CallTimeoutException(op.getClass().getName(), op.getInvocationTime(), op.getCallTimeout()));
+                cancel(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
                 return true;
             }
             return false;
@@ -323,7 +322,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             if (expired) {
                 waitSupport.onWaitExpire();
             } else {
-                op.getResponseHandler().sendResponse(error);
+                op.getResponseHandler().sendResponse(cancelResponse);
             }
         }
 
@@ -372,8 +371,8 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             waitSupport.onWaitExpire();
         }
 
-        public void cancel(Throwable t) {
-            error = t;
+        public void cancel(Object error) {
+            this.cancelResponse = error;
         }
 
         @Override
