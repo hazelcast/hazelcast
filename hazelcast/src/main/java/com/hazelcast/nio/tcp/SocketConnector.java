@@ -35,7 +35,6 @@ import java.util.logging.Level;
 
 public class SocketConnector implements Runnable {
 
-    private static final int TIMEOUT = 3000;
     private final TcpIpConnectionManager connectionManager;
     private final Address address;
     private final ILogger logger;
@@ -64,14 +63,14 @@ public class SocketConnector implements Runnable {
             final Address thisAddress = connectionManager.ioService.getThisAddress();
             if (address.isIPv4()) {
                 // remote is IPv4; connect...
-                tryToConnect(address.getInetSocketAddress(), 0);
+                tryToConnect(address.getInetSocketAddress(), connectionManager.getSocketConnectTimeoutSeconds() * 1000);
             } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
                 // Both remote and this addresses are IPv6.
                 // This is a local IPv6 address and scope id is known.
                 // find correct inet6 address for remote and connect...
                 final Inet6Address inetAddress = AddressUtil
                         .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
-                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), 0);
+                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), connectionManager.getSocketConnectTimeoutSeconds() * 1000);
             } else {
                 // remote is IPv6 and this is either IPv4 or a global IPv6.
                 // find possible remote inet6 addresses and try each one to connect...
@@ -96,7 +95,7 @@ public class SocketConnector implements Runnable {
         Exception error = null;
         for (Inet6Address inetAddress : possibleInetAddresses) {
             try {
-                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), TIMEOUT);
+                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), connectionManager.getSocketConnectTimeoutSeconds() * 1000);
                 connected = true;
                 break;
             } catch (Exception e) {
