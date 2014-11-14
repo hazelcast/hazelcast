@@ -262,8 +262,18 @@ public abstract class AbstractCacheRecordStore<
         }
         records.remove(key);
         if (isEventsEnabled) {
-            publishEvent(CacheEventType.EXPIRED, key, null,
-                    toEventData(record), false, IGNORE_COMPLETION);
+            final Data dataValue;
+            switch (cacheConfig.getInMemoryFormat()) {
+                case BINARY:
+                case OBJECT:
+                case NATIVE:
+                    dataValue = toEventData(record);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid storage format: "
+                            + cacheConfig.getInMemoryFormat());
+            }
+            publishEvent(CacheEventType.EXPIRED, key, null, dataValue, false, IGNORE_COMPLETION);
         }
         return true;
     }
@@ -278,8 +288,18 @@ public abstract class AbstractCacheRecordStore<
         }
         records.remove(key);
         if (isEventsEnabled) {
-            publishEvent(CacheEventType.EXPIRED, key, null,
-                    toEventData(record), false, IGNORE_COMPLETION);
+            final Data dataValue;
+            switch (cacheConfig.getInMemoryFormat()) {
+                case BINARY:
+                case OBJECT:
+                case NATIVE:
+                    dataValue = toEventData(record);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid storage format: "
+                            + cacheConfig.getInMemoryFormat());
+            }
+            publishEvent(CacheEventType.EXPIRED, key, null, dataValue, false, IGNORE_COMPLETION);
         }
         return null;
     }

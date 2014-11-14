@@ -52,6 +52,15 @@ public abstract class HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
 
+    @After
+    public final void shutdownNodeFactory() {
+        final TestHazelcastInstanceFactory f = factory;
+        if (f != null) {
+            factory = null;
+            f.terminateAll();
+        }
+    }
+
     public static String generateRandomString(int length) {
         StringBuffer sb = new StringBuffer(length);
         Random random = new Random();
@@ -107,7 +116,7 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("the size of the collection is not correct: found-content:"+c, expectedSize, c.size());
+                assertEquals("the size of the collection is not correct: found-content:" + c, expectedSize, c.size());
             }
         }, timeoutSeconds);
     }
@@ -125,8 +134,8 @@ public abstract class HazelcastTestSupport {
         }, timeoutSeconds);
     }
 
-    public static void assertClusterSize(int expectedSize, HazelcastInstance instance){
-        assertEquals("Cluster size is not correct",expectedSize,instance.getCluster().getMembers().size());
+    public static void assertClusterSize(int expectedSize, HazelcastInstance instance) {
+        assertEquals("Cluster size is not correct", expectedSize, instance.getCluster().getMembers().size());
     }
 
     public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance) {
@@ -284,15 +293,6 @@ public abstract class HazelcastTestSupport {
         return createHazelcastInstance(new Config());
     }
 
-    @After
-    public final void shutdownNodeFactory() {
-        final TestHazelcastInstanceFactory f = factory;
-        if (f != null) {
-            factory = null;
-            f.terminateAll();
-        }
-    }
-
     public static Node getNode(HazelcastInstance hz) {
         return TestUtil.getNode(hz);
     }
@@ -371,8 +371,7 @@ public abstract class HazelcastTestSupport {
         if (node != null) {
             final InternalPartitionService ps = node.getPartitionService();
             return ps.isMemberStateSafe();
-        }
-        else {
+        } else {
             return true;
         }
     }
@@ -380,7 +379,7 @@ public abstract class HazelcastTestSupport {
     public static void waitInstanceForSafeState(final HazelcastInstance instance) {
         assertTrueEventually(new AssertTask() {
             public void run() {
-              isInstanceInSafeState(instance);
+                isInstanceInSafeState(instance);
             }
         });
     }

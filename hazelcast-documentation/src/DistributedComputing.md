@@ -1,15 +1,17 @@
 
 # Distributed Computing
 
+From Wikipedia: Distributed computing refers to the use of distributed systems to solve computational problems. In distributed computing, a problem is divided into many tasks, each of which is solved by one or more computers.
+
 ## Executor Service
+
+One of the coolest features of Java 1.5 is the Executor framework, which allows you to asynchronously execute your tasks (logical units of work), such as database query, complex calculation, and image rendering.
 
 ### Executor Overview
 
-One of the coolest features of Java 1.5 is the Executor framework, which allows you to asynchronously execute your tasks, logical units of works, such as database query, complex calculation, image rendering, etc.
+The default implementation of this framework (`ThreadPoolExecutor`) is designed to run within a single JVM. In distributed systems, this implementation is not desired since you may want a task submitted in one JVM and processed in another one. Hazelcast offers `IExecutorService` for you to use in distributed environments: it implements `java.util.concurrent.ExecutorService` to serve the applications requiring computational and data processing power.
 
-The default implementation of this framework (ThreadPoolExecutor) is designed to run within a single JVM. In distributed systems, this implementation is not desired since you may want a task submitted in a JVM and processed in another one. Hazelcast offers IExecutorService to be used in distributed environments that implements `java.util.concurrent.ExecutorService`, to serve the applications requiring computational and data processing power.
-
-With IExecutorService, you can execute tasks asynchronously and perform other useful things meanwhile. When ready, get the result and move on. If execution of the task takes longer than expected, you may consider canceling the task execution. In Java Executor framework, tasks are implemented as `java.util.concurrent.Callable` and `java.util.Runnable`. If you need to return a value and submit to Executor, Callable is used. Otherwise, Runnable is used (if you do not need to return a value). Naturally, tasks should be `Serializable` since they will be distributed.
+With `IExecutorService`, you can execute tasks asynchronously and perform other useful tasks. If your task execution takes longer than expected, you can cancel the task execution. In the Java Executor framework, tasks are implemented as `java.util.concurrent.Callable` and `java.util.Runnable`. If you need to return a value and submit to Executor, use Callable. Otherwise, use Runnable (if you do not need to return a value). Tasks should be `Serializable` since they will be distributed.
 
 #### Callable
 
@@ -45,7 +47,7 @@ public class SumTask
 }
 ```
 
-Executing a task by using executor framework is very straight forward. Simply obtain an `ExecutorService` instance, generally via `Executors` and submit the task which returns a `Future`. After executing task, you do not have to wait for execution to complete, you can process other things and when ready use the `future` object to retrieve the result as shown in code below.
+To execute a task with the executor framework, you obtain an `ExecutorService` instance (generally via `Executors`) and you submit a task which returns a `Future`. After executing the task, you do not have to wait for the execution to complete, you can process other things. When ready, you use the `Future` object to retrieve the result as shown in the code example below.
 
 ```java
 ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -55,7 +57,7 @@ Future<String> future = executorService.submit( new Echo( "myinput" ) );
 String result = future.get();
 ```
 
-Please note that Echo callable in the very above sample also implements Serializable interface, since it may be sent to another JVM to be processed.
+Please note that the Echo callable in the above code sample also implements a Serializable interface, since it may be sent to another JVM to be processed.
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *When a task is deserialized, HazelcastInstance needs to be accessed. To do this, the task should implement `HazelcastInstanceAware` interface. Please see [HazelcastInstanceAware Interface](#hazelcastinstanceaware-interface) for more information.*
 <br></br>
@@ -63,7 +65,7 @@ Please note that Echo callable in the very above sample also implements Serializ
 
 #### Runnable
 
-Let's now go with a sample that is Runnable. Below is a task that waits for some time and echoes a message.
+Let's see example code that is Runnable. Below is a task that waits for some time and echoes a message.
 
 ```java
 public class EchoTask implements Runnable, Serializable {
@@ -84,7 +86,7 @@ public class EchoTask implements Runnable, Serializable {
 }
 ```
 
-Then let's write a class that submits and executes echo messages:
+Now let's write a class that submits and executes echo messages. Executor is retrieved from `HazelcastInstance` and 1000 echo tasks are submitted.
 
 ```java
 public class MasterMember {
@@ -101,11 +103,9 @@ public class MasterMember {
 }
 ```
 
-Above, Executor is retrieved from HazelcastInstance and 1000 echo tasks are submitted.
-
 #### Executor Thread Configuration
 
-By default, Executor is configured to have 8 threads in the pool. It can be changed through the `pool-size` property using declarative configuration (`hazelcast.xml`). A sample is shown below (using above Executor).
+By default, Executor is configured to have 8 threads in the pool. You can change that with the `pool-size` property in the declarative configuration (`hazelcast.xml`). An example is shown below (using the above Executor).
 
 ```xml
 <executor-service name="exec">
@@ -119,7 +119,7 @@ By default, Executor is configured to have 8 threads in the pool. It can be chan
 Executor service can be scaled both vertically (scale up) and horizontally (scale out).
 
 
-To scale up, processing capacity of the JVM should be improved. This can be done by increasing the `pool-size` property mentioned in the previous subsection (i.e., increasing the thread count). However, please be aware of your JVM's capacity. If you think it cannot handle such additional load caused by increasing the thread count, you may want to consider improving the JVM's resources (CPU, memory, etc.). As an example, please set the `pool-size` to 5 and run the above `MasterMember`. You will see that `EchoTask` is run as soon as it is produced.
+To scale up, you should improve the processing capacity of the JVM. You can do this by increasing the `pool-size` property mentioned in [Executor Thread Configuration](#executor-thread-configuration) (i.e., increasing the thread count). However, please be aware of your JVM's capacity. If you think it cannot handle such an additional load caused by increasing the thread count, you may want to consider improving the JVM's resources (CPU, memory, etc.). As an example, set the `pool-size` to 5 and run the above `MasterMember`. You will see that `EchoTask` is run as soon as it is produced.
 
 
-To scale out, more JVMs should be added instead of increasing only one JVM's capacity. In reality, you may want to expand your cluster by adding more physical or virtual machines. For the EchoTask sample above, you can simply create another Hazelcast instance. It will automatically get involved in the executions started in `MasterMember` and start processing.
+To scale out, more JVMs should be added instead of increasing only one JVM's capacity. In reality, you may want to expand your cluster by adding more physical or virtual machines. For the EchoTask example in [Runnable](#runnable), you can create another Hazelcast instance. That instance will automatically get involved in the executions started in `MasterMember` and start processing.
