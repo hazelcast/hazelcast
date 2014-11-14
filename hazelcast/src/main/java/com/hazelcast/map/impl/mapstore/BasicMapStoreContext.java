@@ -171,6 +171,7 @@ final class BasicMapStoreContext implements MapStoreContext {
         final MapStoreManager mapStoreManager = createMapStoreManager(context);
         context.setMapStoreManager(mapStoreManager);
 
+        // todo this is user code. it may also block map store creation.
         callLifecycleSupportInit(context);
 
         return context;
@@ -223,7 +224,7 @@ final class BasicMapStoreContext implements MapStoreContext {
             return;
         }
 
-        // select keys owned by current partition.
+        // select keys owned by current node.
         final MapServiceContext mapServiceContext = getMapServiceContext();
         selectOwnedKeys(keys, mapServiceContext);
 
