@@ -35,6 +35,7 @@ import java.util.logging.Level;
 
 public class SocketConnector implements Runnable {
 
+    private static final int DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS = 3;
     private final TcpIpConnectionManager connectionManager;
     private final Address address;
     private final ILogger logger;
@@ -93,9 +94,11 @@ public class SocketConnector implements Runnable {
         }
         boolean connected = false;
         Exception error = null;
+        int configuredTimeoutMillis = connectionManager.getSocketConnectTimeoutSeconds() * 1000;
+        int timeoutMillis = configuredTimeoutMillis > 0 && configuredTimeoutMillis < Integer.MAX_VALUE ? configuredTimeoutMillis: DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS * 1000;
         for (Inet6Address inetAddress : possibleInetAddresses) {
             try {
-                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), connectionManager.getSocketConnectTimeoutSeconds() * 1000);
+                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), timeoutMillis);
                 connected = true;
                 break;
             } catch (Exception e) {
