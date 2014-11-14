@@ -951,7 +951,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final String mapName = randomMapName();
         HazelcastInstance instance = createHazelcastInstance();
         IMap<Integer, Integer> map = instance.getMap(mapName);
-        map.put(1, 1, 100, TimeUnit.MILLISECONDS);
+        map.put(1, 1, 100, TimeUnit.SECONDS);
         final EntryView<Integer, Integer> entryView = map.getEntryView(1);
         final long expirationTime = entryView.getExpirationTime();
 
