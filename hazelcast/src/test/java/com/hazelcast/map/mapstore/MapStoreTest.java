@@ -1481,7 +1481,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapProxyImpl map = (MapProxyImpl) hz.getMap(mapName);
         MapService mapService = (MapService) map.getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
-        MapStoreWrapper mapStoreWrapper = mapContainer.getMapStoreContext().getStore();
+        MapStoreWrapper mapStoreWrapper = mapContainer.getMapStoreContext().getMapStoreWrapper();
         Set keys = mapStoreWrapper.loadAllKeys();
         assertEquals(2, keys.size());
         assertEquals("true", mapStoreWrapper.load("my-prop-1"));

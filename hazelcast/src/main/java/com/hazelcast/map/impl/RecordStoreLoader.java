@@ -23,12 +23,12 @@ interface RecordStoreLoader {
         }
 
         @Override
-        public void loadKeys(List<Data> keys, boolean replaceExistingValues) {
+        public void loadAll(List<Data> keys, boolean replaceExistingValues) {
 
         }
 
         @Override
-        public void loadAllKeys() {
+        public void loadInitialKeys() {
 
         }
 
@@ -54,12 +54,12 @@ interface RecordStoreLoader {
      * @param keys                  keys to be loaded.
      * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
      */
-    void loadKeys(List<Data> keys, boolean replaceExistingValues);
+    void loadAll(List<Data> keys, boolean replaceExistingValues);
 
     /**
-     * Loads all keys.
+     * Loads initial keys.
      */
-    void loadAllKeys();
+    void loadInitialKeys();
 
     /**
      * Picks and returns any one of throwables during load all process.

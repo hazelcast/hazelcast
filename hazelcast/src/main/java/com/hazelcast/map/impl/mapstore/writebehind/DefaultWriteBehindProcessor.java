@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.core.MapStore;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
@@ -61,12 +61,12 @@ class DefaultWriteBehindProcessor implements WriteBehindProcessor<DelayedEntry> 
 
     private final int writeBatchSize;
 
-    DefaultWriteBehindProcessor(MapContainer mapContainer) {
-        this.serializationService = mapContainer.getMapServiceContext().getNodeEngine().getSerializationService();
-        this.mapStore = mapContainer.getMapStoreContext().getStore();
+    DefaultWriteBehindProcessor(MapStoreContext mapStoreContext) {
+        this.serializationService = mapStoreContext.getSerializationService();
+        this.mapStore = mapStoreContext.getMapStoreWrapper();
         this.storeListeners = new ArrayList<StoreListener>(2);
-        this.logger = mapContainer.getMapServiceContext().getNodeEngine().getLogger(DefaultWriteBehindProcessor.class);
-        this.writeBatchSize = mapContainer.getMapConfig().getMapStoreConfig().getWriteBatchSize();
+        this.logger = mapStoreContext.getLogger(DefaultWriteBehindProcessor.class);
+        this.writeBatchSize = mapStoreContext.getMapStoreConfig().getWriteBatchSize();
     }
 
     @Override

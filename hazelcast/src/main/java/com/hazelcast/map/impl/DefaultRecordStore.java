@@ -21,6 +21,8 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
+import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
@@ -56,10 +58,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     public DefaultRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
         this.lockStore = createLockStore();
-        this.mapDataStore
-                = mapContainer.getMapStoreContext().getMapStoreManager().getMapDataStore(partitionId);
+        final MapStoreContext mapStoreContext = mapContainer.getMapStoreContext();
+        final MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
+        this.mapDataStore = mapStoreManager.getMapDataStore(partitionId);
+
         this.recordStoreLoader = createRecordStoreLoader();
-        this.recordStoreLoader.loadAllKeys();
+        this.recordStoreLoader.loadInitialKeys();
     }
 
     @Override
@@ -973,7 +977,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (keys.isEmpty()) {
             return;
         }
-        recordStoreLoader.loadKeys(keys, replaceExistingValues);
+        recordStoreLoader.loadAll(keys, replaceExistingValues);
     }
 
     @Override

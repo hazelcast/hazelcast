@@ -16,168 +16,235 @@
 
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
-import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.core.MapStore;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.map.impl.mapstore.MapStoreManagers.createWriteBehindManager;
 import static com.hazelcast.map.impl.mapstore.MapStoreManagers.createWriteThroughManager;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.map.impl.mapstore.StoreConstructor.createStore;
 
 /**
  * Default impl. of {@link com.hazelcast.map.impl.mapstore.MapStoreContext}
+ * One instance is created per map.
  */
 final class BasicMapStoreContext implements MapStoreContext {
 
     private static final int INITIAL_KEYS_REMOVE_DELAY_MINUTES = 20;
 
+    private static final String INITIAL_KEY_LOAD_EXECUTOR = "hz:trigger-initial-load";
+
     private final Map<Data, Object> initialKeys = new ConcurrentHashMap<Data, Object>();
+
+    private String mapName;
 
     private MapStoreManager mapStoreManager;
 
     private MapStoreWrapper storeWrapper;
 
-    private MapContainer mapContainer;
+    private MapServiceContext mapServiceContext;
+
+    private PartitioningStrategy partitioningStrategy;
+
+    private MapStoreConfig mapStoreConfig;
+
+    private MaxSizeConfig maxSizeConfig;
+
+    private volatile Future<Boolean> initialKeyLoader;
 
     private BasicMapStoreContext() {
     }
 
-    static MapStoreContext create(MapContainer mapContainer) {
-        final BasicMapStoreContext basicMapStoreContext = new BasicMapStoreContext();
-        basicMapStoreContext.setMapContainer(mapContainer);
+    @Override
+    public void start() {
+        mapStoreManager.start();
 
+        final Callable<Boolean> task = new TriggerInitialKeyLoad();
+        initialKeyLoader = executeTask(INITIAL_KEY_LOAD_EXECUTOR, task);
+    }
+
+    @Override
+    public void stop() {
+        if (initialKeyLoader != null) {
+            initialKeyLoader.cancel(true);
+        }
+        mapStoreManager.stop();
+    }
+
+    @Override
+    public boolean isWriteBehindMapStoreEnabled() {
+        final MapStoreConfig mapStoreConfig = getMapStoreConfig();
+        return mapStoreConfig != null && mapStoreConfig.isEnabled()
+                && mapStoreConfig.getWriteDelaySeconds() > 0;
+    }
+
+    @Override
+    public SerializationService getSerializationService() {
+        return mapServiceContext.getNodeEngine().getSerializationService();
+    }
+
+    @Override
+    public ILogger getLogger(Class clazz) {
+        return mapServiceContext.getNodeEngine().getLogger(clazz);
+    }
+
+    @Override
+    public String getMapName() {
+        return mapName;
+    }
+
+    @Override
+    public MapServiceContext getMapServiceContext() {
+        return mapServiceContext;
+    }
+
+    @Override
+    public MapStoreConfig getMapStoreConfig() {
+        return mapStoreConfig;
+    }
+
+    @Override
+    public void waitInitialLoadFinish() throws Exception {
+        initialKeyLoader.get();
+    }
+
+    @Override
+    public MapStoreManager getMapStoreManager() {
+        return mapStoreManager;
+    }
+
+    @Override
+    public Map<Data, Object> getInitialKeys() {
+        return initialKeys;
+    }
+
+    @Override
+    public MapStoreWrapper getMapStoreWrapper() {
+        return storeWrapper;
+    }
+
+    static MapStoreContext create(MapContainer mapContainer) {
+        final BasicMapStoreContext context = new BasicMapStoreContext();
+        final String mapName = mapContainer.getName();
         final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final String mapName = mapContainer.getName();
+        final PartitioningStrategy partitioningStrategy = mapContainer.getPartitioningStrategy();
         final MapConfig mapConfig = mapContainer.getMapConfig();
+        final MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
         final MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         final ClassLoader configClassLoader = nodeEngine.getConfigClassLoader();
+        // create store.
         final Object store = createStore(mapName, mapStoreConfig, configClassLoader);
-
-        // get writable config (not read-only one) from node engine.
-        nodeEngine.getConfig().getMapConfig(mapName).getMapStoreConfig().setImplementation(store);
-
         final MapStoreWrapper storeWrapper = new MapStoreWrapper(mapName, store);
-        basicMapStoreContext.setStoreWrapper(storeWrapper);
 
-        callLifecycleSupportInit(mapName, store, mapStoreConfig, nodeEngine);
+        setStoreImplToWritableMapStoreConfig(nodeEngine, mapName, store);
 
-        return basicMapStoreContext;
+        context.setMapName(mapName);
+        context.setMapStoreConfig(mapStoreConfig);
+        context.setMaxSizeConfig(maxSizeConfig);
+        context.setPartitioningStrategy(partitioningStrategy);
+        context.setMapServiceContext(mapServiceContext);
+        context.setStoreWrapper(storeWrapper);
+
+        final MapStoreManager mapStoreManager = createMapStoreManager(context);
+        context.setMapStoreManager(mapStoreManager);
+
+        callLifecycleSupportInit(context);
+
+        return context;
     }
 
-
-    private static MapStoreManager createMapStoreManager(MapContainer mapContainer) {
-        final MapConfig mapConfig = mapContainer.getMapConfig();
+    private static void setStoreImplToWritableMapStoreConfig(NodeEngine nodeEngine, String mapName, Object store) {
+        final Config config = nodeEngine.getConfig();
+        // get writable config (not read-only one) from node engine.
+        final MapConfig mapConfig = config.getMapConfig(mapName);
         final MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        mapStoreConfig.setImplementation(store);
+    }
 
+
+    private static MapStoreManager createMapStoreManager(MapStoreContext mapStoreContext) {
+        final MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
         if (isWriteBehindMapStoreEnabled(mapStoreConfig)) {
-            return createWriteBehindManager(mapContainer);
+            return createWriteBehindManager(mapStoreContext);
         }
-        return createWriteThroughManager(mapContainer);
+        return createWriteThroughManager(mapStoreContext);
     }
 
-
-    private static Object createStore(String name, MapStoreConfig mapStoreConfig, ClassLoader classLoader) {
-        // 1. Try to create store from `store factory` class.
-        Object store = getStoreFromFactoryOrNull(name, mapStoreConfig, classLoader);
-
-        // 2. Try to get store from `store impl.` object.
-        if (store == null) {
-            store = getStoreFromImplementationOrNull(mapStoreConfig);
-        }
-        // 3. Try to create store from `store impl.` class.
-        if (store == null) {
-            store = getStoreFromClassOrNull(mapStoreConfig, classLoader);
-        }
-        return store;
+    private static boolean isWriteBehindMapStoreEnabled(MapStoreConfig mapStoreConfig) {
+        return mapStoreConfig != null && mapStoreConfig.isEnabled()
+                && mapStoreConfig.getWriteDelaySeconds() > 0;
     }
 
-    private static Object getStoreFromFactoryOrNull(String name, MapStoreConfig mapStoreConfig, ClassLoader classLoader) {
-        MapStoreFactory factory = (MapStoreFactory) mapStoreConfig.getFactoryImplementation();
-        if (factory == null) {
-            final String factoryClassName = mapStoreConfig.getFactoryClassName();
-            if (isNullOrEmpty(factoryClassName)) {
-                return null;
-            }
-
-            try {
-                factory = ClassLoaderUtil.newInstance(classLoader, factoryClassName);
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
-            }
-        }
-        if (factory == null) {
-            return null;
-        }
-
-        final Properties properties = mapStoreConfig.getProperties();
-        return factory.newMapStore(name, properties);
-
-    }
-
-    private static Object getStoreFromImplementationOrNull(MapStoreConfig mapStoreConfig) {
-        return mapStoreConfig.getImplementation();
-    }
-
-    private static Object getStoreFromClassOrNull(MapStoreConfig mapStoreConfig, ClassLoader classLoader) {
-        Object store;
-        String mapStoreClassName = mapStoreConfig.getClassName();
-        try {
-            store = ClassLoaderUtil.newInstance(classLoader, mapStoreClassName);
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-        return store;
-    }
-
-    private static void callLifecycleSupportInit(String mapName, Object store,
-                                                 MapStoreConfig mapStoreConfig, NodeEngine nodeEngine) {
+    private static void callLifecycleSupportInit(MapStoreContext mapStoreContext) {
+        final MapStoreWrapper mapStoreWrapper = mapStoreContext.getMapStoreWrapper();
+        final MapStore store = mapStoreWrapper.getMapStore();
         if (!(store instanceof MapLoaderLifecycleSupport)) {
             return;
         }
 
+        final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final HazelcastInstance hazelcastInstance = nodeEngine.getHazelcastInstance();
+        final MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
         final Properties properties = mapStoreConfig.getProperties();
-        final MapLoaderLifecycleSupport mapLoaderLifecycleSupport = (MapLoaderLifecycleSupport) store;
+        final String mapName = mapStoreContext.getMapName();
 
+        final MapLoaderLifecycleSupport mapLoaderLifecycleSupport = (MapLoaderLifecycleSupport) store;
         mapLoaderLifecycleSupport.init(hazelcastInstance, properties, mapName);
     }
 
     private void loadInitialKeys() {
-        final Map<Data, Object> initialKeys = this.initialKeys;
-        initialKeys.clear();
-
+        // load all keys.
         Set keys = storeWrapper.loadAllKeys();
         if (keys == null || keys.isEmpty()) {
             return;
         }
 
+        // select keys owned by current partition.
+        final MapServiceContext mapServiceContext = getMapServiceContext();
+        selectOwnedKeys(keys, mapServiceContext);
+
+        // remove the keys remains more than 20 minutes.
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final ExecutionService executionService = nodeEngine.getExecutionService();
+        executionService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                initialKeys.clear();
+            }
+        }, INITIAL_KEYS_REMOVE_DELAY_MINUTES, TimeUnit.MINUTES);
+    }
+
+    private void selectOwnedKeys(Set loadedKeys, MapServiceContext mapServiceContext) {
+        final Map<Data, Object> initialKeys = this.initialKeys;
+        initialKeys.clear();
+        final PartitioningStrategy partitioningStrategy = this.partitioningStrategy;
         final int maxSizePerNode = getMaxSizePerNode();
-        final MapContainer mapContainer = this.mapContainer;
-        final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
-        final PartitioningStrategy partitioningStrategy = mapContainer.getPartitioningStrategy();
-
-        for (Object key : keys) {
+        for (Object key : loadedKeys) {
             Data dataKey = mapServiceContext.toData(key, partitioningStrategy);
-
             // this node will load only owned keys
             if (mapServiceContext.isOwnedKey(dataKey)) {
 
@@ -188,20 +255,6 @@ final class BasicMapStoreContext implements MapStoreContext {
                 }
             }
         }
-
-        // remove the keys remains more than 20 minutes.
-        mapServiceContext.getNodeEngine().getExecutionService().schedule(new Runnable() {
-            @Override
-            public void run() {
-                initialKeys.clear();
-            }
-        }, INITIAL_KEYS_REMOVE_DELAY_MINUTES, TimeUnit.MINUTES);
-    }
-
-
-    private static boolean isWriteBehindMapStoreEnabled(MapStoreConfig mapStoreConfig) {
-        return mapStoreConfig != null && mapStoreConfig.isEnabled()
-                && mapStoreConfig.getWriteDelaySeconds() > 0;
     }
 
     /**
@@ -210,7 +263,7 @@ final class BasicMapStoreContext implements MapStoreContext {
      * @return max size or -1 if policy is not set
      */
     private int getMaxSizePerNode() {
-        MaxSizeConfig maxSizeConfig = getMapConfig().getMaxSizeConfig();
+        final MaxSizeConfig maxSizeConfig = this.maxSizeConfig;
         int maxSize = -1;
 
         if (maxSizeConfig.getMaxSizePolicy() == PER_NODE) {
@@ -220,42 +273,28 @@ final class BasicMapStoreContext implements MapStoreContext {
         return maxSize;
     }
 
-    private MapConfig getMapConfig() {
-        return mapContainer.getMapConfig();
+    /**
+     * We are offloading initial key load operation.
+     * A {@link com.hazelcast.map.impl.RecordStore} should wait finish of this task.
+     */
+    private final class TriggerInitialKeyLoad implements Callable<Boolean> {
+        @Override
+        public Boolean call() throws Exception {
+
+            loadInitialKeys();
+
+            return Boolean.TRUE;
+        }
     }
 
-    public MapStoreManager getMapStoreManager() {
-        return mapStoreManager;
+    private <T> Future<T> executeTask(String executorName, Callable task) {
+        return getExecutionService().submit(executorName, task);
+
     }
 
-    public Map<Data, Object> getInitialKeys() {
-        return initialKeys;
-    }
-
-    public MapStoreWrapper getStore() {
-        return storeWrapper;
-    }
-
-    @Override
-    public void start() {
-
-        final MapStoreManager mapStoreManager = createMapStoreManager(mapContainer);
-        setMapStoreManager(mapStoreManager);
-
-        loadInitialKeys();
-        mapStoreManager.start();
-    }
-
-    @Override
-    public void stop() {
-        mapStoreManager.stop();
-    }
-
-    @Override
-    public boolean isWriteBehindMapStoreEnabled() {
-        final MapStoreConfig mapStoreConfig = getMapConfig().getMapStoreConfig();
-        return mapStoreConfig != null && mapStoreConfig.isEnabled()
-                && mapStoreConfig.getWriteDelaySeconds() > 0;
+    private ExecutionService getExecutionService() {
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        return nodeEngine.getExecutionService();
     }
 
     void setMapStoreManager(MapStoreManager mapStoreManager) {
@@ -266,7 +305,23 @@ final class BasicMapStoreContext implements MapStoreContext {
         this.storeWrapper = storeWrapper;
     }
 
-    void setMapContainer(MapContainer mapContainer) {
-        this.mapContainer = mapContainer;
+    void setMapServiceContext(MapServiceContext mapServiceContext) {
+        this.mapServiceContext = mapServiceContext;
+    }
+
+    void setMapName(String mapName) {
+        this.mapName = mapName;
+    }
+
+    void setPartitioningStrategy(PartitioningStrategy partitioningStrategy) {
+        this.partitioningStrategy = partitioningStrategy;
+    }
+
+    void setMapStoreConfig(MapStoreConfig mapStoreConfig) {
+        this.mapStoreConfig = mapStoreConfig;
+    }
+
+    void setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
+        this.maxSizeConfig = maxSizeConfig;
     }
 }
