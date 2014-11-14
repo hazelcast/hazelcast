@@ -31,6 +31,7 @@ import com.hazelcast.test.annotation.SlowTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -272,6 +273,7 @@ public class BackupTest extends HazelcastTestSupport {
      * Test for the issue https://code.google.com/p/hazelcast/issues/detail?id=395.
      */
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/4057
     public void testBackupMigrationAndRecovery2() throws Exception {
         testBackupMigrationAndRecovery(7, 2, 5000);
     }
