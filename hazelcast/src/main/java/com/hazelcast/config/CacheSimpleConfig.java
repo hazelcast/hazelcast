@@ -39,7 +39,7 @@ public class CacheSimpleConfig {
     /**
      * Default InMemory Format.
      */
-    public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
+    public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.OBJECT;
 
     /**
      * Default Eviction Policy.

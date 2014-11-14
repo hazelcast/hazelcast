@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.FetchableConcurrentHashMap;
 
 import java.util.ArrayList;
@@ -31,9 +30,9 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
-public class CacheRecordHashMap<K, V>
-        extends FetchableConcurrentHashMap<K, V>
-        implements CacheRecordMap<K, V> {
+public class CacheRecordHashMap
+        extends FetchableConcurrentHashMap<Data, CacheRecord>
+        implements CacheRecordMap<Data, CacheRecord> {
 
     private static final int MIN_EVICTION_ELEMENT_COUNT = 100;
 
@@ -76,117 +75,117 @@ public class CacheRecordHashMap<K, V>
         }
     }
 
+    //CHECKSTYLE:OFF
     @Override
     public int evictExpiredRecords(int percentage) {
-        long now = Clock.currentTimeMillis();
-        int sizeLimitForEviction = (int) ((double) (size() * percentage)
-                / (double) ICacheRecordStore.ONE_HUNDRED_PERCENT);
-
-        if (sizeLimitForEviction < MIN_EVICTION_ELEMENT_COUNT) {
+        if (percentage <= 0) {
             return 0;
         }
+        final int size = size();
+        if (percentage >= ICacheRecordStore.ONE_HUNDRED_PERCENT || size <= MIN_EVICTION_ELEMENT_COUNT) {
+            clear();
+            return size;
+        }
 
-        List<Map.Entry<K, Expirable>> expiredEntries =
-                new ArrayList<Map.Entry<K, Expirable>>(sizeLimitForEviction);
-        int expiredCount = 0;
-        for (Map.Entry<K, V> entry : entrySet()) {
-            K key = entry.getKey();
-            V value = entry.getValue();
-            final boolean isExpired =
-                    (value instanceof Expirable)
-                            && ((Expirable) value).isExpiredAt(now);
+        long now = Clock.currentTimeMillis();
+        int sizeLimitForEviction = (int) ((double) (size * percentage)
+                / (double) ICacheRecordStore.ONE_HUNDRED_PERCENT);
+        // TODO Maybe instead of creating new list for every evict operation,
+        // thread local based reusable list can be used
+        // or maybe eviction can be done without a helper list to hold entries will be evicted
+        List<Map.Entry<Data, CacheRecord>> entriesWillBeEvicted =
+                new ArrayList<Map.Entry<Data, CacheRecord>>(sizeLimitForEviction);
+
+        int i = 0;
+        for (Map.Entry<Data, CacheRecord> entry : entrySet()) {
+            CacheRecord record = entry.getValue();
+            final boolean isExpired = record.isExpiredAt(now);
             if (isExpired) {
-                expiredEntries.add((Map.Entry<K, Expirable>) entry);
-                if (++expiredCount >= sizeLimitForEviction) {
+                entriesWillBeEvicted.add(entry);
+                if (++i >= sizeLimitForEviction) {
                     break;
                 }
             }
         }
-        int actualExpiredCount = 0;
-        for (Map.Entry<K, Expirable> entry : expiredEntries) {
-            Expirable expirableValue = entry.getValue();
-            if (expirableValue instanceof Data) {
-                callbackEvictionListeners((Data) expirableValue);
+
+        int actualEvictedCount = 0;
+        for (Map.Entry<Data, CacheRecord> entry : entriesWillBeEvicted) {
+            CacheRecord record = entry.getValue();
+            Object value = record.getValue();
+            if (value instanceof Data) {
+                callbackEvictionListeners((Data) value);
             }
             if (remove(entry.getKey()) != null) {
-                actualExpiredCount++;
+                actualEvictedCount++;
             }
         }
-        return actualExpiredCount;
+
+        return actualEvictedCount;
     }
+    //CHECKSTYLE:ON
 
     @Override
     public int evictRecords(int percentage, EvictionPolicy policy) {
         switch (policy) {
             case RANDOM:
-                try {
-                    return evictRecordsRandom(percentage);
-                } catch (Throwable e) {
-                    EmptyStatement.ignore(e);
-                    break;
-                }
-
+                return evictRecordsRandom(percentage);
             case LRU:
-                try {
-                    return evictRecordsLRU(percentage);
-                } catch (Throwable e) {
-                    EmptyStatement.ignore(e);
-                    break;
-                }
-
+                return evictRecordsLRU(percentage);
             case LFU:
-                try {
-                    return evictRecordsLFU(percentage);
-                } catch (Throwable e) {
-                    EmptyStatement.ignore(e);
-                    break;
-                }
-
+                return evictRecordsLFU(percentage);
             default:
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Unsupported eviction policy: " + policy);
         }
-
-        return evictExpiredRecords(percentage);
     }
 
-    private int evictRecordsLRU(int percentage) {
-        throw new UnsupportedOperationException(
-                "\"LRU\" eviction is not supported right now !");
-    }
-
-    private int evictRecordsLFU(int percentage) {
-        throw new UnsupportedOperationException(
-                "\"LFU\" eviction is not supported right now !");
-    }
-
+    //CHECKSTYLE:OFF
     private int evictRecordsRandom(int percentage) {
-        int sizeLimitForEviction = (int) ((double) (size() * percentage)
-                / (double) ICacheRecordStore.ONE_HUNDRED_PERCENT);
-
-        if (sizeLimitForEviction < MIN_EVICTION_ELEMENT_COUNT) {
+        if (percentage <= 0) {
             return 0;
         }
+        final int size = size();
+        if (percentage >= ICacheRecordStore.ONE_HUNDRED_PERCENT || size <= MIN_EVICTION_ELEMENT_COUNT) {
+            clear();
+            return size;
+        }
 
-        List<Map.Entry<K, V>> expiredEntries =
-                new ArrayList<Map.Entry<K, V>>(sizeLimitForEviction);
-        int expiredCount = 0;
-        for (Map.Entry<K, V> entry : entrySet()) {
-            expiredEntries.add(entry);
-            if (++expiredCount >= sizeLimitForEviction) {
+        int sizeLimitForEviction = (int) ((double) (size() * percentage)
+                / (double) ICacheRecordStore.ONE_HUNDRED_PERCENT);
+        // TODO Maybe instead of creating new list for every evict operation,
+        // thread local based reusable list can be used
+        // or maybe eviction can be done without a helper list to hold entries will be evicted
+        List<Map.Entry<Data, CacheRecord>> entriesWillBeEvicted =
+                new ArrayList<Map.Entry<Data, CacheRecord>>(sizeLimitForEviction);
+
+        int i = 0;
+        for (Map.Entry<Data, CacheRecord> entry : entrySet()) {
+            entriesWillBeEvicted.add(entry);
+            if (++i >= sizeLimitForEviction) {
                 break;
             }
         }
-        int actualExpiredCount = 0;
-        for (Map.Entry<K, V> entry : expiredEntries) {
-            V value = entry.getValue();
+
+        int actualEvictedCount = 0;
+        for (Map.Entry<Data, CacheRecord> entry : entriesWillBeEvicted) {
+            CacheRecord record = entry.getValue();
+            Object value = record.getValue();
             if (value instanceof Data) {
                 callbackEvictionListeners((Data) value);
             }
             if (remove(entry.getKey()) != null) {
-                actualExpiredCount++;
+                actualEvictedCount++;
             }
         }
-        return actualExpiredCount;
+        return actualEvictedCount;
+    }
+    //CHECKSTYLE:ON
+
+    private int evictRecordsLRU(int percentage) {
+        throw new UnsupportedOperationException("LRU eviction policy is not supported right now !");
+    }
+
+    private int evictRecordsLFU(int percentage) {
+        throw new UnsupportedOperationException("LFU eviction policy is not supported right now !");
     }
 
 }
