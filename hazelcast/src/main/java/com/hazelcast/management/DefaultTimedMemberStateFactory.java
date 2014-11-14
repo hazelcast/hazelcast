@@ -29,6 +29,7 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
@@ -38,7 +39,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A Factory for creating {@link com.hazelcast.monitor.TimedMemberState} instances.
@@ -49,11 +52,18 @@ public class DefaultTimedMemberStateFactory implements TimedMemberStateFactory {
     private final HazelcastInstanceImpl instance;
     private final int maxVisibleInstanceCount;
     private final boolean cacheServiceEnabled;
+    private volatile boolean memberStateSafe = true;
 
-    public DefaultTimedMemberStateFactory(HazelcastInstanceImpl instance) {
+    public DefaultTimedMemberStateFactory(final HazelcastInstanceImpl instance) {
         this.instance = instance;
         maxVisibleInstanceCount = instance.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         cacheServiceEnabled = instance.node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
+        instance.node.nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                memberStateSafe = instance.getPartitionService().isLocalMemberSafe();
+            }
+        }, 1, 1, TimeUnit.MINUTES);
     }
 
     @Override
@@ -94,13 +104,17 @@ public class DefaultTimedMemberStateFactory implements TimedMemberStateFactory {
         memberState.setClients(serializableClientEndPoints);
         memberState.setAddress(thisAddress.getHost() + ":" + thisAddress.getPort());
         TimedMemberStateFactoryHelper.registerJMXBeans(instance, memberState);
-        memberState.clearPartitions();
+        MemberPartitionStateImpl memberPartitionState = (MemberPartitionStateImpl) memberState.getMemberPartitionState();
+        List<Integer> partitionList = memberPartitionState.getPartitions();
         for (InternalPartition partition : partitions) {
             Address owner = partition.getOwnerOrNull();
             if (owner != null && thisAddress.equals(owner)) {
-                memberState.addPartition(partition.getPartitionId());
+                partitionList.add(partition.getPartitionId());
             }
         }
+        memberPartitionState.setMigrationQueueSize(partitionService.getMigrationQueueSize());
+        memberPartitionState.setMemberStateSafe(memberStateSafe);
+
         memberState.setLocalMemoryStats(getMemoryStats());
         Collection<DistributedObject> proxyObjects = new ArrayList<DistributedObject>(instance.getDistributedObjects());
         TimedMemberStateFactoryHelper.createRuntimeProps(memberState);
