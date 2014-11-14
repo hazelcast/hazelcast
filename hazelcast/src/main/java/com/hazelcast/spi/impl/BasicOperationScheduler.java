@@ -36,7 +36,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 
 /**
  * The BasicOperationProcessor belongs to the BasicOperationService and is responsible for scheduling
@@ -422,9 +422,8 @@ public final class BasicOperationScheduler {
             node.getNodeExtension().onThreadStart(this);
             try {
                 doRun();
-            } catch (OutOfMemoryError e) {
-                onOutOfMemory(e);
             } catch (Throwable t) {
+                inspectOutputMemoryError(t);
                 logger.severe(t);
             } finally {
                 node.getNodeExtension().onThreadStop(this);
@@ -457,7 +456,8 @@ public final class BasicOperationScheduler {
             processedCount++;
             try {
                 dispatcher.dispatch(task);
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                inspectOutputMemoryError(e);
                 logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
             }
         }
@@ -489,9 +489,8 @@ public final class BasicOperationScheduler {
         public void run() {
             try {
                 doRun();
-            } catch (OutOfMemoryError e) {
-                onOutOfMemory(e);
             } catch (Throwable t) {
+                inspectOutputMemoryError(t);
                 logger.severe(t);
             }
         }
@@ -519,7 +518,8 @@ public final class BasicOperationScheduler {
         private void process(Object task) {
             try {
                 dispatcher.dispatch(task);
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                inspectOutputMemoryError(e);
                 logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
             }
         }

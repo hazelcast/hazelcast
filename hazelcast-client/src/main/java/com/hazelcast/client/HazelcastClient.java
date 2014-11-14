@@ -79,7 +79,7 @@ public final class HazelcastClient {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             final HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config);
             client.start();
-            OutOfMemoryErrorDispatcher.register(client);
+            OutOfMemoryErrorDispatcher.registerClient(client);
             proxy = new HazelcastClientProxy(client);
             CLIENTS.put(client.getName(), proxy);
         } finally {
@@ -135,6 +135,7 @@ public final class HazelcastClient {
             }
             proxy.client = null;
         }
+        OutOfMemoryErrorDispatcher.clearClients();
         CLIENTS.clear();
     }
 
@@ -145,9 +146,13 @@ public final class HazelcastClient {
     public static void shutdown(HazelcastInstance instance) {
         if(instance instanceof HazelcastClientProxy){
             final HazelcastClientProxy proxy = (HazelcastClientProxy) instance;
+            if (proxy.client == null) {
+                return;
+            }
             String instanceName = proxy.client.getName();
             try {
                 proxy.client.shutdown();
+                OutOfMemoryErrorDispatcher.deregisterClient(proxy.client);
             } catch (Exception ignored) {
                 EmptyStatement.ignore(ignored);
             }
@@ -165,6 +170,7 @@ public final class HazelcastClient {
         if(proxy != null) {
             try {
                 proxy.client.shutdown();
+                OutOfMemoryErrorDispatcher.deregisterClient(proxy.client);
             } catch (Exception ignored) {
                 EmptyStatement.ignore(ignored);
             }

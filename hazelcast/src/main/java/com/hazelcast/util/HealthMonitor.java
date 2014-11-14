@@ -19,6 +19,7 @@ package com.hazelcast.util;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.GCStatsSupport;
 import com.hazelcast.monitor.LocalGCStats;
@@ -101,28 +102,32 @@ public class HealthMonitor extends Thread {
             return;
         }
 
-        while (node.isActive()) {
-            HealthMetrics metrics;
-            switch (logLevel) {
-                case NOISY:
-                    metrics = new HealthMetrics();
-                    logger.log(Level.INFO, metrics.toString());
-                    break;
-                case SILENT:
-                    metrics = new HealthMetrics();
-                    if (metrics.exceedsThreshold()) {
+        try {
+            while (node.isActive()) {
+                HealthMetrics metrics;
+                switch (logLevel) {
+                    case NOISY:
+                        metrics = new HealthMetrics();
                         logger.log(Level.INFO, metrics.toString());
-                    }
-                    break;
-                default:
-                    throw new IllegalStateException("unrecognized logLevel:" + logLevel);
-            }
+                        break;
+                    case SILENT:
+                        metrics = new HealthMetrics();
+                        if (metrics.exceedsThreshold()) {
+                            logger.log(Level.INFO, metrics.toString());
+                        }
+                        break;
+                    default:
+                        throw new IllegalStateException("unrecognized logLevel:" + logLevel);
+                }
 
-            try {
-                Thread.sleep(TimeUnit.SECONDS.toMillis(delaySeconds));
-            } catch (InterruptedException e) {
-                return;
+                try {
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(delaySeconds));
+                } catch (InterruptedException e) {
+                    return;
+                }
             }
+        } catch (OutOfMemoryError e) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory(e);
         }
     }
 

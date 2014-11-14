@@ -14,18 +14,40 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.eviction;
+package com.hazelcast.util;
 
 /**
  * Used for providing runtime memory information of Java virtual machine.
  *
- * @see com.hazelcast.map.impl.eviction.MaxSizeChecker#memoryInfoAccessor
+ * @see java.lang.Runtime
+ * @see java.lang.management.ManagementFactory#getMemoryMXBean()
  */
 public interface MemoryInfoAccessor {
 
+    /**
+     * Returns total amount allocated memory in JVM in bytes.
+     *
+     * @return total memory allocated in bytes.
+     *
+     * @see Runtime#totalMemory()
+     */
     long getTotalMemory();
 
+    /**
+     * Returns the amount of free memory in the JVM in bytes.
+     *
+     * @return free memory in bytes
+     *
+     * @see Runtime#freeMemory()
+     */
     long getFreeMemory();
 
+    /**
+     * Returns the maximum amount of memory that the JVM will attempt to use in bytes.
+     *
+     * @return maximum memory in bytes.
+     *
+     * @see Runtime#maxMemory()
+     */
     long getMaxMemory();
 }

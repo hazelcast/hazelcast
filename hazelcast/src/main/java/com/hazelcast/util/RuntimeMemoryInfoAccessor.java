@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.eviction;
+package com.hazelcast.util;
 
 /**
- * Provides runtime memory information to {@link com.hazelcast.map.impl.eviction.EvictionOperator}.
+ * Provides memory information using {@link java.lang.Runtime}.
  */
-class RuntimeMemoryInfoAccessor implements MemoryInfoAccessor {
-
-    RuntimeMemoryInfoAccessor() {
-    }
+public class RuntimeMemoryInfoAccessor implements MemoryInfoAccessor {
 
     public long getTotalMemory() {
         return Runtime.getRuntime().totalMemory();
