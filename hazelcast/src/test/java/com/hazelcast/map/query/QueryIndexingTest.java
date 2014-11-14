@@ -11,6 +11,7 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -25,6 +26,7 @@ import static java.util.Collections.emptyList;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -54,7 +56,12 @@ public class QueryIndexingTest extends HazelcastTestSupport {
     @Before
     public void waitForCluster() {
         assertClusterSizeEventually(2, h1);
-        waitClusterForSafeState(h1);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(h1.getPartitionService().isClusterSafe());
+            }
+        });
     }
 
     @Test
