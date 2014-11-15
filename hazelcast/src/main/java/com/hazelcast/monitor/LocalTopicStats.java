@@ -35,7 +35,7 @@ public interface LocalTopicStats extends LocalInstanceStats {
     /**
      * Returns the total number of received messages of this topic on this member
      *
-     * @return
+     * @return total number of receives
      */
     long getReceiveOperationCount();
 
