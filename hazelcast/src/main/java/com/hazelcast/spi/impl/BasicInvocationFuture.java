@@ -115,7 +115,9 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
      * @param offeredResponse
      */
     public void set(Object offeredResponse) {
-        offeredResponse = resolveInternalResponse(offeredResponse);
+        if (offeredResponse == null) {
+            throw new IllegalArgumentException("response can't be null: " + invocation);
+        }
 
         ExecutionCallbackNode<E> callbackChain;
         synchronized (this) {
@@ -150,21 +152,6 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             runAsynchronous(callbackChain.callback, callbackChain.executor);
             callbackChain = callbackChain.next;
         }
-    }
-
-    private Object resolveInternalResponse(Object rawResponse) {
-        if (rawResponse == null) {
-            throw new IllegalArgumentException("response can't be null: " + invocation);
-        }
-
-        if (rawResponse instanceof NormalResponse) {
-            rawResponse = ((NormalResponse) rawResponse).getValue();
-        }
-
-        if (rawResponse == null) {
-            rawResponse = BasicInvocation.NULL_RESPONSE;
-        }
-        return rawResponse;
     }
 
     @Override
@@ -361,23 +348,6 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             response = invocation.nodeEngine.toObject(response);
             if (response == null) {
                 return null;
-            }
-        }
-
-        if (response instanceof NormalResponse) {
-            NormalResponse responseObj = (NormalResponse) response;
-            response = responseObj.getValue();
-
-            if (response == null) {
-                return null;
-            }
-
-            //it could be that the value of the response is Data.
-            if (invocation.resultDeserialized && response instanceof Data) {
-                response = invocation.nodeEngine.toObject(response);
-                if (response == null) {
-                    return null;
-                }
             }
         }
 

@@ -33,7 +33,11 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
  */
 public final class Packet implements SocketWritable, SocketReadable {
 
-    public static final byte VERSION = 3;
+    /**
+     * Version 3 is Hazelcast 3.4.x
+     * Version 4 is Hazelcast 3.5.x
+     */
+    public static final byte VERSION = 4;
 
     public static final int HEADER_OP = 0;
     public static final int HEADER_RESPONSE = 1;
@@ -45,12 +49,12 @@ public final class Packet implements SocketWritable, SocketReadable {
     // The value of these constants is important. The order needs to match the order in the read/write process
     private static final short PERSIST_VERSION = 1;
     private static final short PERSIST_HEADER = 2;
-    private static final short PERSIST_PARTITION = 3;
-    private static final short PERSIST_TYPE = 4;
-    private static final short PERSIST_HASH = 5;
-    private static final short PERSIST_SIZE = 6;
-    private static final short PERSIST_VALUE = 7;
-
+    private static final short PERSIST_SIZE = 3;
+    private static final short PERSIST_PARTITION = 4;
+    private static final short PERSIST_TYPE = 5;
+    private static final short PERSIST_HASH = 6;
+    private static final short PERSIST_RESPONSE_INFO = 7;
+    private static final short PERSIST_VALUE = 8;
     private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
 
     private Data data;
@@ -58,6 +62,8 @@ public final class Packet implements SocketWritable, SocketReadable {
     private short header;
     private int partitionId;
     private transient Connection conn;
+    private long responseCallId;
+    private byte responseBackupCount;
 
     // These 2 fields are only used during read/write. Otherwise they have no meaning.
     private int valueOffset;
@@ -79,6 +85,22 @@ public final class Packet implements SocketWritable, SocketReadable {
         this.data = data;
         this.context = context;
         this.partitionId = partitionId;
+    }
+
+    public long getResponseCallId() {
+        return responseCallId;
+    }
+
+    public void setResponseCallId(long responseCallId) {
+        this.responseCallId = responseCallId;
+    }
+
+    public byte getResponseBackupCount() {
+        return responseBackupCount;
+    }
+
+    public void setResponseBackupCount(byte responseBackupCount) {
+        this.responseBackupCount = responseBackupCount;
     }
 
     /**
@@ -144,6 +166,10 @@ public final class Packet implements SocketWritable, SocketReadable {
             return false;
         }
 
+        if (!writeSize(destination)) {
+            return false;
+        }
+
         if (!writePartition(destination)) {
             return false;
         }
@@ -160,7 +186,7 @@ public final class Packet implements SocketWritable, SocketReadable {
             return false;
         }
 
-        if (!writeSize(destination)) {
+        if (!writeResponseInfo(destination)) {
             return false;
         }
 
@@ -182,12 +208,12 @@ public final class Packet implements SocketWritable, SocketReadable {
             return false;
         }
 
-        if (!readPartition(source)) {
+        if (!readSize(source)) {
             return false;
         }
 
-        if (data == null) {
-            data = new DefaultData();
+        if (!readPartition(source)) {
+            return false;
         }
 
         if (!readType(source)) {
@@ -202,7 +228,7 @@ public final class Packet implements SocketWritable, SocketReadable {
             return false;
         }
 
-        if (!readSize(source)) {
+        if (!readResponseInfo(source)) {
             return false;
         }
 
@@ -295,34 +321,40 @@ public final class Packet implements SocketWritable, SocketReadable {
 
     private boolean readType(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_TYPE)) {
-            if (source.remaining() < INT_SIZE_IN_BYTES + 1) {
-                return false;
-            }
-            int type = source.getInt();
-            ((DefaultData) data).setType(type);
-            setPersistStatus(PERSIST_TYPE);
+            if (valueSize >= 0) {
+                if (source.remaining() < INT_SIZE_IN_BYTES + 1) {
+                    return false;
+                }
 
-            boolean hasClassDefinition = source.get() != 0;
-            if (hasClassDefinition) {
-                classDefinitionSerializer = new ClassDefinitionSerializer(data, context);
+                int type = source.getInt();
+                ((DefaultData) data).setType(type);
+
+                boolean hasClassDefinition = source.get() != 0;
+                if (hasClassDefinition) {
+                    classDefinitionSerializer = new ClassDefinitionSerializer(data, context);
+                }
             }
+            setPersistStatus(PERSIST_TYPE);
         }
         return true;
     }
 
     private boolean writeType(ByteBuffer destination) {
         if (!isPersistStatusSet(PERSIST_TYPE)) {
-            if (destination.remaining() < INT_SIZE_IN_BYTES + 1) {
-                return false;
-            }
-            int type = data.getType();
-            destination.putInt(type);
+            if (valueSize >= 0) {
+                if (destination.remaining() < INT_SIZE_IN_BYTES + 1) {
+                    return false;
+                }
 
-            boolean hasClassDefinition = context.hasClassDefinition(data);
-            destination.put((byte) (hasClassDefinition ? 1 : 0));
+                int type = data.getType();
+                destination.putInt(type);
 
-            if (hasClassDefinition) {
-                classDefinitionSerializer = new ClassDefinitionSerializer(data, context);
+                boolean hasClassDefinition = context.hasClassDefinition(data);
+                destination.put((byte) (hasClassDefinition ? 1 : 0));
+
+                if (hasClassDefinition) {
+                    classDefinitionSerializer = new ClassDefinitionSerializer(data, context);
+                }
             }
 
             setPersistStatus(PERSIST_TYPE);
@@ -354,10 +386,12 @@ public final class Packet implements SocketWritable, SocketReadable {
 
     private boolean readHash(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_HASH)) {
-            if (source.remaining() < INT_SIZE_IN_BYTES) {
-                return false;
+            if (valueSize >= 0) {
+                if (source.remaining() < INT_SIZE_IN_BYTES) {
+                    return false;
+                }
+                ((DefaultData) data).setPartitionHash(source.getInt());
             }
-            ((DefaultData) data).setPartitionHash(source.getInt());
             setPersistStatus(PERSIST_HASH);
         }
         return true;
@@ -365,11 +399,45 @@ public final class Packet implements SocketWritable, SocketReadable {
 
     private boolean writeHash(ByteBuffer destination) {
         if (!isPersistStatusSet(PERSIST_HASH)) {
-            if (destination.remaining() < INT_SIZE_IN_BYTES) {
-                return false;
+            if (valueSize >= 0) {
+                if (destination.remaining() < INT_SIZE_IN_BYTES) {
+                    return false;
+                }
+                destination.putInt(data.hasPartitionHash() ? data.getPartitionHash() : 0);
             }
-            destination.putInt(data.hasPartitionHash() ? data.getPartitionHash() : 0);
             setPersistStatus(PERSIST_HASH);
+        }
+        return true;
+    }
+
+    // ========================= responseInfo =================================================
+
+    private boolean writeResponseInfo(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_RESPONSE_INFO)) {
+            if (isHeaderSet(HEADER_RESPONSE) && isHeaderSet(HEADER_OP)) {
+                if (destination.remaining() < Bits.LONG_SIZE_IN_BYTES + 1) {
+                    return false;
+                }
+                destination.putLong(responseCallId);
+                destination.put(responseBackupCount);
+            }
+            setPersistStatus(PERSIST_RESPONSE_INFO);
+        }
+        return true;
+    }
+
+    private boolean readResponseInfo(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_RESPONSE_INFO)) {
+            // bit checking can be simplified.
+            if (isHeaderSet(HEADER_RESPONSE) && isHeaderSet(HEADER_OP)) {
+                if (source.remaining() < Bits.LONG_SIZE_IN_BYTES + 1) {
+                    return false;
+                }
+
+                responseCallId = source.getLong();
+                responseBackupCount = source.get();
+            }
+            setPersistStatus(PERSIST_RESPONSE_INFO);
         }
         return true;
     }
@@ -381,7 +449,12 @@ public final class Packet implements SocketWritable, SocketReadable {
             if (source.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
+
             valueSize = source.getInt();
+            if (valueSize >= 0) {
+                data = new DefaultData(0, new byte[valueSize]);
+            }
+
             setPersistStatus(PERSIST_SIZE);
         }
         return true;
@@ -392,7 +465,8 @@ public final class Packet implements SocketWritable, SocketReadable {
             if (destination.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
-            valueSize = data.dataSize();
+
+            valueSize = data == null ? -1 : data.getData().length;
             destination.putInt(valueSize);
             setPersistStatus(PERSIST_SIZE);
         }
@@ -426,7 +500,7 @@ public final class Packet implements SocketWritable, SocketReadable {
                 destination.put(byteArray, valueOffset, bytesWrite);
                 valueOffset += bytesWrite;
 
-                if(!done){
+                if (!done) {
                     return false;
                 }
             }
@@ -437,34 +511,31 @@ public final class Packet implements SocketWritable, SocketReadable {
 
     private boolean readValue(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_VALUE)) {
-            byte[] bytes = data.getData();
-            if (bytes == null) {
-                bytes = new byte[valueSize];
-                ((DefaultData) data).setData(bytes);
-            }
+            if (valueSize >= 0) {
+                if (valueSize > 0) {
+                    int bytesReadable = source.remaining();
 
-            if (valueSize > 0) {
-                int bytesReadable = source.remaining();
+                    int bytesNeeded = valueSize - valueOffset;
 
-                int bytesNeeded = valueSize - valueOffset;
+                    boolean done;
+                    int bytesRead;
+                    if (bytesReadable >= bytesNeeded) {
+                        bytesRead = bytesNeeded;
+                        done = true;
+                    } else {
+                        bytesRead = bytesReadable;
+                        done = false;
+                    }
 
-                boolean done;
-                int bytesRead;
-                if (bytesReadable >= bytesNeeded) {
-                    bytesRead = bytesNeeded;
-                    done = true;
-                } else {
-                    bytesRead = bytesReadable;
-                    done = false;
-                }
-
-                // read the data from the byte-buffer into the bytes-array.
-                source.get(bytes, valueOffset, bytesRead);
-                valueOffset += bytesRead;
+                    // read the data from the byte-buffer into the bytes-array.
+                    byte[] byteArray = data.getData();
+                    source.get(byteArray, valueOffset, bytesRead);
+                    valueOffset += bytesRead;
 
 
-                if(!done){
-                    return false;
+                    if (!done) {
+                        return false;
+                    }
                 }
             }
 
@@ -472,7 +543,6 @@ public final class Packet implements SocketWritable, SocketReadable {
         }
         return true;
     }
-
 
     /**
      * Returns an estimation of the packet, including its payload, in bytes.

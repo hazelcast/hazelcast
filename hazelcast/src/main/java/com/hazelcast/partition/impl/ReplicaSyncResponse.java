@@ -200,7 +200,12 @@ public class ReplicaSyncResponse extends Operation
         }
 
         @Override
-        public void sendResponse(final Object obj) {
+        public void sendResponse(Object obj) {
+            sendResponse(obj, 0);
+        }
+
+        @Override
+        public void sendResponse(Object obj, int backupCount) {
             if (obj instanceof Throwable) {
                 Throwable t = (Throwable) obj;
                 logger.severe(t);

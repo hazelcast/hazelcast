@@ -4,7 +4,5 @@ import com.hazelcast.nio.Packet;
 
 public interface BasicResponseHandler {
 
-    Response deserialize(Packet packet) throws Exception;
-
-    void process(Response task) throws Exception;
+    void process(Packet task) throws Exception;
 }

@@ -24,5 +24,7 @@ public interface ResponseHandler {
 
     void sendResponse(Object obj);
 
+    void sendResponse(Object obj, int backupCount);
+
     boolean isLocal();
 }

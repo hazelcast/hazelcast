@@ -43,12 +43,12 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-                    case NORMAL_RESPONSE:
-                        return new NormalResponse();
+//                    case NORMAL_RESPONSE:
+//                        return new NormalResponse();
                     case BACKUP:
                         return new Backup();
-                    case BACKUP_RESPONSE:
-                        return new BackupResponse();
+//                    case BACKUP_RESPONSE:
+//                        return new BackupResponse();
                     case PARTITION_ITERATOR:
                         return new PartitionIteratingOperation();
                     case PARTITION_RESPONSE:

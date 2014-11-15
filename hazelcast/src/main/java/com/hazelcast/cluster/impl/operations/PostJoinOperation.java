@@ -62,6 +62,11 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
                         .setResponseHandler(new ResponseHandler() {
                             @Override
                             public void sendResponse(Object obj) {
+                                sendResponse(obj, 0);
+                            }
+
+                            @Override
+                            public void sendResponse(Object obj, int backupCount) {
                                 if (obj instanceof Throwable) {
                                     Throwable t = (Throwable) obj;
                                     ILogger logger = nodeEngine.getLogger(op.getClass());

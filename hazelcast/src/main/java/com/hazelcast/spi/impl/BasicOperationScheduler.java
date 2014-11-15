@@ -30,6 +30,7 @@ import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
+import javax.xml.ws.Response;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -628,14 +629,7 @@ public final class BasicOperationScheduler {
         private void process(Object task) {
             processedResponses++;
             try {
-                Response response;
-                if(task instanceof Packet){
-                    response = responseHandler.deserialize((Packet)task);
-                }else{
-                    response = (Response)task;
-                }
-
-                responseHandler.process(response);
+                responseHandler.process((Packet)task);
             } catch (Exception e) {
                 //todo: If response is known, show that
                 logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());

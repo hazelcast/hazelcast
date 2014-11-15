@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -56,7 +57,11 @@ public final class ResponseHandlerFactory {
             implements ResponseHandler {
 
         @Override
-        public void sendResponse(final Object obj) {
+        public void sendResponse(Object obj) {
+        }
+
+        @Override
+        public void sendResponse(Object obj, int backupCount) {
         }
 
         @Override
@@ -77,7 +82,12 @@ public final class ResponseHandlerFactory {
         }
 
         @Override
-        public void sendResponse(final Object obj) {
+        public void sendResponse(Object obj) {
+            sendResponse(obj, 0);
+        }
+
+        @Override
+        public void sendResponse(Object obj, int backupCount) {
             if (obj instanceof Throwable) {
                 Throwable t = (Throwable) obj;
                 logger.severe(t);
@@ -103,6 +113,11 @@ public final class ResponseHandlerFactory {
 
         @Override
         public void sendResponse(Object obj) {
+            sendResponse(obj, 0);
+        }
+
+        @Override
+        public void sendResponse(Object obj, int backupCount) {
             long callId = remotePropagatable.getCallId();
             Connection conn = remotePropagatable.getConnection();
             if (!sent.compareAndSet(false, true) && !(obj instanceof Throwable)) {
@@ -110,15 +125,10 @@ public final class ResponseHandlerFactory {
                         + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
 
-            Response response;
-            if (!(obj instanceof Response)) {
-                response = new NormalResponse(obj, remotePropagatable.getCallId(), 0, remotePropagatable.isUrgent());
-            } else {
-                response = (Response) obj;
-            }
-
+            Address caller = remotePropagatable.getCallerAddress();
+            boolean urgent = remotePropagatable.isUrgent();
             OperationService operationService = nodeEngine.getOperationService();
-            if (!operationService.send(response, remotePropagatable.getCallerAddress())) {
+            if (!operationService.sendNormalResponse(caller, callId, urgent, obj, backupCount)) {
                 throw new HazelcastException("Cannot send response: " + obj + " to " + conn.getEndPoint());
             }
         }

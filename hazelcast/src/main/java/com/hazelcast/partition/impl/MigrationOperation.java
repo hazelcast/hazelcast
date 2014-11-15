@@ -43,6 +43,11 @@ public final class MigrationOperation extends BaseMigrationOperation {
     private static final ResponseHandler ERROR_RESPONSE_HANDLER = new ResponseHandler() {
         @Override
         public void sendResponse(Object obj) {
+            sendResponse(obj, 0);
+        }
+
+        @Override
+        public void sendResponse(Object obj, int backupCount) {
             throw new HazelcastException("Migration operations can not send response!");
         }
 

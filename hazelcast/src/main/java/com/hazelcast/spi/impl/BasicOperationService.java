@@ -43,6 +43,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -127,7 +128,7 @@ final class BasicOperationService implements InternalOperationService {
     private final OperationHandler operationHandler;
     private final OperationBackupHandler operationBackupHandler;
     private final OperationTimeoutHandlerThread operationTimeoutHandlerThread;
-    private final ResponseHandler responseHandler;
+    private final TheResponseHandler responseHandler;
     private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
@@ -144,7 +145,7 @@ final class BasicOperationService implements InternalOperationService {
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
         this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
         this.operationHandler = new OperationHandler();
-        this.responseHandler = new ResponseHandler();
+        this.responseHandler = new TheResponseHandler();
         this.operationBackupHandler = new OperationBackupHandler();
         this.scheduler = new BasicOperationScheduler(node, executionService, operationHandler,responseHandler);
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
@@ -270,7 +271,7 @@ final class BasicOperationService implements InternalOperationService {
 
     // =============================== processing response  ===============================
 
-    @Override
+    //@Override
     public void notifyBackupCall(long callId) {
         try {
             final BasicInvocation invocation = invocations.get(callId);
@@ -343,21 +344,50 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
-    public boolean send(Response response, Address target) {
+    public boolean sendNormalResponse(Address target, long callId, boolean urgent, Object value, int backupCount) {
         if (target == null) {
             throw new IllegalArgumentException("Target is required!");
         }
+
         if (nodeEngine.getThisAddress().equals(target)) {
-            throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
+            throw new IllegalArgumentException("Target is this node! -> " + target + ", callId: " + callId);
         }
-        Data data = nodeEngine.toData(response);
+
+        Data data = nodeEngine.toData(value);
         Packet packet = new Packet(data, nodeEngine.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
         packet.setHeader(Packet.HEADER_RESPONSE);
-        if (response.isUrgent()) {
+        packet.setResponseCallId(callId);
+        byte trueBackupCount = value instanceof Throwable ? (byte)Byte.MAX_VALUE-1:(byte)backupCount;
+        packet.setResponseBackupCount(trueBackupCount);
+        if (urgent) {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
+        return nodeEngine.send(packet, connection);
+    }
+
+    @Override
+    public boolean sendBackupResponse(Address caller, long callId, boolean urgent) {
+        if (caller == null) {
+            throw new IllegalArgumentException("Target is required!");
+        }
+
+        if (nodeEngine.getThisAddress().equals(caller)) {
+            notifyBackupCall(callId);
+            return urgent;
+        }
+
+        Packet packet = new Packet(null, nodeEngine.getPortableContext());
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setHeader(Packet.HEADER_RESPONSE);
+        packet.setResponseCallId(callId);
+        packet.setResponseBackupCount(Byte.MAX_VALUE);
+
+        if (urgent) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        Connection connection = node.getConnectionManager().getOrConnect(caller);
         return nodeEngine.send(packet, connection);
     }
 
@@ -405,7 +435,7 @@ final class BasicOperationService implements InternalOperationService {
                     final BasicInvocation invocation = iter.next();
                     if (invocation.isCallTarget(member)) {
                         iter.remove();
-                        invocation.notify(new MemberLeftException(member));
+                        invocation.notify(new MemberLeftException(member), 0);
                     }
                 }
             }
@@ -419,7 +449,7 @@ final class BasicOperationService implements InternalOperationService {
         final Object response = new HazelcastInstanceNotActiveException();
         for (BasicInvocation invocation : invocations.values()) {
             try {
-                invocation.notify(response);
+                invocation.notify(response, 0);
             } catch (Throwable e) {
                 logger.warning(invocation + " could not be notified with shutdown message -> " + e.getMessage());
             }
@@ -532,23 +562,17 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Responsible for handling responses.
      */
-    private final class ResponseHandler implements BasicResponseHandler{
+    private final class TheResponseHandler implements BasicResponseHandler{
 
         @Override
-        public Response deserialize(Packet packet) throws Exception {
-            Data data = packet.getData();
-            return (Response) nodeEngine.toObject(data);
-        }
-
-        @Override
-        public void process(Response response) throws Exception {
+        public void process(Packet packet) throws Exception {
             try {
-                if (response instanceof NormalResponse) {
-                    notifyRemoteCall((NormalResponse) response);
-                } else if (response instanceof BackupResponse) {
-                    notifyBackupCall(response.getCallId());
+                byte backupCount = packet.getResponseBackupCount();
+                long responseCallId = packet.getResponseCallId();
+                if (backupCount == Byte.MAX_VALUE) {
+                    notifyBackupCall(responseCallId);
                 } else {
-                    throw new IllegalStateException("Unrecognized response type: " + response);
+                    notifyRemoteCall(responseCallId, packet.getData(), backupCount);
                 }
             } catch (Throwable e) {
                 logger.severe("While processing response...", e);
@@ -556,8 +580,8 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
-        private void notifyRemoteCall(NormalResponse response) {
-            BasicInvocation invocation = invocations.get(response.getCallId());
+        private void notifyRemoteCall(long callId, Object response, int backupCount) {
+            BasicInvocation invocation = invocations.get(callId);
             if (invocation == null) {
                 if (nodeEngine.isActive()) {
                     throw new HazelcastException("No invocation for response: " + response);
@@ -565,104 +589,9 @@ final class BasicOperationService implements InternalOperationService {
                 return;
             }
 
-            invocation.notify(response);
+            invocation.notify(response, backupCount);
         }
     }
-
-//    /**
-//     * Responsible for handling operation packets.
-//     */
-//    private final class OperationPacketHandler {
-//
-//        /**
-//         * Handles this packet.
-//         */
-//        private void handle(Packet packet) {
-//            try {
-//                Operation op = loadOperation(packet);
-//
-//                if (!ensureValidMember(op)) {
-//                    return;
-//                }
-//
-//                handle(op);
-//            } catch (Throwable e) {
-//                logger.severe(e);
-//            }
-//        }
-//
-//        private Operation loadOperation(Packet packet) throws Exception {
-//            Connection conn = packet.getConn();
-//            Address caller = conn.getEndPoint();
-//            Data data = packet.getData();
-//            try {
-//                Object object = nodeEngine.toObject(data);
-//                Operation op = (Operation) object;
-//                op.setNodeEngine(nodeEngine);
-//                setCallerAddress(op, caller);
-//                setConnection(op, conn);
-//                setCallerUuidIfNotSet(caller, op);
-//                setRemoteResponseHandler(nodeEngine, op);
-//                return op;
-//            } catch (Throwable throwable) {
-//                // If exception happens we need to extract the callId from the bytes directly!
-//                long callId = IOUtil.extractOperationCallId(data, node.getSerializationService());
-//                RemoteOperationExceptionHandler exceptionHandler = new RemoteOperationExceptionHandler(callId);
-//                exceptionHandler.setNodeEngine(nodeEngine);
-//                exceptionHandler.setCallerAddress(caller);
-//                exceptionHandler.setConnection(conn);
-//                ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, exceptionHandler);
-//                operationHandler.handleOperationError(exceptionHandler, throwable);
-//                throw ExceptionUtil.rethrow(throwable);
-//            }
-//        }
-//
-//        private void setCallerUuidIfNotSet(Address caller, Operation op) {
-//            if (op.getCallerUuid() != null) {
-//                return;
-//
-//            }
-//            MemberImpl callerMember = node.clusterService.getMember(caller);
-//            if (callerMember != null) {
-//                op.setCallerUuid(callerMember.getUuid());
-//            }
-//        }
-//
-//        private boolean ensureValidMember(Operation op) {
-//            if (!isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
-//                Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
-//                        op.getClass().getName(), op.getServiceName());
-//                operationHandler.handleOperationError(op, error);
-//                return false;
-//            }
-//            return true;
-//        }
-//
-//        private void handle(Operation op) {
-//            String executorName = op.getExecutorName();
-//            if (executorName == null) {
-//                operationHandler.handle(op);
-//            } else {
-//                offloadOperationHandling(op);
-//            }
-//        }
-//
-//        private void offloadOperationHandling(final Operation op) {
-//            String executorName = op.getExecutorName();
-//
-//            ExecutorService executor = executionService.getExecutor(executorName);
-//            if (executor == null) {
-//                throw new IllegalStateException("Could not found executor with name: " + executorName);
-//            }
-//
-//            executor.execute(new Runnable() {
-//                @Override
-//                public void run() {
-//                    operationHandler.process(op);
-//                }
-//            });
-//        }
-//    }
 
     /**
      * Responsible for processing an Operation.
@@ -770,28 +699,25 @@ final class BasicOperationService implements InternalOperationService {
 
         private void handleResponse(Operation op) throws Exception {
             boolean returnsResponse = op.returnsResponse();
-            Object response = null;
+
+            int backupCount = 0;
             if (op instanceof BackupAwareOperation) {
                 BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
-                int syncBackupCount = 0;
                 if (backupAwareOp.shouldBackup()) {
-                    syncBackupCount = operationBackupHandler.backup(backupAwareOp);
-                }
-                if (returnsResponse) {
-                    response = new NormalResponse(op.getResponse(), op.getCallId(), syncBackupCount, op.isUrgent());
+                    backupCount = operationBackupHandler.backup(backupAwareOp);
                 }
             }
 
-            if (returnsResponse) {
-                if (response == null) {
-                    response = op.getResponse();
-                }
-                com.hazelcast.spi.ResponseHandler responseHandler = op.getResponseHandler();
-                if (responseHandler == null) {
-                    throw new IllegalStateException("ResponseHandler should not be null!");
-                }
-                responseHandler.sendResponse(response);
+            if (!returnsResponse) {
+                return;
             }
+
+            Object response = op.getResponse();
+            ResponseHandler responseHandler = op.getResponseHandler();
+            if (responseHandler == null) {
+                throw new IllegalStateException("ResponseHandler should not be null!");
+            }
+            responseHandler.sendResponse(response, backupCount);
         }
 
         private void afterRun(Operation op) {
@@ -829,6 +755,8 @@ final class BasicOperationService implements InternalOperationService {
 
             Address owner = internalPartition.getReplicaAddress(op.getReplicaIndex());
             if (op.validatesTarget() && !node.getThisAddress().equals(owner)) {
+                //System.out.println("owner.address:"+owner);
+                //System.out.println("node.thisAddress:"+node.getThisAddress());
                 throw new WrongTargetException(node.getThisAddress(), owner, partitionId, op.getReplicaIndex(),
                         op.getClass().getName(), op.getServiceName());
             }
