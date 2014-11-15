@@ -16,14 +16,14 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.serialization.DataAdapter;
+import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
-class SocketClientDataWriter implements SocketWriter<DataAdapter> {
+class SocketClientDataWriter implements SocketWriter<Packet> {
 
     @Override
-    public boolean write(DataAdapter writer, ByteBuffer socketBuffer) throws Exception {
+    public boolean write(Packet writer, ByteBuffer socketBuffer) throws Exception {
         return writer.writeTo(socketBuffer);
     }
 }

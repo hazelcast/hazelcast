@@ -12,20 +12,23 @@ import java.io.IOException;
  */
 public class IsStillExecutingOperation extends AbstractOperation implements UrgentSystemOperation {
 
+    private int partitionId;
     private long operationCallId;
 
     IsStillExecutingOperation() {
     }
 
-    IsStillExecutingOperation(long operationCallId) {
+    IsStillExecutingOperation(long operationCallId, int partitionId) {
         this.operationCallId = operationCallId;
+        this.partitionId = partitionId;
     }
 
     @Override
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-        boolean executing = operationService.isOperationExecuting(getCallerAddress(), getCallerUuid(), operationCallId);
+        BasicOperationScheduler scheduler = operationService.scheduler;
+        boolean executing = scheduler.isOperationExecuting(getCallerAddress(), partitionId, operationCallId);
         getResponseHandler().sendResponse(executing);
     }
 
@@ -37,12 +40,14 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        operationCallId = in.readLong();
+        this.operationCallId = in.readLong();
+        this.partitionId = in.readInt();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(operationCallId);
+        out.writeInt(partitionId);
     }
 }

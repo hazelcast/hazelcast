@@ -16,11 +16,16 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.Operation;
+
 /**
  * To keep the {@link com.hazelcast.spi.impl.BasicOperationScheduler} clean of operations/packets etc, the scheduler
- * takes care of scheduling, but forwards the actual handling of the task to the {@link BasicDispatcher}.
+ * takes care of scheduling, but forwards the actual handling of the task to the {@link BasicOperationHandler}.
  */
-public interface BasicDispatcher {
+public interface BasicOperationHandler {
 
-    void dispatch(Object task);
+    Operation deserialize(Packet packet) throws Exception;
+
+    void process(Operation task);
 }
