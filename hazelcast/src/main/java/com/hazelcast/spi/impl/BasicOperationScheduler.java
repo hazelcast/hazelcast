@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.PartitionAware;
-import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -30,7 +29,6 @@ import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
-import javax.xml.ws.Response;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -85,6 +83,7 @@ public final class BasicOperationScheduler {
 
     private final ResponseThread responseThread;
     private final BasicResponseHandler responseHandler;
+    private final boolean skipResponseQueue;
 
     private volatile boolean shutdown;
 
@@ -110,6 +109,8 @@ public final class BasicOperationScheduler {
         this.node = node;
         this.operationHandler = operationHandler;
         this.responseHandler = responseHandler;
+
+        this.skipResponseQueue = node.getGroupProperties().OPERATION_SKIP_RESPONSE_QUEUE.getBoolean();
 
         this.genericOperationThreads = new OperationThread[getGenericOperationThreadCount()];
         initOperationThreads(genericOperationThreads, new GenericOperationThreadFactory());
@@ -338,7 +339,11 @@ public final class BasicOperationScheduler {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                 //it is an response packet.
-                responseThread.process(packet);
+                if(skipResponseQueue){
+                    responseThread.process(packet);
+                }else{
+                    responseThread.workQueue.add(packet);
+                }
             } else {
                 //it is an must be an operation packet
                 int partitionId = packet.getPartitionId();
@@ -545,9 +550,9 @@ public final class BasicOperationScheduler {
 
             // if it is a runnable we can immediately execute it.
             if (task instanceof Runnable) {
-                try{
+                try {
                     ((Runnable) task).run();
-                }catch (Exception e) {
+                } catch (Exception e) {
                     logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
                 }
                 return;
@@ -555,18 +560,18 @@ public final class BasicOperationScheduler {
 
             // deserialize if needed.
             Operation operation;
-            if(task instanceof Packet){
+            if (task instanceof Packet) {
                 try {
                     operation = operationHandler.deserialize((Packet) task);
-                    if(operation == null){
+                    if (operation == null) {
                         return;
                     }
                 } catch (Exception e) {
                     logger.severe("Failed to deserialize packet: " + task + " on partitionThread:" + getName());
                     return;
                 }
-            }else{
-                operation = (Operation)task;
+            } else {
+                operation = (Operation) task;
             }
 
             // it is an operation, so lets process it.
@@ -606,7 +611,7 @@ public final class BasicOperationScheduler {
         }
 
         private void doRun() {
-            for (;;) {
+            for (; ; ) {
                 Object task;
                 try {
                     task = workQueue.take();
@@ -629,7 +634,7 @@ public final class BasicOperationScheduler {
         private void process(Object task) {
             processedResponses++;
             try {
-                responseHandler.process((Packet)task);
+                responseHandler.process((Packet) task);
             } catch (Exception e) {
                 //todo: If response is known, show that
                 logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
