@@ -111,6 +111,7 @@ public final class BasicOperationScheduler {
         this.responseHandler = responseHandler;
 
         this.skipResponseQueue = node.getGroupProperties().OPERATION_SKIP_RESPONSE_QUEUE.getBoolean();
+        logger.severe("Skip Response Queue: "+skipResponseQueue);
 
         this.genericOperationThreads = new OperationThread[getGenericOperationThreadCount()];
         initOperationThreads(genericOperationThreads, new GenericOperationThreadFactory());
