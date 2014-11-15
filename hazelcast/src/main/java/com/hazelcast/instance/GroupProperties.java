@@ -345,7 +345,7 @@ public class GroupProperties {
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
         OPERATION_CALL_TIMEOUT_MILLIS = new GroupProperty(config, PROP_OPERATION_CALL_TIMEOUT_MILLIS, "60000");
         OPERATION_BACKUP_TIMEOUT_MILLIS = new GroupProperty(config, PROP_OPERATION_BACKUP_TIMEOUT_MILLIS, "5000");
-        OPERATION_SKIP_RESPONSE_QUEUE = new GroupProperty(config, PROP_OPERATION_SKIP_RESPONSE_QUEUE, "false");
+        OPERATION_SKIP_RESPONSE_QUEUE = new GroupProperty(config, PROP_OPERATION_SKIP_RESPONSE_QUEUE, "true");
 
         final GroupProperty SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SOCKET_SERVER_BIND_ANY = new GroupProperty(config, PROP_SOCKET_SERVER_BIND_ANY, SOCKET_BIND_ANY);
