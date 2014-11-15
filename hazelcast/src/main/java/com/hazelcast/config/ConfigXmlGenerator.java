@@ -414,7 +414,8 @@ public class ConfigXmlGenerator {
 
     private void multicastConfigXmlGenerator(StringBuilder xml, JoinConfig join) {
         final MulticastConfig mcast = join.getMulticastConfig();
-        xml.append("<multicast enabled=\"").append(mcast.isEnabled()).append("\">");
+        xml.append("<multicast enabled=\"").append(mcast.isEnabled()).append("\" loopbackModeEnabled=\"");
+        xml.append(mcast.isLoopbackModeEnabled()).append("\">");
         xml.append("<multicast-group>").append(mcast.getMulticastGroup()).append("</multicast-group>");
         xml.append("<multicast-port>").append(mcast.getMulticastPort()).append("</multicast-port>");
         xml.append("<multicast-timeout-seconds>").append(mcast.getMulticastTimeoutSeconds())

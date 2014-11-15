@@ -563,4 +563,40 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         return configBuilder.build();
     }
 
+    @Test
+    public void readMulticastConfig() {
+        String xml =
+                "<hazelcast>\n" +
+                        "   <group>\n" +
+                        "        <name>dev</name>\n" +
+                        "        <password>dev-pass</password>\n" +
+                        "    </group>\n" +
+                        "    <network>\n" +
+                        "        <port auto-increment=\"true\">5701</port>\n" +
+                        "        <join>\n" +
+                        "            <multicast enabled=\"true\" loopbackModeEnabled=\"true\">\n" +
+                        "                <multicast-group>224.2.2.3</multicast-group>\n" +
+                        "                <multicast-port>54327</multicast-port>\n" +
+                        "            </multicast>\n" +
+                        "            <tcp-ip enabled=\"false\">\n" +
+                        "                <interface>127.0.0.1</interface>\n" +
+                        "            </tcp-ip>\n" +
+                        "            <aws enabled=\"true\" connection-timeout-seconds=\"10\" >\n" +
+                        "                <access-key>access</access-key>\n" +
+                        "                <secret-key>secret</secret-key>\n" +
+                        "            </aws>\n" +
+                        "        </join>\n" +
+                        "        <interfaces enabled=\"false\">\n" +
+                        "            <interface>10.10.1.*</interface>\n" +
+                        "        </interfaces>\n" +
+                        "    </network>\n" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        MulticastConfig mcastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
+        assertTrue(mcastConfig.isEnabled());
+        assertTrue(mcastConfig.isLoopbackModeEnabled());
+        assertEquals("224.2.2.3", mcastConfig.getMulticastGroup());
+        assertEquals(54327, mcastConfig.getMulticastPort());
+    }
+
 }

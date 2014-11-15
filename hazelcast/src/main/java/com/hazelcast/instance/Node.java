@@ -196,6 +196,10 @@ public class Node {
                     if (!bindAddress.getInetAddress().isLoopbackAddress()) {
                         multicastSocket.setInterface(bindAddress.getInetAddress());
                     }
+                    else if (multicastConfig.isLoopbackModeEnabled()) {
+                        multicastSocket.setLoopbackMode(true);
+			multicastSocket.setInterface(bindAddress.getInetAddress());
+                    }
                 } catch (Exception e) {
                     logger.warning(e);
                 }
