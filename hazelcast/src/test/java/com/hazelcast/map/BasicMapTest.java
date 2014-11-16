@@ -37,6 +37,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -65,11 +69,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -327,7 +326,6 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
 
-
     @Test
     public void testMapRemove() {
         IMap<String, String> map = getInstance().getMap("testMapRemove");
@@ -491,7 +489,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.containsKey("key2"), true);
         assertEquals(map.containsKey("key5"), false);
     }
-
 
 
     @Test
@@ -1610,7 +1607,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         private SampleIndexableObject[] values = new SampleIndexableObject[10];
         private Set<Integer> keys = new HashSet<Integer>();
 
-        boolean preloadValues = false;
+        volatile boolean preloadValues = false;
 
         public SampleIndexableObjectMapLoader() {
             for (int i = 0; i < 10; i++) {
