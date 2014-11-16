@@ -1609,7 +1609,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         private SampleIndexableObject[] values = new SampleIndexableObject[10];
         private Set<Integer> keys = new HashSet<Integer>();
 
-        boolean preloadValues = false;
+        volatile boolean preloadValues = false;
 
         public SampleIndexableObjectMapLoader() {
             for (int i = 0; i < 10; i++) {
