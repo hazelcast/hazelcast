@@ -50,6 +50,7 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -92,7 +93,7 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
-        String cacheName = randomString();
+        final String cacheName = randomString();
 
         CompleteConfiguration<Integer, String> config =
                 new MutableConfiguration<Integer, String>()
@@ -105,15 +106,18 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         final Data key = serializationService.toData(1);
         final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
 
-        final ICacheRecordStore recordStore1 = cacheServiceHz1.getOrCreateCache("/hz/" + cacheName, partitionId);
-        final ICacheRecordStore recordStore2 = cacheServiceHz2.getOrCreateCache("/hz/" + cacheName, partitionId);
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
+
+                ICacheRecordStore recordStore1 = getRecordStore(cacheServiceHz1, cacheName, partitionId);
+                ICacheRecordStore recordStore2 = getRecordStore(cacheServiceHz2, cacheName, partitionId);
+
                 CacheRecord record1 = recordStore1.getRecord(key);
                 CacheRecord record2 = recordStore2.getRecord(key);
+
+                checkIfRecordsNull(record1, record2);
 
                 Object value1 = serializationService.toObject(record1.getValue());
                 Object value2 = serializationService.toObject(record2.getValue());
@@ -124,12 +128,27 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         });
     }
 
+    private ICacheRecordStore getRecordStore(CacheService cacheService, String cacheName, int partitionId) {
+        try {
+            return cacheService.getOrCreateCache("/hz/" + cacheName, partitionId);
+        } catch (Exception e) {
+            fail("CacheRecordStore not yet initialized!!!");
+        }
+        return null;
+    }
+
+    private void checkIfRecordsNull(CacheRecord record1, CacheRecord record2) {
+        if (record1 == null || record2 == null) {
+            fail("Backups are not done yet!!!");
+        }
+    }
+
     @Test
     public void test_execution_entryprocessor_with_backup_entry_processor() throws Exception {
         CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
-        String cacheName = randomString();
+        final String cacheName = randomString();
 
         CompleteConfiguration<Integer, String> config =
                 new MutableConfiguration<Integer, String>()
@@ -142,15 +161,18 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         final Data key = serializationService.toData(1);
         final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
 
-        final ICacheRecordStore recordStore1 = cacheServiceHz1.getOrCreateCache("/hz/" + cacheName, partitionId);
-        final ICacheRecordStore recordStore2 = cacheServiceHz2.getOrCreateCache("/hz/" + cacheName, partitionId);
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
+
+                ICacheRecordStore recordStore1 = getRecordStore(cacheServiceHz1, cacheName, partitionId);
+                ICacheRecordStore recordStore2 = getRecordStore(cacheServiceHz2, cacheName, partitionId);
+
                 CacheRecord record1 = recordStore1.getRecord(key);
                 CacheRecord record2 = recordStore2.getRecord(key);
+
+                checkIfRecordsNull(record1, record2);
 
                 Object value1 = serializationService.toObject(record1.getValue());
                 Object value2 = serializationService.toObject(record2.getValue());
@@ -166,7 +188,7 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
-        String cacheName = randomString();
+        final String cacheName = randomString();
 
         CompleteConfiguration<Integer, String> config =
                 new MutableConfiguration<Integer, String>()
@@ -179,15 +201,18 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         final Data key = serializationService.toData(1);
         final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
 
-        final ICacheRecordStore recordStore1 = cacheServiceHz1.getOrCreateCache("/hz/" + cacheName, partitionId);
-        final ICacheRecordStore recordStore2 = cacheServiceHz2.getOrCreateCache("/hz/" + cacheName, partitionId);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
+                ICacheRecordStore recordStore1 = getRecordStore(cacheServiceHz1, cacheName, partitionId);
+                ICacheRecordStore recordStore2 = getRecordStore(cacheServiceHz2, cacheName, partitionId);
+
                 CacheRecord record1 = recordStore1.getRecord(key);
                 CacheRecord record2 = recordStore2.getRecord(key);
+
+                checkIfRecordsNull(record1, record2);
 
                 Object value1 = serializationService.toObject(record1.getValue());
                 Object value2 = serializationService.toObject(record2.getValue());
@@ -203,7 +228,7 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
-        String cacheName = randomString();
+        final String cacheName = randomString();
 
         CompleteConfiguration<Integer, String> config =
                 new MutableConfiguration<Integer, String>()
@@ -216,15 +241,18 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         final Data key = serializationService.toData(1);
         final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
 
-        final ICacheRecordStore recordStore1 = cacheServiceHz1.getOrCreateCache("/hz/" + cacheName, partitionId);
-        final ICacheRecordStore recordStore2 = cacheServiceHz2.getOrCreateCache("/hz/" + cacheName, partitionId);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
+                ICacheRecordStore recordStore1 = getRecordStore(cacheServiceHz1, cacheName, partitionId);
+                ICacheRecordStore recordStore2 = getRecordStore(cacheServiceHz2, cacheName, partitionId);
+
                 CacheRecord record1 = recordStore1.getRecord(key);
                 CacheRecord record2 = recordStore2.getRecord(key);
+
+                checkIfRecordsNull(record1, record2);
 
                 Object value1 = serializationService.toObject(record1.getValue());
                 Object value2 = serializationService.toObject(record2.getValue());
