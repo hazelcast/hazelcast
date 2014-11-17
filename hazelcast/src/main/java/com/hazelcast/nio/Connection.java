@@ -100,7 +100,7 @@ public interface Connection {
     InetSocketAddress getRemoteSocketAddress();
 
     /**
-     * Gets the {@ink Address} of the other side of this Connection.
+     * Gets the {@link Address} of the other side of this Connection.
      * <p/>
      * todo: rename to get remoteAddress?
      *

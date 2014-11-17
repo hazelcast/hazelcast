@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * The internal {@link com.hazelcast.core.ReplicatedMap} implementation proxying the requests to the underlying
- * {@@code ReplicatedRecordStore}
+ * {@code ReplicatedRecordStore}
  *
  * @param <K> key type
  * @param <V> value type
