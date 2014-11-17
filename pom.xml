@@ -140,6 +140,7 @@
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
                 <includes>
+                    <include>**/*.html</include>
                     <include>**/*.bat</include>
                     <include>**/*.sh</include>
                     <include>**/*.properties</include>
