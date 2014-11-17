@@ -25,8 +25,8 @@ import com.hazelcast.spi.annotation.Beta;
  * per key.
  * <p/>
  * Reducers are always called in a thread-safe way however they may be moved from one thread to
- * another in the internal thread pool. As of version 3.3.3 the internal state is automatically
- * ensured to be visible according to the Java memory model by the framework. The previous
+ * another in the internal thread pool. As of version 3.3.4 the internal state is automatically
+ * ensured to be visible, according to the Java memory model, by the framework. The previous
  * requirement for making fields volatile is dropped.
  * </p>
  * <p>
