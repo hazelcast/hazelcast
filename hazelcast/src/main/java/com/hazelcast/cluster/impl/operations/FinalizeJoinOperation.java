@@ -35,10 +35,10 @@ import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements JoinOperation {
 
+    public static final int FINALIZE_JOIN_TIMEOUT_FACTOR = 5;
     public static final int FINALIZE_JOIN_MAX_TIMEOUT = 30;
 
     private PostJoinOperation postJoinOp;
@@ -96,8 +96,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         }
 
         if (calls != null) {
-            FutureUtil.waitWithDeadline(calls, Math.min(calls.size(), FINALIZE_JOIN_MAX_TIMEOUT), TimeUnit.SECONDS,
-                    new FinalizeJoinExceptionHandler());
+            int timeout = Math.min(calls.size() * FINALIZE_JOIN_TIMEOUT_FACTOR, FINALIZE_JOIN_MAX_TIMEOUT);
+            FutureUtil.waitWithDeadline(calls, timeout, TimeUnit.SECONDS, new FinalizeJoinExceptionHandler());
         }
     }
 
