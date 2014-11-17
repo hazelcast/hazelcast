@@ -62,10 +62,6 @@ import com.hazelcast.spi.annotation.Beta;
 @Beta
 public abstract class Reducer<ValueIn, ValueOut> {
 
-    // This variable is used for piggybacking the internal state before
-    // suspension and continuation of the reducer
-    private volatile boolean visibility;
-
     /**
      * This method is called before the first value is submitted to this Reducer instance.
      * It can be used to setup any internal needed state before starting to reduce the
@@ -90,28 +86,4 @@ public abstract class Reducer<ValueIn, ValueOut> {
      * @return the final reduced result
      */
     public abstract ValueOut finalizeReduce();
-
-    /**
-     * This method is called internally whenever the reducer is send to suspend mode. It guarantees
-     * the memory visibility of the reducers internal state by enforcing a write fence to flush the
-     * object to main memory.<br/>
-     * This method never needs to be called by a user!
-     */
-    public final void suspend() {
-        visibility = false;
-    }
-
-    /**
-     * This method is called internally whenever the reducer is continued from suspend mode. It
-     * guarantees the memory visibility of the reducers internal state by enforcing a read fence
-     * to refresh the object from main memory.<br/>
-     * The method never needs to be called by a user!
-     *
-     * @return true if wakeup succeed
-     */
-    public final boolean wakeup() {
-        boolean visibility = this.visibility;
-        this.visibility = !visibility;
-        return this.visibility;
-    }
 }
