@@ -2,6 +2,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.operation.PutAllOperation;
 import com.hazelcast.map.impl.operation.PutFromLoadAllOperation;
 import com.hazelcast.map.impl.record.Record;
@@ -16,6 +17,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,13 +35,22 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 class BasicRecordStoreLoader implements RecordStoreLoader {
 
+    private static final String MAP_INITIAL_LOAD_EXECUTOR = "hz:map-initialLoad";
+
     private final AtomicBoolean loaded;
+
     private final ILogger logger;
+
     private final String name;
+
     private final MapServiceContext mapServiceContext;
+
     private final MapDataStore mapDataStore;
+
     private final RecordStore recordStore;
+
     private final int partitionId;
+
     private volatile Throwable throwable;
 
     public BasicRecordStoreLoader(RecordStore recordStore) {
@@ -64,15 +75,19 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     }
 
     @Override
-    public void loadKeys(List<Data> keys, boolean replaceExistingValues) {
+    public void loadAll(List<Data> keys, boolean replaceExistingValues) {
         setLoaded(false);
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.submit(ExecutionService.MAP_LOAD_ALL_KEYS_EXECUTOR, new LoadAllKeysTask(keys, replaceExistingValues));
+
+        final Runnable task = new GivenKeysLoaderTask(keys, replaceExistingValues);
+        final String executorName = ExecutionService.MAP_LOAD_ALL_KEYS_EXECUTOR;
+        executeTask(executorName, task);
     }
 
+    /**
+     * Every partition (record-store) loads its own key set.
+     */
     @Override
-    public void loadAllKeys() {
+    public void loadInitialKeys() {
         if (isLoaded()) {
             return;
         }
@@ -80,7 +95,43 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             setLoaded(true);
             return;
         }
-        final Map<Data, Object> loadedKeys = recordStore.getMapContainer().getInitialKeys();
+
+        final Runnable task = new InitialKeysLoaderTask();
+        final String executorName = MAP_INITIAL_LOAD_EXECUTOR;
+        executeTask(executorName, task);
+    }
+
+    private final class InitialKeysLoaderTask implements Runnable {
+        @Override
+        public void run() {
+            try {
+                loadAllKeysInternal();
+            } catch (Throwable t) {
+                setLoaderException(t);
+            }
+        }
+    }
+
+    private void setLoaderException(Throwable t) {
+        BasicRecordStoreLoader.this.throwable = t;
+    }
+
+    private void executeTask(String executorName, Runnable task) {
+        getExecutionService().submit(executorName, task);
+
+    }
+
+    private ExecutionService getExecutionService() {
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        return nodeEngine.getExecutionService();
+    }
+
+    private void loadAllKeysInternal() throws Exception {
+        final MapContainer mapContainer = recordStore.getMapContainer();
+        final MapStoreContext basicMapStoreContext = mapContainer.getMapStoreContext();
+        basicMapStoreContext.waitInitialLoadFinish();
+
+        final Map<Data, Object> loadedKeys = basicMapStoreContext.getInitialKeys();
         if (loadedKeys == null || loadedKeys.isEmpty()) {
             setLoaded(true);
             return;
@@ -99,16 +150,17 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         return nodeEngine.getThisAddress().equals(partitionOwner);
     }
 
+
     /**
-     * Task for loading keys.
+     * Task for loading given keys.
      * This task is used to make load in an outer thread instead of partition thread.
      */
-    private final class LoadAllKeysTask implements Runnable {
+    private final class GivenKeysLoaderTask implements Runnable {
 
         private final List<Data> keys;
         private final boolean replaceExistingValues;
 
-        private LoadAllKeysTask(List<Data> keys, boolean replaceExistingValues) {
+        private GivenKeysLoaderTask(List<Data> keys, boolean replaceExistingValues) {
             this.keys = keys;
             this.replaceExistingValues = replaceExistingValues;
         }
@@ -314,11 +366,12 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         }
     }
 
+
     private Callback<Throwable> createCallbackForThrowable() {
         return new Callback<Throwable>() {
             @Override
             public void notify(Throwable throwable) {
-                BasicRecordStoreLoader.this.throwable = throwable;
+                setLoaderException(throwable);
             }
         };
     }

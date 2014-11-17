@@ -72,13 +72,13 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private final ConcurrentMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>> scheduledEntries
             = new ConcurrentHashMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>>(1000);
     private final ScheduledExecutorService scheduledExecutorService;
-    private final ScheduledEntryProcessor entryProcessor;
+    private final ScheduledEntryProcessor<K, V> entryProcessor;
     private final ScheduleType scheduleType;
     private final ConcurrentMap<Integer, ScheduledFuture> scheduledTaskMap
             = new ConcurrentHashMap<Integer, ScheduledFuture>(1000);
 
     SecondsBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService,
-                                   ScheduledEntryProcessor entryProcessor, ScheduleType scheduleType) {
+                                   ScheduledEntryProcessor<K, V> entryProcessor, ScheduleType scheduleType) {
         this.scheduledExecutorService = scheduledExecutorService;
         this.entryProcessor = entryProcessor;
         this.scheduleType = scheduleType;
@@ -358,7 +358,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
 
     private List<ScheduledEntry<K, V>> sortForEntryProcessing(Set<ScheduledEntry<K, V>> coll) {
         if (coll == null || coll.isEmpty()) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         final List<ScheduledEntry<K, V>> sortedEntries = new ArrayList<ScheduledEntry<K, V>>(coll);

@@ -4,8 +4,8 @@ import com.hazelcast.map.impl.mapstore.writebehind.DelayedEntry;
 import com.hazelcast.map.impl.mapstore.writebehind.ReachedMaxSizeException;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -137,7 +137,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     }
 
     private void fillQueue(WriteBehindQueue queue, int numberOfItems) {
-        SerializationService ss1 = new SerializationServiceBuilder().build();
+        SerializationService ss1 = new DefaultSerializationServiceBuilder().build();
         final long storeTime = Clock.currentTimeMillis();
         for (int i = 0; i < numberOfItems; i++) {
             final DelayedEntry<Data, Object> e = DelayedEntry.createWithNullValue(ss1.toData(i), storeTime, i);

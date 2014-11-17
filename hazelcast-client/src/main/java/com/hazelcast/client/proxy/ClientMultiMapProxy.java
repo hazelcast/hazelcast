@@ -39,24 +39,24 @@ import com.hazelcast.mapreduce.ReducingSubmittableJob;
 import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
-import com.hazelcast.multimap.impl.operations.client.AddEntryListenerRequest;
-import com.hazelcast.multimap.impl.operations.client.ClearRequest;
-import com.hazelcast.multimap.impl.operations.client.ContainsRequest;
-import com.hazelcast.multimap.impl.operations.client.CountRequest;
-import com.hazelcast.multimap.impl.operations.client.EntrySetRequest;
-import com.hazelcast.multimap.impl.operations.client.GetAllRequest;
-import com.hazelcast.multimap.impl.operations.client.KeyBasedContainsRequest;
-import com.hazelcast.multimap.impl.operations.client.KeySetRequest;
-import com.hazelcast.multimap.impl.operations.client.MultiMapIsLockedRequest;
-import com.hazelcast.multimap.impl.operations.client.MultiMapLockRequest;
-import com.hazelcast.multimap.impl.operations.client.MultiMapUnlockRequest;
-import com.hazelcast.multimap.impl.operations.client.PortableEntrySetResponse;
-import com.hazelcast.multimap.impl.operations.client.PutRequest;
-import com.hazelcast.multimap.impl.operations.client.RemoveAllRequest;
-import com.hazelcast.multimap.impl.operations.client.RemoveEntryListenerRequest;
-import com.hazelcast.multimap.impl.operations.client.RemoveRequest;
-import com.hazelcast.multimap.impl.operations.client.SizeRequest;
-import com.hazelcast.multimap.impl.operations.client.ValuesRequest;
+import com.hazelcast.multimap.impl.client.AddEntryListenerRequest;
+import com.hazelcast.multimap.impl.client.ClearRequest;
+import com.hazelcast.multimap.impl.client.ContainsRequest;
+import com.hazelcast.multimap.impl.client.CountRequest;
+import com.hazelcast.multimap.impl.client.EntrySetRequest;
+import com.hazelcast.multimap.impl.client.GetAllRequest;
+import com.hazelcast.multimap.impl.client.KeyBasedContainsRequest;
+import com.hazelcast.multimap.impl.client.KeySetRequest;
+import com.hazelcast.multimap.impl.client.MultiMapIsLockedRequest;
+import com.hazelcast.multimap.impl.client.MultiMapLockRequest;
+import com.hazelcast.multimap.impl.client.MultiMapUnlockRequest;
+import com.hazelcast.multimap.impl.client.PortableEntrySetResponse;
+import com.hazelcast.multimap.impl.client.PutRequest;
+import com.hazelcast.multimap.impl.client.RemoveAllRequest;
+import com.hazelcast.multimap.impl.client.RemoveEntryListenerRequest;
+import com.hazelcast.multimap.impl.client.RemoveRequest;
+import com.hazelcast.multimap.impl.client.SizeRequest;
+import com.hazelcast.multimap.impl.client.ValuesRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableEntryEvent;
@@ -80,10 +80,10 @@ import static com.hazelcast.util.ValidationUtil.shouldBePositive;
  */
 public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K, V> {
 
-    private final String name;
-
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+
+    private final String name;
 
     public ClientMultiMapProxy(String serviceName, String name) {
         super(serviceName, name);

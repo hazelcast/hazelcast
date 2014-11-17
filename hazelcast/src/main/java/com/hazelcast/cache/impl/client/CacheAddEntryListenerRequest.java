@@ -16,18 +16,29 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListener;
+import com.hazelcast.cache.impl.CacheEventSet;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.Set;
 
+/**
+ * Client request which registers an event listener on behalf of the client and delegates the received events
+ * back to client.
+ *
+ * @see com.hazelcast.cache.impl.CacheService#registerListener(String, com.hazelcast.cache.impl.CacheEventListener)
+ */
 public class CacheAddEntryListenerRequest
         extends CallableClientRequest
         implements RetryableRequest {
@@ -49,12 +60,28 @@ public class CacheAddEntryListenerRequest
         CacheEventListener entryListener = new CacheEventListener() {
             @Override
             public void handleEvent(Object eventObject) {
-                if (endpoint.live()) {
-                    endpoint.sendEvent(eventObject, getCallId());
+                if (endpoint.isAlive()) {
+                    Data partitionKey = getPartitionKey(eventObject);
+                    endpoint.sendEvent(partitionKey, eventObject, getCallId());
                 }
             }
         };
         return service.registerListener(name, entryListener);
+    }
+
+    private Data getPartitionKey(Object eventObject) {
+        Data partitionKey = null;
+        if (eventObject instanceof CacheEventSet) {
+            Set<CacheEventData> events = ((CacheEventSet) eventObject).getEvents();
+            if (events.size() > 1) {
+                partitionKey = new DefaultData();
+            } else if (events.size() == 1) {
+                partitionKey = events.iterator().next().getDataKey();
+            }
+        } else if (eventObject instanceof CacheEventData) {
+            partitionKey = ((CacheEventData) eventObject).getDataKey();
+        }
+        return partitionKey;
     }
 
     public String getServiceName() {

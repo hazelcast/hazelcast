@@ -2,7 +2,7 @@
 
 ## Memcache Client
 
-***NOTE:*** *Hazelcast Memcache Client only supports ASCII protocol. Binary Protocol is not supported.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Hazelcast Memcache Client only supports ASCII protocol. Binary Protocol is not supported.*
 
 A Memcache client written in any language can talk directly to Hazelcast cluster. No additional configuration is required. Assume that your cluster members are as below.
 

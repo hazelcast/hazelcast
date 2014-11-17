@@ -4,11 +4,11 @@
 
 ![](images/enterprise-onlycopy.jpg)
 
-Clustered REST API is exposed from Management Center to allow you to monitor clustered statistics of distributed objects.
+The Clustered REST API is exposed from Management Center to allow you to monitor clustered statistics of distributed objects.
 
 ### Enabling Clustered REST
 
-In order to enable Clustered REST on your Management Center, you need to pass the following system property at startup. This feature is disabled by default.
+To enable Clustered REST on your Management Center, pass the following system property at startup. This property is disabled by default.
 
 ```plain
 -Dhazelcast.mc.rest.enabled=true
@@ -16,13 +16,13 @@ In order to enable Clustered REST on your Management Center, you need to pass th
 
 ### Clustered REST API Root 
 
-Entry point for Clustered REST API is `/rest/`.
+The entry point for Clustered REST API is `/rest/`.
 
-This resource does not have any attributes
+This resource does not have any attributes.
 
 ### Clusters Resource
 
-This resource returns list of clusters that are connected to the Management Center.
+This resource returns a list of clusters that are connected to the Management Center.
 
 ##### Retrieve Clusters
 
@@ -43,7 +43,7 @@ This resource returns list of clusters that are connected to the Management Cent
 
 ### Cluster Resource
 
-This resource returns information related to provided cluster name.
+This resource returns information related to the provided cluster name.
 
 ##### Retrieve Cluster Information
 + *Request Type:* GET
@@ -62,7 +62,7 @@ This resource returns information related to provided cluster name.
 
 ### Members Resource
 
-This resource returns list of members belonging to provided clusters.
+This resource returns a list of members belonging to the provided clusters.
 
 ##### Retrieve Members [GET] [/rest/clusters/{clustername}/members]
 + *Request Type:* GET
@@ -81,7 +81,7 @@ This resource returns list of members belonging to provided clusters.
 
 ### Member Resource
 
-This resource returns information related to provided member.
+This resource returns information related to the provided member.
 
 ##### Retrieve Member Information
 + *Request Type:* GET
@@ -244,7 +244,7 @@ This resource returns information related to provided member.
 
 ### Clients Resource
 
-This resource returns list of clients belonging to provided cluster.
+This resource returns a list of clients belonging to the provided cluster.
 
 ##### Retrieve List of Clients
 + *Request Type:* GET
@@ -282,7 +282,7 @@ This resource returns list of clients belonging to provided cluster.
 
 ### Maps Resource
 
-This resource returns list of maps belonging to provided cluster.
+This resource returns a list of maps belonging to the provided cluster.
 
 
 ##### Retrieve List of Maps
@@ -341,7 +341,7 @@ This resource returns list of maps belonging to provided cluster.
 
 ### MultiMaps Resource
 
-This resource returns list of multimaps belonging to provided cluster.
+This resource returns a list of multimaps belonging to the provided cluster.
 
 
 ##### Retrieve List of MultiMaps
@@ -399,7 +399,7 @@ This resource returns list of multimaps belonging to provided cluster.
 
 ### Queues Resource
 
-This resource returns list of queues belonging to provided cluster.
+This resource returns a list of queues belonging to the provided cluster.
 
 
 ##### Retrieve List of Queues
@@ -450,7 +450,7 @@ This resource returns list of queues belonging to provided cluster.
 
 ### Topics Resource
 
-This resource returns list of topics belonging to provided cluster.
+This resource returns a list of topics belonging to the provided cluster.
 
 
 ##### Retrieve List of Topics
@@ -492,7 +492,7 @@ This resource returns list of topics belonging to provided cluster.
 
 ### Executors Resource
 
-This resource returns list of executors belonging to provided cluster.
+This resource returns a list of executors belonging to the provided cluster.
 
 
 ##### Retrieve List of Executors

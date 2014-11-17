@@ -2,8 +2,8 @@
 
 ### Java Client Overview
 
-Java client is the most full featured client. It is offered both with Hazelcast and Hazelcast Enterprise. Main idea behind the Java client is to provide the same Hazelcast functionality by proxying each operation through a Hazelcast node. 
-It can be used to access and change distributed data or listen distributed events of an already established Hazelcast cluster from another Java application. 
+Java client is the most full featured client. It is offered both with Hazelcast and Hazelcast Enterprise. Main idea behind the Java client is to provide the same Hazelcast functionality by proxying each operation through a Hazelcast node.
+It can be used to access and change distributed data or listen distributed events of an already established Hazelcast cluster from another Java application.
 
 
 ### Java Client Dependencies
@@ -27,7 +27,7 @@ If you prefer to use maven, simply add below lines to your `pom.xml`.
 </dependency>
 ```
 
-### Getting Started with Client API 
+### Getting Started with Client API
 
 First step is configuration. Java client can be configured declaratively or programmatically. We will use the programmatic approach throughout this tutorial. Please refer to [Java Client Declarative Configuration](#java-client-declarative-configuration) for details.
 
@@ -51,8 +51,8 @@ Let's create a map and populate with some data;
 
 IMap<String, Customer> mapCustomers = client.getMap("customers");//creates the map proxy
 
-mapCustomers.put("1", new Customer("Joe", "Smith")); 
-mapCustomers.put("2", new Customer("Ali", "Selam")); 
+mapCustomers.put("1", new Customer("Joe", "Smith"));
+mapCustomers.put("2", new Customer("Ali", "Selam"));
 mapCustomers.put("3", new Customer("Avi", "Noyan"));
 
 ```
@@ -67,7 +67,7 @@ client.shutdown();
 
 ### Java Client Operation modes
 
-Client has two operation modes because of the distributed nature of the data and cluster. 
+Client has two operation modes because of the distributed nature of the data and cluster.
 
 #### Smart Client
 
@@ -76,8 +76,8 @@ In this mode, clients connect to each cluster node. As each data partition uses 
 
 #### Dummy Client
 
-For some cases, the clients can be required to connect to a single node instead of each node in the cluster. Firewalls, security or some custom networking issues can be the reason for that. 
- 
+For some cases, the clients can be required to connect to a single node instead of each node in the cluster. Firewalls, security or some custom networking issues can be the reason for that.
+
 In this mode, client will only connect to one of the configured addresses. This single node will behave as a gateway to other nodes. For any operation requested from the client, it will redirect the request to the relevant node and return the response back to the client returned from this node.
 
 ### Fail Case Handling
@@ -89,7 +89,7 @@ There are two main failure cases to be aware of and configured to achieve a prop
 
 While client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all members might be not available. Instead of giving up, throwing an exception and stopping the client, it will attempt to retry as much as `connectionAttemptLimit` times. Please see [Connection Attempt Limit](#connection-attempt-limit).
 
-Client executes each operation through the already established connection to cluster. If this connection(s) disconnects or drops, client will try to reconnect as configured. 
+Client executes each operation through the already established connection to cluster. If this connection(s) disconnects or drops, client will try to reconnect as configured.
 
 
 #### Retry-able Operation Failure
@@ -114,7 +114,7 @@ Imap<Integer, String> map = client.getMap(“myMap”);
 
 map.put(1, “Ali”);
 String value= map.get(1);
-map.remove(1); 
+map.remove(1);
 ```
 
 As Locality is ambiguous for the client, `addEntryListener` and `localKeySet` are not supported. Please see [Distributed Map](#map) for more information.
@@ -183,9 +183,9 @@ IExecutorService executorService = client.getExecutorService("default");
 
 After getting an instance of `IExecutorService`, it can be used as the interface with the one provided on the server side. Please see [Distributed Computing](#distributed-computing) chapter for detailed usage.
 
-***NOTE:*** *This service is only supported by the Java client.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *This service is only supported by the Java client.*
 
-  
+
 #### Client Service
 
 If you need to track clients and want to listen their connection events, see the below code.
@@ -239,7 +239,7 @@ if(lifecycleService.isRunning()){
     //it is running
 }
 
-//shutdown client gracefully        
+//shutdown client gracefully
 lifecycleService.shutdown();
 
 ```
@@ -259,7 +259,7 @@ Transactional distributed objects are supported on the client side. Please see [
 ClientConfig clientConfig = new ClientConfig();
 ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
 ```
-  
+
 #### Address List
 Address List is the initial list of cluster addresses to which the client will connect. Client uses this list to find an alive node. Although it may be enough to give only one address of a node in the cluster (since all nodes communicate with each other), it is recommended to give all nodes’ addresses.
 
@@ -272,7 +272,7 @@ clientConfig.getNetworkConfig().addAddress("10.1.1.21", "10.1.1.22:5703");
 You can provide multiple addresses with ports provided or not as seen above. The provided list is shuffled to try them in a random order.
 
 Default value is *localhost*.
-  
+
 #### Smart Routing
 
 This parameter defines whether the client is smart or a dummy one.
@@ -288,17 +288,17 @@ Default is *smart client* mode.
 Enables/disables redo-able operations as described in [Retry-able Operation Failure](#retry-able-operation-failure).
 
 ```java
-//enables redo 
+//enables redo
 clientConfig.getNetworkConfig().setRedoOperation(true);
 ```
 Default is *disabled*.
 
 #### Connection Timeout
 
-Timeout value in milliseconds for nodes to accept client connection requests. 
+Timeout value in milliseconds for nodes to accept client connection requests.
 
 ```java
-//enables redo 
+//enables redo
 clientConfig.getNetworkConfig().setConnectionTimeout(1000);
 ```
 
@@ -309,7 +309,7 @@ Default value is *5000* milliseconds.
 While client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all might be not available. Instead of giving up, throwing exception and stopping the client, it will attempt to retry as much as `ClientNetworkConfig.connectionAttemptLimit` times.
 
 ```java
-//enables redo 
+//enables redo
 clientConfig.getNetworkConfig().setConnectionAttemptLimit(5);
 ```
 
@@ -320,13 +320,15 @@ Default value is *2*.
 The duration in milliseconds between connection attempts defined by `ClientNetworkConfig.connectionAttemptLimit`.
 
 ```java
-//enables redo 
+//enables redo
 clientConfig.getNetworkConfig().setConnectionAttemptPeriod(5000);
 ```
 
 Default value is *3000*.
 
 #### Socket Interceptor
+
+![](images/enterprise-onlycopy.jpg)
 
 Client configuration to set a socket intercepter. Any class implementing `com.hazelcast.nio.SocketInterceptor` is a socket Interceptor.
 
@@ -397,11 +399,15 @@ socketOptions.setLingerSeconds(3);
 ```
 
 #### SSL
+
+![](images/enterprise-onlycopy.jpg)
+
+
 SSL can be used to secure the connection between client and the nodes. Please see  [SSLConfig](#sslconfig) section on how to configure it.
 
 #### Configuration for AWS
 
-Below sample declarative and programmatic configurations show how to configure a Java client for connecting to a Hazelcast cluster in AWS. 
+Below sample declarative and programmatic configurations show how to configure a Java client for connecting to a Hazelcast cluster in AWS.
 
 Declarative Configuration:
 
@@ -443,7 +449,7 @@ clientConfig.getNetworkConfig().setAwsConfig( clientAwsConfig );
 HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 ```
 
-***Note:*** *If *`inside-aws`* parameter is not set, private addresses of nodes will always be converted to public addresses. And, client will use public addresses to connect to nodes. In order to use private addresses, you should set it to *`true`*. Also note that, when connecting outside from AWS, setting *`inside-aws`* parameter to *`true`* will cause the client not to be able to reach to the nodes.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If *`inside-aws`* parameter is not set, private addresses of nodes will always be converted to public addresses. And, client will use public addresses to connect to nodes. In order to use private addresses, you should set it to *`true`*. Also note that, when connecting outside from AWS, setting *`inside-aws`* parameter to *`true`* will cause the client not to be able to reach to the nodes.*
 
 #### Load Balancer
 
@@ -451,13 +457,16 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 
 If the client is configured as a smart one, only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer. If it is not a smart client, `LoadBalancer` will be ignored.
 
+For the configuration of client load balance, please see  [Load Balancer Config](#loadbalancerconfig) and [Java Client Declarative Configuration](#java-client-declarative-configuration).
 
 
 ### Client Near Cache
 Hazelcast distributed map has a Near Cache feature to reduce network latencies. As the client always requests data from the cluster nodes, it can be helpful for some use cases to configure a near cache on the client side.
-The client supports the exact same near cache used in Hazelcast distributed map. 
+The client supports the exact same near cache used in Hazelcast distributed map.
 
 ### Client SSLConfig
+
+![](images/enterprise-onlycopy.jpg)
 
 If SSL is desired to be enabled for the client-cluster connection, this parameter should be set. Once set, the connection (socket) is established out of an SSL factory defined either by a factory class name or factory implementation. Please see SSLConfig class in `com.hazelcast.config` package at the JavaDocs page of [Hazelcast Documentation](http://www.hazelcast.org/documentation/) web page.
 
@@ -468,7 +477,7 @@ Hazelcast Java client can be configured in two ways, declaratively or programmat
 
 #### Java Client Declarative Configuration
 
-Java client can be configured using an XML configuration file. 
+Java client can be configured using an XML configuration file.
 Below is a generic template of a declarative configuration.
 
 ```xml
@@ -531,6 +540,7 @@ Below is a generic template of a declarative configuration.
     </proxy-factories>
 
     <!--load balancer configuration-->
+    <!-- type can be "round-robin" or "random" -->
     <load-balancer type="random"/>
 
     <near-cache name="mapName">
@@ -569,6 +579,12 @@ It can be configured using `GroupConfig`, as shown below.
 clientConfig.setGroupConfig(new GroupConfig("dev","dev-pass"));
 ```
 
+#### LoadBalancerConfig
+The following code snippet shows the programmatic configuration of load balancer.
+
+```java
+clientConfig.setLoadBalancer(yourLoadBalancer);
+```
 
 ##### ClientSecurityConfig
 
@@ -634,7 +650,7 @@ Hazelcast has an internal executor service (different from the data structure *E
 
 
 
-##### Client Properties 
+##### Client Properties
 
 There are some advanced client configuration properties to tune some aspects of Hazelcast Client. These can be set as property name and value pairs through declarative configuration, programmatic configuration or JVM system property. Please see [Advanced Configuration Properties](#advanced-configuration-properties) section to learn how to set these properties.
 
@@ -642,7 +658,7 @@ Below table lists the client configuration properties with their descriptions.
 
 Property Name | Default Value | Type | Description
 :--------------|:---------------|:------|:------------
-`hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If there is no any message passing between client and member within the given time via this property in milliseconds the connection will be closed.
+`hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If there is not any message passing between client and member within the given time via this property in milliseconds the connection will be closed.
 `hazelcast.client.heartbeat.interval`|10000|string|The frequency of heartbeat messages sent by the clients to members.
 `hazelcast.client.max.failed.heartbeat.count`|3|string|When the count of failed heartbeats sent to members reaches this value, the cluster is deemed as dead by the client.
 `hazelcast.client.request.retry.count`|20|string|The retry count of the connection requests by the client to the members.

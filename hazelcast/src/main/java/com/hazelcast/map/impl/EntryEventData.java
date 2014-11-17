@@ -70,19 +70,19 @@ public class EntryEventData extends AbstractEventData {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        dataKey.writeData(out);
-        IOUtil.writeNullableData(out, dataNewValue);
-        IOUtil.writeNullableData(out, dataOldValue);
-        IOUtil.writeNullableData(out, dataMergingValue);
+        out.writeData(dataKey);
+        out.writeData(dataNewValue);
+        out.writeData(dataOldValue);
+        out.writeData(dataMergingValue);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        dataKey = IOUtil.readData(in);
-        dataNewValue = IOUtil.readNullableData(in);
-        dataOldValue = IOUtil.readNullableData(in);
-        dataMergingValue = IOUtil.readNullableData(in);
+        dataKey = in.readData();
+        dataNewValue = in.readData();
+        dataOldValue = in.readData();
+        dataMergingValue = in.readData();
     }
 
     public Object cloneWithoutValues() {

@@ -62,7 +62,7 @@ public class CollectionAddAllBackupOperation extends CollectionOperation impleme
         out.writeInt(valueMap.size());
         for (Map.Entry<Long, Data> entry : valueMap.entrySet()) {
             out.writeLong(entry.getKey());
-            entry.getValue().writeData(out);
+            out.writeData(entry.getValue());
         }
     }
 
@@ -73,8 +73,7 @@ public class CollectionAddAllBackupOperation extends CollectionOperation impleme
         valueMap = new HashMap<Long, Data>(size);
         for (int i = 0; i < size; i++) {
             final long itemId = in.readLong();
-            final Data value = new Data();
-            value.readData(in);
+            final Data value = in.readData();
             valueMap.put(itemId, value);
         }
     }

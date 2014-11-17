@@ -87,8 +87,8 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         final MapService mapService = getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getMapServiceContext().getLocalMapStatsProvider()
-                    .getLocalMapStatsImpl(name).incrementPuts(latency);
+            mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name)
+                    .incrementPuts(latency);
         }
     }
 
@@ -113,8 +113,8 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         writer.writeLong("ttl", ttl);
         writer.writeBoolean("a", async);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
-        value.writeData(out);
+        out.writeData(key);
+        out.writeData(value);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -123,10 +123,8 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
         ttl = reader.readLong("ttl");
         async = reader.readBoolean("a");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
-        value = new Data();
-        value.readData(in);
+        key = in.readData();
+        value = in.readData();
     }
 
     public Permission getRequiredPermission() {
@@ -149,8 +147,8 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, Se
     @Override
     public Object[] getParameters() {
         if (ttl == -1) {
-            return new Object[]{key, value};
+            return new Object[] {key, value};
         }
-        return new Object[]{key, value, ttl, TimeUnit.MILLISECONDS};
+        return new Object[] {key, value, ttl, TimeUnit.MILLISECONDS};
     }
 }

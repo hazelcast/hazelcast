@@ -72,7 +72,7 @@ public class AtomicReferenceReplicationOperation extends AbstractOperation
         out.writeInt(migrationData.size());
         for (Map.Entry<String, Data> entry : migrationData.entrySet()) {
             out.writeUTF(entry.getKey());
-            out.writeObject(entry.getValue());
+            out.writeData(entry.getValue());
         }
     }
 
@@ -82,7 +82,7 @@ public class AtomicReferenceReplicationOperation extends AbstractOperation
         migrationData = new HashMap<String, Data>(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
-            Data data = in.readObject();
+            Data data = in.readData();
             migrationData.put(name, data);
         }
     }

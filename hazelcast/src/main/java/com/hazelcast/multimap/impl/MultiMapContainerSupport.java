@@ -43,7 +43,7 @@ abstract class MultiMapContainerSupport {
     protected MultiMapContainerSupport(String name, NodeEngine nodeEngine) {
         this.name = name;
         this.nodeEngine = nodeEngine;
-        this.config = nodeEngine.getConfig().findMultiMapConfig(this.name);
+        this.config = nodeEngine.getConfig().findMultiMapConfig(name);
     }
 
 

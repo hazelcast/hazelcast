@@ -9,13 +9,14 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -83,7 +84,7 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         int numberOfEntries = 10000;
         String mapName = randomMapName();
         final CountDownLatch countDownLatch = new CountDownLatch(numberOfEntries);
-        TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(5);
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(5);
         HazelcastInstance node1 = instanceFactory.newHazelcastInstance();
         HazelcastInstance node2 = instanceFactory.newHazelcastInstance();
         final IMap<Integer, Integer> map1 = node1.getMap(mapName);

@@ -1,11 +1,8 @@
 package com.hazelcast.map.mapstore;
 
-import static java.lang.Math.max;
-import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
@@ -14,55 +11,86 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class MapStoreEvictionTest extends HazelcastTestSupport {
 
-    private int entryCount = 10 * 1000;
+    private int mapStoreEntryCount = 10 * 1000;
     private int nodes = 2;
-    private int maxSizePerNode = entryCount / 4;
+    private int maxSizePerNode = mapStoreEntryCount / 4;
     private int maxSizePerCluster = maxSizePerNode * nodes;
+    private AtomicInteger loadedValueCount = new AtomicInteger();
+    private TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(nodes);
+
+    @Test(timeout = 120000)
+    public void testLoadsAll_whenEvictionDisabled() throws Exception {
+        Config cfg = newConfig("map", false);
+
+        HazelcastInstance instances[] = nodeFactory.newInstances(cfg);
+        assertClusterSizeEventually(nodes, instances[0]);
+        IMap<Object, Object> map = instances[0].getMap("map");
+
+        assertEquals(mapStoreEntryCount, loadedValueCount.get());
+        assertEquals(mapStoreEntryCount, map.size());
+    }
 
     @Test(timeout = 120000)
     public void testLoadsLessThanMaxSize_whenEvictionEnabled() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = newConfigWithEviction(entryCount, maxSizePerNode, "map");
+        Config cfg = newConfig("map", true);
 
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        nodeFactory.newHazelcastInstance(cfg);
-        assertClusterSizeEventually(nodes, instance1);
+        HazelcastInstance instances[] = nodeFactory.newInstances(cfg);
+        assertClusterSizeEventually(nodes, instances[0]);
+        IMap<Object, Object> map = instances[0].getMap("map");
 
-        IMap map = instance1.getMap("map");
-
-        assertEquals(maxSizePerCluster, max(maxSizePerCluster, map.size()));
+        assertEquals(maxSizePerCluster, loadedValueCount.get());
+        assertTrue(maxSizePerCluster >= map.size());
     }
 
-    private static Config newConfigWithEviction(int size, int maxSize, String mapName) {
+    private Config newConfig(String mapName, boolean sizeLimited) {
         Config cfg = new Config();
 
-        cfg.setGroupConfig(new GroupConfig(MapStoreEvictionTest.class.getSimpleName()));
+        cfg.setGroupConfig(new GroupConfig(getClass().getSimpleName()));
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
-        .setEnabled(true)
-        .setImplementation( new SimpleMapLoader(size, false) )
+        .setImplementation( new CountingMapLoader(mapStoreEntryCount, loadedValueCount) )
         .setInitialLoadMode( MapStoreConfig.InitialLoadMode.EAGER );
 
-        MaxSizeConfig maxSizeConfig = new MaxSizeConfig(maxSize, MaxSizeConfig.MaxSizePolicy.PER_NODE);
+        MapConfig mapConfig = cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
 
-        cfg.getMapConfig(mapName)
-        .setMapStoreConfig(mapStoreConfig)
-        .setMaxSizeConfig(maxSizeConfig)
-        .setEvictionPercentage(10)
-        .setEvictionPolicy(MapConfig.EvictionPolicy.LRU)
-        .setMergePolicy(LatestUpdateMapMergePolicy.class.getName());
+        if( sizeLimited ) {
+            MaxSizeConfig maxSizeConfig = new MaxSizeConfig(maxSizePerNode, MaxSizeConfig.MaxSizePolicy.PER_NODE);
+            mapConfig.setMaxSizeConfig(maxSizeConfig);
+        }
 
         return cfg;
     }
 
+    private static class CountingMapLoader extends SimpleMapLoader {
+
+        private AtomicInteger loadedValueCount;
+
+        CountingMapLoader(int size, AtomicInteger loadedValueCount) {
+            super(size, false);
+            this.loadedValueCount = loadedValueCount;
+        }
+
+        @Override
+        public Map loadAll(Collection keys) {
+            loadedValueCount.addAndGet(keys.size());
+            return super.loadAll(keys);
+        }
+    }
 }

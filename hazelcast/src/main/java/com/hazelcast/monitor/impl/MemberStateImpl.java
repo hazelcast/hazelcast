@@ -24,16 +24,16 @@ import com.hazelcast.management.SerializableMXBeans;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.util.JsonUtil.getArray;
@@ -41,8 +41,6 @@ import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
 
 public class MemberStateImpl implements MemberState {
-
-    public static final int DEFAULT_PARTITION_COUNT = 271;
 
     private String address;
     private Map<String, Long> runtimeProps = new HashMap<String, Long>();
@@ -52,9 +50,10 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     private Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
     private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
-    private List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
     private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
     private SerializableMXBeans beans = new SerializableMXBeans();
+    private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
+    private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
 
     public MemberStateImpl() {
     }
@@ -98,17 +97,14 @@ public class MemberStateImpl implements MemberState {
             runtimePropsObject.add(entry.getKey(), entry.getValue());
         }
         root.add("runtimeProps", runtimePropsObject);
-        JsonArray partitionsArray = new JsonArray();
-        for (Integer lsPartition : partitions) {
-            partitionsArray.add(lsPartition);
-        }
-        root.add("partitions", partitionsArray);
         JsonArray clientsArray = new JsonArray();
         for (SerializableClientEndPoint client : clients) {
             clientsArray.add(client.toJson());
         }
         root.add("clients", clientsArray);
         root.add("beans", beans.toJson());
+        root.add("memoryStats", memoryStats.toJson());
+        root.add("memberPartitionState", memberPartitionState.toJson());
         return root;
     }
 
@@ -148,10 +144,6 @@ public class MemberStateImpl implements MemberState {
         for (JsonObject.Member next : getObject(json, "runtimeProps")) {
             runtimeProps.put(next.getName(), next.getValue().asLong());
         }
-        final JsonArray jsonPartitions = getArray(json, "partitions");
-        for (JsonValue jsonPartition : jsonPartitions) {
-            partitions.add(jsonPartition.asInt());
-        }
         final JsonArray jsonClients = getArray(json, "clients");
         for (JsonValue jsonClient : jsonClients) {
             final SerializableClientEndPoint client = new SerializableClientEndPoint();
@@ -160,22 +152,16 @@ public class MemberStateImpl implements MemberState {
         }
         beans = new SerializableMXBeans();
         beans.fromJson(getObject(json, "beans"));
+        JsonObject jsonMemoryStats = getObject(json, "memoryStats", null);
+        if (jsonMemoryStats != null) {
+            memoryStats.fromJson(jsonMemoryStats);
+        }
+        JsonObject jsonMemberPartitionState = getObject(json, "memberPartitionState", null);
+        if (jsonMemberPartitionState != null) {
+            memberPartitionState = new MemberPartitionStateImpl();
+            memberPartitionState.fromJson(jsonMemberPartitionState);
+        }
     }
-
-    public void clearPartitions() {
-        partitions.clear();
-    }
-
-    public void addPartition(int partitionId) {
-        partitions.add(partitionId);
-    }
-
-
-    @Override
-    public List<Integer> getPartitions() {
-        return partitions;
-    }
-
 
     @Override
     public Map<String, Long> getRuntimeProps() {
@@ -267,6 +253,24 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public LocalMemoryStats getLocalMemoryStats() {
+        return memoryStats;
+    }
+
+    public void setLocalMemoryStats(LocalMemoryStats memoryStats) {
+        this.memoryStats = memoryStats;
+    }
+
+    @Override
+    public MemberPartitionState getMemberPartitionState() {
+        return memberPartitionState;
+    }
+
+    public void setMemberPartitionState(MemberPartitionState memberPartitionState) {
+        this.memberPartitionState = memberPartitionState;
+    }
+
+    @Override
     public int hashCode() {
         int result = address != null ? address.hashCode() : 0;
         result = 31 * result + (mapStats != null ? mapStats.hashCode() : 0);
@@ -275,7 +279,7 @@ public class MemberStateImpl implements MemberState {
         result = 31 * result + (topicStats != null ? topicStats.hashCode() : 0);
         result = 31 * result + (executorStats != null ? executorStats.hashCode() : 0);
         result = 31 * result + (cacheStats != null ? cacheStats.hashCode() : 0);
-        result = 31 * result + (partitions != null ? partitions.hashCode() : 0);
+        result = 31 * result + (memberPartitionState != null ? memberPartitionState.hashCode() : 0);
         return result;
     }
 
@@ -302,9 +306,6 @@ public class MemberStateImpl implements MemberState {
         if (multiMapStats != null ? !multiMapStats.equals(that.multiMapStats) : that.multiMapStats != null) {
             return false;
         }
-        if (partitions != null ? !partitions.equals(that.partitions) : that.partitions != null) {
-            return false;
-        }
         if (queueStats != null ? !queueStats.equals(that.queueStats) : that.queueStats != null) {
             return false;
         }
@@ -315,6 +316,13 @@ public class MemberStateImpl implements MemberState {
             return false;
         }
         if (cacheStats != null ? !cacheStats.equals(that.cacheStats) : that.cacheStats != null) {
+            return false;
+        }
+        if (memoryStats != null ? !memoryStats.equals(that.memoryStats) : that.memoryStats != null) {
+            return false;
+        }
+        if (memberPartitionState != null
+                ? !memberPartitionState.equals(that.memberPartitionState) : that.memberPartitionState != null) {
             return false;
         }
 
@@ -333,7 +341,8 @@ public class MemberStateImpl implements MemberState {
                 + ", topicStats=" + topicStats
                 + ", executorStats=" + executorStats
                 + ", cacheStats=" + cacheStats
-                + ", partitions=" + partitions
+                + ", memoryStats=" + memoryStats
+                + ", memberPartitionState=" + memberPartitionState
                 + '}';
     }
 }

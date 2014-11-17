@@ -50,12 +50,12 @@ public class EntryEventFilter implements EventFilter, DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(includeValue);
-        out.writeObject(key);
+        out.writeData(key);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         includeValue = in.readBoolean();
-        key = in.readObject();
+        key = in.readData();
     }
 
     @Override

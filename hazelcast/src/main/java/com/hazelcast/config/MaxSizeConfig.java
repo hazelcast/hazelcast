@@ -65,7 +65,15 @@ public class MaxSizeConfig {
         /**
          * Decide maximum size of map with use heap size
          */
-        USED_HEAP_SIZE
+        USED_HEAP_SIZE,
+        /**
+         * Decide minimum free heap percentage to trigger map cleanup
+         */
+        FREE_HEAP_PERCENTAGE,
+        /**
+         * Decide minimum free heap size to trigger map cleanup
+         */
+        FREE_HEAP_SIZE
     }
 
     public MaxSizeConfigReadOnly getAsReadOnly() {

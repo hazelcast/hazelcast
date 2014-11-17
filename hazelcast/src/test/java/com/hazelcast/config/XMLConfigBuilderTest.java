@@ -17,24 +17,12 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.helpers.DummyMapStore;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.xml.sax.SAXException;
 
-import javax.xml.XMLConstants;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +30,13 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.List;
-import java.util.Properties;
+
+import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -51,10 +45,18 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import org.xml.sax.SAXException;
+
 //it needs to run serial because some tests are relying on System properties they are setting themselves.
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class XMLConfigBuilderTest {
+public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @After
     @Before
@@ -67,7 +69,6 @@ public class XMLConfigBuilderTest {
         File file = File.createTempFile("foo", "bar");
         file.delete();
         System.setProperty("hazelcast.config", file.getAbsolutePath());
-
         new XmlConfigBuilder();
     }
 
@@ -154,33 +155,6 @@ public class XMLConfigBuilderTest {
         assertEquals("nocolon", configBuilder.cleanNodeName("noColon"));
         assertEquals("after", configBuilder.cleanNodeName("Before:After"));
         assertNull(configBuilder.cleanNodeName((String) null));
-    }
-
-    @Test
-    public void readVariables() {
-        String xml =
-                "<hazelcast>\n" +
-                        "    <semaphore name=\"${name}\">\n" +
-                        "        <initial-permits>${initial.permits}</initial-permits>\n" +
-                        "        <backup-count>${backupcount.part1}${backupcount.part2}</backup-count>\n" +
-                        "        <async-backup-count>${notreplaced}</async-backup-count>\n" +
-                        "    </semaphore>" +
-                        "</hazelcast>";
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-
-        Properties properties = new Properties();
-        properties.setProperty("name", "s");
-        properties.setProperty("initial.permits", "25");
-        properties.setProperty("backupcount.part1", "1");
-        properties.setProperty("backupcount.part2", "0");
-        configBuilder.setProperties(properties);
-
-        Config config = configBuilder.build();
-        SemaphoreConfig semaphoreConfig = config.getSemaphoreConfig("s");
-        assertEquals(25, semaphoreConfig.getInitialPermits());
-        assertEquals(10, semaphoreConfig.getBackupCount());
-        assertEquals(0, semaphoreConfig.getAsyncBackupCount());
     }
 
     @Test
@@ -299,9 +273,14 @@ public class XMLConfigBuilderTest {
     }
 
     private void testConfig2Xml2Config(String fileName) {
+        String pass = "password";
         final Config config = new ClasspathXmlConfig(fileName);
+        config.getGroupConfig().setPassword(pass);
+
         final String xml = new ConfigXmlGenerator(true).generate(config);
         final Config config2 = new InMemoryXmlConfig(xml);
+        config2.getGroupConfig().setPassword(pass);
+
         assertTrue(config.isCompatible(config2));
         assertTrue(config2.isCompatible(config));
     }
@@ -335,7 +314,7 @@ public class XMLConfigBuilderTest {
         final Config config = buildConfig(xml);
         final MapConfig mapConfig = config.getMapConfig("testCaseInsensitivity");
         assertTrue(mapConfig.getInMemoryFormat().equals(InMemoryFormat.BINARY));
-        assertTrue(mapConfig.getEvictionPolicy().equals(MapConfig.EvictionPolicy.NONE));
+        assertTrue(mapConfig.getEvictionPolicy().equals(EvictionPolicy.NONE));
         assertTrue(mapConfig.getMaxSizeConfig().getMaxSizePolicy().equals(MaxSizeConfig.MaxSizePolicy.PER_PARTITION));
     }
 
@@ -553,7 +532,7 @@ public class XMLConfigBuilderTest {
                         "</hazelcast>\n";
 
         Config config = buildConfig(xml);
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz = createHazelcastInstance(config);
         hz.getMap(mapName);
 
         MapConfig mapConfig = hz.getConfig().getMapConfig(mapName);
@@ -564,10 +543,9 @@ public class XMLConfigBuilderTest {
         assertTrue(o instanceof DummyMapStore);
     }
 
-
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.3.xsd");
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.4.xsd");
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);

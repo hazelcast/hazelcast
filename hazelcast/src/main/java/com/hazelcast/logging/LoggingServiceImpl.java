@@ -30,11 +30,9 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class LoggingServiceImpl implements LoggingService {
 
-    private volatile MemberImpl thisMember = new MemberImpl();
     private final String groupName;
     private final CopyOnWriteArrayList<LogListenerRegistration> listeners
             = new CopyOnWriteArrayList<LogListenerRegistration>();
-    private volatile String thisAddressString = "[LOCAL]";
 
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
 
@@ -49,6 +47,9 @@ public class LoggingServiceImpl implements LoggingService {
 
     private final LoggerFactory loggerFactory;
     private final BuildInfo buildInfo;
+
+    private volatile MemberImpl thisMember = new MemberImpl();
+    private volatile String thisAddressString = "[LOCAL]";
     private volatile Level minLevel = Level.OFF;
 
     public LoggingServiceImpl(String groupName, String loggingType, BuildInfo buildInfo) {
@@ -214,17 +215,20 @@ public class LoggingServiceImpl implements LoggingService {
         public void log(Level level, String message, Throwable thrown) {
             boolean loggable = logger.isLoggable(level);
             if (loggable || level.intValue() >= minLevel.intValue()) {
-                String logRecordMessage = thisAddressString + " [" + groupName + "] "
+                String address = thisAddressString;
+                String logMessage = (address != null ? address : "")
+                        + " [" + groupName + "] "
                         + "[" + buildInfo.getVersion() + "] " + message;
-                LogRecord logRecord = new LogRecord(level, logRecordMessage);
-                logRecord.setThrown(thrown);
-                logRecord.setLoggerName(name);
-                logRecord.setSourceClassName(name);
-                LogEvent logEvent = new LogEvent(logRecord, groupName, thisMember);
+
                 if (loggable) {
-                    logger.log(logEvent);
+                    logger.log(level, logMessage, thrown);
                 }
                 if (listeners.size() > 0) {
+                    LogRecord logRecord = new LogRecord(level, logMessage);
+                    logRecord.setThrown(thrown);
+                    logRecord.setLoggerName(name);
+                    logRecord.setSourceClassName(name);
+                    LogEvent logEvent = new LogEvent(logRecord, thisMember);
                     handleLogEvent(logEvent);
                 }
             }

@@ -51,7 +51,7 @@ public final class ValueCollectionFactory {
      * Picks right collection type, like {@link java.util.Set} or {@link java.util.List}
      * depending on the {@link com.hazelcast.config.MultiMapConfig#valueCollectionType} and creates it.
      *
-     * @param collectionType  one of {@link MultiMapConfig.ValueCollectionType#SET}
+     * @param collectionType  one of {@link com.hazelcast.config.MultiMapConfig.ValueCollectionType#SET}
      *                        or {@link MultiMapConfig.ValueCollectionType#LIST}
      * @param initialCapacity if smaller than or equals to 0 falls back to default initial capacity of corresponding collection.
      * @return {@link java.util.Set} or {@link java.util.List} depending on the collectionType argument
@@ -82,7 +82,7 @@ public final class ValueCollectionFactory {
      */
     public static <T> Collection<T> createCollection(Collection collection) {
         final MultiMapConfig.ValueCollectionType collectionType = findCollectionType(collection);
-        if (collection == null || collection.isEmpty()) {
+        if (collection.isEmpty()) {
             return emptyCollection(collectionType);
         }
         return createCollection(collectionType, collection.size());

@@ -40,7 +40,7 @@ public class PortableEntryEvent implements Portable {
     public PortableEntryEvent() {
     }
 
-    public PortableEntryEvent(Data key, Data value, Data oldValue, Data mergingValue, EntryEventType eventType, String uuid) {
+    public PortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, String uuid) {
         this.key = key;
         this.value = value;
         this.oldValue = oldValue;
@@ -102,11 +102,12 @@ public class PortableEntryEvent implements Portable {
         writer.writeInt("e", eventType.getType());
         writer.writeUTF("u", uuid);
         writer.writeInt("n", numberOfAffectedEntries);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        IOUtil.writeNullableData(out, key);
-        IOUtil.writeNullableData(out, value);
-        IOUtil.writeNullableData(out, oldValue);
-        IOUtil.writeNullableData(out, mergingValue);
+
+        ObjectDataOutput out = writer.getRawDataOutput();
+        out.writeData(key);
+        out.writeData(value);
+        out.writeData(oldValue);
+        out.writeData(mergingValue);
     }
 
     @Override
@@ -114,10 +115,11 @@ public class PortableEntryEvent implements Portable {
         eventType = EntryEventType.getByType(reader.readInt("e"));
         uuid = reader.readUTF("u");
         numberOfAffectedEntries = reader.readInt("n");
-        final ObjectDataInput in = reader.getRawDataInput();
-        key = IOUtil.readNullableData(in);
-        value = IOUtil.readNullableData(in);
-        oldValue = IOUtil.readNullableData(in);
-        mergingValue = IOUtil.readNullableData(in);
+
+        ObjectDataInput in = reader.getRawDataInput();
+        key = in.readData();
+        value = in.readData();
+        oldValue = in.readData();
+        mergingValue = in.readData();
     }
 }

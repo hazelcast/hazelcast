@@ -133,7 +133,7 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
-    public boolean live() {
+    public boolean isAlive() {
         return live;
     }
 
@@ -230,9 +230,10 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public String toString() {
-        final Socket socket = this.socketChannel.socket();
-        final SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
-        return "Connection [" + remoteSocketAddress + " -> " + endPoint
-                + "] live=" + live + ", client=" + isClient() + ", type=" + type;
+        Socket socket = this.socketChannel.socket();
+        SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
+        SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
+        return "Connection [" + localSocketAddress + " -> " + remoteSocketAddress
+                + "], endpoint=" + endPoint + ", live=" + live + ", type=" + type;
     }
 }

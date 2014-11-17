@@ -30,7 +30,6 @@ import java.util.Map;
  * <p/>
  * It also is possible to execute multiple operation one multiple partitions using one of the invoke methods.
  *
- * @author mdogan 12/14/12
  */
 public interface OperationService {
 
@@ -51,6 +50,12 @@ public interface OperationService {
     long getExecutedOperationCount();
 
     /**
+     * Dumps all kinds of metrics, e.g. performance. This can be used for performance analysis. In the future we'll have a
+     * more formal (e.g map with key/value pairs) information.
+     */
+    void dumpPerformanceMetrics(StringBuffer sb);
+
+    /**
      * Runs operation in calling thread.
      *
      * @param op the operation to execute.
@@ -63,6 +68,16 @@ public interface OperationService {
      * @param op the operation to execute.
      */
     void executeOperation(Operation op);
+
+    /**
+     * Returns true if given operation is allowed to run on calling thread, false otherwise.
+     * If this method returns true, then operation can be executed using {@link #runOperationOnCallingThread(Operation)}
+     * method, otherwise {@link #executeOperation(Operation)} should be used.
+     *
+     * @param op the operation to check.
+     * @return true if operation is allowed to run on calling thread, false otherwise.
+     */
+    boolean isAllowedToRunOnCallingThread(Operation op);
 
     <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId);
 

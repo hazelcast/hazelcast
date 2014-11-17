@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap.impl.operations;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -81,16 +80,16 @@ public class MultiMapOperationFactory implements OperationFactory {
         out.writeUTF(name);
         out.writeInt(operationFactoryType.type);
         out.writeLong(threadId);
-        IOUtil.writeNullableData(out, key);
-        IOUtil.writeNullableData(out, value);
+        out.writeData(key);
+        out.writeData(value);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         operationFactoryType = OperationFactoryType.getByType(in.readInt());
         threadId = in.readLong();
-        key = IOUtil.readNullableData(in);
-        value = IOUtil.readNullableData(in);
+        key = in.readData();
+        value = in.readData();
     }
 
     public enum OperationFactoryType {

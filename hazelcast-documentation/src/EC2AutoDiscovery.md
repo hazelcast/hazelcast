@@ -42,7 +42,7 @@ The parameters `tag-key` and `tag-value` provides unique keys and values to memb
 
 The parameter `security-group-name` is also used to filter/group members.
 
-***NOTE:*** *If you are using a cloud provider other than AWS, you can use the programmatic configuration specify a TCP/IP cluster. The members will needed to be retrieved from that provider (e.g. JClouds).*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If you are using a cloud provider other than AWS, you can use the programmatic configuration specify a TCP/IP cluster. The members will needed to be retrieved from that provider (e.g. JClouds).*
 
 #### AWSClient
 

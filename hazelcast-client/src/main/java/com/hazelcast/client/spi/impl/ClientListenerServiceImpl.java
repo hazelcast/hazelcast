@@ -1,8 +1,8 @@
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
@@ -40,7 +40,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     private final Set<ClientCallFuture> failedListeners =
             Collections.newSetFromMap(new ConcurrentHashMap<ClientCallFuture, Boolean>());
 
-    public ClientListenerServiceImpl(HazelcastClient client, int eventThreadCount, int eventQueueCapacity) {
+    public ClientListenerServiceImpl(HazelcastClientInstanceImpl client, int eventThreadCount, int eventQueueCapacity) {
         this.connectionManager = client.getConnectionManager();
         this.serializationService = client.getSerializationService();
         this.invocationService = client.getInvocationService();

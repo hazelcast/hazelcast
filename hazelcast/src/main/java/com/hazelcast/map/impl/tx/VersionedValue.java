@@ -43,7 +43,7 @@ public class VersionedValue implements DataSerializable {
         boolean isNull = value == null;
         out.writeBoolean(isNull);
         if (!isNull) {
-            value.writeData(out);
+            out.writeData(value);
         }
     }
 
@@ -52,8 +52,7 @@ public class VersionedValue implements DataSerializable {
         version = in.readLong();
         boolean isNull = in.readBoolean();
         if (!isNull) {
-            value = new Data();
-            value.readData(in);
+            value = in.readData();
         }
     }
 }

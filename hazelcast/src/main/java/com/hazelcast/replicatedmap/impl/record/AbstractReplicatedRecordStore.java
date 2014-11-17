@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
@@ -104,6 +105,33 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     }
 
     @Override
+    public void evict(Object key) {
+        ValidationUtil.isNotNull(key, "key");
+        long time = Clock.currentTimeMillis();
+        storage.checkState();
+        V oldValue;
+        K marshalledKey = (K) marshallKey(key);
+        synchronized (getMutex(marshalledKey)) {
+            final ReplicatedRecord current = storage.get(marshalledKey);
+            if (current == null) {
+                oldValue = null;
+            } else {
+                oldValue = (V) current.getValue();
+                if (oldValue != null) {
+                    current.setValue(null, localMemberHash, TOMBSTONE_REMOVAL_PERIOD_MS);
+                    scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, marshalledKey, null);
+                    current.incrementVectorClock(localMember);
+                }
+            }
+        }
+        Object unmarshalledOldValue = unmarshallValue(oldValue);
+        fireEntryListenerEvent(key, unmarshalledOldValue, null, EntryEventType.EVICTED);
+        if (replicatedMapConfig.isStatisticsEnabled()) {
+            mapStats.incrementRemoves(Clock.currentTimeMillis() - time);
+        }
+    }
+
+    @Override
     public Object get(Object key) {
         ValidationUtil.isNotNull(key, "key");
         long time = Clock.currentTimeMillis();
@@ -156,7 +184,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                 storage.get(marshalledKey).setValue(marshalledValue, localMemberHash, ttlMillis);
             }
             if (ttlMillis > 0) {
-                scheduleTtlEntry(ttlMillis, marshalledKey, null);
+                scheduleTtlEntry(ttlMillis, marshalledKey, marshalledValue);
             } else {
                 cancelTtlEntry(marshalledKey);
             }

@@ -21,10 +21,11 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.executor.impl.CancellationOperation;
+import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.SimpleMemberImpl;
 import com.hazelcast.nio.Address;
@@ -56,7 +57,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -89,19 +90,19 @@ public class SerializationTest
                     }
                 }));
 
-        SerializationService ss1 = new SerializationServiceBuilder().setConfig(serializationConfig).build();
+        SerializationService ss1 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         DummyValue value = new DummyValue("test", 111);
         Data data = ss1.toData(value);
-        assertNotNull(data);
+        Assert.assertNotNull(data);
 
-        SerializationService ss2 = new SerializationServiceBuilder().setConfig(serializationConfig).build();
+        SerializationService ss2 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         Object o = ss2.toObject(data);
-        assertEquals(value, o);
+        Assert.assertEquals(value, o);
     }
 
     @Test
     public void test_callid_on_correct_stream_position() throws Exception {
-        SerializationService serializationService = new SerializationServiceBuilder().build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         CancellationOperation operation = new CancellationOperation(UuidUtil.buildRandomUuidString(), true);
         operation.setCallerUuid(UuidUtil.buildRandomUuidString());
         OperationAccessor.setCallId(operation, 12345);
@@ -162,13 +163,13 @@ public class SerializationTest
                             }
                         }));
 
-        SerializationService ss1 = new SerializationServiceBuilder().setConfig(serializationConfig).build();
+        SerializationService ss1 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         Data data = ss1.toData(new SingletonValue());
-        assertNotNull(data);
+        Assert.assertNotNull(data);
 
-        SerializationService ss2 = new SerializationServiceBuilder().setConfig(serializationConfig).build();
+        SerializationService ss2 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         Object o = ss2.toObject(data);
-        assertEquals(new SingletonValue(), o);
+        Assert.assertEquals(new SingletonValue(), o);
     }
 
     private static class SingletonValue {
@@ -179,8 +180,8 @@ public class SerializationTest
 
     @Test
     public void testNullData() {
-        Data data = new Data();
-        SerializationService ss = new SerializationServiceBuilder().build();
+        Data data = new DefaultData();
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
         assertNull(ss.toObject(data));
     }
 
@@ -189,7 +190,7 @@ public class SerializationTest
      */
     @Test
     public void testSharedJavaSerialization() {
-        SerializationService ss = new SerializationServiceBuilder().setEnableSharedObject(true).build();
+        SerializationService ss = new DefaultSerializationServiceBuilder().setEnableSharedObject(true).build();
         Data data = ss.toData(new Foo());
         Foo foo = (Foo) ss.toObject(data);
 
@@ -198,29 +199,29 @@ public class SerializationTest
 
     @Test
     public void testLinkedListSerialization() {
-        SerializationService ss = new SerializationServiceBuilder().build();
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
         LinkedList linkedList = new LinkedList();
         linkedList.add(new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
         linkedList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
         Data data = ss.toData(linkedList);
-        LinkedList deserialized =  ss.toObject(data);
+        LinkedList deserialized = ss.toObject(data);
         assertTrue("Objects are not identical!", linkedList.equals(deserialized));
     }
 
     @Test
     public void testArrayListSerialization() {
-        SerializationService ss = new SerializationServiceBuilder().build();
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
         ArrayList arrayList = new ArrayList();
         arrayList.add(new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
         arrayList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
         Data data = ss.toData(arrayList);
-        ArrayList deserialized =  ss.toObject(data);
+        ArrayList deserialized = ss.toObject(data);
         assertTrue("Objects are not identical!", arrayList.equals(deserialized));
     }
 
     @Test
     public void testArraySerialization() {
-        SerializationService ss = new SerializationServiceBuilder().build();
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
         byte[] array = new byte[1024];
         new Random().nextBytes(array);
         Data data = ss.toData(array);
@@ -228,14 +229,32 @@ public class SerializationTest
         assertEquals(array, deserialized);
     }
 
+    @Test
+    public void testPartitionHash() {
+        PartitioningStrategy partitionStrategy = new PartitioningStrategy() {
+            @Override
+            public Object getPartitionKey(Object key) {
+                return key.hashCode();
+            }
+        };
+
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+
+        String obj = String.valueOf(System.nanoTime());
+        Data data = ss.toData(obj, partitionStrategy);
+
+        assertTrue(data.hasPartitionHash());
+        assertNotEquals(data.hashCode(), data.getPartitionHash());
+    }
+
     /**
      * issue #1265
      */
     @Test
     public void testUnsharedJavaSerialization() {
-        SerializationService ss = new SerializationServiceBuilder().setEnableSharedObject(false).build();
+        SerializationService ss = new DefaultSerializationServiceBuilder().setEnableSharedObject(false).build();
         Data data = ss.toData(new Foo());
-        Foo foo =  ss.toObject(data);
+        Foo foo = ss.toObject(data);
 
         Assert.assertFalse("Objects should not be identical!", foo == foo.getBar().getFoo());
     }

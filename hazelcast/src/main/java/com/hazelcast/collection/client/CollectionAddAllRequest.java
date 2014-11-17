@@ -57,7 +57,7 @@ public class CollectionAddAllRequest extends CollectionRequest {
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeInt(valueList.size());
         for (Data value : valueList) {
-            value.writeData(out);
+            out.writeData(value);
         }
     }
 
@@ -67,8 +67,7 @@ public class CollectionAddAllRequest extends CollectionRequest {
         final int size = in.readInt();
         valueList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            final Data value = new Data();
-            value.readData(in);
+            Data value = in.readData();
             valueList.add(value);
         }
     }
@@ -85,6 +84,6 @@ public class CollectionAddAllRequest extends CollectionRequest {
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{valueList};
+        return new Object[] {valueList};
     }
 }

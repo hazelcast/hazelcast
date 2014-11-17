@@ -16,6 +16,9 @@
 
 package com.hazelcast.client.impl.exceptionconverters;
 
+/**
+ * The ClientExceptionConverter is responsible for converting a Java Throwable to something a client can understand.
+ */
 public interface ClientExceptionConverter {
 
     Object convert(Throwable t);

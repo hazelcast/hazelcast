@@ -163,10 +163,10 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public void write(Data data) throws IOException {
-        final int totalSize = data.totalSize();
+        final Packet packet = new Packet(data, serializationService.getPortableContext());
+        final int totalSize = packet.size();
         final int bufferSize = SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
         final ByteBuffer buffer = ByteBuffer.allocate(totalSize > bufferSize ? bufferSize : totalSize);
-        final Packet packet = new Packet(data, serializationService.getPortableContext());
         boolean complete = false;
         while (!complete) {
             complete = packet.writeTo(buffer);
@@ -211,7 +211,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
-    public boolean live() {
+    public boolean isAlive() {
         return live;
     }
 
@@ -292,7 +292,7 @@ public class ClientConnection implements Connection, Closeable {
         if (socketChannelWrapper.isBlocking()) {
             return;
         }
-        if (connectionManager.isLive()) {
+        if (connectionManager.isAlive()) {
             try {
                 executionService.execute(new CleanResourcesTask());
             } catch (RejectedExecutionException e) {

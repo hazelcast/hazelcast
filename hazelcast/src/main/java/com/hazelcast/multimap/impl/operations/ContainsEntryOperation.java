@@ -21,7 +21,6 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -77,15 +76,15 @@ public class ContainsEntryOperation extends MultiMapOperation implements WaitSup
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(threadId);
-        IOUtil.writeNullableData(out, key);
-        IOUtil.writeNullableData(out, value);
+        out.writeData(key);
+        out.writeData(value);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         threadId = in.readLong();
-        key = IOUtil.readNullableData(in);
-        value = IOUtil.readNullableData(in);
+        key = in.readData();
+        value = in.readData();
     }
 
     public int getId() {

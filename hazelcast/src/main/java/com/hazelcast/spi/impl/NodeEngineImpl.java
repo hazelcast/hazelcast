@@ -83,7 +83,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
-        wanReplicationService = node.initializer.geWanReplicationService();
+        wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
     }
 
     @PrivateApi
@@ -183,7 +183,7 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public Object toObject(final Object object) {
         if (object instanceof Data) {
-            return node.getSerializationService().toObject((Data) object);
+            return node.getSerializationService().toObject(object);
         }
         return object;
     }
@@ -199,7 +199,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public boolean send(Packet packet, Connection connection) {
-        if (connection == null || !connection.live()) {
+        if (connection == null || !connection.isAlive()) {
             return false;
         }
         final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
@@ -377,7 +377,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     @Override
     public Storage<DataRef> getOffHeapStorage() {
-        return node.initializer.getOffHeapStorage();
+        return node.getNodeExtension().getNativeDataStorage();
     }
 
     @PrivateApi

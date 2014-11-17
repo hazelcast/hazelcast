@@ -16,17 +16,11 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,7 +34,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UTFDataFormatException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -54,7 +47,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class UTFEncoderDecoderTest extends HazelcastTestSupport {
+public class UTFEncoderDecoderTest  {
 
     private static final Random RANDOM = new Random();
     private static final int BENCHMARK_ROUNDS = 10; // 100;
@@ -78,7 +71,7 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testEmptyText_Default() throws Exception {
-       testEmptyText(false, UtfWriterType.DEFAULT);
+        testEmptyText(false, UtfWriterType.DEFAULT);
     }
 
     @Test
@@ -146,7 +139,7 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testMultipleTextsInARow_Fast_Default() throws Exception {
-       testMultipleTextsInARow(true, UtfWriterType.DEFAULT);
+        testMultipleTextsInARow(true, UtfWriterType.DEFAULT);
     }
 
     @Test
@@ -189,15 +182,9 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testComplexObject() throws Exception {
-        HazelcastInstance hz = createHazelcastInstance();
-        Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
-        original.setAccessible(true);
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
 
-        HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(hz);
         ComplexUtf8Object complexUtf8Object = buildComplexUtf8Object();
-
-        SerializationService ss = impl.node.getSerializationService();
-
         ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
         ObjectDataOutput out = ss.createObjectDataOutputStream(baos);
         out.writeObject(complexUtf8Object);
@@ -374,22 +361,8 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNullSerialization() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
-
-        IMap<String, User> map = instance1.getMap("testSerialization");
-        map.put("1", new User("", "demirci"));
-
-        User user = map.get("1");
-        assertEquals("", user.getName());
-        assertEquals("demirci", user.getSurname());
-    }
-
-    @Test
     public void testIssue2674_multibyte_char_at_position_that_even_multiple_of_buffer_size() throws Exception {
-        SerializationService serializationService = new SerializationServiceBuilder().build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         for (int i : new int[]{50240, 100240, 80240}) {
             String originalString = createString(i);
@@ -403,7 +376,7 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue2705_integer_overflow_on_old_version_multicast_package() throws Exception {
-        SerializationService serializationService = new SerializationServiceBuilder().build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(64000);
         byte[] temp = new byte[1024];
@@ -497,6 +470,10 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
     }
 
     private static String random(int count) {
+        return random(count, 0, 0, false, false, null, RANDOM);
+    }
+
+    private static String randomAlphaNumeric(int count) {
         return random(count, 0, 0, true, true, null, RANDOM);
     }
 
@@ -534,21 +511,21 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
     private static ComplexUtf8Object buildComplexUtf8Object() {
         ComplexUtf8Object object = new ComplexUtf8Object();
 
-        object.clusterName = random(20);
+        object.clusterName = randomAlphaNumeric(20);
         object.instanceNames = new HashSet<String>();
         for (int i = 0; i < 20; i++) {
-            object.instanceNames.add(randomString());
+            object.instanceNames.add(randomAlphaNumeric(100));
         }
         object.master = RANDOM.nextBoolean();
         object.memberList = new ArrayList<String>();
         for (int i = 0; i < 200; i++) {
-            object.memberList.add(randomString());
+            object.memberList.add(randomAlphaNumeric(100));
         }
         object.time = RANDOM.nextLong();
         object.innerObject = new InnerComplexUtf8Object();
         object.innerObject.memberList = new ArrayList<String>();
         for (int i = 0; i < 200; i++) {
-            object.innerObject.memberList.add(random(200));
+            object.innerObject.memberList.add(randomAlphaNumeric(200));
         }
 
         return object;
@@ -565,7 +542,7 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
         } else if (count < 0) {
             throw new IllegalArgumentException("Requested random string length " + count + " is less than 0.");
         }
-        if ((start == 0) && (end == 0)) {
+        if (start == 0 && end == 0) {
             end = 'z' + 1;
             start = ' ';
             if (!letters && !numbers) {
@@ -584,36 +561,36 @@ public class UTFEncoderDecoderTest extends HazelcastTestSupport {
             } else {
                 ch = chars[random.nextInt(gap) + start];
             }
-            //if ((letters && Character.isLetter(ch))
-            //        || (numbers && Character.isDigit(ch))
-            //        || (!letters && !numbers)) {
-            if (ch >= 56320 && ch <= 57343) {
-                if (count == 0) {
+            if (letters && Character.isLetter(ch)
+                    || numbers && Character.isDigit(ch)
+                    || !letters && !numbers) {
+                if(ch >= 56320 && ch <= 57343) {
+                    if(count == 0) {
+                        count++;
+                    } else {
+                        // low surrogate, insert high surrogate after putting it in
+                        buffer[count] = ch;
+                        count--;
+                        buffer[count] = (char) (55296 + random.nextInt(128));
+                    }
+                } else if(ch >= 55296 && ch <= 56191) {
+                    if(count == 0) {
+                        count++;
+                    } else {
+                        // high surrogate, insert low surrogate before putting it in
+                        buffer[count] = (char) (56320 + random.nextInt(128));
+                        count--;
+                        buffer[count] = ch;
+                    }
+                } else if(ch >= 56192 && ch <= 56319) {
+                    // private high surrogate, no effing clue, so skip it
                     count++;
                 } else {
-                    // low surrogate, insert high surrogate after putting it in
-                    buffer[count] = ch;
-                    count--;
-                    buffer[count] = (char) (55296 + random.nextInt(128));
-                }
-            } else if (ch >= 55296 && ch <= 56191) {
-                if (count == 0) {
-                    count++;
-                } else {
-                    // high surrogate, insert low surrogate before putting it in
-                    buffer[count] = (char) (56320 + random.nextInt(128));
-                    count--;
                     buffer[count] = ch;
                 }
-            } else if (ch >= 56192 && ch <= 56319) {
-                // private high surrogate, no effing clue, so skip it
-                count++;
             } else {
-                buffer[count] = ch;
+                count++;
             }
-            //} else {
-            //    count++;
-            //}
         }
         return new String(buffer);
     }

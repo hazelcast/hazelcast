@@ -20,15 +20,19 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 
 /**
- * distributed object for cache, it will be used as a delegate in CacheProxy
+ * Basic distributed object which serves as an accessor to {@link CacheService} and {@link NodeEngine}.
+ *<p>
+ * <b>Warning: DO NOT use this distributed object directly, instead use {@link CacheProxy} through
+ * {@link javax.cache.CacheManager}.</b>
+ *</p>
  */
 public class CacheDistributedObject
-        extends AbstractDistributedObject<CacheService> {
+        extends AbstractDistributedObject<ICacheService> {
 
     private String name;
     private boolean isDestroy;
 
-    protected CacheDistributedObject(String name, NodeEngine nodeEngine, CacheService service) {
+    protected CacheDistributedObject(String name, NodeEngine nodeEngine, ICacheService service) {
         super(nodeEngine, service);
         this.name = name;
     }

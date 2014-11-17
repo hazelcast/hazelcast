@@ -279,7 +279,7 @@ public class ManagementCenterService {
 
         private StateSendThread() {
             super(instance.getThreadGroup(), instance.node.getThreadNamePrefix("MC.State.Sender"));
-            timedMemberStateFactory = new TimedMemberStateFactory(instance);
+            timedMemberStateFactory = instance.node.getNodeExtension().getTimedMemberStateFactory();
             updateIntervalMs = calcUpdateInterval();
         }
 

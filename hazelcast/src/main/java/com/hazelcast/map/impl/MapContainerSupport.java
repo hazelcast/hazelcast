@@ -1,34 +1,30 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
+
+import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
 
 /**
  * Contains support methods of a map container.
  *
  * @see MapContainer
  */
-public abstract class MapContainerSupport {
+abstract class MapContainerSupport {
 
     protected volatile MapConfig mapConfig;
 
-    protected MapContainerSupport(MapConfig mapConfig) {
+    private final long maxIdleMillis;
+
+    private final long ttlMillisFromConfig;
+
+    private final String name;
+
+    protected MapContainerSupport(String name, MapConfig mapConfig) {
+        this.name = name;
         this.mapConfig = mapConfig;
-    }
-
-    public boolean isMapStoreEnabled() {
-        final MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        if (mapStoreConfig == null || !mapStoreConfig.isEnabled()) {
-            return false;
-        }
-        return true;
-    }
-
-
-    public boolean isWriteBehindMapStoreEnabled() {
-        final MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        return mapStoreConfig != null && mapStoreConfig.isEnabled()
-                && mapStoreConfig.getWriteDelaySeconds() > 0;
+        this.maxIdleMillis = calculateMaxIdleMillis(mapConfig);
+        this.ttlMillisFromConfig = calculateTTLMillis(mapConfig);
     }
 
     public MapConfig getMapConfig() {
@@ -37,5 +33,17 @@ public abstract class MapContainerSupport {
 
     public void setMapConfig(MapConfig mapConfig) {
         this.mapConfig = mapConfig;
+    }
+
+    public long getMaxIdleMillis() {
+        return maxIdleMillis;
+    }
+
+    public long getTtlMillisFromConfig() {
+        return ttlMillisFromConfig;
+    }
+
+    public String getName() {
+        return name;
     }
 }

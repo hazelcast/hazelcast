@@ -5,14 +5,10 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -23,6 +19,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 /**
  * This test verifies that instances returned by the InvocationFuture, are always copied instances.
  * We don't want instances to be shared unexpectedly. In the future there might be some sharing going
@@ -32,13 +33,13 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
 
-    private static HazelcastInstance[] instances;
-    private static HazelcastInstance local;
-    private static HazelcastInstance remote;
+    private HazelcastInstance[] instances;
+    private HazelcastInstance local;
+    private HazelcastInstance remote;
 
-    @BeforeClass
-    public static void setUp() {
-        instances = new TestHazelcastInstanceFactory(2).newInstances();
+    @Before
+    public void setUp() {
+        instances = createHazelcastInstanceFactory(2).newInstances();
         warmUpPartitions(instances);
         local = instances[0];
         remote = instances[1];
@@ -48,7 +49,7 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
     public void invocationToLocalMember() throws ExecutionException, InterruptedException {
         Node localNode = getNode(local);
 
-        Object response = localNode.nodeEngine.toData(new DummyObject());
+        Data response = localNode.nodeEngine.toData(new DummyObject());
         Operation op = new OperationWithResponse(response);
 
         OperationService service = localNode.nodeEngine.getOperationService();
@@ -69,7 +70,7 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
     public void invocationToRemoteMember() throws ExecutionException, InterruptedException {
         Node localNode = getNode(local);
 
-        Object response = localNode.nodeEngine.toData(new DummyObject());
+        Data response = localNode.nodeEngine.toData(new DummyObject());
         Operation op = new OperationWithResponse(response);
 
         Address remoteAddress = getNode(remote).address;
@@ -92,12 +93,12 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
     }
 
     public static class OperationWithResponse extends AbstractOperation {
-        private Object response;
+        private Data response;
 
         public OperationWithResponse() {
         }
 
-        public OperationWithResponse(Object response) {
+        public OperationWithResponse(Data response) {
             this.response = response;
         }
 
@@ -119,13 +120,13 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
         @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {
             super.writeInternal(out);
-            out.writeObject(response);
+            out.writeData(response);
         }
 
         @Override
         protected void readInternal(ObjectDataInput in) throws IOException {
             super.readInternal(in);
-            response = in.readObject();
+            response = in.readData();
         }
     }
 

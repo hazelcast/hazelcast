@@ -32,9 +32,8 @@ public interface InternalPartitionService extends CoreService {
 
     String SERVICE_NAME = "hz:core:partitionService";
 
-    int MAX_PARALLEL_REPLICATIONS = 4;
-    long DEFAULT_REPLICA_SYNC_DELAY = 15000L;
-    long REPLICA_SYNC_RETRY_DELAY = 1000L;
+    long DEFAULT_REPLICA_SYNC_DELAY = 5000L;
+    long REPLICA_SYNC_RETRY_DELAY = 500L;
 
     /**
      * Gets the owner of the partition if it's set.
@@ -111,9 +110,15 @@ public interface InternalPartitionService extends CoreService {
 
     List<Integer> getMemberPartitions(Address target);
 
+    /**
+     * Gets member partition IDs. Blocks until partitions are assigned.
+     * @return map of member address to partition Ids
+     **/
     Map<Address, List<Integer>> getMemberPartitionsMap();
 
     int getMemberGroupsSize();
+
+    int getMaxBackupCount();
 
     String addMigrationListener(MigrationListener migrationListener);
 
@@ -153,7 +158,7 @@ public interface InternalPartitionService extends CoreService {
 
     long[] incrementPartitionReplicaVersions(int partitionId, int totalBackupCount);
 
-    void setPartitionReplicaVersions(int partitionId, long[] versions);
+    void setPartitionReplicaVersions(int partitionId, long[] versions, int replicaOffset);
 
     void clearPartitionReplicaVersions(int partitionId);
 

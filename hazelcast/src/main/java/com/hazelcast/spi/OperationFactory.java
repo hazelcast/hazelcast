@@ -20,8 +20,13 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
  * A Factory for creating {@link Operation} instances.
+ * <p>The operations that will be sent to all partitions causes redundant serialization and network overhead.
+ * An {@link com.hazelcast.spi.OperationFactory} instance is sent to each {@link com.hazelcast.core.Member} (node) instead to
+ * improve the performance.
+ * {@link OperationService} uses this factory to create {@link Operation}s for each partition by calling
+ * {@link #createOperation()}
+ * </p>
  *
- * @author mdogan 1/17/13
  */
 public interface OperationFactory extends DataSerializable {
 

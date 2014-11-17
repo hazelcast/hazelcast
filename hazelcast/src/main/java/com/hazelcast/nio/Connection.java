@@ -41,11 +41,9 @@ public interface Connection {
     /**
      * Checks if the Connection is still alive.
      *
-     * todo: rename to isAlive?
-     *
      * @return true if alive, false otherwise.
      */
-    boolean live();
+    boolean isAlive();
 
     /**
      * Returns the clock time of the most recent read using this connection.
@@ -102,7 +100,7 @@ public interface Connection {
     InetSocketAddress getRemoteSocketAddress();
 
     /**
-     * Gets the {@ink Address} of the other side of this Connection.
+     * Gets the {@link Address} of the other side of this Connection.
      * <p/>
      * todo: rename to get remoteAddress?
      *

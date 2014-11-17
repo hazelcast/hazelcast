@@ -76,15 +76,14 @@ public class MapDeleteRequest extends KeyBasedClientRequest implements Portable,
         writer.writeUTF("n", name);
         writer.writeLong("t", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
     }
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         threadId = reader.readLong("t");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     public Permission getRequiredPermission() {
@@ -103,6 +102,6 @@ public class MapDeleteRequest extends KeyBasedClientRequest implements Portable,
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{key};
+        return new Object[] {key};
     }
 }

@@ -4,48 +4,90 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.util.Clock;
 
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class LockMBeanTest extends HazelcastTestSupport {
-    private static JmxTestDataHolder holder;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
-        holder = new JmxTestDataHolder();
+    private JmxTestDataHolder holder = new JmxTestDataHolder(createHazelcastInstanceFactory(1));
+    private ILock lock = holder.getHz().getLock("lock");
+
+    @Before
+    public void ensureMBeanCreated() throws Exception {
+        // --- Check that mbean gets created at all
+        holder.assertMBeanExistEventually("ILock", lock.getName());
     }
 
     @Test
-    public void testLock() throws Exception {
-        ILock lock = holder.getHz().getLock("lock");
-        // Lock for some time so we can later read the expiry time
+    public void testLockCountIsTwo_whenLockedTwice() throws Exception {
         lock.lock(1000, TimeUnit.MILLISECONDS);
-
-        // --- Check that mbean gets created at all
-        holder.assertMBeanExistEventually("ILock", lock.getName());
-
-        // --- Check remaining lease time
-        final long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
-        // The remaining lease time has to be in the given range from the originally set value
-        assertTrue(remainingLeaseTime > 500);
-        assertTrue(remainingLeaseTime < 1000);
+        lock.lock(1000, TimeUnit.MILLISECONDS);
 
         // --- Check number of times locked (locked twice now)
-        lock.lock(1000, TimeUnit.MILLISECONDS);
-        final int lockCount = (Integer) holder.getMBeanAttribute("ILock", lock.getName(), "lockCount");
-        assertEquals(2, lockCount);
+        int lockCount = (Integer) holder.getMBeanAttribute("ILock", lock.getName(), "lockCount");
 
-        // --- Force unlock
+        assertEquals(2, lockCount);
+    }
+
+    @Test
+    public void testMBeanHasLeaseTime_whenLockedWithLeaseTime_remainingLeaseTimeCannotBeGreaterThanOriginal() throws Exception {
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+
+        long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        assertFalse(remainingLeaseTime > 1000);
+    }
+
+    @Test
+    public void testMBeanHasLeaseTime_whenLockedWithLeaseTime_mustBeLockedWhenHasRemainingLease() throws Exception {
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+
+        boolean isLocked = lock.isLockedByCurrentThread();
+        long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        boolean hasRemainingLease = remainingLeaseTime > 0;
+        assertTrue(isLocked || !hasRemainingLease);
+    }
+
+
+    @Test
+    public void testMBeanHasLeaseTime_whenLockedWithLeaseTime_eitherHasRemainingLeaseOrIsUnlocked() throws Exception {
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+
+        long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        boolean hasLeaseRemaining = remainingLeaseTime > 0;
+        boolean isLocked = lock.isLockedByCurrentThread();
+        assertTrue((isLocked && hasLeaseRemaining) || !isLocked);
+    }
+
+    @Test
+    public void testMBeanHasLeaseTime_whenLockedWithLeaseTime_mustHaveRemainingLeaseBeforeItExpires() throws Exception {
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+        long startTime = Clock.currentTimeMillis();
+
+        long remainingLeaseTime = (Long) holder.getMBeanAttribute("ILock", lock.getName(), "remainingLeaseTime");
+        long timePassed = Clock.currentTimeMillis() - startTime;
+        boolean hasLeaseRemaining = remainingLeaseTime > 0;
+
+        assertTrue(hasLeaseRemaining || timePassed >= 1000);
+    }
+
+    @Test
+    public void testIsNotLocked_whenMBeanForceUnlocked() throws Exception {
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+
         holder.invokeMBeanOperation("ILock", lock.getName(), "forceUnlock", null, null);
-        assertTrue(!lock.isLocked());
+
+        assertFalse("Lock is locked", lock.isLocked());
     }
 }

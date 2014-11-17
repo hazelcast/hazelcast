@@ -80,12 +80,16 @@ public final class TestHazelcastInstanceFactory {
         return newInstances(new Config());
     }
 
-    public HazelcastInstance[] newInstances(Config config) {
-        final HazelcastInstance[] instances = new HazelcastInstance[count];
-        for (int i = 0; i < count; i++) {
+    public HazelcastInstance[] newInstances(Config config, int nodeCount) {
+        final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+        for (int i = 0; i < nodeCount; i++) {
             instances[i] = newHazelcastInstance(config);
         }
         return instances;
+    }
+
+    public HazelcastInstance[] newInstances(Config config) {
+        return newInstances(config, count);
     }
 
     public Collection<HazelcastInstance> getAllHazelcastInstances() {
@@ -101,6 +105,15 @@ public final class TestHazelcastInstanceFactory {
             registry.shutdown();
         } else {
             Hazelcast.shutdownAll();
+        }
+    }
+
+    public void terminateAll() {
+        if (mockNetwork) {
+            nodeIndex.set(Integer.MAX_VALUE);
+            registry.terminate();
+        } else {
+            HazelcastInstanceFactory.terminateAll();
         }
     }
 
@@ -135,6 +148,7 @@ public final class TestHazelcastInstanceFactory {
         }
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
         config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "120");
+        config.setProperty(GroupProperties.PROP_PARTITION_BACKUP_SYNC_INTERVAL, "1");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;
     }

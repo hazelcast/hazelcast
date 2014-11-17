@@ -74,7 +74,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     @Override
     public void run() {
         final long now = getNow();
-        oldValue = getValueFor(dataKey);
+        oldValue = getValueFor(dataKey, now);
 
         final Object key = toObject(dataKey);
         final Object value = toObject(oldValue);
@@ -102,6 +102,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         invalidateNearCaches();
         publishEntryEvent();
         publishWanReplicationEvent();
+        evict(false);
     }
 
     @Override
@@ -228,8 +229,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
 
-    private Object getValueFor(Data dataKey) {
-        return recordStore.getMapEntry(dataKey).getValue();
+    private Object getValueFor(Data dataKey, long now) {
+        final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(dataKey, now);
+        return mapEntry.getValue();
     }
 
     private Data process(Map.Entry entry) {

@@ -86,9 +86,9 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
         writer.writeUTF("n", name);
         writer.writeInt("size", keys.size());
         if (!keys.isEmpty()) {
-            ObjectDataOutput output = writer.getRawDataOutput();
+            ObjectDataOutput out = writer.getRawDataOutput();
             for (Data key : keys) {
-                key.writeData(output);
+                out.writeData(key);
             }
         }
     }
@@ -99,8 +99,7 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
         if (size > 0) {
             ObjectDataInput input = reader.getRawDataInput();
             for (int i = 0; i < size; i++) {
-                Data key = new Data();
-                key.readData(input);
+                Data key = input.readData();
                 keys.add(key);
             }
         }
@@ -123,6 +122,6 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{keys};
+        return new Object[] {keys};
     }
 }

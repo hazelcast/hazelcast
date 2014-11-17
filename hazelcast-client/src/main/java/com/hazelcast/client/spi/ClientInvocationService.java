@@ -31,6 +31,8 @@ public interface ClientInvocationService {
 
     <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception;
 
+    <T> ICompletableFuture<T> invokeOnPartitionOwner(ClientRequest request, int partitionId) throws Exception;
+
     <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception;
 
     <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler) throws Exception;

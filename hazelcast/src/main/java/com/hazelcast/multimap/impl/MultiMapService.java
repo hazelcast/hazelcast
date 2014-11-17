@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MultiMapConfig;
@@ -27,6 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EventData;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
+import com.hazelcast.multimap.impl.operations.MultiMapMigrationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;

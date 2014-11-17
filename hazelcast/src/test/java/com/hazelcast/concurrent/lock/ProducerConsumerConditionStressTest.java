@@ -5,16 +5,15 @@ import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ProblematicTest;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertNull;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(ProblematicTest.class)
+@Ignore // https://github.com/hazelcast/hazelcast/issues/2272
 public class ProducerConsumerConditionStressTest extends HazelcastTestSupport {
 
     private static volatile Object object;

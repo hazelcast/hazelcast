@@ -19,6 +19,13 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 
+/**
+ * Basic client proxy object which serves as an accessor to {@link ClientContext}.
+ *<p>
+ * <b>Warning: DO NOT use this distributed object directly, instead use {@link ClientCacheProxy} through
+ * {@link javax.cache.CacheManager}.</b>
+ *</p>
+ */
 public class ClientCacheDistributedObject
         extends ClientProxy {
 
@@ -29,5 +36,4 @@ public class ClientCacheDistributedObject
     public ClientContext getClientContext() {
         return getContext();
     }
-
 }

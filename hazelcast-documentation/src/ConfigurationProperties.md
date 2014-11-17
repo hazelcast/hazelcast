@@ -9,7 +9,7 @@ Hazelcast has advanced configuration properties to tune some aspects of it. Thes
     http://www.hazelcast.com/schema/config/hazelcast-config-3.0.xsd"
     xmlns="http://www.hazelcast.com/schema/config"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    
+
   ....
   <properties>
     <property name="hazelcast.property.foo">value</property>
@@ -36,7 +36,7 @@ Below table lists the advanced configuration properties with their descriptions.
 
 Property Name | Default Value | Type | Description
 :--------------|:---------------|:------|:------------
-`hazelcast.health.monitoring.level`|SILENT|string|Health monitoring log level. When *SILENT*, logs are printed only when values exceed some predefined threshold. When *NOISY*, logs are always printed periodically. Set *OFF* to turn off completely.  
+`hazelcast.health.monitoring.level`|SILENT|string|Health monitoring log level. When *SILENT*, logs are printed only when values exceed some predefined threshold. When *NOISY*, logs are always printed periodically. Set *OFF* to turn off completely.
 `hazelcast.health.monitoring.delay.seconds`|30|int|Health monitoring logging interval in seconds.
 `hazelcast.version.check.enabled` | true | bool  |   Enable Hazelcast new version check on startup.
 `hazelcast.prefer.ipv4.stack` | true | bool  |   Prefer Ipv4 network interface when picking a local address.
@@ -95,13 +95,8 @@ Property Name | Default Value | Type | Description
 `hazelcast.migration.min.delay.on.member.removed.seconds`|5|int|Minimum delay (in seconds) between detection of a member that has left and start of the rebalancing process.
 `hazelcast.graceful.shutdown.max.wait` | 600 | int  |   Maximum wait seconds during graceful shutdown.
 `hazelcast.system.log.enabled` | true | bool  |   Enable system logs.
-`hazelcast.elastic.memory.enabled` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) off-heap storage.
-`hazelcast.elastic.memory.total.size` | 128 | int  |   [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) storage total size in MB.
-`hazelcast.elastic.memory.chunk.size` | 1 | int  |   [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) storage chunk size in KB.
-`hazelcast.elastic.memory.shared.storage` | false | bool  |   Enable [Hazelcast Elastic Memory](#elastic-memory-enterprise-only) shared storage.
-`hazelcast.elastic.memory.unsafe.enabled`|false|bool|Enable usage of `sun.misc.Unsafe` when allocating, reading and modifying off-heap storage.
 `hazelcast.enterprise.license.key` | null | string  |   [Hazelcast Enterprise](http://www.hazelcast.com/products.jsp) license key.
-`hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If there is no any message passing between client and member within the given time via this property in milliseconds the connection will be closed.
+`hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If there is not any message passing between client and member within the given time via this property in milliseconds the connection will be closed.
 `hazelcast.client.heartbeat.interval`|10000|string|The frequency of heartbeat messages sent by the clients to members.
 `hazelcast.client.max.failed.heartbeat.count`|3|string|When the count of failed heartbeats sent to members reaches this value, the cluster is deemed as dead by the client.
 `hazelcast.client.request.retry.count`|20|string|The retry count of the connection requests by the client to the members.

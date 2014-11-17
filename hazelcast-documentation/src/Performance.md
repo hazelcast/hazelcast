@@ -2,11 +2,11 @@
 
 ## Data Affinity
 
-Data affinity is to ensure that related entries exist on the same node. If related data is on the same node, operations can be executed without the cost of extra network call and extra wire data. This feature is provided by using same partition keys for related data.
+Data affinity ensures that related entries exist on the same node. If related data is on the same node, operations can be executed without the cost of extra network calls and extra wire data. This feature is provided by using the same partition keys for related data.
 
 **Co-location of related data and computation**
 
-Hazelcast has a standard way of finding out which member owns/manages each key object. Following operations will be routed to the same member, since all of them are operating based on the same key, "key1".
+Hazelcast has a standard way of finding out which member owns/manages each key object. The following operations will be routed to the same member, since all of them are operating based on the same key, "key1".
 
 ```java    
 HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
@@ -29,7 +29,7 @@ hazelcastInstance.getExecutorService().executeOnKeyOwner( runnable, "key1" );
 // since "key1" is passed as the key.   
 ```
 
-So, when the keys are the same, then entries are stored on the same node. But we sometimes want to have related entries stored on the same node. Consider customer and his/her order entries. We would have customers map with customerId as the key and orders map with orderId as the key. Since customerId and orderIds are different keys, customer and his/her orders may fall into different members/nodes in your cluster. So how can we have them stored on the same node? The trick here is to create an affinity between customer and orders. If we can somehow make them part of the same partition then these entries will be co-located. We achieve this by making orderIds `PartitionAware`.
+When the keys are the same, entries are stored on the same node. But we sometimes want to have related entries stored on the same node, such as a customer and his/her order entries. We would have a customers map with customerId as the key and an orders map with orderId as the key. Since customerId and orderId are different keys, a customer and his/her orders may fall into different members/nodes in your cluster. So how can we have them stored on the same node? We create an affinity between customer and orders. If we make them part of the same partition then these entries will be co-located. We achieve this by making orderIds `PartitionAware`.
 
 ```java
 public class OrderKey implements Serializable, PartitionAware {
@@ -63,7 +63,7 @@ public class OrderKey implements Serializable, PartitionAware {
 }
 ```
 
-Notice that OrderKey implements `PartitionAware` and `getPartitionKey()` returns the `customerId`. This will make sure that `Customer` entry and its `Order`s are going to be stored on the same node.
+Notice that OrderKey implements `PartitionAware` and that `getPartitionKey()` returns the `customerId`. This will make sure that the `Customer` entry and its `Order`s will be stored on the same node.
 
 ```java
 HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
@@ -78,7 +78,7 @@ mapOrders.put( new OrderKey( 23, 1 ), order );
 ```
 
 
-Assume that you have a customers map where `customerId` is the key and the customer object is the value and you want to remove one of the orders of a customer and return the number of remaining orders. Here is how you would normally do it:
+Assume that you have a customers map where `customerId` is the key and the customer object is the value. You want to remove one of the customer orders and return the number of remaining orders. Here is how you would normally do it.
 
 ```java
 public static int removeOrder( long customerId, long orderId ) throws Exception {
@@ -92,26 +92,26 @@ public static int removeOrder( long customerId, long orderId ) throws Exception 
 }
 ```
 
-There are couple of things you should consider:
+There are couple of things you should consider.
 
 1.  There are four distributed operations there: lock, remove, keySet, unlock. Can you reduce 
 the number of distributed operations?
 
-2.  Customer object may not be that big, but can you not have to pass that object through the 
-wire? Think about a scenario which you set order count to customer object for fast access, so you 
-should do a get and a put as a result customer object is being passed through the wire twice.
+2.  The customer object may not be that big, but can you not have to pass that object through the 
+wire? Think about a scenario where you set order count to the customer object for fast access, so you 
+should do a get and a put, and as a result, the customer object is passed through the wire twice.
 
-So instead, why not moving the computation over to the member (JVM) where your customer data actually is. Here is how you can do this with distributed executor service:
+Instead, why not move the computation over to the member (JVM) where your customer data resides. Here is how you can do this with distributed executor service.
 
 1.  Send a `PartitionAware` `Callable` task.
 
 2.  `Callable` does the deletion of the order right there and returns with the remaining 
 order count.
 
-3.  Upon completion of the `Callable` task, return the result (remaining order count). Plus, you 
+3.  Upon completion of the `Callable` task, return the result (remaining order count). You 
 do not have to wait until the task is completed; since distributed executions are asynchronous, you can do other things in the meantime.
 
-Here is a sample code:
+Here is some example code.
 
 ```java
 HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
@@ -164,13 +164,13 @@ public static class OrderDeletionTask
 }
 ```
 
-Benefits of doing the same operation with distributed `ExecutorService` based on the key are:
+The benefits of doing the same operation with distributed `ExecutorService` based on the key are:
 
 -   Only one distributed execution (`es.submit(task)`), instead of four.
 
 -   Less data is sent over the wire.
 
--   Since lock/update/unlock cycle is done locally (local to the customer data), lock duration for the `Customer` entry is much less, so enabling higher concurrency.
+-   Since lock/update/unlock cycle is done locally (local to the customer data), lock duration for the `Customer` entry is much less, thus enabling higher concurrency.
 
 
 <br> </br>

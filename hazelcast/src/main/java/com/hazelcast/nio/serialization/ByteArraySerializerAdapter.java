@@ -22,9 +22,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-final class ByteArraySerializerAdapter implements SerializerAdapter {
+class ByteArraySerializerAdapter implements SerializerAdapter {
 
-    private final ByteArraySerializer serializer;
+    protected final ByteArraySerializer serializer;
 
     public ByteArraySerializerAdapter(ByteArraySerializer serializer) {
         this.serializer = serializer;
@@ -32,28 +32,26 @@ final class ByteArraySerializerAdapter implements SerializerAdapter {
 
     @SuppressWarnings("unchecked")
     public void write(ObjectDataOutput out, Object object) throws IOException {
-        final byte[] bytes = serializer.write(object);
-        out.writeInt(bytes != null ? bytes.length : 0);
-        out.write(bytes);
+        byte[] bytes = serializer.write(object);
+        out.writeByteArray(bytes);
     }
 
     public Object read(ObjectDataInput in) throws IOException {
-        final int len = in.readInt();
-        if (len > 0) {
-            final byte[] bytes = new byte[len];
-            in.readFully(bytes);
-            return serializer.read(bytes);
+        byte[] bytes = in.readByteArray();
+        if (bytes == null || bytes.length == 0) {
+            return null;
         }
-        return null;
+        return serializer.read(bytes);
     }
 
     @SuppressWarnings("unchecked")
-    public byte[] write(Object object) throws IOException {
-        return serializer.write(object);
+    public Data toData(Object object, int partitionHash) throws IOException {
+        byte[] data = serializer.write(object);
+        return new DefaultData(serializer.getTypeId(), data, partitionHash);
     }
 
-    public Object read(Data data) throws IOException {
-        return serializer.read(data.buffer);
+    public Object toObject(Data data) throws IOException {
+        return serializer.read(data.getData());
     }
 
     public int getTypeId() {

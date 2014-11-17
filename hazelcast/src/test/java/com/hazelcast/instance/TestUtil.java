@@ -20,8 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import org.junit.Ignore;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ import java.util.List;
 @Ignore("not a JUnit test")
 public final class TestUtil {
 
-    static final private SerializationService serializationService = new SerializationServiceBuilder().build();
+    static final private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     private TestUtil() {
     }

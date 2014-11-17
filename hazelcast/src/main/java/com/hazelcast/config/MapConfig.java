@@ -125,24 +125,6 @@ public class MapConfig {
 
     private MapConfigReadOnly readOnly;
 
-    /**
-     * Eviction Policy enum
-     */
-    public enum EvictionPolicy {
-        /**
-         * Least Recently Used
-         */
-        LRU,
-        /**
-         * Least Frequently Used
-         */
-        LFU,
-        /**
-         * None
-         */
-        NONE
-    }
-
     public MapConfig(String name) {
         this.name = name;
     }
@@ -204,11 +186,11 @@ public class MapConfig {
     }
 
     /**
-     * Data type that will be used for storing records.
+     * Binary type that will be used for storing records.
      * Possible values:
      * BINARY (default): keys and values will be stored as binary data
      * OBJECT : values will be stored in their object forms
-     * OFFHEAP : values will be stored in non-heap region of JVM
+     * NATIVE : values will be stored in non-heap region of JVM
      *
      * @param inMemoryFormat the record type to set
      * @throws IllegalArgumentException if inMemoryFormat is null.

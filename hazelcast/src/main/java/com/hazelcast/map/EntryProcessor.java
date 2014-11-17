@@ -40,7 +40,7 @@ import java.util.Map;
  * <p/>
  * <pre>
  * <code>
- * {@literal@}Override
+ * {@literal}Override
  *     public Object process(Map.Entry entry) {
  *        Value value = entry.getValue();
  *        // process and modify value
@@ -66,7 +66,7 @@ public interface EntryProcessor<K, V> extends Serializable {
      * <p/>
      * <pre>
      * <code>
-     * {@literal@}Override
+     * {@literal}Override
      *        public Object process(Map.Entry entry) {
      *          Value value = entry.getValue();
      *          // process and modify value

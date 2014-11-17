@@ -78,8 +78,8 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
         final MapService mapService = getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getMapServiceContext().getLocalMapStatsProvider()
-                    .getLocalMapStatsImpl(name).incrementGets(latency);
+            mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name)
+                    .incrementGets(latency);
         }
     }
 
@@ -105,7 +105,7 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
         writer.writeBoolean("a", async);
         writer.writeLong("threadId", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -113,8 +113,7 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
         async = reader.readBoolean("a");
         threadId = reader.readLong("threadId");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     public MapPermission getRequiredPermission() {
@@ -136,6 +135,6 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{key};
+        return new Object[] {key};
     }
 }

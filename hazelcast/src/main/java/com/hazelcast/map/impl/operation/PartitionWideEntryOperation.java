@@ -55,7 +55,9 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
 
     @Override
     public void run() {
-        final Iterator<Record> iterator = recordStore.iterator();
+        final long now = getNow();
+
+        final Iterator<Record> iterator = recordStore.iterator(now, false);
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             final Data dataKey = record.getKey();
@@ -68,7 +70,6 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
                 continue;
             }
 
-            final long now = getNow();
             final Map.Entry entry = createMapEntry(key, value);
 
             final Data response = process(entry);
@@ -83,6 +84,8 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
                 continue;
             }
             entryAddedOrUpdated(entry, dataKey, oldValue, now);
+
+            evict(false);
         }
     }
 

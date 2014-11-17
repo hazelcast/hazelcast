@@ -25,7 +25,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.util.UuidUtil;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -50,6 +49,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -146,7 +146,7 @@ public class WebFilter implements Filter {
     }
 
     private static String generateSessionId() {
-        final String id = UuidUtil.buildRandomUuidString();
+        final String id = UUID.randomUUID().toString();
         final StringBuilder sb = new StringBuilder("HZ");
         final char[] chars = id.toCharArray();
         for (final char c : chars) {

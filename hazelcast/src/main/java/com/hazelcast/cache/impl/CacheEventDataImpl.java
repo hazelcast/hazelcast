@@ -16,13 +16,17 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
+/**
+ * Implementation of {@link com.hazelcast.cache.impl.CacheEventData}.
+ *
+ * @see com.hazelcast.cache.impl.CacheEventData
+ */
 public class CacheEventDataImpl
         implements CacheEventData {
 
@@ -46,22 +50,27 @@ public class CacheEventDataImpl
         this.isOldValueAvailable = isOldValueAvailable;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public CacheEventType getCacheEventType() {
         return eventType;
     }
 
+    @Override
     public Data getDataKey() {
         return dataKey;
     }
 
+    @Override
     public Data getDataValue() {
         return dataNewValue;
     }
 
+    @Override
     public Data getDataOldValue() {
         return dataOldValue;
     }
@@ -76,9 +85,9 @@ public class CacheEventDataImpl
             throws IOException {
         out.writeUTF(name);
         out.writeInt(eventType.getType());
-        dataKey.writeData(out);
-        IOUtil.writeNullableData(out, dataNewValue);
-        IOUtil.writeNullableData(out, dataOldValue);
+        out.writeData(dataKey);
+        out.writeData(dataNewValue);
+        out.writeData(dataOldValue);
         out.writeBoolean(isOldValueAvailable);
     }
 
@@ -87,9 +96,9 @@ public class CacheEventDataImpl
             throws IOException {
         name = in.readUTF();
         eventType = CacheEventType.getByType(in.readInt());
-        dataKey = IOUtil.readData(in);
-        dataNewValue = IOUtil.readNullableData(in);
-        dataOldValue = IOUtil.readNullableData(in);
+        dataKey = in.readData();
+        dataNewValue = in.readData();
+        dataOldValue = in.readData();
         isOldValueAvailable = in.readBoolean();
     }
 
@@ -101,5 +110,13 @@ public class CacheEventDataImpl
     @Override
     public int getFactoryId() {
         return CacheDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public String toString() {
+        return "CacheEventDataImpl{"
+                + "name='" + name + '\''
+                + ", eventType=" + eventType
+                + '}';
     }
 }

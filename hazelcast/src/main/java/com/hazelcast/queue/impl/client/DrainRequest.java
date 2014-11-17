@@ -19,7 +19,7 @@ package com.hazelcast.queue.impl.client;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.impl.DrainOperation;
+import com.hazelcast.queue.impl.operations.DrainOperation;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
@@ -32,7 +32,7 @@ import java.security.Permission;
 import java.util.Collection;
 
 /**
- * Provides the request service for {@link com.hazelcast.queue.impl.DrainOperation}
+ * Provides the request service for {@link com.hazelcast.queue.impl.operations.DrainOperation}
  */
 public class DrainRequest extends QueueRequest {
 

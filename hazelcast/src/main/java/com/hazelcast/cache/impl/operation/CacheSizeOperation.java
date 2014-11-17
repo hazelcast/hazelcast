@@ -22,7 +22,8 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.spi.ReadonlyOperation;
 
 /**
- * Cache Size Operation
+ * This operation implementation is for calculating the cluster size of a named cache. Result of all partitions
+ * will be summed up to find the cluster size.
  */
 public class CacheSizeOperation
         extends PartitionWideCacheOperation
@@ -39,7 +40,7 @@ public class CacheSizeOperation
     public void run()
             throws Exception {
         CacheService service = getService();
-        ICacheRecordStore cache = service.getCache(name, getPartitionId());
+        ICacheRecordStore cache = service.getCacheRecordStore(name, getPartitionId());
         response = cache != null ? cache.size() : 0;
     }
 

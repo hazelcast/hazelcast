@@ -24,12 +24,14 @@ import com.hazelcast.spi.BackupAwareOperation;
 import java.io.IOException;
 
 /**
- * Base modifying cache operation, this operation publishes COMPLETE events
+ * Base class for all mutable cache operations. Main purpose of this abstract class is providing the
+ * completion event functionality.
+ * <p>This operation publishes COMPLETE event.</p>
  */
 public abstract class AbstractMutatingCacheOperation
         extends AbstractCacheOperation
-        implements BackupAwareOperation {
-    public static final int IGNORE_COMPLETION = -1;
+        implements BackupAwareOperation, MutableOperation {
+
     protected int completionId;
 
     protected AbstractMutatingCacheOperation() {
@@ -41,15 +43,11 @@ public abstract class AbstractMutatingCacheOperation
     }
 
     @Override
-    public void afterRun()
-            throws Exception {
-        cache.publishCompletedEvent(name, completionId, key, key.hashCode());
-    }
-
     public int getCompletionId() {
         return completionId;
     }
 
+    @Override
     public void setCompletionId(int completionId) {
         this.completionId = completionId;
     }

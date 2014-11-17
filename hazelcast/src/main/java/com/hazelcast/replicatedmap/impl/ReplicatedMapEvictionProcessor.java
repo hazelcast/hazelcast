@@ -49,7 +49,7 @@ public class ReplicatedMapEvictionProcessor
                 if (entry.getValue() == null) {
                     replicatedRecordStore.removeTombstone(key);
                 } else {
-                    replicatedRecordStore.remove(key);
+                    replicatedRecordStore.evict(key);
                 }
             }
         }

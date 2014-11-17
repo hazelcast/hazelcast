@@ -63,7 +63,7 @@ public class ListSetBackupOperation extends CollectionOperation implements Backu
         super.writeInternal(out);
         out.writeLong(oldItemId);
         out.writeLong(itemId);
-        value.writeData(out);
+        out.writeData(value);
     }
 
     @Override
@@ -71,7 +71,6 @@ public class ListSetBackupOperation extends CollectionOperation implements Backu
         super.readInternal(in);
         oldItemId = in.readLong();
         itemId = in.readLong();
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
     }
 }

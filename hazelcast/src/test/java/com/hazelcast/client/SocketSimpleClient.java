@@ -20,10 +20,7 @@ import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.ObjectDataInputStream;
-import com.hazelcast.nio.serialization.ObjectDataOutputStream;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.*;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.io.BufferedInputStream;
@@ -60,14 +57,13 @@ public class SocketSimpleClient implements SimpleClient {
     }
 
     public void send(Object o) throws IOException {
-        final Data data = serializationService.toData(o);
-        data.writeData(out);
+        Data data = serializationService.toData(o);
+        out.writeData(data);
         out.flush();
     }
 
     public Object receive() throws IOException {
-        Data responseData = new Data();
-        responseData.readData(in);
+        Data responseData = in.readData();
         ClientResponse clientResponse = serializationService.toObject(responseData);
         return serializationService.toObject(clientResponse.getResponse());
     }

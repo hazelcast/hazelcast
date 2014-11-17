@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.EventService;
@@ -48,6 +49,9 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 
+/**
+ * The {@link com.hazelcast.client.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
+ */
 public final class ClientEndpointImpl implements Client, ClientEndpoint {
 
     private final ClientEngineImpl clientEngine;
@@ -74,6 +78,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         }
     }
 
+    @Override
     public Connection getConnection() {
         return conn;
     }
@@ -83,14 +88,17 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         return principal != null ? principal.getUuid() : null;
     }
 
-    public boolean live() {
-        return conn.live();
+    @Override
+    public boolean isAlive() {
+        return conn.isAlive();
     }
 
+    @Override
     public void setLoginContext(LoginContext loginContext) {
         this.loginContext = loginContext;
     }
 
+    @Override
     public Subject getSubject() {
         return loginContext != null ? loginContext.getSubject() : null;
     }
@@ -173,6 +181,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         transactionContextMap.put(transactionContext.getTxnId(), transactionContext);
     }
 
+    @Override
     public void removeTransactionContext(String txnId) {
         transactionContextMap.remove(txnId);
     }
@@ -188,6 +197,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         });
     }
 
+    @Override
     public void setDistributedObjectListener(final String id) {
         removeListenerActions.add(new Runnable() {
             @Override
@@ -197,6 +207,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         });
     }
 
+    @Override
     public void clearAllListeners() {
         for (Runnable removeAction : removeListenerActions) {
             try {
@@ -248,21 +259,19 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     public void sendResponse(Object response, int callId) {
         boolean isError = false;
         Object clientResponseObject;
-        if (response == null) {
-            clientResponseObject = new Data();
-        } else if (response instanceof Throwable) {
+        if (response instanceof Throwable) {
             isError = true;
             ClientExceptionConverter converter = ClientExceptionConverters.get(getClientType());
             clientResponseObject = converter.convert((Throwable) response);
         } else {
-            clientResponseObject = response;
+            clientResponseObject = response != null ? response : new DefaultData();
         }
-        clientEngine.sendResponse(this, clientResponseObject, callId, isError, false);
+        clientEngine.sendResponse(this, null, clientResponseObject, callId, isError, false);
     }
 
     @Override
-    public void sendEvent(Object event, int callId) {
-        clientEngine.sendResponse(this, event, callId, false, true);
+    public void sendEvent(Data key, Object event, int callId) {
+        clientEngine.sendResponse(this, key, event, callId, false, true);
     }
 
     @Override
