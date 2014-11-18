@@ -361,11 +361,16 @@ public final class BasicOperationScheduler {
     public void dumpPerformanceMetrics(StringBuffer sb) {
         for (int k = 0; k < partitionOperationThreads.length; k++) {
             OperationThread operationThread = partitionOperationThreads[k];
-            sb.append(operationThread.getName()).append(".processedCount=").append(operationThread.processedCount).append("\n");
+            sb.append(operationThread.getName())
+                    .append(" processedCount=").append(operationThread.processedCount)
+                    .append(" pendingCount=").append(operationThread.workQueue.size())
+                    .append('\n');
         }
+        sb.append("pending generic operations ").append(genericWorkQueue.size()).append('\n');
         for (int k = 0; k < genericOperationThreads.length; k++) {
             OperationThread operationThread = genericOperationThreads[k];
-            sb.append(operationThread.getName()).append(".processedCount=").append(operationThread.processedCount).append("\n");
+            sb.append(operationThread.getName())
+                    .append(" processedCount=").append(operationThread.processedCount).append('\n');
         }
     }
 
