@@ -3,6 +3,7 @@ package com.hazelcast.aws.security;
 import com.hazelcast.aws.impl.Constants;
 import com.hazelcast.aws.utility.AwsURLEncoder;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.util.QuickMath;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -20,10 +21,7 @@ import java.util.Map;
  * Created by igmar on 03/11/14.
  */
 public class EC2RequestSigner {
-    private static final int BYTE_MAX = 0xff;
-    private static final int OCTET_MAX = 0x0f;
     private static final String API_TERMINATOR = "aws4_request";
-    private static final int FOUR_BITS = 4;
 
     private final AwsConfig config;
     private String service;
@@ -161,7 +159,7 @@ public class EC2RequestSigner {
             return null;
         }
 
-        return bytesToHex(signature);
+        return QuickMath.bytesToHex(signature);
     }
 
 
@@ -197,17 +195,7 @@ public class EC2RequestSigner {
         return components;
     }
 
-    private String bytesToHex(byte[] in) {
-        final char[] hexArray = "0123456789abcdef".toCharArray();
 
-        char[] hexChars = new char[in.length * 2];
-        for (int j = 0; j < in.length; j++) {
-            int v = in[j] & BYTE_MAX;
-            hexChars[j * 2] = hexArray[v >>> FOUR_BITS];
-            hexChars[j * 2 + 1] = hexArray[v & OCTET_MAX];
-        }
-        return new String(hexChars);
-    }
 
     private String sha256Hashhex(final String in) {
         String payloadHash = "";
@@ -215,7 +203,7 @@ public class EC2RequestSigner {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(in.getBytes("UTF-8"));
             byte[] digest = md.digest();
-            payloadHash = bytesToHex(digest);
+            payloadHash = QuickMath.bytesToHex(digest);
         } catch (NoSuchAlgorithmException e) {
             return null;
         } catch (UnsupportedEncodingException e) {
