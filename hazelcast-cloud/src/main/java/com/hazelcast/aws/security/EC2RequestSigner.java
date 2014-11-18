@@ -20,7 +20,11 @@ import java.util.Map;
  * Created by igmar on 03/11/14.
  */
 public class EC2RequestSigner {
+    private static final int BYTE_MAX = 0xff;
+    private static final int OCTET_MAX = 0x0f;
     private static final String API_TERMINATOR = "aws4_request";
+    private static final int FOUR_BITS = 4;
+
     private final AwsConfig config;
     private String service;
     private final String timestamp;
@@ -198,9 +202,9 @@ public class EC2RequestSigner {
 
         char[] hexChars = new char[in.length * 2];
         for (int j = 0; j < in.length; j++) {
-            int v = in[j] & 0xff;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0f];
+            int v = in[j] & BYTE_MAX;
+            hexChars[j * 2] = hexArray[v >>> FOUR_BITS];
+            hexChars[j * 2 + 1] = hexArray[v & OCTET_MAX];
         }
         return new String(hexChars);
     }
