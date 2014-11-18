@@ -125,4 +125,16 @@ public final class QuickMath {
     public static long normalize(long value, int factor) {
         return divideByAndCeilToLong(value, factor) * factor;
     }
+
+    public static String bytesToHex(byte[] in) {
+        final char[] hexArray = "0123456789abcdef".toCharArray();
+
+        char[] hexChars = new char[in.length * 2];
+        for (int j = 0; j < in.length; j++) {
+            int v = in[j] & 0xff;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0xf];
+        }
+        return new String(hexChars);
+    }
 }
