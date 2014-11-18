@@ -1,6 +1,6 @@
 
 
-## Listener Configurations
+### Listener Configurations
 
 You can add or remove event listeners to/from the related object using Hazelcast API.
 

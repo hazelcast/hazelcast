@@ -32,5 +32,9 @@ JobTrackerConfig JTcfg = config.getJobTrackerConfig()
 
 It has below parameters.
 
+- name: Name of the service to be registered.
+- class-name: Name of the class that you develop.
+- properties: This parameter includes the custom properties that you can add to your service. You enable/disable these properties and set their values using this parameter.
+
 
 
