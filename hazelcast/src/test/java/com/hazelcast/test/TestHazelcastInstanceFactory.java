@@ -31,6 +31,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
+
 public final class TestHazelcastInstanceFactory {
 
     private final static String HAZELCAST_CLIENT = "com.hazelcast.client.HazelcastClient";
@@ -46,13 +48,21 @@ public final class TestHazelcastInstanceFactory {
     private final int count;
 
     public TestHazelcastInstanceFactory(int count) {
-        this.count = count;
+        this(createAddresses(count));
+    }
+
+    public TestHazelcastInstanceFactory(String... addresses) {
+        this(createAddresses(addresses));
+    }
+
+    private TestHazelcastInstanceFactory(Address[] addresses) {
+        this.count = addresses.length;
         if (mockNetwork) {
-            addresses = createAddresses(count);
-            registry = new TestNodeRegistry(addresses);
+            this.addresses = addresses;
+            this.registry = new TestNodeRegistry(this.addresses);
         } else {
-            addresses = null;
-            registry = null;
+            this.addresses = null;
+            this.registry = null;
         }
     }
 
@@ -71,12 +81,12 @@ public final class TestHazelcastInstanceFactory {
         }
         if (useClient) {
             return newHazelcastClient();
-        }else {
+        } else {
             return HazelcastInstanceFactory.newHazelcastInstance(config);
         }
     }
 
-    public HazelcastInstance[] newInstances(){
+    public HazelcastInstance[] newInstances() {
         return newInstances(new Config());
     }
 
@@ -140,6 +150,28 @@ public final class TestHazelcastInstanceFactory {
             }
         }
         return addresses;
+    }
+
+    private static Address[] createAddresses(String...addressArray) {
+        checkElementsNotNull(addressArray);
+
+        final int count = addressArray.length;
+        Address[] addresses = new Address[count];
+        for (int i = 0; i < count; i++) {
+            try {
+                addresses[i] = new Address(addressArray[i], PORTS.incrementAndGet());
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+        }
+        return addresses;
+    }
+
+    private static <T> void checkElementsNotNull(T[] array) {
+        checkNotNull(array, "Array should not be null");
+        for (Object element : array) {
+            checkNotNull(element, "Array element should not be null");
+        }
     }
 
     private static Config init(Config config) {

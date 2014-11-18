@@ -14,21 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.exception;
+package com.hazelcast.spi.impl;
+
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
- * A RetryableHazelcastException that indicates that the execution of an operation ran into a timeout.
+ * An response that indicates that the execution of a single call ran into a timeout.
  */
-public class CallTimeoutException extends RetryableHazelcastException {
+public class CallTimeoutResponse extends Response implements IdentifiedDataSerializable {
 
-    public CallTimeoutException() {
+    public CallTimeoutResponse() {
     }
 
-    public CallTimeoutException(String message) {
-        super(message);
+    public CallTimeoutResponse(long callId, boolean urgent) {
+        super(callId, urgent);
     }
 
-    public CallTimeoutException(String opName, long invocationTime, long timeout) {
-        super("Call timed out for " + opName + ", call-time: " + invocationTime + ", timeout: " + timeout);
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.CALL_TIMEOUT_RESPONSE;
     }
 }
+

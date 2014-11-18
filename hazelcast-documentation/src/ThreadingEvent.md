@@ -23,7 +23,7 @@ Also, when processing a message from A takes a lot of time and the event thread 
 That is why it is better to offload processing to a dedicated thread (pool) so that systems are better isolated.
 
 If events are produced at a higher rate than they are consumed, the queue will grow in size. To prevent overloading the system
-and running into an `OutOfMemoryException`, the queue is given a capacity of 1M million items. When the maximum capacity is reached, the items are
+and running into an `OutOfMemoryException`, the queue is given a capacity of 1 million items. When the maximum capacity is reached, the items are
 dropped. This means that the event system is a 'best effort' system. There is no guarantee that you are going to get an
 event. Topic A might have a lot of pending messages, and therefore B cannot receive messages because the queue
 has no capacity and messages for B are dropped.

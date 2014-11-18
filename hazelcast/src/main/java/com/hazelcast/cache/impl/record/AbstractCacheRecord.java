@@ -84,6 +84,8 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSeri
     }
 
     @Override
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "CacheRecord can be accessed by only its own partition thread.")
     public void incrementAccessHit() {
         accessHit++;
     }

@@ -19,12 +19,12 @@ package com.hazelcast.cluster.impl;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MemberInfo;
-import com.hazelcast.cluster.impl.operations.FinalizeJoinOperation;
-import com.hazelcast.cluster.impl.operations.JoinCheckOperation;
 import com.hazelcast.cluster.impl.operations.AuthenticationFailureOperation;
 import com.hazelcast.cluster.impl.operations.ConfigMismatchOperation;
+import com.hazelcast.cluster.impl.operations.FinalizeJoinOperation;
 import com.hazelcast.cluster.impl.operations.GroupMismatchOperation;
 import com.hazelcast.cluster.impl.operations.HeartbeatOperation;
+import com.hazelcast.cluster.impl.operations.JoinCheckOperation;
 import com.hazelcast.cluster.impl.operations.JoinRequestOperation;
 import com.hazelcast.cluster.impl.operations.MasterConfirmationOperation;
 import com.hazelcast.cluster.impl.operations.MasterDiscoveryOperation;
@@ -97,6 +97,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
+import static com.hazelcast.cluster.impl.operations.FinalizeJoinOperation.FINALIZE_JOIN_MAX_TIMEOUT;
+import static com.hazelcast.cluster.impl.operations.FinalizeJoinOperation.FINALIZE_JOIN_TIMEOUT_FACTOR;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
@@ -734,6 +736,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (node.getThisAddress().equals(masterAddress)) {
             logger.finest("Ignoring master response: " + masterAddress + " from: " + callerAddress
                     + ". This node is already master...");
+            return;
         }
 
         lock.lock();
@@ -917,8 +920,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     }
                 }
                 updateMembers(memberInfos);
-                waitWithDeadline(calls, Math.min(calls.size(), FinalizeJoinOperation.FINALIZE_JOIN_MAX_TIMEOUT),
-                        TimeUnit.SECONDS, whileFinalizeJoinsExceptionHandler);
+                int timeout = Math.min(calls.size() * FINALIZE_JOIN_TIMEOUT_FACTOR, FINALIZE_JOIN_MAX_TIMEOUT);
+                waitWithDeadline(calls, timeout, TimeUnit.SECONDS, whileFinalizeJoinsExceptionHandler);
             } finally {
                 node.getPartitionService().resumeMigration();
             }

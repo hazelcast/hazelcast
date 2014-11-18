@@ -285,6 +285,14 @@ public abstract class HazelcastTestSupport {
         return factory = new TestHazelcastInstanceFactory(nodeCount);
     }
 
+
+    protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(String... addresses) {
+        if (factory != null) {
+            throw new IllegalStateException("Node factory is already created!");
+        }
+        return factory = new TestHazelcastInstanceFactory(addresses);
+    }
+
     public HazelcastInstance createHazelcastInstance(Config config) {
         return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
     }

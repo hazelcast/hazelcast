@@ -1,0 +1,401 @@
+<!doctype html>
+
+<html lang="en">
+
+    <head>
+
+        <meta charset="UTF-8" />
+
+        <title>Hazelcast Readme</title>
+
+        <link rel="shortcut icon" href="data:image/vnd.microsoft.icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAADu7en/e3NX/15UM/9eVDP/XlQz/15UM/+uqZj//////7+7rv9eVDP/XlQz/15UM/9eVDP/XlQz/15UM/+AeF7/jIZu/zYqAP82KgD/NioA/zYqAP82KgD/mZN+//////+vqpr/NioA/zYqAP82KgD/NioA/zYqAP82KgD/YFc2/3x0Wf82KgD/NioA/zYqAP82KgD/NioA/5mTfv//////r6qa/zYqAP82KgD/NioA/zYqAP82KgD/NioA/2BXNv98dFn/NioA/zYqAP82KgD/NioA/zYqAP+Zk37//////6+qmv82KgD/NioA/zYqAP82KgD/NioA/zYqAP9gVzb/fHRZ/zYqAP82KgD/NioA/zYqAP82KgD/mZN+//////+vqpr/NioA/zYqAP82KgD/NioA/zYqAP82KgD/YFc2/3x0Wf82KgD/NioA/zYqAP82KgD/NioA/5mTfv//////tLCh/zYqAP82KgD/NioA/zYqAP82KgD/NioA/2VcPP98dFn/NioA/zYqAP82KgD/NioA/zYqAP+Zk37///////Hw7f9dUzH/NioA/zYqAP82KgD/NioA/0A0DP/AvK//fHRZ/zYqAP82KgD/NioA/zYqAP82KgD/mZN+/////////////v7+//Lx7//x8O3/8fDt//Hw7f/5+fj//////3x0Wf82KgD/NioA/zYqAP82KgD/NioA/5mTfv//////8/b//+Hp///h6f//4en//+Hp///h6f//4en//+ft//98dFn/NioA/zYqAP82KgD/NioA/zYqAP+Zk37//////5q1//8ARv//AEb//wBG//8ARv//AEb//wBG//82bf//fHRZ/zYqAP82KgD/NioA/zYqAP82KgD/mZN+//////+atf//AEb//wBG//8ARv//AEb//wBG//8ARv//Nm3//3x0Wf82KgD/NioA/zYqAP82KgD/NioA/5mTfv//////mrX//wBG//8ARv//AEb//wBG//8ARv//AEb//zZt//98dFn/NioA/zYqAP82KgD/NioA/zYqAP+Zk37//////5q1//8ARv//AEb//wBG//8ARv//AEb//wBG//82bf//fHRZ/zYqAP82KgD/NioA/zYqAP82KgD/mZN+//////+atf//AEb//wBG//8ARv//AEb//wBG//8ARv//Nm3//5CJcv82KgD/NioA/zYqAP82KgD/NioA/5mTfv//////mrX//wBG//8ARv//AEb//wBG//8ARv//AEb//01+///x8O7/hX5k/2hfQP9oX0D/aF9A/2hfQP+zrp///////7PI//9AdP//QHT//0B0//9AdP//QHT//1eF///e5///AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==">
+
+            <link rel="stylesheet" id="open-sans-css" href="//fonts.googleapis.com/css?family=Open+Sans%3A300italic%2C400italic%2C600italic%2C300%2C400%2C600&amp;subset=latin%2Clatin-ext&amp;ver=3.9.1" type="text/css" media="all" data-inprogress="">
+
+                
+
+                <style>
+
+                    
+
+                    body {
+
+                        font-family: 'Open Sans', sans-serif;
+
+                        color: #666;
+
+                        border-top: 6px solid #ff5f00;
+
+                        width: 100%;
+
+                        background: #f8f8f8;
+
+                        margin: 0;
+
+                        padding: 0;
+
+                        
+
+                    }
+
+                
+
+                .content {
+
+                    width: 800px;
+
+                    background: #fff;
+
+                    margin: 40px auto;
+
+                    border: 1px solid #ccc;
+
+                    padding: 30px 40px;
+
+                }
+
+                
+
+                .logo {
+
+                    width: 45px;
+
+                    display: block;
+
+                    margin: 0 auto;
+
+                }
+
+                
+
+                h1 {
+
+                    font-size: 40px;
+
+                    font-weight: 300;
+
+                    margin-top: 10px;
+
+                    text-align: center;
+
+                }
+
+                
+
+                h2 {
+
+                    margin-top: 30px;
+
+                    margin-bottom: 5px;
+
+                    font-size: 20px;
+
+                }
+
+                
+
+                h2 + p, h2 + ul {
+
+                    margin-top: 5px;
+
+                }
+
+                
+
+                a {
+
+                    color: #ff5f00;
+
+                    text-decoration: none;
+
+                    font-weight: bold;
+
+                }
+
+                
+
+                ul > li {
+
+                    margin-bottom: 5px;
+
+                }
+
+                
+
+                ul.included {
+
+                    list-style-type: none;
+
+                    padding-left: 0px;
+
+                }
+
+                
+
+                ul.included ul {
+
+                    margin-bottom: 12px;
+
+                    padding-left: 35px;
+
+                    list-style-type: disc;
+
+                }
+
+                
+
+                ul.included ul li {
+
+                    margin-bottom: 3px;
+
+                }
+
+                
+
+                h2:target {
+
+                    border-left: 5px solid #6ce26c;
+
+                    padding-left: 35px;
+
+                    margin-left: -40px;
+
+                }
+
+                
+
+                    </style>
+
+                
+
+    </head>
+
+    
+
+    <body>
+
+        <div class="content">
+
+            
+
+            <img class="logo" alt="Hazelcast Logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABpCAYAAADMfIaKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAnBJREFUeNrs3TFSwkAUxvElQ0fDDYwtFRb2eAO9gMIJ0BOgJ0BPEPQE3sD0FqayBW9AY+v4Fp9OhgHBwuTt5v/N7IQijLv7Y7PBmTxabo90esepHHwbuOoze399XvzlDR/nq37W0ddt8f0vkgdX7DqxvQNiKIextH6Ng8l1QH+Jx5g4Y5EPih/HvbRbwVluOifZAtGXNpeXWc0YsSXVD8pccC73AtFV8aJvJv+TrrSpoGS/gihGxnxVluE6SrK2cU+Zo1pQTjetkEyXEqk+maB0f0D8Jm7sNrGJe8qwvELGzEntuSiDsDrqT99ftpLS/TExgJIwB7YCCCAEEEAIIIAQQAAhgABCACGAAEIAAYQAAggBBBACCAEEEAIIIAQQQAgggBBACCCAEEAAIYDEm3ak48oD7fciSpDkYQUSJAqXLEAIIIAQQAAhgABCAAGEWEq7iYPu9I4H7qto24GrplaYr2j9Ju1xV5XudsMgrt1XKb204j890ONU+pDL8UZg8saCaJFPK1W6V6tT+vQox5HALBu1hyjGk7NXMt3X6n2S/nUbA1LCsFqP+Lt/jVkhIRSH7uveFjeI1rEP5ZcdJlrqPeoVMgmsv+NoQXTvSAPr9mnMK2QQYJ9Tf9mKFSTUX3lI+V+WsQACCAEEEAIIIAQQQAgggBBACCCAEEAAIYAAQgABhABCAAGEAAIIAaQRIAVTYQskZypsgdwxFYZA9NnpGdNha1O/krZgSoyA6PPSZ9KWTIuR215B8XdbJ6AY+h6iKIfsKYa+GPrLl7SRvDxSGPaWitLa90QtAVHHc9/Fej2QPfqauvCewl2N9VOAAQDt+HTADrWVDQAAAABJRU5ErkJggg==" />
+
+            
+
+            <h1>Hazelcast Readme</h1>
+
+            
+
+            <h2>Table of Contents</h2>
+
+            <ul>
+
+                <li><a href="#included">What's Included</a></li>
+
+                <li><a href="#getting-started">Getting Started</a></li>
+
+                <li><a href="#mancenter">Management Center</a></li>
+
+                <li><a href="#resources">Training, Tutorials and Events</a></li>
+
+                <li><a href="#community">Hazelcast Community</a></li>
+
+                <li><a href="#support">Support</a></li>
+
+                
+
+            </ul>
+
+            
+
+            <h2 id="included">What's Included:</h2>
+
+            
+
+            <ul class="included">
+
+                
+
+                <li><strong>/bin</strong>
+
+                    <ul>
+
+                        <li><strong>hazelcast.xml</strong> &mdash; The configuration file for Hazelcast.</li>
+
+                        <li><strong>server.bat</strong> &mdash; Starts a Hazelcast node for Windows users.</li>
+
+                        <li><strong>server.sh</strong> &mdash;  Starts a Hazelcast node for Linux users.</li>
+
+                    </ul>
+
+                </li>
+
+                
+
+                <li><strong>/code-samples</strong> &mdash; Hazelcast code samples to learn from and include in your projects. Please refer to the <a href="code-samples/readme.html">code samples readme</a> for more information.</li>
+
+                
+
+                <li><strong>/demo</strong>
+
+                    <ul>
+
+                        <li><strong>clientConsole.bat</strong> &mdash; Starts a sample client application for Windows users. You can perform, for example, usual map operations using command line interface. This application requires an up and running Hazelcast cluster.</li>
+
+                        <li><strong>clientConsole.sh</strong> &mdash; Starts a sample client application for Linux users. You can perform, for example, usual map operations using command line interface. This application requires an up and running Hazelcast cluster.</li>
+
+                        <li><strong>console.bat</strong> &mdash; Starts a sample node application for Windows users.</li>
+
+                        <li><strong>console.sh</strong> &mdash; Starts a sample node application for Linux users.</li>
+
+                    </ul>
+
+                </li>
+
+                
+
+                <li><strong>/docs</strong>
+
+                    <ul>
+
+                        <li><strong>/javadoc</strong> &mdash; <a href="docs/javadoc/index.html">Hazelcast Javadoc</a>.</li>
+
+                        <li><strong>/manual</strong> &mdash; <a href="docs/manual/html/index.html">Hazelcast Reference Manual</a>, also available in <a href="docs/manual/html-single/index.html">single page</a> and <a href="docs/manual/pdf/hazelcast-documentation-${project.version}.pdf">pdf</a> formats.</li>
+
+                    </ul>
+
+                </li>
+
+                
+
+                <li><strong>/lib</strong>
+
+                    <ul>
+
+                        <li><strong>hazelcast&ndash;<i>${project.version}</i>.jar</strong> &mdash; The core hazelcast JAR.</li>
+
+                        <li><strong>hazelcast-all&ndash;<i>${project.version}</i>.jar</strong> &mdash; Includes all of the libraries here in one JAR file.</li>
+
+                        <li><strong>hazelcast-client&ndash;<i>${project.version}</i>.jar</strong> &mdash; Java native client library to be included on classpath for Hazelcast client.</li>
+
+                        <li><strong>hazelcast-cloud&ndash;<i>${project.version}</i>.jar</strong> &mdash; To connect to a Hazelcast cluster on AWS as a client or node, include this library.</li>
+
+                        <li><strong>hazelcast-hibernate(version)&ndash;<i>${project.version}</i>.jar</strong> &mdash; These are the libraries that enable Hazelcast to be used as a Hibernate 2nd Level Cache, for Hibernate 3 and 4.</li>
+
+                        <li><strong>hazelcast-jca&ndash;<i>${project.version}</i>.jar</strong> and <strong>hazelcast-jca-rar&ndash;<i>${project.version}</i>.rar</strong> &mdash; These are the libraries when you want to use a Hazelcast Resource Adapter implementation.</li>
+
+                        <li><strong>hazelcast-spring&ndash;<i>${project.version}</i>.jar</strong> &mdash; This is the library to integrate Hazelcast with Spring based applications.</li>
+
+                        <li><strong>hazelcast-wm&ndash;<i>${project.version}</i>.jar</strong> &mdash; This is the Hazelcast's session replication module library.</li>
+
+                    </ul>
+
+                </li>
+
+                
+
+                <li><strong>/license</strong>
+
+                    <ul>
+
+                        <li><strong>apache-v2-license.txt</strong> &mdash; Hazelcast License.</li>
+
+                        <li><strong>mancenter-license.txt</strong> &mdash; Management Center License.</li>
+
+                        <li><strong>notice.txt</strong> &mdash; NOTICE file corresponding to the section 4 (d) of the Apache License.</li>
+
+                        <li><strong>README.txt</strong> &mdash; License README.</li>
+
+                    </ul>
+
+                </li>
+
+                
+
+                <li><strong>/mancenter</strong>
+
+                    <ul>
+
+                        <li><strong>mancenter&ndash;<i>${project.version}</i>.war</strong> &mdash; Hazelcast Management Center. This WAR file is executable (double click on it) to start Management Center or can be deployed as a web application. Please see the <a href="docs/manual/html/managementcenter.html">reference manual</a> for more information.</li>
+
+                        <li><strong>startManCenter.bat</strong> &mdash; Starts the management center for Windows users.</li>
+
+                        <li><strong>startManCenter.sh</strong> &mdash; Starts the management center for Linux users.</li>
+
+                    </ul>
+
+                </li>
+
+                
+
+                
+
+                
+
+            </ul>
+
+            
+
+            
+
+            <h2 id="getting-started">Getting Started</h2>
+
+            <p>First, go through the included <a href="docs/manual/html-single/hazelcast-documentation.html#getting-started">installation guide</a> to get Hazelcast up and running. Don't miss the sections on <a href="docs/manual/html-single/hazelcast-documentation.html#starting-the-cluster-and-client">starting the cluster and client</a> and <a href="docs/manual/html-single/hazelcast-documentation.html#configuring-hazelcast">configuring Hazelcast</a>.<br/>
+
+            <p>The online <a href="http://hazelcast.org/getting-started/">Getting Started Guide</a> includes video tutorials to guide you through building your first Hazelcast application and running your cluster.</p>
+
+            
+
+            
+
+            <h2 id="mancenter">Management Center</h2>
+
+            <p>See the included <a href="docs/manual/html/managementcenter.html#management-center">Management Center documentation</a> for installation instructions and an overview of Management Center.</p>
+
+            
+
+            
+
+            <h2 id="resources">Training, Tutorials and Events</h2>
+
+            <ul>
+
+                <li><a href="http://hazelcast.org/learn">Hazelcast.org/Learn</a> is the hub for online training, tutorials and learning resources.</li>
+
+                <li><a href="http://hazelcast.com/events/">Hazelcast.com/Events</a> will connect you with live training classes, user groups, meetups and events.</li>
+
+            </ul>
+
+            
+
+            <h2 id="community">Hazelcast Community</h2>
+
+            <p>Get your questions answered and share your knowledge on <a href="http://stackoverflow.com/questions/tagged/hazelcast">Stack Overflow</a> and our <a href="https://groups.google.com/forum/#!forum/hazelcast">Google Group</a>.
+
+            
+
+            
+
+            </p>
+
+            
+
+            <h2 id="support">Support</h2>
+
+            <p>For information on professional support subscriptions, please visit <a href="http://hazelcast.com/support">Hazelcast.com/Support</a>.
+
+            
+
+            </p>
+
+            
+
+            
+
+            
+
+        </div>
+
+    </body>
+
+</html>

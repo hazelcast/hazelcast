@@ -35,7 +35,8 @@ import java.util.logging.Level;
 
 public class SocketConnector implements Runnable {
 
-    private static final int TIMEOUT = 3000;
+    private static final int DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS = 3;
+    private static final int MILLIS_PER_SECOND = 1000;
     private final TcpIpConnectionManager connectionManager;
     private final Address address;
     private final ILogger logger;
@@ -64,14 +65,16 @@ public class SocketConnector implements Runnable {
             final Address thisAddress = connectionManager.ioService.getThisAddress();
             if (address.isIPv4()) {
                 // remote is IPv4; connect...
-                tryToConnect(address.getInetSocketAddress(), 0);
+                tryToConnect(address.getInetSocketAddress(),
+                        connectionManager.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
             } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
                 // Both remote and this addresses are IPv6.
                 // This is a local IPv6 address and scope id is known.
                 // find correct inet6 address for remote and connect...
                 final Inet6Address inetAddress = AddressUtil
                         .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
-                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), 0);
+                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()),
+                        connectionManager.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
             } else {
                 // remote is IPv6 and this is either IPv4 or a global IPv6.
                 // find possible remote inet6 addresses and try each one to connect...
@@ -94,9 +97,12 @@ public class SocketConnector implements Runnable {
         }
         boolean connected = false;
         Exception error = null;
+        int configuredTimeoutMillis = connectionManager.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND;
+        int timeoutMillis = configuredTimeoutMillis > 0 && configuredTimeoutMillis < Integer.MAX_VALUE
+                ? configuredTimeoutMillis : DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS * MILLIS_PER_SECOND;
         for (Inet6Address inetAddress : possibleInetAddresses) {
             try {
-                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), TIMEOUT);
+                tryToConnect(new InetSocketAddress(inetAddress, address.getPort()), timeoutMillis);
                 connected = true;
                 break;
             } catch (Exception e) {
