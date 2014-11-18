@@ -10,22 +10,25 @@ import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by igmar on 03/11/14.
  */
 public class EC2RequestSigner {
-    private final static String API_TERMINATOR = "aws4_request";
-    //private DescribeInstances request = null;
+    private static final String API_TERMINATOR = "aws4_request";
     private final AwsConfig config;
     private String service;
     private final String timestamp;
-    private String signature = null;
-    private Map<String, String> attributes = null;
-    private String canonicalRequest = null;
-    private String stringToSign = null;
-    private byte[] signingKey = null;
+    private String signature;
+    private Map<String, String> attributes;
+    private String canonicalRequest;
+    private String stringToSign;
+    private byte[] signingKey;
 
     public EC2RequestSigner(AwsConfig config, final String timeStamp) {
         if (config == null) {
@@ -60,13 +63,9 @@ public class EC2RequestSigner {
         this.service = service;
         this.attributes = attributes;
         canonicalRequest = getCanonicalizedRequest();
-        System.out.println(String.format("Canonical request \n%s", canonicalRequest));
         stringToSign = createStringToSign(canonicalRequest);
-        System.out.println(String.format("String to sign    \n%s", stringToSign));
         signingKey = deriveSigningKey();
-        System.out.println(String.format("signingkey        \n%s",  bytesToHex(signingKey)));
         this.signature = createSignature(stringToSign, signingKey);
-        System.out.println(String.format("signature         \n%s", this.signature));
 
         return this.signature;
     }
@@ -87,7 +86,7 @@ public class EC2RequestSigner {
         // signed headers + \n
         sb.append(getSignedHeaders()).append("\n");
         // payload hash
-        sb.append(SHA256HashHex(""));
+        sb.append(sha256Hashhex(""));
 
         return sb.toString();
     }
@@ -102,7 +101,7 @@ public class EC2RequestSigner {
         // CredentialScope
         sb.append(getCredentialScope()).append("\n");
         // HashedCanonicalRequest
-        sb.append(SHA256HashHex(canonicalRequest));
+        sb.append(sha256Hashhex(canonicalRequest));
 
         return sb.toString();
     }
@@ -112,11 +111,8 @@ public class EC2RequestSigner {
         final String signKey = config.getSecretKey();
         final String dateStamp = timestamp.substring(0, 8);
         // This is derived from
-        // http://docs.com.hazelcast.aws.security.amazon.com/general/latest/gr/signature-v4-examples.html#signature-v4-examples-python
-        System.out.println(String.format("key         : %s", signKey));
-        System.out.println(String.format("dateStamp   : %s", dateStamp));
-        System.out.println(String.format("regionName  : %s", config.getRegion()));
-        System.out.println(String.format("serviceName : %s", this.service));
+        // http://docs.com.hazelcast.aws.security.amazon.com/general/latest/gr/signature-v4-examples.html
+        // #signature-v4-examples-python
 
         try {
             final String key = "AWS4" + signKey;
@@ -149,10 +145,6 @@ public class EC2RequestSigner {
     }
 
     private String createSignature(String stringToSign, byte[] signingKey) {
-        System.out.println("-----");
-        System.out.println(String.format("%s", stringToSign));
-        System.out.println(String.format("%s", bytesToHex(signingKey)));
-
         byte[] signature = null;
         try {
             final Mac signMac = Mac.getInstance("HmacSHA256");
@@ -165,11 +157,7 @@ public class EC2RequestSigner {
             return null;
         }
 
-        final String sig = bytesToHex(signature);
-        System.out.println(String.format("%s", sig));
-        System.out.println("-----");
-
-        return sig;
+        return bytesToHex(signature);
     }
 
 
@@ -209,15 +197,15 @@ public class EC2RequestSigner {
         final char[] hexArray = "0123456789abcdef".toCharArray();
 
         char[] hexChars = new char[in.length * 2];
-        for ( int j = 0; j < in.length; j++ ) {
-            int v = in[j] & 0xFF;
+        for (int j = 0; j < in.length; j++) {
+            int v = in[j] & 0xff;
             hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0f];
         }
         return new String(hexChars);
     }
 
-    private String SHA256HashHex(final String in) {
+    private String sha256Hashhex(final String in) {
         String payloadHash = "";
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");

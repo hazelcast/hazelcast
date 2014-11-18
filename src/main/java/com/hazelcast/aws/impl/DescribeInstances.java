@@ -33,8 +33,8 @@ import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
 import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD_V4;
 
 public class DescribeInstances {
-    private EC2RequestSigner rs = null;
-    private AwsConfig awsConfig = null;
+    private EC2RequestSigner rs;
+    private AwsConfig awsConfig;
 
     private Map<String, String> attributes = new HashMap<String, String>();
 
