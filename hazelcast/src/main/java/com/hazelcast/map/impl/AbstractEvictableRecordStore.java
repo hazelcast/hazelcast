@@ -333,10 +333,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     private void doPostExpirationOperations(Data key, Object value) {
         final String mapName = this.name;
         final MapServiceContext mapServiceContext = this.mapServiceContext;
-        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        if (nearCacheProvider.isNearCacheAndInvalidationEnabled(mapName)) {
-            nearCacheProvider.invalidateAllNearCaches(mapName, key);
-        }
         getEvictionOperator().fireEvent(key, value, mapName, mapServiceContext);
     }
 

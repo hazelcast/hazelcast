@@ -26,7 +26,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.NearCache;
+import com.hazelcast.map.impl.NearCacheProvider;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
@@ -45,6 +48,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -395,7 +399,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         NearCacheStats stats2 = map.getLocalMapStats().getNearCacheStats();
         assertTrue("hits", 400 < stats2.getHits());
         for (int i = 0; i < size; i++) {
-            assertEquals(i,(int)all.get(i));
+            assertEquals(i, (int) all.get(i));
         }
 
     }
@@ -513,5 +517,81 @@ public class NearCacheTest extends HazelcastTestSupport {
 
     }
 
+    /**
+     * Near-cache has its own eviction/expiration mechanism,
+     * eviction/expiration on IMap should not force any near-cache eviction/expiration.
+     * Except a direct call to {@link com.hazelcast.core.IMap#evict(Object)}
+     * and {@link com.hazelcast.core.IMap#evictAll()}, those direct calls also evicts near-caches.
+     */
+    @Test
+    public void testNearCacheEntriesNotExpired_afterIMapExpiration() throws Exception {
+        final String mapName = randomMapName();
+        final Config config = createNearCachedMapConfig(mapName);
+        final HazelcastInstance instance = createHazelcastInstance(config);
+        final IMap<Integer, Integer> map = instance.getMap(mapName);
+        final int mapSize = 3;
+        final CountDownLatch latch = new CountDownLatch(mapSize);
 
+        addListener(map, latch);
+        populateMapWithExpirableEnties(map, mapSize);
+        populateNearCache(map, mapSize);
+
+        waitUntilEvictionEventsReceived(latch);
+        assertNearCacheSize(mapSize, mapName, map);
+    }
+
+    private void waitUntilEvictionEventsReceived(CountDownLatch latch) {
+        assertOpenEventually(latch);
+    }
+
+    private void addListener(IMap<Integer, Integer> map, final CountDownLatch latch) {
+        map.addLocalEntryListener(new EntryAdapter<Integer, Integer>() {
+            @Override
+            public void entryEvicted(EntryEvent<Integer, Integer> event) {
+                latch.countDown();
+            }
+        });
+    }
+
+    private void populateNearCache(IMap<Integer, Integer> map, int mapSize) {
+        for (int i = 0; i < mapSize; i++) {
+            map.get(i);
+        }
+    }
+
+    private void populateMapWithExpirableEnties(IMap<Integer, Integer> map, int mapSize) {
+        for (int i = 0; i < mapSize; i++) {
+            map.put(i, i, 3, TimeUnit.SECONDS);
+        }
+    }
+
+    private void assertNearCacheSize(final int expectedSize, final String mapName, final Map map) {
+
+        final AssertTask assertionTask = new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final MapProxyImpl mapProxy = (MapProxyImpl) map;
+                final MapService mapService = (MapService) mapProxy.getService();
+                final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+                final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+                final NearCache nearCache = nearCacheProvider.getNearCache(mapName);
+
+                assertEquals(expectedSize, nearCache.size());
+            }
+        };
+
+        assertTrueEventually(assertionTask);
+    }
+
+    private Config createNearCachedMapConfig(String mapName) {
+        final Config config = new Config();
+
+        final NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setCacheLocalEntries(true);
+
+        final MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setNearCacheConfig(nearCacheConfig);
+
+        return config;
+    }
 }
