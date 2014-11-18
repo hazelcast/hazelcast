@@ -60,7 +60,7 @@ import java.util.logging.Level;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 
 /**
- * The {@llink ClientClusterService} implementation.
+ * The {@link ClientClusterService} implementation.
  */
 public class ClientClusterServiceImpl implements ClientClusterService {
 

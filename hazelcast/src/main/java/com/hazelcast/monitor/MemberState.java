@@ -19,8 +19,8 @@ package com.hazelcast.monitor;
 import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.management.SerializableClientEndPoint;
 import com.hazelcast.management.SerializableMXBeans;
+
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 public interface MemberState extends JsonSerializable {
@@ -41,12 +41,12 @@ public interface MemberState extends JsonSerializable {
 
     LocalCacheStats getLocalCacheStats(String cacheName);
 
-    List<Integer> getPartitions();
-
     Collection<SerializableClientEndPoint> getClients();
 
     SerializableMXBeans getMXBeans();
 
     LocalMemoryStats getLocalMemoryStats();
+
+    MemberPartitionState getMemberPartitionState();
 
 }

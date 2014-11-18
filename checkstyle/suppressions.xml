@@ -253,7 +253,6 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.instance[\\/]"/>
     <suppress checks="MethodCount" files="com.hazelcast.instance.HazelcastInstanceProxy"/>
     <suppress checks="MethodCount" files="com.hazelcast.instance.MemberImpl"/>
-    <suppress checks="EmptyBlock" files="com.hazelcast.instance.OutOfMemoryErrorDispatcher"/>
     <suppress checks="EmptyBlock" files="com.hazelcast.instance.NodeShutdownLatch"/>
     <suppress checks="MethodCount" files="com.hazelcast.instance.HazelcastInstanceImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.instance.HazelcastInstanceImpl"/>

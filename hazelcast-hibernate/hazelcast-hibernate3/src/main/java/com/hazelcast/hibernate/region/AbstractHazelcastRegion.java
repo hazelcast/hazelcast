@@ -53,7 +53,7 @@ abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements Haz
     }
 
     /**
-     * @return The size of the internal <code>{@linkIMap}</code>.
+     * @return The size of the internal <code>{@link com.hazelcast.core.IMap}</code>.
      */
     public long getElementCountInMemory() {
         return getCache().size();

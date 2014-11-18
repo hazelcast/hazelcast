@@ -1,6 +1,6 @@
 package com.hazelcast.map.impl.mapstore;
 
-import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindProcessor;
@@ -8,6 +8,7 @@ import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writethrough.WriteThroughStore;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,18 +29,20 @@ public final class MapDataStores {
     /**
      * Creates a write behind data store.
      *
-     * @param mapContainer corresponding container of map.
-     * @param partitionId  partition id of partition.
-     * @param <K>          type of key to store.
-     * @param <V>          type of value to store.
+     * @param mapStoreContext      context for map store operations.
+     * @param partitionId          partition id of partition.
+     * @param writeBehindProcessor
+     * @param <K>                  type of key to store.
+     * @param <V>                  type of value to store.
      * @return new write behind store manager.
      */
-    public static <K, V> MapDataStore<K, V> createWriteBehindStore(MapContainer mapContainer, int partitionId,
+    public static <K, V> MapDataStore<K, V> createWriteBehindStore(MapStoreContext mapStoreContext, int partitionId,
                                                                    WriteBehindProcessor writeBehindProcessor) {
-        final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
-        final MapStoreWrapper store = mapContainer.getMapStoreContext().getStore();
+        final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
+        final MapStoreWrapper store = mapStoreContext.getMapStoreWrapper();
         final SerializationService serializationService = mapServiceContext.getNodeEngine().getSerializationService();
-        final int writeDelaySeconds = mapContainer.getMapConfig().getMapStoreConfig().getWriteDelaySeconds();
+        final MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
+        final int writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
         final long writeDelayMillis = TimeUnit.SECONDS.toMillis(writeDelaySeconds);
         // TODO writeCoalescing should be configurable.
         boolean writeCoalescing = true;
@@ -61,14 +64,19 @@ public final class MapDataStores {
     /**
      * Creates a write through data store.
      *
-     * @param mapContainer corresponding container of map.
-     * @param <K>          type of key to store.
-     * @param <V>          type of value to store.
+     * @param mapStoreContext context for map store operations.
+     * @param <K>             type of key to store.
+     * @param <V>             type of value to store.
      * @return new write through store manager.
      */
-    public static <K, V> MapDataStore<K, V> createWriteThroughStore(MapContainer mapContainer) {
-        return (MapDataStore<K, V>) new WriteThroughStore(mapContainer.getMapStoreContext().getStore(),
-                mapContainer.getMapServiceContext().getNodeEngine().getSerializationService());
+    public static <K, V> MapDataStore<K, V> createWriteThroughStore(MapStoreContext mapStoreContext) {
+        final MapStoreWrapper store = mapStoreContext.getMapStoreWrapper();
+        final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final SerializationService serializationService = nodeEngine.getSerializationService();
+
+        return (MapDataStore<K, V>) new WriteThroughStore(store, serializationService);
+
     }
 
     /**

@@ -18,9 +18,12 @@ package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.Collections;
 import java.util.Map;
@@ -28,7 +31,7 @@ import java.util.Map;
 import static com.hazelcast.map.impl.mapstore.MapStoreManagers.emptyMapStoreManager;
 
 /**
- * A factory which create {@link com.hazelcast.map.impl.mapstore.MapStoreContext} objects
+ * A factory which creates {@link com.hazelcast.map.impl.mapstore.MapStoreContext} objects
  * according to {@link com.hazelcast.config.MapStoreConfig}.
  */
 public final class MapStoreContextFactory {
@@ -47,7 +50,6 @@ public final class MapStoreContextFactory {
         return BasicMapStoreContext.create(mapContainer);
     }
 
-
     private static final class EmptyMapStoreContext implements MapStoreContext {
 
         @Override
@@ -61,7 +63,8 @@ public final class MapStoreContextFactory {
         }
 
         @Override
-        public MapStoreWrapper getStore() {
+        public MapStoreWrapper getMapStoreWrapper() {
+            // keep it null. do not throw exception.
             return null;
         }
 
@@ -78,6 +81,35 @@ public final class MapStoreContextFactory {
         @Override
         public boolean isWriteBehindMapStoreEnabled() {
             return false;
+        }
+
+        @Override
+        public SerializationService getSerializationService() {
+            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+        }
+
+        @Override
+        public ILogger getLogger(Class clazz) {
+            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+        }
+
+        @Override
+        public String getMapName() {
+            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+        }
+
+        @Override
+        public MapServiceContext getMapServiceContext() {
+            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+        }
+
+        @Override
+        public MapStoreConfig getMapStoreConfig() {
+            throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
+        }
+
+        @Override
+        public void waitInitialLoadFinish() {
         }
     }
 

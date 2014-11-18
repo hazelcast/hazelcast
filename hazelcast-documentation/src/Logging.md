@@ -19,7 +19,7 @@ You can set `hazelcast.logging.type` through declarative configuration, programm
 ![image](images/NoteSmall.jpg) ***NOTE:*** *If you choose to use `log4j` or `slf4j`, proper dependencies should be included in the classpath.*
 <br></br>
 
--   **Declarative Configuration**
+**Declarative Configuration**
 
 ```xml
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config
@@ -36,14 +36,14 @@ You can set `hazelcast.logging.type` through declarative configuration, programm
 </hazelcast>
 ```
 
--   **Programmatic Configuration**
+**Programmatic Configuration**
 
 ```java
 Config config = new Config() ;
 config.setProperty( "hazelcast.logging.type", "log4j" );
 ```
 
--   **System Property**
+**System Property**
 
 	-	Using JVM parameter: `java -Dhazelcast.logging.type=slf4j`
 	-	Using System class: `System.setProperty( "hazelcast.logging.type", "none" );`

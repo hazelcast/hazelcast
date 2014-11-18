@@ -153,7 +153,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         MapStoreConfig mapStoreConfig = getMapConfig().getMapStoreConfig();
         if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
             MapStoreConfig.InitialLoadMode initialLoadMode = mapStoreConfig.getInitialLoadMode();
-            if (initialLoadMode.equals(MapStoreConfig.InitialLoadMode.EAGER)) {
+            if (MapStoreConfig.InitialLoadMode.EAGER.equals(initialLoadMode)) {
                 waitUntilLoaded();
             }
         }
@@ -1132,7 +1132,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final MapService service = getService();
         final MapServiceContext mapServiceContext = service.getMapServiceContext();
         final MapContainer mapContainer = mapServiceContext.getMapContainer(name);
-        return mapContainer.getMapStoreContext().getStore();
+        return mapContainer.getMapStoreContext().getMapStoreWrapper();
 
     }
 

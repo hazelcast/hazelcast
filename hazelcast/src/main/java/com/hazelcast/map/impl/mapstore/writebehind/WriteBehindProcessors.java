@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 
 /**
  * Static factory which creates a write behind processor.
@@ -26,7 +26,7 @@ public final class WriteBehindProcessors {
     private WriteBehindProcessors() {
     }
 
-    public static WriteBehindProcessor createWriteBehindProcessor(MapContainer mapContainer) {
-        return new DefaultWriteBehindProcessor(mapContainer);
+    public static WriteBehindProcessor createWriteBehindProcessor(MapStoreContext mapStoreContext) {
+        return new DefaultWriteBehindProcessor(mapStoreContext);
     }
 }

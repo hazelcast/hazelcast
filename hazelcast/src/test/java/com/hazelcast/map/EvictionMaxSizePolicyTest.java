@@ -15,8 +15,8 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.SizeEstimator;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
-import com.hazelcast.map.impl.eviction.MemoryInfoAccessor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
@@ -24,6 +24,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.MemoryInfoAccessor;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -195,7 +196,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
                     @Override
                     public long getCost(Object record) {
-                        return convertMegaBytesToBytes(oneEntryHeapCostInMegaBytes);
+                        return MemoryUnit.MEGABYTES.toBytes(oneEntryHeapCostInMegaBytes);
                     }
 
                     @Override
@@ -215,17 +216,17 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         final EvictionOperator evictionOperator = EvictionOperator.create(new MemoryInfoAccessor() {
             @Override
             public long getTotalMemory() {
-                return convertMegaBytesToBytes(totalMemoryMB);
+                return MemoryUnit.MEGABYTES.toBytes(totalMemoryMB);
             }
 
             @Override
             public long getFreeMemory() {
-                return convertMegaBytesToBytes(freeMemoryMB);
+                return MemoryUnit.MEGABYTES.toBytes(freeMemoryMB);
             }
 
             @Override
             public long getMaxMemory() {
-                return convertMegaBytesToBytes(maxMemoryMB);
+                return MemoryUnit.MEGABYTES.toBytes(maxMemoryMB);
             }
         }, mapServiceContext);
 
@@ -277,9 +278,6 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         return createHazelcastInstanceFactory(nodeCount).newInstances(config);
     }
 
-    private long convertMegaBytesToBytes(long mb) {
-        return mb * 1024 * 1024;
-    }
 
     private int getSize(Collection<IMap> maps) {
         if (maps == null || maps.isEmpty()) {
@@ -342,9 +340,9 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
                 final long heapCost = getHeapCost(maps);
                 final String message = String.format("heap cost is %d and it should be smaller "
                                 + "than allowed max heap size %d in bytes",
-                        heapCost, convertMegaBytesToBytes(maxSizeInMegaBytes));
+                        heapCost, MemoryUnit.MEGABYTES.toBytes(maxSizeInMegaBytes));
 
-                assertTrue(message, heapCost <= convertMegaBytesToBytes(maxSizeInMegaBytes));
+                assertTrue(message, heapCost <= MemoryUnit.MEGABYTES.toBytes(maxSizeInMegaBytes));
             }
         });
 

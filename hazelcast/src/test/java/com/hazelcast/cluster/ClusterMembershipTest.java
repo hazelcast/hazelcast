@@ -47,6 +47,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -178,18 +179,27 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
         // index config is added since it was blocking post join operations.
         config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
 
-        final CountDownLatch latch = new CountDownLatch(instanceCount);
+        final CyclicBarrier barrier = new CyclicBarrier(instanceCount + 1);
         for (int i = 0; i < instanceCount; i++) {
             executorService.execute(new Runnable() {
                 public void run() {
                     final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
                     hz.getMap(mapName);
                     assertClusterSizeEventually(instanceCount, hz, 20);
-                    latch.countDown();
+
+                    assertExecutionsDone(barrier);
                 }
             });
         }
-        assertOpenEventually(latch);
+        assertExecutionsDone(barrier);
+    }
+
+    public static void assertExecutionsDone(CyclicBarrier barrier) {
+        try {
+            barrier.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test

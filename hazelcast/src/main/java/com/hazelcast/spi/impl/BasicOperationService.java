@@ -47,7 +47,6 @@ import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
@@ -73,6 +72,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
@@ -579,8 +579,8 @@ final class BasicOperationService implements InternalOperationService {
                 Data data = packet.getData();
                 Response response = (Response) nodeEngine.toObject(data);
 
-                if (response instanceof NormalResponse) {
-                    notifyRemoteCall((NormalResponse) response);
+                if (response instanceof NormalResponse || response instanceof CallTimeoutResponse) {
+                    notifyRemoteCall(response);
                 } else if (response instanceof BackupResponse) {
                     notifyBackupCall(response.getCallId());
                 } else {
@@ -592,7 +592,7 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
-        private void notifyRemoteCall(NormalResponse response) {
+        private void notifyRemoteCall(Response response) {
             BasicInvocation invocation = invocations.get(response.getCallId());
             if (invocation == null) {
                 if (nodeEngine.isActive()) {
@@ -755,9 +755,7 @@ final class BasicOperationService implements InternalOperationService {
 
         private boolean timeout(Operation op) {
             if (isCallTimedOut(op)) {
-                Object response = new CallTimeoutException(
-                        op.getClass().getName(), op.getInvocationTime(), op.getCallTimeout());
-                op.getResponseHandler().sendResponse(response);
+                op.getResponseHandler().sendResponse(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
                 return true;
             }
             return false;
@@ -1076,6 +1074,7 @@ final class BasicOperationService implements InternalOperationService {
                     }
                 }
             } catch (Throwable t) {
+                inspectOutputMemoryError(t);
                 logger.severe("Failed to run", t);
             }
         }
@@ -1089,6 +1088,7 @@ final class BasicOperationService implements InternalOperationService {
                 try {
                     invocation.handleBackupTimeout(backupOperationTimeoutMillis);
                 } catch (Throwable t) {
+                    inspectOutputMemoryError(t);
                     logger.severe("Failed to handle backup timeout of invocation:" + invocation, t);
                 }
             }
