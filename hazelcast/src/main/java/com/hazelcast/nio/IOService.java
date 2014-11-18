@@ -82,6 +82,8 @@ public interface IOService {
 
     int getSocketLingerSeconds();
 
+    int getSocketConnectTimeoutSeconds();
+
     boolean getSocketKeepAlive();
 
     boolean getSocketNoDelay();

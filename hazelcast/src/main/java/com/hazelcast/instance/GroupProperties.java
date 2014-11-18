@@ -100,6 +100,7 @@ public class GroupProperties {
     public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
     public static final String PROP_SOCKET_SEND_BUFFER_SIZE = "hazelcast.socket.send.buffer.size";
     public static final String PROP_SOCKET_LINGER_SECONDS = "hazelcast.socket.linger.seconds";
+    public static final String PROP_SOCKET_CONNECT_TIMEOUT_SECONDS = "hazelcast.socket.connect.timeout.seconds";
     public static final String PROP_SOCKET_KEEP_ALIVE = "hazelcast.socket.keep.alive";
     public static final String PROP_SOCKET_NO_DELAY = "hazelcast.socket.no.delay";
     public static final String PROP_SHUTDOWNHOOK_ENABLED = "hazelcast.shutdownhook.enabled";
@@ -216,6 +217,8 @@ public class GroupProperties {
     public final GroupProperty SOCKET_SEND_BUFFER_SIZE;
 
     public final GroupProperty SOCKET_LINGER_SECONDS;
+
+    public final GroupProperty SOCKET_CONNECT_TIMEOUT_SECONDS;
 
     public final GroupProperty SOCKET_KEEP_ALIVE;
 
@@ -348,6 +351,7 @@ public class GroupProperties {
         SOCKET_RECEIVE_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_RECEIVE_BUFFER_SIZE, "32");
         SOCKET_SEND_BUFFER_SIZE = new GroupProperty(config, PROP_SOCKET_SEND_BUFFER_SIZE, "32");
         SOCKET_LINGER_SECONDS = new GroupProperty(config, PROP_SOCKET_LINGER_SECONDS, "0");
+        SOCKET_CONNECT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_SOCKET_CONNECT_TIMEOUT_SECONDS, "0");
         SOCKET_KEEP_ALIVE = new GroupProperty(config, PROP_SOCKET_KEEP_ALIVE, "true");
         SOCKET_NO_DELAY = new GroupProperty(config, PROP_SOCKET_NO_DELAY, "true");
         SHUTDOWNHOOK_ENABLED = new GroupProperty(config, PROP_SHUTDOWNHOOK_ENABLED, "true");
