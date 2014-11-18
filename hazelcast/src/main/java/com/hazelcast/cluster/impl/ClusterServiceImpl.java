@@ -736,6 +736,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (node.getThisAddress().equals(masterAddress)) {
             logger.finest("Ignoring master response: " + masterAddress + " from: " + callerAddress
                     + ". This node is already master...");
+            return;
         }
 
         lock.lock();
