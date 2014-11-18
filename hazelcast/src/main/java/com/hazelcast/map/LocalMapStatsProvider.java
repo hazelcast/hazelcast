@@ -75,7 +75,7 @@ public class LocalMapStatsProvider {
                 addOwnerPartitionStats(localMapStats, mapName, partitionId);
             } else {
                 addReplicaPartitionStats(localMapStats, mapName, partitionId,
-                        partition, clusterService, backupCount, thisAddress);
+                        partition, partitionService, backupCount, thisAddress);
             }
         }
         return localMapStats;
@@ -136,15 +136,15 @@ public class LocalMapStatsProvider {
      * Calculates and adds replica partition stats.
      */
     private void addReplicaPartitionStats(LocalMapStatsImpl localMapStats, String mapName, int partitionId,
-                                          InternalPartition partition, ClusterService clusterService,
+                                          InternalPartition partition, InternalPartitionService partitionService,
                                           int backupCount, Address thisAddress) {
         long heapCost = 0;
         long backupEntryCount = 0;
         long backupEntryMemoryCost = 0;
 
         for (int replica = 1; replica <= backupCount; replica++) {
-            final Address replicaAddress = getReplicaAddress(replica, partition, clusterService, backupCount);
-            if (notGotReplicaAddress(replicaAddress, clusterService, backupCount)) {
+            final Address replicaAddress = getReplicaAddress(replica, partition, partitionService, backupCount);
+            if (notGotReplicaAddress(replicaAddress, partitionService, backupCount)) {
                 printWarning(partition, replica);
                 continue;
             }
@@ -166,8 +166,8 @@ public class LocalMapStatsProvider {
         return recordStore != null && recordStore.size() > 0;
     }
 
-    private boolean notGotReplicaAddress(Address replicaAddress, ClusterService clusterService, int backupCount) {
-        return replicaAddress == null && clusterService.getSize() > backupCount;
+    private boolean notGotReplicaAddress(Address replicaAddress, InternalPartitionService partitionService, int backupCount) {
+        return replicaAddress == null && partitionService.getMemberGroupsSize() > backupCount;
     }
 
     private boolean gotReplicaAddress(Address replicaAddress, Address thisAddress) {
@@ -200,10 +200,10 @@ public class LocalMapStatsProvider {
      * @see #waitForReplicaAddress
      */
     private Address getReplicaAddress(int replica, InternalPartition partition,
-                                      ClusterService clusterService, int backupCount) {
+                                      InternalPartitionService partitionService, int backupCount) {
         Address replicaAddress = partition.getReplicaAddress(replica);
         if (replicaAddress == null) {
-            replicaAddress = waitForReplicaAddress(replica, partition, clusterService, backupCount);
+            replicaAddress = waitForReplicaAddress(replica, partition, partitionService, backupCount);
         }
         return replicaAddress;
     }
@@ -212,10 +212,10 @@ public class LocalMapStatsProvider {
      * Waits partition table update to get replica address if current replica address is null.
      */
     private Address waitForReplicaAddress(int replica, InternalPartition partition,
-                                          ClusterService clusterService, int backupCount) {
+                                          InternalPartitionService partitionService, int backupCount) {
         int tryCount = RETRY_COUNT;
         Address replicaAddress = null;
-        while (replicaAddress == null && clusterService.getSize() > backupCount && tryCount-- > 0) {
+        while (replicaAddress == null && partitionService.getMemberGroupsSize() > backupCount && tryCount-- > 0) {
             sleep();
             replicaAddress = partition.getReplicaAddress(replica);
         }
