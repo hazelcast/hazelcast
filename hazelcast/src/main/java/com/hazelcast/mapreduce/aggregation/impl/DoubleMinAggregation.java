@@ -134,7 +134,7 @@ public class DoubleMinAggregation<Key, Value>
     private static final class DoubleMinReducer
             extends Reducer<Double, Double> {
 
-        private volatile double min = Double.MAX_VALUE;
+        private double min = Double.MAX_VALUE;
 
         @Override
         public void reduce(Double value) {

@@ -129,7 +129,7 @@ public class LongSumAggregation<Key, Value>
     private static final class LongSumReducer
             extends Reducer<Long, Long> {
 
-        private volatile long sum;
+        private long sum;
 
         @Override
         public void reduce(Long value) {

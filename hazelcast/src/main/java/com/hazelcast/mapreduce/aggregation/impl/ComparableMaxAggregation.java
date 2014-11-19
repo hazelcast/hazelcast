@@ -134,7 +134,7 @@ public class ComparableMaxAggregation<Key, Value>
     private static final class ComparableMaxReducer
             extends Reducer<Comparable, Comparable> {
 
-        private volatile Comparable max;
+        private Comparable max;
 
         @Override
         public void reduce(Comparable value) {

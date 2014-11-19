@@ -129,7 +129,7 @@ public class CountAggregation<Key, Value>
     private static final class CountReducer
             extends Reducer<Long, Long> {
 
-        private volatile long count;
+        private long count;
 
         @Override
         public void reduce(Long value) {

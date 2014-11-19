@@ -133,7 +133,7 @@ public class BigIntegerSumAggregation<Key, Value>
     private static final class BigIntegerSumReducer
             extends Reducer<BigInteger, BigInteger> {
 
-        private volatile BigInteger sum = BigInteger.ZERO;
+        private BigInteger sum = BigInteger.ZERO;
 
         @Override
         public void reduce(BigInteger value) {

@@ -134,7 +134,7 @@ public class BigIntegerMinAggregation<Key, Value>
     private static final class BigIntegerMinReducer
             extends Reducer<BigInteger, BigInteger> {
 
-        private volatile BigInteger min;
+        private BigInteger min;
 
         @Override
         public void reduce(BigInteger value) {

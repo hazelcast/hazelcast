@@ -134,7 +134,7 @@ public class BigDecimalMaxAggregation<Key, Value>
     private static final class BigDecimalMaxReducer
             extends Reducer<BigDecimal, BigDecimal> {
 
-        private volatile BigDecimal max;
+        private BigDecimal max;
 
         @Override
         public void reduce(BigDecimal value) {
