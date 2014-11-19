@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -67,6 +68,7 @@ public class InvocationTest extends HazelcastTestSupport {
         f.get();
     }
 
+    @Repeat(100)
     @Test
     public void whenTargetMemberDiesThenOperationAbortedWithMembersLeftException() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -80,7 +82,7 @@ public class InvocationTest extends HazelcastTestSupport {
         Future f = service.createInvocationBuilder(null, op, address).invoke();
         sleepSeconds(1);
 
-        remote.shutdown();
+        remote.getLifecycleService().terminate();
 
         try {
             f.get();
