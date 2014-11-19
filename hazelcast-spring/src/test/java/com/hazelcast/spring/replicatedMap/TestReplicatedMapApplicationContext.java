@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring.replicatedMap;
+package com.hazelcast.spring.replicatedmap;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
@@ -40,7 +40,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"replicatedMap-applicationContext-hazelcast.xml"})
+@ContextConfiguration(locations = {"replicatedmap-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
 public class TestReplicatedMapApplicationContext {
 
