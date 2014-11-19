@@ -791,6 +791,9 @@ public class ClientMapTest {
         public void entryUpdated(EntryEvent<Integer, Deal> arg0) {
             _gateUpdate.countDown();
         }
+
+        @Override
+        public void entryMerged(EntryEvent<Integer, Deal> arg0) { }
     }
 
     static class Deal implements Serializable {

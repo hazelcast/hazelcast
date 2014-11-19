@@ -255,6 +255,8 @@ public class BasicMapTest extends HazelcastTestSupport {
                 latchUpdated.countDown();
             }
 
+            public void entryMerged(EntryEvent event) { }
+
             public void entryEvicted(EntryEvent event) {
                 entryRemoved(event);
             }
@@ -864,6 +866,8 @@ public class BasicMapTest extends HazelcastTestSupport {
                 newValue[0] = event.getValue();
             }
 
+            public void entryMerged(EntryEvent event) { }
+
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
 
@@ -919,6 +923,9 @@ public class BasicMapTest extends HazelcastTestSupport {
                 updatedKey[0] = event.getKey();
                 oldValue[0] = event.getOldValue();
                 newValue[0] = event.getValue();
+            }
+
+            public void entryMerged(EntryEvent<Object, Object> event) {
             }
 
             public void entryEvicted(EntryEvent<Object, Object> event) {
@@ -996,6 +1003,8 @@ public class BasicMapTest extends HazelcastTestSupport {
                 newValue[0] = event.getValue();
             }
 
+            public void entryMerged(EntryEvent event) { }
+
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
 
@@ -1057,6 +1066,8 @@ public class BasicMapTest extends HazelcastTestSupport {
                 oldValue[0] = event.getOldValue();
                 newValue[0] = event.getValue();
             }
+
+            public void entryMerged(EntryEvent event) { }
 
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }

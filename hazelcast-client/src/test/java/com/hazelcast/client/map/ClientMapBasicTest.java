@@ -1144,6 +1144,8 @@ public class ClientMapBasicTest {
         }
         public void entryUpdated(EntryEvent event) {
         }
+        public void entryMerged(EntryEvent event) {
+        }
         public void entryEvicted(EntryEvent event) {
         }
         public void mapEvicted(MapEvent event) {

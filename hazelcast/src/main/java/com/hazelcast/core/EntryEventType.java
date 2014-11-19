@@ -26,7 +26,8 @@ public enum EntryEventType {
     UPDATED(3),
     EVICTED(4),
     EVICT_ALL(5),
-    CLEAR_ALL(6);
+    CLEAR_ALL(6),
+    MERGED(7);
 
     private int type;
 

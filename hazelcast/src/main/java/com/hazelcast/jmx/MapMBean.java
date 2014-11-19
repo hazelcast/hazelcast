@@ -58,6 +58,8 @@ public class MapMBean extends HazelcastMBean<IMap> {
                 totalUpdatedEntryCount.incrementAndGet();
             }
 
+            public void entryMerged(EntryEvent event) { totalUpdatedEntryCount.incrementAndGet(); }
+
             public void entryEvicted(EntryEvent event) {
                 totalEvictedEntryCount.incrementAndGet();
             }

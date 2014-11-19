@@ -90,6 +90,10 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
                 throw new AssertionError("MultiMap cannot get update event!");
             }
 
+            public void entryMerged(EntryEvent event) {
+                throw new AssertionError("MultiMap cannot get update event!");
+            }
+
             public void entryEvicted(EntryEvent event) {
                 entryRemoved(event);
             }

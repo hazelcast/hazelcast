@@ -188,7 +188,7 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
                 ReplicatedMapService.SERVICE_NAME, name);
         if (registrations.size() > 0) {
             EntryEvent event = new EntryEvent(name, nodeEngine.getLocalMember(), eventType.getType(),
-                    key, oldValue, value);
+                    key, oldValue, value, null);
 
             for (EventRegistration registration : registrations) {
                 EventFilter filter = registration.getFilter();

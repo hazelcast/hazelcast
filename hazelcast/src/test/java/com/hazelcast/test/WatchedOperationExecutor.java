@@ -90,9 +90,10 @@ public class WatchedOperationExecutor {
         }
 
         @Override
-        public void entryUpdated(EntryEvent event) {
-            handleEvent(event.getEventType());
-        }
+        public void entryUpdated(EntryEvent event) { handleEvent(event.getEventType()); }
+
+        @Override
+        public void entryMerged(EntryEvent event) { handleEvent(event.getEventType()); }
 
         @Override
         public void entryEvicted(EntryEvent event) {

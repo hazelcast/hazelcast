@@ -46,6 +46,11 @@ public class EntryAdapter<K, V> implements EntryListener<K, V> {
     }
 
     @Override
+    public void entryMerged(EntryEvent<K, V> event) {
+        onEntryEvent(event);
+    }
+
+    @Override
     public void mapEvicted(MapEvent event) {
         onMapEvent(event);
     }
