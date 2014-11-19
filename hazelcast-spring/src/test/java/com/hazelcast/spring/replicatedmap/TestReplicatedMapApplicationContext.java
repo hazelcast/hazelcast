@@ -40,7 +40,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"replicatedmap-applicationContext-hazelcast.xml"})
+@ContextConfiguration(locations = {"replicatedMap-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
 public class TestReplicatedMapApplicationContext {
 
