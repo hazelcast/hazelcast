@@ -20,9 +20,12 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -35,8 +38,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
@@ -53,11 +59,13 @@ public class ClientMapNearCacheTest {
     private static final int MAX_CACHE_SIZE = 100;
     private static final int MAX_TTL_SECONDS = 3;
     private static final int MAX_IDLE_SECONDS = 1;
+    private static final int LONG_MAX_IDLE_SECONDS = 60 * 60;
 
     private static final String NEAR_CACHE_WITH_NO_INVALIDATION = "NEAR_CACHE_WITH_NO_INVALIDATION";
     private static final String NEAR_CACHE_WITH_MAX_SIZE = "NEAR_CACHE_WITH_MAX_SIZE";
     private static final String NEAR_CACHE_WITH_TTL = "NEAR_CACHE_WITH_TTL";
     private static final String NEAR_CACHE_WITH_IDLE = "NEAR_CACHE_WITH_IDLE";
+    private static final String NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME = "NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME";
     private static final String NEAR_CACHE_WITH_INVALIDATION = "NEAR_CACHE_WITH_INVALIDATION";
 
     private static HazelcastInstance h1;
@@ -94,6 +102,13 @@ public class ClientMapNearCacheTest {
         idleConfig.setInvalidateOnChange(false);
         idleConfig.setMaxIdleSeconds(MAX_IDLE_SECONDS);
         clientConfig.addNearCacheConfig(idleConfig);
+
+
+        NearCacheConfig longIdleConfig = new NearCacheConfig();
+        idleConfig.setName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME + "*");
+        idleConfig.setInvalidateOnChange(true);
+        idleConfig.setMaxIdleSeconds(LONG_MAX_IDLE_SECONDS);
+        clientConfig.addNearCacheConfig(longIdleConfig);
 
         NearCacheConfig invalidateConfig = new NearCacheConfig();
         invalidateConfig.setName(NEAR_CACHE_WITH_INVALIDATION + "*");
@@ -153,6 +168,7 @@ public class ClientMapNearCacheTest {
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(size, stats.getOwnedEntryCount());
         assertEquals(size, stats.getHits());
+
     }
 
     @Test
@@ -484,6 +500,39 @@ public class ClientMapNearCacheTest {
         for (int i = 0; i < size; i++) {
             assertNull(map.get(i));
         }
+    }
+
+
+    @Test
+    public void testServerMapExpiration_doesNotInvalidateClientNearCache() throws Exception {
+        final String mapName = randomMapName(NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME);
+        final IMap clientMap = client.getMap(mapName);
+        final CountDownLatch waitEventsToBeFired = new CountDownLatch(1);
+        clientMap.addEntryListener(new EntryAdapter() {
+            @Override
+            public void entryEvicted(EntryEvent event) {
+                waitEventsToBeFired.countDown();
+            }
+        }, false);
+
+        clientMap.put(1, 1, 3, TimeUnit.SECONDS);
+
+        // get entry in near cache.
+        clientMap.get(1);
+
+        assertOpenEventually(waitEventsToBeFired);
+
+        // give some extra time in case an event may be received.
+        sleepSeconds(2);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final LocalMapStats localMapStats = clientMap.getLocalMapStats();
+                NearCacheStats stats = localMapStats.getNearCacheStats();
+                assertEquals(1, stats.getOwnedEntryCount());
+            }
+        });
     }
 
     private void populateNearCache(IMap map, int size) {

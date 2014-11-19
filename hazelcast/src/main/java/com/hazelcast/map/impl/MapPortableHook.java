@@ -41,6 +41,7 @@ import com.hazelcast.map.impl.client.MapKeySetRequest;
 import com.hazelcast.map.impl.client.MapLoadAllKeysRequest;
 import com.hazelcast.map.impl.client.MapLoadGivenKeysRequest;
 import com.hazelcast.map.impl.client.MapLockRequest;
+import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapPutAllRequest;
 import com.hazelcast.map.impl.client.MapPutIfAbsentRequest;
 import com.hazelcast.map.impl.client.MapPutRequest;
@@ -121,6 +122,7 @@ public class MapPortableHook implements PortableHook {
     public static final int LOAD_ALL_GIVEN_KEYS = 47;
     public static final int LOAD_ALL_KEYS = 48;
     public static final int IS_EMPTY = 49;
+    public static final int ADD_NEAR_CACHE_ENTRY_LISTENER = 50;
 
     public int getFactoryId() {
         return F_ID;
@@ -128,7 +130,7 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[IS_EMPTY + 1];
+            final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[ADD_NEAR_CACHE_ENTRY_LISTENER + 1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -397,6 +399,12 @@ public class MapPortableHook implements PortableHook {
                 constructors[IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapIsEmptyRequest();
+                    }
+                };
+
+                constructors[ADD_NEAR_CACHE_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapAddNearCacheEntryListenerRequest();
                     }
                 };
             }

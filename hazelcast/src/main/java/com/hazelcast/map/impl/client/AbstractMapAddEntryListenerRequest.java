@@ -67,7 +67,6 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService();
 
-
         EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
 
             @Override
@@ -99,16 +98,20 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
             }
         };
 
-        EventFilter eventFilter;
-        if (getPredicate() == null) {
-            eventFilter = new EntryEventFilter(includeValue, key);
-        } else {
-            eventFilter = new QueryEventFilter(includeValue, key, getPredicate());
-        }
-        String registrationId = mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
+        final EventFilter eventFilter = getEventFilter();
+        final String registrationId = mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
         endpoint.setListenerRegistration(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
+
+
+    protected EventFilter getEventFilter() {
+        if (getPredicate() == null) {
+            return new EntryEventFilter(includeValue, key);
+        }
+        return new QueryEventFilter(includeValue, key, getPredicate());
+    }
+
 
     @Override
     public String getServiceName() {

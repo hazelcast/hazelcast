@@ -20,4 +20,7 @@ public interface MapEventPublisher {
 
     void publishEvent(Address caller, String mapName, EntryEventType eventType,
                       Data dataKey, Data dataOldValue, Data dataValue);
+
+    void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean synthetic,
+                      Data dataKey, Data dataOldValue, Data dataValue);
 }
