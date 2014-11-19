@@ -372,6 +372,9 @@ public final class BasicOperationScheduler {
             sb.append(operationThread.getName())
                     .append(" processedCount=").append(operationThread.processedCount).append('\n');
         }
+        sb.append(responseThread.getName())
+                .append(" processedCount: ").append(responseThread.processedResponses)
+                .append(" pendingCount: ").append(responseThread.workQueue.size()).append('\n');
     }
 
     private class GenericOperationThreadFactory implements ThreadFactory {
@@ -485,6 +488,8 @@ public final class BasicOperationScheduler {
 
     private class ResponseThread extends Thread {
         private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
+        // field is only written by the response-thread itself, but can be read by other threads.
+        private volatile long processedResponses;
 
         public ResponseThread() {
             super(node.threadGroup, node.getThreadNamePrefix("response"));
@@ -520,12 +525,14 @@ public final class BasicOperationScheduler {
             }
         }
 
-        private void process(Object task) {
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
+        private void process(Object response) {
+            processedResponses++;
             try {
-                dispatcher.dispatch(task);
+                dispatcher.dispatch(response);
             } catch (Throwable e) {
                 inspectOutputMemoryError(e);
-                logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
+                logger.severe("Failed to process response: " + response + " on response thread:" + getName());
             }
         }
     }
