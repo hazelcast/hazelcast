@@ -77,7 +77,6 @@ import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
-import static com.hazelcast.spi.OperationAccessor.setStartTime;
 import static com.hazelcast.spi.impl.ResponseHandlerFactory.setRemoteResponseHandler;
 import static java.lang.Math.min;
 
@@ -721,7 +720,7 @@ final class BasicOperationService implements InternalOperationService {
 
                 ensureNoPartitionProblems(op);
 
-                beforeRun(op);
+                op.beforeRun();
 
                 if (waitingNeeded(op)) {
                     return;
@@ -735,11 +734,6 @@ final class BasicOperationService implements InternalOperationService {
             } finally {
                 afterCallExecution(op, callKey);
             }
-        }
-
-        private void beforeRun(Operation op) throws Exception {
-            setStartTime(op, Clock.currentTimeMillis());
-            op.beforeRun();
         }
 
         private boolean waitingNeeded(Operation op) {
