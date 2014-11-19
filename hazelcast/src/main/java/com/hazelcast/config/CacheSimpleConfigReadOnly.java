@@ -77,7 +77,7 @@ public class CacheSimpleConfigReadOnly
     }
 
     @Override
-    public CacheSimpleConfig setEvictionThresholdPercentage(int evictionThresholdPercentage) {
+    public CacheSimpleConfig setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

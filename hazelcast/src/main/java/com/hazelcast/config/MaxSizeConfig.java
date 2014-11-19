@@ -16,11 +16,18 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
+import java.io.Serializable;
+
 /**
  * Configuration for map's capacity.
  * You can set a limit for number of entries or total memory cost of entries.
  */
-public class MaxSizeConfig {
+public class MaxSizeConfig implements DataSerializable, Serializable {
 
     /**
      * Default maximum size of map.
@@ -31,12 +38,12 @@ public class MaxSizeConfig {
 
     private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
 
-    private int size = DEFAULT_MAX_SIZE;
+    private long size = DEFAULT_MAX_SIZE;
 
     public MaxSizeConfig() {
     }
 
-    public MaxSizeConfig(int size, MaxSizePolicy maxSizePolicy) {
+    public MaxSizeConfig(long size, MaxSizePolicy maxSizePolicy) {
         setSize(size);
         this.maxSizePolicy = maxSizePolicy;
     }
@@ -51,29 +58,37 @@ public class MaxSizeConfig {
      */
     public enum MaxSizePolicy {
         /**
-         * Decide maximum size of map according to node
+         * Decide maximum entry count according to node
          */
         PER_NODE,
         /**
-         * Decide maximum size of map according to partition
+         * Decide maximum entry count according to partition
          */
         PER_PARTITION,
         /**
-         * Decide maximum size of map with use heap percentage
+         * Decide maximum size with use heap percentage
          */
         USED_HEAP_PERCENTAGE,
         /**
-         * Decide maximum size of map with use heap size
+         * Decide maximum size with use heap size
          */
         USED_HEAP_SIZE,
         /**
-         * Decide minimum free heap percentage to trigger map cleanup
+         * Decide minimum free heap percentage to trigger cleanup
          */
         FREE_HEAP_PERCENTAGE,
         /**
-         * Decide minimum free heap size to trigger map cleanup
+         * Decide minimum free heap size to trigger cleanup
          */
-        FREE_HEAP_SIZE
+        FREE_HEAP_SIZE,
+        /**
+         * Decide maximum size with use native memory size
+         */
+        USED_NATIVE_MEMORY_SIZE,
+        /**
+         * Decide maximum size with use native memory percentage
+         */
+        USED_NATIVE_MEMORY_PERCENTAGE
     }
 
     public MaxSizeConfigReadOnly getAsReadOnly() {
@@ -83,11 +98,11 @@ public class MaxSizeConfig {
         return readOnly;
     }
 
-    public int getSize() {
+    public long getSize() {
         return size;
     }
 
-    public MaxSizeConfig setSize(int size) {
+    public MaxSizeConfig setSize(long size) {
         if (size > 0) {
             this.size = size;
         }
@@ -101,6 +116,18 @@ public class MaxSizeConfig {
     public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         this.maxSizePolicy = maxSizePolicy;
         return this;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(maxSizePolicy.ordinal());
+        out.writeLong(size);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        maxSizePolicy = MaxSizePolicy.values()[in.readInt()];
+        size = in.readLong();
     }
 
     @Override

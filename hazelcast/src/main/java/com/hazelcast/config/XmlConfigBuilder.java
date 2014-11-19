@@ -836,6 +836,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         this.config.addReplicatedMapConfig(replicatedMapConfig);
     }
 
+    //CHECKSTYLE:OFF
     private void handleMap(final org.w3c.dom.Node node) throws Exception {
         final String name = getAttribute(node, "name");
         final MapConfig mapConfig = new MapConfig();
@@ -855,9 +856,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 final MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
                 final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");
                 if (maxSizePolicy != null) {
-                    msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy))));
+                    msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
+                            upperCaseInternal(getTextContent(maxSizePolicy))));
                 }
-                int size = sizeParser(value);
+                long size = sizeParser(value);
+                if (size < 0 || size > Integer.MAX_VALUE) {
+                    throw new IllegalArgumentException("\"max-size\" value of map config must be between "
+                            + "0 and Integer.MAX_VALUE");
+                }
                 msc.setSize(size);
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
@@ -896,6 +902,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
         this.config.addMapConfig(mapConfig);
     }
+    //CHECKSTYLE:ON
 
     private void handleCache(final org.w3c.dom.Node node)
             throws Exception {
@@ -934,11 +941,20 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("eviction-percentage".equals(nodeName)) {
                 cacheConfig.setEvictionPercentage(
                         getIntegerValue("eviction-percentage", value, CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE));
-            } else if ("eviction-threshold-percentage".equals(nodeName)) {
-                cacheConfig.setEvictionThresholdPercentage(
-                        getIntegerValue("eviction-threshold-percentage", value, CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE));
             } else if ("eviction-policy".equals(nodeName)) {
                 cacheConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
+            } else if ("max-size".equals(nodeName)) {
+                final MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
+                final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");
+                if (maxSizePolicy != null) {
+                    maxSizeConfig.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(
+                            getTextContent(maxSizePolicy))));
+                }
+                final long size = sizeParser(value);
+                if (size > 0) {
+                    maxSizeConfig.setSize(size);
+                }
+                cacheConfig.setMaxSizeConfig(maxSizeConfig);
             }
         }
         this.config.addCacheConfig(cacheConfig);
@@ -1001,11 +1017,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-
-    private int sizeParser(String value) {
-        int size;
+    private long sizeParser(String value) {
+        long size;
         if (value.length() < 2) {
-            size = Integer.parseInt(value);
+            size = Long.parseLong(value);
         } else {
             char last = value.charAt(value.length() - 1);
             int type = 0;
@@ -1015,11 +1030,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 type = 2;
             }
             if (type == 0) {
-                size = Integer.parseInt(value);
+                size = Long.parseLong(value);
             } else if (type == 1) {
-                size = Integer.parseInt(value.substring(0, value.length() - 1)) * THOUSAND_FACTOR;
+                size = Long.parseLong(value.substring(0, value.length() - 1)) * THOUSAND_FACTOR;
             } else {
-                size = Integer.parseInt(value.substring(0, value.length() - 1));
+                size = Long.parseLong(value.substring(0, value.length() - 1));
             }
         }
         return size;

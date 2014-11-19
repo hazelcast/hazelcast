@@ -32,7 +32,6 @@ import java.io.IOException;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_EVICTION_POLICY;
-import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_EVICTION_THRESHOLD_PERCENTAGE;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.MAX_BACKUP_COUNT;
@@ -54,8 +53,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
+    // Default max size config, size = Integer.MAX_VALUE, policy = PER_NODE
+    private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
     private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
-    private int evictionThresholdPercentage = DEFAULT_EVICTION_THRESHOLD_PERCENTAGE;
 
     private NearCacheConfig nearCacheConfig;
 
@@ -74,6 +74,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
             this.evictionPolicy = config.evictionPolicy;
+            this.maxSizeConfig = config.maxSizeConfig;
             if (config.nearCacheConfig != null) {
                 this.nearCacheConfig = new NearCacheConfig(config.nearCacheConfig);
             }
@@ -107,8 +108,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         this.backupCount = simpleConfig.getBackupCount();
         this.inMemoryFormat = simpleConfig.getInMemoryFormat();
         this.evictionPolicy = simpleConfig.getEvictionPolicy();
+        this.maxSizeConfig = simpleConfig.getMaxSizeConfig();
         this.evictionPercentage = simpleConfig.getEvictionPercentage();
-        this.evictionThresholdPercentage = simpleConfig.getEvictionThresholdPercentage();
         for (CacheSimpleEntryListenerConfig simpleListener : simpleConfig.getCacheEntryListeners()) {
             Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
             Factory<? extends CacheEntryEventFilter<? super K, ? super V>> filterFactory = null;
@@ -248,6 +249,21 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         return this;
     }
 
+    /**
+     * @return the maxSizeConfig
+     */
+    public MaxSizeConfig getMaxSizeConfig() {
+        return maxSizeConfig;
+    }
+
+    /**
+     * @param maxSizeConfig the maxSizeConfig to set
+     */
+    public CacheConfig<K, V> setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
+        this.maxSizeConfig = maxSizeConfig;
+        return this;
+    }
+
     public NearCacheConfig getNearCacheConfig() {
         return nearCacheConfig;
     }
@@ -290,18 +306,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         return this;
     }
 
-    /**
-     * @return eviction threshold percentage
-     */
-    public int getEvictionThresholdPercentage() {
-        return evictionThresholdPercentage;
-    }
-
-    public CacheConfig<K, V> setEvictionThresholdPercentage(int evictionThresholdPercentage) {
-        this.evictionThresholdPercentage = evictionThresholdPercentage;
-        return this;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
@@ -313,8 +317,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         out.writeInt(inMemoryFormat.ordinal());
         out.writeInt(evictionPolicy.ordinal());
+        out.writeObject(maxSizeConfig);
         out.writeInt(evictionPercentage);
-        out.writeInt(evictionThresholdPercentage);
 
         out.writeObject(nearCacheConfig);
 
@@ -355,8 +359,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         final int resultEvictionPolicy = in.readInt();
         evictionPolicy = EvictionPolicy.values()[resultEvictionPolicy];
+        maxSizeConfig = in.readObject();
         evictionPercentage = in.readInt();
-        evictionThresholdPercentage = in.readInt();
 
         nearCacheConfig = in.readObject();
 

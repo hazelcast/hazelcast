@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
+import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
@@ -62,9 +63,39 @@ public class CacheRecordStore
         this.cacheRecordFactory = createCacheRecordFactory();
     }
 
+    //CHECKSTYLE:OFF
+    @Override
+    protected MaxSizeChecker createMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
+        if (maxSizeConfig == null) {
+            return null;
+        }
+        final MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        if (maxSizePolicy == null) {
+            return null;
+        }
+
+        final MaxSizeChecker maxSizeChecker = super.createMaxSizeChecker(maxSizeConfig);
+        if (maxSizeChecker != null) {
+            return maxSizeChecker;
+        }
+
+        if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE) {
+            return new UsedHeapMaxSizeChecker(maxSizeConfig);
+        } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE) {
+            return new UsedHeapPercentageMaxSizeChecker(maxSizeConfig);
+        } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE) {
+            return new FreeHeapMaxSizeChecker(maxSizeConfig);
+        } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE) {
+            return new FreeHeapPercentageMaxSizeChecker(maxSizeConfig);
+        }
+
+        return null;
+    }
+    //CHECKSTYLE:ON
+
     @Override
     protected CacheRecordHashMap createRecordCacheMap() {
-        return new CacheRecordHashMap(DEFAULT_INITIAL_CAPACITY);
+        return new CacheRecordHashMap(DEFAULT_INITIAL_CAPACITY, cacheInfo);
     }
 
     @Override
@@ -150,10 +181,60 @@ public class CacheRecordStore
         }
     }
 
-    @Override
-    protected boolean isEvictionRequired() {
-        // Eviction is not supported by CacheRecordStore
-        return false;
+    protected class UsedHeapMaxSizeChecker implements MaxSizeChecker {
+
+        protected UsedHeapMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
+
+        }
+
+        @Override
+        public boolean isReachedToMaxSize() {
+            // TODO Not supported yet
+            return false;
+        }
+
+    }
+
+    protected class UsedHeapPercentageMaxSizeChecker implements MaxSizeChecker {
+
+        protected UsedHeapPercentageMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
+
+        }
+
+        @Override
+        public boolean isReachedToMaxSize() {
+            // TODO Not supported yet
+            return false;
+        }
+
+    }
+
+    protected class FreeHeapMaxSizeChecker implements MaxSizeChecker {
+
+        protected FreeHeapMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
+
+        }
+
+        @Override
+        public boolean isReachedToMaxSize() {
+            // TODO Not supported yet
+            return false;
+        }
+
+    }
+
+    protected class FreeHeapPercentageMaxSizeChecker implements MaxSizeChecker {
+
+        protected FreeHeapPercentageMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
+
+        }
+
+        @Override
+        public boolean isReachedToMaxSize() {
+            // TODO Not supported yet
+            return false;
+        }
+
     }
 
 }

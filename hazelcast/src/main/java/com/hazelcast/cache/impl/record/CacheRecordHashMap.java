@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.record;
 
+import com.hazelcast.cache.impl.CacheInfo;
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.config.EvictionPolicy;
@@ -23,11 +24,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.FetchableConcurrentHashMap;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +38,11 @@ public class CacheRecordHashMap
     private static final int MIN_EVICTION_ELEMENT_COUNT = 100;
 
     private Callback<Data> evictionCallback;
+    private CacheInfo cacheInfo;
 
-    public CacheRecordHashMap(int initialCapacity) {
+    public CacheRecordHashMap(int initialCapacity, CacheInfo cacheInfo) {
         super(initialCapacity);
+        this.cacheInfo = cacheInfo;
     }
 
     public CacheRecordHashMap(int initialCapacity,
@@ -49,8 +50,9 @@ public class CacheRecordHashMap
                               int concurrencyLevel,
                               ConcurrentReferenceHashMap.ReferenceType keyType,
                               ConcurrentReferenceHashMap.ReferenceType valueType,
-                              EnumSet<Option> options) {
-        this(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options, null);
+                              EnumSet<Option> options,
+                              CacheInfo cacheInfo) {
+        this(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options, null, cacheInfo);
     }
 
     public CacheRecordHashMap(int initialCapacity,
@@ -59,9 +61,56 @@ public class CacheRecordHashMap
                               ConcurrentReferenceHashMap.ReferenceType keyType,
                               ConcurrentReferenceHashMap.ReferenceType valueType,
                               EnumSet<ConcurrentReferenceHashMap.Option> options,
-                              Callback<Data> evictionCallback) {
+                              Callback<Data> evictionCallback,
+                              CacheInfo cacheInfo) {
         super(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options);
         this.evictionCallback = evictionCallback;
+        this.cacheInfo = cacheInfo;
+    }
+
+    @Override
+    public CacheRecord put(Data key, CacheRecord value) {
+        CacheRecord record = super.put(key, value);
+        // If there is no previous value with specified key, means that new entry is added
+        if (record == null) {
+            cacheInfo.increaseEntryCount();
+        }
+        return record;
+    }
+
+    @Override
+    public CacheRecord putIfAbsent(Data key, CacheRecord value) {
+        CacheRecord record = super.putIfAbsent(key, value);
+        // If there is no previous value with specified key, means that new entry is added
+        if (record == null) {
+            cacheInfo.increaseEntryCount();
+        }
+        return record;
+    }
+
+    @Override
+    public CacheRecord remove(Object key) {
+        CacheRecord record = super.remove(key);
+        if (record != null) {
+            cacheInfo.decreaseEntryCount();
+        }
+        return record;
+    }
+
+    @Override
+    public boolean remove(Object key, Object value) {
+        boolean removed = super.remove(key, value);
+        if (removed) {
+            cacheInfo.decreaseEntryCount();
+        }
+        return removed;
+    }
+
+    @Override
+    public void clear() {
+        final int sizeBeforeClear = size();
+        super.clear();
+        cacheInfo.removeEntryCount(sizeBeforeClear);
     }
 
     @Override
@@ -122,146 +171,34 @@ public class CacheRecordHashMap
             }
         }
 
+        cacheInfo.removeEntryCount(actualEvictedCount);
+
         return actualEvictedCount;
     }
     //CHECKSTYLE:ON
 
     @Override
     public int evictRecords(int percentage, EvictionPolicy policy) {
+        int evictedCount;
+
         switch (policy) {
             case RANDOM:
-                try {
-                    return evictRecordsRandom(percentage);
-                } catch (Throwable e) {
-                    EmptyStatement.ignore(e);
-                    break;
-                }
-
+                evictedCount = evictRecordsRandom(percentage);
+                break;
             case LRU:
-                try {
-                    return evictRecordsLRU(percentage);
-                } catch (Throwable e) {
-                    EmptyStatement.ignore(e);
-                    break;
-                }
-
+                evictedCount = evictRecordsLRU(percentage);
+                break;
             case LFU:
-                try {
-                    return evictRecordsLFU(percentage);
-                } catch (Throwable e) {
-                    EmptyStatement.ignore(e);
-                    break;
-                }
-
+                evictedCount = evictRecordsLFU(percentage);
+                break;
             default:
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("Unsupported eviction policy: " + policy);
         }
 
-        return evictExpiredRecords(percentage);
+        cacheInfo.removeEntryCount(evictedCount);
+
+        return evictedCount;
     }
-
-    //CHECKSTYLE:OFF
-    private int evictRecordsLRU(int percentage) {
-        if (percentage <= 0) {
-            return 0;
-        }
-        final int size = size();
-        if (percentage >= ICacheRecordStore.ONE_HUNDRED_PERCENT || size <= MIN_EVICTION_ELEMENT_COUNT) {
-            clear();
-            return size;
-        }
-
-        int sizeLimitForEviction = (int) ((double) (size() * percentage)
-                / (double) ICacheRecordStore.ONE_HUNDRED_PERCENT);
-        // TODO Maybe instead of creating new list for every evict operation,
-        // thread local based reusable list can be used
-        // or maybe eviction can be done without a helper list to hold entries will be evicted
-        List<Map.Entry<Data, CacheRecord>> entriesWillBeEvicted =
-                new ArrayList<Map.Entry<Data, CacheRecord>>(sizeLimitForEviction);
-        long[] sortArray = CacheRecordSortArea.SORT_AREA_THREAD_LOCAL.get().getLongArray(size);
-
-        int i = 0;
-        for (Map.Entry<Data, CacheRecord> entry : entrySet()) {
-            CacheRecord record = entry.getValue();
-            sortArray[i] = record.getAccessTime();
-            entriesWillBeEvicted.add(entry);
-            if (++i >= size) {
-                break;
-            }
-        }
-
-        Arrays.sort(sortArray, 0, size);
-        long timeLimitForEviction = sortArray[sizeLimitForEviction];
-
-        int actualEvictedCount = 0;
-        for (Map.Entry<Data, CacheRecord> entry : entriesWillBeEvicted) {
-            CacheRecord record = entry.getValue();
-            long accessTime = record.getAccessTime();
-            if (accessTime <= timeLimitForEviction) {
-                Object value = record.getValue();
-                if (value instanceof Data) {
-                    callbackEvictionListeners((Data) value);
-                }
-                if (remove(entry.getKey()) != null) {
-                    actualEvictedCount++;
-                }
-            }
-        }
-
-        return actualEvictedCount;
-    }
-    //CHECKSTYLE:ON
-
-    //CHECKSTYLE:OFF
-    private int evictRecordsLFU(int percentage) {
-        if (percentage <= 0) {
-            return 0;
-        }
-        final int size = size();
-        if (percentage >= ICacheRecordStore.ONE_HUNDRED_PERCENT || size <= MIN_EVICTION_ELEMENT_COUNT) {
-            clear();
-            return size;
-        }
-
-        int sizeLimitForEviction = (int) ((double) (size() * percentage)
-                / (double) ICacheRecordStore.ONE_HUNDRED_PERCENT);
-        // TODO Maybe instead of creating new list for every evict operation,
-        // thread local based reusable list can be used
-        // or maybe eviction can be done without a helper list to hold entries will be evicted
-        List<Map.Entry<Data, CacheRecord>> entriesWillBeEvicted =
-                new ArrayList<Map.Entry<Data, CacheRecord>>(sizeLimitForEviction);
-        int[] sortArray = CacheRecordSortArea.SORT_AREA_THREAD_LOCAL.get().getIntArray(size);
-
-        int i = 0;
-        for (Map.Entry<Data, CacheRecord> entry : entrySet()) {
-            CacheRecord record = entry.getValue();
-            sortArray[i] = record.getAccessHit();
-            entriesWillBeEvicted.add(entry);
-            if (++i >= size) {
-                break;
-            }
-        }
-
-        Arrays.sort(sortArray, 0, size);
-        int hitLimitForEviction = sortArray[sizeLimitForEviction];
-
-        int actualEvictedCount = 0;
-        for (Map.Entry<Data, CacheRecord> entry : entriesWillBeEvicted) {
-            CacheRecord record = entry.getValue();
-            if (record.getAccessHit() <= hitLimitForEviction) {
-                Object value = record.getValue();
-                if (value instanceof Data) {
-                    callbackEvictionListeners((Data) value);
-                }
-                if (remove(entry.getKey()) != null) {
-                    actualEvictedCount++;
-                }
-            }
-        }
-
-        return actualEvictedCount;
-    }
-    //CHECKSTYLE:ON
 
     //CHECKSTYLE:OFF
     private int evictRecordsRandom(int percentage) {
@@ -304,4 +241,13 @@ public class CacheRecordHashMap
         return actualEvictedCount;
     }
     //CHECKSTYLE:ON
+
+    private int evictRecordsLRU(int percentage) {
+        throw new UnsupportedOperationException("LRU eviction policy is not supported right now !");
+    }
+
+    private int evictRecordsLFU(int percentage) {
+        throw new UnsupportedOperationException("LFU eviction policy is not supported right now !");
+    }
+
 }

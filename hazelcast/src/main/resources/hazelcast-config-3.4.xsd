@@ -359,20 +359,6 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-            <xs:element name="eviction-threshold-percentage" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        When size reaches threshold percentage, eviction will be fired. Any integer between
-                        0 and 100.
-                    </xs:documentation>
-                </xs:annotation>
-                <xs:simpleType>
-                    <xs:restriction base="xs:byte">
-                        <xs:minInclusive value="0"/>
-                        <xs:maxInclusive value="100"/>
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:element>
             <xs:element name="eviction-policy" type="cache-eviction-policy" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
@@ -384,6 +370,30 @@
                         NONE is the default.
                     </xs:documentation>
                 </xs:annotation>
+            </xs:element>
+            <xs:element name="max-size" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        When maximum size is reached, cache is evicted based on the eviction policy
+                        Size can be any long between 0 and Long.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                        Max-Size policy has eight valid values:
+                        PER_NODE (Maximum number of cache entries in each JVM),
+                        PER_PARTITION (Maximum number of cache entries within each partition),
+                        USED_HEAP_SIZE (Maximum used heap size in megabytes for each JVM) and
+                        USED_HEAP_PERCENTAGE (Maximum used heap size percentage for each JVM),
+                        FREE_HEAP_SIZE (Maximum free heap size in megabytes for each JVM) and
+                        FREE_HEAP_PERCENTAGE (Maximum free heap size percentage for each JVM),
+                        USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes for each JVM) and
+                        USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage for each JVM).
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:integer">
+                            <xs:attribute name="policy" use="optional" default="PER_NODE"/>
+                        </xs:extension>
+                    </xs:simpleContent>
+                </xs:complexType>
             </xs:element>
         </xs:sequence>
         <xs:attribute name="name" use="required">

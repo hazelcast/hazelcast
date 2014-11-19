@@ -537,7 +537,7 @@ public class MapConfig {
                 + ((this.mapStoreConfig == null) ? 0 : this.mapStoreConfig
                 .hashCode());
         result = prime * result + this.maxIdleSeconds;
-        result = prime * result + this.maxSizeConfig.getSize();
+        result = prime * result + (int) this.maxSizeConfig.getSize();
         result = prime
                 * result
                 + ((this.mergePolicy == null) ? 0 : this.mergePolicy.hashCode());

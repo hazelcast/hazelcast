@@ -36,6 +36,8 @@
         <cache-writer-factory class-name="com.hazelcast.cache.MyCacheWriterFactory"/>
         <expiry-policy-factory class-name="com.hazelcast.cache.MyExpirePolicyFactory"/>
 
+        <max-size policy="USED_HEAP_PERCENTAGE">50</max-size>
+
         <cache-entry-listeners>
             <cache-entry-listener old-value-required="false" synchronous="false" >
                 <cache-entry-listener-factory class-name="com.hazelcast.cache.MyEntryListenerFactory" />
