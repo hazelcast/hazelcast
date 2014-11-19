@@ -68,7 +68,6 @@ public class InvocationTest extends HazelcastTestSupport {
         f.get();
     }
 
-    @Repeat(100)
     @Test
     public void whenTargetMemberDiesThenOperationAbortedWithMembersLeftException() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
