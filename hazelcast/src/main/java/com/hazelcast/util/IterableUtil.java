@@ -21,9 +21,9 @@ import java.util.Iterator;
 /**
  * Utility functions for working with {@link Iterable}
  */
-public class IterableUtil {
+public final class IterableUtil {
 
-    private IterableUtil(){
+    private IterableUtil() {
     }
 
     /**
