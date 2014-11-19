@@ -17,6 +17,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
@@ -31,6 +32,9 @@ import static java.lang.Math.min;
 final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
     private static final int CALL_TIMEOUT = 5000;
+
+    private static final AtomicReferenceFieldUpdater<BasicInvocationFuture, Object> RESPONSE_FIELD_UPDATER
+            = AtomicReferenceFieldUpdater.newUpdater(BasicInvocationFuture.class, Object.class, "response");
 
     volatile boolean interrupted;
     private BasicInvocation basicInvocation;
@@ -203,6 +207,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                 timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
 
                 if (response == BasicInvocation.WAIT_RESPONSE) {
+                    RESPONSE_FIELD_UPDATER.compareAndSet(this, BasicInvocation.WAIT_RESPONSE, null);
                     continue;
                 } else if (response != null) {
                     //if the thread is interrupted, but the response was not an interrupted-response,
@@ -239,11 +244,11 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
     private void pollResponse(final long pollTimeoutMs) throws InterruptedException {
         //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
-        if (pollTimeoutMs > 0) {
+        if (pollTimeoutMs > 0 && response == null) {
             long currentTimeoutMs = pollTimeoutMs;
             final long waitStart = Clock.currentTimeMillis();
             synchronized (this) {
-                while (currentTimeoutMs > 0 && (response == null || response == BasicInvocation.WAIT_RESPONSE)) {
+                while (currentTimeoutMs > 0 && response == null) {
                     wait(currentTimeoutMs);
                     currentTimeoutMs = pollTimeoutMs - (Clock.currentTimeMillis() - waitStart);
                 }
