@@ -1,4 +1,4 @@
-### Member Attributes Configuration
+## Member Attributes Configuration
 
 It is used to tag your cluster members in case, for example, you want to direct some tasks to specific members.
 

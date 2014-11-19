@@ -1,5 +1,5 @@
 
-### Multimap Configuration
+## Multimap Configuration
 
 Most of MultiMap configuration parameters have the same names and tasks explained in map properties above. Below are the ones specific to MultiMap.
 

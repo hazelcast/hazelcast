@@ -1,5 +1,5 @@
 
-### Logging Configuration
+## Logging Configuration
 
 Hazelcast has a flexible logging configuration and does not depend on any logging framework except JDK logging. It has in-built adaptors for a number of logging frameworks and also supports custom loggers by providing logging interfaces.
 

@@ -1,5 +1,5 @@
 
-### List Configuration
+## List Configuration
 
 **Declarative:**
 
