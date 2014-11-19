@@ -1,5 +1,5 @@
 
-### Network Configuration
+## Network Configuration
 
 All network related configuration is performed via `network` tag in the XML file or the class `NetworkConfig` when using programmatic configuration. Let's first give the samples for these two approaches. Then we will look at its parameters, which are a lot.
 
@@ -64,11 +64,11 @@ It has below parameters which are briefly described in the following subsections
 - socket-interceptor
 - symmetric-encryption
 
-##### Public Address
+### Public Address
 
 It is used to override public address of a node. By default, a node selects its socket address as its public address. But behind a network address translation (NAT), two endpoints (nodes) may not be able to see/access each other. If both nodes set their public addresses to their defined addresses on NAT, then that way they can communicate with each other. In this case, their public addresses are not an address of a local network interface but a virtual address defined by NAT. It is optional to set and useful when you have a private cloud.
 
-##### Port
+### Port
 
 You can specify the ports which Hazelcast will use to communicate between cluster members. Its default value is `5701`. Sample configurations are shown below.
 
@@ -99,7 +99,7 @@ It has below attributes.
 
 Naturally, the parameter `port-count` is ignored when the above configuration is made.
 
-##### Outbound Ports
+### Outbound Ports
 
 
 By default, Hazelcast lets the system to pick up an ephemeral port during socket bind operation. But security policies/firewalls may require to restrict outbound ports to be used by Hazelcast enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports. Sample configurations are shown below.
@@ -140,7 +140,7 @@ As you can see in the programmatic configuration, if you want to add only one po
 In the declarative one, the tag `ports` can be used for both (for single and multiple port definitions).
 
 
-##### Join
+### Join
 
 This configuration parameter is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: TCP/IP, multicast and AWS (EC2). Below are sample configurations.
 
@@ -211,7 +211,7 @@ It has below elements and attributes.
 	- `security-group-name`:Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast nodes to be within this group. It is optional.
 	- `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast nodes, you can set these parameters as the ones you specified in the EC2 console. They are optional.
 
-##### Interfaces
+### Interfaces
 
 You can specify which network interfaces that Hazelcast should use. Servers mostly have more than one network interface so you may want to list the valid IPs. Range characters ('\*' and '-') can be used for simplicity. So 10.3.10.\*, for instance, refers to IPs between 10.3.10.0 and 10.3.10.255. Interface 10.3.10.4-18 refers to IPs between 10.3.10.4 and 10.3.10.18 (4 and 18 included). If network interface configuration is enabled (disabled by default) and if Hazelcast cannot find an matching interface, then it will print a message on console and will not start on that node.
 
@@ -245,16 +245,56 @@ interface.setEnabled( "true" )
 
 
 
-##### SSL
+### SSL
 
 This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
 
-##### Socket Interceptor
+### Socket Interceptor
 
 This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
 
-##### Symmetric Encryption
+### Symmetric Encryption
 
 This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
 
+### IPv6 Support
 
+Hazelcast supports IPv6 addresses seamlessly (This support is switched off by default, please see the note at the end of this section).
+
+All you need is to define IPv6 addresses or interfaces in [network configuration](#network-configuration). Only limitation at the moment is that you cannot define wildcard IPv6 addresses in TCP/IP join configuration (`tcp-ip` element). [Interfaces](#interfaces) section does not have this limitation, you can configure wildcard IPv6 interfaces in the same way as IPv4 interfaces.
+
+```xml
+<hazelcast>
+  ...
+  <network>
+    <port auto-increment="true">5701</port>
+    <join>
+      <multicast enabled="false">
+        <multicast-group>FF02:0:0:0:0:0:0:1</multicast-group>
+        <multicast-port>54327</multicast-port>
+      </multicast>
+      <tcp-ip enabled="true">
+        <member>[fe80::223:6cff:fe93:7c7e]:5701</member>
+        <interface>192.168.1.0-7</interface>
+        <interface>192.168.1.*</interface>
+        <interface>fe80:0:0:0:45c5:47ee:fe15:493a</interface>
+      </tcp-ip>
+    </join>
+    <interfaces enabled="true">
+      <interface>10.3.16.*</interface>
+      <interface>10.3.10.4-18</interface>
+      <interface>fe80:0:0:0:45c5:47ee:fe15:*</interface>
+      <interface>fe80::223:6cff:fe93:0-5555</interface>
+    </interfaces>
+    ...
+  </network>
+  ...
+</hazelcast>
+```
+
+JVM has two system properties for setting the preferred protocol stack (IPv4 or IPv6) as well as the preferred address family types (inet4 or inet6). On a dual stack machine, IPv6 stack is preferred by default, this can be changed through `java.net.preferIPv4Stack=<true|false>` system property. And when querying name services, JVM prefers IPv4 addressed over IPv6 addresses and will return an IPv4 address if possible. This can be changed through `java.net.preferIPv6Addresses=<true|false>` system property.
+
+Also see additional [details on IPv6 support in Java](http://docs.oracle.com/javase/1.5.0/docs/guide/net/ipv6_guide/query.html#details).
+
+![image](images/NoteSmall.jpg) ***NOTE:*** *IPv6 support has been switched off by default, since some platforms have issues in use of IPv6 stack. Some other platforms such as Amazon AWS have no support at all. To enable IPv6 support, just set configuration property `hazelcast.prefer.ipv4.stack` to *false*. See [Advanced Configuration Properties](#advanced-configuration-properties).*
+<br></br>

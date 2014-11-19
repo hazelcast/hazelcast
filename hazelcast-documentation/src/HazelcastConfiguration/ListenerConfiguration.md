@@ -1,12 +1,12 @@
 
 
-### Listener Configurations
+## Listener Configurations
 
 You can add or remove event listeners to/from the related object using Hazelcast API.
 
 Downside of attaching listeners using API is the possibility of missing events between creation of object and registering listener. To overcome this race condition, Hazelcast introduces registration of listeners in configuration. You can register listeners using either declarative, programmatic or Spring configuration.
 
-####  MembershipListener
+###  MembershipListener
 
 - Declarative Configuration
 
@@ -32,7 +32,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:listeners>
 ```
 
-#### DistributedObjectListener
+### DistributedObjectListener
 
 - Declarative Configuration
 
@@ -58,7 +58,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:listeners>
 ```
 
-#### MigrationListener
+### MigrationListener
 
 - Declarative Configuration
 
@@ -84,7 +84,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:listeners>
 ```
 
-#### LifecycleListener
+### LifecycleListener
 
 - Declarative Configuration
 
@@ -110,7 +110,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:listeners>
 ```
 
-#### EntryListener for IMap
+### EntryListener for IMap
 
 - Declarative Configuration
 
@@ -145,7 +145,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:map>
 ```
 
-#### EntryListener for MultiMap
+### EntryListener for MultiMap
 
 - Declarative Configuration
 
@@ -179,7 +179,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:multimap>
 ```
 
-#### ItemListener for IQueue
+### ItemListener for IQueue
 
 - Declarative Configuration
 
@@ -212,7 +212,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:queue>
 ```
 
-#### MessageListener for ITopic
+### MessageListener for ITopic
 
 - Declarative Configuration
 
@@ -244,7 +244,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:topic>
 ```
 
-#### ClientListener
+### ClientListener
 
 - Declarative Configuration
 

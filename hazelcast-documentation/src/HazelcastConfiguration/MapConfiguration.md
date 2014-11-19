@@ -1,6 +1,6 @@
 
 
-### Map Configuration
+## Map Configuration
 
 **Declarative:**
 
@@ -40,23 +40,23 @@ PutIfAbsentMapMergePolicy causes the merging entry to be merged from source to d
 - partition-strategy: ???
 - optimize-queries: This parameter is used to increase the speed of query processes in the map. It only works when `in-memory-format` is set as `BINARY` and performs a pre-caching on the entries queried.
 
-#### Map Store
+### Map Store
 
 - class-name: Name of the class implementing MapLoader and/or MapStore.
 - write-delay-seconds: Number of seconds to delay to call the MapStore.store(key, value). If the value is zero then it is write-through so MapStore.store(key, value) will be called as soon as the entry is updated. Otherwise it is write-behind so updates will be stored after write-delay-seconds value by calling Hazelcast.storeAll(map). Default value is 0.
 - write-batch-size: Used to create batch chunks when writing map store. In default mode all entries will be tried to persist in one go. To create batch chunks, minimum meaningful value for write-batch-size is 2. For values smaller than 2, it works as in default mode.
 
-#### Near Cache
+### Near Cache
 
 Most of map near cache properties have the same names and tasks explained in map properties above. Below are the ones specific to near cache.
 
 - invalidate-on-change: Determines whether the cached entries get evicted if the entries are updated or removed).
 - cache-local-entries: If you want the local entries to be cached, set this parameter's value as "true".
 
-#### Indexes
+### Indexes
 This configuration lets you index the attributes and also order them. See the above sample declarative and programmatic configuration.
 
-#### Entry Listeners
+### Entry Listeners
 This configuration lets you add listeners (listener classes) for the map entries. You can also set the attributes `include-value` to `true` if you want the entry event to contain the entry values and `local` to `true` if you want to listen the entries on the local node.
 
 

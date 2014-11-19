@@ -1,4 +1,5 @@
-### Configuration Wrap-Up
+
+## Configuration Wrap-Up
 
 Below is the `hazelcast.xml` configuration file that comes with the release, located at `bin` folder.
 

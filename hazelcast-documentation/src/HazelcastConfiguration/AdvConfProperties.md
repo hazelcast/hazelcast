@@ -1,4 +1,4 @@
-### Advanced Configuration Properties
+## Advanced Configuration Properties
 
 Hazelcast has advanced configuration properties to tune some aspects of it. These can be set as property name and value pairs through declarative configuration, programmatic configuration or JVM system property.
 
