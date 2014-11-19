@@ -83,11 +83,8 @@ public class CacheRecordHashMap
         if (percentage <= 0) {
             return 0;
         }
+        percentage = Math.min(percentage, ICacheRecordStore.ONE_HUNDRED_PERCENT);
         final int size = size();
-        if (percentage >= ICacheRecordStore.ONE_HUNDRED_PERCENT || size <= MIN_EVICTION_ELEMENT_COUNT) {
-            clear();
-            return size;
-        }
 
         long now = Clock.currentTimeMillis();
         int sizeLimitForEviction = (int) ((double) (size * percentage)
