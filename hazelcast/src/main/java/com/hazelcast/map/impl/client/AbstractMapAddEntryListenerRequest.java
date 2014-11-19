@@ -69,7 +69,6 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
 
         EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
-
             @Override
             public void onEntryEvent(EntryEvent<Object, Object> event) {
                 if (endpoint.isAlive()) {
