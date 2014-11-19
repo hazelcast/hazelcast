@@ -38,12 +38,12 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
 
     private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
 
-    private long size = DEFAULT_MAX_SIZE;
+    private int size = DEFAULT_MAX_SIZE;
 
     public MaxSizeConfig() {
     }
 
-    public MaxSizeConfig(long size, MaxSizePolicy maxSizePolicy) {
+    public MaxSizeConfig(int size, MaxSizePolicy maxSizePolicy) {
         setSize(size);
         this.maxSizePolicy = maxSizePolicy;
     }
@@ -98,11 +98,11 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
         return readOnly;
     }
 
-    public long getSize() {
+    public int getSize() {
         return size;
     }
 
-    public MaxSizeConfig setSize(long size) {
+    public MaxSizeConfig setSize(int size) {
         if (size > 0) {
             this.size = size;
         }
@@ -121,13 +121,13 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(maxSizePolicy.ordinal());
-        out.writeLong(size);
+        out.writeInt(size);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         maxSizePolicy = MaxSizePolicy.values()[in.readInt()];
-        size = in.readLong();
+        size = in.readInt();
     }
 
     @Override

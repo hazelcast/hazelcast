@@ -375,7 +375,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         When maximum size is reached, cache is evicted based on the eviction policy
-                        Size can be any long between 0 and Long.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                        Size can be any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
                         Max-Size policy has eight valid values:
                         PER_NODE (Maximum number of cache entries in each JVM),
                         PER_PARTITION (Maximum number of cache entries within each partition),

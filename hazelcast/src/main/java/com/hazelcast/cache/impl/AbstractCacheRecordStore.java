@@ -1449,7 +1449,7 @@ public abstract class AbstractCacheRecordStore<
 
     protected class PerNodeMaxSizeChecker implements MaxSizeChecker {
 
-        private final long maxEntryCount;
+        private final int maxEntryCount;
 
         protected PerNodeMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
             this.maxEntryCount = maxSizeConfig.getSize();
@@ -1464,7 +1464,7 @@ public abstract class AbstractCacheRecordStore<
 
     protected class PerPartitionMaxSizeChecker implements MaxSizeChecker {
 
-        private final long maxEntryCount;
+        private final int maxEntryCount;
 
         protected PerPartitionMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
             this.maxEntryCount = maxSizeConfig.getSize();

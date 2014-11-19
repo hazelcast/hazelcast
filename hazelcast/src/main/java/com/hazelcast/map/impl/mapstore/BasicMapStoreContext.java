@@ -268,8 +268,7 @@ final class BasicMapStoreContext implements MapStoreContext {
         int maxSize = -1;
 
         if (maxSizeConfig.getMaxSizePolicy() == PER_NODE) {
-            // For max-size config on map, we assume and check that size can be Integer.MAX_VALUE at most
-            maxSize = (int) maxSizeConfig.getSize();
+            maxSize = maxSizeConfig.getSize();
         }
 
         return maxSize;

@@ -187,10 +187,7 @@ public final class EvictionOperator {
 
 
     public int evictableSize(int currentPartitionSize, MapConfig mapConfig) {
-        if (mapConfig.getMaxSizeConfig().getSize() < 0 || mapConfig.getMaxSizeConfig().getSize() > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("\"Max size\" value of map config must be between 0 and Integer.MAX_VALUE");
-        }
-        int maxSize = (int) mapConfig.getMaxSizeConfig().getSize();
+        final int maxSize = mapConfig.getMaxSizeConfig().getSize();
         int evictableSize;
         final MaxSizeConfig.MaxSizePolicy maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
         final int evictionPercentage = mapConfig.getEvictionPercentage();

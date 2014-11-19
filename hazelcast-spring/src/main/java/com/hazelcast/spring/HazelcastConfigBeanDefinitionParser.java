@@ -495,7 +495,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                                 getTextContent(maxSizePolicy))));
                     }
                     final String value = getTextContent(childNode).trim();
-                    final long size = value != null ? Long.parseLong(value) : 0;
+                    final int size = value != null ? Integer.parseInt(value) : 0;
                     if (size > 0) {
                         maxSizeConfig.setSize(size);
                     }

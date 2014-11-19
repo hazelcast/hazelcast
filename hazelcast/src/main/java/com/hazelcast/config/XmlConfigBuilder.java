@@ -859,12 +859,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
                             upperCaseInternal(getTextContent(maxSizePolicy))));
                 }
-                long size = sizeParser(value);
-                if (size < 0 || size > Integer.MAX_VALUE) {
-                    throw new IllegalArgumentException("\"max-size\" value of map config must be between "
-                            + "0 and Integer.MAX_VALUE");
+                int size = sizeParser(value);
+                if (size > 0) {
+                    msc.setSize(size);
                 }
-                msc.setSize(size);
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
                         MapConfig.DEFAULT_EVICTION_PERCENTAGE));
@@ -950,7 +948,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     maxSizeConfig.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(
                             getTextContent(maxSizePolicy))));
                 }
-                final long size = sizeParser(value);
+                final int size = sizeParser(value);
                 if (size > 0) {
                     maxSizeConfig.setSize(size);
                 }
@@ -1017,10 +1015,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    private long sizeParser(String value) {
-        long size;
+    private int sizeParser(String value) {
+        int size;
         if (value.length() < 2) {
-            size = Long.parseLong(value);
+            size = Integer.parseInt(value);
         } else {
             char last = value.charAt(value.length() - 1);
             int type = 0;
@@ -1030,11 +1028,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 type = 2;
             }
             if (type == 0) {
-                size = Long.parseLong(value);
+                size = Integer.parseInt(value);
             } else if (type == 1) {
-                size = Long.parseLong(value.substring(0, value.length() - 1)) * THOUSAND_FACTOR;
+                size = Integer.parseInt(value.substring(0, value.length() - 1)) * THOUSAND_FACTOR;
             } else {
-                size = Long.parseLong(value.substring(0, value.length() - 1));
+                size = Integer.parseInt(value.substring(0, value.length() - 1));
             }
         }
         return size;

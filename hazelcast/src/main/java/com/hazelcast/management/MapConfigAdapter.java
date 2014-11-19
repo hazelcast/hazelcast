@@ -93,8 +93,10 @@ public class MapConfigAdapter implements JsonSerializable, DataSerializable {
         config.setMinEvictionCheckMillis(in.readLong());
         config.setTimeToLiveSeconds(in.readInt());
         config.setMaxIdleSeconds(in.readInt());
-        config.setMaxSizeConfig(new MaxSizeConfig().setSize(in.readLong())
-                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(in.readUTF())));
+        config.setMaxSizeConfig(
+                new MaxSizeConfig()
+                        .setSize(in.readInt())
+                        .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.values()[in.readInt()]));
         config.setReadBackupData(in.readBoolean());
         config.setEvictionPolicy(EvictionPolicy.valueOf(in.readUTF()));
         config.setMergePolicy(in.readUTF());
@@ -110,8 +112,8 @@ public class MapConfigAdapter implements JsonSerializable, DataSerializable {
         out.writeLong(config.getMinEvictionCheckMillis());
         out.writeInt(config.getTimeToLiveSeconds());
         out.writeInt(config.getMaxIdleSeconds());
-        out.writeLong(config.getMaxSizeConfig().getSize());
-        out.writeUTF(config.getMaxSizeConfig().getMaxSizePolicy().toString());
+        out.writeInt(config.getMaxSizeConfig().getSize());
+        out.writeInt(config.getMaxSizeConfig().getMaxSizePolicy().ordinal());
         out.writeBoolean(config.isReadBackupData());
         out.writeUTF(config.getEvictionPolicy().name());
         out.writeUTF(config.getMergePolicy());
