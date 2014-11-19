@@ -107,7 +107,11 @@ public class QueryOperation extends AbstractMapOperation {
                     .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
         }
 
-        if( partitionStateVersion != partitionService.getPartitionStateVersion() ) {
+        checkPartitionStateChanges(partitionService, partitionStateVersion);
+    }
+
+    private void checkPartitionStateChanges(InternalPartitionService partitionService, int partitionStateVersion) {
+        if (partitionStateVersion != partitionService.getPartitionStateVersion()) {
             getLogger().info("Partition assignments changed while executing query: " + predicate);
         }
     }

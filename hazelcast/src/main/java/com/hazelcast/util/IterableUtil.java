@@ -18,7 +18,13 @@ package com.hazelcast.util;
 
 import java.util.Iterator;
 
+/**
+ * Utility functions for working with {@link Iterable}
+ */
 public class IterableUtil {
+
+    private IterableUtil(){
+    }
 
     /**
      * @return First element or defaultValue if iterable is empty
