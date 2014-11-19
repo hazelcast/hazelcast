@@ -40,7 +40,7 @@ public class PortableEntryEvent implements Portable {
     public PortableEntryEvent() {
     }
 
-    public PortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, String uuid) {
+    public PortableEntryEvent(Data key, Data value, Data oldValue, Data mergingValue, EntryEventType eventType, String uuid) {
         this.key = key;
         this.value = value;
         this.oldValue = oldValue;
