@@ -20,6 +20,7 @@ import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.core.MigrationEvent.MigrationStatus;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -52,6 +53,7 @@ import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
@@ -86,8 +88,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
-import static com.hazelcast.core.MigrationEvent.MigrationStatus;
-import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
@@ -1033,7 +1033,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return false;
     }
 
-    boolean hasOnGoingMigrationLocal() {
+    @Override
+    public boolean hasOnGoingMigrationLocal() {
         return !activeMigrations.isEmpty() || !migrationQueue.isEmpty()
                 || !isMigrationActive()
                 || migrationThread.isMigrating()
@@ -1472,6 +1473,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     public Node getNode() {
         return node;
+    }
+
+    @Override
+    public int getPartitionStateVersion() {
+        return stateVersion.get();
     }
 
     private class SendClusterStateTask implements Runnable {
