@@ -132,7 +132,7 @@ final class BasicOperationService implements InternalOperationService {
     private final OperationBackupHandler operationBackupHandler;
     private final OperationPacketHandler operationPacketHandler;
     private final ResponsePacketHandler responsePacketHandler;
-    private final BackupTimeoutHandlerThread backupTimeoutHandlerThread;
+    private final OperationTimeoutHandlerThread operationTimeoutHandlerThread;
     private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
@@ -160,8 +160,8 @@ final class BasicOperationService implements InternalOperationService {
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
-        this.backupTimeoutHandlerThread = new BackupTimeoutHandlerThread();
-        this.backupTimeoutHandlerThread.start();
+        this.operationTimeoutHandlerThread = new OperationTimeoutHandlerThread();
+        this.operationTimeoutHandlerThread.start();
     }
 
     @Override
@@ -1034,24 +1034,25 @@ final class BasicOperationService implements InternalOperationService {
 
 
     /**
-     * The HandleBackupTimeoutThread periodically iterates over all invocations in this BasicOperationService and calls the
-     * {@link BasicInvocation#handleBackupTimeout(long)} method. This gives each invocation the opportunity to handle with a
-     * backup not completing in time.
+     * The OperationTimeoutHandlerThread periodically iterates over all invocations in this BasicOperationService and calls the
+     * {@link BasicInvocation#handleOperationTimeout()} {@link BasicInvocation#handleBackupTimeout(long)} methods.
+     * This gives each invocation the opportunity to handle with an operation (especially required for async ones)
+     * and/or a backup not completing in time.
      * <p/>
      * The previous approach was that for each BackupAwareOperation a task was scheduled to deal with the timeout. The problem
      * is that the actual operation already could be completed, but the task is still scheduled and this can lead to an OOME.
      * Apart from that it also had quite an impact on performance since there is more interaction with concurrent data-structures
      * (e.g. the priority-queue of the scheduled-executor).
      * <p/>
-     * We use a dedicates thread instead of a shared ScheduledThreadPool because there will not be that many of these threads
+     * We use a dedicated thread instead of a shared ScheduledThreadPool because there will not be that many of these threads
      * (each member-HazelcastInstance gets 1) and we don't want problems in 1 member causing problems in the other.
      */
-    private final class BackupTimeoutHandlerThread extends Thread {
+    private final class OperationTimeoutHandlerThread extends Thread {
 
         public static final int DELAY_MILLIS = 1000;
 
-        private BackupTimeoutHandlerThread() {
-            super(node.getThreadNamePrefix("BackupTimeoutHandlerThread"));
+        private OperationTimeoutHandlerThread() {
+            super(node.getThreadNamePrefix("OperationTimeoutHandlerThread"));
         }
 
         @Override
@@ -1079,6 +1080,12 @@ final class BasicOperationService implements InternalOperationService {
             }
 
             for (BasicInvocation invocation : invocations.values()) {
+                try {
+                    invocation.handleOperationTimeout();
+                } catch (Throwable t) {
+                    inspectOutputMemoryError(t);
+                    logger.severe("Failed to handle operation timeout of invocation:" + invocation, t);
+                }
                 try {
                     invocation.handleBackupTimeout(backupOperationTimeoutMillis);
                 } catch (Throwable t) {
