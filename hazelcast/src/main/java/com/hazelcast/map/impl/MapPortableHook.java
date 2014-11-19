@@ -20,6 +20,7 @@ import com.hazelcast.map.impl.client.MapAddEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapAddEntryListenerSqlRequest;
 import com.hazelcast.map.impl.client.MapAddIndexRequest;
 import com.hazelcast.map.impl.client.MapAddInterceptorRequest;
+import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapClearRequest;
 import com.hazelcast.map.impl.client.MapContainsKeyRequest;
 import com.hazelcast.map.impl.client.MapContainsValueRequest;
@@ -41,7 +42,6 @@ import com.hazelcast.map.impl.client.MapKeySetRequest;
 import com.hazelcast.map.impl.client.MapLoadAllKeysRequest;
 import com.hazelcast.map.impl.client.MapLoadGivenKeysRequest;
 import com.hazelcast.map.impl.client.MapLockRequest;
-import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapPutAllRequest;
 import com.hazelcast.map.impl.client.MapPutIfAbsentRequest;
 import com.hazelcast.map.impl.client.MapPutRequest;
@@ -68,6 +68,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.util.ConstructorFunction;
+
 import java.util.Collection;
 
 /**
@@ -130,7 +131,8 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[ADD_NEAR_CACHE_ENTRY_LISTENER + 1];
+            final ConstructorFunction<Integer, Portable>[] constructors
+                    = new ConstructorFunction[ADD_NEAR_CACHE_ENTRY_LISTENER + 1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
