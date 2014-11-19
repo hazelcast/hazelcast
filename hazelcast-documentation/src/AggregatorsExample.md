@@ -49,7 +49,7 @@ class SalaryYear implements Serializable {
 }
 ```
 
-The two `IMap`s and the `MultiMap`, they are both keyed by the string of email and are defined as follows:
+The two `IMap`s and the `MultiMap` are keyed by the string of email. They are defined as follows:
 
 ```java
 IMap<String, Employee> employees = hz.getMap( "employees" );
@@ -57,10 +57,10 @@ IMap<String, SalaryYear> salaries = hz.getMap( "salaries" );
 MultiMap<String, String> officeAssignment = hz.getMultiMap( "office-employee" );
 ```
 
-So far, we know all important information to work out some example aggregations. We will look into some deeper implementation
+So far, we know all the important information to work out some example aggregations. We will look into some deeper implementation
 details and how we can work around some current limitations that will be eliminated in future versions of the API.
 
-So let's start with an already seen, very basic example. We want to know the average salary of all of our employees. To do this,
+Let's start with a very basic example. We want to know the average salary of all of our employees. To do this,
 we need a `PropertyExtractor` and the average aggregation for type `Integer`.
 
 ```java
@@ -71,13 +71,13 @@ int avgSalary = salaries.aggregate( Supplier.all( extractor ),
                                     Aggregations.integerAvg() );
 ```
 
-That's it. Internally, we created a map-reduce task based on the predefined aggregation and fire it up immediately. Currently, all
+That's it. Internally, we created a MapReduce task based on the predefined aggregation and fired it up immediately. Currently, all
 aggregation calls are blocking operations, so it is not yet possible to execute the aggregation in a reactive way (using
-`com.hazelcast.core.ICompletableFuture`) but this will be part of one of the upcoming versions.
+`com.hazelcast.core.ICompletableFuture`) but this will be part of an upcoming version.
 
 #### Map Join Example
 
-The following example is already a bit more complex, so we only want to have our US based employees selected into the average
+The following example is a little more complex. We only want to have our US based employees selected into the average
 salary calculation, so we need to execute some kind of a join operation between the employees and salaries maps.
 
 ```java
@@ -96,7 +96,7 @@ class USEmployeeFilter implements KeyPredicate<String>, HazelcastInstanceAware {
 }
 ```
 
-Using the `HazelcastInstanceAware` interface, we get the current instance of Hazelcast injected into our filter and can perform data
+Using the `HazelcastInstanceAware` interface, we get the current instance of Hazelcast injected into our filter and we can perform data
 joins on other data structures of the cluster. We now only select employees that work as part of our US offices into the
 aggregation.
 
@@ -112,10 +112,10 @@ int avgSalary = salaries.aggregate( Supplier.fromKeyPredicate(
 #### Grouping Example
 
 For our next example, we will do some grouping based on the different worldwide offices. Currently, a group aggregator is not yet 
-available, that means we need a small workaround to achieve this goal. In later versions of the Aggregations API this will not be 
-required anymore since it will be available out of the box in a much more convenient way.
+available, so we need a small workaround to achieve this goal. (In later versions of the Aggregations API this will not be 
+required because it will be available out of the box in a much more convenient way.)
 
-So again, let's start with our filter. This time we want to filter based on an office name and we again need to do some data joins
+Again, let's start with our filter. This time, we want to filter based on an office name and we need to do some data joins
 to achieve this kind of filtering. 
 
 **A short tip:** to minimize the data transmission on the aggregation we can use
@@ -147,8 +147,8 @@ class OfficeEmployeeFilter implements KeyPredicate<String>, HazelcastInstanceAwa
 }
 ```
 
-Now, we can execute our aggregations. As mentioned, we currently need to do the grouping on our own by executing multiple
-aggregations in a row but that will go away soon.
+Now we can execute our aggregations. As mentioned before, we currently need to do the grouping on our own by executing multiple
+aggregations in a row.
 
 ```java
 Map<String, Integer> avgSalariesPerOffice = new HashMap<String, Integer>();
@@ -171,11 +171,9 @@ for ( String office : officeAssignment.keySet() ) {
 
 #### Simple Count Example
 
-After the previous example, we want to fade out from this section by executing one final, easy but nice aggregation. We
-just want to know how many employees we currently have on a worldwide basis. Before reading the next lines of source code, you
-can try to do it on your own to see if you understood the way of executing aggregations.
-
-As said, this is again a very basic example but it is the perfect closing point for this section:
+After the previous example, we want to end this section by executing one final and easy aggregation. We
+want to know how many employees we currently have on a worldwide basis. Before reading the next lines of example code, you
+can try to do it on your own to see if you understood how to execute aggregations.
 
 ```java
 IMap<String, Employee> employees = hazelcastInstance.getMap( "employees" );
@@ -189,7 +187,6 @@ IMap<String, Employee> employees = hazelcastInstance.getMap( "employees" );
 int count = employees.aggregate( Supplier.all(), Aggregations.count() );
 ```
 
-We now have a good overview of how to use aggregations in real life situations. If you want to do your colleagues a favor you
-might want to end up writing your own additional set of aggregations. Then please read on the next section, if not just stop
-here.
+We now have an overview of how to use aggregations in real life situations. If you want to do your colleagues a favor, you
+might want to write your own additional set of aggregations. If so, then read the next section, [Implementing Aggregations](#implementing-aggregations).
 

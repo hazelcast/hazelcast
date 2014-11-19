@@ -134,7 +134,7 @@ public class ComparableMinAggregation<Key, Value>
     private static final class ComparableMinReducer
             extends Reducer<Comparable, Comparable> {
 
-        private volatile Comparable min;
+        private Comparable min;
 
         @Override
         public void reduce(Comparable value) {

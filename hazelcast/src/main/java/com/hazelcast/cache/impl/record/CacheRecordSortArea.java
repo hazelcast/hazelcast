@@ -7,6 +7,9 @@ import java.util.Arrays;
 /**
  * Sort area for record address as thread local usage.
  */
+@edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "EI_EXPOSE_REP",
+        justification = "Exposed arrays are thread local arrays, zeroed out on every access "
+                + "and contain no special data other than being used as temp sort space.")
 public class CacheRecordSortArea {
 
     // TODO clear thread local at the end!

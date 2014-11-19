@@ -110,11 +110,11 @@ public final class ResponseHandlerFactory {
                         + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
 
-            NormalResponse response;
-            if (!(obj instanceof NormalResponse)) {
+            Response response;
+            if (!(obj instanceof Response)) {
                 response = new NormalResponse(obj, remotePropagatable.getCallId(), 0, remotePropagatable.isUrgent());
             } else {
-                response = (NormalResponse) obj;
+                response = (Response) obj;
             }
 
             OperationService operationService = nodeEngine.getOperationService();

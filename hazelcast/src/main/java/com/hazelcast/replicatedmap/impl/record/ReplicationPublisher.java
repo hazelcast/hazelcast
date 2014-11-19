@@ -19,6 +19,7 @@ package com.hazelcast.replicatedmap.impl.record;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -39,7 +40,6 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
@@ -279,7 +279,8 @@ public class ReplicationPublisher<K, V>
         }
 
         // If we get here we does not seem to have finished the operation
-        throw new CallTimeoutException("ReplicatedMap::clear couldn't be finished, failed nodes: " + failedMembers);
+        throw new OperationTimeoutException("ReplicatedMap::clear couldn't be finished, failed nodes: "
+                + failedMembers);
     }
 
     private Map executeClearOnMembers(Collection<MemberImpl> members, boolean emptyReplicationQueue) {
