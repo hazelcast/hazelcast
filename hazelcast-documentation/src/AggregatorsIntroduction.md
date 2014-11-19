@@ -66,7 +66,7 @@ Supplier<String, Integer, String> supplier = Supplier.all(
 );
 ```
 
-A Java 6 / 7 example will follow up below in the following section.
+You can see a Java 6 / 7 example in the [Aggregations Examples section](#aggregation-examples).
 
 Apart from the fact we transformed the input value of type `int` (or Integer) to a string, we can see that the generic information
 of the resulting `Supplier` has changed as well. This indicates that we now have an aggregation working on string values.
@@ -131,7 +131,7 @@ int sum = personAgeMapping.aggregate( supplier, Aggregations.count() );
 
 The `com.hazelcast.mapreduce.aggregation.Aggregation` interface defines the aggregation operation itself. It contains a set of
 MapReduce API implementations like `Mapper`, `Combiner`, `Reducer`, and `Collator`. These implementations are normally unique to
-the chosen `Aggregation`. This interface can also be implemented with your aggregation operations based on map-reduce calls. To
+the chosen `Aggregation`. This interface can also be implemented with your aggregation operations based on MapReduce calls. To
 more information, refer to [Implementing Aggregations](#implementing-aggregations).
 
 The `com.hazelcast.mapreduce.aggregation.Aggregations` class provides a common predefined set of aggregations. This class

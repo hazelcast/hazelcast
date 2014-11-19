@@ -71,7 +71,7 @@ int avgSalary = salaries.aggregate( Supplier.all( extractor ),
                                     Aggregations.integerAvg() );
 ```
 
-That's it. Internally, we created a map-reduce task based on the predefined aggregation and fired it up immediately. Currently, all
+That's it. Internally, we created a MapReduce task based on the predefined aggregation and fired it up immediately. Currently, all
 aggregation calls are blocking operations, so it is not yet possible to execute the aggregation in a reactive way (using
 `com.hazelcast.core.ICompletableFuture`) but this will be part of an upcoming version.
 

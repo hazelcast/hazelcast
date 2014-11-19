@@ -18,7 +18,7 @@ interface Aggregation<Key, Supplied, Result> {
 }
 ```
  
-An `Aggregation` implementation is just defining a map-reduce task with a small difference: the `Mapper`
+An `Aggregation` implementation is just defining a MapReduce task with a small difference: the `Mapper`
 is always expected to work on a `Supplier` that filters and / or transforms the mapped input value to some output value.
 
 `getMapper` and `getReducerFactory` are expected to return non-null values. `getCombinerFactory` and `getCollator` are
@@ -26,9 +26,9 @@ optional operations and do not need to be implemented. If you can decide to impl
 to achieve.
 
 For more information on how you implement mappers, combiners, reducers, and collators, refer to the
-[MapReduce](#mapreduce) section.
+[MapReduce section](#mapreduce) section.
 
-For best speed and traffic usage, as mentioned in the MapReduce documentation, you should add a `Combiner` to your aggregation
+For best speed and traffic usage, as mentioned in the [MapReduce section](#mapreduce), you should add a `Combiner` to your aggregation
 whenever it is possible to do some kind of pre-reduction step.
 
 Your implementation also should use `DataSerializable` or `IdentifiedDataSerializable` for best compatibility and speed / stream-size
