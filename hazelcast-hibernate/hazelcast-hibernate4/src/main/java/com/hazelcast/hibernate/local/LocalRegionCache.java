@@ -232,7 +232,8 @@ public class LocalRegionCache implements RegionCache {
         final int maxSize;
         final long timeToLive;
         if (config != null) {
-            maxSize = config.getMaxSizeConfig().getSize();
+            // For max-size config on map, we assume and check that size can be Integer.MAX_VALUE at most
+            maxSize = (int) config.getMaxSizeConfig().getSize();
             timeToLive = config.getTimeToLiveSeconds() * SEC_TO_MS;
         } else {
             maxSize = MAX_SIZE;
