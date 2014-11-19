@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
@@ -81,13 +82,6 @@ public class NearCache {
         nearCacheStats = new NearCacheStatsImpl();
         lastCleanup = Clock.currentTimeMillis();
         serializationService = nodeEngine.getSerializationService();
-    }
-
-    /**
-     * EvictionPolicy.
-     */
-    static enum EvictionPolicy {
-        NONE, LRU, LFU
     }
 
     // this operation returns the given value in near-cache memory format (data or object)

@@ -138,4 +138,10 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         result = 31 * result + (getName() != null ? getName().hashCode() : 0);
         return result;
     }
+
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '{' + "service=" + getServiceName() + ", name=" + getName() + '}';
+    }
 }

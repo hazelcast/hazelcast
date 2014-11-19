@@ -1,11 +1,11 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapDataStores;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
@@ -31,16 +31,17 @@ public class WriteBehindManager implements MapStoreManager {
 
     private StoreWorker storeWorker;
 
-    private MapContainer mapContainer;
-
     private String executorName;
 
-    public WriteBehindManager(MapContainer mapContainer) {
-        this.mapContainer = mapContainer;
-        writeBehindProcessor = createWriteBehindProcessor(mapContainer);
-        storeWorker = new StoreWorker(mapContainer, writeBehindProcessor);
-        executorName = EXECUTOR_NAME_PREFIX + mapContainer.getName();
-        scheduledExecutor = getScheduledExecutorService(mapContainer.getMapServiceContext());
+    private final MapStoreContext mapStoreContext;
+
+    public WriteBehindManager(MapStoreContext mapStoreContext) {
+        this.mapStoreContext = mapStoreContext;
+        writeBehindProcessor = createWriteBehindProcessor(mapStoreContext);
+        storeWorker = new StoreWorker(mapStoreContext, writeBehindProcessor);
+        executorName = EXECUTOR_NAME_PREFIX + mapStoreContext.getMapName();
+        final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
+        scheduledExecutor = getScheduledExecutorService(mapServiceContext);
     }
 
     public void start() {
@@ -48,20 +49,21 @@ public class WriteBehindManager implements MapStoreManager {
     }
 
     public void stop() {
-        NodeEngine nodeEngine = mapContainer.getMapServiceContext().getNodeEngine();
+        final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         nodeEngine.getExecutionService().shutdownExecutor(executorName);
     }
 
     //todo get this via constructor function.
     @Override
     public MapDataStore getMapDataStore(int partitionId) {
-        return MapDataStores.createWriteBehindStore(mapContainer, partitionId, writeBehindProcessor);
+        return MapDataStores.createWriteBehindStore(mapStoreContext, partitionId, writeBehindProcessor);
     }
 
-    private WriteBehindProcessor createWriteBehindProcessor(final MapContainer mapContainer) {
-        final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
+    private WriteBehindProcessor createWriteBehindProcessor(final MapStoreContext mapStoreContext) {
+        final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
         final WriteBehindProcessor writeBehindProcessor
-                = WriteBehindProcessors.createWriteBehindProcessor(mapContainer);
+                = WriteBehindProcessors.createWriteBehindProcessor(mapStoreContext);
         writeBehindProcessor.addStoreListener(new StoreListener<DelayedEntry>() {
             @Override
             public void beforeStore(StoreEvent<DelayedEntry> storeEvent) {
@@ -79,7 +81,7 @@ public class WriteBehindManager implements MapStoreManager {
                 final Data key = (Data) storeEvent.getSource().getKey();
                 final int partitionId = delayedEntry.getPartitionId();
                 final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
-                final RecordStore recordStore = partitionContainer.getExistingRecordStore(mapContainer.getName());
+                final RecordStore recordStore = partitionContainer.getExistingRecordStore(mapStoreContext.getMapName());
                 if (recordStore != null) {
                     recordStore.getMapDataStore().addTransient(key, Clock.currentTimeMillis());
                 }

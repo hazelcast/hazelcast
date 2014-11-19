@@ -6,7 +6,7 @@ import java.io.IOException;
 * @author mdogan 22/05/14
 */
 class NamedPortable implements Portable {
-    static final int CLASS_ID = 3;
+    static final short CLASS_ID = 3;
 
     String name;
     int k;
@@ -36,7 +36,7 @@ class NamedPortable implements Portable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || !(o instanceof NamedPortable)) return false;
 
         NamedPortable that = (NamedPortable) o;
 

@@ -16,10 +16,11 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.HazelcastCacheManager;
 import com.hazelcast.cache.impl.client.CacheCreateConfigRequest;
 import com.hazelcast.cache.impl.client.CacheGetConfigRequest;
 import com.hazelcast.cache.impl.client.CacheManagementConfigRequest;
@@ -27,9 +28,9 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
@@ -41,14 +42,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * CacheManager implementation for client side
  *
  * Provides client side cacheManager functionality
  */
-public final class HazelcastClientCacheManager extends HazelcastCacheManager {
+public final class HazelcastClientCacheManager extends AbstractHazelcastCacheManager {
 
     private final ClientContext clientContext;
     private final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
@@ -56,14 +56,11 @@ public final class HazelcastClientCacheManager extends HazelcastCacheManager {
     public HazelcastClientCacheManager(HazelcastClientCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
         super(cachingProvider, uri, classLoader, properties);
-        if (hazelcastInstance == null) {
-            throw new NullPointerException("hazelcastInstance missing");
-        }
+        checkIfNotNull(hazelcastInstance, "hazelcastInstance cannot be null");
         this.hazelcastInstance = hazelcastInstance;
         final ClientCacheDistributedObject setupRef = hazelcastInstance
                 .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         this.clientContext = setupRef.getClientContext();
-        logger = Logger.getLogger(getClass());
     }
 
     @Override
@@ -77,12 +74,8 @@ public final class HazelcastClientCacheManager extends HazelcastCacheManager {
     }
 
     private void enableStatisticManagementOnNodes(String cacheName, boolean statOrMan, boolean enabled) {
-        if (isClosed()) {
-            throw new IllegalStateException();
-        }
-        if (cacheName == null) {
-            throw new NullPointerException();
-        }
+        checkIfManagerNotClosed();
+        checkIfNotNull(cacheName, "cacheName cannot be null");
         final ClientInvocationService invocationService = clientContext.getInvocationService();
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
         final Collection<Future> futures = new ArrayList<Future>();
@@ -97,11 +90,7 @@ public final class HazelcastClientCacheManager extends HazelcastCacheManager {
             }
         }
         //make sure all configs are created
-        try {
-            FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            logger.warning(e);
-        }
+        FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
     }
 
@@ -121,12 +110,12 @@ public final class HazelcastClientCacheManager extends HazelcastCacheManager {
     }
 
     @Override
-    protected <K, V> boolean createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
+    protected <K, V> CacheConfig<K, V> createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
             CacheCreateConfigRequest request = new CacheCreateConfigRequest(cacheConfig, true, partitionId);
             final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheConfig.getNameWithPrefix());
-            return (Boolean) clientContext.getSerializationService().toObject(future.get());
+            return (CacheConfig<K, V>) clientContext.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -138,8 +127,8 @@ public final class HazelcastClientCacheManager extends HazelcastCacheManager {
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName) {
-        ClientRequest request = new CacheGetConfigRequest(cacheName);
+    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName, String simpleCacheName) {
+        ClientRequest request = new CacheGetConfigRequest(cacheName, simpleCacheName, InMemoryFormat.BINARY);
         try {
             final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheName);
             return clientContext.getSerializationService().toObject(future.get());
@@ -148,4 +137,17 @@ public final class HazelcastClientCacheManager extends HazelcastCacheManager {
         }
     }
 
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        if (HazelcastClientCacheManager.class.isAssignableFrom(clazz)) {
+            return (T) this;
+        }
+        throw new IllegalArgumentException();
+    }
+
+    protected void postClose() {
+        if (properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION) != null) {
+            hazelcastInstance.shutdown();
+        }
+    }
 }

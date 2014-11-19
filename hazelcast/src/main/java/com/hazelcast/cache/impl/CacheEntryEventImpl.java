@@ -21,6 +21,20 @@ import com.hazelcast.cache.ICache;
 import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.EventType;
 
+/**
+ * CacheEntryEvent implementation is the actual event object received by sub-interfaces of
+ * {@link javax.cache.event.CacheEntryListener}.
+ * <p>This implementation will provide source cache, the event type, key, new value, old value and availability.</p>
+ *
+ * @param <K> the type of key.
+ * @param <V> the type of value.
+ *
+ * @see javax.cache.event.CacheEntryEvent
+ * @see javax.cache.event.CacheEntryCreatedListener#onCreated(Iterable)
+ * @see javax.cache.event.CacheEntryUpdatedListener#onUpdated(Iterable)
+ * @see javax.cache.event.CacheEntryRemovedListener#onRemoved(Iterable)
+ * @see javax.cache.event.CacheEntryExpiredListener#onExpired(Iterable)
+ */
 public class CacheEntryEventImpl<K, V>
         extends CacheEntryEvent<K, V> {
 
@@ -63,4 +77,14 @@ public class CacheEntryEventImpl<K, V>
         throw new IllegalArgumentException("Unwrapping to " + clazz + " is not supported by this implementation");
     }
 
+    @Override
+    public String toString() {
+        return "CacheEntryEventImpl{"
+                + "eventType=" + getEventType()
+                + ", key=" + key
+                + ", newValue=" + newValue
+                + ", oldValue=" + oldValue
+                + ", source=" + getSource()
+                + '}';
+    }
 }

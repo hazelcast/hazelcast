@@ -82,7 +82,7 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final QueueService service = getService();
-
+        final Data partitionKey = serializationService.toData(name);
         ItemListener listener = new ItemListener() {
             @Override
             public void itemAdded(ItemEvent item) {
@@ -95,7 +95,7 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
             }
 
             private void send(ItemEvent event) {
-                if (endpoint.live()) {
+                if (endpoint.isAlive()) {
 
                     if (!(event instanceof DataAwareItemEvent)) {
                         throw new IllegalArgumentException("Expecting: DataAwareItemEvent, Found: "
@@ -106,7 +106,7 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
                     Data item = dataAwareItemEvent.getItemData();
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(),
                             event.getMember().getUuid());
-                    endpoint.sendEvent(portableItemEvent, getCallId());
+                    endpoint.sendEvent(partitionKey, portableItemEvent, getCallId());
                 }
             }
         };

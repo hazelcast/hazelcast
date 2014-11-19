@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.4-SNAPSHOT</version>
+        <version>3.4-RC1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -55,11 +55,7 @@
                     <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     <abbrevLength>7</abbrevLength>
                     <gitDescribe>
-                        <skip>false</skip>
-                        <always>false</always>
-                        <abbrev>7</abbrev>
-                        <dirty>-dirty</dirty>
-                        <forceLongFormat>false</forceLongFormat>
+                        <skip>true</skip>
                     </gitDescribe>
                 </configuration>
             </plugin>
@@ -132,6 +128,7 @@
                                 </Export-Package>
                                 <Import-Package>
                                     !org.junit,
+                                    !com.eclipsesource.json,
                                     sun.misc;resolution:=optional,
                                     org.apache.log4j;resolution:=optional,
                                     org.apache.logging.log4j;resolution:=optional,
@@ -164,6 +161,7 @@
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                     <excludes>
+                        <exclude>**/*.html</exclude>
                         <exclude>**/*.sh</exclude>
                         <exclude>**/*.bat</exclude>
                     </excludes>
@@ -172,7 +170,7 @@
                     <execution>
                         <goals>
                             <goal>test-jar</goal>
-<!--Need to add sources for this test jar to Maven central. partic TestHazelcastInstanceFactory. Brian request. -->
+                            <!--Need to add sources for this test jar to Maven central. partic TestHazelcastInstanceFactory. Brian request. -->
                         </goals>
                     </execution>
                 </executions>
@@ -212,7 +210,7 @@
                             <finalName>${project.build.finalName}</finalName>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <createSourcesJar>true</createSourcesJar>
-							<shadeSourcesContent>true</shadeSourcesContent>
+                            <shadeSourcesContent>true</shadeSourcesContent>
                             <artifactSet>
                                 <includes>
                                     <include>com.eclipsesource.minimal-json:minimal-json</include>
@@ -233,6 +231,25 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <version>1.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-tests</artifactId>
+            <classifier>tests</classifier>
+            <version>1.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-tests</artifactId>
+            <version>1.0.0</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>

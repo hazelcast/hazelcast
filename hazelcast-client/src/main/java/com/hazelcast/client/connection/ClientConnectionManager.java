@@ -32,17 +32,19 @@ public interface ClientConnectionManager {
     void shutdown();
 
     /**
-     * Check if client connection manager is live.
-     * ClientConnectionManager is not live only when client is closing.
+     * Check if client connection manager is alive.
+     * ClientConnectionManager is not alive only when client is closing.
      *
-     * @return true if live, false otherwise.
+     * @return true if alive, false otherwise.
      */
-    boolean isLive();
+    boolean isAlive();
 
     /**
      * Start clientConnectionManager
      */
     void start();
+
+    ClientConnection connectToAddress(Address target) throws Exception;
 
     /**
      * Tries to connect to an address in member list.

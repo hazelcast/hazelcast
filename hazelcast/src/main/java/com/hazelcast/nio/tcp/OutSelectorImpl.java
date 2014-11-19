@@ -22,13 +22,29 @@ import java.nio.channels.SelectionKey;
 
 public final class OutSelectorImpl extends AbstractIOSelector {
 
+    // This field will be incremented by a single thread --> the OutSelectorImpl. It can be read by multiple threads.
+    private volatile long writeEvents;
+
     public OutSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger, IOSelectorOutOfMemoryHandler oomeHandler) {
         super(threadGroup, tname, logger, oomeHandler);
     }
 
+    /**
+     * Returns the current number of write events that have been processed by this OutSelectorImpl.
+     *
+     * This method is thread-safe.
+     *
+     * @return the number of write events.
+     */
+    public long getWriteEvents() {
+        return writeEvents;
+    }
+
     @Override
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
     protected void handleSelectionKey(SelectionKey sk) {
         if (sk.isValid() && sk.isWritable()) {
+            writeEvents++;
             sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
             SelectionHandler handler = (SelectionHandler) sk.attachment();
             handler.handle();

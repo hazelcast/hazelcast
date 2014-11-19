@@ -28,6 +28,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.tcp.PacketReader;
+import com.hazelcast.nio.tcp.PacketWriter;
+import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -183,6 +187,11 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public int getSocketConnectTimeoutSeconds() {
+        return this.node.getGroupProperties().SOCKET_CONNECT_TIMEOUT_SECONDS.getInteger();
+    }
+
+    @Override
     public boolean getSocketKeepAlive() {
         return this.node.getGroupProperties().SOCKET_KEEP_ALIVE.getBoolean();
     }
@@ -244,6 +253,26 @@ public class NodeIOService implements IOService {
     @Override
     public PortableContext getPortableContext() {
         return node.getSerializationService().getPortableContext();
+    }
+
+    @Override
+    public SocketChannelWrapperFactory getSocketChannelWrapperFactory() {
+        return node.getNodeExtension().getSocketChannelWrapperFactory();
+    }
+
+    @Override
+    public MemberSocketInterceptor getMemberSocketInterceptor() {
+        return node.getNodeExtension().getMemberSocketInterceptor();
+    }
+
+    @Override
+    public PacketReader createPacketReader(TcpIpConnection connection) {
+        return node.getNodeExtension().createPacketReader(connection, this);
+    }
+
+    @Override
+    public PacketWriter createPacketWriter(TcpIpConnection connection) {
+        return node.getNodeExtension().createPacketWriter(connection, this);
     }
 
     @Override

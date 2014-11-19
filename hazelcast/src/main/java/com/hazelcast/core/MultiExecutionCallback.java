@@ -25,7 +25,6 @@ import java.util.Map;
  *
  * @see IExecutorService
  * @see ExecutionCallback
- *
  */
 public interface MultiExecutionCallback {
 

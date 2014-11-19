@@ -18,6 +18,9 @@ package com.hazelcast.client.impl.exceptionconverters;
 
 import com.hazelcast.core.ClientType;
 
+/**
+ * A utility class for getting the correct converter based on the client type.
+ */
 public final class ClientExceptionConverters {
 
     private static final JavaClientExceptionConverter JAVA = new JavaClientExceptionConverter();

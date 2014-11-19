@@ -4,17 +4,17 @@
 
 ![](images/enterprise-onlycopy.jpg)
 
-Clustered JMX via Management Center will allow you to monitor clustered statistics of distributed objects from a JMX interface.
+Clustered JMX via Management Center allows you to monitor clustered statistics of distributed objects from a JMX interface.
 
 
 ### Clustered JMX Configuration
 
-In order to configure Clustered JMX, you should use two command line parameters for your Management Center deployment.
+In order to configure Clustered JMX, use two command line parameters for your Management Center deployment.
 
 - `-Dhazelcast.mc.jmx.enabled=true` (default is false)
 - `-Dhazelcast.mc.jmx.port=9000` (optional, default is 9999)
 
-With embedded Jetty, there is no need to deploy your Management Center application to any container or application server.
+With embedded Jetty, you do not need to deploy your Management Center application to any container or application server.
 
 You can start Management Center application with Clustered JMX enabled as shown below.
 
@@ -58,7 +58,7 @@ ManagementCenter[dev]:type=Services,name=OperationService,member="192.168.2.79:5
 ```
 
 
-Below is the list of attributes that are exposed from the Clustered JMX interface.
+Here is the list of attributes that are exposed from the Clustered JMX interface.
 
 * **ManagementCenter[ClusterName]**
 * Clients
@@ -224,9 +224,9 @@ Below is the list of attributes that are exposed from the Clustered JMX interfac
 
 ### New Relic Integration
 
-Clustered JMX interface can be used to integrate Hazelcast Management Center with *New Relic*. In order to perform this, you need to attach New Relic Java agent and provide an extension file that describes which metrics will be sent to New Relic.
+Use the Clustered JMX interface to integrate Hazelcast Management Center with *New Relic*. To perform this integration, attach New Relic Java agent and provide an extension file that describes which metrics will be sent to New Relic.
 
-Please see [Custom JMX instrumentation by YAML](http://docs.newrelic.com/docs/java/custom-jmx-instrumentation-by-yml) on New Relic webpage.
+Please see [Custom JMX instrumentation by YAML](http://docs.newrelic.com/docs/java/custom-jmx-instrumentation-by-yml) on the New Relic webpage.
 
 Below is an example Map monitoring `.yml` file for New Relic.
 
@@ -248,16 +248,16 @@ jmx:
         type: simple
 ```
 
-You should put the `.yml` file under the `extensions` folder in your New Relic installation. If that folder does not exist, please create one.
+Put the `.yml` file in the `extensions` folder in your New Relic installation. If an `extensions` folder does not exist there, create one.
 
-After you set your extension, you can attach New Relic Java agent and start Management Center as shown below.
+After you set your extension, attach the New Relic Java agent and start Management Center as shown below.
 
 ```plain
 java -javaagent:/path/to/newrelic.jar -Dhazelcast.mc.jmx.enabled=true\
     -Dhazelcast.mc.jmx.port=9999 -jar mancenter-3.3.jar
 ```
 
-Once started and if your logging level is set as FINER, you should see the logs  similar to below in the file `newrelic_agent.log`, which is located at `logs` folder in your New Relic installation.
+If your logging level is set as FINER, you should see the log listing in the file `newrelic_agent.log`, which is located in the `logs` folder in your New Relic installation. Below is an example log listing.
 
 ```plain
 Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINE:
@@ -288,17 +288,17 @@ Jun 5, 2014 14:18:43 +0300 [72696 62] com.newrelic.agent.jmx.JmxService FINER:
     Recording JMX metric LastAccessTime : 1,401,962,426,811
 ```
 
-Then, you can navigate to your New Relic account and create Custom Dashboards. Please see [Creating custom dashboards](http://docs.newrelic.com/docs/dashboards-menu/creating-custom-dashboards) on creating one.
+Then you can navigate to your New Relic account and create Custom Dashboards. Please see [Creating custom dashboards](http://docs.newrelic.com/docs/dashboards-menu/creating-custom-dashboards).
 
 While you are creating the dashboard, you should see the metrics that you are sending to New Relic from Management Center in the **Metrics** section under the JMX folder.
 
 ### AppDynamics Integration
 
-Clustered JMX interface can be used to integrate Hazelcast Management Center with *AppDynamics*. In order to perform this, you need to attach AppDynamics Java agent to the Management Center.
+Use the Clustered JMX interface to integrate Hazelcast Management Center with *AppDynamics*. To perform this integration, attach AppDynamics Java agent to the Management Center.
 
-For agent installation, you can refer to [Install the App Agent for Java](http://docs.appdynamics.com/display/PRO14S/Install+the+App+Agent+for+Java) page.
+For agent installation, refer to [Install the App Agent for Java](http://docs.appdynamics.com/display/PRO14S/Install+the+App+Agent+for+Java) page.
 
-For monitoring on AppDynamics, please see [Using AppDynamics for JMX Monitoring](http://docs.appdynamics.com/display/PRO14S/Monitor+JMX+MBeans#MonitorJMXMBeans-UsingAppDynamicsforJMXMonitoring) page.
+For monitoring on AppDynamics, refer to [Using AppDynamics for JMX Monitoring](http://docs.appdynamics.com/display/PRO14S/Monitor+JMX+MBeans#MonitorJMXMBeans-UsingAppDynamicsforJMXMonitoring) page.
 
 After installing AppDynamics agent, you can start Management Center as shown below.
 
@@ -307,7 +307,7 @@ java -javaagent:/path/to/javaagent.jar -Dhazelcast.mc.jmx.enabled=true\
     -Dhazelcast.mc.jmx.port=9999 -jar mancenter-3.3.jar
 ```
 
-Once started, you should see the below logs.
+When Management Center starts, you should see the logs below.
 
 ```plain
 Started AppDynamics Java Agent Successfully.

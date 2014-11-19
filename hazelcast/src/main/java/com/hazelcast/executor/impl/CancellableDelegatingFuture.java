@@ -17,6 +17,7 @@
 package com.hazelcast.executor.impl;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;

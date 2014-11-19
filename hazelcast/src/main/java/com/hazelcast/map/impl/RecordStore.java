@@ -62,13 +62,27 @@ public interface RecordStore {
     void removeBackup(Data dataKey);
 
     /**
-     * Gets record from {@link com.hazelcast.map.impl.RecordStore}
+     * Gets record from {@link com.hazelcast.map.impl.RecordStore}.
+     * Loads missing keys from map store.
      *
      * @param dataKey key.
      * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return value of an entry in {@link com.hazelcast.map.impl.RecordStore}
      */
     Object get(Data dataKey, boolean backup);
+
+    /**
+     * Called when {@link com.hazelcast.config.MapConfig#isReadBackupData} is <code>true</code> from
+     * {@link com.hazelcast.map.impl.proxy.MapProxySupport#getInternal}
+     * <p/>
+     * Returns corresponding value for key as {@link com.hazelcast.nio.serialization.Data}.
+     * This adds an extra serialization step. For the reason of this behaviour please see issue 1292 on github.
+     *
+     * @param key key to be accessed
+     * @return value as {@link com.hazelcast.nio.serialization.Data}
+     * independent of {@link com.hazelcast.config.InMemoryFormat}
+     */
+    Data readBackupData(Data key);
 
     MapEntrySet getAll(Set<Data> keySet);
 
@@ -99,7 +113,7 @@ public interface RecordStore {
      * @param value to put.
      * @return the previous value associated with <tt>key</tt>, or
      * <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     * @see {@link com.hazelcast.map.impl.operation.PutFromLoadAllOperation}
+     * @see com.hazelcast.map.impl.operation.PutFromLoadAllOperation
      */
     Object putFromLoad(Data key, Object value);
 
@@ -111,7 +125,7 @@ public interface RecordStore {
      * @param ttl   time to live seconds.
      * @return the previous value associated with <tt>key</tt>, or
      * <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     * @see {@link com.hazelcast.map.impl.operation.PutAllOperation}
+     * @see com.hazelcast.map.impl.operation.PutAllOperation
      */
     Object putFromLoad(Data key, Object value, long ttl);
 
@@ -125,11 +139,9 @@ public interface RecordStore {
      *
      * @param key    the data key to put record store.
      * @param record the value for record store.
-     * @see {@link com.hazelcast.map.impl.operation.MapReplicationOperation}
+     * @see com.hazelcast.map.impl.operation.MapReplicationOperation
      */
     void putRecord(Data key, Record record);
-
-    void deleteRecord(Data key);
 
     /**
      * Iterates over record store values.
@@ -139,14 +151,24 @@ public interface RecordStore {
     Iterator<Record> iterator();
 
     /**
+     * Iterates over record store values by respecting expiration.
+     *
+     * @return read only iterator for map values.
+     */
+    Iterator<Record> iterator(long now, boolean backup);
+
+
+    /**
      * Iterates over record store values but first waits map store to load.
      * If an operation needs to wait a data source load like query operations
      * {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)},
      * this method can be used to return a read-only iterator.
      *
+     * @param now    current time in millis
+     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
      * @return read only iterator for map values.
      */
-    Iterator<Record> loadAwareIterator();
+    Iterator<Record> loadAwareIterator(long now, boolean backup);
 
     /**
      * Returns records map.
@@ -191,9 +213,7 @@ public interface RecordStore {
 
     Set<Map.Entry<Data, Data>> entrySetData();
 
-    Map.Entry<Data, Object> getMapEntry(Data dataKey);
-
-    Map.Entry<Data, Object> getMapEntryForBackup(Data dataKey);
+    Map.Entry<Data, Object> getMapEntry(Data dataKey, long now);
 
     void flush();
 
@@ -240,5 +260,16 @@ public interface RecordStore {
     MapDataStore<Data, Object> getMapDataStore();
 
     int getPartitionId();
+
+    /**
+     * Returns live record or null if record is already expired. Does not load missing keys from a map store.
+     *
+     * @param key key to be accessed
+     * @return live record or null
+     * @see #get
+     */
+    Record getRecordOrNull(Data key);
+
+    void evictEntries(long now, boolean backup);
 
 }

@@ -20,13 +20,18 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
 /**
- * Provides iterator functionality for ICache.
+ * <p>Provides iterator functionality for ICache.</p>
+ * <p>
+ * Initializes and grabs a number of keys defined by <code>size</code> parameter from the
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore} with the last table index.
+ * </p>
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#iterator(int, int)
  */
 public class CacheKeyIteratorOperation
         extends AbstractCacheOperation
@@ -39,7 +44,7 @@ public class CacheKeyIteratorOperation
     }
 
     public CacheKeyIteratorOperation(String name, int tableIndex, int size) {
-        super(name, new Data());
+        super(name, new DefaultData());
         this.tableIndex = tableIndex;
         this.size = size;
     }

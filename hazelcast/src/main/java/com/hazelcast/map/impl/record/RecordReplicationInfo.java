@@ -48,17 +48,15 @@ public class RecordReplicationInfo extends RecordInfo implements DataSerializabl
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        key.writeData(out);
-        value.writeData(out);
+        out.writeData(key);
+        out.writeData(value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        key = new Data();
-        key.readData(in);
-        value = new Data();
-        value.readData(in);
+        key = in.readData();
+        value = in.readData();
     }
 
     @Override

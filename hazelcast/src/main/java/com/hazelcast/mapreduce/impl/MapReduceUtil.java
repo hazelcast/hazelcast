@@ -205,7 +205,7 @@ public final class MapReduceUtil {
             String name = supervisor.getConfiguration().getName();
             String jobId = supervisor.getConfiguration().getJobId();
             KeysAssignmentResult assignmentResult = mapReduceService
-                    .processRequest(supervisor.getJobOwner(), new KeysAssignmentOperation(name, jobId, keys), name);
+                    .processRequest(supervisor.getJobOwner(), new KeysAssignmentOperation(name, jobId, keys));
 
             if (assignmentResult.getResultState() == SUCCESSFUL) {
                 Map<Object, Address> assignment = assignmentResult.getAssignment();

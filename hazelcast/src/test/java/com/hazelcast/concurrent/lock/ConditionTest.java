@@ -685,6 +685,7 @@ public class ConditionTest extends HazelcastTestSupport {
 
 
     @Test
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/2272
     public void testLockConditionSignalAllShutDownKeyOwner() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final String name = randomString();

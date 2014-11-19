@@ -70,15 +70,14 @@ public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implem
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        dataKey.writeData(out);
         out.writeLong(threadId);
+        out.writeData(dataKey);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        dataKey = new Data();
-        dataKey.readData(in);
         threadId = in.readLong();
+        dataKey = in.readData();
     }
 
 }

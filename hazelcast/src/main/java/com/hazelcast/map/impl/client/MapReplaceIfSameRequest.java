@@ -52,15 +52,14 @@ public class MapReplaceIfSameRequest extends MapPutRequest {
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        testValue.writeData(out);
+        out.writeData(testValue);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
-        testValue = new Data();
-        testValue.readData(in);
+        testValue = in.readData();
     }
 
     @Override

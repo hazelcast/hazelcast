@@ -78,7 +78,7 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
         writer.writeUTF("n", name);
         writer.writeLong("threadId", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
     }
 
     @Override
@@ -86,8 +86,7 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
         name = reader.readUTF("n");
         threadId = reader.readLong("threadId");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     public Permission getRequiredPermission() {
@@ -106,6 +105,6 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{key};
+        return new Object[] {key};
     }
 }

@@ -37,8 +37,9 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class PortablePredicatesTest {
 
-    private static final int FACTORY_ID = 1;
-    private final SerializationService ss = new SerializationServiceBuilder().addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
+    private static final short FACTORY_ID = 1;
+    private final SerializationService ss = new DefaultSerializationServiceBuilder()
+            .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
 
     @Test
     public void testPortablePredicate() {

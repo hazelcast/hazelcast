@@ -16,7 +16,9 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.operation.CacheBackupEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheClearBackupOperation;
+import com.hazelcast.cache.impl.operation.CacheRemoveAllBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
@@ -38,6 +40,8 @@ import com.hazelcast.cache.impl.operation.CachePutAllBackupOperation;
 import com.hazelcast.cache.impl.operation.CachePutBackupOperation;
 import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
+import com.hazelcast.cache.impl.operation.CacheRemoveAllOperation;
+import com.hazelcast.cache.impl.operation.CacheRemoveAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheRemoveBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
@@ -51,7 +55,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 
 /**
- * This class contains all the ID hooks for IdentifiedDataSerializable classes used inside the JCache framework.
+ * {@link CacheDataSerializerHook} contains all the ID hooks for {@link IdentifiedDataSerializable} classes used
+ * inside the JCache framework.
+ * <p>CacheProxy operations are mapped here. This factory class is used by internal serialization system to create
+ * {@link IdentifiedDataSerializable} classes without using reflection.</p>
  */
 public final class CacheDataSerializerHook
         implements DataSerializerHook {
@@ -89,8 +96,12 @@ public final class CacheDataSerializerHook
     public static final short DESTROY_CACHE = 30;
     public static final short CACHE_EVENT_DATA = 31;
     public static final short CACHE_EVENT_DATA_SET = 32;
+    public static final short BACKUP_ENTRY_PROCESSOR = 33;
+    public static final short REMOVE_ALL = 34;
+    public static final short REMOVE_ALL_BACKUP = 35;
+    public static final short REMOVE_ALL_FACTORY = 36;
 
-    private static final int LEN = 33;
+    private static final int LEN = 37;
 
     public int getFactoryId() {
         return F_ID;
@@ -153,11 +164,6 @@ public final class CacheDataSerializerHook
                 return new CacheRemoveBackupOperation();
             }
         };
-        constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CacheClearBackupOperation();
-            }
-        };
         constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheSizeOperation();
@@ -166,11 +172,6 @@ public final class CacheDataSerializerHook
         constructors[SIZE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheSizeOperationFactory();
-            }
-        };
-        constructors[CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CacheClearOperation();
             }
         };
         constructors[CLEAR_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -252,6 +253,37 @@ public final class CacheDataSerializerHook
         constructors[CACHE_EVENT_DATA_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheEventSet();
+            }
+        };
+        constructors[BACKUP_ENTRY_PROCESSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheBackupEntryProcessorOperation();
+            }
+        };
+        constructors[CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheClearOperation();
+            }
+        };
+        constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheClearBackupOperation();
+            }
+        };
+        constructors[REMOVE_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheRemoveAllOperation();
+            }
+        };
+        constructors[REMOVE_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheRemoveAllBackupOperation();
+            }
+        };
+        constructors[REMOVE_ALL_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheRemoveAllOperationFactory();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

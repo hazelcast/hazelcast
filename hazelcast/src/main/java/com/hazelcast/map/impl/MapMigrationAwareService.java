@@ -10,9 +10,9 @@ import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.util.Clock;
 
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Defines migration behavior of map service.
@@ -50,8 +50,7 @@ class MapMigrationAwareService implements MigrationAwareService {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             mapServiceContext.clearPartitionData(event.getPartitionId());
         }
-        final List<Integer> memberPartitions = mapServiceContext.getMemberPartitions();
-        mapServiceContext.ownedPartitions().set(memberPartitions);
+        mapServiceContext.reloadOwnedPartitions();
     }
 
     @Override
@@ -59,8 +58,7 @@ class MapMigrationAwareService implements MigrationAwareService {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             mapServiceContext.clearPartitionData(event.getPartitionId());
         }
-        final List<Integer> memberPartitions = mapServiceContext.getMemberPartitions();
-        mapServiceContext.ownedPartitions().set(memberPartitions);
+        mapServiceContext.reloadOwnedPartitions();
     }
 
     @Override
@@ -69,12 +67,14 @@ class MapMigrationAwareService implements MigrationAwareService {
     }
 
     private void migrateIndex(PartitionMigrationEvent event) {
+        final long now = getNow();
+
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
             final IndexService indexService = mapContainer.getIndexService();
             if (indexService.hasIndex()) {
-                final Iterator<Record> iterator = recordStore.iterator();
+                final Iterator<Record> iterator = recordStore.iterator(now, false);
                 while (iterator.hasNext()) {
                     final Record record = iterator.next();
                     if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
@@ -89,6 +89,10 @@ class MapMigrationAwareService implements MigrationAwareService {
                 }
             }
         }
+    }
+
+    private long getNow() {
+        return Clock.currentTimeMillis();
     }
 
 }

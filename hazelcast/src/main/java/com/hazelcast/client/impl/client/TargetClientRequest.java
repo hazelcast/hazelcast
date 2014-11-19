@@ -29,9 +29,9 @@ public abstract class TargetClientRequest extends ClientRequest {
     @Override
     public final void process() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final Operation op = prepareOperation();
+        Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
-        final InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, getTarget())
+        InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, getTarget())
                 .setTryCount(TRY_COUNT)
                 .setResultDeserialized(false)
                 .setCallback(new Callback<Object>() {

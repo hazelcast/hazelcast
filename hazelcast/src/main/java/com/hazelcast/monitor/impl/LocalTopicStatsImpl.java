@@ -18,10 +18,8 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalTopicStats;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-import java.io.IOException;
+
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -41,22 +39,6 @@ public class LocalTopicStatsImpl
 
     public LocalTopicStatsImpl() {
         creationTime = Clock.currentTimeMillis();
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        out.writeLong(creationTime);
-        out.writeLong(totalPublishes);
-        out.writeLong(totalReceivedMessages);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        creationTime = in.readLong();
-        TOTAL_PUBLISHES_UPDATER.set(this, in.readLong());
-        TOTAL_RECEIVED_MESSAGES_UPDATER.set(this, in.readLong());
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -29,22 +30,26 @@ public final class OutOfMemoryErrorDispatcher {
     private static final int MAX_REGISTERED_INSTANCES = 50;
     private static final HazelcastInstance[] EMPTY_INSTANCES = new HazelcastInstance[0];
 
-    private static final AtomicReference<HazelcastInstance[]> INSTANCES_REF =
+    private static final AtomicReference<HazelcastInstance[]> SERVER_INSTANCES_REF =
+            new AtomicReference<HazelcastInstance[]>(EMPTY_INSTANCES);
+
+    private static final AtomicReference<HazelcastInstance[]> CLIENT_INSTANCES_REF =
             new AtomicReference<HazelcastInstance[]>(EMPTY_INSTANCES);
 
     private static volatile OutOfMemoryHandler handler = new DefaultOutOfMemoryHandler();
 
-    private static volatile OutOfMemoryHandler clientHandler;
+    private static volatile OutOfMemoryHandler clientHandler = new EmptyOutOfMemoryHandler();
+
 
     private OutOfMemoryErrorDispatcher() {
     }
 
     //for testing only
     static HazelcastInstance[] current() {
-        return INSTANCES_REF.get();
+        return SERVER_INSTANCES_REF.get();
     }
 
-    public static void setHandler(OutOfMemoryHandler outOfMemoryHandler) {
+    public static void setServerHandler(OutOfMemoryHandler outOfMemoryHandler) {
         handler = outOfMemoryHandler;
     }
 
@@ -52,11 +57,19 @@ public final class OutOfMemoryErrorDispatcher {
         clientHandler = outOfMemoryHandler;
     }
 
-    public static void register(HazelcastInstance instance) {
+    public static void registerServer(HazelcastInstance instance) {
+       register(SERVER_INSTANCES_REF, instance);
+    }
+
+    public static void registerClient(HazelcastInstance instance) {
+        register(CLIENT_INSTANCES_REF, instance);
+    }
+
+    private static void register(AtomicReference<HazelcastInstance[]> ref, HazelcastInstance instance) {
         isNotNull(instance, "instance");
 
         for (;;) {
-            HazelcastInstance[] oldInstances = INSTANCES_REF.get();
+            HazelcastInstance[] oldInstances = ref.get();
             if (oldInstances.length == MAX_REGISTERED_INSTANCES) {
                 return;
             }
@@ -65,17 +78,25 @@ public final class OutOfMemoryErrorDispatcher {
             arraycopy(oldInstances, 0, newInstances, 0, oldInstances.length);
             newInstances[oldInstances.length] = instance;
 
-            if (INSTANCES_REF.compareAndSet(oldInstances, newInstances)) {
+            if (ref.compareAndSet(oldInstances, newInstances)) {
                 return;
             }
         }
     }
 
-    public static void deregister(HazelcastInstance instance) {
+    public static void deregisterServer(HazelcastInstance instance) {
+        deregister(SERVER_INSTANCES_REF, instance);
+    }
+
+    public static void deregisterClient(HazelcastInstance instance) {
+        deregister(CLIENT_INSTANCES_REF, instance);
+    }
+
+    private static void deregister(AtomicReference<HazelcastInstance[]> ref, HazelcastInstance instance) {
         isNotNull(instance, "instance");
 
         for (;;) {
-            HazelcastInstance[] oldInstances = INSTANCES_REF.get();
+            HazelcastInstance[] oldInstances = ref.get();
             int indexOf = indexOf(oldInstances, instance);
             if (indexOf == -1) {
                 return;
@@ -92,7 +113,7 @@ public final class OutOfMemoryErrorDispatcher {
                 }
             }
 
-            if (INSTANCES_REF.compareAndSet(oldInstances, newInstances)) {
+            if (ref.compareAndSet(oldInstances, newInstances)) {
                 return;
             }
         }
@@ -107,8 +128,12 @@ public final class OutOfMemoryErrorDispatcher {
         return -1;
     }
 
-    static void clear() {
-        INSTANCES_REF.set(EMPTY_INSTANCES);
+    public static void clearServers() {
+        SERVER_INSTANCES_REF.set(EMPTY_INSTANCES);
+    }
+
+    public static void clearClients() {
+        CLIENT_INSTANCES_REF.set(EMPTY_INSTANCES);
     }
 
     public static void inspectOutputMemoryError(Throwable throwable) {
@@ -132,104 +157,53 @@ public final class OutOfMemoryErrorDispatcher {
     public static void onOutOfMemory(OutOfMemoryError outOfMemoryError) {
         isNotNull(outOfMemoryError, "outOfMemoryError");
 
-        HazelcastInstance[] instances = removeRegisteredInstances();
-        if (instances.length == 0) {
-            return;
-        }
-
         OutOfMemoryHandler h = clientHandler;
-        if (h != null) {
+        if (h != null && h.shouldHandle(outOfMemoryError)) {
             try {
-                h.onOutOfMemory(outOfMemoryError, instances);
+                HazelcastInstance[] clients = removeRegisteredClients();
+                h.onOutOfMemory(outOfMemoryError, clients);
             } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
 
         h = handler;
-        if (h != null) {
+        if (h != null && h.shouldHandle(outOfMemoryError)) {
             try {
+                HazelcastInstance[] instances = removeRegisteredServers();
                 h.onOutOfMemory(outOfMemoryError, instances);
             } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
             }
         }
     }
 
-    private static HazelcastInstance[] removeRegisteredInstances() {
+    private static HazelcastInstance[] removeRegisteredServers() {
+        return removeRegisteredInstances(SERVER_INSTANCES_REF);
+    }
+
+    private static HazelcastInstance[] removeRegisteredClients() {
+        return removeRegisteredInstances(CLIENT_INSTANCES_REF);
+    }
+
+    private static HazelcastInstance[] removeRegisteredInstances(AtomicReference<HazelcastInstance[]> ref) {
         for (;;) {
-            HazelcastInstance[] instances = INSTANCES_REF.get();
-            if (INSTANCES_REF.compareAndSet(instances, EMPTY_INSTANCES)) {
+            HazelcastInstance[] instances = ref.get();
+            if (ref.compareAndSet(instances, EMPTY_INSTANCES)) {
                 return instances;
             }
         }
     }
 
-    private static class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
+    private static class EmptyOutOfMemoryHandler extends OutOfMemoryHandler {
+        @Override
+        public void onOutOfMemory(OutOfMemoryError oome, HazelcastInstance[] hazelcastInstances) {
+        }
 
         @Override
-        public void onOutOfMemory(OutOfMemoryError oom, HazelcastInstance[] hazelcastInstances) {
-            for (HazelcastInstance instance : hazelcastInstances) {
-                if (instance instanceof HazelcastInstanceImpl) {
-                    Helper.tryCloseConnections(instance);
-                    Helper.tryStopThreads(instance);
-                    Helper.tryShutdown(instance);
-                }
-            }
-            System.err.println(oom);
+        public boolean shouldHandle(OutOfMemoryError oome) {
+            return false;
         }
     }
 
-    public static final class Helper {
-
-        private Helper() {
-        }
-
-        public static void tryCloseConnections(HazelcastInstance hazelcastInstance) {
-            if (hazelcastInstance == null) {
-                return;
-            }
-            HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
-            closeSockets(factory);
-        }
-
-        private static void closeSockets(HazelcastInstanceImpl factory) {
-            if (factory.node.connectionManager != null) {
-                try {
-                    factory.node.connectionManager.shutdown();
-                } catch (Throwable ignored) {
-                }
-            }
-        }
-
-        public static void tryShutdown(HazelcastInstance hazelcastInstance) {
-            if (hazelcastInstance == null) {
-                return;
-            }
-            HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
-            closeSockets(factory);
-            try {
-                factory.node.shutdown(true);
-            } catch (Throwable ignored) {
-            }
-        }
-
-        public static void inactivate(HazelcastInstance hazelcastInstance) {
-            if (hazelcastInstance == null) {
-                return;
-            }
-            final HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
-            factory.node.inactivate();
-        }
-
-        public static void tryStopThreads(HazelcastInstance hazelcastInstance) {
-            if (hazelcastInstance == null) {
-                return;
-            }
-
-            HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
-            try {
-                factory.node.threadGroup.interrupt();
-            } catch (Throwable ignored) {
-            }
-        }
-    }
 }

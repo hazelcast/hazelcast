@@ -66,14 +66,14 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
             writer.writeBoolean("pre", false);
             if (hasKey) {
                 final ObjectDataOutput out = writer.getRawDataOutput();
-                key.writeData(out);
+                out.writeData(key);
             }
         } else {
             writer.writeBoolean("pre", true);
             writer.writeUTF("p", predicate);
             final ObjectDataOutput out = writer.getRawDataOutput();
             if (hasKey) {
-                key.writeData(out);
+                out.writeData(key);
             }
         }
 
@@ -87,13 +87,11 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
             predicate = reader.readUTF("p");
             final ObjectDataInput in = reader.getRawDataInput();
             if (hasKey) {
-                key = new Data();
-                key.readData(in);
+                key = in.readData();
             }
         } else if (hasKey) {
             final ObjectDataInput in = reader.getRawDataInput();
-            key = new Data();
-            key.readData(in);
+            key = in.readData();
         }
     }
 

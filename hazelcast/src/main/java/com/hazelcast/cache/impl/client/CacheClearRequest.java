@@ -16,10 +16,10 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
-import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -34,11 +34,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * This client request  specifically calls {@link CacheClearOperationFactory} on the server side.
+ *
+ * @see com.hazelcast.cache.impl.operation.CacheClearOperationFactory
+ */
 public class CacheClearRequest
-        extends AllPartitionsClientRequest
+        extends AbstractCacheAllPartitionsRequest
         implements RetryableRequest {
 
-    private String name;
     private Set<Data> keys;
     private boolean isRemoveAll;
     private int completionId;
@@ -47,7 +51,7 @@ public class CacheClearRequest
     }
 
     public CacheClearRequest(String name, Set<Data> keys, boolean isRemoveAll, int completionId) {
-        this.name = name;
+        super(name);
         this.keys = keys;
         this.isRemoveAll = isRemoveAll;
         this.completionId = completionId;
@@ -68,7 +72,7 @@ public class CacheClearRequest
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeInt("c", completionId);
         writer.writeBoolean("r", isRemoveAll);
         writer.writeBoolean("k", keys != null);
@@ -77,7 +81,7 @@ public class CacheClearRequest
                 ObjectDataOutput output = writer.getRawDataOutput();
                 output.writeInt(keys.size());
                 for (Data key : keys) {
-                    key.writeData(output);
+                    output.writeData(key);
                 }
             }
         }
@@ -85,7 +89,7 @@ public class CacheClearRequest
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         completionId = reader.readInt("c");
         isRemoveAll = reader.readBoolean("r");
         final boolean isKeysNotNull = reader.readBoolean("k");
@@ -95,8 +99,7 @@ public class CacheClearRequest
             keys = new HashSet<Data>(size);
             if (size > 0) {
                 for (int i = 0; i < size; i++) {
-                    Data key = new Data();
-                    key.readData(input);
+                    Data key = input.readData();
                     keys.add(key);
                 }
             }
@@ -105,7 +108,11 @@ public class CacheClearRequest
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new CacheClearOperationFactory(name, keys, isRemoveAll, completionId);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        if (isRemoveAll) {
+            return operationProvider.createRemoveAllOperationFactory(keys, completionId);
+        }
+        return operationProvider.createClearOperationFactory();
     }
 
     @Override

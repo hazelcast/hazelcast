@@ -17,10 +17,10 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
@@ -58,9 +58,9 @@ public class StoreWorker implements Runnable {
     private long lastRunTime;
 
 
-    public StoreWorker(MapContainer mapContainer, WriteBehindProcessor writeBehindProcessor) {
-        this.mapName = mapContainer.getName();
-        this.mapServiceContext = mapContainer.getMapServiceContext();
+    public StoreWorker(MapStoreContext mapStoreContext, WriteBehindProcessor writeBehindProcessor) {
+        this.mapName = mapStoreContext.getMapName();
+        this.mapServiceContext = mapStoreContext.getMapServiceContext();
         this.writeBehindProcessor = writeBehindProcessor;
         this.backupRunIntervalTime = getReplicaWaitTime();
         this.lastRunTime = Clock.currentTimeMillis();

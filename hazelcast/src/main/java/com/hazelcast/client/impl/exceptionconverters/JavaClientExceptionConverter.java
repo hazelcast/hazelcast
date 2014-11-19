@@ -16,6 +16,10 @@
 
 package com.hazelcast.client.impl.exceptionconverters;
 
+/**
+ * A {@link com.hazelcast.client.impl.exceptionconverters.ClientExceptionConverter} for java. It doesn't do anything;
+ * just returns the passed Throwable.
+ */
 public final class JavaClientExceptionConverter implements ClientExceptionConverter {
 
     @Override

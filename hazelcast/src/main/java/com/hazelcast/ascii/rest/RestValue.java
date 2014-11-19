@@ -16,7 +16,6 @@
 
 package com.hazelcast.ascii.rest;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -39,13 +38,13 @@ public class RestValue implements DataSerializable {
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        value = IOUtil.readByteArray(in);
-        contentType = IOUtil.readByteArray(in);
+        value = in.readByteArray();
+        contentType = in.readByteArray();
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        IOUtil.writeByteArray(out, value);
-        IOUtil.writeByteArray(out, contentType);
+        out.writeByteArray(value);
+        out.writeByteArray(contentType);
     }
 
     public byte[] getContentType() {

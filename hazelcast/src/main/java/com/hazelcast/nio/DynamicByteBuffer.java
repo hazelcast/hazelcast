@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -247,14 +246,16 @@ public final class DynamicByteBuffer {
         return new DynamicByteBuffer(buffer.slice());
     }
 
-    public void clear() {
+    public DynamicByteBuffer clear() {
         check();
         buffer.clear();
+        return this;
     }
 
-    public void flip() {
+    public DynamicByteBuffer flip() {
         check();
         buffer.flip();
+        return this;
     }
 
     public int limit() {
@@ -262,14 +263,16 @@ public final class DynamicByteBuffer {
         return buffer.limit();
     }
 
-    public Buffer limit(int newLimit) {
+    public DynamicByteBuffer limit(int newLimit) {
         check();
-        return buffer.limit(newLimit);
+        buffer.limit(newLimit);
+        return this;
     }
 
-    public Buffer mark() {
+    public DynamicByteBuffer mark() {
         check();
-        return buffer.mark();
+        buffer.mark();
+        return this;
     }
 
     public int position() {
@@ -277,9 +280,10 @@ public final class DynamicByteBuffer {
         return buffer.position();
     }
 
-    public Buffer position(int newPosition) {
+    public DynamicByteBuffer position(int newPosition) {
         check();
-        return buffer.position(newPosition);
+        buffer.position(newPosition);
+        return this;
     }
 
     public int remaining() {
@@ -287,14 +291,16 @@ public final class DynamicByteBuffer {
         return buffer.remaining();
     }
 
-    public Buffer reset() {
+    public DynamicByteBuffer reset() {
         check();
-        return buffer.reset();
+        buffer.reset();
+        return this;
     }
 
-    public Buffer rewind() {
+    public DynamicByteBuffer rewind() {
         check();
-        return buffer.rewind();
+        buffer.rewind();
+        return this;
     }
 
     public int capacity() {
@@ -325,9 +331,10 @@ public final class DynamicByteBuffer {
         return buffer.order();
     }
 
-    public ByteBuffer order(ByteOrder order) {
+    public DynamicByteBuffer order(ByteOrder order) {
         check();
-        return buffer.order(order);
+        buffer.order(order);
+        return this;
     }
 
     public void close() {
@@ -338,6 +345,11 @@ public final class DynamicByteBuffer {
         if (buffer == null) {
             throw new IllegalStateException("Buffer is closed!");
         }
+    }
+
+    public boolean isDirect() {
+        check();
+        return buffer.isDirect();
     }
 
     @Override

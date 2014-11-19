@@ -41,7 +41,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -173,19 +172,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return nodeEngine.getProxyService();
     }
 
-    public void sendResponse(ClientEndpointImpl endpoint, Object response, int callId, boolean isError, boolean isEvent) {
+    public void sendResponse(ClientEndpoint endpoint, Data key, Object response, int callId, boolean isError, boolean isEvent) {
         Data data = serializationService.toData(response);
         ClientResponse clientResponse = new ClientResponse(data, callId, isError);
-        sendResponse(endpoint, clientResponse, isEvent);
-    }
-
-    private void sendResponse(ClientEndpointImpl endpoint, ClientResponse response, boolean isEvent) {
-        Data resultData = serializationService.toData(response);
-        Connection conn = endpoint.getConnection();
-        final Packet packet = new Packet(resultData, serializationService.getPortableContext());
+        Data responseData = serializationService.toData(clientResponse);
+        int partitionId = key == null ? -1 : getPartitionService().getPartitionId(key);
+        final Packet packet = new Packet(responseData, partitionId, serializationService.getPortableContext());
         if (isEvent) {
             packet.setHeader(Packet.HEADER_EVENT);
         }
+        Connection conn = endpoint.getConnection();
         conn.write(packet);
     }
 
@@ -227,8 +223,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         final Connection conn = endpoint.getConnection();
         if (conn instanceof TcpIpConnection) {
             Address address = new Address(conn.getRemoteSocketAddress());
-            TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) node.getConnectionManager();
-            connectionManager.bind((TcpIpConnection) conn, address, null, false);
+            ((TcpIpConnection) conn).setEndPoint(address);
         }
         sendClientEvent(endpoint);
     }
@@ -306,7 +301,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             }
             try {
                 final Connection conn = endpoint.getConnection();
-                if (conn.live()) {
+                if (conn.isAlive()) {
                     conn.close();
                 }
             } catch (Exception e) {
@@ -346,7 +341,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 if (request == null) {
                     handlePacketWithNullRequest();
                 } else if (request instanceof AuthenticationRequest) {
-                    if (conn.live()) {
+                    if (conn.isAlive()) {
                         endpoint = new ClientEndpointImpl(ClientEngineImpl.this, conn);
                         processRequest(endpoint, request);
                     } else {
@@ -379,7 +374,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         }
 
         private void handleMissingEndpoint(Connection conn) {
-            if (conn.live()) {
+            if (conn.isAlive()) {
                 logger.severe("Dropping: " + packet + " -> no endpoint found for live connection.");
             } else {
                 if (logger.isFinestEnabled()) {

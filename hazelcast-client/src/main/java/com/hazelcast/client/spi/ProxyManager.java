@@ -17,9 +17,9 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientCreateRequest;
 import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
@@ -82,12 +82,12 @@ public final class ProxyManager {
 
     private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
 
-    private final HazelcastClient client;
+    private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
     private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies
             = new ConcurrentHashMap<ObjectNamespace, ClientProxyFuture>();
 
-    public ProxyManager(HazelcastClient client) {
+    public ProxyManager(HazelcastClientInstanceImpl client) {
         this.client = client;
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
@@ -199,6 +199,7 @@ public final class ProxyManager {
         ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
         client.getInvocationService().invokeOnRandomTarget(request).get();
         clientProxy.setContext(new ClientContext(client, this));
+        clientProxy.onInitialize();
     }
 
     public Collection<? extends DistributedObject> getDistributedObjects() {

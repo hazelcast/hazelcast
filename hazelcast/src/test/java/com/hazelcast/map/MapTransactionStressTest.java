@@ -4,7 +4,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
@@ -27,6 +26,12 @@ import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
 import com.hazelcast.transaction.impl.TransactionLog;
 import com.hazelcast.transaction.impl.TransactionSupport;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -35,10 +40,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -52,7 +53,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMapGetIsUsed_withTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -83,7 +84,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMapGetIsUsed_withoutTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -106,7 +107,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMapContainsKeyIsUsed_withTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -136,7 +137,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMapContainsKeyIsUsed_withoutTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -158,7 +159,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionAtomicity_whenMapGetEntryViewIsUsed_withoutTransaction() throws InterruptedException {
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(createConfigWithDummyTxService());
+        final HazelcastInstance hz = createHazelcastInstance(createConfigWithDummyTxService());
         final String name = HazelcastTestSupport.generateRandomString(5);
         Thread producerThread = startProducerThread(hz, name);
         try {
@@ -330,6 +331,11 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
+        }
+
+        @Override
+        public String toString() {
+            return "SleepyTransactionLog{}";
         }
     }
 

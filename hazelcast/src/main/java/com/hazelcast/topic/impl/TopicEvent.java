@@ -17,7 +17,6 @@
 package com.hazelcast.topic.impl;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -58,7 +57,7 @@ public class TopicEvent implements IdentifiedDataSerializable {
         out.writeUTF(name);
         out.writeLong(publishTime);
         out.writeObject(publisherAddress);
-        IOUtil.writeNullableData(out, data);
+        out.writeData(data);
     }
 
     @Override
@@ -66,7 +65,7 @@ public class TopicEvent implements IdentifiedDataSerializable {
         name = in.readUTF();
         publishTime = in.readLong();
         publisherAddress = in.readObject();
-        data = IOUtil.readNullableData(in);
+        data = in.readData();
     }
 
     @Override

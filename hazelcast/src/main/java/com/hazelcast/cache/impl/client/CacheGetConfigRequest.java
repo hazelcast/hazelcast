@@ -18,20 +18,29 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
+/**
+ * This client request  specifically calls {@link CacheGetConfigOperation} on the server side.
+ *
+ * @see com.hazelcast.cache.impl.operation.CacheGetConfigOperation
+ */
 public class CacheGetConfigRequest
         extends AbstractCacheRequest {
+
+    private String simpleName;
 
     public CacheGetConfigRequest() {
     }
 
-    public CacheGetConfigRequest(String cacheName) {
-        super(cacheName);
+    public CacheGetConfigRequest(String cacheName, String simpleName, InMemoryFormat inMemoryFormat) {
+        super(cacheName, inMemoryFormat);
+        this.simpleName = simpleName;
     }
 
     @Override
@@ -41,7 +50,7 @@ public class CacheGetConfigRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheGetConfigOperation(name);
+        return new CacheGetConfigOperation(name, simpleName);
     }
 
     public int getClassId() {
@@ -50,11 +59,14 @@ public class CacheGetConfigRequest
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
+        writer.writeUTF("s", simpleName);
     }
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
+        simpleName = reader.readUTF("s");
     }
+
 }

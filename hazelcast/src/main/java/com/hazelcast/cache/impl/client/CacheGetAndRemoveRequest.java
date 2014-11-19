@@ -16,8 +16,10 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheGetAndRemoveOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,6 +29,11 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
+/**
+ * This client request  specifically calls {@link CacheGetAndRemoveOperation} on the server side.
+ *
+ * @see com.hazelcast.cache.impl.operation.CacheGetAndRemoveOperation
+ */
 public class CacheGetAndRemoveRequest
         extends AbstractCacheRequest {
 
@@ -36,8 +43,8 @@ public class CacheGetAndRemoveRequest
     public CacheGetAndRemoveRequest() {
     }
 
-    public CacheGetAndRemoveRequest(String name, Data key) {
-        super(name);
+    public CacheGetAndRemoveRequest(String name, Data key, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
     }
 
@@ -51,24 +58,24 @@ public class CacheGetAndRemoveRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheGetAndRemoveOperation(name, key, completionId);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createGetAndRemoveOperation(key, completionId);
     }
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
     }
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     public void setCompletionId(Integer completionId) {

@@ -1,13 +1,14 @@
 package com.hazelcast.map.impl;
 
+import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.merge.MergePolicyProvider;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Context which is needed by a map service.
@@ -57,15 +58,23 @@ public interface MapServiceContext extends MapServiceContextSupport,
 
     RecordStore getExistingRecordStore(int partitionId, String mapName);
 
-    List<Integer> getOwnedPartitions();
+    Collection<Integer> getOwnedPartitions();
 
-    AtomicReference<List<Integer>> ownedPartitions();
+    void reloadOwnedPartitions();
 
-    List<Integer> getMemberPartitions();
+    /**
+     * Check if key belongs on partitions of the this node
+     *
+     * @param key key to be queried.
+     * @return true if this node owns the key
+     */
+    boolean isOwnedKey(Data key);
 
     AtomicInteger getWriteBehindQueueItemCounter();
 
     ExpirationManager getExpirationManager();
+
+    EvictionOperator getEvictionOperator();
 
     void setService(MapService mapService);
 

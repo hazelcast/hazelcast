@@ -107,5 +107,15 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         transactionId = in.readUTF();
     }
 
-
+    @Override
+    public String toString() {
+        return "CollectionTransactionLog{"
+                + "transactionId='" + transactionId + '\''
+                + ", itemId=" + itemId
+                + ", name='" + name + '\''
+                + ", op=" + op
+                + ", partitionId=" + partitionId
+                + ", serviceName='" + serviceName + '\''
+                + '}';
+    }
 }

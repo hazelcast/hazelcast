@@ -63,8 +63,8 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final ClientEngine clientEngine = getClientEngine();
-
-        ItemListener listener = createItemListener(endpoint);
+        Data partitionKey = serializationService.toData(name);
+        ItemListener listener = createItemListener(endpoint, partitionKey);
         final EventService eventService = clientEngine.getEventService();
         final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
         final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
@@ -73,8 +73,9 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
         return registrationId;
     }
 
-    private ItemListener createItemListener(final ClientEndpoint endpoint) {
+    private ItemListener createItemListener(final ClientEndpoint endpoint, final Data partitionKey) {
         return new ItemListener() {
+
             @Override
             public void itemAdded(ItemEvent item) {
                 send(item);
@@ -86,7 +87,7 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
             }
 
             private void send(ItemEvent event) {
-                if (endpoint.live()) {
+                if (endpoint.isAlive()) {
                     if (!(event instanceof DataAwareItemEvent)) {
                         throw new IllegalArgumentException("Expecting: DataAwareItemEvent, Found: "
                                 + event.getClass().getSimpleName());
@@ -96,7 +97,7 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
                     Data item = dataAwareItemEvent.getItemData();
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(),
                             event.getMember().getUuid());
-                    endpoint.sendEvent(portableItemEvent, getCallId());
+                    endpoint.sendEvent(partitionKey, portableItemEvent, getCallId());
                 }
             }
         };

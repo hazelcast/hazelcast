@@ -66,7 +66,7 @@ public class LoadAllOperation extends AbstractMapOperation implements PartitionA
         final int size = keys.size();
         out.writeInt(size);
         for (Data key : keys) {
-            key.writeData(out);
+            out.writeData(key);
         }
         out.writeBoolean(replaceExistingValues);
     }
@@ -79,8 +79,7 @@ public class LoadAllOperation extends AbstractMapOperation implements PartitionA
             keys = new ArrayList<Data>(size);
         }
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             keys.add(data);
         }
         replaceExistingValues = in.readBoolean();

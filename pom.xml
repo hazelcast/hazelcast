@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.4-SNAPSHOT</version>
+    <version>3.4-RC1-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -60,7 +60,7 @@
         <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
-        <findbugs.maven.plugin.version>2.5.3</findbugs.maven.plugin.version>
+        <findbugs.maven.plugin.version>3.0.0</findbugs.maven.plugin.version>
         <checkstyle.maven.plugin.version>2.12</checkstyle.maven.plugin.version>
         <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
         <maven.shade.plugin.version>2.2</maven.shade.plugin.version>
@@ -79,6 +79,13 @@
         <sonar.verbose>true</sonar.verbose>
         <animal.sniffer.plugin.version>1.11</animal.sniffer.plugin.version>
         <jsr107.api.version>1.0.0</jsr107.api.version>
+        <CacheManagerImpl>com.hazelcast.cache.HazelcastCacheManager</CacheManagerImpl>
+        <CacheImpl>com.hazelcast.cache.ICache</CacheImpl>
+        <CacheEntryImpl>com.hazelcast.cache.impl.CacheEntry</CacheEntryImpl>
+        <javax.management.builder.initial>com.hazelcast.cache.impl.TCKMBeanServerBuilder
+        </javax.management.builder.initial>
+        <org.jsr107.tck.management.agentId>TCKMbeanServer</org.jsr107.tck.management.agentId>
+        <javax.cache.annotation.CacheInvocationContext>javax.cache.annotation.impl.cdi.CdiCacheKeyInvocationContextImpl</javax.cache.annotation.CacheInvocationContext>
     </properties>
     <licenses>
         <license>
@@ -104,6 +111,15 @@
             <email>fuad@hazelcast.com</email>
         </developer>
     </developers>
+
+    <contributors>
+        <contributor>
+            <name>Marvin Froeder</name>
+            <email>velo dot br at gmail dot com</email>
+            <url>about.me/velo</url>
+        </contributor>
+    </contributors>
+
     <issueManagement>
         <system>Github</system>
         <url>https://github.com/hazelcast/hazelcast/issues</url>
@@ -124,6 +140,7 @@
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
                 <includes>
+                    <include>**/*.html</include>
                     <include>**/*.bat</include>
                     <include>**/*.sh</include>
                     <include>**/*.properties</include>
@@ -145,6 +162,7 @@
         </resources>
 
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -206,9 +224,15 @@
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=false
                     </argLine>
+                    <includes>
+                        <include>**/**.java</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/jsr/**.java</exclude>
+                    </excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
-                        com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.ProblematicTest
+                        com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
                 </configuration>
             </plugin>
@@ -255,6 +279,12 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
+                                -Djavax.management.builder.initial=${javax.management.builder.initial}
+                                -DCacheManagerImpl=${CacheManagerImpl}
+                                -Djavax.cache.Cache=${CacheImpl}
+                                -Djavax.cache.Cache.Entry=${CacheEntryImpl}
+                                -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
+                                -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                             </argLine>
 
 
@@ -287,11 +317,38 @@
                     -Dhazelcast.mancenter.enabled=false
                     -Dhazelcast.logging.type=none
                     -Dhazelcast.test.use.network=false
+                    -Djavax.management.builder.initial=${javax.management.builder.initial}
+                    -DCacheManagerImpl=${CacheManagerImpl}
+                    -Djavax.cache.Cache=${CacheImpl}
+                    -Djavax.cache.Cache.Entry=${CacheEntryImpl}
+                    -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
+                    -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                 </argLine>
             </properties>
             <id>test-coverage</id>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>**DummyProperty**</exclude>
+                                <exclude>**DummyEntity**</exclude>
+                                <exclude>**test-hibernate**</exclude>
+                                <exclude>**HibernateStatisticsTestSupport**</exclude>
+                                <exclude>**HibernateTestSupport**</exclude>
+                                <exclude>**RegionFactoryDefaultTest**</exclude>
+                            </excludes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
@@ -299,10 +356,12 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <testFailureIgnore>true</testFailureIgnore>
-                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest
-                            </groups>
+                            <includes>
+                                <include>**/*.java</include>
+                            </includes>
+                            <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
                             <excludedGroups>
-                                com.hazelcast.test.annotation.NightlyTest,com.hazelcast.test.annotation.ProblematicTest
+                                com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
                         </configuration>
                     </plugin>
@@ -379,6 +438,12 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
+                                -Djavax.management.builder.initial=${javax.management.builder.initial}
+                                -DCacheManagerImpl=${CacheManagerImpl}
+                                -Djavax.cache.Cache=${CacheImpl}
+                                -Djavax.cache.Cache.Entry=${CacheEntryImpl}
+                                -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
+                                -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                             </argLine>
 
                             <includes>
@@ -390,7 +455,7 @@
                             <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest
                             </groups>
                             <excludedGroups>
-                                com.hazelcast.test.annotation.NightlyTest,com.hazelcast.test.annotation.ProblematicTest
+                                com.hazelcast.test.annotation.NightlyTest
                             </excludedGroups>
                         </configuration>
                     </plugin>
@@ -417,8 +482,6 @@
                                 com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
                             </groups>
 
-                            <!--groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest</groups>
-                            <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups -->
                         </configuration>
                         <executions>
                             <execution>
@@ -468,58 +531,6 @@
                                     <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
                                 </property>
                             </javaApiLinks>
-
-                            <sourceFileIncludes>
-                                <include>com/hazelcast/core/**</include>
-                                <include>com/hazelcast/config/**</include>
-                                <include>com/hazelcast/jmx/**</include>
-                                <include>com/hazelcast/monitor/*</include>
-                                <include>com/hazelcast/query/*</include>
-                                <include>com/hazelcast/security/*</include>
-                                <include>com/hazelcast/spi/*</include>
-                                <include>com/hazelcast/transaction/*</include>
-                                <include>com/hazelcast/mapreduce/*</include>
-                                <include>com/hazelcast/jca/**</include>
-                                <include>com/hazelcast/buildutils/**</include>
-
-                                <include>com/hazelcast/map/*</include>
-                                <include>com/hazelcast/map/merge/*</include>
-
-                                <include>com/hazelcast/nio/serialization/ClassDefinition.java</include>
-                                <include>com/hazelcast/nio/serialization/ClassDefinitionBuilder.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/IdentifiedDataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/Portable.java</include>
-                                <include>com/hazelcast/nio/serialization/PortableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/ByteArraySerializer.java</include>
-                                <include>com/hazelcast/nio/serialization/StreamSerializer.java</include>
-
-                                <include>com/hazelcast/client/HazelcastClient.java</include>
-                                <include>com/hazelcast/client/LoadBalancer.java</include>
-                                <include>com/hazelcast/client/config/**</include>
-                                <include>com/hazelcast/client/exception/**</include>
-                                <include>com/hazelcast/client/spi/*</include>
-
-                                <include>com/hazelcast/cluster/TcpIpJoinerOverAWS.java</include>
-
-                                <include>com/hazelcast/hibernate/HazelcastCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/HazelcastLocalCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/VersionAwareMapMergePolicy.java</include>
-                                <include>com/hazelcast/hibernate/instance/HazelcastAccessor.java</include>
-
-                                <include>com/hazelcast/spring/cache/HazelcastCache.java</include>
-                                <include>com/hazelcast/spring/cache/HazelcastCacheManager.java</include>
-                                <include>com/hazelcast/spring/context/SpringAware.java</include>
-                                <include>com/hazelcast/spring/context/SpringManagedContext.java</include>
-                                <include>com/hazelcast/spring/jpa/JPAMapStore.java</include>
-                                <include>com/hazelcast/spring/mongodb/MongoMapStore.java</include>
-
-                                <include>com/hazelcast/web/SessionListener.java</include>
-                                <include>com/hazelcast/web/WebFilter.java</include>
-                            </sourceFileIncludes>
-                            <excludePackageNames>*.impl.*</excludePackageNames>
-
                         </configuration>
                         <executions>
                             <execution>
@@ -564,58 +575,6 @@
                                     <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
                                 </property>
                             </javaApiLinks>
-
-                            <sourceFileIncludes>
-                                <include>com/hazelcast/core/**</include>
-                                <include>com/hazelcast/config/**</include>
-                                <include>com/hazelcast/jmx/**</include>
-                                <include>com/hazelcast/monitor/*</include>
-                                <include>com/hazelcast/query/*</include>
-                                <include>com/hazelcast/security/*</include>
-                                <include>com/hazelcast/spi/*</include>
-                                <include>com/hazelcast/transaction/*</include>
-                                <include>com/hazelcast/mapreduce/*</include>
-                                <include>com/hazelcast/jca/**</include>
-                                <include>com/hazelcast/buildutils/**</include>
-
-                                <include>com/hazelcast/map/*</include>
-                                <include>com/hazelcast/map/merge/*</include>
-
-                                <include>com/hazelcast/nio/serialization/ClassDefinition.java</include>
-                                <include>com/hazelcast/nio/serialization/ClassDefinitionBuilder.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/IdentifiedDataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/Portable.java</include>
-                                <include>com/hazelcast/nio/serialization/PortableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/ByteArraySerializer.java</include>
-                                <include>com/hazelcast/nio/serialization/StreamSerializer.java</include>
-
-                                <include>com/hazelcast/client/HazelcastClient.java</include>
-                                <include>com/hazelcast/client/LoadBalancer.java</include>
-                                <include>com/hazelcast/client/config/**</include>
-                                <include>com/hazelcast/client/exception/**</include>
-                                <include>com/hazelcast/client/spi/*</include>
-
-                                <include>com/hazelcast/cluster/TcpIpJoinerOverAWS.java</include>
-
-                                <include>com/hazelcast/hibernate/HazelcastCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/HazelcastLocalCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/VersionAwareMapMergePolicy.java</include>
-                                <include>com/hazelcast/hibernate/instance/HazelcastAccessor.java</include>
-
-                                <include>com/hazelcast/spring/cache/HazelcastCache.java</include>
-                                <include>com/hazelcast/spring/cache/HazelcastCacheManager.java</include>
-                                <include>com/hazelcast/spring/context/SpringAware.java</include>
-                                <include>com/hazelcast/spring/context/SpringManagedContext.java</include>
-                                <include>com/hazelcast/spring/jpa/JPAMapStore.java</include>
-                                <include>com/hazelcast/spring/mongodb/MongoMapStore.java</include>
-
-                                <include>com/hazelcast/web/SessionListener.java</include>
-                                <include>com/hazelcast/web/WebFilter.java</include>
-                            </sourceFileIncludes>
-                            <excludePackageNames>*.impl.*</excludePackageNames>
-
                         </configuration>
                         <executions>
                             <execution>
@@ -716,10 +675,15 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                -Djavax.management.builder.initial=${javax.management.builder.initial}
+                                -DCacheManagerImpl=${CacheManagerImpl}
+                                -Djavax.cache.Cache=${CacheImpl}
+                                -Djavax.cache.Cache.Entry=${CacheEntryImpl}
+                                -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
+                                -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                             </argLine>
                             <groups>com.hazelcast.test.annotation.NightlyTest,com.hazelcast.test.annotation.SlowTest
                             </groups>
-                            <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -742,35 +706,16 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                -Djavax.management.builder.initial=${javax.management.builder.initial}
+                                -DCacheManagerImpl=${CacheManagerImpl}
+                                -Djavax.cache.Cache=${CacheImpl}
+                                -Djavax.cache.Cache.Entry=${CacheEntryImpl}
+                                -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
+                                -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                             </argLine>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
                             </groups>
-                            <excludedGroups>com.hazelcast.test.annotation.ProblematicTest</excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>problematic-tests</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven.surefire.plugin.version}</version>
-                        <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                            <parallel>none</parallel>
-                            <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                -Dhazelcast.version.check.enabled=false
-                                -Dhazelcast.mancenter.enabled=false
-                                -Dhazelcast.logging.type=none
-                                -Dhazelcast.test.use.network=true
-                            </argLine>
-                            <groups>com.hazelcast.test.annotation.ProblematicTest</groups>
                         </configuration>
                     </plugin>
                 </plugins>

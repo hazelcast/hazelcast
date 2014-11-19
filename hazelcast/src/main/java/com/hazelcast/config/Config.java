@@ -60,6 +60,8 @@ public class Config {
 
     private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
+    private final Map<String, CacheSimpleConfig> cacheConfigs = new ConcurrentHashMap<String, CacheSimpleConfig>();
+
     private final Map<String, TopicConfig> topicConfigs = new ConcurrentHashMap<String, TopicConfig>();
 
     private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
@@ -97,6 +99,8 @@ public class Config {
     private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
     private MemberAttributeConfig memberAttributeConfig = new MemberAttributeConfig();
+
+    private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
     private String licenseKey;
 
@@ -236,6 +240,54 @@ public class Config {
         this.mapConfigs.clear();
         this.mapConfigs.putAll(mapConfigs);
         for (final Entry<String, MapConfig> entry : this.mapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+
+    public CacheSimpleConfig findCacheConfig(String name) {
+        name = getBaseName(name);
+        return lookupByPattern(cacheConfigs, name);
+    }
+
+    public CacheSimpleConfig getCacheConfig(String name) {
+        String baseName = getBaseName(name);
+        CacheSimpleConfig config = lookupByPattern(cacheConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        CacheSimpleConfig defConfig = cacheConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new CacheSimpleConfig();
+            defConfig.setName("default");
+            addCacheConfig(defConfig);
+        }
+        config = new CacheSimpleConfig(defConfig);
+        config.setName(name);
+        addCacheConfig(config);
+        return config;
+    }
+
+    public Config addCacheConfig(CacheSimpleConfig cacheConfig) {
+        cacheConfigs.put(cacheConfig.getName(), cacheConfig);
+        return this;
+    }
+
+    /**
+     * @return the cacheConfigs
+     */
+    public Map<String, CacheSimpleConfig> getCacheConfigs() {
+        return cacheConfigs;
+    }
+
+    /**
+     * @param cacheConfigs the cacheConfigs to set
+     */
+    public Config setCacheConfigs(Map<String, CacheSimpleConfig> cacheConfigs) {
+        this.cacheConfigs.clear();
+        this.cacheConfigs.putAll(cacheConfigs);
+        for (final Entry<String, CacheSimpleConfig> entry : this.cacheConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
@@ -777,6 +829,15 @@ public class Config {
             throw new IllegalArgumentException("userContext can't be null");
         }
         this.userContext = userContext;
+        return this;
+    }
+
+    public NativeMemoryConfig getNativeMemoryConfig() {
+        return nativeMemoryConfig;
+    }
+
+    public Config setNativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
+        this.nativeMemoryConfig = nativeMemoryConfig;
         return this;
     }
 

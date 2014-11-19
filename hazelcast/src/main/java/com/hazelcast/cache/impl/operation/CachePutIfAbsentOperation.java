@@ -26,7 +26,10 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * Cache PutIfAbsent Operation
+ * Operation implementation for calling
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String, int)}.
+ *
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#putIfAbsent(Data, Object, ExpiryPolicy, String, int)
  */
 public class CachePutIfAbsentOperation
         extends AbstractMutatingCacheOperation {
@@ -35,10 +38,6 @@ public class CachePutIfAbsentOperation
     private ExpiryPolicy expiryPolicy;
 
     public CachePutIfAbsentOperation() {
-    }
-
-    public CachePutIfAbsentOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
-        this(name, key, value, expiryPolicy, IGNORE_COMPLETION);
     }
 
     public CachePutIfAbsentOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, int completionId) {
@@ -50,7 +49,7 @@ public class CachePutIfAbsentOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.putIfAbsent(key, value, expiryPolicy, getCallerUuid());
+        response = cache.putIfAbsent(key, value, expiryPolicy, getCallerUuid(), completionId);
         if (Boolean.TRUE.equals(response)) {
             backupRecord = cache.getRecord(key);
         }
@@ -71,7 +70,7 @@ public class CachePutIfAbsentOperation
             throws IOException {
         super.writeInternal(out);
         out.writeObject(expiryPolicy);
-        value.writeData(out);
+        out.writeData(value);
     }
 
     @Override
@@ -79,8 +78,7 @@ public class CachePutIfAbsentOperation
             throws IOException {
         super.readInternal(in);
         expiryPolicy = in.readObject();
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
     }
 
     @Override

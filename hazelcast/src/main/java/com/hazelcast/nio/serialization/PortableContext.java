@@ -19,8 +19,14 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.core.ManagedContext;
 
 import java.io.IOException;
+import java.nio.ByteOrder;
 
 public interface PortableContext {
+
+    int HEADER_ENTRY_LENGTH = 12;
+    int HEADER_FACTORY_OFFSET = 0;
+    int HEADER_CLASS_OFFSET = 4;
+    int HEADER_VERSION_OFFSET = 8;
 
     int getVersion();
 
@@ -28,7 +34,13 @@ public interface PortableContext {
 
     void setClassVersion(int factoryId, int classId, int version);
 
-    ClassDefinition lookup(int factoryId, int classId, int version);
+    ClassDefinition lookupClassDefinition(int factoryId, int classId, int version);
+
+    ClassDefinition lookupClassDefinition(Data data);
+
+    boolean hasClassDefinition(Data data);
+
+    ClassDefinition[] getClassDefinitions(Data data);
 
     ClassDefinition createClassDefinition(int factoryId, byte[] binary) throws IOException;
 
@@ -40,4 +52,5 @@ public interface PortableContext {
 
     ManagedContext getManagedContext();
 
+    ByteOrder getByteOrder();
 }

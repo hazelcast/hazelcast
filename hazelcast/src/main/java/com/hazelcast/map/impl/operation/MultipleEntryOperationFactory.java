@@ -10,10 +10,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * date: 19/12/13
- * author: eminn
- */
 public class MultipleEntryOperationFactory implements OperationFactory {
 
     private String name;
@@ -39,7 +35,7 @@ public class MultipleEntryOperationFactory implements OperationFactory {
         out.writeUTF(name);
         out.writeInt(keys.size());
         for (Data key : keys) {
-            key.writeData(out);
+            out.writeData(key);
         }
         out.writeObject(entryProcessor);
     }
@@ -50,8 +46,7 @@ public class MultipleEntryOperationFactory implements OperationFactory {
         int size = in.readInt();
         this.keys = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data key = new Data();
-            key.readData(in);
+            Data key = in.readData();
             keys.add(key);
         }
         this.entryProcessor = in.readObject();

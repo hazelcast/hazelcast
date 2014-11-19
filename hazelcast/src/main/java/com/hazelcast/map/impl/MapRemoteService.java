@@ -34,7 +34,7 @@ class MapRemoteService implements RemoteService {
             if (mapContainer.isNearCacheEnabled()) {
                 mapServiceContext.getNearCacheProvider().remove(name);
             }
-            mapContainer.getMapStoreManager().stop();
+            mapContainer.getMapStoreContext().stop();
         }
         mapServiceContext.destroyMap(name);
         nodeEngine.getEventService().deregisterAllListeners(mapServiceContext.serviceName(), name);

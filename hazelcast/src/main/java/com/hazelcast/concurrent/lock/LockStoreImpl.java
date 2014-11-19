@@ -38,11 +38,10 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
     private final transient ConstructorFunction<Data, LockResourceImpl> lockConstructor =
             new ConstructorFunction<Data, LockResourceImpl>() {
-                @Override
-                public LockResourceImpl createNew(Data key) {
-                    return new LockResourceImpl(key, LockStoreImpl.this);
-                }
-            };
+        public LockResourceImpl createNew(Data key) {
+            return new LockResourceImpl(key, LockStoreImpl.this);
+        }
+    };
 
     private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<Data, LockResourceImpl>();
     private ObjectNamespace namespace;
@@ -175,6 +174,14 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         }
     }
 
+    public int getVersion(Data key) {
+        LockResourceImpl lock = locks.get(key);
+        if (lock != null) {
+            return lock.getVersion();
+        }
+        return -1;
+    }
+
     public Collection<LockResource> getLocks() {
         return Collections.<LockResource>unmodifiableCollection(locks.values());
     }
@@ -192,8 +199,8 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         return keySet;
     }
 
-    void scheduleEviction(Data key, long leaseTime) {
-        lockService.scheduleEviction(namespace, key, leaseTime);
+    void scheduleEviction(Data key, int version, long leaseTime) {
+        lockService.scheduleEviction(namespace, key, version, leaseTime);
     }
 
     void cancelEviction(Data key) {

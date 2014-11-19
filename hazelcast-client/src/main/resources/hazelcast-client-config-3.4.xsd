@@ -32,6 +32,7 @@
                 <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
@@ -241,6 +242,7 @@
             <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1" default="LRU"/>
             <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
+            <xs:element name="local-update-policy" type="xs:string" default="INVALIDATE" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
     </xs:complexType>
     <xs:simpleType name="eviction-policy">
@@ -255,7 +257,7 @@
         <xs:restriction base="non-space-string">
             <xs:enumeration value="BINARY"/>
             <xs:enumeration value="OBJECT"/>
-            <xs:enumeration value="OFFHEAP"/>
+            <xs:enumeration value="NATIVE"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -318,6 +320,15 @@
         <xs:attribute name="type-class" type="xs:string" use="required"/>
     </xs:complexType>
 
+    <xs:simpleType name="cache-eviction-policy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="NONE"/>
+            <xs:enumeration value="RANDOM"/>
+            <xs:enumeration value="LRU"/>
+            <xs:enumeration value="LFU"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="socket-interceptor">
         <xs:sequence>
             <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
@@ -325,6 +336,47 @@
         </xs:sequence>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
     </xs:complexType>
+
+    <xs:complexType name="native-memory">
+        <xs:sequence>
+            <xs:element name="size" type="memory-size" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="min-block-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="page-size" type="xs:positiveInteger" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="metadata-space-percentage" minOccurs="0" maxOccurs="1">
+                <xs:simpleType>
+                    <xs:restriction base="xs:decimal">
+                        <xs:totalDigits value="3" />
+                        <xs:fractionDigits value="1"/>
+                        <xs:minInclusive value="5" />
+                        <xs:maxInclusive value="95"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type" />
+        <xs:attribute name="enabled" default="false" type="xs:boolean"/>
+    </xs:complexType>
+
+    <xs:complexType name="memory-size">
+        <xs:attribute name="value" type="xs:int" default="128"/>
+        <xs:attribute name="unit" type="memory-unit" default="MEGABYTES" />
+    </xs:complexType>
+
+    <xs:simpleType name="memory-unit">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="BYTES" />
+            <xs:enumeration value="KILOBYTES"/>
+            <xs:enumeration value="MEGABYTES"/>
+            <xs:enumeration value="GIGABYTES"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="memory-allocator-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="STANDARD" />
+            <xs:enumeration value="POOLED"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="property">
         <xs:simpleContent>

@@ -59,7 +59,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
                     }
                 }
             }
-            entry.getKeyData().writeData(out);
+            out.writeData(entry.getKeyData());
         }
         return out.toByteArray();
     }

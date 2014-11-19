@@ -19,34 +19,38 @@ package com.hazelcast.cache.impl.record;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.util.Clock;
 
 /**
- * Provides factory for {@link com.hazelcast.cache.impl.record.CacheRecord}
+ * Provides factory for {@link com.hazelcast.cache.impl.record.CacheRecord}.
+ * <p>Key, value and expiryTime are packed into a subclass of
+ * {@link com.hazelcast.cache.impl.record.AbstractCacheRecord}
+ * depending on the configured inMemoryFormat.</p>
  */
-public class CacheRecordFactory {
+public class CacheRecordFactory<R extends CacheRecord> {
 
-    private InMemoryFormat inMemoryFormat;
-    private SerializationService serializationService;
+    protected InMemoryFormat inMemoryFormat;
+    protected SerializationService serializationService;
 
     public CacheRecordFactory(InMemoryFormat inMemoryFormat, SerializationService serializationService) {
         this.inMemoryFormat = inMemoryFormat;
         this.serializationService = serializationService;
     }
 
-    public CacheRecord newRecord(Data key, Object value) {
-        return newRecordWithExpiry(key, value, -1);
+    public R newRecord(Object value) {
+        return newRecordWithExpiry(value, Clock.currentTimeMillis(), -1);
     }
 
-    public CacheRecord newRecordWithExpiry(Data key, Object value, long expiryTime) {
-        final CacheRecord record;
+    public R newRecordWithExpiry(Object value, long creationTime, long expiryTime) {
+        final R record;
         switch (inMemoryFormat) {
             case BINARY:
                 Data dataValue = serializationService.toData(value);
-                record = new CacheDataRecord(key, dataValue, expiryTime);
+                record = (R) createCacheDataRecord(dataValue, creationTime, expiryTime);
                 break;
             case OBJECT:
                 Object objectValue = serializationService.toObject(value);
-                record = new CacheObjectRecord(key, objectValue, expiryTime);
+                record = (R) createCacheObjectRecord(objectValue, creationTime, expiryTime);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid storage format: " + inMemoryFormat);
@@ -54,12 +58,20 @@ public class CacheRecordFactory {
         return record;
     }
 
+    protected CacheRecord createCacheDataRecord(Data dataValue, long creationTime, long expiryTime) {
+        return new CacheDataRecord(dataValue, creationTime, expiryTime);
+    }
+
+    protected CacheRecord createCacheObjectRecord(Object objectValue, long creationTime, long expiryTime) {
+        return new CacheObjectRecord(objectValue, creationTime, expiryTime);
+    }
+
     /**
-     * Determines if the Cache Entry associated with this value would be expired
-     * at the specified time
+     * Determines whether the Cache Entry associated with this value would be expired
+     * at the specified time.
      *
-     * @param now time in milliseconds (since the Epoc)
-     * @return true if the value would be expired at the specified time
+     * @param now time in milliseconds (since the Epoc).
+     * @return true if the value would be expired at the specified time.
      */
     public static boolean isExpiredAt(long expirationTime, long now) {
         return expirationTime > -1 && expirationTime <= now;

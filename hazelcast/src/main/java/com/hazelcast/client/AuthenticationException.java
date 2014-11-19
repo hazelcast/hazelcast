@@ -19,14 +19,22 @@ package com.hazelcast.client;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * This exception is thrown when given credentials from client is not valid.
+ * A {@link HazelcastException} that is thrown when there is an Authentication failure: e.g. credentials from client is not valid.
  */
 public class AuthenticationException extends HazelcastException {
 
+    /**
+     * Creates a AuthenticationException with a default message.
+     */
     public AuthenticationException() {
         super("Wrong group name or password.");
     }
 
+    /**
+     * Creates a AuthenticationException with the given message.
+     *
+     * @param message the message.
+     */
     public AuthenticationException(String message) {
         super(message);
     }

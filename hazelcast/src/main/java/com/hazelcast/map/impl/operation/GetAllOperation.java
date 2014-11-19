@@ -72,7 +72,7 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
         } else {
             out.writeInt(keys.size());
             for (Data key : keys) {
-                key.writeData(out);
+                out.writeData(key);
             }
         }
     }
@@ -83,8 +83,7 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
         int size = in.readInt();
         if (size > -1) {
             for (int i = 0; i < size; i++) {
-                Data data = new Data();
-                data.readData(in);
+                Data data = in.readData();
                 keys.add(data);
             }
         }

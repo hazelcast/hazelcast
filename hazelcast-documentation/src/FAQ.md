@@ -283,9 +283,9 @@ if (partitionService().isLocalMemberSafe()) {
 ```
 
 
-## When do I need Off-heap solutions
+## When do I need Native Memory solutions
 
-Off-heap solutions can be preferred;
+Native Memory solutions can be preferred;
 
 - When the amount of data per node is large enough to create significant garbage collection pauses,
 - When your application requires predictable latency.
@@ -298,5 +298,60 @@ The only disadvantage when using near-cache is that it may cause stale reads.
 ## Is Hazelcast secure
 
 Hazelcast supports symmetric encryption, secure sockets layer (SSL) and Java Authentication and Authorization Service (JAAS). Please see [Security](#security) chapter for more information.
+
+
+
+## How can I set socket options
+
+Hazelcast allows to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, `SO_RCVBUF` using Hazelcast configuration properties. Please see `hazelcast.socket.*` properties explained at [Advanced Configuration Properties](#advanced-configuration-properties).
+
+## I periodically see client disconnections during idle time
+
+In Hazelcast, socket connections are created with `SO_KEEPALIVE` option enabled by default. In most operating systems, default keep-alive time is 2 hours. If you have a firewall between clients and servers which is configured to reset idle connections/sessions, make sure that firewall's idle timeout is greater than TCP keep-alive defined in OS.
+
+For additional information please see:
+
+ - [Using TCP keepalive under Linux](http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html)
+ - [Microsoft TechNet](http://technet.microsoft.com/en-us/library/cc957549.aspx)
+
+## How to get rid of "java.lang.OutOfMemoryError: unable to create new native thread"
+
+If you encounter an error of `java.lang.OutOfMemoryError: unable to create new native thread`, it may be caused by exceeding the available file descriptors on your operating system, especially if it is Linux. This exception is usually thrown on a running node, after a period of time when thread count exhausts file descriptor availability.
+
+The JVM on Linux consumes a file descriptor for each thread created.  The default number of file descriptors available in Linux is usually 1024, so if you have many JVMs running on a single machine it is possible to exceed this.
+
+You can view the limit using the following command
+
+`# ulimit -a`
+
+At operating system level, Linux users can control the amount of resources (and in particular file descriptors) used via one of the following options.
+
+1 - Editing the `limits.conf` file:
+
+`# vi /etc/security/limits.conf` 
+
+```
+testuser soft nofile 4096<br>
+testuser hard nofile 10240<br>
+```
+
+2 - Or, using the `ulimit` command:
+
+`# ulimit -Hn`
+
+```
+10240
+```
+
+The default number of process per users is 1024. So adding the following to your `$HOME/.profile` could solve the issue:
+
+`# ulimit -u 4096`
+
+## Which virtualization should I use on AWS
+
+AWS uses two virtualization types to launch the EC2 instances: Para-Virtualization (PV) and Hardware-assisted Virtual Machine (HVM). According to the tests we performed, HVM provided up to three times higher throughput than PV. Therefore, we recommend you to use HVM when you run Hazelcast on EC2.
+
+
+
 
 

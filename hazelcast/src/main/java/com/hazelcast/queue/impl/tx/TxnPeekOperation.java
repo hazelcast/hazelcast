@@ -20,7 +20,7 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.queue.impl.QueueDataSerializerHook;
-import com.hazelcast.queue.impl.QueueOperation;
+import com.hazelcast.queue.impl.operations.QueueOperation;
 
 import java.io.IOException;
 

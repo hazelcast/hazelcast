@@ -47,13 +47,15 @@ import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,6 +72,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
@@ -104,16 +107,16 @@ final class BasicOperationService implements InternalOperationService {
 
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
-    private static final long SLEEP_TIME = 100;
-    private static final int TRY_COUNT = 10;
-    private static final long TRY_PAUSE_MILLIS = 300;
     private static final long SCHEDULE_DELAY = 1111;
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
     private static final int CONCURRENCY_LEVEL = 16;
+    private static final int ASYNC_QUEUE_CAPACITY = 100000;
 
     final ConcurrentMap<Long, BasicInvocation> invocations;
     final BasicOperationScheduler scheduler;
+    final ILogger invocationLogger;
+    final ManagedExecutorService asyncExecutor;
     private final AtomicLong executedOperationsCount = new AtomicLong();
 
     private final NodeEngineImpl nodeEngine;
@@ -123,18 +126,24 @@ final class BasicOperationService implements InternalOperationService {
 
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
 
-    private final long defaultCallTimeout;
+    private final long defaultCallTimeoutMillis;
+    private final long backupOperationTimeoutMillis;
     private final ExecutionService executionService;
     private final OperationHandler operationHandler;
     private final OperationBackupHandler operationBackupHandler;
     private final OperationPacketHandler operationPacketHandler;
     private final ResponsePacketHandler responsePacketHandler;
+    private final BackupTimeoutHandlerThread backupTimeoutHandlerThread;
+    private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
-        this.defaultCallTimeout = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+        this.invocationLogger = nodeEngine.getLogger(BasicInvocation.class);
+        this.defaultCallTimeoutMillis = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+        this.backupOperationTimeoutMillis = node.getGroupProperties().OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
+
         this.executionService = nodeEngine.getExecutionService();
 
         int coreSize = Runtime.getRuntime().availableProcessors();
@@ -148,6 +157,17 @@ final class BasicOperationService implements InternalOperationService {
         this.operationBackupHandler = new OperationBackupHandler();
         this.operationPacketHandler = new OperationPacketHandler();
         this.responsePacketHandler = new ResponsePacketHandler();
+
+        this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
+                ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
+
+        this.backupTimeoutHandlerThread = new BackupTimeoutHandlerThread();
+        this.backupTimeoutHandlerThread.start();
+    }
+
+    @Override
+    public void dumpPerformanceMetrics(StringBuffer sb) {
+        scheduler.dumpPerformanceMetrics(sb);
     }
 
     @Override
@@ -239,6 +259,11 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
+    public boolean isAllowedToRunOnCallingThread(Operation op) {
+        return scheduler.isAllowedToRunInCurrentThread(op);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
         return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
@@ -310,15 +335,22 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
-    public boolean send(final Operation op, final Address target) {
+    public boolean send(Operation op, Address target) {
         if (target == null) {
             throw new IllegalArgumentException("Target is required!");
         }
         if (nodeEngine.getThisAddress().equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
-
-        return send(op, node.getConnectionManager().getOrConnect(target));
+        Data data = nodeEngine.toData(op);
+        int partitionId = scheduler.getPartitionIdForExecution(op);
+        Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
+        packet.setHeader(Packet.HEADER_OP);
+        if (op instanceof UrgentSystemOperation) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        Connection connection = node.getConnectionManager().getOrConnect(target);
+        return nodeEngine.send(packet, connection);
     }
 
     @Override
@@ -336,20 +368,7 @@ final class BasicOperationService implements InternalOperationService {
         if (response.isUrgent()) {
             packet.setHeader(Packet.HEADER_URGENT);
         }
-        return nodeEngine.send(packet, node.getConnectionManager().getOrConnect(target));
-    }
-
-    private boolean send(Operation op, Connection connection) {
-        Data data = nodeEngine.toData(op);
-
-        //enable this line to get some logging of sizes of operations.
-        //System.out.println(op.getClass()+" "+data.bufferSize());
-        int partitionId = scheduler.getPartitionIdForExecution(op);
-        Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
-        packet.setHeader(Packet.HEADER_OP);
-        if (op instanceof UrgentSystemOperation) {
-            packet.setHeader(Packet.HEADER_URGENT);
-        }
+        Connection connection = node.getConnectionManager().getOrConnect(target);
         return nodeEngine.send(packet, connection);
     }
 
@@ -369,8 +388,8 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @PrivateApi
-    long getDefaultCallTimeout() {
-        return defaultCallTimeout;
+    long getDefaultCallTimeoutMillis() {
+        return defaultCallTimeoutMillis;
     }
 
     @PrivateApi
@@ -411,6 +430,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public void shutdown() {
+        shutdown = true;
         logger.finest("Stopping operation threads...");
         final Object response = new HazelcastInstanceNotActiveException();
         for (BasicInvocation invocation : invocations.values()) {
@@ -439,7 +459,7 @@ final class BasicOperationService implements InternalOperationService {
         private final Map<Integer, Object> partitionResults;
 
         private InvokeOnPartitions(String serviceName, OperationFactory operationFactory,
-                                  Map<Address, List<Integer>> memberPartitions) {
+                                   Map<Address, List<Integer>> memberPartitions) {
             this.serviceName = serviceName;
             this.operationFactory = operationFactory;
             this.memberPartitions = memberPartitions;
@@ -556,11 +576,11 @@ final class BasicOperationService implements InternalOperationService {
     private final class ResponsePacketHandler {
         private void handle(Packet packet) {
             try {
-                final Data data = packet.getData();
-                final Response response = (Response) nodeEngine.toObject(data);
+                Data data = packet.getData();
+                Response response = (Response) nodeEngine.toObject(data);
 
-                if (response instanceof NormalResponse) {
-                    notifyRemoteCall((NormalResponse) response);
+                if (response instanceof NormalResponse || response instanceof CallTimeoutResponse) {
+                    notifyRemoteCall(response);
                 } else if (response instanceof BackupResponse) {
                     notifyBackupCall(response.getCallId());
                 } else {
@@ -572,7 +592,7 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
-        private void notifyRemoteCall(NormalResponse response) {
+        private void notifyRemoteCall(Response response) {
             BasicInvocation invocation = invocations.get(response.getCallId());
             if (invocation == null) {
                 if (nodeEngine.isActive()) {
@@ -611,7 +631,6 @@ final class BasicOperationService implements InternalOperationService {
             Connection conn = packet.getConn();
             Address caller = conn.getEndPoint();
             Data data = packet.getData();
-
             try {
                 Object object = nodeEngine.toObject(data);
                 Operation op = (Operation) object;
@@ -736,9 +755,7 @@ final class BasicOperationService implements InternalOperationService {
 
         private boolean timeout(Operation op) {
             if (isCallTimedOut(op)) {
-                Object response = new CallTimeoutException(
-                        op.getClass().getName(), op.getInvocationTime(), op.getCallTimeout());
-                op.getResponseHandler().sendResponse(response);
+                op.getResponseHandler().sendResponse(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
                 return true;
             }
             return false;
@@ -884,8 +901,7 @@ final class BasicOperationService implements InternalOperationService {
             long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(op.getPartitionId(),
                     totalRequestedBackupCount);
 
-            int maxPossibleBackupCount = min(partitionService.getMemberGroupsSize() - 1,
-                    InternalPartition.MAX_BACKUP_COUNT);
+            int maxPossibleBackupCount = partitionService.getMaxBackupCount();
             int syncBackupCount = min(maxPossibleBackupCount, requestedSyncBackupCount);
             int asyncBackupCount = min(maxPossibleBackupCount - syncBackupCount, requestedAsyncBackupCount);
 
@@ -902,7 +918,7 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private int makeBackups(BackupAwareOperation backupAwareOp, int partitionId, long[] replicaVersions,
-                int syncBackupCount, int totalBackupCount) {
+                                int syncBackupCount, int totalBackupCount) {
 
             int sentSyncBackupCount = 0;
             InternalPartitionService partitionService = node.getPartitionService();
@@ -927,7 +943,7 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private Backup newBackup(BackupAwareOperation backupAwareOp, long[] replicaVersions,
-                int replicaIndex, boolean isSyncBackup) {
+                                 int replicaIndex, boolean isSyncBackup) {
             Operation op = (Operation) backupAwareOp;
             Operation backupOp = initBackupOperation(backupAwareOp, replicaIndex);
             Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
@@ -1019,6 +1035,63 @@ final class BasicOperationService implements InternalOperationService {
             sb.append(", time=").append(time);
             sb.append('}');
             return sb.toString();
+        }
+    }
+
+
+    /**
+     * The HandleBackupTimeoutThread periodically iterates over all invocations in this BasicOperationService and calls the
+     * {@link BasicInvocation#handleBackupTimeout(long)} method. This gives each invocation the opportunity to handle with a
+     * backup not completing in time.
+     * <p/>
+     * The previous approach was that for each BackupAwareOperation a task was scheduled to deal with the timeout. The problem
+     * is that the actual operation already could be completed, but the task is still scheduled and this can lead to an OOME.
+     * Apart from that it also had quite an impact on performance since there is more interaction with concurrent data-structures
+     * (e.g. the priority-queue of the scheduled-executor).
+     * <p/>
+     * We use a dedicates thread instead of a shared ScheduledThreadPool because there will not be that many of these threads
+     * (each member-HazelcastInstance gets 1) and we don't want problems in 1 member causing problems in the other.
+     */
+    private final class BackupTimeoutHandlerThread extends Thread {
+
+        public static final int DELAY_MILLIS = 1000;
+
+        private BackupTimeoutHandlerThread() {
+            super(node.getThreadNamePrefix("BackupTimeoutHandlerThread"));
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!shutdown) {
+                    scan();
+
+                    try {
+                        Thread.sleep(DELAY_MILLIS);
+                    } catch (InterruptedException ignore) {
+                        // can safely be ignored. If this thread wants to shut down, we'll read the shutdown variable.
+                        EmptyStatement.ignore(ignore);
+                    }
+                }
+            } catch (Throwable t) {
+                inspectOutputMemoryError(t);
+                logger.severe("Failed to run", t);
+            }
+        }
+
+        private void scan() {
+            if (invocations.isEmpty()) {
+                return;
+            }
+
+            for (BasicInvocation invocation : invocations.values()) {
+                try {
+                    invocation.handleBackupTimeout(backupOperationTimeoutMillis);
+                } catch (Throwable t) {
+                    inspectOutputMemoryError(t);
+                    logger.severe("Failed to handle backup timeout of invocation:" + invocation, t);
+                }
+            }
         }
     }
 }

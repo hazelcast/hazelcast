@@ -71,7 +71,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     final void registerOp(final Selector selector, final int operation) {
         try {
-            if (!connection.live()) {
+            if (!connection.isAlive()) {
                 return;
             }
             if (sk == null) {

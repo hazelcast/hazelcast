@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -54,7 +53,7 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     }
 
     public boolean shouldBackup() {
-        return successful;
+        return successful && recordStore.getRecord(dataKey) != null;
     }
 
     @Override
@@ -65,13 +64,13 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeNullableData(out, expect);
+        out.writeData(expect);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        expect = IOUtil.readNullableData(in);
+        expect = in.readData();
     }
 
     @Override

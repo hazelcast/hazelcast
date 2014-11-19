@@ -66,14 +66,13 @@ public class MapReplicationRemove implements ReplicationEventObject, DataSeriali
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
         out.writeLong(removeTime);
-        key.writeData(out);
+        out.writeData(key);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
         removeTime = in.readLong();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 }

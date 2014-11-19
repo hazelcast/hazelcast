@@ -16,10 +16,10 @@ To use built-in adaptors, you should set `hazelcast.logging.type` property to on
 You can set `hazelcast.logging.type` through declarative configuration, programmatic configuration or JVM system property.
 
 
-***NOTE:*** *If you choose to use `log4j` or `slf4j`, proper dependencies should be included in the classpath.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If you choose to use `log4j` or `slf4j`, proper dependencies should be included in the classpath.*
 <br></br>
 
--   **Declarative Configuration**
+**Declarative Configuration**
 
 ```xml
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config
@@ -36,14 +36,14 @@ You can set `hazelcast.logging.type` through declarative configuration, programm
 </hazelcast>
 ```
 
--   **Programmatic Configuration**
+**Programmatic Configuration**
 
 ```java
 Config config = new Config() ;
 config.setProperty( "hazelcast.logging.type", "log4j" );
 ```
 
--   **System Property**
+**System Property**
 
 	-	Using JVM parameter: `java -Dhazelcast.logging.type=slf4j`
 	-	Using System class: `System.setProperty( "hazelcast.logging.type", "none" );`
@@ -69,6 +69,6 @@ loggingService.addLogListener( Level.INFO, listener );
 ```
 Through the `LoggingService`, you can get the currently used ILogger implementation and log your own messages, too.
 
-***NOTE:*** *If you are not using command line for configuring logging, you should be careful about Hazelcast classes. They may be defaulted to `jdk` logging before newly configured logging is read. When logging mechanism is selected, it will not change.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If you are not using command line for configuring logging, you should be careful about Hazelcast classes. They may be defaulted to `jdk` logging before newly configured logging is read. When logging mechanism is selected, it will not change.*
 
 <br></br>

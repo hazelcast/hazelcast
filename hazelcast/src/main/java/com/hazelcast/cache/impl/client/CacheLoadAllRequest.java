@@ -16,10 +16,10 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
-import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.nio.ObjectDataInput;
@@ -36,11 +36,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * This client request  specifically calls {@link CacheLoadAllOperationFactory} on the server side.
+ *
+ * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory
+ */
 public class CacheLoadAllRequest
-        extends AllPartitionsClientRequest
+        extends AbstractCacheAllPartitionsRequest
         implements Portable, RetryableRequest, SecureRequest {
 
-    protected String name;
     private Set<Data> keys = new HashSet<Data>();
     private boolean replaceExistingValues;
 
@@ -48,7 +52,7 @@ public class CacheLoadAllRequest
     }
 
     public CacheLoadAllRequest(String name, Set<Data> keys, boolean replaceExistingValues) {
-        this.name = name;
+        super(name);
         this.keys = keys;
         this.replaceExistingValues = replaceExistingValues;
     }
@@ -63,19 +67,12 @@ public class CacheLoadAllRequest
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new CacheLoadAllOperationFactory(name, keys, replaceExistingValues);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createLoadAllOperationFactory(keys, replaceExistingValues);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        //        for (Object result : map.values()) {
-        //            if (result != null && result instanceof CacheClearResponse) {
-        //                final Object response = ((CacheClearResponse) result).getResponse();
-        //                if (response instanceof Throwable) {
-        //                    throw ExceptionUtil.rethrow((Throwable) response);
-        //                }
-        //            }
-        //        }
         return map;
     }
 
@@ -85,27 +82,26 @@ public class CacheLoadAllRequest
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeBoolean("r", replaceExistingValues);
         writer.writeInt("size", keys.size());
         if (!keys.isEmpty()) {
             ObjectDataOutput output = writer.getRawDataOutput();
             for (Data key : keys) {
-                key.writeData(output);
+                output.writeData(key);
             }
         }
     }
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         replaceExistingValues = reader.readBoolean("r");
         int size = reader.readInt("size");
         if (size > 0) {
             ObjectDataInput input = reader.getRawDataInput();
             for (int i = 0; i < size; i++) {
-                Data key = new Data();
-                key.readData(input);
+                Data key = input.readData();
                 keys.add(key);
             }
         }
@@ -113,11 +109,6 @@ public class CacheLoadAllRequest
 
     public Permission getRequiredPermission() {
         return null;
-    }
-
-    @Override
-    public String getDistributedObjectName() {
-        return name;
     }
 
     @Override

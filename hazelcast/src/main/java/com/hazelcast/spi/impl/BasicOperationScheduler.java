@@ -36,7 +36,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 
 /**
  * The BasicOperationProcessor belongs to the BasicOperationService and is responsible for scheduling
@@ -118,7 +118,7 @@ public final class BasicOperationScheduler {
                 + partitionOperationThreads.length + " partition operation threads.");
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({ "NP_NONNULL_PARAM_VIOLATION" })
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"NP_NONNULL_PARAM_VIOLATION" })
     private static void initOperationThreads(OperationThread[] operationThreads, ThreadFactory threadFactory) {
         for (int threadId = 0; threadId < operationThreads.length; threadId++) {
             OperationThread operationThread = (OperationThread) threadFactory.newThread(null);
@@ -130,8 +130,9 @@ public final class BasicOperationScheduler {
     private int getGenericOperationThreadCount() {
         int threadCount = node.getGroupProperties().GENERIC_OPERATION_THREAD_COUNT.getInteger();
         if (threadCount <= 0) {
+            // default generic operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
-            threadCount = coreSize * 2;
+            threadCount = Math.max(2, coreSize / 2);
         }
         return threadCount;
     }
@@ -139,8 +140,9 @@ public final class BasicOperationScheduler {
     private int getPartitionOperationThreadCount() {
         int threadCount = node.getGroupProperties().PARTITION_OPERATION_THREAD_COUNT.getInteger();
         if (threadCount <= 0) {
+            // default partition operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
-            threadCount = coreSize * 2;
+            threadCount = Math.max(2, coreSize);
         }
         return threadCount;
     }
@@ -157,7 +159,7 @@ public final class BasicOperationScheduler {
         return isInvocationAllowedFromCurrentThread(getPartitionIdForExecution(op));
     }
 
-    boolean isAllowedToRunInCurrentThread(int partitionId) {
+    private boolean isAllowedToRunInCurrentThread(int partitionId) {
         Thread currentThread = Thread.currentThread();
 
         // IO threads are not allowed to run any operation
@@ -188,7 +190,7 @@ public final class BasicOperationScheduler {
         return toPartitionThreadIndex(partitionId) == threadId;
     }
 
-    boolean isInvocationAllowedFromCurrentThread(int partitionId) {
+    private boolean isInvocationAllowedFromCurrentThread(int partitionId) {
         Thread currentThread = Thread.currentThread();
 
         if (currentThread instanceof OperationThread) {
@@ -272,7 +274,7 @@ public final class BasicOperationScheduler {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                 //it is an response packet.
-                responseThread.workQueue.add(packet);
+                responseThread.process(packet);
             } else {
                 //it is an must be an operation packet
                 int partitionId = packet.getPartitionId();
@@ -356,6 +358,17 @@ public final class BasicOperationScheduler {
                 + '}';
     }
 
+    public void dumpPerformanceMetrics(StringBuffer sb) {
+        for (int k = 0; k < partitionOperationThreads.length; k++) {
+            OperationThread operationThread = partitionOperationThreads[k];
+            sb.append(operationThread.getName()).append(".processedCount=").append(operationThread.processedCount).append("\n");
+        }
+        for (int k = 0; k < genericOperationThreads.length; k++) {
+            OperationThread operationThread = genericOperationThreads[k];
+            sb.append(operationThread.getName()).append(".processedCount=").append(operationThread.processedCount).append("\n");
+        }
+    }
+
     private class GenericOperationThreadFactory implements ThreadFactory {
         private int threadId;
 
@@ -391,6 +404,8 @@ public final class BasicOperationScheduler {
         private final boolean isPartitionSpecific;
         private final BlockingQueue workQueue;
         private final Queue priorityWorkQueue;
+        // This field is updated by this OperationThread (so a single writer) and can be read by other threads.
+        private volatile long processedCount;
 
         public OperationThread(String name, boolean isPartitionSpecific,
                                int threadId, BlockingQueue workQueue, Queue priorityWorkQueue) {
@@ -404,12 +419,14 @@ public final class BasicOperationScheduler {
 
         @Override
         public void run() {
+            node.getNodeExtension().onThreadStart(this);
             try {
                 doRun();
-            } catch (OutOfMemoryError e) {
-                onOutOfMemory(e);
             } catch (Throwable t) {
+                inspectOutputMemoryError(t);
                 logger.severe(t);
+            } finally {
+                node.getNodeExtension().onThreadStop(this);
             }
         }
 
@@ -434,10 +451,13 @@ public final class BasicOperationScheduler {
             }
         }
 
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
         private void process(Object task) {
+            processedCount++;
             try {
                 dispatcher.dispatch(task);
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                inspectOutputMemoryError(e);
                 logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
             }
         }
@@ -469,9 +489,8 @@ public final class BasicOperationScheduler {
         public void run() {
             try {
                 doRun();
-            } catch (OutOfMemoryError e) {
-                onOutOfMemory(e);
             } catch (Throwable t) {
+                inspectOutputMemoryError(t);
                 logger.severe(t);
             }
         }
@@ -499,7 +518,8 @@ public final class BasicOperationScheduler {
         private void process(Object task) {
             try {
                 dispatcher.dispatch(task);
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                inspectOutputMemoryError(e);
                 logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
             }
         }

@@ -74,6 +74,7 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.HealthMonitor;
 import com.hazelcast.util.HealthMonitorLevel;
+import com.hazelcast.util.PerformanceMonitor;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,7 +84,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 @SuppressWarnings("unchecked")
 @PrivateApi
-public final class HazelcastInstanceImpl
+public class HazelcastInstanceImpl
         implements HazelcastInstance {
 
     public final Node node;
@@ -130,7 +131,7 @@ public final class HazelcastInstanceImpl
 
             managementService = new ManagementService(this);
             initManagedContext(configuredManagedContext);
-            initHealthMonitor();
+            initMonitors();
         } catch (Throwable e) {
             try {
                 // Terminate the node by terminating node engine,
@@ -141,6 +142,11 @@ public final class HazelcastInstanceImpl
             }
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    private void initMonitors() {
+        initHealthMonitor();
+        initPerformanceMonitor();
     }
 
     private void initManagedContext(ManagedContext configuredManagedContext) {
@@ -159,6 +165,17 @@ public final class HazelcastInstanceImpl
             int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
             new HealthMonitor(this, healthLevel, delaySeconds).start();
         }
+    }
+
+    private void initPerformanceMonitor() {
+        boolean enabled = node.getGroupProperties().PERFORMANCE_MONITORING_ENABLED.getBoolean();
+        if (!enabled) {
+            return;
+        }
+
+        logger.finest("Starting performance monitor");
+        int delaySeconds = node.getGroupProperties().PERFORMANCE_MONITORING_DELAY_SECONDS.getInteger();
+        new PerformanceMonitor(this, delaySeconds).start();
     }
 
     public ManagementService getManagementService() {

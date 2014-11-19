@@ -9,7 +9,7 @@ Hazelcast's Client security includes both authentication and authorization.
 
 ### Authentication
 
-Authentication mechanism just works the same as cluster member authentication. Implementation of client authentication requires a Credentials and one or more LoginModule(s). Client side does not have/need a factory object to create Credentials objects like `ICredentialsFactory`. Credentials must be created at the client side and sent to the connected node during connection process.
+The authentication mechanism works the same as cluster member authentication. To implement client authentication, configure a Credential and one or more LoginModules. The client side does not have and does not need a factory object to create Credentials objects like `ICredentialsFactory`. Credentials must be created at the client side and sent to the connected node during the connection process.
 
 ```xml
 <security enabled="true">
@@ -37,7 +37,7 @@ Authentication mechanism just works the same as cluster member authentication. I
 </security>
 ```
 
-You can define as many as `LoginModules` you want in configuration. Those are executed in the given order. Usage attribute has 4 values; 'required', 'requisite', 'sufficient' and 'optional' as defined in `javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag`.
+You can define as many as `LoginModules` as you want in configuration. Those are executed in the given order. The `usage` attribute has 4 values: 'required', 'requisite', 'sufficient' and 'optional' as defined in `javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag`.
 
 ```java
 ClientConfig clientConfig = new ClientConfig();
@@ -47,7 +47,7 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 
 ### Authorization
 
-Hazelcast client authorization is configured by a client permission policy. Hazelcast has a default permission policy implementation that uses permission configurations defined in Hazelcast security configuration. Default policy permission checks are done against instance types (map, queue, etc.), instance names (map, queue, etc. name), instance actions (put, read, remove, add, etc.), client endpoint addresses and client principal defined by Credentials object. Instance and principal names and endpoint addresses can be defined as wildcards(*). Please see [Network Configuration](#network-configuration) and [Using Wildcard](#using-wildcard) sections.
+Hazelcast client authorization is configured by a client permission policy. Hazelcast has a default permission policy implementation that uses permission configurations defined in the Hazelcast security configuration. Default policy permission checks are done against instance types (map, queue, etc.), instance names (map, queue, name, etc.), instance actions (put, read, remove, add, etc.), client endpoint addresses, and client principal defined by the Credentials object. Instance and principal names and endpoint addresses can be defined as wildcards(*). Please see the [Network Configuration](#network-configuration) and [Using Wildcard](#using-wildcard) sections.
 
 ```xml
 <security enabled="true">
@@ -106,7 +106,7 @@ Hazelcast client authorization is configured by a client permission policy. Haze
 </security>
 ```
 
-The users also can define their own policy by implementing `com.hazelcast.security.IPermissionPolicy`.
+Users can also define their own policy by implementing `com.hazelcast.security.IPermissionPolicy`.
 
 ```java
 package com.hazelcast.security;
@@ -125,12 +125,12 @@ public interface IPermissionPolicy {
 }
 ```
 
-Permission policy implementations can access client-permissions in configuration by using 
+Permission policy implementations can access client-permissions in configuration by using
 `SecurityConfig.getClientPermissionConfigs()` during `configure(SecurityConfig securityConfig, Properties properties)` method is called by Hazelcast.
 
-`IPermissionPolicy.getPermissions(Subject subject, Class<? extends Permission> type)` method is used to determine a client request that has been granted permission to perform a security-sensitive operation. 
+The `IPermissionPolicy.getPermissions(Subject subject, Class<? extends Permission> type)` method is used to determine a client request that has been granted permission to perform a security-sensitive operation. 
 
-Permission policy should return a `PermissionCollection` containing permissions of given type for given `Subject`. Hazelcast access controller will call `PermissionCollection.implies(Permission)` on returning `PermissionCollection` and will decide if current `Subject` has permitted to access to requested resources or not.
+Permission policy should return a `PermissionCollection` containing permissions of the given type for the given `Subject`. The Hazelcast access controller will call `PermissionCollection.implies(Permission)` on returning `PermissionCollection` and will decide if the current `Subject` has permission to access the requested resources or not.
 
 ### Permissions
 

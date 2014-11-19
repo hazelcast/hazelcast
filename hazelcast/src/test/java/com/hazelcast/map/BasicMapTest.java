@@ -326,7 +326,6 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
 
-
     @Test
     public void testMapRemove() {
         IMap<String, String> map = getInstance().getMap("testMapRemove");
@@ -490,7 +489,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.containsKey("key2"), true);
         assertEquals(map.containsKey("key5"), false);
     }
-
 
 
     @Test
@@ -1089,11 +1087,6 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutWithTtl2() throws InterruptedException {
-    }
-
-
-    @Test
     public void testPutWithTtl() throws InterruptedException {
         IMap<String, String> map = getInstance().getMap("testPutWithTtl");
         final CountDownLatch latch = new CountDownLatch(1);
@@ -1163,11 +1156,9 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testIfWeCarryRecordVersionInfoToReplicas() {
         final String mapName = randomMapName();
         final int mapSize = 1000;
-        final int nodeCount = 2;
         final int expectedRecordVersion = 3;
-        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(nodeCount);
-        final Config config = new Config();
-        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+
+        final HazelcastInstance node1 = instances[1];
 
         final IMap<Integer, Integer> map1 = node1.getMap(mapName);
         for (int i = 0; i < mapSize; i++) {
@@ -1176,7 +1167,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             map1.put(i, 2);//version 2.
             map1.put(i, 3);//version 3.
         }
-        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance node2 = instances[2];
 
         node1.shutdown();
 
@@ -1616,7 +1607,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         private SampleIndexableObject[] values = new SampleIndexableObject[10];
         private Set<Integer> keys = new HashSet<Integer>();
 
-        boolean preloadValues = false;
+        volatile boolean preloadValues = false;
 
         public SampleIndexableObjectMapLoader() {
             for (int i = 0; i < 10; i++) {

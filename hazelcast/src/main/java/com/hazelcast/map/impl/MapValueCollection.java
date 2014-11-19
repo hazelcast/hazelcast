@@ -44,7 +44,7 @@ public class MapValueCollection implements IdentifiedDataSerializable {
         int size = values.size();
         out.writeInt(size);
         for (Data o : values) {
-            o.writeData(out);
+            out.writeData(o);
         }
     }
 
@@ -52,8 +52,7 @@ public class MapValueCollection implements IdentifiedDataSerializable {
         int size = in.readInt();
         values = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             values.add(data);
         }
     }

@@ -2,16 +2,16 @@
 
 ### Map Persistence
 
-Hazelcast allows you to load and store the distributed map entries from/to a persistent data store such as a relational database. For these, you can use Hazelcast's `MapStore` and `MapLoader` interfaces.
+Hazelcast allows you to load and store the distributed map entries from/to a persistent data store such as a relational database. To do this, you can use Hazelcast's `MapStore` and `MapLoader` interfaces.
 
-When you provide a `MapLoader` implementation and request an entry (`IMap.get()`) that does not exist in the memory, `MapLoader`'s `load` or `loadAll` methods will load that entry from the data store. This loaded entry is placed into the map and will stay there until it is removed or evicted.
+When you provide a `MapLoader` implementation and request an entry (`IMap.get()`) that does not exist in memory, `MapLoader`'s `load` or `loadAll` methods will load that entry from the data store. This loaded entry is placed into the map and will stay there until it is removed or evicted.
 
-When a `MapStore` implementation is provided, an entry is put also into a user defined data store. 
+When a `MapStore` implementation is provided, an entry is also put into a user defined data store. 
 
-***ATTENTION:*** *Data store needs to be a centralized system that is
-accessible from all Hazelcast Nodes. Persisting to local file system is not supported.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Data store needs to be a centralized system that is
+accessible from all Hazelcast Nodes. Persistence to local file system is not supported.*
 
-Please see the below example.
+Following is a `MapStore` example.
 
 ```java
 public class PersonMapStore implements MapStore<Long, Person> {
@@ -83,62 +83,64 @@ public class PersonMapStore implements MapStore<Long, Person> {
 }
 ```
 
+![image](images/NoteSmall.jpg) ***NOTE:*** *Loading process is performed on a thread different than the partition threads using ExecutorService.*
+
 <br></br>
 ***RELATED INFORMATION***
 
 *For more MapStore/MapLoader code samples please see [here](https://github.com/hazelcast/hazelcast-code-samples/tree/master/distributed-map/mapstore/src/main/java).*
 <br></br>
 
-Hazelcast supports read-through, write-through and write-behind persistence modes which are explained in below subsections.
+Hazelcast supports read-through, write-through, and write-behind persistence modes which are explained in below subsections.
 
 #### Read-Through
 
-If an entry does not exist in the memory when an application asks, Hazelcast asks your loader implementation to load that entry from the data store.  If the entry exists there, the loader implementation gets it, hands it to Hazelcast, and Hazelcast puts it into the memory. This is read-through persistence mode.
+If an entry does not exist in the memory when an application asks for it, Hazelcast asks your loader implementation to load that entry from the data store.  If the entry exists there, the loader implementation gets it, hands it to Hazelcast, and Hazelcast puts it into the memory. This is read-through persistence mode.
 
 
 
 #### Write-Through
 
-`MapStore` can be configured as write-through by setting the `write-delay-seconds` property to **0**. This means the entries will be put to the data store synchronously.
+`MapStore` can be configured to be write-through by setting the `write-delay-seconds` property to **0**. This means the entries will be put to the data store synchronously.
 
-In this mode, when the `map.put(key,value)` call returns, you can be sure that
+In this mode, when the `map.put(key,value)` call returns:
 
 -   `MapStore.store(key,value)` is successfully called so the entry is persisted.
 
--   In-Memory entry is updated
+-   In-Memory entry is updated.
 
--   In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0)
+-   In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0).
 
-Same behavior goes for the `map.remove(key)`, only difference is that  `MapStore.delete(key)` is called when it will be deleted.
+The same behavior goes for a `map.remove(key)` call. The only difference is that  `MapStore.delete(key)` is called when the entry will be deleted.
 
 If `MapStore` throws an exception, then the exception will be propagated back to the original `put` or `remove` call in the form of `RuntimeException`. 
 
 #### Write-Behind
 
-`MapStore` can be configured as write-behind by setting the `write-delay-seconds` property to a value bigger than **0**. This means the modified entries will be put to the data store asynchronously after a configured delay. 
+You can configure `MapStore` as write-behind by setting the `write-delay-seconds` property to a value bigger than **0**. This means the modified entries will be put to the data store asynchronously after a configured delay. 
 
-***NOTE:*** *In write-behind mode, Hazelcast coalesces updates on a specific key, i.e. applies only the last update on it.* 
+![image](images/NoteSmall.jpg) ***NOTE:*** *In write-behind mode, Hazelcast coalesces updates on a specific key, i.e. applies only the last update on it.* 
 
-In this mode, when the `map.put(key,value)` call returns, you can be sure that
+In this mode, when the `map.put(key,value)` call returns:
 
--   In-Memory entry is updated
+-   In-Memory entry is updated.
 
--   In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0)
+-   In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0).
 
 -   The entry is marked as dirty so that after `write-delay-seconds`, it can be persisted with `MapStore.store(key,value)` call.
 
-Same behavior goes for the `map.remove(key)`, only difference is that  `MapStore.delete(key)` is called when it will be deleted.
+The same behavior goes for the `map.remove(key)`, the only difference is that  `MapStore.delete(key)` is called when the entry will be deleted.
 
-If `MapStore` throws an exception, then Hazelcast retries to store the entry. If it still cannot be stored, a log message is printed and the entry is re-queued. 
+If `MapStore` throws an exception, then Hazelcast tries to store the entry again. If the entry still cannot be stored, a log message is printed and the entry is re-queued. 
 
-For batch write operations, which are only allowed in write-behind mode, Hazelcast will call `MapStore.storeAll(map)`, and `MapStore.deleteAll(collection)` to do all writes in a single call.
+For batch write operations, which are only allowed in write-behind mode, Hazelcast will call `MapStore.storeAll(map)` and `MapStore.deleteAll(collection)` to do all writes in a single call.
 <br></br>
 
-***ATTENTION:*** *If a map entry is marked as dirty, i.e. it is waiting to be persisted to the `MapStore` in a write-behind scenario, the eviction process forces the entry to be stored. By this way, you will have control on the number of entries waiting to be stored, so that a possible OutOfMemory exception can be prevented.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If a map entry is marked as dirty, i.e. it is waiting to be persisted to the `MapStore` in a write-behind scenario, the eviction process forces the entry to be stored. By this way, you will have control on the number of entries waiting to be stored, and thus you can prevent a possible OutOfMemory exception.*
 <br></br>
 
 
-***ATTENTION:*** *MapStore or MapLoader implementations should not use Hazelcast Map/Queue/MultiMap/List/Set operations. Your implementation should only work with your data store. Otherwise, you may get into deadlock situations.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *`MapStore` or `MapLoader` implementations should not use Hazelcast Map/Queue/MultiMap/List/Set operations. Your implementation should only work with your data store. Otherwise, you may get into deadlock situations.*
 
 Here is a sample configuration:
 
@@ -174,11 +176,11 @@ Here is a sample configuration:
 </hazelcast>
 ```
 
-#### MapStoreFactory and MapLoaderLifecycleSupport Interfaces
+#### MapStoreFactory And MapLoaderLifecycleSupport Interfaces
 
-As you know, a configuration can be applied to more than one map using wildcards (Please see [Using Wildcard](#using-wildcard)), meaning the configuration is shared among the maps. But, `MapStore` does not know which entries to be stored when there is one configuration applied to multiple maps. To overcome this, Hazelcast provides `MapStoreFactory` interface.
+A configuration can be applied to more than one map using wildcards (see [Using Wildcard](#using-wildcard)), meaning that the configuration is shared among the maps. But `MapStore` does not know which entries to store when there is one configuration applied to multiple maps. To overcome this, Hazelcast provides the `MapStoreFactory` interface.
 
-Using this factory, `MapStore`s for each map can be created, when a wildcard configuration is used. A sample code is given below.
+Using the `MapStoreFactory` interface, `MapStore`s for each map can be created when a wildcard configuration is used. Sample code is shown below.
 
 ```java
 Config config = new Config();
@@ -192,7 +194,7 @@ mapStoreConfig.setFactoryImplementation( new MapStoreFactory<Object, Object>() {
 });
 ```
 
-Moreover, if the configuration implements `MapLoaderLifecycleSupport` interface, then the user will have the control to initialize the `MapLoader` implementation with the given map name, configuration properties and the Hazelcast instance. See the below code portion.
+If the configuration implements the `MapLoaderLifecycleSupport` interface, then the user can initialize the `MapLoader` implementation with the given map name, configuration properties, and the Hazelcast instance. See the following example code.
 
 ```java
 public interface MapLoaderLifecycleSupport {
@@ -218,25 +220,25 @@ public interface MapLoaderLifecycleSupport {
 ```
 
 
-#### Initialization on startup
+#### Initialization On Startup
 
-`MapLoader.loadAllKeys` API is used for pre-populating the in-memory map when the map is first touched/used. If `MapLoader.loadAllKeys` returns NULL then nothing will be loaded. Your `MapLoader.loadAllKeys` implementation can return all or some of the keys. You may select and return only the `hot` keys, for instance. Also note that this is the fastest way of pre-populating the map as Hazelcast will optimize the loading process by having each node loading owned portion of the entries.
+You can use the `MapLoader.loadAllKeys` API to pre-populate the in-memory map when the map is first touched/used. If `MapLoader.loadAllKeys` returns NULL then nothing will be loaded. Your `MapLoader.loadAllKeys` implementation can return all or some of the keys. For example, you may select and return only the `hot` keys. `MapLoader.loadAllKeys` is the fastest way of pre-populating the map since Hazelcast will optimize the loading process by having each node loading its owned portion of the entries.
 
-Moreover, there is InitialLoadMode configuration parameter in the class [`MapStoreConfig`](https://github.com/hazelcast/hazelcast/blob/5f4f6a876e572f91431ad22f01ad5af9f5837f72/hazelcast/src/main/java/com/hazelcast/config/MapStoreConfig.java) class. This parameter has two values: LAZY and EAGER. If InitialLoadMode is set as LAZY, data is not loaded during the map creation. If it is set as EAGER, whole data is loaded while the map is being created and everything becomes ready to use. Also, if you add indices to your map by [`MapIndexConfig`](https://github.com/hazelcast/hazelcast/blob/da5cceee74e471e33f65f43f31d891c9741e31e3/hazelcast/src/main/java/com/hazelcast/config/MapIndexConfig.java) class or [`addIndex`](#indexing) method, then InitialLoadMode is overridden and MapStoreConfig behaves as if EAGER mode is on.
+The `InitialLoadMode` configuration parameter in the class [`MapStoreConfig`](https://github.com/hazelcast/hazelcast/blob/5f4f6a876e572f91431ad22f01ad5af9f5837f72/hazelcast/src/main/java/com/hazelcast/config/MapStoreConfig.java) has two values: `LAZY` and `EAGER`. If `InitialLoadMode` is set to `LAZY`, data is not loaded during the map creation. If it is set to `EAGER`, the whole data is loaded while the map is created and everything becomes ready to use. Also, if you add indices to your map with the [`MapIndexConfig`](https://github.com/hazelcast/hazelcast/blob/da5cceee74e471e33f65f43f31d891c9741e31e3/hazelcast/src/main/java/com/hazelcast/config/MapIndexConfig.java) class or the [`addIndex`](#indexing) method, then `InitialLoadMode` is overridden and `MapStoreConfig` behaves as if `EAGER` mode is on.
 
-Here is MapLoader initialization flow:
+Here is the `MapLoader` initialization flow:
 
-1. When `getMap()` is first called from any node, initialization will start depending on the the value of InitialLoadMode. If it is set as EAGER, initialization starts.  If it is set as LAZY, initialization actually does not start but data is loaded at each time a partition loading is completed.
-2. Hazelcast will call `MapLoader.loadAllKeys()` to get all your keys on each node
-3. Each node will figure out the list of keys it owns
-4. Each node will load all its owned keys by calling `MapLoader.loadAll(keys)`
-5. Each node puts its owned entries into the map by calling `IMap.putTransient(key,value)`
+1. When `getMap()` is first called from any node, initialization will start depending on the the value of `InitialLoadMode`. If it is set to `EAGER`, initialization starts.  If it is set to `LAZY`, initialization does not start but data is loaded each time a partition loading completes.
+2. Hazelcast will call `MapLoader.loadAllKeys()` to get all your keys on each node.
+3. Each node will figure out the list of keys it owns.
+4. Each node will load all its owned keys by calling `MapLoader.loadAll(keys)`.
+5. Each node puts its owned entries into the map by calling `IMap.putTransient(key,value)`.
 
-***ATTENTION:*** *If the load mode is LAZY and when `clear()` method is called (which triggers `MapStore.deleteAll()`), Hazelcast will remove **ONLY** the loaded entries from your map and datastore. Since the whole data is not loaded for this case (LAZY mode), please note that there may be still entries in your datastore.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If the load mode is `LAZY` and when the `clear()` method is called (which triggers `MapStore.deleteAll()`), Hazelcast will remove **ONLY** the loaded entries from your map and datastore. Since the whole data is not loaded for this case (`LAZY` mode), please note that there may be still entries in your datastore.*
 
 #### Forcing All Keys To Be Loaded
 
-The method `loadAll` is developed to load some or all keys into a data store in order to optimize the multiple load operations. The method has two signatures (i.e. same method can take two different parameter lists). One loads the given keys and the other loads all keys. Please see the sample code below.
+The method `loadAll` loads some or all keys into a data store in order to optimize the multiple load operations. The method has two signatures (i.e. the same method can take two different parameter lists). One signature loads the given keys and the other loads all keys. Please see the sample code below.
 
 
 ```java
@@ -265,8 +267,7 @@ public class LoadAll {
 #### Post Processing Map Store
 
 In some scenarios, you may need to modify the object after storing it into the map store.
-For example, you can get ID or version auto generated by your database and you need to modify your object stored in distributed map, not to break the sync between database and data grid. You can do that by implementing `PostProcessingMapStore` interface;
-so the modified object will be put to the distributed map. That will cause an extra step of `Serialization`, so use it just when needed (This explanation is only valid when using `write-through` map store configuration).
+For example, you can get an ID or version auto generated by your database and then you need to modify your object stored in the distributed map but not to break the sync between database and data grid. You can do that by implementing the `PostProcessingMapStore` interface to put the modified object into the distributed map. That will cause an extra step of `Serialization`, so use it only when needed. (This explanation is only valid when using the `write-through` map store configuration.)
 
 Here is an example of post processing map store:
 

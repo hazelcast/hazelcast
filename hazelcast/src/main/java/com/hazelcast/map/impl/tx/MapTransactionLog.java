@@ -27,6 +27,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
+
 import java.io.IOException;
 import java.util.concurrent.Future;
 
@@ -96,7 +97,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         boolean isNullKey = key == null;
         out.writeBoolean(isNullKey);
         if (!isNullKey) {
-            key.writeData(out);
+            out.writeData(key);
         }
         out.writeLong(threadId);
         out.writeUTF(ownerUuid);
@@ -108,8 +109,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         name = in.readUTF();
         boolean isNullKey = in.readBoolean();
         if (!isNullKey) {
-            key = new Data();
-            key.readData(in);
+            key = in.readData();
         }
         threadId = in.readLong();
         ownerUuid = in.readUTF();
@@ -119,5 +119,16 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     @Override
     public Object getKey() {
         return new MapRecordKey(name, key);
+    }
+
+    @Override
+    public String toString() {
+        return "MapTransactionLog{"
+                + "name='" + name + '\''
+                + ", key=" + key
+                + ", threadId=" + threadId
+                + ", ownerUuid='" + ownerUuid + '\''
+                + ", op=" + op
+                + '}';
     }
 }

@@ -18,7 +18,7 @@ package com.hazelcast.queue.impl.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.queue.impl.QueueBackupAwareOperation;
+import com.hazelcast.queue.impl.operations.QueueBackupAwareOperation;
 import com.hazelcast.queue.impl.QueueContainer;
 import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;

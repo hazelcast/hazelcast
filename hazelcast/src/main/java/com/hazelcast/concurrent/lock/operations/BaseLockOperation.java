@@ -115,7 +115,7 @@ abstract class BaseLockOperation extends AbstractOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(namespace);
-        key.writeData(out);
+        out.writeData(key);
         out.writeLong(threadId);
         out.writeLong(ttl);
     }
@@ -124,8 +124,7 @@ abstract class BaseLockOperation extends AbstractOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         namespace = in.readObject();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
         threadId = in.readLong();
         ttl = in.readLong();
     }

@@ -52,6 +52,15 @@ public abstract class HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
 
+    @After
+    public final void shutdownNodeFactory() {
+        final TestHazelcastInstanceFactory f = factory;
+        if (f != null) {
+            factory = null;
+            f.terminateAll();
+        }
+    }
+
     public static String generateRandomString(int length) {
         StringBuffer sb = new StringBuffer(length);
         Random random = new Random();
@@ -107,7 +116,7 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("the size of the collection is not correct", expectedSize, c.size());
+                assertEquals("the size of the collection is not correct: found-content:" + c, expectedSize, c.size());
             }
         }, timeoutSeconds);
     }
@@ -123,6 +132,10 @@ public abstract class HazelcastTestSupport {
                 assertEquals("the size of the map is not correct", expectedSize, m.size());
             }
         }, timeoutSeconds);
+    }
+
+    public static void assertClusterSize(int expectedSize, HazelcastInstance instance) {
+        assertEquals("Cluster size is not correct", expectedSize, instance.getCluster().getMembers().size());
     }
 
     public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance) {
@@ -272,21 +285,20 @@ public abstract class HazelcastTestSupport {
         return factory = new TestHazelcastInstanceFactory(nodeCount);
     }
 
+
+    protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(String... addresses) {
+        if (factory != null) {
+            throw new IllegalStateException("Node factory is already created!");
+        }
+        return factory = new TestHazelcastInstanceFactory(addresses);
+    }
+
     public HazelcastInstance createHazelcastInstance(Config config) {
         return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
     }
 
     public HazelcastInstance createHazelcastInstance() {
         return createHazelcastInstance(new Config());
-    }
-
-    @After
-    public final void shutdownNodeFactory() {
-        final TestHazelcastInstanceFactory f = factory;
-        if (f != null) {
-            factory = null;
-            f.shutdownAll();
-        }
     }
 
     public static Node getNode(HazelcastInstance hz) {
@@ -367,8 +379,7 @@ public abstract class HazelcastTestSupport {
         if (node != null) {
             final InternalPartitionService ps = node.getPartitionService();
             return ps.isMemberStateSafe();
-        }
-        else {
+        } else {
             return true;
         }
     }
@@ -376,7 +387,7 @@ public abstract class HazelcastTestSupport {
     public static void waitInstanceForSafeState(final HazelcastInstance instance) {
         assertTrueEventually(new AssertTask() {
             public void run() {
-              isInstanceInSafeState(instance);
+                isInstanceInSafeState(instance);
             }
         });
     }

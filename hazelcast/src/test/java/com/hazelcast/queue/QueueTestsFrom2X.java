@@ -58,6 +58,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         final String value = "hello";
         final HazelcastInstance instance = createHazelcastInstance();
         IQueue<String> queue = instance.getQueue("testQueueItemListener");
+
         queue.addItemListener(new ItemListener<String>() {
             public void itemAdded(ItemEvent<String> itemEvent) {
                 assertEquals(value, itemEvent.getItem());

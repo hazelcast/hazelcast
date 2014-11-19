@@ -95,7 +95,7 @@ public class InvocationTest extends HazelcastTestSupport {
      */
     private static class TargetOperation extends AbstractOperation {
         public void run() throws InterruptedException {
-            Thread.sleep(5000);
+            Thread.sleep(10000);
         }
     }
 

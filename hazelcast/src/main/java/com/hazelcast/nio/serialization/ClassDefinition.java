@@ -26,7 +26,7 @@ import java.util.Set;
  * @see com.hazelcast.nio.serialization.Portable
  * @see com.hazelcast.nio.serialization.ClassDefinitionBuilder
  */
-public interface ClassDefinition extends DataSerializable {
+public interface ClassDefinition {
 
     /**
      * @param name name of the field
@@ -65,13 +65,6 @@ public interface ClassDefinition extends DataSerializable {
      * @throws java.lang.IllegalArgumentException
      */
     int getFieldClassId(String fieldName);
-
-    /**
-     * @param fieldName name of the field
-     * @return version of given field
-     * @throws java.lang.IllegalArgumentException
-     */
-    int getFieldVersion(String fieldName);
 
     /**
      * @return total field count

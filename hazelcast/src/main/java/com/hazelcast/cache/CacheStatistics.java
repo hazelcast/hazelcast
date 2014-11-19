@@ -18,7 +18,22 @@ package com.hazelcast.cache;
 
 /**
  * Cache statistics
+ * <p>
+ *     Cache statistics are accumulated since the time a cache is created. <br/>
+ *     An instance of this class represents local node values only! For an accumulated view
+ *     on cluster level the user has to retrieve all nodes statistics and aggregate values
+ *     on his own.
+ * </p>
+ * <p>
+ *     Sample code:
+ *     <pre>
+ *       ICache&lt;Key, Value&gt; unwrappedCache =  cache.unwrap( ICache.class );
+ *       CacheStatistics cacheStatistics = unwrappedCache.getLocalCacheStatistics();
+ *       long cacheHits = cacheStatistics.getCacheHits();
+ *     </pre>
+ * </p>
  *
+ * @since 3.3.1
  */
 public interface CacheStatistics {
 
@@ -28,7 +43,7 @@ public interface CacheStatistics {
      * {@link javax.cache.Cache#containsKey(Object)} is not a get request for
      * statistics purposes.
      * <p>
-     * In a caches with multiple tiered storage, a hit may be implemented as a hit
+     * In caches with multiple tiered storage, a hit may be implemented as a hit
      * to the cache or to the first tier.
      * <p>
      * For an {@link javax.cache.processor.EntryProcessor}, a hit occurs when the
@@ -46,14 +61,14 @@ public interface CacheStatistics {
      * It is calculated as:
      * {@link #getCacheHits} divided by {@link #getCacheGets ()} * 100.
      *
-     * @return the percentage of successful hits, as a decimal e.g 75.
+     * @return the percentage of successful hits, as a decimal, e.g 75
      */
     float getCacheHitPercentage();
 
     /**
      * A miss is a get request that is not satisfied.
      * <p>
-     * In a simple cache a miss occurs when the cache does not satisfy the request.
+     * In a simple cache, a miss occurs when the cache does not satisfy the request.
      * <p>
      * {@link javax.cache.Cache#containsKey(Object)} is not a get request for
      * statistics purposes.
@@ -62,10 +77,10 @@ public interface CacheStatistics {
      * key does not exist and therefore an entry processor cannot be invoked
      * against it.
      * <p>
-     * In a caches with multiple tiered storage, a miss may be implemented as a miss
+     * In caches with multiple tiered storage, a miss may be implemented as a miss
      * to the cache or to the first tier.
      * <p>
-     * In a read-through cache a miss is an absence of the key in the cache that
+     * In a read-through cache, a miss is an absence of the key in the cache that
      * will trigger a call to a CacheLoader. So it is still a miss even though the
      * cache will load and return the value.
      * <p>
@@ -93,7 +108,7 @@ public interface CacheStatistics {
      * A "get" is an operation that returns the current or previous value. It does
      * not include checking for the existence of a key.
      * <p>
-     * In a caches with multiple tiered storage, a gets may be implemented as a get
+     * In caches with multiple tiered storage, a get may be implemented as a get
      * to the cache or to the first tier.
      *
      * @return the number of gets
@@ -132,7 +147,7 @@ public interface CacheStatistics {
     /**
      * The mean time to execute gets.
      * <p>
-     * In a read-through cache the time taken to load an entry on miss is not
+     * In a read-through cache, the time taken to load an entry on miss is not
      * included in get time.
      *
      * @return the time in µs

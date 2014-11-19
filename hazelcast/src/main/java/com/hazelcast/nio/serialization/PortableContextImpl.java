@@ -18,11 +18,14 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,32 +34,29 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
-import static com.hazelcast.util.ByteUtil.combineToLong;
+import static com.hazelcast.nio.Bits.combineToLong;
 
 final class PortableContextImpl implements PortableContext {
 
-    private static final int COMPRESSION_BUFFER_LENGTH = 1024;
     private static final Pattern NESTED_FIELD_PATTERN = Pattern.compile("\\.");
+    private static final int COMPRESSION_BUFFER_LENGTH = 1024;
 
     private final int version;
     private final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap =
             new ConcurrentHashMap<Integer, ClassDefinitionContext>();
-    private final SerializationServiceImpl serializationService;
+
+    private final SerializationService serializationService;
+
     private final ConstructorFunction<Integer, ClassDefinitionContext> constructorFunction =
             new ConstructorFunction<Integer, ClassDefinitionContext>() {
                 public ClassDefinitionContext createNew(Integer arg) {
-                    return new ClassDefinitionContext();
+                    return new ClassDefinitionContext(arg);
                 }
             };
 
-    PortableContextImpl(SerializationServiceImpl serializationService, Collection<Integer> portableFactories,
-            int version) {
+    PortableContextImpl(SerializationService serializationService, int version) {
         this.serializationService = serializationService;
         this.version = version;
-
-        for (int factoryId : portableFactories) {
-            classDefContextMap.put(factoryId, new ClassDefinitionContext());
-        }
     }
 
     @Override
@@ -70,8 +70,52 @@ final class PortableContextImpl implements PortableContext {
     }
 
     @Override
-    public ClassDefinition lookup(int factoryId, int classId, int version) {
+    public ClassDefinition lookupClassDefinition(int factoryId, int classId, int version) {
         return getClassDefContext(factoryId).lookup(classId, version);
+    }
+
+    public ClassDefinition lookupClassDefinition(Data data) {
+        if (!data.isPortable()) {
+            throw new IllegalArgumentException("Data is not Portable!");
+        }
+
+        ByteOrder byteOrder = serializationService.getByteOrder();
+        return readClassDefinition(data, 0, byteOrder);
+    }
+
+    private ClassDefinition readClassDefinition(Data data, int start, ByteOrder order) {
+        int factoryId =  data.readIntHeader(start + HEADER_FACTORY_OFFSET, order);
+        int classId = data.readIntHeader(start + HEADER_CLASS_OFFSET, order);
+        int version = data.readIntHeader(start + HEADER_VERSION_OFFSET, order);
+        return lookupClassDefinition(factoryId, classId, version);
+    }
+
+    @Override
+    public boolean hasClassDefinition(Data data) {
+        if (data.isPortable()) {
+            return true;
+        }
+        return data.headerSize() > 0;
+    }
+
+    @Override
+    public ClassDefinition[] getClassDefinitions(Data data) {
+        if (data.headerSize() == 0) {
+            return null;
+        }
+
+        int len =  data.headerSize();
+        if (len % HEADER_ENTRY_LENGTH != 0) {
+            throw new AssertionError("Header length should be factor of " + HEADER_ENTRY_LENGTH);
+        }
+        int k = len / HEADER_ENTRY_LENGTH;
+
+        ByteOrder byteOrder = serializationService.getByteOrder();
+        ClassDefinition[] definitions = new ClassDefinition[k];
+        for (int i = 0; i < k; i++) {
+            definitions[i] = readClassDefinition(data, i * HEADER_ENTRY_LENGTH, byteOrder);
+        }
+        return definitions;
     }
 
     @Override
@@ -87,22 +131,14 @@ final class PortableContextImpl implements PortableContext {
     @Override
     public ClassDefinition lookupOrRegisterClassDefinition(Portable p) throws IOException {
         int portableVersion = PortableVersionHelper.getVersion(p, version);
-        ClassDefinition cd = lookup(p.getFactoryId(), p.getClassId(), portableVersion);
+        ClassDefinition cd = lookupClassDefinition(p.getFactoryId(), p.getClassId(), portableVersion);
         if (cd == null) {
-            ClassDefinitionWriter classDefinitionWriter = new ClassDefinitionWriter(this, p.getFactoryId(),
+            ClassDefinitionWriter writer = new ClassDefinitionWriter(this, p.getFactoryId(),
                     p.getClassId(), portableVersion);
-            p.writePortable(classDefinitionWriter);
-            cd = classDefinitionWriter.registerAndGet();
+            p.writePortable(writer);
+            cd = writer.registerAndGet();
         }
         return cd;
-    }
-
-    private void registerNestedDefinitions(ClassDefinitionImpl cd) {
-        Collection<ClassDefinition> nestedDefinitions = cd.getNestedClassDefinitions();
-        for (ClassDefinition classDefinition : nestedDefinitions) {
-            final ClassDefinitionImpl nestedCD = (ClassDefinitionImpl) classDefinition;
-            registerClassDefinition(nestedCD);
-        }
     }
 
     @Override
@@ -121,7 +157,8 @@ final class PortableContextImpl implements PortableContext {
                     if (fd == null) {
                         throw new IllegalArgumentException("Unknown field: " + name);
                     }
-                    currentClassDef = lookup(fd.getFactoryId(), fd.getClassId(), fd.getVersion());
+                    currentClassDef = lookupClassDefinition(fd.getFactoryId(), fd.getClassId(),
+                            currentClassDef.getVersion());
                     if (currentClassDef == null) {
                         throw new IllegalArgumentException("Not a registered Portable field: " + fd);
                     }
@@ -143,10 +180,20 @@ final class PortableContextImpl implements PortableContext {
         return serializationService.getManagedContext();
     }
 
-    private class ClassDefinitionContext {
+    @Override
+    public ByteOrder getByteOrder() {
+        return serializationService.getByteOrder();
+    }
 
+    private final class ClassDefinitionContext {
+
+        final int factoryId;
         final ConcurrentMap<Long, ClassDefinition> versionedDefinitions = new ConcurrentHashMap<Long, ClassDefinition>();
         final ConcurrentMap<Integer, Integer> currentClassVersions = new ConcurrentHashMap<Integer, Integer>();
+
+        private ClassDefinitionContext(int factoryId) {
+            this.factoryId = factoryId;
+        }
 
         int getClassVersion(int classId) {
             Integer version = currentClassVersions.get(classId);
@@ -174,40 +221,21 @@ final class PortableContextImpl implements PortableContext {
         }
 
         ClassDefinition create(byte[] compressedBinary) throws IOException {
-            if (compressedBinary == null || compressedBinary.length == 0) {
-                throw new IOException("Illegal class-definition binary! ");
-            }
-            final byte[] binary = getClassDefBinary(compressedBinary);
-            final ClassDefinitionImpl cd = new ClassDefinitionImpl();
-            cd.readData(serializationService.createObjectDataInput(binary));
-            if (cd.getVersion() < 0) {
-                throw new IOException("ClassDefinition version cannot be negative! -> " + cd);
-            }
-            cd.setBinary(compressedBinary);
+            ClassDefinition cd = toClassDefinition(compressedBinary);
             return register(cd);
-        }
-
-        private byte[] getClassDefBinary(byte[] compressedBinary) throws IOException {
-            final BufferObjectDataOutput out = serializationService.pop();
-            final byte[] binary;
-            try {
-                decompress(compressedBinary, out);
-                binary = out.toByteArray();
-            } finally {
-                serializationService.push(out);
-            }
-            return binary;
         }
 
         ClassDefinition register(ClassDefinition cd) {
             if (cd == null) {
                 return null;
             }
+            if (cd.getFactoryId() != factoryId) {
+                throw new HazelcastSerializationException("Invalid factory-id! " + factoryId + " -> " + cd);
+            }
             if (cd instanceof ClassDefinitionImpl) {
                 final ClassDefinitionImpl cdImpl = (ClassDefinitionImpl) cd;
                 cdImpl.setVersionIfNotSet(getVersion());
                 setClassDefBinary(cdImpl);
-                registerNestedDefinitions(cdImpl);
             }
             final long versionedClassId = combineToLong(cd.getClassId(), cd.getVersion());
             final ClassDefinition currentCd = versionedDefinitions.putIfAbsent(versionedClassId, cd);
@@ -227,23 +255,130 @@ final class PortableContextImpl implements PortableContext {
 
         private void setClassDefBinary(ClassDefinitionImpl cd) {
             if (cd.getBinary() == null) {
-                final BufferObjectDataOutput out = serializationService.pop();
                 try {
-                    cd.writeData(out);
-                    final byte[] binary = out.toByteArray();
-                    out.clear();
-                    compress(binary, out);
-                    cd.setBinary(out.toByteArray());
+                    byte[] binary = toClassDefinitionBinary(cd);
+                    cd.setBinary(binary);
                 } catch (IOException e) {
                     throw new HazelcastSerializationException(e);
-                } finally {
-                    serializationService.push(out);
                 }
             }
         }
+
+        private byte[] toClassDefinitionBinary(ClassDefinition cd) throws IOException {
+            BufferObjectDataOutput out = serializationService.pop();
+            try {
+                writeClassDefinition(cd, out);
+                byte[] binary = out.toByteArray();
+                out.clear();
+                compress(binary, out);
+                return out.toByteArray();
+            } finally {
+                serializationService.push(out);
+            }
+        }
+
+        private ClassDefinition toClassDefinition(byte[] compressedBinary) throws IOException {
+
+            if (compressedBinary == null || compressedBinary.length == 0) {
+                throw new IOException("Illegal class-definition binary! ");
+            }
+
+            BufferObjectDataOutput out = serializationService.pop();
+            byte[] binary;
+            try {
+                decompress(compressedBinary, out);
+                binary = out.toByteArray();
+            } finally {
+                serializationService.push(out);
+            }
+
+            ClassDefinitionImpl cd = readClassDefinition(serializationService.createObjectDataInput(binary));
+            if (cd.getVersion() < 0) {
+                throw new IOException("ClassDefinition version cannot be negative! -> " + cd);
+            }
+            cd.setBinary(compressedBinary);
+            return cd;
+        }
     }
 
-    static void compress(byte[] input, DataOutput out) throws IOException {
+    /**
+     * Writes a ClassDefinition to a stream.
+     *
+     * @param classDefinition ClassDefinition
+     * @param out             stream to write ClassDefinition
+     */
+    private static void writeClassDefinition(ClassDefinition classDefinition, ObjectDataOutput out) throws IOException {
+        ClassDefinitionImpl cd = (ClassDefinitionImpl) classDefinition;
+
+        out.writeInt(cd.getFactoryId());
+        out.writeInt(cd.getClassId());
+        out.writeInt(cd.getVersion());
+
+        Collection<FieldDefinition> fieldDefinitions = cd.getFieldDefinitions();
+        out.writeShort(fieldDefinitions.size());
+
+        for (FieldDefinition fieldDefinition : fieldDefinitions) {
+            writeFieldDefinition((FieldDefinitionImpl) fieldDefinition, out);
+        }
+    }
+
+    /**
+     * Reads a ClassDefinition from a stream.
+     *
+     * @param in stream to write ClassDefinition
+     * @return ClassDefinition
+     */
+    private static ClassDefinitionImpl readClassDefinition(ObjectDataInput in) throws IOException {
+        int factoryId = in.readInt();
+        int classId = in.readInt();
+        int version = in.readInt();
+
+        if (classId == 0) {
+            throw new IllegalArgumentException("Portable class id cannot be zero!");
+        }
+
+        ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId, version);
+        int len = in.readShort();
+
+        for (int i = 0; i < len; i++) {
+            FieldDefinitionImpl fd = readFieldDefinition(in);
+            cd.addFieldDef(fd);
+        }
+
+        return cd;
+    }
+
+    /**
+     * Writes a FieldDefinition to a stream.
+     *
+     * @param fd FieldDefinition
+     * @param out             stream to write FieldDefinition
+     */
+    private static void writeFieldDefinition(FieldDefinitionImpl fd, ObjectDataOutput out) throws IOException {
+        out.writeInt(fd.index);
+        out.writeUTF(fd.fieldName);
+        out.writeByte(fd.type.getId());
+        out.writeInt(fd.factoryId);
+        out.writeInt(fd.classId);
+    }
+
+    /**
+     * Reads a FieldDefinition from a stream.
+     *
+     * @param in stream to write FieldDefinition
+     * @return FieldDefinition
+     */
+    private static FieldDefinitionImpl readFieldDefinition(ObjectDataInput in) throws IOException {
+        int index = in.readInt();
+        String name = in.readUTF();
+        byte typeId = in.readByte();
+        int factoryId = in.readInt();
+        int classId = in.readInt();
+
+        return new FieldDefinitionImpl(index, name, FieldType.get(typeId), factoryId, classId);
+    }
+
+    private static void compress(byte[] input, DataOutput out) throws IOException {
         Deflater deflater = new Deflater();
         deflater.setLevel(Deflater.DEFAULT_COMPRESSION);
         deflater.setStrategy(Deflater.FILTERED);
@@ -257,7 +392,7 @@ final class PortableContextImpl implements PortableContext {
         deflater.end();
     }
 
-    static void decompress(byte[] compressedData, DataOutput out) throws IOException {
+    private static void decompress(byte[] compressedData, DataOutput out) throws IOException {
         Inflater inflater = new Inflater();
         inflater.setInput(compressedData);
         byte[] buf = new byte[COMPRESSION_BUFFER_LENGTH];
@@ -271,4 +406,5 @@ final class PortableContextImpl implements PortableContext {
         }
         inflater.end();
     }
+
 }

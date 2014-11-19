@@ -49,7 +49,7 @@ public class MapGetAllOperationFactory implements OperationFactory {
         out.writeUTF(name);
         out.writeInt(keys.size());
         for (Data key : keys) {
-            key.writeData(out);
+            out.writeData(key);
         }
     }
 
@@ -58,8 +58,7 @@ public class MapGetAllOperationFactory implements OperationFactory {
         name = in.readUTF();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             keys.add(data);
         }
     }

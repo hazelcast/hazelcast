@@ -1,11 +1,11 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
@@ -42,22 +42,22 @@ class ClusterListenerThread extends Thread {
 
     private static final ILogger LOGGER = Logger.getLogger(ClusterListenerThread.class);
     private static final int SLEEP_TIME = 1000;
+
     protected final List<MemberImpl> members = new LinkedList<MemberImpl>();
     protected ClientClusterServiceImpl clusterService;
     private volatile ClientConnection conn;
     private final CountDownLatch latch = new CountDownLatch(1);
     private final Collection<AddressProvider> addressProviders;
-    private HazelcastClient client;
+    private HazelcastClientInstanceImpl client;
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
-
 
     public ClusterListenerThread(ThreadGroup group, String name, Collection<AddressProvider> addressProviders) {
         super(group, name);
         this.addressProviders = addressProviders;
     }
 
-    public void init(HazelcastClient client) {
+    public void init(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.connectionManager = client.getConnectionManager();
         this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
@@ -79,7 +79,10 @@ class ClusterListenerThread extends Thread {
                     try {
                         conn = connectToOne();
                     } catch (Exception e) {
-                        LOGGER.severe("Error while connecting to cluster!", e);
+                        if (client.getLifecycleService().isRunning()) {
+                            LOGGER.severe("Error while connecting to cluster!", e);
+                        }
+
                         client.getLifecycleService().shutdown();
                         latch.countDown();
                         return;
@@ -91,7 +94,7 @@ class ClusterListenerThread extends Thread {
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {
                     if (LOGGER.isFinestEnabled()) {
-                        LOGGER.warning("Error while listening cluster events! -> " + conn, e);
+                        LOGGER.finest("Error while listening cluster events! -> " + conn, e);
                     } else {
                         LOGGER.warning("Error while listening cluster events! -> " + conn + ", Error: " + e.toString());
                     }
@@ -266,7 +269,7 @@ class ClusterListenerThread extends Thread {
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             LOGGER.warning(
                     String.format("Unable to get alive cluster connection,"
-                                    + " try in %d ms later, attempt %d of %d.",
+                            + " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
             if (remainingTime > 0) {

@@ -30,7 +30,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Get all keys from Cache.
+ * Gets all keys from the cache.
+ * <p>{@link com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory} creates this operation.</p>
+ * <p>Functionality: Filters out the partition keys and calls
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAll(java.util.Set, javax.cache.expiry.ExpiryPolicy)}</p>
  */
 public class CacheGetAllOperation
         extends PartitionWideCacheOperation
@@ -75,6 +78,7 @@ public class CacheGetAllOperation
     @Override
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
+        //TODO not used validate and remove !!
         super.writeInternal(out);
         out.writeObject(expiryPolicy);
         if (keys == null) {
@@ -82,7 +86,7 @@ public class CacheGetAllOperation
         } else {
             out.writeInt(keys.size());
             for (Data key : keys) {
-                key.writeData(out);
+                out.writeData(key);
             }
         }
     }
@@ -90,14 +94,14 @@ public class CacheGetAllOperation
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
+        //TODO not used validate and remove !!
         super.readInternal(in);
         expiryPolicy = in.readObject();
         int size = in.readInt();
         if (size > -1) {
             for (int i = 0; i < size; i++) {
-                Data data = new Data();
-                data.readData(in);
-                keys.add(data);
+                Data key = in.readData();
+                keys.add(key);
             }
         }
     }

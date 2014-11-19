@@ -278,13 +278,19 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
         backupProcessor.processBackup(entry);
     }
 
-    protected Object getValueFor(Data dataKey) {
-        return recordStore.getMapEntry(dataKey).getValue();
+    protected Object getValueFor(Data dataKey, long now) {
+        final Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(dataKey, now);
+        return mapEntry.getValue();
     }
 
     protected boolean keyNotOwnedByThisPartition(Data key) {
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         return partitionService.getPartitionId(key) != getPartitionId();
+    }
+
+    protected void evict(boolean backup) {
+        final long now = Clock.currentTimeMillis();
+        recordStore.evictEntries(now, backup);
     }
 
 }
