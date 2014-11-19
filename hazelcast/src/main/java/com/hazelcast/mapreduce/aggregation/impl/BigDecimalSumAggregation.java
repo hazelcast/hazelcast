@@ -133,7 +133,7 @@ public class BigDecimalSumAggregation<Key, Value>
     private static final class BigDecimalSumReducer
             extends Reducer<BigDecimal, BigDecimal> {
 
-        private volatile BigDecimal sum = BigDecimal.ZERO;
+        private BigDecimal sum = BigDecimal.ZERO;
 
         @Override
         public void reduce(BigDecimal value) {

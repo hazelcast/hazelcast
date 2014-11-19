@@ -136,8 +136,8 @@ public class DoubleAvgAggregation<Key, Value>
     private static final class DoubleAvgReducer
             extends Reducer<AvgTuple<Long, Double>, AvgTuple<Long, Double>> {
 
-        private volatile long count;
-        private volatile double amount;
+        private long count;
+        private double amount;
 
         @Override
         public void reduce(AvgTuple<Long, Double> value) {
