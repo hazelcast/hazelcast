@@ -49,27 +49,28 @@
                     <hz:interface>127.0.0.1</hz:interface>
                 </hz:interfaces>
             </hz:network>
-            <hz:cache name="cache1" async-backup-count="1" backup-count="2"
+            <hz:cache name="cache1"
+                      async-backup-count="1"
+                      backup-count="2"
                       key-type="java.lang.Integer"
                       value-type="java.lang.String"
                       statistics-enabled="true"
                       management-enabled="true"
                       read-through="true"
-                      write-through="false"
+                      write-through="true"
                       cache-loader-factory="com.hazelcast.cache.MyCacheLoaderFactory"
                       cache-writer-factory="com.hazelcast.cache.MyCacheWriterFactory"
                       expiry-policy-factory="com.hazelcast.cache.MyExpiryPolicyFactory"
-                      in-memory-format="BINARY"
-                      eviction-threshold-percentage="20"
+                      in-memory-format="OBJECT"
                       eviction-percentage="20"
                       eviction-policy="LRU">
-                <hz:cache-entry-listeners>
-                    <hz:cache-entry-listener cache-entry-event-filter-factory="om.hazelcast.cache.MyCacheFilterFactory"
-                                             cache-entry-listener-factory="om.hazelcast.cache.MyCacheListenerFactory"
-                                             old-value-required="false" synchronous="false" />
-                </hz:cache-entry-listeners>
-                      </hz:cache>
-
+                    <hz:max-size policy="USED_HEAP_PERCENTAGE">50</hz:max-size>
+                    <hz:cache-entry-listeners>
+                        <hz:cache-entry-listener cache-entry-event-filter-factory="om.hazelcast.cache.MyCacheFilterFactory"
+                                                 cache-entry-listener-factory="om.hazelcast.cache.MyCacheListenerFactory"
+                                                 old-value-required="false" synchronous="false" />
+                    </hz:cache-entry-listeners>
+            </hz:cache>
         </hz:config>
     </hz:hazelcast>
 

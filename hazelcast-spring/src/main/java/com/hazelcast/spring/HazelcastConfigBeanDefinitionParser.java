@@ -487,6 +487,20 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final String name = getTextContent(attName);
             fillAttributeValues(node, cacheConfigBuilder);
             for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                if ("max-size".equals(cleanNodeName(childNode))) {
+                    final MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
+                    final Node maxSizePolicy = childNode.getAttributes().getNamedItem("policy");
+                    if (maxSizePolicy != null) {
+                        maxSizeConfig.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(
+                                getTextContent(maxSizePolicy))));
+                    }
+                    final String value = getTextContent(childNode).trim();
+                    final long size = value != null ? Long.parseLong(value) : 0;
+                    if (size > 0) {
+                        maxSizeConfig.setSize(size);
+                    }
+                    cacheConfigBuilder.addPropertyValue("maxSizeConfig", maxSizeConfig);
+                }
                 if ("cache-entry-listeners".equals(cleanNodeName(childNode))) {
                     ManagedList listeners = new ManagedList();
                     for (Node listenerNode : new IterableNodeList(childNode.getChildNodes(), Node.ELEMENT_NODE)) {
