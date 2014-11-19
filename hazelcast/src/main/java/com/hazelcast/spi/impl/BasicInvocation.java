@@ -84,10 +84,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
      */
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
 
-    private static final int TEN_FACTOR = 10;
-    private static final int NINETY_NINE_COUNT = 99;
-    private static final int INVOKE_COUNT_FIVE = 5;
-
     private static final AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
 

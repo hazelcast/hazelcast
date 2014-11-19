@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Callback;
@@ -119,7 +120,12 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                 //it can be that this invocation future already received an answer, e.g. when a an invocation
                 //already received a response, but before it cleans up itself, it receives a
                 //HazelcastInstanceNotActiveException.
-                basicInvocation.logger.info("The InvocationFuture.set method of " + basicInvocation + " can only be called once");
+
+                ILogger logger = basicInvocation.logger;
+                if (logger.isFinestEnabled()) {
+                    logger.info("Future response is already set! Current response: "
+                            + response + ", Offered response: " + offeredResponse + ", Invocation: " + basicInvocation);
+                }
                 return;
             }
 
@@ -232,10 +238,9 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
                 boolean executing = isOperationExecuting(target);
                 if (!executing) {
-                    if (response != null) {
-                        continue;
-                    }
-                    return newOperationTimeoutException(pollCount, pollTimeoutMs);
+                    Object operationTimeoutException = newOperationTimeoutException(pollCount, pollTimeoutMs);
+                    // tries to set an OperationTimeoutException response if response is not set yet
+                    set(operationTimeoutException);
                 }
             }
         }
@@ -413,6 +418,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     public String toString() {
         final StringBuilder sb = new StringBuilder("BasicInvocationFuture{");
         sb.append("invocation=").append(basicInvocation.toString());
+        sb.append(", response=").append(response);
         sb.append(", done=").append(isDone());
         sb.append('}');
         return sb.toString();
