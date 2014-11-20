@@ -20,6 +20,7 @@ import com.hazelcast.map.impl.client.MapAddEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapAddEntryListenerSqlRequest;
 import com.hazelcast.map.impl.client.MapAddIndexRequest;
 import com.hazelcast.map.impl.client.MapAddInterceptorRequest;
+import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapClearRequest;
 import com.hazelcast.map.impl.client.MapContainsKeyRequest;
 import com.hazelcast.map.impl.client.MapContainsValueRequest;
@@ -67,6 +68,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.util.ConstructorFunction;
+
 import java.util.Collection;
 
 /**
@@ -121,6 +123,7 @@ public class MapPortableHook implements PortableHook {
     public static final int LOAD_ALL_GIVEN_KEYS = 47;
     public static final int LOAD_ALL_KEYS = 48;
     public static final int IS_EMPTY = 49;
+    public static final int ADD_NEAR_CACHE_ENTRY_LISTENER = 50;
 
     public int getFactoryId() {
         return F_ID;
@@ -128,7 +131,8 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[IS_EMPTY + 1];
+            final ConstructorFunction<Integer, Portable>[] constructors
+                    = new ConstructorFunction[ADD_NEAR_CACHE_ENTRY_LISTENER + 1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -397,6 +401,12 @@ public class MapPortableHook implements PortableHook {
                 constructors[IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapIsEmptyRequest();
+                    }
+                };
+
+                constructors[ADD_NEAR_CACHE_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapAddNearCacheEntryListenerRequest();
                     }
                 };
             }

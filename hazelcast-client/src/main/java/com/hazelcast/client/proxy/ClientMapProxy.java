@@ -36,8 +36,8 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapValueCollection;
 import com.hazelcast.map.impl.SimpleEntryView;
@@ -65,6 +65,7 @@ import com.hazelcast.map.impl.client.MapKeySetRequest;
 import com.hazelcast.map.impl.client.MapLoadAllKeysRequest;
 import com.hazelcast.map.impl.client.MapLoadGivenKeysRequest;
 import com.hazelcast.map.impl.client.MapLockRequest;
+import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapPutAllRequest;
 import com.hazelcast.map.impl.client.MapPutIfAbsentRequest;
 import com.hazelcast.map.impl.client.MapPutRequest;
@@ -952,7 +953,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
-        for(K key : keys) {
+        for (K key : keys) {
             dataKeys.add(toData(key));
         }
 
@@ -1127,7 +1128,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     private void addNearCacheInvalidateListener() {
         try {
-            ClientRequest request = new MapAddEntryListenerRequest(name, false);
+            ClientRequest request = new MapAddNearCacheEntryListenerRequest(name, false);
             EventHandler handler = new EventHandler<PortableEntryEvent>() {
                 @Override
                 public void handle(PortableEntryEvent event) {
