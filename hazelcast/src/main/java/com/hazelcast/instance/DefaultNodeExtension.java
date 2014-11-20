@@ -22,8 +22,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.management.DefaultTimedMemberStateFactory;
-import com.hazelcast.management.TimedMemberStateFactory;
+import com.hazelcast.memory.DefaultMemoryStats;
+import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -50,6 +50,8 @@ public class DefaultNodeExtension implements NodeExtension {
     protected volatile Node node;
     protected volatile ILogger logger;
     protected volatile ILogger systemLogger;
+
+    private final MemoryStats memoryStats = new DefaultMemoryStats();
 
     @Override
     public void beforeStart(Node node) {
@@ -132,11 +134,6 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public TimedMemberStateFactory getTimedMemberStateFactory() {
-        return new DefaultTimedMemberStateFactory(node.hazelcastInstance);
-    }
-
-    @Override
     public MemberSocketInterceptor getMemberSocketInterceptor() {
         logger.warning("SocketInterceptor feature is only available on Hazelcast Enterprise!");
         return null;
@@ -163,6 +160,11 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void onThreadStop(Thread thread) {
+    }
+
+    @Override
+    public MemoryStats getMemoryStats() {
+        return memoryStats;
     }
 
     @Override
