@@ -6,9 +6,9 @@
 ![](images/enterprise-onlycopy.jpg)
 
 
-You can use native .NET client to connect to Hazelcast nodes. All you need is to add `HazelcastClient3x.dll` into your .NET project references. The API is very similar to Java native client. 
+You can use the native .NET client to connect to Hazelcast nodes. All you need is to add `HazelcastClient3x.dll` into your .NET project references. The API is very similar to the Java native client. 
 
-.NET Client has following distributed objects:
+.NET Client has the following distributed objects.
 
 * `IMap<K,V>`
 * `IMultiMap<K,V>`
@@ -23,17 +23,17 @@ You can use native .NET client to connect to Hazelcast nodes. All you need is to
 * `IAtomicLong`
 * `ITransactionContext`
 	
-ITransactionContext can be used to obtain;
+ITransactionContext can be used to obtain:
 
-* `ITransactionalMap<K,V>`
-* `ITransactionalMultiMap<K,V>`
-* `ITransactionalList<E>`
-* `ITransactionalSet<E>`
-
-
+* `ITransactionalMap<K,V>`,
+* `ITransactionalMultiMap<K,V>`,
+* `ITransactionalList<E>`, and
+* `ITransactionalSet<E>`.
 
 
-Sample code is shown below.
+
+
+A code example is shown below.
 
 ```csharp
 using Hazelcast.Config;
@@ -127,13 +127,13 @@ namespace Hazelcast.Client.Example
 
 
 ### Client Configuration
-Hazelcast .NET client can be configured via API or XML. To start the client, a configuration can be passed or can be left empty to use default values.
+You can configure the Hazelcast .NET client via API or XML. To start the client, you can pass a configuration or leave it empty to use default values.
 
 ![image](images/NoteSmall.jpg) ***NOTE***: *.NET and Java clients are similar in terms of configuration. Therefore, you can refer to [Java Client](#java-client) section for configuration aspects. For information on .NET API documentation, please refer to the API document provided along with the Hazelcast Enterprise license*.
 
 
 ### Client Startup
-After configuration, one can obtain a client using one of the static methods of Hazelcast like as shown below.
+After configuration, you can obtain a client using one of the static methods of Hazelcast, as shown below.
 
 
 ```csharp
@@ -150,7 +150,7 @@ IHazelcastInstance xmlConfClient = Hazelcast
     .NewHazelcastClient(@"..\Hazelcast.Net\Resources\hazelcast-client.xml");
 ```
 
-IHazelcastInstance interface is the starting point where all distributed objects can be obtained using it.
+The `IHazelcastInstance` interface is the starting point where all distributed objects can be obtained.
 
 ```csharp
 var map = client.GetMap<int,string>("mapName");

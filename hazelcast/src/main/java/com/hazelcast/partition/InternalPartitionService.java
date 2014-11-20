@@ -164,4 +164,8 @@ public interface InternalPartitionService extends CoreService {
 
     com.hazelcast.core.PartitionService getPartitionServiceProxy();
 
+    int getPartitionStateVersion();
+
+    boolean hasOnGoingMigrationLocal();
+
 }
