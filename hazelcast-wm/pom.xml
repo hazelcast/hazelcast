@@ -35,7 +35,7 @@
     <properties>
         <jsp.api.version>2.2.1</jsp.api.version>
         <servlet.api.version>3.0.1</servlet.api.version>
-        <org.springframework.version>3.1.0.RELEASE</org.springframework.version>
+        <org.springframework.version>3.2.1.RELEASE</org.springframework.version>
         <jetty.maven.plugin.version>8.1.2.v20120308</jetty.maven.plugin.version>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
@@ -250,19 +250,19 @@
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-catalina</artifactId>
-            <version>7.0.54</version>
+            <version>8.0.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-util</artifactId>
-            <version>7.0.54</version>
+            <version>8.0.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>7.0.54</version>
+            <version>8.0.9</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

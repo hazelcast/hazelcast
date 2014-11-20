@@ -448,7 +448,7 @@ public class WebFilter implements Filter {
         if (!(req instanceof HttpServletRequest)) {
             chain.doFilter(req, res);
         } else {
-            if (req instanceof RequestWrapper) {
+            if (isInstanceOfRequestWrapper(req)) {
                 LOGGER.finest("Request is instance of RequestWrapper! Continue...");
                 chain.doFilter(req, res);
                 return;
@@ -472,6 +472,22 @@ public class WebFilter implements Filter {
                 session.sessionDeferredWrite();
             }
         }
+    }
+
+    private boolean isInstanceOfRequestWrapper(ServletRequest req) {
+        boolean isInstanceOfRequestWrapper = false;
+        if (req instanceof RequestWrapper) {
+            isInstanceOfRequestWrapper = true;
+        } else {
+            if (req instanceof HttpServletRequestWrapper) {
+                HttpServletRequestWrapper wrapper = (HttpServletRequestWrapper) req;
+                ServletRequest wrappedRequest = wrapper.getRequest();
+                if (wrappedRequest != null && isInstanceOfRequestWrapper(wrappedRequest)) {
+                    isInstanceOfRequestWrapper = true;
+                }
+            }
+        }
+        return isInstanceOfRequestWrapper;
     }
 
     public final void destroy() {
@@ -608,6 +624,11 @@ public class WebFilter implements Filter {
                 prepareReloadingSession(hazelcastSession);
             }
             return hazelcastSession;
+        }
+
+        public String changeSessionId() {
+            HazelcastHttpSession newSession = getSession(true);
+            return newSession.getOriginalSessionId();
         }
     } // END of RequestWrapper
 

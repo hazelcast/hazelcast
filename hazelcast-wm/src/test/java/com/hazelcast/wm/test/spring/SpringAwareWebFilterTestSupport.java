@@ -99,8 +99,7 @@ public abstract class SpringAwareWebFilterTestSupport extends AbstractWebFilterT
                 RequestType.POST_REQUEST,
                 SPRING_SECURITY_LOGIN_URL + "?" +
                     SPRING_SECURITY_LOGIN_USERNAME_PARAM + "=" + username + "&" +
-                    SPRING_SECURITY_LOGIN_PASSWORD_PARAM + "=" + password + "&" +
-                    SPRING_SECURITY_REMEMBER_ME_PARAM + "=" + "true",
+                    SPRING_SECURITY_LOGIN_PASSWORD_PARAM + "=" + password,
                 serverPort1, springSecuritySession.cookieStore);
         springSecuritySession.lastResponse = response;
         return springSecuritySession;

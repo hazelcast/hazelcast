@@ -20,6 +20,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.wm.test.JettyServer;
 import com.hazelcast.wm.test.ServletContainer;
+import com.hazelcast.wm.test.TomcatServer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,7 +38,7 @@ public class SpringAwareWebFilterTest extends SpringAwareWebFilterTestSupport {
 
     @Override
     protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception{
-        return new JettyServer(port,sourceDir,serverXml);
+        return new TomcatServer(port,sourceDir,serverXml);
     }
 
     @Test
@@ -78,6 +79,12 @@ public class SpringAwareWebFilterTest extends SpringAwareWebFilterTestSupport {
             "Hazelcast session must not exist in both Spring session registry of Node-1 and Node-2 after logout",
             sessionRegistry1.getSessionInformation(hazelcastSessionId) == null &&
                  sessionRegistry2.getSessionInformation(hazelcastSessionId) == null);
+    }
+
+    @Test
+    public void test_issue_3742() throws Exception {
+        SpringSecuritySession sss = login(null);
+        logout(sss);
     }
 
 }
