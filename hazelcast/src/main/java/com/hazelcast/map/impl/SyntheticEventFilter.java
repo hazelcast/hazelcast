@@ -24,7 +24,7 @@ import com.hazelcast.spi.EventFilter;
 import java.io.IOException;
 
 /**
- * Wrapper class for synthetic events.
+ * Wrapper class for a filter which does not want to receive synthetic events.
  * <p/>
  * Synthetic events are caused by map internals such as eviction or expiration;
  * other events are natural events like an explicit call to {@link com.hazelcast.core.IMap#put}
