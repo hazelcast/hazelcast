@@ -577,6 +577,11 @@ public class ListenerTest extends HazelcastTestSupport {
         }
 
         @Override
+        public void entryMerged(EntryEvent<Object, Object> objectObjectEntryEvent) {
+            evictCount.incrementAndGet();
+        }
+
+        @Override
         public void mapEvicted(MapEvent event) {
         }
 

@@ -4,8 +4,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
@@ -30,6 +33,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 
 import static org.junit.Assert.assertEquals;
@@ -216,7 +220,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
         });
     }
 
-
     private void assertKeysIn(final HazelcastInstance[] cluster, final String mapName, final int start, final int end) {
         assertTrueEventually(new AssertTask() {
             public void run() {
@@ -239,6 +242,15 @@ public class WanReplicationTest extends HazelcastTestSupport {
                 assertTrue(checkKeysNotIn(cluster, mapName, start, end));
             }
         }, ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
+    }
+
+    private void assertCountDownLatchEventually(final CountDownLatch countDownLatch) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                countDownLatch.await();
+            }
+        });
     }
 
 
@@ -529,6 +541,64 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
         assertKeysIn(clusterC, "map", 0, 1000);
         assertDataSizeEventually(clusterC, "map", 1000);
+    }
+
+    // https://github.com/hazelcast/hazelcast/issues/2981
+    @Test
+    public void willFireNewOnMergeEventAtReceivingCluster(){
+
+        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
+
+        initClusterA();
+        initClusterB();
+
+        IMap<String,String> map = clusterB[0].getMap("map");
+        final CountDownLatch mergeEventFiredCounter = new CountDownLatch(100);
+
+        map.addEntryListener(new EntryListener<String, String>() {
+            @Override
+            public void entryAdded(EntryEvent<String, String> event) {
+
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<String, String> event) {
+
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent<String, String> event) {
+
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent<String, String> event) {
+
+            }
+
+            @Override
+            public void entryMerged(EntryEvent<String, String> event) {
+                mergeEventFiredCounter.countDown();
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+
+            }
+        },true);
+
+        createDataIn(clusterA, "map", 0, 1000);
+
+        assertKeysIn(clusterB, "map", 0, 1000);
+        assertDataSizeEventually(clusterB, "map", 1000);
+        assertCountDownLatchEventually(mergeEventFiredCounter);
+
+
     }
 
 

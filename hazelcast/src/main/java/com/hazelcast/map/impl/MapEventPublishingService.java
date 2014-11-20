@@ -76,7 +76,7 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
     private DataAwareEntryEvent createDataAwareEntryEvent(EntryEventData entryEventData, Member member) {
         return new DataAwareEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
                 entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(),
-                nodeEngine.getSerializationService());
+                entryEventData.getDataMergingValue(), nodeEngine.getSerializationService());
     }
 
     private void dispatch0(IMapEvent event, EntryListener listener) {
@@ -98,6 +98,9 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
                 break;
             case CLEAR_ALL:
                 listener.mapCleared((MapEvent) event);
+                break;
+            case MERGED:
+                listener.entryMerged((EntryEvent) event);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid event type: " + event.getEventType());

@@ -48,19 +48,65 @@ class MapEventPublisherSupport implements MapEventPublisher {
         final String source = nodeEngine.getThisAddress().toString();
         final MapEventData mapEventData = new MapEventData(source, mapName, caller,
                 eventType.getType(), numberOfEntriesAffected);
-        nodeEngine.getEventService().publishEvent(mapServiceContext.serviceName(),
-                registrations, mapEventData, mapName.hashCode());
+        nodeEngine.getEventService().publishEvent(mapServiceContext.serviceName(), registrations, mapEventData,
+                mapName.hashCode());
+
+    }
+
+    @Override
+    public void publishMergeEvent(Address caller, String mapName, EntryEventType eventType, Data dataKey, Data dataOldValue,
+                                  Data dataValue, Data dataMergingValue) {
+
+        Registrations registrations = getRegistrations(mapName, eventType, dataKey, dataOldValue, dataValue);
+
+        if (registrations.isEmpty()) {
+            return;
+        }
+
+        final EntryEventData eventData = createEntryEventData(mapName, caller, dataKey, dataValue, dataOldValue, dataMergingValue,
+                eventType.getType());
+
+        publishToRegistrars(dataKey, registrations, eventData);
 
     }
 
     public void publishEvent(Address caller, String mapName, EntryEventType eventType,
                              final Data dataKey, Data dataOldValue, Data dataValue) {
-        final Collection<EventRegistration> candidates = getCandidates(mapName);
-        if (candidates.isEmpty()) {
+
+        Registrations registrations = getRegistrations(mapName, eventType, dataKey, dataOldValue, dataValue);
+
+        if (registrations.isEmpty()) {
             return;
         }
-        final Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
-        final Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
+
+        final EntryEventData eventData = createEntryEventData(mapName, caller, dataKey, dataValue, dataOldValue,
+                eventType.getType());
+
+        publishToRegistrars(dataKey, registrations, eventData);
+    }
+
+    private void publishToRegistrars(Data dataKey, Registrations registrations, EntryEventData eventData) {
+        final int orderKey = pickOrderKey(dataKey);
+        publishWithValue(registrations, eventData, orderKey);
+        publishWithoutValue(registrations, eventData, orderKey);
+    }
+
+    private Registrations getRegistrations(String mapName, EntryEventType eventType, Data dataKey, Data dataOldValue,
+                                           Data dataValue) {
+        final Collection<EventRegistration> candidates = getCandidates(mapName);
+        if (candidates.isEmpty()) {
+            return new Registrations();
+        }
+
+        return generateRegistrations(eventType, dataKey, dataOldValue, dataValue, candidates);
+
+    }
+
+    private Registrations generateRegistrations(EntryEventType eventType, Data dataKey, Data dataOldValue, Data dataValue,
+                                       Collection<EventRegistration> candidates) {
+
+        Registrations registrations = new Registrations();
+
         // iterate on candidates.
         for (final EventRegistration candidate : candidates) {
             Result result = Result.NONE;
@@ -72,16 +118,10 @@ class MapEventPublisherSupport implements MapEventPublisher {
             } else if (filter.eval(dataKey)) {
                 result = processEntryEventFilter(filter);
             }
-            registerCandidate(result, candidate, registrationsWithValue, registrationsWithoutValue);
+            registrations.addRegistration(result, candidate);
         }
-        if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty()) {
-            return;
-        }
-        final EntryEventData eventData = createEntryEventData(mapName, caller,
-                dataKey, dataValue, dataOldValue, eventType.getType());
-        final int orderKey = pickOrderKey(dataKey);
-        publishWithValue(registrationsWithValue, eventData, orderKey);
-        publishWithoutValue(registrationsWithoutValue, eventData, orderKey);
+
+        return registrations;
     }
 
     private boolean emptyFilter(EventFilter filter) {
@@ -101,33 +141,16 @@ class MapEventPublisherSupport implements MapEventPublisher {
         return key == null ? -1 : key.hashCode();
     }
 
-
-    private void registerCandidate(Result result, EventRegistration candidate, Set<EventRegistration> registrationsWithValue,
-                                   Set<EventRegistration> registrationsWithoutValue) {
-        switch (result) {
-            case VALUE_INCLUDED:
-                registrationsWithValue.add(candidate);
-                break;
-            case NO_VALUE_INCLUDED:
-                registrationsWithoutValue.add(candidate);
-                break;
-            case NONE:
-                break;
-            default:
-                throw new IllegalArgumentException("Not a known result type [" + result + "]");
-        }
-    }
-
-    private void publishWithValue(Set<EventRegistration> registrationsWithValue, EntryEventData event, int orderKey) {
+    private void publishWithValue(Registrations registrations, EntryEventData event, int orderKey) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         nodeEngine.getEventService().publishEvent(mapServiceContext.serviceName(),
-                registrationsWithValue, event, orderKey);
+                registrations.getRegistrationsWithValue(), event, orderKey);
     }
 
-    private void publishWithoutValue(Set<EventRegistration> registrationsWithoutValue, EntryEventData event, int orderKey) {
+    private void publishWithoutValue(Registrations registrations, EntryEventData event, int orderKey) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         nodeEngine.getEventService().publishEvent(mapServiceContext.serviceName(),
-                registrationsWithoutValue, event.cloneWithoutValues(), orderKey);
+                registrations.getRegistrationsWithoutValue(), event.cloneWithoutValues(), orderKey);
     }
 
     private Result processEmptyFilter() {
@@ -166,17 +189,58 @@ class MapEventPublisherSupport implements MapEventPublisher {
         }
     }
 
-
     private EntryEventData createEntryEventData(String mapName, Address caller,
-                                                Data dataKey, Data dataNewValue, Data dataOldValue, int eventType) {
+                                                     Data dataKey, Data dataNewValue, Data dataOldValue, int eventType) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         return new EntryEventData(nodeEngine.getThisAddress().toString(), mapName, caller,
                 dataKey, dataNewValue, dataOldValue, eventType);
+    }
+
+    private EntryEventData createEntryEventData(String mapName, Address caller,
+                                                Data dataKey, Data dataNewValue, Data dataOldValue, Data dataMergingValue,
+                                                int eventType) {
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        return new EntryEventData(nodeEngine.getThisAddress().toString(), mapName, caller,
+                dataKey, dataNewValue, dataOldValue, dataMergingValue, eventType);
     }
 
     private static enum Result {
         VALUE_INCLUDED,
         NO_VALUE_INCLUDED,
         NONE
+    }
+
+    private class Registrations {
+
+        private Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
+        private Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
+
+        public Set<EventRegistration> getRegistrationsWithValue() {
+            return registrationsWithValue;
+        }
+
+        public Set<EventRegistration> getRegistrationsWithoutValue() {
+            return registrationsWithoutValue;
+        }
+
+        public void addRegistration(Result result, EventRegistration candidate) {
+            switch (result) {
+                case VALUE_INCLUDED:
+                    registrationsWithValue.add(candidate);
+                    break;
+                case NO_VALUE_INCLUDED:
+                    registrationsWithoutValue.add(candidate);
+                    break;
+                case NONE:
+                    break;
+                default:
+                    throw new IllegalArgumentException("Not a known result type [" + result + "]");
+            }
+        }
+
+        public boolean isEmpty() {
+            return (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty());
+        }
+
     }
 }

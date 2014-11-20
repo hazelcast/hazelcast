@@ -31,6 +31,7 @@ public class PortableEntryEvent implements Portable {
     private Data key;
     private Data value;
     private Data oldValue;
+    private Data mergingValue;
     private EntryEventType eventType;
     private String uuid;
     private int numberOfAffectedEntries = 1;
@@ -38,10 +39,11 @@ public class PortableEntryEvent implements Portable {
     public PortableEntryEvent() {
     }
 
-    public PortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, String uuid) {
+    public PortableEntryEvent(Data key, Data value, Data oldValue, Data mergingValue, EntryEventType eventType, String uuid) {
         this.key = key;
         this.value = value;
         this.oldValue = oldValue;
+        this.mergingValue = mergingValue;
         this.eventType = eventType;
         this.uuid = uuid;
     }
@@ -63,6 +65,10 @@ public class PortableEntryEvent implements Portable {
 
     public Data getOldValue() {
         return oldValue;
+    }
+
+    public Data getMergingValue() {
+        return mergingValue;
     }
 
     public EntryEventType getEventType() {
@@ -100,6 +106,7 @@ public class PortableEntryEvent implements Portable {
         out.writeData(key);
         out.writeData(value);
         out.writeData(oldValue);
+        out.writeData(mergingValue);
     }
 
     @Override
@@ -112,5 +119,6 @@ public class PortableEntryEvent implements Portable {
         key = in.readData();
         value = in.readData();
         oldValue = in.readData();
+        mergingValue = in.readData();
     }
 }

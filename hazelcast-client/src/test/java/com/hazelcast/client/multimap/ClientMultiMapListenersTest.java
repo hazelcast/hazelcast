@@ -340,6 +340,10 @@ public class ClientMultiMapListenersTest {
             }
         }
 
+        @Override
+        public void entryMerged(EntryEvent event) {
+        }
+
         public void entryEvicted(EntryEvent event) {
             if (event.getValue() != null) {
                 evictLatch.countDown();
@@ -388,6 +392,10 @@ public class ClientMultiMapListenersTest {
             if (event.getValue() == null) {
                 evictLatch.countDown();
             }
+        }
+
+        @Override
+        public void entryMerged(EntryEvent event) {
         }
 
         @Override
