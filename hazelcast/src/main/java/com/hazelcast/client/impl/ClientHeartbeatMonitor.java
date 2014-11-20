@@ -61,10 +61,6 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     private void monitor(String memberUuid, ClientEndpointImpl clientEndpoint) {
-        if (clientEndpoint.isFirstConnection()) {
-            return;
-        }
-
         final Connection connection = clientEndpoint.getConnection();
         final long lastTimePackageReceived = connection.lastReadTime();
         final long timeoutInMillis = TimeUnit.SECONDS.toMillis(heartbeatTimeoutSeconds);

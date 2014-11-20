@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 
+import java.net.InetSocketAddress;
+
 /**
  * Responsible for managing {@link com.hazelcast.client.connection.nio.ClientConnection} objects.
  */
@@ -64,11 +66,6 @@ public interface ClientConnectionManager {
      * @throws Exception
      */
     ClientConnection ownerConnection(Address address) throws Exception;
-
-    /**
-     * Called when an owner connection is closed
-     */
-    void onCloseOwnerConnection();
 
     /**
      * @return unique uuid of local client if available, null otherwise
@@ -127,5 +124,7 @@ public interface ClientConnectionManager {
      * @param connection to be marked.
      */
     void onDetectingUnresponsiveConnection(ClientConnection connection);
+
+    InetSocketAddress getLocalAddress();
 
 }

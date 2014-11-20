@@ -1,5 +1,6 @@
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 
@@ -9,6 +10,8 @@ import com.hazelcast.client.impl.client.ClientRequest;
 public interface ClientListenerService {
 
     String listen(ClientRequest request, Object key, EventHandler handler);
+
+    String listenOnConnection(ClientRequest request, ClientConnection clientConnection, EventHandler handler);
 
     boolean stopListening(BaseClientRemoveListenerRequest request, String registrationId);
 

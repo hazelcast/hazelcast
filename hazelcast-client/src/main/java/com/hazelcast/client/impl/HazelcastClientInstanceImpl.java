@@ -133,8 +133,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
             lb = new RoundRobinLB();
         }
         loadBalancer = lb;
-        connectionManager = createClientConnectionManager();
         clusterService = new ClientClusterServiceImpl(this);
+        connectionManager = createClientConnectionManager();
         invocationService = new ClientInvocationServiceImpl(this);
         listenerService = initListenerService();
         userContext = new ConcurrentHashMap<String, Object>();
@@ -445,7 +445,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         proxyManager.destroy();
         executionService.shutdown();
         partitionService.stop();
-        clusterService.stop();
         transactionManager.shutdown();
         connectionManager.shutdown();
         invocationService.shutdown();

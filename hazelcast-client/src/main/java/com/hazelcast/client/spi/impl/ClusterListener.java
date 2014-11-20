@@ -6,11 +6,14 @@ import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientResponse;
+import com.hazelcast.client.impl.client.GetMemberListRequest;
+import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.cluster.client.MemberAttributeChange;
+import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -36,24 +39,23 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 
-class ClusterListenerThread extends Thread {
+public class ClusterListener {
 
-    private static final ILogger LOGGER = Logger.getLogger(ClusterListenerThread.class);
-    private static final int SLEEP_TIME = 1000;
+    private static final ILogger LOGGER = Logger.getLogger(ClusterListener.class);
 
     protected final List<MemberImpl> members = new LinkedList<MemberImpl>();
     protected ClientClusterServiceImpl clusterService;
-    private volatile ClientConnection conn;
-    private final CountDownLatch latch = new CountDownLatch(1);
+
     private final Collection<AddressProvider> addressProviders;
     private HazelcastClientInstanceImpl client;
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
+    private ClientInvocationService clientInvocationService;
+    private String listenerRegistrationId;
 
-    public ClusterListenerThread(ThreadGroup group, String name, Collection<AddressProvider> addressProviders) {
-        super(group, name);
+    public ClusterListener(Collection<AddressProvider> addressProviders) {
         this.addressProviders = addressProviders;
     }
 
@@ -62,55 +64,36 @@ class ClusterListenerThread extends Thread {
         this.connectionManager = client.getConnectionManager();
         this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
+        this.clientInvocationService = client.getInvocationService();
     }
 
-    public void await() throws InterruptedException {
-        latch.await();
-    }
-
-    ClientConnection getConnection() {
-        return conn;
-    }
-
-    public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
+    public void connectToClusterAndListen() {
+        ClientConnection conn = null;
+        try {
             try {
-                if (conn == null) {
-                    try {
-                        conn = connectToOne();
-                    } catch (Exception e) {
-                        if (client.getLifecycleService().isRunning()) {
-                            LOGGER.severe("Error while connecting to cluster!", e);
-                        }
-
-                        client.getLifecycleService().shutdown();
-                        latch.countDown();
-                        return;
-                    }
-                }
-                clientListenerService.triggerFailedListeners();
-                loadInitialMemberList();
-                listenMembershipEvents();
+                conn = connectToCluster();
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {
-                    if (LOGGER.isFinestEnabled()) {
-                        LOGGER.finest("Error while listening cluster events! -> " + conn, e);
-                    } else {
-                        LOGGER.warning("Error while listening cluster events! -> " + conn + ", Error: " + e.toString());
-                    }
+                    LOGGER.severe("Error while connecting to cluster!", e);
                 }
 
-                connectionManager.onCloseOwnerConnection();
-                IOUtil.closeResource(conn);
-                conn = null;
-                clusterService.fireConnectionEvent(true);
+                client.getLifecycleService().shutdown();
+                return;
             }
-            try {
-                Thread.sleep(SLEEP_TIME);
-            } catch (InterruptedException e) {
-                latch.countDown();
-                break;
+            clientListenerService.triggerFailedListeners();
+            loadInitialMemberList(conn);
+            listenMembershipEvents(conn);
+        } catch (Exception e) {
+            if (client.getLifecycleService().isRunning()) {
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("Error while registering to cluster events! -> " + conn, e);
+                } else {
+                    LOGGER.warning("Error while registering to cluster events! -> " + conn + ", Error: " + e.toString());
+                }
             }
+
+            IOUtil.closeResource(conn);
+            clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
         }
     }
 
@@ -130,10 +113,11 @@ class ClusterListenerThread extends Thread {
         return socketAddresses;
     }
 
-    private void loadInitialMemberList() throws Exception {
+    private void loadInitialMemberList(ClientConnection conn) throws Exception {
         final SerializationService serializationService = clusterService.getSerializationService();
-        final AddMembershipListenerRequest request = new AddMembershipListenerRequest();
-        final SerializableCollection coll = (SerializableCollection) connectionManager.sendAndReceive(request, conn);
+        final GetMemberListRequest request = new GetMemberListRequest();
+        final Future future = clientInvocationService.invokeOnConnection(request, conn);
+        final SerializableCollection coll = serializationService.toObject(future.get());
 
         Map<String, MemberImpl> prevMembers = Collections.emptyMap();
         if (!members.isEmpty()) {
@@ -149,7 +133,6 @@ class ClusterListenerThread extends Thread {
         updateMembersRef();
         LOGGER.info(clusterService.membersString());
         fireMembershipEvent(prevMembers);
-        latch.countDown();
     }
 
     private void fireMembershipEvent(Map<String, MemberImpl> prevMembers) {
@@ -172,49 +155,65 @@ class ClusterListenerThread extends Thread {
         }
     }
 
-    private void listenMembershipEvents() throws IOException {
+    private void listenMembershipEvents(ClientConnection conn) throws Exception {
+        final AddMembershipListenerRequest request = new AddMembershipListenerRequest();
+        final EventHandler<ClientMembershipEvent> handler = createEventHandler();
+        final Future future = clientInvocationService.invokeOnConnection(request, conn, handler);
         final SerializationService serializationService = clusterService.getSerializationService();
-        while (!Thread.currentThread().isInterrupted()) {
-            final Data clientResponseData = conn.read();
-            final ClientResponse clientResponse = serializationService.toObject(clientResponseData);
-            final Object eventObject = serializationService.toObject(clientResponse.getResponse());
-            final ClientMembershipEvent event = (ClientMembershipEvent) eventObject;
-            final MemberImpl member = (MemberImpl) event.getMember();
-            boolean membersUpdated = false;
-            if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                members.add(member);
-                membersUpdated = true;
-            } else if (event.getEventType() == ClientMembershipEvent.MEMBER_REMOVED) {
-                members.remove(member);
-                membersUpdated = true;
-                connectionManager.removeEndpoint(member.getAddress());
-            } else if (event.getEventType() == ClientMembershipEvent.MEMBER_ATTRIBUTE_CHANGED) {
-                MemberAttributeChange memberAttributeChange = event.getMemberAttributeChange();
-                Map<Address, MemberImpl> memberMap = clusterService.getMembersRef();
-                if (memberMap != null) {
-                    for (MemberImpl target : memberMap.values()) {
-                        if (target.getUuid().equals(memberAttributeChange.getUuid())) {
-                            final MemberAttributeOperationType operationType = memberAttributeChange.getOperationType();
-                            final String key = memberAttributeChange.getKey();
-                            final Object value = memberAttributeChange.getValue();
-                            target.updateAttribute(operationType, key, value);
-                            MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(
-                                    client.getCluster(), target, operationType, key, value);
-                            clusterService.fireMemberAttributeEvent(memberAttributeEvent);
-                            break;
+        listenerRegistrationId = serializationService.toObject(future.get());
+    }
+
+    private EventHandler<ClientMembershipEvent> createEventHandler() {
+        return new EventHandler<ClientMembershipEvent>() {
+            @Override
+            public void handle(ClientMembershipEvent event) {
+                final MemberImpl member = (MemberImpl) event.getMember();
+                boolean membersUpdated = false;
+                if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+                    members.add(member);
+                    membersUpdated = true;
+                } else if (event.getEventType() == ClientMembershipEvent.MEMBER_REMOVED) {
+                    members.remove(member);
+                    membersUpdated = true;
+                    connectionManager.removeEndpoint(member.getAddress());
+                } else if (event.getEventType() == ClientMembershipEvent.MEMBER_ATTRIBUTE_CHANGED) {
+                    MemberAttributeChange memberAttributeChange = event.getMemberAttributeChange();
+                    Map<Address, MemberImpl> memberMap = clusterService.getMembersRef();
+                    if (memberMap != null) {
+                        for (MemberImpl target : memberMap.values()) {
+                            if (target.getUuid().equals(memberAttributeChange.getUuid())) {
+                                final MemberAttributeOperationType operationType = memberAttributeChange.getOperationType();
+                                final String key = memberAttributeChange.getKey();
+                                final Object value = memberAttributeChange.getValue();
+                                target.updateAttribute(operationType, key, value);
+                                MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(
+                                        client.getCluster(), target, operationType, key, value);
+                                clusterService.fireMemberAttributeEvent(memberAttributeEvent);
+                                break;
+                            }
                         }
                     }
                 }
+
+                if (membersUpdated) {
+                    ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
+                    updateMembersRef();
+                    LOGGER.info(clusterService.membersString());
+                    clusterService.fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
+                            Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
+                }
             }
 
-            if (membersUpdated) {
-                ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
-                updateMembersRef();
-                LOGGER.info(clusterService.membersString());
-                clusterService.fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
-                        Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
+            @Override
+            public void beforeListenerRegister() {
+
             }
-        }
+
+            @Override
+            public void onListenerRegister() {
+
+            }
+        };
     }
 
 
@@ -226,15 +225,7 @@ class ClusterListenerThread extends Thread {
         clusterService.setMembersRef(Collections.unmodifiableMap(map));
     }
 
-    void shutdown() {
-        interrupt();
-        final ClientConnection c = conn;
-        if (c != null) {
-            c.close();
-        }
-    }
-
-    private ClientConnection connectToOne() throws Exception {
+    public ClientConnection connectToCluster() throws Exception {
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
@@ -253,7 +244,7 @@ class ClusterListenerThread extends Thread {
                 LOGGER.finest("Trying to connect to " + address);
                 try {
                     final ClientConnection connection = connectionManager.ownerConnection(address);
-                    clusterService.fireConnectionEvent(false);
+                    clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                     return connection;
                 } catch (IOException e) {
                     lastError = e;
@@ -269,7 +260,7 @@ class ClusterListenerThread extends Thread {
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             LOGGER.warning(
                     String.format("Unable to get alive cluster connection,"
-                            + " try in %d ms later, attempt %d of %d.",
+                                    + " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
             if (remainingTime > 0) {

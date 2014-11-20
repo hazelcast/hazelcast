@@ -16,14 +16,13 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.impl.ClientImpl;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.ClientImpl;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.config.ListenerConfig;
@@ -45,6 +44,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
@@ -68,14 +68,14 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     private final HazelcastClientInstanceImpl client;
     private final ClientConnectionManager connectionManager;
-    private final ClusterListenerThread clusterThread;
+    private final ClusterListener clusterListener;
     private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
 
     public ClientClusterServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.connectionManager = client.getConnectionManager();
-        this.clusterThread = createListenerThread();
+        this.clusterListener = createClusterListener();
         final ClientConfig clientConfig = getClientConfig();
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
@@ -95,7 +95,11 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    ClusterListenerThread createListenerThread() {
+    public ClusterListener getClusterListener() {
+        return clusterListener;
+    }
+
+    ClusterListener createClusterListener() {
         final ClientAwsConfig awsConfig = client.getClientConfig().getNetworkConfig().getAwsConfig();
         final Collection<AddressProvider> addressProvider = new LinkedList<AddressProvider>();
 
@@ -109,8 +113,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 throw e;
             }
         }
-        return new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener",
-                addressProvider);
+        return new ClusterListener(addressProvider);
     }
 
     @Override
@@ -155,8 +158,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     @Override
     public Client getLocalClient() {
         final String uuid = connectionManager.getUuid();
-        ClientConnection conn = clusterThread.getConnection();
-        return new ClientImpl(uuid, conn != null ? conn.getLocalSocketAddress() : null);
+        InetSocketAddress address = connectionManager.getLocalAddress();
+        return new ClientImpl(uuid, address);
     }
 
     SerializationService getSerializationService() {
@@ -206,25 +209,19 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public void start() {
-        clusterThread.init(client);
-        clusterThread.start();
+        clusterListener.init(client);
 
         try {
-            clusterThread.await();
-        } catch (InterruptedException e) {
+            clusterListener.connectToClusterAndListen();
+        } catch (Exception e) {
             throw new HazelcastException(e);
         }
         initMembershipListener();
         // started
     }
 
-    public void stop() {
-        clusterThread.shutdown();
-    }
-
-    void fireConnectionEvent(boolean disconnected) {
+    void fireConnectionEvent(LifecycleState state) {
         final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
-        final LifecycleState state = disconnected ? LifecycleState.CLIENT_DISCONNECTED : LifecycleState.CLIENT_CONNECTED;
         lifecycleService.fireLifecycleEvent(state);
     }
 

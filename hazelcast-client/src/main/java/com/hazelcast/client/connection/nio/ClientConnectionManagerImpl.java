@@ -32,8 +32,8 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
@@ -66,6 +66,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
@@ -73,6 +74,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -86,7 +88,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private static final int RETRY_COUNT = 20;
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
-    private  static final IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
+    private static final IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
             LOGGER.severe(error);
@@ -114,11 +116,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final AtomicInteger callIdIncrementer = new AtomicInteger();
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
     private final ClientExecutionServiceImpl executionService;
-    private ClientInvocationServiceImpl invocationService;
+    private final ClientClusterServiceImpl clusterService;
     private final AddressTranslator addressTranslator;
-
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
+
+    private  ClientInvocationServiceImpl invocationService;
 
     private volatile boolean alive;
 
@@ -160,6 +163,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         ClientExtension clientExtension = client.getClientExtension();
         socketChannelWrapperFactory = clientExtension.getSocketChannelWrapperFactory();
         socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
+        clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
     }
 
     private Credentials initCredentials(ClientConfig config) {
@@ -207,9 +211,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         alive = true;
         inSelector.start();
         outSelector.start();
-        invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         HeartBeat heartBeat = new HeartBeat();
         executionService.scheduleWithFixedDelay(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
+        invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
+
     }
 
     @Override
@@ -224,12 +229,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         inSelector.shutdown();
         outSelector.shutdown();
         connectionLockMap.clear();
-    }
-
-    @Override
-    public void onCloseOwnerConnection() {
-        //mark the owner connection as closed so that operations requiring owner connection can be waited.
-        ownerConnectionFuture.markAsClosed();
     }
 
     @Override
@@ -324,7 +323,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             synchronized (lock) {
                 clientConnection = connections.get(address);
                 if (clientConnection == null) {
-                    final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, false);
+                    final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator);
                     final ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
                     try {
                         clientConnection = future.get(connectionTimeout, TimeUnit.MILLISECONDS);
@@ -347,12 +346,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         final Address address;
         final Authenticator authenticator;
-        final boolean isBlock;
 
-        private ConnectionProcessor(final Address address, final Authenticator authenticator, final boolean isBlock) {
+        private ConnectionProcessor(final Address address, final Authenticator authenticator) {
             this.address = address;
             this.authenticator = authenticator;
-            this.isBlock = isBlock;
         }
 
         @Override
@@ -385,12 +382,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 if (socketInterceptor != null) {
                     socketInterceptor.onConnect(socket);
                 }
-                authenticator.auth(clientConnection);
-                socketChannel.configureBlocking(isBlock);
+                socketChannel.configureBlocking(false);
                 socket.setSoTimeout(0);
-                if (!isBlock) {
-                    clientConnection.getReadHandler().register();
-                }
+                clientConnection.getReadHandler().register();
+                authenticator.auth(clientConnection);
                 return clientConnection;
             } catch (Exception e) {
                 if (socketChannel != null) {
@@ -483,17 +478,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public Object sendAndReceive(ClientRequest request, ClientConnection connection) throws Exception {
-        final SerializationService ss = client.getSerializationService();
-        connection.write(ss.toData(request));
-        final Data data = connection.read();
-        ClientResponse clientResponse = ss.toObject(data);
-        Object response = ss.toObject(clientResponse.getResponse());
-        if (response instanceof Throwable) {
-            Throwable t = (Throwable) response;
-            ExceptionUtil.fixRemoteStackTrace(t, Thread.currentThread().getStackTrace());
-            throw new Exception(t);
+        final SerializationService ss = getSerializationService();
+        try {
+            final Future f =  invocationService.invokeOnConnection(request, connection);
+            return ss.toObject(f.get());
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
-        return response;
     }
 
     private Object getLock(Address address) {
@@ -548,8 +539,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         //close both owner and operation connection
-        ownerConnectionFuture.close();
         IOUtil.closeResource(connection);
+    }
+
+    @Override
+    public InetSocketAddress getLocalAddress() {
+        try {
+            return ownerConnectionFuture.getOrWaitForCreation().getLocalSocketAddress();
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     private class OwnerConnectionFuture {
@@ -592,7 +591,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         private ClientConnection createNew(Address address) throws RetryableIOException {
             final ManagerAuthenticator authenticator = new ManagerAuthenticator();
-            final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
+            final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator);
             ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
             try {
                 ClientConnection conn = future.get(connectionTimeout, TimeUnit.MILLISECONDS);
@@ -605,10 +604,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 future.cancel(true);
                 throw new RetryableIOException(e);
             }
-        }
-
-        private void markAsClosed() {
-            ownerConnection = null;
         }
 
         private void closeIfAddressMatches(Address address) {
@@ -628,7 +623,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
 
             IOUtil.closeResource(currentOwnerConnection);
-            markAsClosed();
+            ownerConnection = null;
+            clusterService.getClusterListener().connectToClusterAndListen();
         }
     }
 }
