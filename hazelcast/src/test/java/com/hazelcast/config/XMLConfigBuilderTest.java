@@ -581,7 +581,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                         "            <tcp-ip enabled=\"false\">\n" +
                         "                <interface>127.0.0.1</interface>\n" +
                         "            </tcp-ip>\n" +
-                        "            <aws enabled=\"true\" connection-timeout-seconds=\"10\" >\n" +
+                        "            <aws enabled=\"false\" connection-timeout-seconds=\"10\" >\n" +
                         "                <access-key>access</access-key>\n" +
                         "                <secret-key>secret</secret-key>\n" +
                         "            </aws>\n" +

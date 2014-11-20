@@ -16,30 +16,28 @@
 
 package com.hazelcast.instance;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeFalse;
-
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
-
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ISet;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
+
 
 /** Test the multicast loopback mode when there is no other
  * network interface than 127.0.0.1.
@@ -85,79 +83,54 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
 		assumeFalse(
 				"This test can be processed only if your host has no configured network interface.",
 				hasConfiguredNetworkInterface());
-		this.hz1 = this.hz2 = null;
-		this.multicastGroup = System.clearProperty("hazelcast.multicast.group");
+		multicastGroup = System.clearProperty("hazelcast.multicast.group");
 	}
 
 	@After
 	public void tearDownTests() {
-		Hazelcast.shutdownAll();
-		this.hz1 = this.hz2 = null;
-		if (this.multicastGroup==null)
+		HazelcastInstanceFactory.terminateAll();
+		if (multicastGroup == null) {
 			System.clearProperty("hazelcast.multicast.group");
-		else
-			System.setProperty("hazelcast.multicast.group", this.multicastGroup);
+		} else {
+			System.setProperty("hazelcast.multicast.group", multicastGroup);
+		}
 	}	
 
 	private void createTestEnvironment(boolean loopbackMode) throws Exception {
-		Config config1 = new Config();
-		{
-			config1.setProperty("hazelcast.local.localAddress", "127.0.0.1"); //$NON-NLS-1$
-			MulticastConfig multicastConfig = config1.getNetworkConfig().getJoin().getMulticastConfig();
-			multicastConfig.setEnabled(true);
-			multicastConfig.setLoopbackModeEnabled(loopbackMode);
-		}
+		Config config = new Config();
+		config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+		MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
+		multicastConfig.setEnabled(true);
+		multicastConfig.setLoopbackModeEnabled(loopbackMode);
 
-		Config config2 = new Config();
-		{
-			config2.setProperty("hazelcast.local.localAddress", "127.0.0.1"); //$NON-NLS-1$
-			MulticastConfig multicastConfig = config2.getNetworkConfig().getJoin().getMulticastConfig();
-			multicastConfig.setEnabled(true);
-			multicastConfig.setLoopbackModeEnabled(loopbackMode);
-		}
+		hz1 = HazelcastInstanceFactory.newHazelcastInstance(config);
+		assertNotNull("Cannot create the first HazelcastInstance", hz1);
 
-		this.hz1 = HazelcastInstanceFactory.newHazelcastInstance(config1);
-		assertNotNull("cannot create the first hazelcastInstance",hz1);
-
-		this.hz2 = HazelcastInstanceFactory.newHazelcastInstance(config2);
-		assertNotNull("cannot create the first hazelcastInstance",hz2);
+		hz2 = HazelcastInstanceFactory.newHazelcastInstance(config);
+		assertNotNull("Cannot create the second HazelcastInstance", hz2);
 	}
-
 
 	@Test
 	public void testEnabledMode() throws Exception {
-		String dataName = randomMapName(MulticastLoopbackModeTest.class.getName());
-		String myID = randomString();
-
 		createTestEnvironment(true);
 
-		ISet<String> theMap = this.hz1.getSet(dataName);
-		theMap.add(myID);
+		assertClusterSize(2, hz1);
+		assertClusterSize(2, hz2);
 
-
-		ISet<String> remoteMap = this.hz2.getSet(dataName);
-
-		sleepSeconds(1);
-
-		assertTrue(remoteMap.contains(myID));
+		Cluster cluster1 = hz1.getCluster();
+		Cluster cluster2 = hz2.getCluster();
+		assertTrue("Members list " + cluster1.getMembers() + " should contain " + cluster2.getLocalMember(),
+				cluster1.getMembers().contains(cluster2.getLocalMember()));
+		assertTrue("Members list " + cluster2.getMembers() + " should contain " + cluster1.getLocalMember(),
+				cluster2.getMembers().contains(cluster1.getLocalMember()));
 	}
 
 	@Test
 	public void testDisabledMode() throws Exception {
-		String dataName = randomMapName(MulticastLoopbackModeTest.class.getName());
-		String myID = randomString();
-
 		createTestEnvironment(false);
 
-		ISet<String> theMap = this.hz1.getSet(dataName);
-		theMap.add(myID);
-
-
-		ISet<String> remoteMap = this.hz2.getSet(dataName);
-
-		sleepSeconds(1);
-
-		assertFalse(remoteMap.contains(myID));
+		assertClusterSize(1, hz1);
+		assertClusterSize(1, hz2);
 	}
 
 }
