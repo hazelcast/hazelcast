@@ -48,6 +48,7 @@ import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
+import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
@@ -121,6 +122,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap executorManagedMap;
         private ManagedMap wanReplicationManagedMap;
         private ManagedMap jobTrackerManagedMap;
+        private ManagedMap replicatedMapManagedMap;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -135,6 +137,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.executorManagedMap = createManagedMap("executorConfigs");
             this.wanReplicationManagedMap = createManagedMap("wanReplicationConfigs");
             this.jobTrackerManagedMap = createManagedMap("jobTrackerConfigs");
+            this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
 
             BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
             this.configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
@@ -179,6 +182,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleTopic(node);
                 } else if ("jobtracker".equals(nodeName)) {
                     handleJobTracker(node);
+                } else if ("replicatedmap".equals(nodeName)) {
+                    handleReplicatedMap(node);
                 } else if ("wan-replication".equals(nodeName)) {
                     handleWanReplication(node);
                 } else if ("partition-group".equals(nodeName)) {
@@ -202,6 +207,20 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleManagementCenter(node);
                 }
             }
+        }
+
+        public void handleReplicatedMap(Node node) {
+            BeanDefinitionBuilder replicatedMapConfigBuilder = createBeanBuilder(ReplicatedMapConfig.class);
+            final Node attName = node.getAttributes().getNamedItem("name");
+            final String name = getTextContent(attName);
+            fillAttributeValues(node, replicatedMapConfigBuilder);
+            for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                if ("entry-listeners".equals(cleanNodeName(childNode))) {
+                    ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
+                    replicatedMapConfigBuilder.addPropertyValue("listenerConfigs", listeners);
+                }
+            }
+            replicatedMapManagedMap.put(name, replicatedMapConfigBuilder.getBeanDefinition());
         }
 
         public void handleNetwork(Node node) {

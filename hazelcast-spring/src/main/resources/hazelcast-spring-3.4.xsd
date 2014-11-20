@@ -744,6 +744,62 @@
                                 </xs:attribute>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="replicatedmap" minOccurs="0" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    A replicated map is a fully vector clock based, eventually consistent implementation of the map
+                                    interface. In difference to all other Hazelcast data structures this implementation is not
+                                    partitioned but fully replicates all data to all members.
+                                    Due to the nature of eventually consistency there is a chance of reading staled data and no
+                                    guarantee is given to retrieve the same value on multiple get calls.
+                                    ReplicatedMap was added in Hazelcast 3.2.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="entry-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="entry-listener" type="entry-listener" minOccurs="0"
+                                                            maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                                <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
+                                <xs:attribute name="in-memory-format" type="in-memory-format" use="optional" default="OBJECT"/>
+                                <xs:attribute name="concurrency-level" type="concurrency-level" use="optional" default="32">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Number of parallel mutexes to minimize contention on keys. The default value is 32 which
+                                        is a good number for lots of applications. If higher contention is seen on writes to values
+                                        inside of the replicated map this value can be adjusted to the needs.
+                                    </xs:documentation>
+                                </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="replication-delay-millis" type="xs:unsignedInt" use="optional" default="100">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Defines a number of milliseconds after a put is executed before the value is replicated
+                                            to other nodes. In this time multiple puts can be operated and are cached up to be send
+                                            at once. This highers the latency for eventually consistency but lowers IO operations.
+                                            Default value is 100ms before a replication is operated, if set to 0 no delay is used and
+                                            all values are replicated one by one.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="async-fillup" type="xs:boolean" use="optional" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            This value defines it the replicated map is available for reads before the initial
+                                            replication is completed. Default is true. If set to false no Exception will be
+                                            thrown when replicated map is not yet ready but call will block until finished.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="statistics-enabled" type="xs:boolean" use="optional" default="true"/>
+                            </xs:complexType>
+                        </xs:element>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>

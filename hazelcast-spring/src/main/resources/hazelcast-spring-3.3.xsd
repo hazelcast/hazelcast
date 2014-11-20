@@ -240,6 +240,26 @@
                                               type="topology-changed-strategy" default="CANCEL_RUNNING_OPERATION"/>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="replicatedmap" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="entry-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="entry-listener" type="entry-listener" minOccurs="0"
+                                                            maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:sequence>
+                                <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
+                                <xs:attribute name="in-memory-format" type="in-memory-format" use="optional" default="OBJECT"/>
+                                <xs:attribute name="concurrency-level" type="concurrency-level" use="optional" default="32"/>
+                                <xs:attribute name="replication-delay-millis" type="xs:unsignedInt" use="optional" default="100"/>
+                                <xs:attribute name="async-fillup" type="xs:boolean" use="optional" default="true"/>
+                                <xs:attribute name="statistics-enabled" type="xs:boolean" use="optional" default="true"/>
+                            </xs:complexType>
+                        </xs:element>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
