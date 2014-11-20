@@ -3,7 +3,7 @@
 
 
 ## REST Client
-Hazelcast provides a REST interface, i.e. it provides an HTTP service in each node so that your `map` and `queue` can be accessed using HTTP protocol. Assuming `mapName` and `queueName` are already configured in your Hazelcast, its structure is shown below.
+Hazelcast provides a REST interface, i.e. it provides an HTTP service in each node so that you can access your `map` and `queue` using HTTP protocol. Assuming `mapName` and `queueName` are already configured in your Hazelcast, its structure is shown below.
 
 `http://node IP address:port/hazelcast/rest/maps/mapName/key`
 
