@@ -18,7 +18,6 @@ package com.hazelcast.web;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
@@ -197,7 +196,7 @@ public class WebFilter implements Filter {
         }
 
         if (!stickySession) {
-            getClusterMap().addEntryListener(new EntryAdapter<String, Object>() {
+            getClusterMap().addEntryListener(new EntryListener<String, Object>() {
                 public void entryAdded(EntryEvent<String, Object> entryEvent) {
                 }
 
