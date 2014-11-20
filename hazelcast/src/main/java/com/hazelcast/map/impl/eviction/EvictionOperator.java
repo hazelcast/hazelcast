@@ -22,7 +22,6 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.NearCacheProvider;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.Address;
@@ -101,7 +100,7 @@ public final class EvictionOperator {
                     evictedRecordCounter++;
                     final String mapName = mapConfig.getName();
                     if (!backup) {
-                        interceptAndInvalidate(mapServiceContext, value, tmpKey, mapName);
+                        mapServiceContext.interceptAfterRemove(mapName, value);
                         fireEvent(tmpKey, tmpValue, mapName, mapServiceContext);
                     }
                 }
@@ -149,14 +148,6 @@ public final class EvictionOperator {
         final int sizeToEvict = Math.min(evictableSize, length);
         final int index = sizeToEvict - 1;
         return index < 0 ? 0 : index;
-    }
-
-    private void interceptAndInvalidate(MapServiceContext mapServiceContext, long value, Data tmpKey, String mapName) {
-        mapServiceContext.interceptAfterRemove(mapName, value);
-        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        if (nearCacheProvider.isNearCacheAndInvalidationEnabled(mapName)) {
-            nearCacheProvider.invalidateAllNearCaches(mapName, tmpKey);
-        }
     }
 
     public void fireEvent(Data key, Object value, String mapName, MapServiceContext mapServiceContext) {
