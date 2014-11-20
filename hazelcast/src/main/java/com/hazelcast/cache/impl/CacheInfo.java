@@ -28,9 +28,11 @@ public class CacheInfo {
     protected final CacheConfig cacheConfig;
     protected final AtomicLong entryCount = new AtomicLong(0L);
     protected final AtomicLong usedMemory = new AtomicLong(0L);
+    protected final String cacheNameWithPrefix;
 
     public CacheInfo(CacheConfig cacheConfig) {
        this.cacheConfig = cacheConfig;
+       this.cacheNameWithPrefix = cacheConfig.getNameWithPrefix();
     }
 
     public String getCacheName() {
@@ -70,9 +72,22 @@ public class CacheInfo {
     }
 
     @Override
+    public int hashCode() {
+        return cacheNameWithPrefix.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof CacheInfo)) {
+            return false;
+        }
+        return cacheNameWithPrefix.equals(((CacheInfo) obj).cacheNameWithPrefix);
+    }
+
+    @Override
     public String toString() {
         return "CacheInfo{"
-                + "cacheName=" + cacheConfig.getName()
+                + "cacheName=" + cacheNameWithPrefix
                 + ", entryCount=" + entryCount
                 + ", usedMemory=" + usedMemory
                 + '}';

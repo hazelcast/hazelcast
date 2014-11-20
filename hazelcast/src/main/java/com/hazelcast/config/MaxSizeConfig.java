@@ -88,7 +88,15 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
         /**
          * Decide maximum size with use native memory percentage
          */
-        USED_NATIVE_MEMORY_PERCENTAGE
+        USED_NATIVE_MEMORY_PERCENTAGE,
+        /**
+         * Decide minimum free native memory size to trigger cleanup
+         */
+        FREE_NATIVE_MEMORY_SIZE,
+        /**
+         * Decide minimum free native memory percentage to trigger cleanup
+         */
+        FREE_NATIVE_MEMORY_PERCENTAGE
     }
 
     public MaxSizeConfigReadOnly getAsReadOnly() {
@@ -120,13 +128,13 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(maxSizePolicy.ordinal());
+        out.writeUTF(maxSizePolicy.toString());
         out.writeInt(size);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        maxSizePolicy = MaxSizePolicy.values()[in.readInt()];
+        maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());
         size = in.readInt();
     }
 

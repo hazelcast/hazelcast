@@ -96,7 +96,7 @@ public class MapConfigAdapter implements JsonSerializable, DataSerializable {
         config.setMaxSizeConfig(
                 new MaxSizeConfig()
                         .setSize(in.readInt())
-                        .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.values()[in.readInt()]));
+                        .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(in.readUTF())));
         config.setReadBackupData(in.readBoolean());
         config.setEvictionPolicy(EvictionPolicy.valueOf(in.readUTF()));
         config.setMergePolicy(in.readUTF());
@@ -113,7 +113,7 @@ public class MapConfigAdapter implements JsonSerializable, DataSerializable {
         out.writeInt(config.getTimeToLiveSeconds());
         out.writeInt(config.getMaxIdleSeconds());
         out.writeInt(config.getMaxSizeConfig().getSize());
-        out.writeInt(config.getMaxSizeConfig().getMaxSizePolicy().ordinal());
+        out.writeUTF(config.getMaxSizeConfig().getMaxSizePolicy().toString());
         out.writeBoolean(config.isReadBackupData());
         out.writeUTF(config.getEvictionPolicy().name());
         out.writeUTF(config.getMergePolicy());

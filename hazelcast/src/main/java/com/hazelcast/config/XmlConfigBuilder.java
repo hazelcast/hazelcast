@@ -861,10 +861,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
                             upperCaseInternal(getTextContent(maxSizePolicy))));
                 }
-                int size = sizeParser(value);
-                if (size > 0) {
-                    msc.setSize(size);
-                }
+                final int size = sizeParser(value);
+                msc.setSize(size);
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
                         MapConfig.DEFAULT_EVICTION_PERCENTAGE));
@@ -951,9 +949,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                             getTextContent(maxSizePolicy))));
                 }
                 final int size = sizeParser(value);
-                if (size > 0) {
-                    maxSizeConfig.setSize(size);
-                }
+                maxSizeConfig.setSize(size);
                 cacheConfig.setMaxSizeConfig(maxSizeConfig);
             }
         }

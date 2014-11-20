@@ -16,6 +16,11 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.FreeHeapPercentageCacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.FreeHeapSizeCacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.UsedHeapPercentageCacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.UsedHeapSizeCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
@@ -65,7 +70,7 @@ public class CacheRecordStore
 
     //CHECKSTYLE:OFF
     @Override
-    protected MaxSizeChecker createMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
+    protected CacheMaxSizeChecker createCacheMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
         if (maxSizeConfig == null) {
             return null;
         }
@@ -74,22 +79,29 @@ public class CacheRecordStore
             return null;
         }
 
-        final MaxSizeChecker maxSizeChecker = super.createMaxSizeChecker(maxSizeConfig);
+        final CacheMaxSizeChecker maxSizeChecker = super.createCacheMaxSizeChecker(maxSizeConfig);
         if (maxSizeChecker != null) {
             return maxSizeChecker;
         }
 
         if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE) {
-            return new UsedHeapMaxSizeChecker(maxSizeConfig);
+            return new UsedHeapSizeCacheMaxSizeChecker(cacheInfo, maxSizeConfig);
         } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE) {
-            return new UsedHeapPercentageMaxSizeChecker(maxSizeConfig);
+            return new UsedHeapPercentageCacheMaxSizeChecker(cacheInfo, maxSizeConfig);
         } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE) {
-            return new FreeHeapMaxSizeChecker(maxSizeConfig);
+            return new FreeHeapSizeCacheMaxSizeChecker(cacheInfo, maxSizeConfig);
         } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE) {
-            return new FreeHeapPercentageMaxSizeChecker(maxSizeConfig);
+            return new FreeHeapPercentageCacheMaxSizeChecker(cacheInfo, maxSizeConfig);
+        } else {
+            throw new IllegalArgumentException("Invalid max-size policy for " + getClass().getName() + " ! Only "
+                    + MaxSizeConfig.MaxSizePolicy.PER_NODE + ", "
+                    + MaxSizeConfig.MaxSizePolicy.PER_PARTITION + ", "
+                    + MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE + ", "
+                    + MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE + ", "
+                    + MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE + ", "
+                    + MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE
+                    + " are supported.");
         }
-
-        return null;
     }
     //CHECKSTYLE:ON
 
@@ -179,62 +191,6 @@ public class CacheRecordStore
         } else {
             return serializationService.toData(obj);
         }
-    }
-
-    protected class UsedHeapMaxSizeChecker implements MaxSizeChecker {
-
-        protected UsedHeapMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
-
-        }
-
-        @Override
-        public boolean isReachedToMaxSize() {
-            // TODO Not supported yet
-            return false;
-        }
-
-    }
-
-    protected class UsedHeapPercentageMaxSizeChecker implements MaxSizeChecker {
-
-        protected UsedHeapPercentageMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
-
-        }
-
-        @Override
-        public boolean isReachedToMaxSize() {
-            // TODO Not supported yet
-            return false;
-        }
-
-    }
-
-    protected class FreeHeapMaxSizeChecker implements MaxSizeChecker {
-
-        protected FreeHeapMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
-
-        }
-
-        @Override
-        public boolean isReachedToMaxSize() {
-            // TODO Not supported yet
-            return false;
-        }
-
-    }
-
-    protected class FreeHeapPercentageMaxSizeChecker implements MaxSizeChecker {
-
-        protected FreeHeapPercentageMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
-
-        }
-
-        @Override
-        public boolean isReachedToMaxSize() {
-            // TODO Not supported yet
-            return false;
-        }
-
     }
 
 }

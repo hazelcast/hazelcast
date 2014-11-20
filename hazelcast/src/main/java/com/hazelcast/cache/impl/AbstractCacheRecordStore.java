@@ -17,6 +17,9 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
+import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.PerNodeCacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.PerPartitionCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordMap;
 import com.hazelcast.config.CacheConfig;
@@ -52,8 +55,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -71,12 +72,6 @@ public abstract class AbstractCacheRecordStore<
 
     protected static final long DEFAULT_EXPIRATION_TASK_INITIAL_DELAY = 10;
     protected static final long DEFAULT_EXPIRATION_TASK_PERIOD = 10;
-
-    // TODO Maybe stored at different and common place to access such as CacheStats.
-    // Since static members are based on classes and classes are based on classloaders,
-    // can be problematic on OSGI based environments
-    private static final ConcurrentMap<String, CacheInfo> CACHE_INFO_MAP =
-            new ConcurrentHashMap<String, CacheInfo>();
 
     protected final String name;
     protected final int partitionId;
@@ -97,7 +92,7 @@ public abstract class AbstractCacheRecordStore<
     protected final int evictionPercentage;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
     protected ScheduledFuture<?> expirationTaskScheduler;
-    protected final MaxSizeChecker maxSizeChecker;
+    protected final CacheMaxSizeChecker maxSizeChecker;
     protected CacheInfo cacheInfo;
 
     //CHECKSTYLE:OFF
@@ -111,16 +106,7 @@ public abstract class AbstractCacheRecordStore<
         if (cacheConfig == null) {
             throw new CacheNotExistsException("Cache already destroyed, node " + nodeEngine.getLocalMember());
         }
-        this.cacheInfo = CACHE_INFO_MAP.get(name);
-        if (this.cacheInfo == null) {
-            synchronized (CACHE_INFO_MAP) {
-                this.cacheInfo = CACHE_INFO_MAP.get(name);
-                if (this.cacheInfo == null) {
-                    this.cacheInfo = createCacheInfo(cacheConfig);
-                    CACHE_INFO_MAP.put(name, this.cacheInfo);
-                }
-            }
-        }
+        this.cacheInfo = cacheService.getOrCreateCacheInfo(cacheConfig);
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
@@ -132,7 +118,7 @@ public abstract class AbstractCacheRecordStore<
         if (cacheConfig.isStatisticsEnabled()) {
             this.statistics = cacheService.createCacheStatIfAbsent(name);
         }
-        Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
+        final Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
         this.defaultExpiryPolicy = expiryPolicyFactory.create();
         this.evictionPolicy = cacheConfig.getEvictionPolicy() != null
                 ? cacheConfig.getEvictionPolicy() : EvictionPolicy.NONE;
@@ -140,7 +126,7 @@ public abstract class AbstractCacheRecordStore<
         this.evictionEnabled = evictionPolicy != EvictionPolicy.NONE;
         this.evictionPercentage = cacheConfig.getEvictionPercentage();
         this.expirationTaskScheduler = scheduleExpirationTask();
-        this.maxSizeChecker = createMaxSizeChecker(maxSizeConfig);
+        this.maxSizeChecker = createCacheMaxSizeChecker(maxSizeConfig);
     }
     //CHECKSTYLE:ON
 
@@ -177,7 +163,7 @@ public abstract class AbstractCacheRecordStore<
 
     protected abstract Data toHeapData(Object obj);
 
-    protected MaxSizeChecker createMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
+    protected CacheMaxSizeChecker createCacheMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
         if (maxSizeConfig == null) {
             return null;
         }
@@ -187,9 +173,9 @@ public abstract class AbstractCacheRecordStore<
         }
 
         if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_NODE) {
-            return new PerNodeMaxSizeChecker(maxSizeConfig);
+            return new PerNodeCacheMaxSizeChecker(cacheInfo, maxSizeConfig);
         } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
-            return new PerPartitionMaxSizeChecker(maxSizeConfig);
+            return new PerPartitionCacheMaxSizeChecker(records, maxSizeConfig);
         }
 
         return null;
@@ -1437,42 +1423,6 @@ public abstract class AbstractCacheRecordStore<
         @Override
         public void run() {
             onExpiry();
-        }
-
-    }
-
-    protected interface MaxSizeChecker {
-
-        boolean isReachedToMaxSize();
-
-    }
-
-    protected class PerNodeMaxSizeChecker implements MaxSizeChecker {
-
-        private final int maxEntryCount;
-
-        protected PerNodeMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
-            this.maxEntryCount = maxSizeConfig.getSize();
-        }
-
-        @Override
-        public boolean isReachedToMaxSize() {
-            return cacheInfo.getEntryCount() >= maxEntryCount;
-        }
-
-    }
-
-    protected class PerPartitionMaxSizeChecker implements MaxSizeChecker {
-
-        private final int maxEntryCount;
-
-        protected PerPartitionMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
-            this.maxEntryCount = maxSizeConfig.getSize();
-        }
-
-        @Override
-        public boolean isReachedToMaxSize() {
-            return records.size() >= maxEntryCount;
         }
 
     }
