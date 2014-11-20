@@ -291,7 +291,7 @@ public class PartitionStateGeneratorTest {
         if (startAfter != null) {
             Address address = startAfter.getAddress();
             byte[] startIp = address.getInetAddress().getAddress();
-            if (startIp[3] < 255) {
+            if ((0xff & startIp[3]) < 255) {
                 ip[2] = startIp[2];
                 ip[3] = (byte) (startIp[3] + 1);
             } else {
@@ -315,7 +315,7 @@ public class PartitionStateGeneratorTest {
             MemberImpl m = new MemberImpl(new Address(InetAddress.getByAddress(new byte[]{ip[0], ip[1], ip[2], ip[3]})
                     , port), false);
             members.add(m);
-            if (ip[3] == 255) {
+            if ((0xff & ip[3]) == 255) {
                 ip[2] = ++ip[2];
             }
         }
