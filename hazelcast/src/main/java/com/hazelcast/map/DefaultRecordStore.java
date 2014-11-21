@@ -106,6 +106,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public void putRecord(Data key, Record record) {
+        markRecordStoreExpirable(record.getTtl());
+
         final Record existingRecord = records.put(key, record);
         updateSizeEstimator(-calculateRecordHeapCost(existingRecord));
         updateSizeEstimator(calculateRecordHeapCost(record));
