@@ -21,6 +21,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -28,7 +29,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.tcp.PacketReader;
+import com.hazelcast.nio.tcp.DefaultPacketReader;
 import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -49,6 +50,11 @@ public class NodeIOService implements IOService {
     public NodeIOService(Node node) {
         this.node = node;
         this.nodeEngine = node.nodeEngine;
+    }
+
+    @Override
+    public GroupProperties getGroupProperties() {
+        return node.getGroupProperties();
     }
 
     @Override
@@ -266,7 +272,7 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public PacketReader createPacketReader(TcpIpConnection connection) {
+    public DefaultPacketReader createPacketReader(TcpIpConnection connection) {
         return node.getNodeExtension().createPacketReader(connection, this);
     }
 

@@ -29,9 +29,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.logging.Level;
 
 public class SocketAcceptor implements Runnable {
+
     private final ServerSocketChannel serverSocketChannel;
     private final TcpIpConnectionManager connectionManager;
     private final ILogger logger;
@@ -42,16 +42,17 @@ public class SocketAcceptor implements Runnable {
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
     }
 
+    @Override
     public void run() {
         Selector selector = null;
         try {
             if (logger.isFinestEnabled()) {
-                log(Level.FINEST, "Starting SocketAcceptor on " + serverSocketChannel);
+                logger.finest("Starting SocketAcceptor on " + serverSocketChannel);
             }
             selector = Selector.open();
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            while (connectionManager.isLive()) {
+            while (connectionManager.isAlive()) {
                 // block until new connection or interruption.
                 final int keyCount = selector.select();
                 if (Thread.currentThread().isInterrupted()) {
@@ -60,70 +61,56 @@ public class SocketAcceptor implements Runnable {
                 if (keyCount == 0) {
                     continue;
                 }
-                final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
-                final Iterator<SelectionKey> it = setSelectedKeys.iterator();
-                while (it.hasNext()) {
-                    final SelectionKey sk = it.next();
-                    it.remove();
-                    // of course it is acceptable!
-                    if (sk.isValid() && sk.isAcceptable()) {
-                        acceptSocket();
-                    }
-                }
+                processSelectionKeys(selector);
             }
         } catch (OutOfMemoryError e) {
             OutOfMemoryErrorDispatcher.onOutOfMemory(e);
         } catch (IOException e) {
-            log(Level.SEVERE, e.getClass().getName() + ": " + e.getMessage(), e);
+            logger.severe(e.getClass().getName() + ": " + e.getMessage(), e);
         } finally {
             closeSelector(selector);
         }
     }
 
-    private void closeSelector(Selector selector) {
-        if (selector != null) {
-            try {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Closing selector " + Thread.currentThread().getName());
-                }
-                selector.close();
-            } catch (final Exception e) {
-                Logger.getLogger(SocketAcceptor.class).finest("Exception while closing selector", e);
+    private void processSelectionKeys(Selector selector) {
+        final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
+        final Iterator<SelectionKey> it = setSelectedKeys.iterator();
+        while (it.hasNext()) {
+            final SelectionKey sk = it.next();
+            it.remove();
+            // of course it is acceptable!
+            if (sk.isValid() && sk.isAcceptable()) {
+                acceptSocket();
             }
         }
     }
 
-    private void acceptSocket() {
-        if (!connectionManager.isLive()) {
+    private void closeSelector(Selector selector) {
+        if (selector == null) {
             return;
         }
-        SocketChannelWrapper socketChannelWrapper = null;
+
         try {
-            final SocketChannel socketChannel = serverSocketChannel.accept();
-            if (socketChannel != null) {
-                socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, false);
+            if (logger.isFinestEnabled()) {
+                logger.finest("Closing selector " + Thread.currentThread().getName());
             }
+            selector.close();
         } catch (Exception e) {
-            if (e instanceof ClosedChannelException && !connectionManager.isLive()) {
-                // ClosedChannelException
-                // or AsynchronousCloseException
-                // or ClosedByInterruptException
-                logger.finest("Terminating socket acceptor thread...", e);
-            } else {
-                String error = "Unexpected error while accepting connection! "
-                        + e.getClass().getName() + ": " + e.getMessage();
-                log(Level.WARNING, error);
-                try {
-                    serverSocketChannel.close();
-                } catch (Exception ex) {
-                    Logger.getLogger(SocketAcceptor.class).finest("Closing server socket failed", ex);
-                }
-                connectionManager.ioService.onFatalError(e);
-            }
+            //TODO: Why are we not making use of the normal logger?
+            Logger.getLogger(SocketAcceptor.class).finest("Exception while closing selector", e);
         }
+    }
+
+    private void acceptSocket() {
+        if (!connectionManager.isAlive()) {
+            return;
+        }
+
+        SocketChannelWrapper socketChannelWrapper = createSocketChannelWrapper();
+
         if (socketChannelWrapper != null) {
             final SocketChannelWrapper socketChannel = socketChannelWrapper;
-            log(Level.INFO, "Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
+            logger.info("Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
             if (connectionManager.isSocketInterceptorEnabled()) {
                 configureAndAssignSocket(socketChannel);
             } else {
@@ -136,6 +123,35 @@ public class SocketAcceptor implements Runnable {
         }
     }
 
+    private SocketChannelWrapper createSocketChannelWrapper() {
+        SocketChannelWrapper socketChannelWrapper = null;
+        try {
+            SocketChannel socketChannel = serverSocketChannel.accept();
+            if (socketChannel != null) {
+                socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, false);
+            }
+        } catch (Exception e) {
+            if (e instanceof ClosedChannelException && !connectionManager.isAlive()) {
+                // ClosedChannelException
+                // or AsynchronousCloseException
+                // or ClosedByInterruptException
+                logger.finest("Terminating socket acceptor thread...", e);
+            } else {
+                String error = "Unexpected error while accepting connection! "
+                        + e.getClass().getName() + ": " + e.getMessage();
+                logger.warning(error);
+                try {
+                    serverSocketChannel.close();
+                } catch (Exception ex) {
+                    //todo: why are we not using the normal logger.
+                    Logger.getLogger(SocketAcceptor.class).finest("Closing server socket failed", ex);
+                }
+                connectionManager.ioService.onFatalError(e);
+            }
+        }
+        return socketChannelWrapper;
+    }
+
     private void configureAndAssignSocket(SocketChannelWrapper socketChannel) {
         try {
             connectionManager.initSocket(socketChannel.socket());
@@ -143,17 +159,8 @@ public class SocketAcceptor implements Runnable {
             socketChannel.configureBlocking(false);
             connectionManager.assignSocketChannel(socketChannel, null);
         } catch (Exception e) {
-            log(Level.WARNING, e.getClass().getName() + ": " + e.getMessage(), e);
+            logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);
             IOUtil.closeResource(socketChannel);
         }
     }
-
-    private void log(Level level, String message) {
-        log(level, message, null);
-    }
-
-    private void log(Level level, String message, Exception e) {
-        logger.log(level, message, e);
-    }
-
 }

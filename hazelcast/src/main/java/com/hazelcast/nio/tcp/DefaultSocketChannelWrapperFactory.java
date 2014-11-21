@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp;
 import java.nio.channels.SocketChannel;
 
 public class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
+
     @Override
     public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
         return new DefaultSocketChannelWrapper(socketChannel);

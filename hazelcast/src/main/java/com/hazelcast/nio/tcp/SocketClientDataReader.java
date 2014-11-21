@@ -29,10 +29,10 @@ class SocketClientDataReader implements SocketReader {
 
     private static final int TYPE_BYTE = 3;
 
-    final TcpIpConnection connection;
-    final IOService ioService;
-    Packet packet;
-    boolean connectionTypeSet;
+    private final TcpIpConnection connection;
+    private final IOService ioService;
+    private Packet packet;
+    private boolean connectionTypeSet;
 
     public SocketClientDataReader(TcpIpConnection connection) {
         this.connection = connection;

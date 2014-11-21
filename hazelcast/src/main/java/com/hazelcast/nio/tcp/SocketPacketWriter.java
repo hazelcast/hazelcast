@@ -16,31 +16,24 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
-class SocketPacketWriter implements SocketWriter<Packet> {
-
-    final TcpIpConnection connection;
-    final IOService ioService;
-    final ILogger logger;
+/**
+ * A {@link com.hazelcast.nio.tcp.SocketWriter} that writes {@link com.hazelcast.nio.Packet} using the
+ * {@link com.hazelcast.nio.tcp.PacketWriter}.
+ */
+public class SocketPacketWriter implements SocketWriter<Packet> {
 
     private final PacketWriter packetWriter;
 
-    SocketPacketWriter(TcpIpConnection connection) {
-        this.connection = connection;
-        final TcpIpConnectionManager connectionManager = connection.getConnectionManager();
-        this.ioService = connectionManager.ioService;
-        this.logger = ioService.getLogger(SocketPacketWriter.class.getName());
-        packetWriter = connectionManager.createPacketWriter(connection);
+    public SocketPacketWriter(PacketWriter packetWriter) {
+        this.packetWriter = packetWriter;
     }
 
     @Override
-    public boolean write(Packet socketWritable, ByteBuffer socketBuffer) throws Exception {
-        return packetWriter.writePacket(socketWritable, socketBuffer);
+    public boolean write(Packet packet, ByteBuffer socketBuffer) throws Exception {
+        return packetWriter.writePacket(packet, socketBuffer);
     }
-
 }

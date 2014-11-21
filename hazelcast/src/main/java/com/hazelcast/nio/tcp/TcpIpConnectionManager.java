@@ -57,11 +57,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private static final int DEFAULT_KILL_THREAD_MILLIS = 1000 * 10;
 
     final int socketReceiveBufferSize;
-
     final IOService ioService;
-
     final int socketSendBufferSize;
-
     private final ConstructorFunction<Address, TcpIpConnectionMonitor> monitorConstructor
             = new ConstructorFunction<Address, TcpIpConnectionMonitor>() {
         public TcpIpConnectionMonitor createNew(Address endpoint) {
@@ -70,49 +67,29 @@ public class TcpIpConnectionManager implements ConnectionManager {
     };
 
     private final ILogger logger;
-
     private final int socketLingerSeconds;
-
     private final int socketConnectTimeoutSeconds;
-
     private final boolean socketKeepAlive;
-
     private final boolean socketNoDelay;
-
     private final ConcurrentMap<Address, Connection> connectionsMap = new ConcurrentHashMap<Address, Connection>(100);
-
     private final ConcurrentMap<Address, TcpIpConnectionMonitor> monitors =
             new ConcurrentHashMap<Address, TcpIpConnectionMonitor>(100);
-
     private final Set<Address> connectionsInProgress =
             Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
-
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
-
     private final Set<SocketChannelWrapper> acceptedSockets =
             Collections.newSetFromMap(new ConcurrentHashMap<SocketChannelWrapper, Boolean>());
-
     private final Set<TcpIpConnection> activeConnections =
             Collections.newSetFromMap(new ConcurrentHashMap<TcpIpConnection, Boolean>());
-
     private final AtomicInteger allTextConnections = new AtomicInteger();
-
     private final AtomicInteger connectionIdGen = new AtomicInteger();
-
-    private volatile boolean live;
-
+    private volatile boolean alive;
     private final ServerSocketChannel serverSocketChannel;
-
-    private final int selectorThreadCount;
-
-    private final InSelectorImpl[] inSelectors;
-
-    private final OutSelectorImpl[] outSelectors;
-
-    private final AtomicInteger nextSelectorIndex = new AtomicInteger();
-
+    private final int reactorThreadCount;
+    private final IOReactorImpl[] inReactors;
+    private final IOReactorImpl[] outReactors;
+    private final AtomicInteger nextReactorIndex = new AtomicInteger();
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
-
     private final int outboundPortCount;
 
     // accessed only in synchronized block
@@ -123,11 +100,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
-    // the selectorImbalanceWorkaroundEnabled is a hack to make sure that selectors get an equal number of connections
+    // the reactorImbalanceWorkaroundEnabled is a hack to make sure that selectors get an equal number of connections
     // to deal with this should only be used for the test lab. In the future we need to create a real fix to this problem,
     // but without this hack we can't do reliable benchmarking because the numbers have too much variation.
-    private final boolean selectorImbalanceWorkaroundEnabled;
-    private final Map<String, Integer> selectorIndexPerHostMap;
+    private final boolean reactorImbalanceWorkaroundEnabled;
+    private final Map<String, Integer> reactorIndexPerHostMap;
 
     public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
@@ -139,9 +116,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketConnectTimeoutSeconds = ioService.getSocketConnectTimeoutSeconds();
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
-        this.selectorThreadCount = ioService.getSelectorThreadCount();
-        this.inSelectors = new InSelectorImpl[selectorThreadCount];
-        this.outSelectors = new OutSelectorImpl[selectorThreadCount];
+        this.reactorThreadCount = ioService.getSelectorThreadCount();
+        this.inReactors = new IOReactorImpl[reactorThreadCount];
+        this.outReactors = new IOReactorImpl[reactorThreadCount];
         final Collection<Integer> ports = ioService.getOutboundPorts();
         this.outboundPortCount = ports == null ? 0 : ports.size();
         if (ports != null) {
@@ -150,11 +127,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
         this.portableContext = ioService.getPortableContext();
 
-        this.selectorImbalanceWorkaroundEnabled = isSelectorImbalanceEnabled();
-        this.selectorIndexPerHostMap = selectorImbalanceWorkaroundEnabled ? new HashMap<String, Integer>() : null;
+        this.reactorImbalanceWorkaroundEnabled = isReactorImbalanceEnabled();
+        this.reactorIndexPerHostMap = reactorImbalanceWorkaroundEnabled ? new HashMap<String, Integer>() : null;
     }
 
-    private boolean isSelectorImbalanceEnabled() {
+    private boolean isReactorImbalanceEnabled() {
         boolean enabled = parseBoolean(System.getProperty("hazelcast.selectorhack.enabled", "false"));
         if (enabled) {
             logger.severe("WARNING!!!! The 'hazelcast.selectorhack.enabled' has been enabled. This feature should not be used "
@@ -223,7 +200,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return portableContext;
     }
 
-    public IOService getIOHandler() {
+    public IOService getIOService() {
         return ioService;
     }
 
@@ -326,8 +303,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         //now you can send anything...
     }
 
-    private int nextSelectorIndex() {
-        return Math.abs(nextSelectorIndex.getAndIncrement()) % selectorThreadCount;
+    private int nextReactorIndex() {
+        return Math.abs(nextReactorIndex.getAndIncrement()) % reactorThreadCount;
     }
 
     SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
@@ -339,10 +316,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
         InetSocketAddress remoteSocketAddress = (InetSocketAddress) channel.socket().getRemoteSocketAddress();
         String remoteHost = remoteSocketAddress.getHostName();
-        int index = getSelectorIndex(remoteHost);
+        int index = getReactorIndex(remoteHost);
 
-        final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
-                outSelectors[index], connectionIdGen.incrementAndGet(), channel);
+        final TcpIpConnection connection = new TcpIpConnection(this, inReactors[index],
+                outReactors[index], connectionIdGen.incrementAndGet(), channel);
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
@@ -353,27 +330,27 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return connection;
     }
 
-    private int getSelectorIndex(String remoteHost) {
+    private int getReactorIndex(String remoteHost) {
         Integer index;
-        if (selectorImbalanceWorkaroundEnabled) {
-            synchronized (selectorIndexPerHostMap) {
-                index = selectorIndexPerHostMap.get(remoteHost);
+        if (reactorImbalanceWorkaroundEnabled) {
+            synchronized (reactorIndexPerHostMap) {
+                index = reactorIndexPerHostMap.get(remoteHost);
                 if (index == null) {
-                    index = nextSelectorIndex();
-                    selectorIndexPerHostMap.put(remoteHost, index);
+                    index = nextReactorIndex();
+                    reactorIndexPerHostMap.put(remoteHost, index);
                     logger.info(remoteHost + " no selector index found, retrieving a new one: " + index);
                 } else {
                     logger.info(remoteHost + " selector index found: " + index);
                 }
             }
         } else {
-            index = nextSelectorIndex();
+            index = nextReactorIndex();
         }
         return index;
     }
 
     private void logConnectionEstablished(SocketChannelWrapper channel, InetSocketAddress remoteSocketAddress, Integer index) {
-        if (selectorImbalanceWorkaroundEnabled) {
+        if (reactorImbalanceWorkaroundEnabled) {
             log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
                     + " and " + remoteSocketAddress
                     + " using selectorIndex: " + index + " connectionCount: " + activeConnections.size());
@@ -404,7 +381,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     @Override
     public Connection getOrConnect(final Address address, final boolean silent) {
         Connection connection = connectionsMap.get(address);
-        if (connection == null && live) {
+        if (connection == null && alive) {
             if (connectionsInProgress.add(address)) {
                 ioService.shouldConnectTo(address);
                 ioService.executeAsync(new SocketConnector(this, address, silent));
@@ -435,7 +412,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (endPoint != null) {
             connectionsInProgress.remove(endPoint);
             connectionsMap.remove(endPoint, connection);
-            if (live) {
+            if (alive) {
                 ioService.getEventService().executeEventCallback(new StripedRunnable() {
                     @Override
                     public void run() {
@@ -470,30 +447,36 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     @Override
     public synchronized void start() {
-        if (live) {
+        if (alive) {
             return;
         }
-        live = true;
+        alive = true;
         log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
-        IOSelectorOutOfMemoryHandler oomeHandler = new IOSelectorOutOfMemoryHandler() {
+        IOReactorOutOfMemoryHandler oomeHandler = new IOReactorOutOfMemoryHandler() {
             @Override
             public void handle(OutOfMemoryError error) {
                 ioService.onOutOfMemory(error);
             }
         };
-        for (int i = 0; i < inSelectors.length; i++) {
-            inSelectors[i] = new InSelectorImpl(
+
+        DefaultIOEventLoopFactory eventLoopFactory = newEventLoopFactory();
+
+        for (int i = 0; i < inReactors.length; i++) {
+            inReactors[i] = new IOReactorImpl(
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "in-" + i,
-                    ioService.getLogger(InSelectorImpl.class.getName()),
-                    oomeHandler);
-            outSelectors[i] = new OutSelectorImpl(
+                    ioService.getLogger(IOReactor.class.getName()),
+                    oomeHandler,
+                    eventLoopFactory);
+
+            outReactors[i] = new IOReactorImpl(
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "out-" + i,
-                    ioService.getLogger(OutSelectorImpl.class.getName()),
-                    oomeHandler);
-            inSelectors[i].start();
-            outSelectors[i].start();
+                    ioService.getLogger(IOReactor.class.getName()),
+                    oomeHandler,
+                    eventLoopFactory);
+            inReactors[i].start();
+            outReactors[i].start();
         }
 
         if (socketAcceptorThread != null) {
@@ -506,6 +489,16 @@ public class TcpIpConnectionManager implements ConnectionManager {
         socketAcceptorThread.start();
     }
 
+    private DefaultIOEventLoopFactory newEventLoopFactory() {
+        DefaultIOEventLoopFactory eventLoopFactory = new DefaultIOEventLoopFactory();
+        boolean spinningEnabled = ioService.getGroupProperties().IO_SPINNING_ENABLED.getBoolean();
+        if (spinningEnabled) {
+            logger.warning("IOReactor.spinning is enabled. This is currently an experimental feature");
+        }
+        eventLoopFactory.setSpinningEnabled(spinningEnabled);
+        return eventLoopFactory;
+    }
+
     @Override
     public synchronized void restart() {
         stop();
@@ -514,10 +507,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     @Override
     public synchronized void shutdown() {
-        if (!live) {
+        if (!alive) {
             return;
         }
-        live = false;
+        alive = false;
         shutdownSocketAcceptor();
         closeServerSocket();
         stop();
@@ -536,7 +529,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     private void stop() {
-        live = false;
+        alive = false;
         log(Level.FINEST, "Stopping ConnectionManager");
         shutdownSocketAcceptor();
         for (SocketChannelWrapper socketChannel : acceptedSockets) {
@@ -556,7 +549,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 logger.finest(ignore);
             }
         }
-        shutdownIOSelectors();
+        shutdownIOReactors();
 
         acceptedSockets.clear();
         connectionsInProgress.clear();
@@ -565,22 +558,25 @@ public class TcpIpConnectionManager implements ConnectionManager {
         activeConnections.clear();
     }
 
-    private synchronized void shutdownIOSelectors() {
-        if (logger.isFinestEnabled()) {
-            log(Level.FINEST, "Shutting down IO selectors... Total: " + selectorThreadCount);
-        }
-        for (int i = 0; i < selectorThreadCount; i++) {
-            IOSelector ioSelector = inSelectors[i];
-            if (ioSelector != null) {
-                ioSelector.shutdown();
-            }
-            inSelectors[i] = null;
+    private synchronized void shutdownIOReactors() {
+        // todo: Do we really want this method to be synchronized. Why not use a cas field and jump out of another thread
+        // is shutting down this connection-manager.
 
-            ioSelector = outSelectors[i];
-            if (ioSelector != null) {
-                ioSelector.shutdown();
+        if (logger.isFinestEnabled()) {
+            log(Level.FINEST, "Shutting down IO Reactors... Total: " + reactorThreadCount);
+        }
+        for (int i = 0; i < reactorThreadCount; i++) {
+            IOReactor ioReactor = inReactors[i];
+            if (ioReactor != null) {
+                ioReactor.shutdown();
             }
-            outSelectors[i] = null;
+            inReactors[i] = null;
+
+            ioReactor = outReactors[i];
+            if (ioReactor != null) {
+                ioReactor.shutdown();
+            }
+            outReactors[i] = null;
         }
     }
 
@@ -612,8 +608,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return count;
     }
 
-    public boolean isLive() {
-        return live;
+    public boolean isAlive() {
+        return alive;
     }
 
     private void log(Level level, String message) {
@@ -641,16 +637,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     @Override
     public void dumpPerformanceMetrics(StringBuffer sb) {
-        for (int k = 0; k < inSelectors.length; k++) {
-            InSelectorImpl inSelector = inSelectors[k];
-            sb.append(inSelector.getName()).append(".readEvents=")
-                    .append(inSelector.getReadEvents()).append("\n");
+        for (int k = 0; k < inReactors.length; k++) {
+            IOReactor reactor = inReactors[k];
+            reactor.dumpPerformanceMetrics(sb);
         }
 
-        for (int k = 0; k < outSelectors.length; k++) {
-            OutSelectorImpl outSelector = outSelectors[k];
-            sb.append(outSelector.getName()).append(".writeEvents=")
-                    .append(outSelector.getWriteEvents()).append("\n");
+        for (int k = 0; k < outReactors.length; k++) {
+            IOReactor reactor = outReactors[k];
+            reactor.dumpPerformanceMetrics(sb);
         }
     }
 
@@ -661,8 +655,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
             sb.append("\n");
             sb.append(conn);
         }
-        sb.append("\nlive=");
-        sb.append(live);
+        sb.append("\nalive=");
+        sb.append(alive);
         sb.append("\n}");
         return sb.toString();
     }

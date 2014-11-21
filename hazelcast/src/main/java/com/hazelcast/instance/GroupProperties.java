@@ -62,6 +62,13 @@ public class GroupProperties {
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
+
+    /**
+     * If the IO system should rely on spinning (so Selector#selectNow) instead of a blocking call. Using spinning can
+     * reduce latency, since the CPU is spinning it can also impact performance negatively. Currently this is an experimental
+     * feature and disabled by default.
+     */
+    public static final String PROP_IO_SPINNING_ENABLED = "hazelcast.io.spinning.enabled";
     public static final String PROP_IO_QUEUE_CAPACITY = "hazelcast.io.queue.capacity";
     /**
      * The number of partition threads per Member. If this is less than the number of partitions on a Member, then
@@ -177,6 +184,8 @@ public class GroupProperties {
     public final GroupProperty PERFORMANCE_MONITORING_DELAY_SECONDS;
 
     public final GroupProperty IO_THREAD_COUNT;
+
+    public final GroupProperty IO_SPINNING_ENABLED;
 
     public final GroupProperty IO_QUEUE_CAPACITY;
 
@@ -325,6 +334,7 @@ public class GroupProperties {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
+        IO_SPINNING_ENABLED = new GroupProperty(config, PROP_IO_SPINNING_ENABLED, "false");
         IO_QUEUE_CAPACITY = new GroupProperty(config, PROP_IO_QUEUE_CAPACITY, "10000");
 
         //-1 means that the value is worked out dynamically.

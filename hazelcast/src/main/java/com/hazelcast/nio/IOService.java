@@ -20,6 +20,7 @@ import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
@@ -38,6 +39,7 @@ public interface IOService {
 
     boolean isActive();
 
+    // TODO: Replace by access to the logging service.
     ILogger getLogger(String name);
 
     void onOutOfMemory(OutOfMemoryError oom);
@@ -58,10 +60,6 @@ public interface IOService {
 
     TextCommandService getTextCommandService();
 
-    boolean isMemcacheEnabled();
-
-    boolean isRestEnabled();
-
     void removeEndpoint(Address endpoint);
 
     String getThreadPrefix();
@@ -72,27 +70,47 @@ public interface IOService {
 
     void shouldConnectTo(Address address);
 
+
+    // TODO: Replace by group-properties
+    boolean isMemcacheEnabled();
+
+    // TODO: Replace by group-properties
+    boolean isRestEnabled();
+
+    // TODO: Replace by group-properties
     boolean isSocketBind();
 
+    // TODO: Replace by group-properties
     boolean isSocketBindAny();
 
+    // TODO: Replace by group-properties
     int getSocketReceiveBufferSize();
 
+    // TODO: Replace by group-properties
     int getSocketSendBufferSize();
 
+    // TODO: Replace by group-properties
     int getSocketLingerSeconds();
 
+    // TODO: Replace by group-properties
     int getSocketConnectTimeoutSeconds();
 
+    // TODO: Replace by group-properties
     boolean getSocketKeepAlive();
 
+    // TODO: Replace by group-properties
     boolean getSocketNoDelay();
 
+    // TODO: Replace by group-properties
     int getSelectorThreadCount();
 
+    // TODO: Replace by group-properties
     long getConnectionMonitorInterval();
 
+    // TODO: Replace by group-properties
     int getConnectionMonitorMaxFaults();
+
+    GroupProperties getGroupProperties();
 
     void onDisconnect(Address endpoint);
 
@@ -104,12 +122,15 @@ public interface IOService {
 
     Collection<Integer> getOutboundPorts();
 
+    // Replace by serialization service
     Data toData(Object obj);
 
+    // Replace by serialization service.
     Object toObject(Data data);
 
     SerializationService getSerializationService();
 
+    // Replace by serialization service.
     PortableContext getPortableContext();
 
     SocketChannelWrapperFactory getSocketChannelWrapperFactory();

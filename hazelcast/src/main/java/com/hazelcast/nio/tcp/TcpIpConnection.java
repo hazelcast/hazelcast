@@ -30,46 +30,37 @@ import java.net.SocketAddress;
 
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
- *
+ * <p/>
  * A Connection has 2 sides:
  * <ol>
- *     <li>the side where it receives data from the remote  machine</li>
- *     <li>the side where it sends data to the remote machine</li>
+ * <li>the side where it receives data from the remote  machine</li>
+ * <li>the side where it sends data to the remote machine</li>
  * </ol>
- *
- * The reading side is the {@link com.hazelcast.nio.tcp.ReadHandler} and the writing side of this connection
- * is the {@link com.hazelcast.nio.tcp.WriteHandler}.
+ * <p/>
+ * The reading side is the {@link TcpIpConnectionReadHandler} and the writing side of this connection
+ * is the {@link TcpIpConnectionWriteHandler}.
  */
 public final class TcpIpConnection implements Connection {
 
-    private final SocketChannelWrapper socketChannel;
-
-    private final ReadHandler readHandler;
-
-    private final WriteHandler writeHandler;
-
-    private final TcpIpConnectionManager connectionManager;
-
-    private volatile boolean live = true;
-
-    private volatile ConnectionType type = ConnectionType.NONE;
-
-    private Address endPoint;
-
     private final ILogger logger;
-
     private final int connectionId;
-
+    private final SocketChannelWrapper socketChannel;
+    private final TcpIpConnectionReadHandler readHandler;
+    private final TcpIpConnectionWriteHandler writeHandler;
+    private final TcpIpConnectionManager connectionManager;
+    private volatile boolean live = true;
+    private volatile ConnectionType type = ConnectionType.NONE;
+    private Address endPoint;
     private TcpIpConnectionMonitor monitor;
 
-    public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
+    public TcpIpConnection(TcpIpConnectionManager connectionManager, IOReactor in, IOReactor out,
                            int connectionId, SocketChannelWrapper socketChannel) {
         this.connectionId = connectionId;
         this.logger = connectionManager.ioService.getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
-        this.readHandler = new ReadHandler(this, in);
-        this.writeHandler = new WriteHandler(this, out);
+        this.readHandler = new TcpIpConnectionReadHandler(this, in);
+        this.writeHandler = new TcpIpConnectionWriteHandler(this, out);
     }
 
     @Override
@@ -81,16 +72,40 @@ public final class TcpIpConnection implements Connection {
         return connectionManager;
     }
 
+    public int getConnectionId() {
+        return connectionId;
+    }
+
     @Override
-    public boolean write(SocketWritable packet) {
-        if (!live) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Connection is closed, won't write packet -> " + packet);
-            }
-            return false;
-        }
-        writeHandler.enqueueSocketWritable(packet);
-        return true;
+    public boolean isAlive() {
+        return live;
+    }
+
+    @Override
+    public long lastWriteTime() {
+        return writeHandler.lastWriteTime();
+    }
+
+    @Override
+    public long lastReadTime() {
+        return readHandler.lastReadTime();
+    }
+
+    @Override
+    public Address getEndPoint() {
+        return endPoint;
+    }
+
+    public void setEndPoint(Address endPoint) {
+        this.endPoint = endPoint;
+    }
+
+    public void setMonitor(TcpIpConnectionMonitor monitor) {
+        this.monitor = monitor;
+    }
+
+    public TcpIpConnectionMonitor getMonitor() {
+        return monitor;
     }
 
     @Override
@@ -124,61 +139,24 @@ public final class TcpIpConnection implements Connection {
         return (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
     }
 
-    public ReadHandler getReadHandler() {
+    public TcpIpConnectionReadHandler getReadHandler() {
         return readHandler;
     }
 
-    public WriteHandler getWriteHandler() {
+    public TcpIpConnectionWriteHandler getWriteHandler() {
         return writeHandler;
     }
 
     @Override
-    public boolean isAlive() {
-        return live;
-    }
-
-    @Override
-    public long lastWriteTime() {
-        return writeHandler.getLastHandle();
-    }
-
-    @Override
-    public long lastReadTime() {
-        return readHandler.getLastHandle();
-    }
-
-    @Override
-    public Address getEndPoint() {
-        return endPoint;
-    }
-
-    public void setEndPoint(Address endPoint) {
-        this.endPoint = endPoint;
-    }
-
-    public void setMonitor(TcpIpConnectionMonitor monitor) {
-        this.monitor = monitor;
-    }
-
-    public TcpIpConnectionMonitor getMonitor() {
-        return monitor;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof TcpIpConnection)) {
+    public boolean write(SocketWritable packet) {
+        if (!live) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Connection is closed, won't write packet -> " + packet);
+            }
             return false;
         }
-        TcpIpConnection that = (TcpIpConnection) o;
-        return connectionId == that.getConnectionId();
-    }
-
-    @Override
-    public int hashCode() {
-        return connectionId;
+        writeHandler.enqueue(packet);
+        return true;
     }
 
     private void close0() throws IOException {
@@ -224,7 +202,20 @@ public final class TcpIpConnection implements Connection {
         }
     }
 
-    public int getConnectionId() {
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof TcpIpConnection)) {
+            return false;
+        }
+        TcpIpConnection that = (TcpIpConnection) o;
+        return connectionId == that.getConnectionId();
+    }
+
+    @Override
+    public int hashCode() {
         return connectionId;
     }
 

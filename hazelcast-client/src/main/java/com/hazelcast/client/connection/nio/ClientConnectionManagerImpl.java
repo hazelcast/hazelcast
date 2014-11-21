@@ -52,10 +52,13 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.tcp.IOSelector;
-import com.hazelcast.nio.tcp.IOSelectorOutOfMemoryHandler;
-import com.hazelcast.nio.tcp.InSelectorImpl;
-import com.hazelcast.nio.tcp.OutSelectorImpl;
+import com.hazelcast.nio.tcp.DefaultIOEventLoopFactory;
+import com.hazelcast.nio.tcp.IOEventLoopFactory;
+import com.hazelcast.nio.tcp.BlockingIOEventLoop;
+import com.hazelcast.nio.tcp.IOReactor;
+import com.hazelcast.nio.tcp.IOReactorImpl;
+import com.hazelcast.nio.tcp.IOReactorOutOfMemoryHandler;
+
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.security.Credentials;
@@ -86,7 +89,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private static final int RETRY_COUNT = 20;
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
-    private  static final IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
+    private  static final IOReactorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOReactorOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
             LOGGER.severe(error);
@@ -104,8 +107,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final Router router;
     private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
-    private final IOSelector inSelector;
-    private final IOSelector outSelector;
+    private final IOReactor inReactor;
+    private final IOReactor outReactor;
     private final boolean smartRouting;
     private final OwnerConnectionFuture ownerConnectionFuture = new OwnerConnectionFuture();
 
@@ -145,16 +148,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         credentials = initCredentials(config);
         router = new Router(loadBalancer);
 
-        inSelector = new InSelectorImpl(
+        DefaultIOEventLoopFactory eventLoopFactory = new DefaultIOEventLoopFactory();
+        inReactor = new IOReactorImpl(
                 client.getThreadGroup(),
-                "InSelector",
-                Logger.getLogger(InSelectorImpl.class),
-                OUT_OF_MEMORY_HANDLER);
-        outSelector = new OutSelectorImpl(
+                "InReactor",
+                Logger.getLogger(IOReactor.class),
+                OUT_OF_MEMORY_HANDLER,
+                eventLoopFactory);
+        outReactor = new IOReactorImpl(
                 client.getThreadGroup(),
-                "OutSelector",
-                Logger.getLogger(OutSelectorImpl.class),
-                OUT_OF_MEMORY_HANDLER);
+                "OutReactor",
+                Logger.getLogger(IOReactor.class),
+                OUT_OF_MEMORY_HANDLER,
+                eventLoopFactory);
 
         socketOptions = networkConfig.getSocketOptions();
         ClientExtension clientExtension = client.getClientExtension();
@@ -205,8 +211,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             return;
         }
         alive = true;
-        inSelector.start();
-        outSelector.start();
+        inReactor.start();
+        outReactor.start();
         invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         HeartBeat heartBeat = new HeartBeat();
         executionService.scheduleWithFixedDelay(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
@@ -221,8 +227,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         for (ClientConnection connection : connections.values()) {
             connection.close();
         }
-        inSelector.shutdown();
-        outSelector.shutdown();
+        inReactor.shutdown();
+        outReactor.shutdown();
         connectionLockMap.clear();
     }
 
@@ -378,8 +384,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 socket.setReceiveBufferSize(bufferSize);
                 socketChannel.socket().connect(address.getInetSocketAddress(), connectionTimeout);
                 SocketChannelWrapper socketChannelWrapper = socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
-                final ClientConnection clientConnection = new ClientConnection(ClientConnectionManagerImpl.this, inSelector,
-                        outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper,
+                final ClientConnection clientConnection = new ClientConnection(ClientConnectionManagerImpl.this, inReactor,
+                        outReactor, connectionIdGen.incrementAndGet(), socketChannelWrapper,
                         executionService, invocationService, client.getSerializationService());
                 socketChannel.configureBlocking(true);
                 if (socketInterceptor != null) {

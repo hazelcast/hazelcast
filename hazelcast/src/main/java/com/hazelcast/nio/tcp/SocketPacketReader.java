@@ -16,24 +16,18 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOService;
-
 import java.nio.ByteBuffer;
 
-class SocketPacketReader implements SocketReader {
+/**
+ * A {@link com.hazelcast.nio.tcp.SocketReader} that can read a {@link com.hazelcast.nio.Packet} using the
+ * {@link com.hazelcast.nio.tcp.PacketReader}.
+ */
+public class SocketPacketReader implements SocketReader {
 
-    final PacketReader packetReader;
-    final TcpIpConnection connection;
-    final IOService ioService;
-    final ILogger logger;
+    private final PacketReader packetReader;
 
-    public SocketPacketReader(TcpIpConnection connection) {
-        this.connection = connection;
-        final TcpIpConnectionManager connectionManager = connection.getConnectionManager();
-        this.ioService = connectionManager.ioService;
-        this.logger = ioService.getLogger(getClass().getName());
-        packetReader = connectionManager.createPacketReader(connection);
+    public SocketPacketReader(PacketReader packetReader) {
+        this.packetReader = packetReader;
     }
 
     @Override

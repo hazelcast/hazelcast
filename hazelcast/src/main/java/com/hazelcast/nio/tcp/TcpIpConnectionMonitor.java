@@ -23,19 +23,17 @@ import com.hazelcast.util.Clock;
 
 public class TcpIpConnectionMonitor {
 
-    final ILogger logger;
-    final TcpIpConnectionManager connectionManager;
-    final IOService ioService;
-    final Address endPoint;
-    final long minInterval;
-    final int maxFaults;
-    int faults;
-    long lastFaultTime;
+    private final ILogger logger;
+    private final IOService ioService;
+    private final Address endPoint;
+    private final long minInterval;
+    private final int maxFaults;
+    private int faults;
+    private long lastFaultTime;
 
     public TcpIpConnectionMonitor(TcpIpConnectionManager connectionManager, Address endPoint) {
-        this.connectionManager = connectionManager;
         this.endPoint = endPoint;
-        this.ioService = connectionManager.getIOHandler();
+        this.ioService = connectionManager.getIOService();
         this.minInterval = ioService.getConnectionMonitorInterval();
         this.maxFaults = ioService.getConnectionMonitorMaxFaults();
         this.logger = ioService.getLogger(getClass().getName());
@@ -48,8 +46,8 @@ public class TcpIpConnectionMonitor {
     public synchronized void onError(Throwable t) {
         String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(t);
         logger.finest(errorMessage);
-        final long now = Clock.currentTimeMillis();
-        final long last = lastFaultTime;
+        long now = Clock.currentTimeMillis();
+        long last = lastFaultTime;
         if (now - last > minInterval) {
             if (faults++ >= maxFaults) {
                 String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(t);
@@ -67,7 +65,7 @@ public class TcpIpConnectionMonitor {
         lastFaultTime = 0L;
     }
 
-    private  String getCauseDescription(Throwable t) {
+    private String getCauseDescription(Throwable t) {
         StringBuilder s = new StringBuilder(" Cause => ");
         if (t != null) {
             s.append(t.getClass().getName()).append(" {").append(t.getMessage()).append("}");

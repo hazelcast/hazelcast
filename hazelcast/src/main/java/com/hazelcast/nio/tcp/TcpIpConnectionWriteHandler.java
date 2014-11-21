@@ -31,62 +31,61 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
  * The writing side of the {@link TcpIpConnection}.
  */
-public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
+public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler implements Runnable {
 
-    private static final long TIMEOUT = 3;
+    private static final long TIMEOUT_SECONDS = 3;
 
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
-
     private final Queue<SocketWritable> urgencyWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();
-
-    private final AtomicBoolean informSelector = new AtomicBoolean(true);
-
+    private final AtomicBoolean notifyReactor = new AtomicBoolean(true);
     private final ByteBuffer buffer;
-
-    private final IOSelector ioSelector;
-
+    private final IOReactor ioReactor;
     private boolean ready;
-
-    private SocketWritable lastWritable;
-
+    private SocketWritable currentPacket;
     private SocketWriter socketWriter;
 
-    private volatile long lastHandle;
+    // This field is written by single IO thread, but read by other threads.
+    private volatile long lastWriteTime;
 
-    WriteHandler(TcpIpConnection connection, IOSelector ioSelector) {
+    TcpIpConnectionWriteHandler(TcpIpConnection connection, IOReactor ioReactor) {
         super(connection);
-        this.ioSelector = ioSelector;
-        buffer = ByteBuffer.allocate(connectionManager.socketSendBufferSize);
+        this.ioReactor = ioReactor;
+        this.buffer = ByteBuffer.allocate(connectionManager.socketSendBufferSize);
     }
 
-    // accessed from ReadHandler and SocketConnector
+    long lastWriteTime() {
+        return lastWriteTime;
+    }
+
+    // accessed from TcpIpConnectionReadHandler and SocketConnector
     void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
-        ioSelector.addTask(new Runnable() {
+        ioReactor.addTask(new Runnable() {
             public void run() {
                 createWriter(protocol);
                 latch.countDown();
             }
         });
-        ioSelector.wakeup();
+        ioReactor.wakeup();
         try {
-            latch.await(TIMEOUT, TimeUnit.SECONDS);
+            latch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            Logger.getLogger(WriteHandler.class).finest("CountDownLatch::await interrupted", e);
+            // why don't we make use of the regular logger.
+            Logger.getLogger(TcpIpConnectionWriteHandler.class).finest("CountDownLatch::await interrupted", e);
         }
     }
 
     private void createWriter(String protocol) {
         if (socketWriter == null) {
             if (Protocols.CLUSTER.equals(protocol)) {
-                socketWriter = new SocketPacketWriter(connection);
+                TcpIpConnectionManager connectionManager = connection.getConnectionManager();
+                socketWriter = new SocketPacketWriter(connectionManager.createPacketWriter(connection));
                 buffer.put(stringToBytes(Protocols.CLUSTER));
                 registerWrite();
             } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
@@ -101,19 +100,18 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         return socketWriter;
     }
 
-    public void enqueueSocketWritable(SocketWritable socketWritable) {
-        if (socketWritable.isUrgent()) {
-            urgencyWriteQueue.offer(socketWritable);
+    public void enqueue(SocketWritable packet) {
+        if (packet.isUrgent()) {
+            urgencyWriteQueue.offer(packet);
         } else {
-            writeQueue.offer(socketWritable);
+            writeQueue.offer(packet);
         }
-        if (informSelector.compareAndSet(true, false)) {
-            // we don't have to call wake up if this WriteHandler is
-            // already in the task queue.
-            // we can have a counter to check this later on.
-            // for now, wake up regardless.
-            ioSelector.addTask(this);
-            ioSelector.wakeup();
+
+        if (notifyReactor.compareAndSet(true, false)) {
+            // we don't have to call wake up if this WriteHandler already in the task queue.
+            // we can have a counter to check this later on for now, wake up regardless.
+            ioReactor.addTask(this);
+            ioReactor.wakeup();
         }
     }
 
@@ -129,17 +127,17 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     @SuppressWarnings("unchecked")
     @Override
     public void handle() {
-        lastHandle = Clock.currentTimeMillis();
+        lastWriteTime = Clock.currentTimeMillis();
         if (!connection.isAlive()) {
             return;
         }
         if (socketWriter == null) {
-            logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
+            logger.warning("SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
             createWriter(Protocols.CLUSTER);
         }
-        if (lastWritable == null) {
-            lastWritable = poll();
-            if (lastWritable == null && buffer.position() == 0) {
+        if (currentPacket == null) {
+            currentPacket = poll();
+            if (currentPacket == null && buffer.position() == 0) {
                 ready = true;
                 return;
             }
@@ -155,34 +153,38 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     private void writeBuffer() throws Exception {
-        while (buffer.hasRemaining() && lastWritable != null) {
-            boolean complete = socketWriter.write(lastWritable, buffer);
+        while (buffer.hasRemaining() && currentPacket != null) {
+            boolean complete = socketWriter.write(currentPacket, buffer);
             if (complete) {
-                lastWritable = poll();
+                currentPacket = poll();
             } else {
                 break;
             }
         }
-        if (buffer.position() > 0) {
-            buffer.flip();
-            try {
-                socketChannel.write(buffer);
-            } catch (Exception e) {
-                lastWritable = null;
-                handleSocketException(e);
-                return;
-            }
-            if (buffer.hasRemaining()) {
-                buffer.compact();
-            } else {
-                buffer.clear();
-            }
+
+        if (buffer.position() == 0) {
+            return;
+        }
+
+        buffer.flip();
+        try {
+            socketChannel.write(buffer);
+        } catch (Exception e) {
+            currentPacket = null;
+            handleSocketException(e);
+            return;
+        }
+
+        if (buffer.hasRemaining()) {
+            buffer.compact();
+        } else {
+            buffer.clear();
         }
     }
 
     @Override
     public void run() {
-        informSelector.set(true);
+        notifyReactor.set(true);
         if (ready) {
             handle();
         } else {
@@ -192,7 +194,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     private void registerWrite() {
-        registerOp(ioSelector.getSelector(), SelectionKey.OP_WRITE);
+        registerOp(ioReactor.getSelector(), SelectionKey.OP_WRITE);
     }
 
     public void shutdown() {
@@ -200,7 +202,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         urgencyWriteQueue.clear();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        ioSelector.addTask(new Runnable() {
+        ioReactor.addTask(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -212,15 +214,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 }
             }
         });
-        ioSelector.wakeup();
+        ioReactor.wakeup();
         try {
-            latch.await(TIMEOUT, TimeUnit.SECONDS);
+            latch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             EmptyStatement.ignore(e);
         }
-    }
-
-    long getLastHandle() {
-        return lastHandle;
     }
 }

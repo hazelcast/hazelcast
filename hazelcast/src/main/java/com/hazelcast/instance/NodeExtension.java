@@ -20,7 +20,7 @@ import com.hazelcast.management.TimedMemberStateFactory;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.tcp.PacketReader;
+import com.hazelcast.nio.tcp.DefaultPacketReader;
 import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -104,7 +104,7 @@ public interface NodeExtension {
      *
      * @return packet reader
      */
-    PacketReader createPacketReader(TcpIpConnection connection, IOService ioService);
+    DefaultPacketReader createPacketReader(TcpIpConnection connection, IOService ioService);
 
     /**
      * Creates a <tt>PacketWriter</tt> for given <tt>Connection</tt> instance.

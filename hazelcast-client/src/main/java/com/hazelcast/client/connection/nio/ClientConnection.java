@@ -35,7 +35,7 @@ import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.IOReactor;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ExceptionUtil;
@@ -64,9 +64,9 @@ public class ClientConnection implements Connection, Closeable {
 
     private final ILogger logger = Logger.getLogger(ClientConnection.class);
 
-    private final ClientWriteHandler writeHandler;
+    private final ClientConnectionWriteHandler writeHandler;
 
-    private final ClientReadHandler readHandler;
+    private final ClientConnectionReadHandler readHandler;
 
     private final ClientConnectionManager connectionManager;
 
@@ -88,7 +88,7 @@ public class ClientConnection implements Connection, Closeable {
     private final AtomicInteger packetCount = new AtomicInteger(0);
     private volatile boolean heartBeating = true;
 
-    public ClientConnection(ClientConnectionManager connectionManager, IOSelector in, IOSelector out,
+    public ClientConnection(ClientConnectionManager connectionManager, IOReactor in, IOReactor out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper,
                             ClientExecutionService executionService,
                             ClientInvocationServiceImpl invocationService,
@@ -100,8 +100,8 @@ public class ClientConnection implements Connection, Closeable {
         this.invocationService = invocationService;
         this.socketChannelWrapper = socketChannelWrapper;
         this.connectionId = connectionId;
-        this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
-        this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize());
+        this.readHandler = new ClientConnectionReadHandler(this, in, socket.getReceiveBufferSize());
+        this.writeHandler = new ClientConnectionWriteHandler(this, out, socket.getSendBufferSize());
         this.readBuffer = ByteBuffer.allocate(socket.getReceiveBufferSize());
     }
 
@@ -263,7 +263,7 @@ public class ClientConnection implements Connection, Closeable {
         return connectionManager;
     }
 
-    public ClientReadHandler getReadHandler() {
+    public ClientConnectionReadHandler getReadHandler() {
         return readHandler;
     }
 

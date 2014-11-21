@@ -16,15 +16,33 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.NIOThread;
+import com.hazelcast.logging.ILogger;
 
 import java.nio.channels.Selector;
 
-public interface IOSelector extends NIOThread {
+/**
+ * The IOReactor is an implementation of the reactor design-pattern.
+ * <p/>
+ * http://www.cs.wustl.edu/~schmidt/PDF/reactor-siemens.pdf
+ * <p/>
+ * The reactor contains a few parts:
+ * - the reactor itself.
+ * - the event loop
+ * - the event handler
+ */
+public interface IOReactor {
 
     Selector getSelector();
 
+    ILogger getLogger();
+
+    IOReactorOutOfMemoryHandler getOutOfMemoryHandler();
+
+    String getName();
+
     void addTask(Runnable runnable);
+
+    void processTasks();
 
     void wakeup();
 
@@ -34,4 +52,7 @@ public interface IOSelector extends NIOThread {
 
     void awaitShutdown();
 
+    boolean isAlive();
+
+    void dumpPerformanceMetrics(StringBuffer sb);
 }
