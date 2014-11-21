@@ -58,23 +58,22 @@ public class MultiMapOperationFactory implements OperationFactory {
 
     public Operation createOperation() {
 
-    	switch(operationFactoryType) {
-    		case KEY_SET:
-    			return new KeySetOperation(name);
-			case VALUES:
-				return new ValuesOperation(name);
-			case ENTRY_SET:
-				return new EntrySetOperation(name);
-			case CONTAINS:
-				return new ContainsEntryOperation(name, key, value, threadId);
-			case SIZE:
-				return new SizeOperation(name);
-			case CLEAR:
-				return new ClearOperation(name);
-			default:
-				return null;    		
-    	}
-    	
+        switch(operationFactoryType) {
+            case KEY_SET:
+                 return new KeySetOperation(name);
+            case VALUES:
+                 return new ValuesOperation(name);
+            case ENTRY_SET:
+                 return new EntrySetOperation(name);
+            case CONTAINS:
+                 return new ContainsEntryOperation(name, key, value, threadId);
+            case SIZE:
+                 return new SizeOperation(name);
+            case CLEAR:
+                 return new ClearOperation(name);
+            default:
+                 return null;
+        }
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
