@@ -35,7 +35,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.memory.MemoryStatsSupport.freePhysicalMemory;
+import static com.hazelcast.memory.MemoryStatsSupport.freeSwapSpace;
 import static com.hazelcast.memory.MemoryStatsSupport.totalPhysicalMemory;
+import static com.hazelcast.memory.MemoryStatsSupport.totalSwapSpace;
 import static com.hazelcast.util.OperatingSystemMXBeanSupport.readLongAttribute;
 import static java.lang.String.format;
 
@@ -134,8 +136,6 @@ public class HealthMonitor extends Thread {
      * Health metrics to be logged under load.
      */
     private class HealthMetrics {
-        private final long swapSpaceTotal;
-        private final long swapSpaceFree;
         private final long memoryFree;
         private final long memoryTotal;
         private final long memoryUsed;
@@ -168,8 +168,6 @@ public class HealthMonitor extends Thread {
 
         //CHECKSTYLE:OFF
         public HealthMetrics() {
-            swapSpaceTotal = readLongAttribute("TotalSwapSpaceSize", -1L);
-            swapSpaceFree = readLongAttribute("FreeSwapSpaceSize", -1L);
             memoryFree = runtime.freeMemory();
             memoryTotal = runtime.totalMemory();
             memoryUsed = memoryTotal - memoryFree;
@@ -222,8 +220,8 @@ public class HealthMonitor extends Thread {
             sb.append("processors=").append(runtime.availableProcessors()).append(", ");
             sb.append("physical.memory.total=").append(numberToUnit(totalPhysicalMemory())).append(", ");
             sb.append("physical.memory.free=").append(numberToUnit(freePhysicalMemory())).append(", ");
-            sb.append("swap.space.total=").append(numberToUnit(swapSpaceTotal)).append(", ");
-            sb.append("swap.space.free=").append(numberToUnit(swapSpaceFree)).append(", ");
+            sb.append("swap.space.total=").append(numberToUnit(totalSwapSpace())).append(", ");
+            sb.append("swap.space.free=").append(numberToUnit(freeSwapSpace())).append(", ");
             sb.append("heap.memory.used=").append(numberToUnit(memoryUsed)).append(", ");
             sb.append("heap.memory.free=").append(numberToUnit(memoryFree)).append(", ");
             sb.append("heap.memory.total=").append(numberToUnit(memoryTotal)).append(", ");

@@ -26,6 +26,8 @@ public final class MemoryStatsSupport {
 
     private static final long TOTAL_PHYSICAL_MEMORY = readLongAttribute("TotalPhysicalMemorySize", -1L);
 
+    private static final long TOTAL_SWAP_SPACE = readLongAttribute("TotalSwapSpaceSize", -1L);
+
     /**
      * No public constructor is needed for utility classes
      */
@@ -37,6 +39,14 @@ public final class MemoryStatsSupport {
 
     public static long freePhysicalMemory() {
         return readLongAttribute("FreePhysicalMemorySize", -1L);
+    }
+
+    public static long totalSwapSpace() {
+        return TOTAL_SWAP_SPACE;
+    }
+
+    public static long freeSwapSpace() {
+        return readLongAttribute("FreeSwapSpaceSize", -1L);
     }
 
 }
