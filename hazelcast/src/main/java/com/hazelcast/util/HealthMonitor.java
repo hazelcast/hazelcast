@@ -21,8 +21,8 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.memory.GCStatsSupport;
-import com.hazelcast.monitor.LocalGCStats;
+import com.hazelcast.memory.GarbageCollectorStats;
+import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
@@ -30,12 +30,13 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ProxyService;
 
 import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadMXBean;
-import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.memory.MemoryStatsSupport.freePhysicalMemory;
+import static com.hazelcast.memory.MemoryStatsSupport.totalPhysicalMemory;
+import static com.hazelcast.util.OperatingSystemMXBeanSupport.readLongAttribute;
 import static java.lang.String.format;
 
 /**
@@ -66,7 +67,6 @@ public class HealthMonitor extends Thread {
     private final ILogger logger;
     private final Node node;
     private final Runtime runtime;
-    private final OperatingSystemMXBean osMxBean;
     private final HealthMonitorLevel logLevel;
     private final int delaySeconds;
     private final ExecutionService executionService;
@@ -84,7 +84,6 @@ public class HealthMonitor extends Thread {
         this.node = hazelcastInstance.node;
         this.logger = node.getLogger(HealthMonitor.class.getName());
         this.runtime = Runtime.getRuntime();
-        this.osMxBean = ManagementFactory.getOperatingSystemMXBean();
         this.logLevel = logLevel;
         this.delaySeconds = delaySeconds;
         this.threadMxBean = ManagementFactory.getThreadMXBean();
@@ -135,8 +134,6 @@ public class HealthMonitor extends Thread {
      * Health metrics to be logged under load.
      */
     private class HealthMetrics {
-        private final long physicalMemoryTotal;
-        private final long physicalMemoryFree;
         private final long swapSpaceTotal;
         private final long swapSpaceFree;
         private final long memoryFree;
@@ -171,19 +168,17 @@ public class HealthMonitor extends Thread {
 
         //CHECKSTYLE:OFF
         public HealthMetrics() {
-            physicalMemoryTotal = get(osMxBean, "getTotalPhysicalMemorySize", -1L);
-            physicalMemoryFree = get(osMxBean, "getFreePhysicalMemorySize", -1L);
-            swapSpaceTotal = get(osMxBean, "getTotalSwapSpaceSize", -1L);
-            swapSpaceFree = get(osMxBean, "getFreeSwapSpaceSize", -1L);
+            swapSpaceTotal = readLongAttribute("TotalSwapSpaceSize", -1L);
+            swapSpaceFree = readLongAttribute("FreeSwapSpaceSize", -1L);
             memoryFree = runtime.freeMemory();
             memoryTotal = runtime.totalMemory();
             memoryUsed = memoryTotal - memoryFree;
             memoryMax = runtime.maxMemory();
             memoryUsedOfTotalPercentage = PERCENTAGE_MULTIPLIER * memoryUsed / memoryTotal;
             memoryUsedOfMaxPercentage = PERCENTAGE_MULTIPLIER * memoryUsed / memoryMax;
-            processCpuLoad = get(osMxBean, "getProcessCpuLoad", -1L);
-            systemLoadAverage = get(osMxBean, "getSystemLoadAverage", -1L);
-            systemCpuLoad = get(osMxBean, "getSystemCpuLoad", -1L);
+            processCpuLoad = readLongAttribute("ProcessCpuLoad", -1L);
+            systemLoadAverage = readLongAttribute("SystemLoadAverage", -1L);
+            systemCpuLoad = readLongAttribute("SystemCpuLoad", -1L);
             threadCount = threadMxBean.getThreadCount();
             peakThreadCount = threadMxBean.getPeakThreadCount();
             asyncExecutorQueueSize = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR).getQueueSize();
@@ -225,26 +220,35 @@ public class HealthMonitor extends Thread {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("processors=").append(runtime.availableProcessors()).append(", ");
-            sb.append("physical.memory.total=").append(numberToUnitRepresentation(physicalMemoryTotal)).append(", ");
-            sb.append("physical.memory.free=").append(numberToUnitRepresentation(physicalMemoryFree)).append(", ");
-            sb.append("swap.space.total=").append(numberToUnitRepresentation(swapSpaceTotal)).append(", ");
-            sb.append("swap.space.free=").append(numberToUnitRepresentation(swapSpaceFree)).append(", ");
-            sb.append("heap.memory.used=").append(numberToUnitRepresentation(memoryUsed)).append(", ");
-            sb.append("heap.memory.free=").append(numberToUnitRepresentation(memoryFree)).append(", ");
-            sb.append("heap.memory.total=").append(numberToUnitRepresentation(memoryTotal)).append(", ");
-            sb.append("heap.memory.max=").append(numberToUnitRepresentation(memoryMax)).append(", ");
+            sb.append("physical.memory.total=").append(numberToUnit(totalPhysicalMemory())).append(", ");
+            sb.append("physical.memory.free=").append(numberToUnit(freePhysicalMemory())).append(", ");
+            sb.append("swap.space.total=").append(numberToUnit(swapSpaceTotal)).append(", ");
+            sb.append("swap.space.free=").append(numberToUnit(swapSpaceFree)).append(", ");
+            sb.append("heap.memory.used=").append(numberToUnit(memoryUsed)).append(", ");
+            sb.append("heap.memory.free=").append(numberToUnit(memoryFree)).append(", ");
+            sb.append("heap.memory.total=").append(numberToUnit(memoryTotal)).append(", ");
+            sb.append("heap.memory.max=").append(numberToUnit(memoryMax)).append(", ");
             sb.append("heap.memory.used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
             sb.append("heap.memory.used/max=").append(percentageString(memoryUsedOfMaxPercentage)).append((", "));
 
-            LocalGCStats gcMetrics = GCStatsSupport.getGCStats();
-            sb.append("minor.gc.count=").append(gcMetrics.getMinorCollectionCount()).append(", ");
-            sb.append("minor.gc.time=").append(gcMetrics.getMinorCollectionTime()).append("ms, ");
-            sb.append("major.gc.count=").append(gcMetrics.getMajorCollectionCount()).append(", ");
-            sb.append("major.gc.time=").append(gcMetrics.getMajorCollectionTime()).append("ms, ");
-            if (gcMetrics.getUnknownCollectionCount() > 0) {
-                sb.append("unknown.gc.count=").append(gcMetrics.getUnknownCollectionCount()).append(", ");
-                sb.append("unknown.gc.time=").append(gcMetrics.getUnknownCollectionTime()).append("ms, ");
+            MemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
+            if (memoryStats.getMaxNativeMemory() > 0L) {
+                sb.append("native.memory.used=").append(numberToUnit(memoryStats.getUsedNativeMemory())).append(", ");
+                sb.append("native.memory.free=").append(numberToUnit(memoryStats.getFreeNativeMemory())).append(", ");
+                sb.append("native.memory.total=").append(numberToUnit(memoryStats.getCommittedNativeMemory())).append(", ");
+                sb.append("native.memory.max=").append(numberToUnit(memoryStats.getMaxNativeMemory())).append(", ");
             }
+
+            GarbageCollectorStats gcStats = memoryStats.getGCStats();
+            sb.append("minor.gc.count=").append(gcStats.getMinorCollectionCount()).append(", ");
+            sb.append("minor.gc.time=").append(gcStats.getMinorCollectionTime()).append("ms, ");
+            sb.append("major.gc.count=").append(gcStats.getMajorCollectionCount()).append(", ");
+            sb.append("major.gc.time=").append(gcStats.getMajorCollectionTime()).append("ms, ");
+            if (gcStats.getUnknownCollectionCount() > 0) {
+                sb.append("unknown.gc.count=").append(gcStats.getUnknownCollectionCount()).append(", ");
+                sb.append("unknown.gc.time=").append(gcStats.getUnknownCollectionTime()).append("ms, ");
+            }
+
             sb.append("load.process=").append(format("%.2f", processCpuLoad)).append("%, ");
             sb.append("load.system=").append(format("%.2f", systemCpuLoad)).append("%, ");
             sb.append("load.systemAverage=").append(format("%.2f", systemLoadAverage)).append("%, ");
@@ -272,42 +276,11 @@ public class HealthMonitor extends Thread {
         }
     }
 
-    private static long get(OperatingSystemMXBean mbean, String methodName, long defaultValue) {
-        try {
-            Method method = mbean.getClass().getMethod(methodName);
-            method.setAccessible(true);
-
-            Object value = method.invoke(mbean);
-            if (value == null) {
-                return defaultValue;
-            }
-
-            if (value instanceof Long) {
-                return (Long) value;
-            }
-
-            if (value instanceof Double) {
-                double v = (Double) value;
-                return Math.round(v * PERCENTAGE_MULTIPLIER);
-            }
-
-            if (value instanceof Number) {
-                return ((Number) value).longValue();
-            }
-
-        } catch (RuntimeException re) {
-            throw re;
-        } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
-        }
-        return defaultValue;
-    }
-
     public static String percentageString(double p) {
         return format("%.2f", p) + "%";
     }
 
-    public static String numberToUnitRepresentation(long number) {
+    public static String numberToUnit(long number) {
         //CHECKSTYLE:OFF
         for (int i = 6; i > 0; i--) {
             double step = Math.pow(1024, i); // 1024 is for 1024 kb is 1 MB etc

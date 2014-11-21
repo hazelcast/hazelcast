@@ -1,6 +1,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.memory.GarbageCollectorStats;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.util.Clock;
 
@@ -18,6 +19,15 @@ public class LocalGCStatsImpl implements LocalGCStats {
 
     public LocalGCStatsImpl() {
         creationTime = Clock.currentTimeMillis();
+    }
+
+    public LocalGCStatsImpl(GarbageCollectorStats gcStats) {
+        setMajorCount(gcStats.getMajorCollectionCount());
+        setMajorTime(gcStats.getMajorCollectionTime());
+        setMinorCount(gcStats.getMinorCollectionCount());
+        setMinorTime(gcStats.getMinorCollectionTime());
+        setUnknownCount(gcStats.getUnknownCollectionCount());
+        setUnknownTime(gcStats.getUnknownCollectionTime());
     }
 
     @Override
@@ -74,30 +84,6 @@ public class LocalGCStatsImpl implements LocalGCStats {
         this.unknownTime = unknownTime;
     }
 
-//    @Override
-//    public void writeData(ObjectDataOutput out)
-//            throws IOException {
-//        out.writeLong(creationTime);
-//        out.writeLong(majorCount);
-//        out.writeLong(majorTime);
-//        out.writeLong(minorCount);
-//        out.writeLong(minorTime);
-//        out.writeLong(unknownCount);
-//        out.writeLong(unknownTime);
-//    }
-//
-//    @Override
-//    public void readData(ObjectDataInput in)
-//            throws IOException {
-//        creationTime = in.readLong();
-//        majorCount = in.readLong();
-//        majorTime = in.readLong();
-//        minorCount = in.readLong();
-//        minorTime = in.readLong();
-//        unknownCount = in.readLong();
-//        unknownTime = in.readLong();
-//    }
-
     @Override
     public long getCreationTime() {
         return creationTime;
@@ -129,7 +115,7 @@ public class LocalGCStatsImpl implements LocalGCStats {
 
     @Override
     public String toString() {
-        return "LocalGCStatsImpl{"
+        return "LocalGCStats{"
                 + "creationTime=" + creationTime
                 + ", minorCount=" + minorCount
                 + ", minorTime=" + minorTime
