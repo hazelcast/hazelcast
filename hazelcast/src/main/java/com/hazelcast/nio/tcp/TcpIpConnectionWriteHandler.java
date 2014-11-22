@@ -44,6 +44,12 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
  * <p/>
  * A thread becomes scheduled by a user-thread
  * A thread becomes unscheduled by the io thread when all data is written and there are no pending packets.
+ * <p/>
+ * <p/>
+ * todo:
+ * - no write events are being received
+ * - currently we are registering for write, but should we not unregister if there is nothing that
+ * needs to be written that
  */
 public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler implements Runnable {
 
@@ -147,10 +153,17 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
      */
     private void unschedule() {
         if (!writeBufferIsEmpty()) {
+            // Because not all data was written to the socket, we need to register for OP_WRITE so we get
+            // notified when the socketChannel is ready for more data.
+            registerOp(selector, SelectionKey.OP_WRITE);
+
             // If the writeBuffer is not empty, we don't need to unschedule ourselves. This is because the
             // TcpIpConnectionWriteHandle will be triggered by a nio write event to continue sending data.
             return;
         }
+
+        // since everything is written, we are not interested anymore in write-events, so lets unsubscribe
+        selectionKey.interestOps(selectionKey.interestOps() & ~ SelectionKey.OP_WRITE);
 
         // So the write-buffer is empty, so we are going to unschedule ourselves.
         scheduled.set(false);
@@ -286,9 +299,6 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         // We did not manage to write all data to the socket. So lets compact the buffer so new data
         // can be added at the end.
         writeBuffer.compact();
-        // Because not all data was written to the socket, we need to register for OP_WRITE so we get
-        // notified when the socketChannel is ready for more data.
-        registerOp(selector, SelectionKey.OP_WRITE);
     }
 
 

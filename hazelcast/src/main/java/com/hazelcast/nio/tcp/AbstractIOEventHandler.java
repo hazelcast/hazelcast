@@ -33,7 +33,7 @@ public abstract class AbstractIOEventHandler implements IOEventHandler {
     protected final SocketChannelWrapper socketChannel;
     protected final TcpIpConnection connection;
     protected final TcpIpConnectionManager connectionManager;
-    private SelectionKey selectionKey;
+    protected SelectionKey selectionKey;
 
     public AbstractIOEventHandler(TcpIpConnection connection) {
         this.connection = connection;
