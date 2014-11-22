@@ -20,7 +20,7 @@ package com.hazelcast.ascii.memcache;
 import com.hazelcast.ascii.TextCommand;
 import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TypeAwareCommandParser;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextByteBufferReader;
 
 import java.util.StringTokenizer;
 
@@ -36,7 +36,7 @@ public class IncrementCommandParser extends TypeAwareCommandParser {
         super(type);
     }
 
-    public TextCommand parser(SocketTextReader socketTextReader, String cmd, int space) {
+    public TextCommand parser(TextByteBufferReader textByteBufferReader, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
         String key = null;

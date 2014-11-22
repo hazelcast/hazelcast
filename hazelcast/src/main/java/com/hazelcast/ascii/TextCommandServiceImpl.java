@@ -35,7 +35,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ascii.SocketTextWriter;
+import com.hazelcast.nio.ascii.TextByteBufferWriter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
@@ -371,7 +371,7 @@ public class TextCommandServiceImpl implements TextCommandService {
                             stopObject.notify();
                         }
                     } else {
-                        SocketTextWriter socketTextWriter = textCommand.getSocketTextWriter();
+                        TextByteBufferWriter socketTextWriter = textCommand.getSocketTextWriter();
                         socketTextWriter.enqueue(textCommand);
                     }
                 } catch (InterruptedException e) {

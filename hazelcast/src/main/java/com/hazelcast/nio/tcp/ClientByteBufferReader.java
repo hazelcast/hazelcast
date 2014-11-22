@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 
-class SocketClientDataReader implements SocketReader {
+class ClientByteBufferReader implements ByteBufferReader {
 
     private static final int TYPE_BYTE = 3;
 
@@ -34,7 +34,7 @@ class SocketClientDataReader implements SocketReader {
     private Packet packet;
     private boolean connectionTypeSet;
 
-    public SocketClientDataReader(TcpIpConnection connection) {
+    public ClientByteBufferReader(TcpIpConnection connection) {
         this.connection = connection;
         this.ioService = connection.getConnectionManager().ioService;
     }

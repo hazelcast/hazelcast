@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextByteBufferReader;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
@@ -35,7 +35,7 @@ final class TcpIpConnectionReadHandler extends AbstractIOEventHandler implements
 
     private final ByteBuffer buffer;
     private final IOReactor ioReactor;
-    private SocketReader socketReader;
+    private ByteBufferReader byteBufferReader;
 
     // This field is written by single IO thread, but read by other threads.
     private volatile long lastReadTime;
@@ -55,9 +55,9 @@ final class TcpIpConnectionReadHandler extends AbstractIOEventHandler implements
         }
 
         try {
-            if (socketReader == null) {
+            if (byteBufferReader == null) {
                 initializeSocketReader();
-                if (socketReader == null) {
+                if (byteBufferReader == null) {
                     // when using SSL, we can read 0 bytes since data read from socket can be handshake packets.
                     return;
                 }
@@ -76,7 +76,7 @@ final class TcpIpConnectionReadHandler extends AbstractIOEventHandler implements
                 return;
             }
             buffer.flip();
-            socketReader.read(buffer);
+            byteBufferReader.read(buffer);
             if (buffer.hasRemaining()) {
                 buffer.compact();
             } else {
@@ -88,7 +88,7 @@ final class TcpIpConnectionReadHandler extends AbstractIOEventHandler implements
     }
 
     private void initializeSocketReader() throws IOException {
-        if (socketReader == null) {
+        if (byteBufferReader == null) {
             final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
             int readBytes = socketChannel.read(protocolBuffer);
             if (readBytes == -1) {
@@ -105,18 +105,18 @@ final class TcpIpConnectionReadHandler extends AbstractIOEventHandler implements
                     connection.setType(ConnectionType.MEMBER);
                     writeHandler.setProtocol(Protocols.CLUSTER);
                     TcpIpConnectionManager connectionManager = connection.getConnectionManager();
-                    socketReader = new SocketPacketReader(connectionManager.createPacketReader(connection));
+                    byteBufferReader = new PacketByteBufferReader(connectionManager.createPacketReader(connection));
                 } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
                     writeHandler.setProtocol(Protocols.CLIENT_BINARY);
-                    socketReader = new SocketClientDataReader(connection);
+                    byteBufferReader = new ClientByteBufferReader(connection);
                 } else {
                     writeHandler.setProtocol(Protocols.TEXT);
                     buffer.put(protocolBuffer.array());
-                    socketReader = new SocketTextReader(connection);
+                    byteBufferReader = new TextByteBufferReader(connection);
                     connection.getConnectionManager().incrementTextConnections();
                 }
             }
-            if (socketReader == null) {
+            if (byteBufferReader == null) {
                 throw new IOException("Could not initialize SocketReader!");
             }
         }

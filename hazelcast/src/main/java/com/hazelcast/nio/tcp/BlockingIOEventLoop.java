@@ -33,7 +33,8 @@ public final class BlockingIOEventLoop extends AbstractIOEventLoop {
         //noinspection WhileLoopSpinsOnField
         while (reactor.isAlive()) {
             reactor.processTasks();
-            if (!reactor.isAlive() || currentThread.isInterrupted()) {
+
+             if (!reactor.isAlive() || currentThread.isInterrupted()) {
                 if (logger.isFinestEnabled()) {
                     logger.finest(reactor.getName() + " is interrupted!");
                 }

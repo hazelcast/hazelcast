@@ -37,7 +37,7 @@ public class SimpleCommandProcessor extends MemcacheCommandProcessor<SimpleComma
     public void handle(SimpleCommand command) {
         if (command.getType() == QUIT) {
             try {
-                command.getSocketTextReader().closeConnection();
+                command.getTextByteBufferReader().closeConnection();
             } catch (Exception e) {
                 logger.warning(e);
             }

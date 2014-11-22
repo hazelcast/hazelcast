@@ -18,7 +18,20 @@ package com.hazelcast.nio.tcp;
 
 import java.nio.ByteBuffer;
 
-public interface SocketReader {
+/**
+ * A {@link ByteBufferReader} that can read a {@link com.hazelcast.nio.Packet} using the
+ * {@link com.hazelcast.nio.tcp.PacketReader}.
+ */
+public class PacketByteBufferReader implements ByteBufferReader {
 
-    void read(ByteBuffer bb) throws Exception;
+    private final PacketReader packetReader;
+
+    public PacketByteBufferReader(PacketReader packetReader) {
+        this.packetReader = packetReader;
+    }
+
+    @Override
+    public void read(ByteBuffer inBuffer) throws Exception {
+        packetReader.readPacket(inBuffer);
+    }
 }

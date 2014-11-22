@@ -16,22 +16,24 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.nio.Packet;
+
 import java.nio.ByteBuffer;
 
 /**
- * A {@link com.hazelcast.nio.tcp.SocketReader} that can read a {@link com.hazelcast.nio.Packet} using the
- * {@link com.hazelcast.nio.tcp.PacketReader}.
+ * A {@link ByteBufferWriter} that writes {@link com.hazelcast.nio.Packet} using the
+ * {@link com.hazelcast.nio.tcp.PacketWriter}.
  */
-public class SocketPacketReader implements SocketReader {
+public class PacketByteBufferWriter implements ByteBufferWriter<Packet> {
 
-    private final PacketReader packetReader;
+    private final PacketWriter packetWriter;
 
-    public SocketPacketReader(PacketReader packetReader) {
-        this.packetReader = packetReader;
+    public PacketByteBufferWriter(PacketWriter packetWriter) {
+        this.packetWriter = packetWriter;
     }
 
     @Override
-    public void read(ByteBuffer inBuffer) throws Exception {
-        packetReader.readPacket(inBuffer);
+    public boolean write(Packet packet, ByteBuffer socketBuffer) throws Exception {
+        return packetWriter.writePacket(packet, socketBuffer);
     }
 }

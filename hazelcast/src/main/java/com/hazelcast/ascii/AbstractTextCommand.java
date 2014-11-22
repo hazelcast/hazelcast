@@ -16,13 +16,13 @@
 
 package com.hazelcast.ascii;
 
-import com.hazelcast.nio.ascii.SocketTextReader;
-import com.hazelcast.nio.ascii.SocketTextWriter;
+import com.hazelcast.nio.ascii.TextByteBufferReader;
+import com.hazelcast.nio.ascii.TextByteBufferWriter;
 
 public abstract class AbstractTextCommand implements TextCommand {
     protected final TextCommandConstants.TextCommandType type;
-    private SocketTextReader socketTextReader;
-    private SocketTextWriter socketTextWriter;
+    private TextByteBufferReader textByteBufferReader;
+    private TextByteBufferWriter socketTextWriter;
     private long requestId = -1;
 
 
@@ -36,12 +36,12 @@ public abstract class AbstractTextCommand implements TextCommand {
     }
 
     @Override
-    public SocketTextReader getSocketTextReader() {
-        return socketTextReader;
+    public TextByteBufferReader getTextByteBufferReader() {
+        return textByteBufferReader;
     }
 
     @Override
-    public SocketTextWriter getSocketTextWriter() {
+    public TextByteBufferWriter getSocketTextWriter() {
         return socketTextWriter;
     }
 
@@ -51,10 +51,10 @@ public abstract class AbstractTextCommand implements TextCommand {
     }
 
     @Override
-    public void init(SocketTextReader socketTextReader, long requestId) {
-        this.socketTextReader = socketTextReader;
+    public void init(TextByteBufferReader textByteBufferReader, long requestId) {
+        this.textByteBufferReader = textByteBufferReader;
         this.requestId = requestId;
-        this.socketTextWriter = socketTextReader.getSocketTextWriter();
+        this.socketTextWriter = textByteBufferReader.getSocketTextWriter();
     }
 
     @Override

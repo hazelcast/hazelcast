@@ -17,19 +17,19 @@
 package com.hazelcast.nio.ascii;
 
 import com.hazelcast.ascii.TextCommand;
-import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.ByteBufferWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class SocketTextWriter implements SocketWriter<TextCommand> {
+public class TextByteBufferWriter implements ByteBufferWriter<TextCommand> {
     private final TcpIpConnection connection;
     private final Map<Long, TextCommand> responses = new ConcurrentHashMap<Long, TextCommand>(100);
     private long currentRequestId;
 
-    public SocketTextWriter(TcpIpConnection connection) {
+    public TextByteBufferWriter(TcpIpConnection connection) {
         this.connection = connection;
     }
 

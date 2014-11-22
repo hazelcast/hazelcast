@@ -18,24 +18,24 @@ package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.CommandParser;
 import com.hazelcast.ascii.TextCommand;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextByteBufferReader;
 
 import java.util.StringTokenizer;
 
 public class GetCommandParser implements CommandParser {
 
-    public TextCommand parser(SocketTextReader socketTextReader, String cmd, int space) {
+    public TextCommand parser(TextByteBufferReader textByteBufferReader, String cmd, int space) {
         String key = cmd.substring(space + 1);
         if (key.indexOf(' ') == -1) {
             GetCommand r = new GetCommand(key);
-            socketTextReader.publishRequest(r);
+            textByteBufferReader.publishRequest(r);
         } else {
             StringTokenizer st = new StringTokenizer(key);
             while (st.hasMoreTokens()) {
                 PartialGetCommand r = new PartialGetCommand(st.nextToken());
-                socketTextReader.publishRequest(r);
+                textByteBufferReader.publishRequest(r);
             }
-            socketTextReader.publishRequest(new EndCommand());
+            textByteBufferReader.publishRequest(new EndCommand());
         }
         return null;
     }

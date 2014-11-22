@@ -20,7 +20,7 @@ import com.hazelcast.nio.SocketWritable;
 
 import java.nio.ByteBuffer;
 
-public interface SocketWriter<T extends SocketWritable> {
+public interface ByteBufferWriter<T extends SocketWritable> {
 
     boolean write(T socketWritable, ByteBuffer socketBuffer) throws Exception;
 }
