@@ -313,7 +313,7 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         try {
             int written = socketChannel.write(writeBuffer);
             if (written > 0) {
-                bytesWritten++;
+                bytesWritten += written;
             }
         } catch (Exception e) {
             currentPacket = null;
