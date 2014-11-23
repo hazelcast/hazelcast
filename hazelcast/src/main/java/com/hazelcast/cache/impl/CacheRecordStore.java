@@ -16,9 +16,11 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
+import com.hazelcast.config.CacheMaxSizeConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
@@ -59,6 +61,26 @@ public class CacheRecordStore
         super(name, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
         this.cacheRecordFactory = createCacheRecordFactory();
+    }
+
+    @Override
+    protected CacheMaxSizeChecker createCacheMaxSizeChecker(CacheMaxSizeConfig maxSizeConfig) {
+        if (maxSizeConfig == null) {
+            return null;
+        }
+
+        final CacheMaxSizeConfig.CacheMaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        if (maxSizePolicy == null) {
+            return null;
+        }
+
+        if (maxSizePolicy != CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
+            throw new IllegalArgumentException("Invalid max-size policy "
+                    + "(" + maxSizePolicy + ") for " + getClass().getName() + " ! Only "
+                    + CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT + " is supported.");
+        } else {
+            return super.createCacheMaxSizeChecker(maxSizeConfig);
+        }
     }
 
     @Override
