@@ -16,9 +16,6 @@
 
 package com.hazelcast.memory;
 
-import com.hazelcast.monitor.LocalGCStats;
-import com.hazelcast.monitor.impl.LocalGCStatsImpl;
-
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.util.HashSet;
@@ -49,7 +46,7 @@ public final class GCStatsSupport {
      */
     private GCStatsSupport() { }
 
-    public static void fill(LocalGCStatsImpl stats) {
+    static void fill(DefaultGarbageCollectorStats stats) {
         long minorCount = 0;
         long minorTime = 0;
         long majorCount = 0;
@@ -81,8 +78,8 @@ public final class GCStatsSupport {
         stats.setUnknownTime(unknownTime);
     }
 
-    public static LocalGCStats getGCStats() {
-        LocalGCStatsImpl stats = new LocalGCStatsImpl();
+    public static GarbageCollectorStats getGCStats() {
+        DefaultGarbageCollectorStats stats = new DefaultGarbageCollectorStats();
         fill(stats);
         return stats;
     }

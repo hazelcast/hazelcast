@@ -798,7 +798,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final AtomicInteger updateCount = new AtomicInteger(0);
         final AtomicInteger removeCount = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(300);
-        map.addEntryListener(new EntryListener<Integer, Integer>() {
+        map.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
                 addCount.incrementAndGet();
