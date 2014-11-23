@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CacheMaxSizeConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
@@ -507,16 +508,16 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, cacheConfigBuilder);
             for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 if ("max-size".equals(cleanNodeName(childNode))) {
-                    final MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
+                    final CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
+                    final Node size = childNode.getAttributes().getNamedItem("size");
                     final Node maxSizePolicy = childNode.getAttributes().getNamedItem("policy");
-                    if (maxSizePolicy != null) {
-                        maxSizeConfig.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(
-                                getTextContent(maxSizePolicy))));
+                    if (size != null) {
+                        maxSizeConfig.setSize(Integer.parseInt(getTextContent(size)));
                     }
-                    final String value = getTextContent(childNode).trim();
-                    final int size = value != null ? Integer.parseInt(value) : 0;
-                    if (size > 0) {
-                        maxSizeConfig.setSize(size);
+                    if (maxSizePolicy != null) {
+                        maxSizeConfig.setMaxSizePolicy(
+                                CacheMaxSizeConfig.CacheMaxSizePolicy.valueOf(
+                                        upperCaseInternal(getTextContent(maxSizePolicy))));
                     }
                     cacheConfigBuilder.addPropertyValue("maxSizeConfig", maxSizeConfig);
                 }
