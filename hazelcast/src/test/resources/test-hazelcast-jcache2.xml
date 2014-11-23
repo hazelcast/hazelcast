@@ -18,45 +18,39 @@
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.4.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
     <group>
         <name>test-group2</name>
         <password>test-pass2</password>
     </group>
 
-
     <cache name="cache2">
-        <key-type class-name="java.lang.Object" />
+        <key-type class-name="java.lang.Object"/>
         <value-type class-name="java.lang.Object"/>
         <statistics-enabled>false</statistics-enabled>
         <management-enabled>false</management-enabled>
-
         <read-through>true</read-through>
         <write-through>true</write-through>
-        <cache-loader-factory class-name="com.hazelcast.cache.MyCacheLoaderFactory" />
+        <cache-loader-factory class-name="com.hazelcast.cache.MyCacheLoaderFactory"/>
         <cache-writer-factory class-name="com.hazelcast.cache.MyCacheWriterFactory"/>
         <expiry-policy-factory class-name="com.hazelcast.cache.MyExpirePolicyFactory"/>
-
-        <max-size policy="USED_HEAP_PERCENTAGE">50</max-size>
-
+        <max-size size="50" policy="ENTRY_COUNT"/>
         <cache-entry-listeners>
-            <cache-entry-listener old-value-required="false" synchronous="false" >
-                <cache-entry-listener-factory class-name="com.hazelcast.cache.MyEntryListenerFactory" />
-                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.MyEntryEventFilterFactory" />
+            <cache-entry-listener old-value-required="false" synchronous="false">
+                <cache-entry-listener-factory class-name="com.hazelcast.cache.MyEntryListenerFactory"/>
+                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.MyEntryEventFilterFactory"/>
             </cache-entry-listener>
         </cache-entry-listeners>
-
         <backup-count>1</backup-count>
         <async-backup-count>1</async-backup-count>
         <eviction-policy>LRU</eviction-policy>
-
     </cache>
 
     <cache name="testCache">
-        <key-type class-name="java.lang.Integer" />
+        <key-type class-name="java.lang.Integer"/>
         <value-type class-name="java.lang.String"/>
         <statistics-enabled>false</statistics-enabled>
         <management-enabled>false</management-enabled>
-
     </cache>
 
 </hazelcast>

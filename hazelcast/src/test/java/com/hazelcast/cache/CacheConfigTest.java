@@ -17,10 +17,10 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.config.CacheMaxSizeConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -84,7 +84,7 @@ public class CacheConfigTest {
 
         assertNotNull(cacheConfig1.getMaxSizeConfig());
         assertEquals(50, cacheConfig1.getMaxSizeConfig().getSize());
-        assertEquals(MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE,
+        assertEquals(CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT,
                 cacheConfig1.getMaxSizeConfig().getMaxSizePolicy());
 
         List<CacheSimpleEntryListenerConfig> cacheEntryListeners = cacheConfig1.getCacheEntryListeners();
