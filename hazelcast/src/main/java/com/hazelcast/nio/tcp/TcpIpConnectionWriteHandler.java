@@ -61,6 +61,7 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
     private final ByteBuffer writeBuffer;
     private final IOReactor ioReactor;
     private final Selector selector;
+
     // Will onl be touched by single IO thread.
     private SocketWritable currentPacket;
     private ByteBufferWriter byteBufferWriter;
@@ -77,6 +78,10 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
 
     long lastWriteTime() {
         return lastWriteTime;
+    }
+
+    public ByteBufferWriter getByteBufferWriter() {
+        return byteBufferWriter;
     }
 
     // accessed from TcpIpConnectionReadHandler and SocketConnector
@@ -114,10 +119,6 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         }
     }
 
-    public ByteBufferWriter getByteBufferWriter() {
-        return byteBufferWriter;
-    }
-
     public void enqueue(SocketWritable packet) {
         if (packet.isUrgent()) {
             urgentWriteQueue.offer(packet);
@@ -148,8 +149,6 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
 
     /**
      * Tries to unschedule this TcpIpConnectionWriteHandler.
-     * <p/>
-     * If
      */
     private void unschedule() {
         if (!writeBufferIsEmpty()) {
@@ -163,12 +162,13 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         }
 
         // since everything is written, we are not interested anymore in write-events, so lets unsubscribe
-        selectionKey.interestOps(selectionKey.interestOps() & ~ SelectionKey.OP_WRITE);
+        selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
 
         // So the write-buffer is empty, so we are going to unschedule ourselves.
         scheduled.set(false);
 
         if (writeQueue.isEmpty() && urgentWriteQueue.isEmpty()) {
+            // there are no remaining packets, so we are done.
             return;
         }
 
@@ -212,27 +212,23 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         unschedule();
     }
 
+    /**
+     * Checks of the writeBuffer is empty.
+     *
+     * @return true if empty, false otherwise.
+     */
     private boolean writeBufferIsEmpty() {
         return writeBuffer.position() == 0;
     }
 
     /**
-     * Fills the write-buffer with data. This is done by writing the currentPacket if there is one,
-     * or polling new packets.
+     * Fills the write-buffer with packets. This is done till there are no more packets or till there is no more space in the
+     * write-buffer.
      *
      * @throws Exception
      */
     private void fillWriteBuffer() throws Exception {
-//        // If there is no currentPacket, try to get one. If none is available, and the write-buffer is
-//        // empty, then we are ready.
-//        if (currentPacket == null) {
-//            currentPacket = poll();
-//            if (currentPacket == null && writeBuffer.position() == 0) {
-//                return;
-//            }
-//        }
-
-        for (; ; ) {
+        for (;;) {
             if (!writeBuffer.hasRemaining()) {
                 // The buffer is completely filled, we are done.
                 return;
@@ -247,13 +243,13 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
                 }
             }
 
-            // Lets write the currentPacket to the socket.
+            // Lets write the currentPacket to the writeBuffer.
             if (!byteBufferWriter.write(currentPacket, writeBuffer)) {
                 // We are done for this round because not all data of the current packet fits in the byte-buffer.
                 return;
             }
 
-            // The current packet has been written completely. So lets null it
+            // The current packet has been written completely. So lets null it and lets try to write another packet.
             currentPacket = null;
         }
     }
@@ -301,8 +297,6 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         writeBuffer.compact();
     }
 
-
-    // is triggered when a packet is written to the connection.
     @Override
     public void run() {
         handle();

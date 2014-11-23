@@ -86,7 +86,7 @@ public class TextByteBufferReader implements ByteBufferReader {
     private boolean commandLineRead;
     private TextCommand command;
     private final TextCommandService textCommandService;
-    private final TextByteBufferWriter socketTextWriter;
+    private final TextByteBufferWriter byteBufferWriter;
     private final TcpIpConnection connection;
     private final boolean restEnabled;
     private final boolean memcacheEnabled;
@@ -97,7 +97,7 @@ public class TextByteBufferReader implements ByteBufferReader {
     public TextByteBufferReader(TcpIpConnection connection) {
         IOService ioService = connection.getConnectionManager().getIOService();
         this.textCommandService = ioService.getTextCommandService();
-        this.socketTextWriter = (TextByteBufferWriter) connection.getWriteHandler().getByteBufferWriter();
+        this.byteBufferWriter = (TextByteBufferWriter) connection.getWriteHandler().getByteBufferWriter();
         this.connection = connection;
         this.memcacheEnabled = ioService.isMemcacheEnabled();
         this.restEnabled = ioService.isRestEnabled();
@@ -105,7 +105,7 @@ public class TextByteBufferReader implements ByteBufferReader {
     }
 
     public void sendResponse(TextCommand command) {
-        socketTextWriter.enqueue(command);
+        byteBufferWriter.enqueue(command);
     }
 
     public void read(ByteBuffer inBuffer) {
@@ -196,8 +196,8 @@ public class TextByteBufferReader implements ByteBufferReader {
         }
     }
 
-    public TextByteBufferWriter getSocketTextWriter() {
-        return socketTextWriter;
+    public TextByteBufferWriter getByteBufferWriter() {
+        return byteBufferWriter;
     }
 
     public void closeConnection() {

@@ -54,7 +54,7 @@ public abstract class AbstractTextCommand implements TextCommand {
     public void init(TextByteBufferReader textByteBufferReader, long requestId) {
         this.textByteBufferReader = textByteBufferReader;
         this.requestId = requestId;
-        this.socketTextWriter = textByteBufferReader.getSocketTextWriter();
+        this.socketTextWriter = textByteBufferReader.getByteBufferWriter();
     }
 
     @Override
