@@ -219,6 +219,18 @@ public final class TcpIpConnection implements Connection {
         return connectionId;
     }
 
+    public void dumpPerformanceMetrics(StringBuffer sb) {
+        Socket socket = this.socketChannel.socket();
+        SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
+        SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
+
+        sb.append("Connection [").append(localSocketAddress).append(" -> ").append(remoteSocketAddress).append(']');
+        sb.append(" unscheduledCount=").append(writeHandler.getUnscheduledCount());
+        sb.append(" handleCount=").append(writeHandler.getHandleCount());
+        sb.append(" packetCount=").append(writeHandler.getPacketCount());
+        sb.append('\n');
+    }
+
     @Override
     public String toString() {
         Socket socket = this.socketChannel.socket();
@@ -227,4 +239,5 @@ public final class TcpIpConnection implements Connection {
         return "Connection [" + localSocketAddress + " -> " + remoteSocketAddress
                 + "], endpoint=" + endPoint + ", live=" + live + ", type=" + type;
     }
+
 }

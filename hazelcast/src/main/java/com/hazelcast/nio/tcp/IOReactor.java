@@ -40,8 +40,15 @@ public interface IOReactor {
 
     String getName();
 
+
     void addTask(Runnable runnable);
 
+    /**
+     * Processes all tasks.
+     *
+     * It is important that the implementation processes all tasks. If a task schedules itself again, also this task is going
+     * to be processed.
+     */
     void processTasks();
 
     void wakeup();

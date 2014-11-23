@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.TextByteBufferWriter;
@@ -62,6 +61,10 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
     private final IOReactor ioReactor;
     private final Selector selector;
 
+    private volatile long unscheduledCount = 0;
+    private volatile long handleCount = 0;
+    private volatile long packetCount = 0;
+
     // Will onl be touched by single IO thread.
     private SocketWritable currentPacket;
     private ByteBufferWriter byteBufferWriter;
@@ -84,6 +87,18 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         return byteBufferWriter;
     }
 
+    public long getUnscheduledCount() {
+        return unscheduledCount;
+    }
+
+    public long getHandleCount() {
+        return handleCount;
+    }
+
+    public long getPacketCount() {
+        return packetCount;
+    }
+
     // accessed from TcpIpConnectionReadHandler and SocketConnector
     void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
@@ -98,7 +113,7 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
             latch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             // why don't we make use of the regular logger.
-            Logger.getLogger(TcpIpConnectionWriteHandler.class).finest("CountDownLatch::await interrupted", e);
+            logger.finest("CountDownLatch::await interrupted", e);
         }
     }
 
@@ -140,6 +155,10 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
             writable = writeQueue.poll();
         }
 
+        if(writable!=null){
+            packetCount++;
+        }
+
         return writable;
     }
 
@@ -175,6 +194,8 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
             return;
         }
 
+        unscheduledCount++;
+
         // since everything is written, we are not interested anymore in write-events, so lets unsubscribe
         selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
 
@@ -195,7 +216,8 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         }
 
         // We managed to reschedule. So lets add ourselves to the ioReactor so we are processed again.
-        // We don't need to call wakeup because the current thread is the IO-thread.
+        // We don't need to call wakeup because the current thread is the IO-thread and the {@link IOReactor#processTasks()}
+        // method will continue also rescheduled tasks.
         ioReactor.addTask(this);
     }
 
@@ -207,6 +229,7 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
     @SuppressWarnings("unchecked")
     @Override
     public void handle() {
+        handleCount++;
         lastWriteTime = Clock.currentTimeMillis();
 
         if (!connection.isAlive()) {
@@ -247,7 +270,7 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
      * @throws Exception
      */
     private void fillWriteBuffer() throws Exception {
-        for (;;) {
+        for (; ; ) {
             if (!writeBuffer.hasRemaining()) {
                 // The buffer is completely filled, we are done.
                 return;

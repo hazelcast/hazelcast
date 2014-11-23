@@ -71,7 +71,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private final int socketConnectTimeoutSeconds;
     private final boolean socketKeepAlive;
     private final boolean socketNoDelay;
-    private final ConcurrentMap<Address, Connection> connectionsMap = new ConcurrentHashMap<Address, Connection>(100);
+    private final ConcurrentMap<Address, TcpIpConnection> connectionsMap
+            = new ConcurrentHashMap<Address, TcpIpConnection>(100);
     private final ConcurrentMap<Address, TcpIpConnectionMonitor> monitors =
             new ConcurrentHashMap<Address, TcpIpConnectionMonitor>(100);
     private final Set<Address> connectionsInProgress =
@@ -256,7 +257,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 tcpConnection.setMonitor(connectionMonitor);
             }
         }
-        connectionsMap.put(remoteEndPoint, connection);
+        connectionsMap.put(remoteEndPoint, (TcpIpConnection)connection);
         connectionsInProgress.remove(remoteEndPoint);
         ioService.getEventService().executeEventCallback(new StripedRunnable() {
             @Override
@@ -645,6 +646,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
         for (int k = 0; k < outReactors.length; k++) {
             IOReactor reactor = outReactors[k];
             reactor.dumpPerformanceMetrics(sb);
+        }
+
+        for(TcpIpConnection connection: connectionsMap.values()){
+            connection.dumpPerformanceMetrics(sb);
         }
     }
 
