@@ -16,19 +16,21 @@
 
 package com.hazelcast.spring.context;
 
+import com.hazelcast.config.CacheMaxSizeConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -86,7 +88,7 @@ public class TestJCache {
         assertEquals(InMemoryFormat.OBJECT, simpleConfig.getInMemoryFormat());
         assertNotNull(simpleConfig.getMaxSizeConfig());
         assertEquals(50, simpleConfig.getMaxSizeConfig().getSize());
-        assertEquals(MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE,
+        assertEquals(CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT,
                 simpleConfig.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(20, simpleConfig.getEvictionPercentage());
         assertEquals(EvictionPolicy.LRU, simpleConfig.getEvictionPolicy());
