@@ -53,8 +53,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    // Default max size config, size = Integer.MAX_VALUE, policy = PER_NODE
-    private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
+    // Default max size config, size = Integer.MAX_VALUE, policy = ENTRY_COUNT
+    private CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
     private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
 
     private NearCacheConfig nearCacheConfig;
@@ -252,14 +252,14 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     /**
      * @return the maxSizeConfig
      */
-    public MaxSizeConfig getMaxSizeConfig() {
+    public CacheMaxSizeConfig getMaxSizeConfig() {
         return maxSizeConfig;
     }
 
     /**
      * @param maxSizeConfig the maxSizeConfig to set
      */
-    public CacheConfig<K, V> setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
+    public CacheConfig<K, V> setMaxSizeConfig(CacheMaxSizeConfig maxSizeConfig) {
         this.maxSizeConfig = maxSizeConfig;
         return this;
     }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl.record;
 
-import com.hazelcast.cache.impl.CacheInfo;
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.config.EvictionPolicy;
@@ -38,79 +37,25 @@ public class CacheRecordHashMap
     private static final int MIN_EVICTION_ELEMENT_COUNT = 100;
 
     private Callback<Data> evictionCallback;
-    private CacheInfo cacheInfo;
 
-    public CacheRecordHashMap(int initialCapacity, CacheInfo cacheInfo) {
+    public CacheRecordHashMap(int initialCapacity) {
         super(initialCapacity);
-        this.cacheInfo = cacheInfo;
     }
 
-    public CacheRecordHashMap(int initialCapacity,
-                              float loadFactor,
-                              int concurrencyLevel,
-                              ConcurrentReferenceHashMap.ReferenceType keyType,
-                              ConcurrentReferenceHashMap.ReferenceType valueType,
-                              EnumSet<Option> options,
-                              CacheInfo cacheInfo) {
-        this(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options, null, cacheInfo);
+    public CacheRecordHashMap(int initialCapacity, float loadFactor, int concurrencyLevel,
+            ConcurrentReferenceHashMap.ReferenceType keyType,
+            ConcurrentReferenceHashMap.ReferenceType valueType,
+            EnumSet<Option> options) {
+        this(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options, null);
     }
 
-    public CacheRecordHashMap(int initialCapacity,
-                              float loadFactor,
-                              int concurrencyLevel,
-                              ConcurrentReferenceHashMap.ReferenceType keyType,
-                              ConcurrentReferenceHashMap.ReferenceType valueType,
-                              EnumSet<ConcurrentReferenceHashMap.Option> options,
-                              Callback<Data> evictionCallback,
-                              CacheInfo cacheInfo) {
+    public CacheRecordHashMap(int initialCapacity, float loadFactor, int concurrencyLevel,
+            ConcurrentReferenceHashMap.ReferenceType keyType,
+            ConcurrentReferenceHashMap.ReferenceType valueType,
+            EnumSet<ConcurrentReferenceHashMap.Option> options,
+            Callback<Data> evictionCallback) {
         super(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options);
         this.evictionCallback = evictionCallback;
-        this.cacheInfo = cacheInfo;
-    }
-
-    @Override
-    public CacheRecord put(Data key, CacheRecord value) {
-        CacheRecord record = super.put(key, value);
-        // If there is no previous value with specified key, means that new entry is added
-        if (record == null) {
-            cacheInfo.increaseEntryCount();
-        }
-        return record;
-    }
-
-    @Override
-    public CacheRecord putIfAbsent(Data key, CacheRecord value) {
-        CacheRecord record = super.putIfAbsent(key, value);
-        // If there is no previous value with specified key, means that new entry is added
-        if (record == null) {
-            cacheInfo.increaseEntryCount();
-        }
-        return record;
-    }
-
-    @Override
-    public CacheRecord remove(Object key) {
-        CacheRecord record = super.remove(key);
-        if (record != null) {
-            cacheInfo.decreaseEntryCount();
-        }
-        return record;
-    }
-
-    @Override
-    public boolean remove(Object key, Object value) {
-        boolean removed = super.remove(key, value);
-        if (removed) {
-            cacheInfo.decreaseEntryCount();
-        }
-        return removed;
-    }
-
-    @Override
-    public void clear() {
-        final int sizeBeforeClear = size();
-        super.clear();
-        cacheInfo.removeEntryCount(sizeBeforeClear);
     }
 
     @Override
@@ -168,8 +113,6 @@ public class CacheRecordHashMap
             }
         }
 
-        cacheInfo.removeEntryCount(actualEvictedCount);
-
         return actualEvictedCount;
     }
     //CHECKSTYLE:ON
@@ -191,8 +134,6 @@ public class CacheRecordHashMap
             default:
                 throw new IllegalArgumentException("Unsupported eviction policy: " + policy);
         }
-
-        cacheInfo.removeEntryCount(evictedCount);
 
         return evictedCount;
     }

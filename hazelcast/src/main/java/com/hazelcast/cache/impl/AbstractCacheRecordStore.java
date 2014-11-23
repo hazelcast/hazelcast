@@ -18,13 +18,12 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
-import com.hazelcast.cache.impl.maxsize.PerNodeCacheMaxSizeChecker;
-import com.hazelcast.cache.impl.maxsize.PerPartitionCacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.EntryCountCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordMap;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheMaxSizeConfig;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -75,6 +74,7 @@ public abstract class AbstractCacheRecordStore<
 
     protected final String name;
     protected final int partitionId;
+    protected final int partitionCount;
     protected final NodeEngine nodeEngine;
     protected final AbstractCacheService cacheService;
     protected final CacheConfig cacheConfig;
@@ -86,27 +86,27 @@ public abstract class AbstractCacheRecordStore<
     protected boolean isEventBatchingEnabled;
     protected ExpiryPolicy defaultExpiryPolicy;
     protected final EvictionPolicy evictionPolicy;
-    protected final MaxSizeConfig maxSizeConfig;
+    protected final CacheMaxSizeConfig maxSizeConfig;
     protected volatile boolean hasExpiringEntry;
     protected final boolean evictionEnabled;
     protected final int evictionPercentage;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
     protected ScheduledFuture<?> expirationTaskScheduler;
     protected final CacheMaxSizeChecker maxSizeChecker;
-    protected CacheInfo cacheInfo;
 
     //CHECKSTYLE:OFF
     public AbstractCacheRecordStore(final String name, final int partitionId, final NodeEngine nodeEngine,
             final AbstractCacheService cacheService) {
         this.name = name;
         this.partitionId = partitionId;
+        this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
         this.cacheConfig = cacheService.getCacheConfig(name);
         if (cacheConfig == null) {
             throw new CacheNotExistsException("Cache already destroyed, node " + nodeEngine.getLocalMember());
         }
-        this.cacheInfo = cacheService.getOrCreateCacheInfo(cacheConfig);
+        this.records = createRecordCacheMap();
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
@@ -163,26 +163,17 @@ public abstract class AbstractCacheRecordStore<
 
     protected abstract Data toHeapData(Object obj);
 
-    protected CacheMaxSizeChecker createCacheMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
+    protected CacheMaxSizeChecker createCacheMaxSizeChecker(CacheMaxSizeConfig maxSizeConfig) {
         if (maxSizeConfig == null) {
             return null;
         }
-        final MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
-        if (maxSizePolicy == null) {
-            return null;
-        }
 
-        if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_NODE) {
-            return new PerNodeCacheMaxSizeChecker(cacheInfo, maxSizeConfig);
-        } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
-            return new PerPartitionCacheMaxSizeChecker(records, maxSizeConfig);
+        final CacheMaxSizeConfig.CacheMaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        if (maxSizePolicy == CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
+            return new EntryCountCacheMaxSizeChecker(maxSizeConfig, records, partitionCount);
         }
 
         return null;
-    }
-
-    protected CacheInfo createCacheInfo(CacheConfig cacheConfig) {
-        return new CacheInfo(cacheConfig);
     }
 
     protected boolean isEvictionRequired() {

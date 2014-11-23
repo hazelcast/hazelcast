@@ -87,8 +87,8 @@ public class CacheSimpleConfig {
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    // Default max size config, size = Integer.MAX_VALUE, policy = PER_NODE
-    private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
+    // Default max size config, size = Integer.MAX_VALUE, policy = ENTRY_COUNT
+    private CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
     private int evictionPercentage;
 
     private CacheSimpleConfig readOnly;
@@ -267,11 +267,11 @@ public class CacheSimpleConfig {
         return this;
     }
 
-    public MaxSizeConfig getMaxSizeConfig() {
+    public CacheMaxSizeConfig getMaxSizeConfig() {
         return maxSizeConfig;
     }
 
-    public CacheSimpleConfig setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
+    public CacheSimpleConfig setMaxSizeConfig(CacheMaxSizeConfig maxSizeConfig) {
         this.maxSizeConfig = maxSizeConfig;
         return this;
     }

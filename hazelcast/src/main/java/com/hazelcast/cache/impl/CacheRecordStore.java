@@ -16,15 +16,9 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
-import com.hazelcast.cache.impl.maxsize.FreeHeapPercentageCacheMaxSizeChecker;
-import com.hazelcast.cache.impl.maxsize.FreeHeapSizeCacheMaxSizeChecker;
-import com.hazelcast.cache.impl.maxsize.UsedHeapPercentageCacheMaxSizeChecker;
-import com.hazelcast.cache.impl.maxsize.UsedHeapSizeCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
@@ -64,50 +58,12 @@ public class CacheRecordStore
             AbstractCacheService cacheService) {
         super(name, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
-        this.records = createRecordCacheMap();
         this.cacheRecordFactory = createCacheRecordFactory();
     }
 
-    //CHECKSTYLE:OFF
-    @Override
-    protected CacheMaxSizeChecker createCacheMaxSizeChecker(MaxSizeConfig maxSizeConfig) {
-        if (maxSizeConfig == null) {
-            return null;
-        }
-        final MaxSizeConfig.MaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
-        if (maxSizePolicy == null) {
-            return null;
-        }
-
-        final CacheMaxSizeChecker maxSizeChecker = super.createCacheMaxSizeChecker(maxSizeConfig);
-        if (maxSizeChecker != null) {
-            return maxSizeChecker;
-        }
-
-        if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE) {
-            return new UsedHeapSizeCacheMaxSizeChecker(cacheInfo, maxSizeConfig);
-        } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE) {
-            return new UsedHeapPercentageCacheMaxSizeChecker(cacheInfo, maxSizeConfig);
-        } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE) {
-            return new FreeHeapSizeCacheMaxSizeChecker(cacheInfo, maxSizeConfig);
-        } else if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE) {
-            return new FreeHeapPercentageCacheMaxSizeChecker(cacheInfo, maxSizeConfig);
-        } else {
-            throw new IllegalArgumentException("Invalid max-size policy for " + getClass().getName() + " ! Only "
-                    + MaxSizeConfig.MaxSizePolicy.PER_NODE + ", "
-                    + MaxSizeConfig.MaxSizePolicy.PER_PARTITION + ", "
-                    + MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE + ", "
-                    + MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE + ", "
-                    + MaxSizeConfig.MaxSizePolicy.FREE_HEAP_SIZE + ", "
-                    + MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE
-                    + " are supported.");
-        }
-    }
-    //CHECKSTYLE:ON
-
     @Override
     protected CacheRecordHashMap createRecordCacheMap() {
-        return new CacheRecordHashMap(DEFAULT_INITIAL_CAPACITY, cacheInfo);
+        return new CacheRecordHashMap(DEFAULT_INITIAL_CAPACITY);
     }
 
     @Override

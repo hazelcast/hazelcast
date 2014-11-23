@@ -78,14 +78,4 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
      * Creates cache operations according to the storage-type of the cache
      */
     CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat storageType);
-
-    /**
-     * Gets or creates (if there is no cache info for that cache) {@link CacheInfo} instance
-     * which holds live information about cache.
-     *
-     * @param cacheConfig Configuration of the cache whose live information is requested
-     *
-     * @return the {@link CacheInfo} instance which holds live information about cache
-     */
-    CacheInfo getOrCreateCacheInfo(CacheConfig cacheConfig);
 }

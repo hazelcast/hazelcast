@@ -42,8 +42,7 @@ public abstract class AbstractCacheService implements ICacheService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
-    protected final ConcurrentMap<String, CacheInfo> cacheInfoMap = new ConcurrentHashMap<String, CacheInfo>();
-    protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
+        protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
             new ConcurrentHashMap<String, CacheOperationProvider>();
     protected final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction =
             new ConstructorFunction<String, CacheStatisticsImpl>() {
@@ -360,20 +359,5 @@ public abstract class AbstractCacheService implements ICacheService {
         cacheOperationProvider = new DefaultOperationProvider(nameWithPrefix);
         CacheOperationProvider current = operationProviderCache.putIfAbsent(nameWithPrefix, cacheOperationProvider);
         return current == null ? cacheOperationProvider : current;
-    }
-
-    @Override
-    public CacheInfo getOrCreateCacheInfo(CacheConfig cacheConfig) {
-        CacheInfo cacheInfo = cacheInfoMap.get(cacheConfig.getNameWithPrefix());
-        if (cacheInfo == null) {
-            synchronized (cacheInfoMap) {
-                cacheInfo = cacheInfoMap.get(cacheConfig.getNameWithPrefix());
-                if (cacheInfo == null) {
-                    cacheInfo = new CacheInfo(cacheConfig);
-                    cacheInfoMap.put(cacheConfig.getNameWithPrefix(), cacheInfo);
-                }
-            }
-        }
-        return cacheInfo;
     }
 }

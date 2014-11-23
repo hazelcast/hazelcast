@@ -24,31 +24,31 @@ import java.io.IOException;
 import java.io.Serializable;
 
 /**
- * Configuration for map's capacity.
+ * Configuration for cache's capacity.
  * You can set a limit for number of entries or total memory cost of entries.
  */
-public class MaxSizeConfig implements DataSerializable, Serializable {
+public class CacheMaxSizeConfig implements DataSerializable, Serializable {
 
     /**
-     * Default maximum size of map.
+     * Default maximum size of cache.
      */
     public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
 
-    private MaxSizeConfigReadOnly readOnly;
+    private CacheMaxSizeConfigReadOnly readOnly;
 
-    private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
+    private CacheMaxSizePolicy maxSizePolicy = CacheMaxSizePolicy.ENTRY_COUNT;
 
     private int size = DEFAULT_MAX_SIZE;
 
-    public MaxSizeConfig() {
+    public CacheMaxSizeConfig() {
     }
 
-    public MaxSizeConfig(int size, MaxSizePolicy maxSizePolicy) {
+    public CacheMaxSizeConfig(int size, CacheMaxSizePolicy maxSizePolicy) {
         setSize(size);
         this.maxSizePolicy = maxSizePolicy;
     }
 
-    public MaxSizeConfig(MaxSizeConfig config) {
+    public CacheMaxSizeConfig(CacheMaxSizeConfig config) {
         this.size = config.size;
         this.maxSizePolicy = config.maxSizePolicy;
     }
@@ -56,36 +56,32 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
     /**
      * Maximum Size Policy
      */
-    public enum MaxSizePolicy {
+    public enum CacheMaxSizePolicy {
         /**
          * Decide maximum entry count according to node
          */
-        PER_NODE,
+        ENTRY_COUNT,
         /**
-         * Decide maximum entry count according to partition
+         * Decide maximum size with use native memory size
          */
-        PER_PARTITION,
+        USED_NATIVE_MEMORY_SIZE,
         /**
-         * Decide maximum size with use heap percentage
+         * Decide maximum size with use native memory percentage
          */
-        USED_HEAP_PERCENTAGE,
+        USED_NATIVE_MEMORY_PERCENTAGE,
         /**
-         * Decide maximum size with use heap size
+         * Decide minimum free native memory size to trigger cleanup
          */
-        USED_HEAP_SIZE,
+        FREE_NATIVE_MEMORY_SIZE,
         /**
-         * Decide minimum free heap percentage to trigger cleanup
+         * Decide minimum free native memory percentage to trigger cleanup
          */
-        FREE_HEAP_PERCENTAGE,
-        /**
-         * Decide minimum free heap size to trigger cleanup
-         */
-        FREE_HEAP_SIZE
+        FREE_NATIVE_MEMORY_PERCENTAGE
     }
 
-    public MaxSizeConfigReadOnly getAsReadOnly() {
+    public CacheMaxSizeConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
-            readOnly = new MaxSizeConfigReadOnly(this);
+            readOnly = new CacheMaxSizeConfigReadOnly(this);
         }
         return readOnly;
     }
@@ -94,18 +90,18 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
         return size;
     }
 
-    public MaxSizeConfig setSize(int size) {
+    public CacheMaxSizeConfig setSize(int size) {
         if (size > 0) {
             this.size = size;
         }
         return this;
     }
 
-    public MaxSizePolicy getMaxSizePolicy() {
+    public CacheMaxSizePolicy getMaxSizePolicy() {
         return maxSizePolicy;
     }
 
-    public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
+    public CacheMaxSizeConfig setMaxSizePolicy(CacheMaxSizePolicy maxSizePolicy) {
         this.maxSizePolicy = maxSizePolicy;
         return this;
     }
@@ -118,13 +114,13 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());
+        maxSizePolicy = CacheMaxSizePolicy.valueOf(in.readUTF());
         size = in.readInt();
     }
 
     @Override
     public String toString() {
-        return "MaxSizeConfig{"
+        return "CacheMaxSizeConfig{"
                 + "maxSizePolicy='" + maxSizePolicy
                 + '\''
                 + ", size=" + size
