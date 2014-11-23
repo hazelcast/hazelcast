@@ -230,6 +230,9 @@ public final class TcpIpConnection implements Connection {
         sb.append(" write.packetCount=").append(writeHandler.getPacketCount());
         double packetPerHandleRatio = writeHandler.getPacketCount() * 1d / writeHandler.getHandleCount();
         sb.append(" write.packet/handle=").append(packetPerHandleRatio);
+        sb.append(" write.bytes=").append(writeHandler.getBytesWritten());
+        double bytesPerPacket = (1d*writeHandler.getBytesWritten())/writeHandler.getPacketCount();
+        sb.append(" write.bytesPerPacket=").append(bytesPerPacket);
         sb.append('\n');
     }
 

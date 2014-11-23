@@ -64,6 +64,7 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
     private volatile long unscheduledCount = 0;
     private volatile long handleCount = 0;
     private volatile long packetCount = 0;
+    private volatile long bytesWritten = 0;
 
     // Will onl be touched by single IO thread.
     private SocketWritable currentPacket;
@@ -97,6 +98,10 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
 
     public long getPacketCount() {
         return packetCount;
+    }
+
+    public long getBytesWritten() {
+        return bytesWritten;
     }
 
     // accessed from TcpIpConnectionReadHandler and SocketConnector
@@ -155,7 +160,7 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
             writable = writeQueue.poll();
         }
 
-        if(writable!=null){
+        if (writable != null) {
             packetCount++;
         }
 
@@ -306,7 +311,10 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         // So there is data for writing, so lets prepare the buffer for writing and then write it to the socketChannel.
         writeBuffer.flip();
         try {
-            socketChannel.write(writeBuffer);
+            int written = socketChannel.write(writeBuffer);
+            if (written > 0) {
+                bytesWritten++;
+            }
         } catch (Exception e) {
             currentPacket = null;
             handleSocketException(e);
