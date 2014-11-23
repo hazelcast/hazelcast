@@ -942,14 +942,17 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("eviction-policy".equals(nodeName)) {
                 cacheConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
             } else if ("max-size".equals(nodeName)) {
-                final MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
+                final CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
+                final Node size = n.getAttributes().getNamedItem("size");
                 final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");
-                if (maxSizePolicy != null) {
-                    maxSizeConfig.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(
-                            getTextContent(maxSizePolicy))));
+                if (size != null) {
+                    maxSizeConfig.setSize(Integer.parseInt(getTextContent(size)));
                 }
-                final int size = sizeParser(value);
-                maxSizeConfig.setSize(size);
+                if (maxSizePolicy != null) {
+                    maxSizeConfig.setMaxSizePolicy(
+                            CacheMaxSizeConfig.CacheMaxSizePolicy.valueOf(
+                                    upperCaseInternal(getTextContent(maxSizePolicy))));
+                }
                 cacheConfig.setMaxSizeConfig(maxSizeConfig);
             }
         }
