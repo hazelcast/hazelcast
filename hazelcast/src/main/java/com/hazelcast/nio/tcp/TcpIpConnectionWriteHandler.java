@@ -119,7 +119,7 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         }
     }
 
-    public void enqueue(SocketWritable packet) {
+    public void offer(SocketWritable packet) {
         if (packet.isUrgent()) {
             urgentWriteQueue.offer(packet);
         } else {
@@ -127,6 +127,20 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         }
 
         schedule();
+    }
+
+    /**
+     * Deques a packet from the urgentWriteQueue or else from the writeQueue.
+     *
+     * @return the retrieved packet. Null if no packet is available.
+     */
+    private SocketWritable poll() {
+        SocketWritable writable = urgentWriteQueue.poll();
+        if (writable == null) {
+            writable = writeQueue.poll();
+        }
+
+        return writable;
     }
 
     private void schedule() {
@@ -183,6 +197,11 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         // We managed to reschedule. So lets add ourselves to the ioReactor so we are processed again.
         // We don't need to call wakeup because the current thread is the IO-thread.
         ioReactor.addTask(this);
+    }
+
+    @Override
+    public void run() {
+        handle();
     }
 
     @SuppressWarnings("unchecked")
@@ -254,19 +273,6 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         }
     }
 
-    /**
-     * Gets a packet from the urgentWriteQueue or else from the writeQueue.
-     *
-     * @return the retrieved packet. Null if no packet is available.
-     */
-    private SocketWritable poll() {
-        SocketWritable writable = urgentWriteQueue.poll();
-        if (writable == null) {
-            writable = writeQueue.poll();
-        }
-
-        return writable;
-    }
 
     /**
      * Writes to content of the writeBuffer to the socket.
@@ -287,7 +293,6 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         // Now we verify if all data is written.
         if (!writeBuffer.hasRemaining()) {
             // We managed to fully write the writeBuffer to the socket, so we are done.
-            // We don't need to register for a OP_WRITE, because we have nothing left to write.
             writeBuffer.clear();
             return;
         }
@@ -295,11 +300,6 @@ public final class TcpIpConnectionWriteHandler extends AbstractIOEventHandler im
         // We did not manage to write all data to the socket. So lets compact the buffer so new data
         // can be added at the end.
         writeBuffer.compact();
-    }
-
-    @Override
-    public void run() {
-        handle();
     }
 
     public void shutdown() {

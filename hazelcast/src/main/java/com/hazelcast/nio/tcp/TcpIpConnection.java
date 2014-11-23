@@ -155,7 +155,7 @@ public final class TcpIpConnection implements Connection {
             }
             return false;
         }
-        writeHandler.enqueue(packet);
+        writeHandler.offer(packet);
         return true;
     }
 
