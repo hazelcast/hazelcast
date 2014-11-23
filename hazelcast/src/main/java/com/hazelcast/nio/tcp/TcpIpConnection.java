@@ -225,9 +225,11 @@ public final class TcpIpConnection implements Connection {
         SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
 
         sb.append("Connection [").append(localSocketAddress).append(" -> ").append(remoteSocketAddress).append(']');
-        sb.append(" unscheduledCount=").append(writeHandler.getUnscheduledCount());
-        sb.append(" handleCount=").append(writeHandler.getHandleCount());
-        sb.append(" packetCount=").append(writeHandler.getPacketCount());
+        sb.append(" write.handleCount=").append(writeHandler.getHandleCount());
+        sb.append(" write.unscheduledCount=").append(writeHandler.getUnscheduledCount());
+        sb.append(" write.packetCount=").append(writeHandler.getPacketCount());
+        double packetPerHandleRatio = writeHandler.getPacketCount() * 1d / writeHandler.getHandleCount();
+        sb.append(" write.packet/handle=").append(packetPerHandleRatio);
         sb.append('\n');
     }
 
