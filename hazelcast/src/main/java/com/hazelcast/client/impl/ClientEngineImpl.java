@@ -58,6 +58,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.ClaimAccounting;
 import com.hazelcast.spi.impl.InternalOperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -104,12 +105,14 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final ClientEndpointManagerImpl endpointManager;
     private final ILogger logger;
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
+    private final ClaimAccounting claimAccounting;
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
         this.node = node;
         this.serializationService = node.getSerializationService();
         this.nodeEngine = node.nodeEngine;
+        this.claimAccounting = nodeEngine.getClaimAccounting();
         this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
         this.executor = newExecutor();
 
@@ -150,6 +153,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
             operationService.execute(new ClientPacketProcessor(packet), packet.getPartitionId());
         }
+    }
+
+    public ClaimAccounting getClaimAccounting() {
+        return claimAccounting;
     }
 
     @Override

@@ -85,6 +85,16 @@ public class ClientProperties {
      */
     public static final String PROP_EVENT_QUEUE_CAPACITY_DEFAULT = "1000000";
 
+    /**
+     * If {@code true} then back-pressure on client is enabled
+     */
+    public static final String PROP_BACKPRESSURE_ENABLED = "hazelcast.client.backpressure.enabled";
+
+    /**
+     * Back-pressure is disabled by default
+     */
+    public static final String PROP_BACKPRESSURE_ENABLED_DEFAULT = "true";
+
 
     private final ClientProperty heartbeatTimeout;
     private final ClientProperty heartbeatInterval;
@@ -92,6 +102,7 @@ public class ClientProperties {
     private final ClientProperty retryWaitTime;
     private final ClientProperty eventThreadCount;
     private final ClientProperty eventQueueCapacity;
+    private final ClientProperty backpressureEnabled;
 
 
     public ClientProperties(ClientConfig clientConfig) {
@@ -101,6 +112,7 @@ public class ClientProperties {
         retryWaitTime = new ClientProperty(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
         eventThreadCount = new ClientProperty(clientConfig, PROP_EVENT_THREAD_COUNT, PROP_EVENT_THREAD_COUNT_DEFAULT);
         eventQueueCapacity = new ClientProperty(clientConfig, PROP_EVENT_QUEUE_CAPACITY, PROP_EVENT_QUEUE_CAPACITY_DEFAULT);
+        backpressureEnabled = new ClientProperty(clientConfig, PROP_BACKPRESSURE_ENABLED, PROP_BACKPRESSURE_ENABLED_DEFAULT);
     }
 
     public ClientProperty getHeartbeatTimeout() {
@@ -125,6 +137,10 @@ public class ClientProperties {
 
     public ClientProperty getEventThreadCount() {
         return eventThreadCount;
+    }
+
+    public ClientProperty getBackpressureEnabled() {
+        return backpressureEnabled;
     }
 
     /**
