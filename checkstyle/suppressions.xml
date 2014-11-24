@@ -294,7 +294,6 @@
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicPartitionInvocation"/>
 
     <!-- these need to be solved-->
-    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocation"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
     <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.BasicInvocationFuture"/>
