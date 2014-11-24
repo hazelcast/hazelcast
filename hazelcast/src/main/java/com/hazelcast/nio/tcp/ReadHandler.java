@@ -31,9 +31,9 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 /**
  * The reading side of the {@link com.hazelcast.nio.Connection}.
  */
-final class ReadHandler extends AbstractSelectionHandler implements Runnable {
+final class ReadHandler extends AbstractSelectionHandler {
 
-    private final ByteBuffer buffer;
+    private final ByteBuffer inputBuffer;
 
     private final IOSelector ioSelector;
 
@@ -42,9 +42,21 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
     private volatile long lastHandle;
 
     public ReadHandler(TcpIpConnection connection, IOSelector ioSelector) {
-        super(connection);
+        super(connection, ioSelector, SelectionKey.OP_READ);
         this.ioSelector = ioSelector;
-        buffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
+        this.inputBuffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
+    }
+
+    public void start() {
+        ioSelector.addTask(new Runnable() {
+            @Override
+            public void run() {
+                getSelectionKey();
+
+            }
+        });
+
+        ioSelector.wakeup();
     }
 
     @Override
@@ -63,7 +75,7 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
                     return;
                 }
             }
-            int readBytes = socketChannel.read(buffer);
+            int readBytes = socketChannel.read(inputBuffer);
             if (readBytes == -1) {
                 throw new EOFException("Remote socket closed!");
             }
@@ -72,15 +84,15 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
             return;
         }
         try {
-            if (buffer.position() == 0) {
+            if (inputBuffer.position() == 0) {
                 return;
             }
-            buffer.flip();
-            socketReader.read(buffer);
-            if (buffer.hasRemaining()) {
-                buffer.compact();
+            inputBuffer.flip();
+            socketReader.read(inputBuffer);
+            if (inputBuffer.hasRemaining()) {
+                inputBuffer.compact();
             } else {
-                buffer.clear();
+                inputBuffer.clear();
             }
         } catch (Throwable t) {
             handleSocketException(t);
@@ -110,7 +122,7 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
                     socketReader = new SocketClientDataReader(connection);
                 } else {
                     writeHandler.setProtocol(Protocols.TEXT);
-                    buffer.put(protocolBuffer.array());
+                    inputBuffer.put(protocolBuffer.array());
                     socketReader = new SocketTextReader(connection);
                     connection.getConnectionManager().incrementTextConnections();
                 }
@@ -121,18 +133,8 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
         }
     }
 
-    @Override
-    public void run() {
-        registerOp(ioSelector.getSelector(), SelectionKey.OP_READ);
-    }
-
     long getLastHandle() {
         return lastHandle;
-    }
-
-    public void register() {
-        ioSelector.addTask(this);
-        ioSelector.wakeup();
     }
 
     void shutdown() {

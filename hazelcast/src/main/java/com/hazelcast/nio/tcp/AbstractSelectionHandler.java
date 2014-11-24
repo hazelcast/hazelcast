@@ -20,6 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.logging.Level;
@@ -27,32 +28,45 @@ import java.util.logging.Level;
 abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected final ILogger logger;
-
     protected final SocketChannelWrapper socketChannel;
-
     protected final TcpIpConnection connection;
-
     protected final TcpIpConnectionManager connectionManager;
+    protected final Selector selector;
+    private final int ops;
+    private SelectionKey selectionKey;
+    protected final IOSelector ioSelector;
 
-
-    private SelectionKey sk;
-
-    public AbstractSelectionHandler(final TcpIpConnection connection) {
+    public AbstractSelectionHandler(TcpIpConnection connection, IOSelector ioSelector, int ops) {
         this.connection = connection;
+        this.ioSelector = ioSelector;
+        this.selector = ioSelector.getSelector();
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
+        this.ops = ops;
+    }
+
+    protected SelectionKey getSelectionKey() {
+        if (selectionKey == null) {
+            try {
+                selectionKey = socketChannel.register(selector, ops, AbstractSelectionHandler.this);
+            } catch (ClosedChannelException e) {
+                handleSocketException(e);
+            }
+        }
+
+        return selectionKey;
     }
 
     final void handleSocketException(Throwable e) {
         if (e instanceof OutOfMemoryError) {
             connectionManager.ioService.onOutOfMemory((OutOfMemoryError) e);
         }
-        if (sk != null) {
-            sk.cancel();
+        if (selectionKey != null) {
+            selectionKey.cancel();
         }
         connection.close(e);
-        final ConnectionType connectionType = connection.getType();
+        ConnectionType connectionType = connection.getType();
         if (connectionType.isClient() && !connectionType.isBinary()) {
             return;
         }
@@ -61,7 +75,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         sb.append(" Closing socket to endpoint ");
         sb.append(connection.getEndPoint());
         sb.append(", Cause:").append(e);
-        final Level level = connectionManager.ioService.isActive() ? Level.WARNING : Level.FINEST;
+        Level level = connectionManager.ioService.isActive() ? Level.WARNING : Level.FINEST;
         if (e instanceof IOException) {
             logger.log(level, sb.toString());
         } else {
@@ -69,24 +83,14 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         }
     }
 
-    final void registerOp(final Selector selector, final int operation) {
+    final void registerOp(int operation) {
+        SelectionKey selectionKey = getSelectionKey();
+
         try {
-            if (!connection.isAlive()) {
-                return;
-            }
-            if (sk == null) {
-                sk = socketChannel.keyFor(selector);
-            }
-            if (sk == null) {
-                sk = socketChannel.register(selector, operation, this);
-            } else {
-                sk.interestOps(sk.interestOps() | operation);
-                if (sk.attachment() != this) {
-                    sk.attach(this);
-                }
-            }
+            selectionKey.interestOps(selectionKey.interestOps() | operation);
         } catch (Throwable e) {
             handleSocketException(e);
         }
     }
+
 }
