@@ -333,10 +333,7 @@ public abstract class HazelcastTestSupport {
      */
     private static String generateKeyInternal(HazelcastInstance instance, boolean generateOwnedKey) {
         final Cluster cluster = instance.getCluster();
-        final Set<Member> members = cluster.getMembers();
-        if (members.size() < 2) {
-            return randomString();
-        }
+        checkMemberCount(generateOwnedKey, cluster);
 
         final Member localMember = cluster.getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
@@ -346,6 +343,16 @@ public abstract class HazelcastTestSupport {
             if (comparePartitionOwnership(generateOwnedKey, localMember, partition)) {
                 return id;
             }
+        }
+    }
+
+    private static void checkMemberCount(boolean generateOwnedKey, Cluster cluster) {
+        if (generateOwnedKey) {
+            return;
+        }
+        final Set<Member> members = cluster.getMembers();
+        if (members.size() < 2) {
+            throw new UnsupportedOperationException("Cluster has only one member, you can not generate a `not owned key`");
         }
     }
 
