@@ -17,4 +17,4 @@
  * Contains classes related to Txn
  * such as TransactionProxy
  */
-package com.hazelcast.client.impl.client.txn;
+package com.hazelcast.client.txn;

@@ -13,7 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package com.hazelcast.client.txn.proxy;
+
+import com.hazelcast.client.txn.TransactionContextProxy;
+
 /**
- * Contains classes related to proxy for com.hazelcast.client.client.txn
+ * @ali 9/4/13
  */
-package com.hazelcast.client.impl.client.txn.proxy;
+public abstract class AbstractClientTxnCollectionProxy<E> extends ClientTxnProxy {
+
+    protected AbstractClientTxnCollectionProxy(String name, TransactionContextProxy proxy) {
+        super(name, proxy);
+    }
+
+    void onDestroy() {
+    }
+
+    public String getName() {
+        return (String) getId();
+    }
+
+    protected void throwExceptionIfNull(Object o) {
+        if (o == null) {
+            throw new NullPointerException("Object is null");
+        }
+    }
+}
