@@ -16,18 +16,27 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.AssertTask;
@@ -43,8 +52,12 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -123,6 +136,79 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
 
         assertNoLitterInOpService(hz);
         assertNoLitterInOpService(hz2);
+    }
+
+    @Test
+    public void testSyncOperationTimeoutSingleMember() {
+        testOperationTimeout(1);
+    }
+
+    @Test
+    public void testSyncOperationTimeoutMultiMember() {
+        testOperationTimeout(3);
+    }
+
+    private void testOperationTimeout(int memberCount) {
+        assertTrue(memberCount > 0);
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "3000");
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(memberCount);
+        HazelcastInstance[] instances = factory.newInstances(config);
+        warmUpPartitions(instances);
+
+        final HazelcastInstance hz = instances[memberCount - 1];
+        Node node = TestUtil.getNode(hz);
+        NodeEngine nodeEngine = node.nodeEngine;
+        OperationService operationService = nodeEngine.getOperationService();
+        int partitionId = (int) (Math.random() * node.getPartitionService().getPartitionCount());
+
+        InternalCompletableFuture<Object> future = operationService
+                .invokeOnPartition(null, new TimedOutBackupAwareOperation(), partitionId);
+
+        try {
+            future.getSafely();
+            fail("Should throw OperationTimeoutException!");
+        } catch (OperationTimeoutException ignored) {
+        }
+
+        for (HazelcastInstance instance : instances) {
+            assertNoLitterInOpService(instance);
+        }
+    }
+
+    static class TimedOutBackupAwareOperation extends AbstractOperation
+            implements BackupAwareOperation {
+        @Override
+        public void run() throws Exception {
+            LockSupport.parkNanos((long) (Math.random() * 1000 + 10));
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            // required for operation timeout
+            return false;
+        }
+
+        @Override
+        public boolean shouldBackup() {
+            return true;
+        }
+
+        @Override
+        public int getSyncBackupCount() {
+            return 0;
+        }
+
+        @Override
+        public int getAsyncBackupCount() {
+            return 0;
+        }
+
+        @Override
+        public Operation getBackupOperation() {
+            return null;
+        }
     }
 
     @Test(expected = ExecutionException.class)
