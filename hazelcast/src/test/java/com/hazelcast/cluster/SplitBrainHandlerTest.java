@@ -605,6 +605,98 @@ public class SplitBrainHandlerTest {
         assertEquals(n3.getThisAddress(), n3.getMasterAddress());
     }
 
+
+    @Test
+    public void testClusterMerge_when_split_not_detected_by_slave_and_restart_during_merge() throws InterruptedException {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
+        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
+
+        config.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "40");
+        config.setProperty(GroupProperties.PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "10");
+
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.getJoin().getMulticastConfig().setEnabled(false);
+        networkConfig.getJoin().getTcpIpConfig()
+                .setEnabled(true).addMember("127.0.0.1:5701").addMember("127.0.0.1:5702").addMember("127.0.0.1:5703");
+
+        networkConfig.setPort(5702);
+        HazelcastInstance hz2 = newHazelcastInstance(config, "test-node2", new FirewallingNodeContext());
+        networkConfig.setPort(5703);
+        HazelcastInstance hz3 = newHazelcastInstance(config, "test-node3", new FirewallingNodeContext());
+        networkConfig.setPort(5701);
+        HazelcastInstance hz1 = newHazelcastInstance(config, "test-node1", new FirewallingNodeContext());
+
+        final Node n1 = TestUtil.getNode(hz1);
+        Node n2 = TestUtil.getNode(hz2);
+        Node n3 = TestUtil.getNode(hz3);
+
+        final CountDownLatch splitLatch = new CountDownLatch(2);
+        MembershipAdapter membershipAdapter = new MembershipAdapter() {
+            @Override
+            public void memberRemoved(MembershipEvent event) {
+                if (n1.getLocalMember().equals(event.getMember())) {
+                    splitLatch.countDown();
+                }
+            }
+        };
+
+        hz2.getCluster().addMembershipListener(membershipAdapter);
+        hz3.getCluster().addMembershipListener(membershipAdapter);
+
+        final CountDownLatch mergingLatch = new CountDownLatch(1);
+        final CountDownLatch mergeLatch = new CountDownLatch(2);
+        LifecycleListener lifecycleListener = new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleState.MERGING) {
+                    mergingLatch.countDown();
+                }
+                if (event.getState() == LifecycleState.MERGED) {
+                    mergeLatch.countDown();
+                }
+            }
+        };
+        hz2.getLifecycleService().addLifecycleListener(lifecycleListener);
+        hz3.getLifecycleService().addLifecycleListener(lifecycleListener);
+
+        FirewallingTcpIpConnectionManager cm1 = getConnectionManager(hz1);
+        FirewallingTcpIpConnectionManager cm2 = getConnectionManager(hz2);
+        FirewallingTcpIpConnectionManager cm3 = getConnectionManager(hz3);
+
+        cm1.block(n2.address);
+        cm1.block(n3.address);
+
+        n2.clusterService.removeAddress(n1.address);
+        n3.clusterService.removeAddress(n1.address);
+        cm2.block(n1.address);
+        cm3.block(n1.address);
+
+        assertTrue(splitLatch.await(20, TimeUnit.SECONDS));
+        assertEquals(2, hz2.getCluster().getMembers().size());
+        assertEquals(2, hz3.getCluster().getMembers().size());
+        assertEquals(3, hz1.getCluster().getMembers().size());
+
+        cm1.unblock(n2.address);
+        cm2.unblock(n1.address);
+        cm3.unblock(n1.address);
+
+        assertTrue(mergingLatch.await(60, TimeUnit.SECONDS));
+        Thread.sleep(2700);
+        hz1.getLifecycleService().terminate();
+        hz1 = newHazelcastInstance(config, "test-node1", new FirewallingNodeContext());
+        Node node1 = TestUtil.getNode(hz1);
+
+        assertTrue(mergeLatch.await(60, TimeUnit.SECONDS));
+        assertEquals(3, hz1.getCluster().getMembers().size());
+        assertEquals(3, hz2.getCluster().getMembers().size());
+        assertEquals(3, hz3.getCluster().getMembers().size());
+
+        assertEquals(n3.getThisAddress(), node1.getMasterAddress());
+        assertEquals(n3.getThisAddress(), n2.getMasterAddress());
+        assertEquals(n3.getThisAddress(), n3.getMasterAddress());
+    }
+
     private static class FirewallingNodeContext extends DefaultNodeContext {
         @Override
         public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
