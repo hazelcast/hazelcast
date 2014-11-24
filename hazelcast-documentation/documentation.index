@@ -29,6 +29,7 @@ src/Distributed_Data_Structures.md
 		src/SampleQueueCode.md
 		src/BoundedQueue.md
 		src/Queue-Persistence.md
+		src/QueueConfiguration.md
 	src/MultiMap.md
 	src/Set.md
 	src/List.md

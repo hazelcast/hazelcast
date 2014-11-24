@@ -41,7 +41,7 @@ It has below attributes and parameters.
 - `max-size`: Value of maximum size of items in the Queue.
 - `backup-count`: Count of synchronous backups. Remember that, Queue is a non-partitioned data structure, i.e. all entries of a Set resides in one partition. When this parameter is '1', it means there will be a backup of that Set in another node in the cluster. When it is '2', 2 nodes will have the backup.
 - `async-backup-count`: Count of asynchronous backups.
-- `empty-queue-ttl`: Value of time to live to empty the Queue.
+- `empty-queue-ttl`: Used to purge unused or empty queues. If you define a value (time in seconds) for this element, then your queue will be destroyed if it stays empty or unused for the time you give.
 - `item-listeners`: ???
 - `queue-store`: Includes the queue store factory class name and the properties  *binary*, *memory limit* and *bulk load*. Please refer to [Queue Persistence](#queue-persistence).
 - `statistics-enabled`: If set as `true`, you can retrieve statistics for this Queue using the method `getLocalQueueStats()`.
