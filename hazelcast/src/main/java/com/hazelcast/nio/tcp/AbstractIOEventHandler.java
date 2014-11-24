@@ -24,35 +24,33 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.logging.Level;
 
-abstract class AbstractSelectionHandler implements SelectionHandler {
+/**
+ * Abstract {@link com.hazelcast.nio.tcp.IOEventHandler}
+ */
+public abstract class AbstractIOEventHandler implements IOEventHandler {
 
     protected final ILogger logger;
-
     protected final SocketChannelWrapper socketChannel;
-
     protected final TcpIpConnection connection;
-
     protected final TcpIpConnectionManager connectionManager;
+    protected SelectionKey selectionKey;
 
-
-    private SelectionKey sk;
-
-    public AbstractSelectionHandler(final TcpIpConnection connection) {
+    public AbstractIOEventHandler(TcpIpConnection connection) {
         this.connection = connection;
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
     }
 
-    final void handleSocketException(Throwable e) {
+    protected final void handleSocketException(Throwable e) {
         if (e instanceof OutOfMemoryError) {
             connectionManager.ioService.onOutOfMemory((OutOfMemoryError) e);
         }
-        if (sk != null) {
-            sk.cancel();
+        if (selectionKey != null) {
+            selectionKey.cancel();
         }
         connection.close(e);
-        final ConnectionType connectionType = connection.getType();
+        ConnectionType connectionType = connection.getType();
         if (connectionType.isClient() && !connectionType.isBinary()) {
             return;
         }
@@ -61,7 +59,7 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         sb.append(" Closing socket to endpoint ");
         sb.append(connection.getEndPoint());
         sb.append(", Cause:").append(e);
-        final Level level = connectionManager.ioService.isActive() ? Level.WARNING : Level.FINEST;
+        Level level = connectionManager.ioService.isActive() ? Level.WARNING : Level.FINEST;
         if (e instanceof IOException) {
             logger.log(level, sb.toString());
         } else {
@@ -69,20 +67,20 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         }
     }
 
-    final void registerOp(final Selector selector, final int operation) {
+    protected final void registerOp(Selector selector, int operation) {
         try {
             if (!connection.isAlive()) {
                 return;
             }
-            if (sk == null) {
-                sk = socketChannel.keyFor(selector);
+            if (selectionKey == null) {
+                selectionKey = socketChannel.keyFor(selector);
             }
-            if (sk == null) {
-                sk = socketChannel.register(selector, operation, this);
+            if (selectionKey == null) {
+                selectionKey = socketChannel.register(selector, operation, this);
             } else {
-                sk.interestOps(sk.interestOps() | operation);
-                if (sk.attachment() != this) {
-                    sk.attach(this);
+                selectionKey.interestOps(selectionKey.interestOps() | operation);
+                if (selectionKey.attachment() != this) {
+                    selectionKey.attach(this);
                 }
             }
         } catch (Throwable e) {

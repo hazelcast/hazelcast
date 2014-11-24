@@ -25,11 +25,9 @@ import java.nio.ByteBuffer;
 
 public class DefaultPacketReader implements PacketReader {
 
-    protected final TcpIpConnection connection;
-
-    protected final IOService ioService;
-
-    protected Packet packet;
+    private Packet packet;
+    private final TcpIpConnection connection;
+    private final IOService ioService;
 
     public DefaultPacketReader(TcpIpConnection connection, IOService ioService) {
         this.connection = connection;

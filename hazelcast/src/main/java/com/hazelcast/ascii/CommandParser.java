@@ -16,8 +16,8 @@
 
 package com.hazelcast.ascii;
 
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextByteBufferReader;
 
 public interface CommandParser  {
-    TextCommand parser(SocketTextReader socketTextReader, String cmd, int space);
+    TextCommand parser(TextByteBufferReader textByteBufferReader, String cmd, int space);
 }

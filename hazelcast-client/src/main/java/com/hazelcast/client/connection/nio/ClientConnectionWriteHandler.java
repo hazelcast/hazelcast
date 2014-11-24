@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.nio.SocketWritable;
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.IOReactor;
 import com.hazelcast.util.Clock;
 
 import java.nio.ByteBuffer;
@@ -26,22 +26,17 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ClientWriteHandler extends AbstractClientSelectionHandler implements Runnable {
+public class ClientConnectionWriteHandler extends AbstractClientIOEventHandler implements Runnable {
 
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
-
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
-
     private final ByteBuffer buffer;
-
     private boolean ready;
-
     private SocketWritable lastWritable;
-
     private volatile long lastHandle;
 
-    public ClientWriteHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
-        super(connection, ioSelector);
+    public ClientConnectionWriteHandler(ClientConnection connection, IOReactor ioReactor, int bufferSize) {
+        super(connection, ioReactor);
         buffer = ByteBuffer.allocate(bufferSize);
     }
 
@@ -103,8 +98,8 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
             // already in the task queue.
             // we can have a counter to check this later on.
             // for now, wake up regardless.
-            ioSelector.addTask(this);
-            ioSelector.wakeup();
+            ioReactor.addTask(this);
+            ioReactor.wakeup();
         }
     }
 

@@ -18,7 +18,7 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.IOReactor;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
@@ -26,16 +26,14 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
-public class ClientReadHandler extends AbstractClientSelectionHandler {
+public class ClientConnectionReadHandler extends AbstractClientIOEventHandler {
 
     private final ByteBuffer buffer;
-
     private volatile long lastHandle;
-
     private Packet packet;
 
-    public ClientReadHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
-        super(connection, ioSelector);
+    public ClientConnectionReadHandler(ClientConnection connection, IOReactor ioReactor, int bufferSize) {
+        super(connection, ioReactor);
         buffer = ByteBuffer.allocate(bufferSize);
         lastHandle = Clock.currentTimeMillis();
     }

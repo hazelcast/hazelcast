@@ -37,6 +37,7 @@ public class SocketConnector implements Runnable {
 
     private static final int DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS = 3;
     private static final int MILLIS_PER_SECOND = 1000;
+
     private final TcpIpConnectionManager connectionManager;
     private final Address address;
     private final ILogger logger;
@@ -51,18 +52,18 @@ public class SocketConnector implements Runnable {
 
     @Override
     public void run() {
-        if (!connectionManager.isLive()) {
+        if (!connectionManager.isAlive()) {
             if (logger.isFinestEnabled()) {
-                String message = "ConnectionManager is not live, connection attempt to " + address + " is cancelled!";
-                log(Level.FINEST, message);
+                logger.finest("ConnectionManager is not live, connection attempt to " + address + " is cancelled!");
             }
             return;
         }
+
         try {
             if (logger.isFinestEnabled()) {
-                log(Level.FINEST, "Starting to connect to " + address);
+                logger.finest("Starting to connect to " + address);
             }
-            final Address thisAddress = connectionManager.ioService.getThisAddress();
+            Address thisAddress = connectionManager.ioService.getThisAddress();
             if (address.isIPv4()) {
                 // remote is IPv4; connect...
                 tryToConnect(address.getInetSocketAddress(),
@@ -71,7 +72,7 @@ public class SocketConnector implements Runnable {
                 // Both remote and this addresses are IPv6.
                 // This is a local IPv6 address and scope id is known.
                 // find correct inet6 address for remote and connect...
-                final Inet6Address inetAddress = AddressUtil
+                Inet6Address inetAddress = AddressUtil
                         .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
                 tryToConnect(new InetSocketAddress(inetAddress, address.getPort()),
                         connectionManager.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
@@ -88,12 +89,12 @@ public class SocketConnector implements Runnable {
 
     private void tryConnectToIPv6()
             throws Exception {
-        final Collection<Inet6Address> possibleInetAddresses = AddressUtil
+        Collection<Inet6Address> possibleInetAddresses = AddressUtil
                 .getPossibleInetAddressesFor((Inet6Address) address.getInetAddress());
-        final Level level = silent ? Level.FINEST : Level.INFO;
+        Level level = silent ? Level.FINEST : Level.INFO;
         //TODO: collection.toString() will likely not produce any useful output!
         if (logger.isLoggable(level)) {
-            log(level, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
+            logger.log(level, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
         }
         boolean connected = false;
         Exception error = null;
@@ -115,25 +116,25 @@ public class SocketConnector implements Runnable {
         }
     }
 
-    private void tryToConnect(final InetSocketAddress socketAddress, final int timeout) throws Exception {
-        final SocketChannel socketChannel = SocketChannel.open();
+    private void tryToConnect(InetSocketAddress socketAddress, int timeout) throws Exception {
+        SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
         if (connectionManager.ioService.isSocketBind()) {
             bindSocket(socketChannel);
         }
-        final Level level = silent ? Level.FINEST : Level.INFO;
+        Level level = silent ? Level.FINEST : Level.INFO;
         if (logger.isLoggable(level)) {
-            final String message = "Connecting to " + socketAddress + ", timeout: " + timeout
+            String message = "Connecting to " + socketAddress + ", timeout: " + timeout
                     + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
-            log(level, message);
+            logger.log(level, message);
         }
         try {
             socketChannel.configureBlocking(true);
             connectSocketChannel(socketAddress, timeout, socketChannel);
             if (logger.isFinestEnabled()) {
-                log(Level.FINEST, "Successfully connected to: " + address + " using socket " + socketChannel.socket());
+                logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
             }
-            final SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
+            SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
             connectionManager.interceptSocket(socketChannel.socket(), false);
 
             socketChannelWrapper.configureBlocking(false);
@@ -142,7 +143,7 @@ public class SocketConnector implements Runnable {
             connectionManager.sendBindRequest(connection, address, true);
         } catch (Exception e) {
             closeSocket(socketChannel);
-            log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
+            logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                     + "[" + e.getMessage() + "]");
             throw e;
         }
@@ -164,47 +165,44 @@ public class SocketConnector implements Runnable {
         }
     }
 
-    private void bindSocket(final SocketChannel socketChannel) throws IOException {
-        final InetAddress inetAddress;
+    private void bindSocket(SocketChannel socketChannel) throws IOException {
+        InetAddress inetAddress;
         if (connectionManager.ioService.isSocketBindAny()) {
             inetAddress = null;
         } else {
-            final Address thisAddress = connectionManager.ioService.getThisAddress();
+            Address thisAddress = connectionManager.ioService.getThisAddress();
             inetAddress = thisAddress.getInetAddress();
         }
-        final Socket socket = socketChannel.socket();
+        Socket socket = socketChannel.socket();
         if (connectionManager.useAnyOutboundPort()) {
-            final SocketAddress socketAddress = new InetSocketAddress(inetAddress, 0);
+            SocketAddress socketAddress = new InetSocketAddress(inetAddress, 0);
             socket.bind(socketAddress);
         } else {
             IOException ex = null;
-            final int retryCount = connectionManager.getOutboundPortCount() * 2;
+            int retryCount = connectionManager.getOutboundPortCount() * 2;
             for (int i = 0; i < retryCount; i++) {
-                final int port = connectionManager.acquireOutboundPort();
-                final SocketAddress socketAddress = new InetSocketAddress(inetAddress, port);
+                int port = connectionManager.acquireOutboundPort();
+                SocketAddress socketAddress = new InetSocketAddress(inetAddress, port);
                 try {
                     socket.bind(socketAddress);
                     return;
                 } catch (IOException e) {
                     ex = e;
-                    log(Level.FINEST, "Could not bind port[ " + port + "]: " + e.getMessage());
+                    logger.finest("Could not bind port[ " + port + "]: " + e.getMessage());
                 }
             }
             throw ex;
         }
     }
 
-    private void closeSocket(final SocketChannel socketChannel) {
+    private void closeSocket(SocketChannel socketChannel) {
         if (socketChannel != null) {
             try {
                 socketChannel.close();
             } catch (final IOException e) {
+                //TODO: Why are we not using the logger?
                 Logger.getLogger(SocketConnector.class).finest("Closing socket channel failed", e);
             }
         }
-    }
-
-    private void log(Level level, String message) {
-        logger.log(level, message);
     }
 }

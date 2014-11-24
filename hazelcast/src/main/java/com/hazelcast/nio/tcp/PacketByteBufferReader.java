@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,22 @@
 
 package com.hazelcast.nio.tcp;
 
-public interface IOSelectorOutOfMemoryHandler {
+import java.nio.ByteBuffer;
 
-    void handle(OutOfMemoryError error);
+/**
+ * A {@link ByteBufferReader} that can read a {@link com.hazelcast.nio.Packet} using the
+ * {@link com.hazelcast.nio.tcp.PacketReader}.
+ */
+public class PacketByteBufferReader implements ByteBufferReader {
+
+    private final PacketReader packetReader;
+
+    public PacketByteBufferReader(PacketReader packetReader) {
+        this.packetReader = packetReader;
+    }
+
+    @Override
+    public void read(ByteBuffer inBuffer) throws Exception {
+        packetReader.readPacket(inBuffer);
+    }
 }

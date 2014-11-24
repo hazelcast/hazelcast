@@ -19,7 +19,7 @@ package com.hazelcast.ascii.rest;
 import com.hazelcast.ascii.CommandParser;
 import com.hazelcast.ascii.TextCommand;
 import com.hazelcast.ascii.memcache.ErrorCommand;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextByteBufferReader;
 
 import java.util.StringTokenizer;
 
@@ -27,7 +27,7 @@ import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_CLI
 
 public class HttpPostCommandParser implements CommandParser {
 
-    public TextCommand parser(SocketTextReader socketTextReader, String cmd, int space) {
+    public TextCommand parser(TextByteBufferReader textByteBufferReader, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
         String uri = null;
@@ -36,6 +36,6 @@ public class HttpPostCommandParser implements CommandParser {
         } else {
             return new ErrorCommand(ERROR_CLIENT);
         }
-        return new HttpPostCommand(socketTextReader, uri);
+        return new HttpPostCommand(textByteBufferReader, uri);
     }
 }

@@ -16,22 +16,14 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.NIOThread;
+import com.hazelcast.nio.serialization.DataAdapter;
 
-import java.nio.channels.Selector;
+import java.nio.ByteBuffer;
 
-public interface IOSelector extends NIOThread {
+class ClientByteBufferWriter implements ByteBufferWriter<DataAdapter> {
 
-    Selector getSelector();
-
-    void addTask(Runnable runnable);
-
-    void wakeup();
-
-    void start();
-
-    void shutdown();
-
-    void awaitShutdown();
-
+    @Override
+    public boolean write(DataAdapter writer, ByteBuffer socketBuffer) throws Exception {
+        return writer.writeTo(socketBuffer);
+    }
 }

@@ -28,7 +28,7 @@ import java.nio.channels.SocketChannel;
 
 public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
 
-    protected final SocketChannel socketChannel;
+    private final SocketChannel socketChannel;
 
     public DefaultSocketChannelWrapper(SocketChannel socketChannel) {
         this.socketChannel = socketChannel;
@@ -99,7 +99,7 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("DefaultSocketChannelWrapper{");
+        StringBuilder sb = new StringBuilder("DefaultSocketChannelWrapper{");
         sb.append("socketChannel=").append(socketChannel);
         sb.append('}');
         return sb.toString();

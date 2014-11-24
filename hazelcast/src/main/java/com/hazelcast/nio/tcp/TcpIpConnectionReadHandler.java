@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextByteBufferReader;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
@@ -31,34 +31,33 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 /**
  * The reading side of the {@link com.hazelcast.nio.Connection}.
  */
-final class ReadHandler extends AbstractSelectionHandler implements Runnable {
+final class TcpIpConnectionReadHandler extends AbstractIOEventHandler implements Runnable {
 
     private final ByteBuffer buffer;
+    private final IOReactor ioReactor;
+    private ByteBufferReader byteBufferReader;
 
-    private final IOSelector ioSelector;
+    // This field is written by single IO thread, but read by other threads.
+    private volatile long lastReadTime;
 
-    private SocketReader socketReader;
-
-    private volatile long lastHandle;
-
-    public ReadHandler(TcpIpConnection connection, IOSelector ioSelector) {
+    public TcpIpConnectionReadHandler(TcpIpConnection connection, IOReactor ioReactor) {
         super(connection);
-        this.ioSelector = ioSelector;
-        buffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
+        this.ioReactor = ioReactor;
+        this.buffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
     }
 
     @Override
     public void handle() {
-        lastHandle = Clock.currentTimeMillis();
+        lastReadTime = Clock.currentTimeMillis();
         if (!connection.isAlive()) {
-            String message = "We are being asked to read, but connection is not live so we won't";
-            logger.finest(message);
+            logger.finest("We are being asked to read, but connection is not live so we won't");
             return;
         }
+
         try {
-            if (socketReader == null) {
+            if (byteBufferReader == null) {
                 initializeSocketReader();
-                if (socketReader == null) {
+                if (byteBufferReader == null) {
                     // when using SSL, we can read 0 bytes since data read from socket can be handshake packets.
                     return;
                 }
@@ -71,12 +70,13 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
             handleSocketException(e);
             return;
         }
+
         try {
             if (buffer.position() == 0) {
                 return;
             }
             buffer.flip();
-            socketReader.read(buffer);
+            byteBufferReader.read(buffer);
             if (buffer.hasRemaining()) {
                 buffer.compact();
             } else {
@@ -88,7 +88,7 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
     }
 
     private void initializeSocketReader() throws IOException {
-        if (socketReader == null) {
+        if (byteBufferReader == null) {
             final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
             int readBytes = socketChannel.read(protocolBuffer);
             if (readBytes == -1) {
@@ -100,22 +100,23 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
             }
             if (!protocolBuffer.hasRemaining()) {
                 String protocol = bytesToString(protocolBuffer.array());
-                WriteHandler writeHandler = connection.getWriteHandler();
+                TcpIpConnectionWriteHandler writeHandler = connection.getWriteHandler();
                 if (Protocols.CLUSTER.equals(protocol)) {
                     connection.setType(ConnectionType.MEMBER);
                     writeHandler.setProtocol(Protocols.CLUSTER);
-                    socketReader = new SocketPacketReader(connection);
+                    TcpIpConnectionManager connectionManager = connection.getConnectionManager();
+                    byteBufferReader = new PacketByteBufferReader(connectionManager.createPacketReader(connection));
                 } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
                     writeHandler.setProtocol(Protocols.CLIENT_BINARY);
-                    socketReader = new SocketClientDataReader(connection);
+                    byteBufferReader = new ClientByteBufferReader(connection);
                 } else {
                     writeHandler.setProtocol(Protocols.TEXT);
                     buffer.put(protocolBuffer.array());
-                    socketReader = new SocketTextReader(connection);
+                    byteBufferReader = new TextByteBufferReader(connection);
                     connection.getConnectionManager().incrementTextConnections();
                 }
             }
-            if (socketReader == null) {
+            if (byteBufferReader == null) {
                 throw new IOException("Could not initialize SocketReader!");
             }
         }
@@ -123,20 +124,25 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     @Override
     public void run() {
-        registerOp(ioSelector.getSelector(), SelectionKey.OP_READ);
+        registerOp(ioReactor.getSelector(), SelectionKey.OP_READ);
     }
 
-    long getLastHandle() {
-        return lastHandle;
+    /**
+     * Returns the time in ms when this ReadHandler handled a packet for the last time.
+     *
+     * @return
+     */
+    long lastReadTime() {
+        return lastReadTime;
     }
 
     public void register() {
-        ioSelector.addTask(this);
-        ioSelector.wakeup();
+        ioReactor.addTask(this);
+        ioReactor.wakeup();
     }
 
     void shutdown() {
-        ioSelector.addTask(new Runnable() {
+        ioReactor.addTask(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -146,6 +152,6 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 }
             }
         });
-        ioSelector.wakeup();
+        ioReactor.wakeup();
     }
 }

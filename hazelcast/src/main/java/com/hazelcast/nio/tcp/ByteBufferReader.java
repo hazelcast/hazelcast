@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import java.nio.ByteBuffer;
 
-public interface SocketReader {
+public interface ByteBufferReader {
 
     void read(ByteBuffer bb) throws Exception;
 }
