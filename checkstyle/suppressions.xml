@@ -69,7 +69,7 @@
     <suppress checks="NPathComplexity" files="com.hazelcast.cache.impl.HazelcastServerCachingProvider"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.client.cache.impl.HazelcastClientCachingProvider"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
-    <suppress checks="MethodCount|ParameterNumber" files="com.hazelcast.cache.impl.AbstractCacheRecordStore"/>
+    <suppress checks="MethodCount|ParameterNumber|ClassFanOutComplexity|ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.AbstractCacheRecordStore"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractCacheService"/>
 
     <!-- Core-->

@@ -217,7 +217,6 @@ public class MaxSizeChecker {
         return maxSizeFromConfig * EVICTION_START_THRESHOLD_PERCENTAGE / ONE_HUNDRED_PERCENT;
     }
 
-
     private List<Integer> findPartitionIds() {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();

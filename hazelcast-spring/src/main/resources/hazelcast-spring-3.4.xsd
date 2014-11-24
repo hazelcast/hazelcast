@@ -373,6 +373,21 @@
                         <xs:element name="cache" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
+                                    <xs:element name="max-size" type="cache-max-size" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                When maximum size is reached, cache is evicted based on the eviction policy
+                                                Size can be any integer between 0 and Integer.MAX_VALUE.
+                                                0 means Integer.MAX_VALUE. Default is 0.
+                                                Cache Max-Size policy has these valid values:
+                                                    ENTRY_COUNT (Maximum number of cache entries in the cache),
+                                                    USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes for each JVM),
+                                                    USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage for each JVM),
+                                                    FREE_NATIVE_MEMORY_SIZE (Maximum free native memory size in megabytes for each JVM),
+                                                    FREE_NATIVE_MEMORY_PERCENTAGE (Maximum free native memory size percentage for each JVM).
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
                                     <xs:element name="cache-entry-listeners" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>List of cache entry listeners</xs:documentation>
@@ -487,15 +502,6 @@
                                             evicted.
                                             Any integer between 0 and 100. If 25 is set for example, 25% of the
                                             entries will get evicted.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="eviction-threshold-percentage" use="optional"
-                                              type="xs:unsignedByte">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            When size reaches threshold percentage, eviction will be fired. Any integer
-                                            between 0 and 100.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -1711,6 +1717,21 @@
         <xs:restriction base="xs:string">
             <xs:enumeration value="CANCEL_RUNNING_OPERATION"/>
             <xs:enumeration value="DISCARD_AND_RESTART"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="cache-max-size">
+        <xs:attribute name="size" type="xs:nonNegativeInteger" default="0" use="optional" />
+        <xs:attribute name="policy" type="cache-max-size-policy" default="ENTRY_COUNT" use="optional" />
+    </xs:complexType>
+
+    <xs:simpleType name="cache-max-size-policy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ENTRY_COUNT" />
+            <xs:enumeration value="USED_NATIVE_MEMORY_SIZE" />
+            <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE" />
+            <xs:enumeration value="FREE_NATIVE_MEMORY_SIZE" />
+            <xs:enumeration value="FREE_NATIVE_MEMORY_PERCENTAGE" />
         </xs:restriction>
     </xs:simpleType>
 
