@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 
+import java.io.IOException;
+
 /**
  * Responsible for managing {@link com.hazelcast.client.connection.nio.ClientConnection} objects.
  */
@@ -63,7 +65,7 @@ public interface ClientConnectionManager {
      * @return ownerConnection
      * @throws Exception
      */
-    ClientConnection ownerConnection(Address address) throws Exception;
+    ClientConnection ownerConnection(Address address) throws IOException;
 
     /**
      * Called when an owner connection is closed
