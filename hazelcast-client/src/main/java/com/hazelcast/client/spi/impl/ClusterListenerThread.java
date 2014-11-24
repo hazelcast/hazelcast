@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -51,6 +52,7 @@ class ClusterListenerThread extends Thread {
     private HazelcastClientInstanceImpl client;
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
+    private Exception exception;
 
     public ClusterListenerThread(ThreadGroup group, String name, Collection<AddressProvider> addressProviders) {
         super(group, name);
@@ -66,6 +68,9 @@ class ClusterListenerThread extends Thread {
 
     public void await() throws InterruptedException {
         latch.await();
+        if (exception != null) {
+            throw ExceptionUtil.rethrow(exception);
+        }
     }
 
     ClientConnection getConnection() {
@@ -81,6 +86,7 @@ class ClusterListenerThread extends Thread {
                     } catch (Exception e) {
                         if (client.getLifecycleService().isRunning()) {
                             LOGGER.severe("Error while connecting to cluster!", e);
+                            this.exception = e;
                         }
 
                         client.getLifecycleService().shutdown();
@@ -269,7 +275,7 @@ class ClusterListenerThread extends Thread {
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             LOGGER.warning(
                     String.format("Unable to get alive cluster connection,"
-                            + " try in %d ms later, attempt %d of %d.",
+                                    + " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
             if (remainingTime > 0) {
