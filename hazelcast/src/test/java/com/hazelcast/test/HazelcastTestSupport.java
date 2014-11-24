@@ -17,6 +17,7 @@
 package com.hazelcast.test;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
@@ -31,6 +32,7 @@ import org.junit.ComparisonFailure;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -314,26 +316,45 @@ public abstract class HazelcastTestSupport {
     }
 
     public static String generateKeyOwnedBy(HazelcastInstance instance) {
-        final Member localMember = instance.getCluster().getLocalMember();
+        return generateKeyInternal(instance, true);
+    }
+
+    public static String generateKeyNotOwnedBy(HazelcastInstance instance) {
+        return generateKeyInternal(instance, false);
+    }
+
+    /**
+     * Generates a key according to given reference instance by checking partition ownership for it.
+     *
+     * @param instance         reference instance for key generation.
+     * @param generateOwnedKey <code>true</code> if we want a key which is owned by the given instance, otherwise
+     *                         set to <code>false</code> which means generated key will not be owned by the given instance.
+     * @return generated string.
+     */
+    private static String generateKeyInternal(HazelcastInstance instance, boolean generateOwnedKey) {
+        final Cluster cluster = instance.getCluster();
+        final Set<Member> members = cluster.getMembers();
+        if (members.size() < 2) {
+            return randomString();
+        }
+
+        final Member localMember = cluster.getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
         for (; ; ) {
-            String id = UUID.randomUUID().toString();
-            Partition partition = partitionService.getPartition(id);
-            if (localMember.equals(partition.getOwner())) {
+            final String id = randomString();
+            final Partition partition = partitionService.getPartition(id);
+            if (comparePartitionOwnership(generateOwnedKey, localMember, partition)) {
                 return id;
             }
         }
     }
 
-    public static String generateKeyNotOwnedBy(HazelcastInstance instance) {
-        final Member localMember = instance.getCluster().getLocalMember();
-        final PartitionService partitionService = instance.getPartitionService();
-        for (; ; ) {
-            String id = UUID.randomUUID().toString();
-            Partition partition = partitionService.getPartition(id);
-            if (!localMember.equals(partition.getOwner())) {
-                return id;
-            }
+    private static boolean comparePartitionOwnership(boolean generateOwnedKey, Member member, Partition partition) {
+        final Member owner = partition.getOwner();
+        if (generateOwnedKey) {
+            return member.equals(owner);
+        } else {
+            return !member.equals(owner);
         }
     }
 
