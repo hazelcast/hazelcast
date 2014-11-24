@@ -170,10 +170,24 @@ public final class CacheProxyUtil {
      * @param <K> the type of key.
      * @throws ClassCastException if the provided key does not match with configured type.
      */
-    public static <K> void validateConfiguredTypes(CacheConfig cacheConfig, K key)
+    public static <K> void validateConfiguredKeyType(CacheConfig cacheConfig, K key)
             throws ClassCastException {
         final Class keyType = cacheConfig.getKeyType();
         validateConfiguredKeyType(keyType, key);
+    }
+
+    /**
+     * Validates the configured key and value types matches the provided value.
+     *
+     * @param cacheConfig Cache configuration.
+     * @param value the value to be validated.
+     * @param <V> the type of value.
+     * @throws ClassCastException if the provided key or value do not match with configured types.
+     */
+    public static <V> void validateConfiguredValueType(CacheConfig cacheConfig, V value)
+            throws ClassCastException {
+        final Class valueType = cacheConfig.getValueType();
+        validateConfiguredValueType(valueType, value);
     }
 
     /**
@@ -226,7 +240,7 @@ public final class CacheProxyUtil {
         if (Object.class != keyType) {
             //means type checks required
             if (!keyType.isAssignableFrom(key.getClass())) {
-                throw new ClassCastException("Key " + key + "is not assignable to " + keyType);
+                throw new ClassCastException("Key " + key + " is not assignable to " + keyType);
             }
         }
     }
@@ -243,7 +257,7 @@ public final class CacheProxyUtil {
         if (Object.class != valueType) {
             //means type checks required
             if (!valueType.isAssignableFrom(value.getClass())) {
-                throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
+                throw new ClassCastException("Value " + value + " is not assignable to " + valueType);
             }
         }
     }

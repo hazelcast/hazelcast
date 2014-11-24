@@ -72,13 +72,13 @@ public class CacheProxy<K, V>
 
     protected final ILogger logger;
 
-    private AbstractHazelcastCacheManager cacheManager;
+    private final AbstractHazelcastCacheManager cacheManager;
 
     protected CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService,
                          HazelcastServerCacheManager cacheManager) {
         super(cacheConfig, nodeEngine, cacheService);
         this.cacheManager = cacheManager;
-        logger = getNodeEngine().getLogger(getClass());
+        this.logger = getNodeEngine().getLogger(getClass());
     }
 
     @Override
@@ -101,6 +101,7 @@ public class CacheProxy<K, V>
         OperationService operationService = getNodeEngine().getOperationService();
         int partitionId = getPartitionId(getNodeEngine(), k);
         InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
+
         return f.getSafely();
     }
 
@@ -109,7 +110,7 @@ public class CacheProxy<K, V>
         ensureOpen();
         validateNotNull(keys);
         for (K key : keys) {
-            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
+            CacheProxyUtil.validateConfiguredKeyType(cacheConfig, key);
         }
         validateCacheLoader(completionListener);
         HashSet<Data> keysData = new HashSet<Data>();

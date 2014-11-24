@@ -42,6 +42,14 @@ import java.util.Properties;
 public final class HazelcastServerCachingProvider
         extends AbstractHazelcastCachingProvider {
 
+    public HazelcastServerCachingProvider() {
+        this(null);
+    }
+
+    private HazelcastServerCachingProvider(HazelcastInstance defaultHazelcastInstance) {
+        super(defaultHazelcastInstance);
+    }
+
     /**
      * Helper method for creating caching provider for testing, etc.
      *
@@ -50,24 +58,27 @@ public final class HazelcastServerCachingProvider
      * @return HazelcastServerCachingProvider
      */
     public static HazelcastServerCachingProvider createCachingProvider(HazelcastInstance hazelcastInstance) {
-        final HazelcastServerCachingProvider cachingProvider = new HazelcastServerCachingProvider();
-        cachingProvider.hazelcastInstance = hazelcastInstance;
+        final HazelcastServerCachingProvider cachingProvider = new HazelcastServerCachingProvider(hazelcastInstance);
         return cachingProvider;
     }
 
     @Override
     protected HazelcastServerCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties properties) {
-        final HazelcastInstance instance;
+        HazelcastInstance instance = null;
         //uri is null or default or a non hazelcast one, then we use the internal shared instance
         if (uri == null || uri.equals(getDefaultURI())) {
-            if (hazelcastInstance == null) {
+            if (defaultHazelcastInstance != null) {
+                instance = defaultHazelcastInstance;
+            } else if (hazelcastInstance == null) {
                 try {
                     hazelcastInstance = instanceFromProperties(classLoader, properties, true);
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
             }
-            instance = hazelcastInstance;
+            if (instance == null) {
+                instance = hazelcastInstance;
+            }
         } else {
             try {
                 instance = instanceFromProperties(classLoader, properties, false);
@@ -112,7 +123,19 @@ public final class HazelcastServerCachingProvider
         if (instanceName != null) {
             instance = Hazelcast.getHazelcastInstanceByName(instanceName);
         }
-        if (isDefault) {
+        if (isDefault || instance == null) {
+            instance = getOrCreateDefaultHazelcastInstance();
+        }
+        return instance;
+    }
+
+    private HazelcastInstance getOrCreateDefaultHazelcastInstance() {
+        HazelcastInstance instance;
+        if (defaultHazelcastInstance != null) {
+            instance = defaultHazelcastInstance;
+        } else if (hazelcastInstance != null) {
+            instance = hazelcastInstance;
+        } else {
             Config config = new XmlConfigBuilder().build();
             if (config.getInstanceName() == null) {
                 config.setInstanceName("JCacheSharedInstance");

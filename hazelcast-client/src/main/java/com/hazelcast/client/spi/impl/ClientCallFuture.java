@@ -30,6 +30,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.OperationResultVerifier;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.Clock;
@@ -71,6 +72,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private final EventHandler handler;
 
     private AtomicInteger reSendCount = new AtomicInteger();
+
+    private volatile OperationResultVerifier<V> operationResultVerifier;
 
     private volatile ClientConnection connection;
 
@@ -167,6 +170,10 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         setResponse(response);
     }
 
+    public void setOperationResultVerifier(OperationResultVerifier<V> operationResultVerifier) {
+        this.operationResultVerifier = operationResultVerifier;
+    }
+
     private void setResponse(Object response) {
         synchronized (this) {
             if (this.response != null && handler == null) {
@@ -196,25 +203,35 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private V resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
         if (response instanceof Throwable) {
-            ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
-            if (response instanceof ExecutionException) {
-                throw (ExecutionException) response;
-            }
-            if (response instanceof TimeoutException) {
-                throw (TimeoutException) response;
-            }
-            if (response instanceof Error) {
-                throw (Error) response;
-            }
-            if (response instanceof InterruptedException) {
-                throw (InterruptedException) response;
-            }
-            throw new ExecutionException((Throwable) response);
+            handleThrowableResponse((Throwable) response);
         }
         if (response == null) {
             throw new TimeoutException();
         }
+        if (operationResultVerifier != null) {
+            response = operationResultVerifier.verify((V) response);
+            if (response instanceof Throwable) {
+                ExceptionUtil.sneakyThrow((Throwable) response);
+            }
+        }
         return (V) response;
+    }
+
+    private void handleThrowableResponse(Throwable throwable) throws ExecutionException, TimeoutException, InterruptedException {
+        ExceptionUtil.fixRemoteStackTrace(throwable, Thread.currentThread().getStackTrace());
+        if (throwable instanceof ExecutionException) {
+            throw (ExecutionException) throwable;
+        }
+        if (throwable instanceof TimeoutException) {
+            throw (TimeoutException) throwable;
+        }
+        if (throwable instanceof Error) {
+            throw (Error) throwable;
+        }
+        if (throwable instanceof InterruptedException) {
+            throw (InterruptedException) throwable;
+        }
+        throw new ExecutionException(throwable);
     }
 
     @Override

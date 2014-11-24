@@ -27,4 +27,7 @@ import com.hazelcast.core.ICompletableFuture;
 public interface InternalCompletableFuture<E> extends ICompletableFuture<E> {
 
     E getSafely();
+
+    void setOperationResultVerifier(OperationResultVerifier<E> operationResultVerifier);
+
 }

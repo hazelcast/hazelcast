@@ -76,21 +76,30 @@ public abstract class AbstractHazelcastCacheManager
         checkIfNotNull(configuration, "configuration must not be null");
 
         final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
-        if (caches.containsKey(newCacheConfig.getNameWithPrefix())) {
-            throw new CacheException("A cache named " + cacheName + " already exists.");
+        ICache<?, ?> oldCache = caches.get(newCacheConfig.getNameWithPrefix());
+        if (oldCache != null) {
+            CacheConfig oldCacheConfig = oldCache.getConfiguration(CacheConfig.class);
+            if (!newCacheConfig.equals(oldCacheConfig)) {
+                throw new CacheException("A cache named " + cacheName + " already exists.");
+            }
         }
         //create proxy object
-        final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
+        ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
         //CREATE THE CONFIG ON PARTITION
         CacheConfig<K, V> current = createConfigOnPartition(newCacheConfig);
         if (current == null) {
             //single thread region because createConfigOnPartition is single threaded by partition thread
             //UPDATE LOCAL MEMBER
             addCacheConfigIfAbsentToLocal(newCacheConfig);
-            //no need to a putIfAbsent as this is a single threaded region
-            caches.put(newCacheConfig.getNameWithPrefix(), cacheProxy);
-            //REGISTER LISTENERS
-            registerListeners(newCacheConfig, cacheProxy);
+            // Multiple threads can try to acquire the same cache concurrently, so another
+            // thread might also put his CacheProxy instance for the current config
+            ICache temp = caches.putIfAbsent(newCacheConfig.getNameWithPrefix(), cacheProxy);
+            if (temp != null) {
+                cacheProxy = temp;
+            } else {
+                //REGISTER LISTENERS
+                registerListeners(newCacheConfig, cacheProxy);
+            }
             return cacheProxy;
         }
         ICache<?, ?> cache = getOrPutIfAbsent(current.getNameWithPrefix(), cacheProxy);
@@ -104,8 +113,8 @@ public abstract class AbstractHazelcastCacheManager
     private ICache<?, ?> getOrPutIfAbsent(String nameWithPrefix, ICache cacheProxy) {
         ICache<?, ?> cache = caches.get(nameWithPrefix);
         if (cache == null) {
-            ICache<?, ?> iCache = caches.putIfAbsent(nameWithPrefix, cacheProxy);
-            cache = iCache != null ? iCache : cacheProxy;
+            ICache<?, ?> oldCacheProxy = caches.putIfAbsent(nameWithPrefix, cacheProxy);
+            cache = oldCacheProxy != null ? oldCacheProxy : cacheProxy;
         }
         return cache;
     }
