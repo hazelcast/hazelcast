@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.client.txn;
+package com.hazelcast.client.txn;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.txn.proxy.ClientTxnListProxy;
-import com.hazelcast.client.impl.client.txn.proxy.ClientTxnMapProxy;
-import com.hazelcast.client.impl.client.txn.proxy.ClientTxnMultiMapProxy;
-import com.hazelcast.client.impl.client.txn.proxy.ClientTxnQueueProxy;
-import com.hazelcast.client.impl.client.txn.proxy.ClientTxnSetProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnListProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnMapProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnMultiMapProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnQueueProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnSetProxy;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.core.HazelcastException;

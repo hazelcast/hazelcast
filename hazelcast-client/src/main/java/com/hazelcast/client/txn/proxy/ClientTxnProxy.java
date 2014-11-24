@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.client.txn.proxy;
+package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.impl.client.ClientDestroyRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.transaction.client.BaseTransactionRequest;
-import com.hazelcast.client.impl.client.txn.TransactionContextProxy;
+import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;

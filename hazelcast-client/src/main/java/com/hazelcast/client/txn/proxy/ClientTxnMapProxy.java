@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.client.txn.proxy;
+package com.hazelcast.client.txn.proxy;
 
-import com.hazelcast.client.impl.client.txn.TransactionContextProxy;
+import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;

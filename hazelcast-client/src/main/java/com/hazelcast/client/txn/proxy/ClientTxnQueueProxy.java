@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.client.txn.proxy;
+package com.hazelcast.client.txn.proxy;
 
-import com.hazelcast.client.impl.client.txn.TransactionContextProxy;
+import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.impl.QueueService;

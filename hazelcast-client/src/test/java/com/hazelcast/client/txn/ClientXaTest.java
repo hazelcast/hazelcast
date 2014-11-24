@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.client.txn;
+package com.hazelcast.client.txn;
 
 import com.atomikos.icatch.jta.UserTransactionManager;
 import com.hazelcast.client.HazelcastClient;
