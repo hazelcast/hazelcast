@@ -212,7 +212,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         clusterListener.init(client);
 
         try {
-            clusterListener.connectToClusterAndListen();
+            clusterListener.connectToCluster();
         } catch (Exception e) {
             throw new HazelcastException(e);
         }

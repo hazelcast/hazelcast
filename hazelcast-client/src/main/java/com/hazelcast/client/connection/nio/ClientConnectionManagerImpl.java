@@ -121,7 +121,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
 
-    private  ClientInvocationServiceImpl invocationService;
+    private ClientInvocationServiceImpl invocationService;
 
     private volatile boolean alive;
 
@@ -480,7 +480,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     public Object sendAndReceive(ClientRequest request, ClientConnection connection) throws Exception {
         final SerializationService ss = getSerializationService();
         try {
-            final Future f =  invocationService.invokeOnConnection(request, connection);
+            final Future f = invocationService.invokeOnConnection(request, connection);
             return ss.toObject(f.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -622,9 +622,22 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return;
             }
 
-            IOUtil.closeResource(currentOwnerConnection);
             ownerConnection = null;
-            clusterService.getClusterListener().connectToClusterAndListen();
+            IOUtil.closeResource(currentOwnerConnection);
+            executionService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    if (!client.getLifecycleService().isRunning()) {
+                        return;
+                    }
+                    try {
+
+                        clusterService.getClusterListener().connectToCluster();
+                    } catch (Exception e) {
+                        LOGGER.severe("Error while connecting to cluster!", e);
+                    }
+                }
+            });
         }
     }
 }

@@ -67,19 +67,16 @@ public class ClusterListener {
         this.clientInvocationService = client.getInvocationService();
     }
 
-    public void connectToClusterAndListen() {
-        ClientConnection conn = null;
+    public void connectToCluster() throws Exception {
+        ClientConnection conn;
         try {
-            try {
-                conn = connectToCluster();
-            } catch (Exception e) {
-                if (client.getLifecycleService().isRunning()) {
-                    LOGGER.severe("Error while connecting to cluster!", e);
-                }
+            conn = connectToOne();
+        } catch (Exception e) {
+            client.getLifecycleService().shutdown();
+            throw e;
+        }
 
-                client.getLifecycleService().shutdown();
-                return;
-            }
+        try {
             clientListenerService.triggerFailedListeners();
             loadInitialMemberList(conn);
             listenMembershipEvents(conn);
@@ -92,8 +89,8 @@ public class ClusterListener {
                 }
             }
 
-            IOUtil.closeResource(conn);
             clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
+            IOUtil.closeResource(conn);
         }
     }
 
@@ -160,7 +157,11 @@ public class ClusterListener {
         final EventHandler<ClientMembershipEvent> handler = createEventHandler();
         final Future future = clientInvocationService.invokeOnConnection(request, conn, handler);
         final SerializationService serializationService = clusterService.getSerializationService();
-        listenerRegistrationId = serializationService.toObject(future.get());
+        final Object response = serializationService.toObject(future.get());
+        if (response instanceof Exception) {
+            throw (Exception) response;
+        }
+        listenerRegistrationId = (String) response;
     }
 
     private EventHandler<ClientMembershipEvent> createEventHandler() {
@@ -225,7 +226,7 @@ public class ClusterListener {
         clusterService.setMembersRef(Collections.unmodifiableMap(map));
     }
 
-    public ClientConnection connectToCluster() throws Exception {
+    public ClientConnection connectToOne() throws Exception {
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();

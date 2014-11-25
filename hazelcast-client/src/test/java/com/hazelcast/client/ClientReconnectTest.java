@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,7 +45,6 @@ import static org.junit.Assert.assertTrue;
 public class ClientReconnectTest extends HazelcastTestSupport {
 
     @After
-    @Before
     public void cleanup() throws Exception {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
@@ -56,11 +54,12 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testClientReconnectOnClusterDown() throws Exception {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance client = HazelcastClient.newHazelcastClient();
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-                connectedLatch.countDown();
+                if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_CONNECTED)
+                    connectedLatch.countDown();
             }
         });
         IMap<String, String> m = client.getMap("default");
@@ -79,11 +78,13 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setRedoOperation(true);
 
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-                connectedLatch.countDown();
+                if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_CONNECTED) {
+                    connectedLatch.countDown();
+                }
             }
         });
 
