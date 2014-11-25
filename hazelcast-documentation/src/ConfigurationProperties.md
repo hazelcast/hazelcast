@@ -68,8 +68,8 @@ Property Name | Default Value | Type | Description
 `hazelcast.max.join.merge.target.seconds`|20|int|Split-brain merge timeout for a specific target.
 `hazelcast.max.wait.seconds.before.join` | 20 | int  |   Maximum wait time before the join operation.
 `hazelcast.heartbeat.interval.seconds` | 1 | int  |   Heartbeat send interval in seconds.
-`hazelcast.max.no.heartbeat.seconds` | 500 | int  |   Max timeout for heartbeat in seconds for a node to assume it is dead.
-`hazelcast.max.no.master.confirmation.seconds` | 450 | int  |   Max timeout of master confirmation from other nodes.
+`hazelcast.max.no.heartbeat.seconds` | 500 | int  |   Maximum timeout for heartbeat in seconds for a node to assume it is dead.
+`hazelcast.max.no.master.confirmation.seconds` | 450 | int  |   Maximum timeout of master confirmation from other nodes.
 `hazelcast.master.confirmation.interval.seconds` | 30 | int  |   Interval at which nodes send master confirmation.
 `hazelcast.member.list.publish.interval.seconds` | 600 | int  |   Interval at which master node publishes a member list.
 `hazelcast.icmp.enabled` | false | bool  |   Enable ICMP ping.
