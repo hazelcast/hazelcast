@@ -1,9 +1,9 @@
 
 ## Logging Configuration
 
-Hazelcast has a flexible logging configuration and does not depend on any logging framework except JDK logging. It has in-built adaptors for a number of logging frameworks and also supports custom loggers by providing logging interfaces.
+Hazelcast has a flexible logging configuration and does not depend on any logging framework except JDK logging. It has built-in adaptors for a number of logging frameworks and it also supports custom loggers by providing logging interfaces.
 
-To use built-in adaptors, you should set `hazelcast.logging.type` property to one of predefined types below.
+To use built-in adaptors, set the `hazelcast.logging.type` property to one of the predefined types below.
 
 -   **jdk**: JDK logging (default)
 
@@ -13,10 +13,10 @@ To use built-in adaptors, you should set `hazelcast.logging.type` property to on
 
 -   **none**: disable logging
 
-You can set `hazelcast.logging.type` through declarative configuration, programmatic configuration or JVM system property.
+You can set `hazelcast.logging.type` through declarative configuration, programmatic configuration, or JVM system property.
 
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *If you choose to use `log4j` or `slf4j`, proper dependencies should be included in the classpath.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *If you choose to use `log4j` or `slf4j`, you should include the proper dependencies in the classpath.*
 <br></br>
 
 **Declarative Configuration**
@@ -49,7 +49,7 @@ config.setProperty( "hazelcast.logging.type", "log4j" );
 	-	Using System class: `System.setProperty( "hazelcast.logging.type", "none" );`
 
 
-If provided logging mechanisms are not satisfactory, you can implement your own using the custom logging feature. To use it, you should implement `com.hazelcast.logging.LoggerFactory` and `com.hazelcast.logging.ILogger` interfaces and set system property `hazelcast.logging.class` as your custom `LoggerFactory` class name.
+If the provided logging mechanisms are not satisfactory, you can implement your own using the custom logging feature. To use it, implement the `com.hazelcast.logging.LoggerFactory` and `com.hazelcast.logging.ILogger` interfaces and set the system property `hazelcast.logging.class` as your custom `LoggerFactory` class name.
 
 ```plain
 -Dhazelcast.logging.class=foo.bar.MyLoggingFactory
@@ -67,7 +67,7 @@ HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 LoggingService loggingService = instance.getLoggingService();
 loggingService.addLogListener( Level.INFO, listener );
 ```
-Through the `LoggingService`, you can get the currently used ILogger implementation and log your own messages, too.
+Through the `LoggingService`, you can get the currently used ILogger implementation and log your own messages too.
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *If you are not using command line for configuring logging, you should be careful about Hazelcast classes. They may be defaulted to `jdk` logging before newly configured logging is read. When logging mechanism is selected, it will not change.*
 

@@ -2,7 +2,7 @@
 
 ### Ports
 
-You can specify the ports which Hazelcast will use to communicate between cluster members. The name of the parameter for this is `port` and its default value is `5701`.
+You can specify the ports that Hazelcast will use to communicate between cluster members. The name of the parameter is `port` and its default value is `5701`.
 
 ```xml
 <network>
@@ -10,9 +10,9 @@ You can specify the ports which Hazelcast will use to communicate between cluste
 </network>
 ```
 
-By default, Hazelcast will try 100 ports to bind. Meaning that, if you set the value of port as 5701, as members are joining to the cluster, Hazelcast tries to find ports between 5701 and 5801. 
+By default, Hazelcast will try 100 ports to bind: if you set the value of `port` as 5701, as members join the cluster, Hazelcast will try to find ports between 5701 and 5801. 
 
-You can choose to change the port count in the cases like having large instances on a single machine or willing to have only a few ports to be assigned. The parameter `port-count` is used for this purpose, whose default value is 100.
+You can change the port count. You might have cases like having large instances on a single machine or having only a few ports to be assigned. Use the parameter `port-count` for this purpose. Its default value is 100.
 
 ```xml
 <network>
@@ -20,7 +20,7 @@ You can choose to change the port count in the cases like having large instances
 </network>
 ```
 
-According to the above example, Hazelcast will try to find free ports between 5781 and 5801. Normally, you will not need to change this value, but it will come very handy when needed. You may also want to choose to use only one port. In that case, you can disable the auto-increment feature of `port`, as shown below.
+According to the above example, Hazelcast will try to find free ports between 5781 and 5801. Normally, you will not need to change `port-count`, but it will come handy when needed. You may also want to choose to use only one port. In that case, you can disable the auto-increment feature of `port`, as shown below.
 
 ```xml
 <network>
@@ -28,12 +28,14 @@ According to the above example, Hazelcast will try to find free ports between 57
 </network>
 ```
 
-Naturally, the parameter `port-count` is ignored when the above configuration is made.
+The parameter `port-count` is ignored when `auto-increment` is used.
 
 
 #### Outbound Ports
 
-By default, Hazelcast lets the system to pick up an ephemeral port during socket bind operation. But security policies/firewalls may require to restrict outbound ports to be used by Hazelcast enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports.
+By default, Hazelcast lets the system pick up an ephemeral port during socket bind operations. But security policies/firewalls may require you to restrict the outbound ports used by Hazelcast-enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports.
+
+You can configure this declaratively. 
 
 ```xml
 <hazelcast>
@@ -53,7 +55,7 @@ By default, Hazelcast lets the system to pick up an ephemeral port during socket
 </hazelcast>
 ```
 
-Or, by programmatically:
+You can also declare this programmatically.
 
 ```java
 ...
