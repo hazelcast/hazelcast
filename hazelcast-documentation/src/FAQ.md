@@ -64,7 +64,7 @@ value.updateSomeProperty();
 map.put( key, value );
 ```
 
-Collections which return values of methods—such as `IMap.keySet`, `IMap.values`, `IMap.entrySet`, `MultiMap.get`, `MultiMap.remove`, `IMap.keySet`, `IMap.values`—contain cloned values. These collections are NOT backed up by related Hazelcast objects. Therefore, changes to them are **NOT** reflected in the originals, and vice-versa.
+Collections which return values of methods —such as `IMap.keySet`, `IMap.values`, `IMap.entrySet`, `MultiMap.get`, `MultiMap.remove`, `IMap.keySet`, `IMap.values`— contain cloned values. These collections are NOT backed up by related Hazelcast objects. Therefore, changes to them are **NOT** reflected in the originals, and vice-versa.
 
 ## How do I test my Hazelcast cluster
 
@@ -152,7 +152,7 @@ For more information please [check our existing tests.](https://github.com/hazel
 
 ## How do I create separate clusters
 
-By specifying group name and group password, you can separate your clusters in a simple way. Groupings can be by *dev*, *production*, *test*, *app*, etc. Here is a declarative declaration.
+By specifying group name and group password, you can separate your clusters in a simple way. Groupings can be by *dev*, *production*, *test*, *app*, etc. Here is a declarative configuration.
 
 ```xml
 <hazelcast>
