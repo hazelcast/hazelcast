@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
 /**
  * The BasicOperationProcessor belongs to the BasicOperationService and is responsible for scheduling
@@ -391,9 +392,9 @@ public final class BasicOperationScheduler {
             sb.append(operationThread.getName())
                     .append(" processedCount=").append(operationThread.processedCount).append('\n');
         }
-//        sb.append(responseThread.getName())
-//                .append(" processedCount: ").append(responseThread.processedResponses)
-//                .append(" pendingCount: ").append(responseThread.workQueue.size()).append('\n');
+        sb.append(responseThread.getName())
+                .append(" processedCount: ").append(responseThread.processedResponses)
+                .append(" pendingCount: ").append(responseThread.workQueue.size()).append('\n');
     }
 
     public int getResponseQueueSize() {
@@ -513,6 +514,7 @@ public final class BasicOperationScheduler {
 
     private class ResponseThread extends Thread {
         private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
+        private volatile long processedResponses;
 
         public ResponseThread() {
             super(node.threadGroup, node.getThreadNamePrefix("response"));
@@ -550,6 +552,7 @@ public final class BasicOperationScheduler {
         }
 
         private void process(Object task) {
+            processedResponses++;
             try {
                 dispatcher.dispatch(task);
             } catch (Exception e) {
