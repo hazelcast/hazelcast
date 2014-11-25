@@ -57,23 +57,23 @@ public class MultiMapOperationFactory implements OperationFactory {
     }
 
     public Operation createOperation() {
-        //TODO: Don't use a if/else, but use a switch case.
 
-        if (operationFactoryType == OperationFactoryType.KEY_SET) {
-            return new KeySetOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.VALUES) {
-            return new ValuesOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.ENTRY_SET) {
-            return new EntrySetOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.CONTAINS) {
-            return new ContainsEntryOperation(name, key, value, threadId);
-        } else if (operationFactoryType == OperationFactoryType.SIZE) {
-            return new SizeOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.CLEAR) {
-            return new ClearOperation(name);
+        switch(operationFactoryType) {
+            case KEY_SET:
+                 return new KeySetOperation(name);
+            case VALUES:
+                 return new ValuesOperation(name);
+            case ENTRY_SET:
+                 return new EntrySetOperation(name);
+            case CONTAINS:
+                 return new ContainsEntryOperation(name, key, value, threadId);
+            case SIZE:
+                 return new SizeOperation(name);
+            case CLEAR:
+                 return new ClearOperation(name);
+            default:
+                 return null;
         }
-
-        return null;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
