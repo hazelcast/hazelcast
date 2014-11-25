@@ -7,7 +7,7 @@
 
 ## Why 271 as the default partition count
 
-The partition count 271, being a prime number, is a good choice since it will be distributed to the nodes almost evenly. For a small to medium sized cluster, the count 271 gives almost even partition distribution and optimal sized partitions.  As your cluster becomes bigger, this count should be made bigger to have evenly distributed partitions.
+The partition count of 271, being a prime number, is a good choice because it will be distributed to the nodes almost evenly. For a small to medium sized cluster, the count of 271 gives an almost even partition distribution and optimal-sized partitions.  As your cluster becomes bigger, you should make this count bigger to have evenly distributed partitions.
 
 ## Is Hazelcast thread safe
 
@@ -18,33 +18,33 @@ Yes. All Hazelcast data structures are thread safe.
 
 When a node is started in a cluster, it will dynamically and automatically be discovered. There are three types of discovery.
 
--	One is the multicast. Nodes in a cluster discover each other by multicast, by default. 
--	Second is discovery by TCP/IP. The first node created in the cluster (leader) will form a list of IP addresses of other joining nodes and send this list to these nodes. So, nodes will know each other.
--	And, if your application is placed on Amazon EC2, Hazelcast has an automatic discovery mechanism, as the third discovery type. You will just give your Amazon credentials and the joining node will be discovered automatically.
+-	Multicast discovery: nodes in a cluster discover each other by multicast, by default. 
+-	Discovery by TCP/IP: the first node created in the cluster (leader) will form a list of IP addresses of other joining nodes and send this list to these nodes so the nodes will know each other.
+-	If your application is placed on Amazon EC2, Hazelcast has an automatic discovery mechanism. You will give your Amazon credentials and the joining node will be discovered automatically.
 
 Once nodes are discovered, all the communication between them will be via TCP/IP.
 
 ## What happens when a node goes down
 
-Once a node is gone (e.g.crashes) and since data in each node has a backup in other nodes:
+Once a node is gone (e.g. crashes) and since data in each node has a backup in other nodes:
 
--	First, the backups in other nodes are restored
--	Then, data from these restored backups are recovered
--	And finally, backups for these recovered data are formed
+-	First, the backups in other nodes are restored.
+-	Then, data from these restored backups are recovered.
+-	And finally, backups for these recovered data are formed.
 
-So, eventually, no data is lost.
+So eventually, no data is lost.
 
 ## How do I test the connectivity
 
-If you notice that there is a problem about a node in joining to a cluster, you may want to perform a connectivity test between the node to be joined and a node from the cluster. The `iperf` tool can be used for this purpose. For example, you can execute the below command on one node (i.e. listening on port 5701):
+If you notice that there is a problem with a node joining to a cluster, you may want to perform a connectivity test between the node to be joined and a node from the cluster. You can use the `iperf` tool for this purpose. For example, you can execute the below command on one node (i.e. listening on port 5701).
 
 `iperf -s -p 5701`
 
-And you can execute the below command on the other node:
+And you can execute the below command on the other node.
 
 `iperf -c` *`<IP address>`* `-d -p 5701`
 
-You should see the output which includes connection information such as the IP addresses, transfer speed and bandwidth. Otherwise, if the output says `No route to host`, it means a network connection problem exists.
+The output should include connection information such as the IP addresses, transfer speed, and bandwidth. Otherwise, if the output says `No route to host`, it means a network connection problem exists.
 
 
 ## How do I choose keys properly
@@ -64,13 +64,13 @@ value.updateSomeProperty();
 map.put( key, value );
 ```
 
-Collections which return values of methods such as `IMap.keySet`, `IMap.values`, `IMap.entrySet`, `MultiMap.get`, `MultiMap.remove`, `IMap.keySet`, `IMap.values`, contain cloned values. These collections are NOT backup by related Hazelcast objects. So changes to the these are **NOT** reflected in the originals, and vice-versa.
+Collections which return values of methods—such as `IMap.keySet`, `IMap.values`, `IMap.entrySet`, `MultiMap.get`, `MultiMap.remove`, `IMap.keySet`, `IMap.values`—contain cloned values. These collections are NOT backed up by related Hazelcast objects. Therefore, changes to them are **NOT** reflected in the originals, and vice-versa.
 
 ## How do I test my Hazelcast cluster
 
 Hazelcast allows you to create more than one instance on the same JVM. Each member is called `HazelcastInstance` and each will have its own configuration, socket and threads, i.e. you can treat them as totally separate instances. 
 
-This enables us to write and run cluster unit tests on a single JVM. As you can use this feature for creating separate members different applications running on the same JVM (imagine running multiple web applications on the same JVM), you can also use this feature for testing Hazelcast cluster.
+This enables you to write and to run cluster unit tests on a single JVM. Because you can use this feature for creating separate members different applications running on the same JVM (imagine running multiple web applications on the same JVM), you can also use this feature for testing your Hazelcast cluster.
 
 Let's say you want to test if two members have the same size of a map.
 
@@ -97,7 +97,7 @@ public void testTwoMemberMapSizes() {
 }
 ```
 
-In the test above, everything happens in the same thread. When developing multi-threaded test, coordination of the thread executions has to be carefully handled. Usage of `CountDownLatch` for thread coordination is highly recommended. You can certainly use other things. Here is an example where we need to listen for messages and make sure that we got these messages:
+In the test above, everything happens in the same thread. When developing a multi-threaded test, you need to carefully handle coordination of the thread executions. it is highly recommended that you use `CountDownLatch` for thread coordination (you can certainly use other ways). Here is an example where we need to listen for messages and make sure that we got these messages.
 
 ```java
 @Test
@@ -139,7 +139,7 @@ public void testTopic() {
   }
 }
 ```
-You can surely start Hazelcast members with different configurations. Remember to call `Hazelcast.shutdownAll()` after each test case to make sure that there is no other running member left from the previous tests.
+You can start Hazelcast members with different configurations. Remember to call `Hazelcast.shutdownAll()` after each test case to make sure that there is no other running member left from the previous tests.
 
 ```java
 @After
@@ -152,7 +152,7 @@ For more information please [check our existing tests.](https://github.com/hazel
 
 ## How do I create separate clusters
 
-By specifying group name and group password, you can separate your clusters in a simple way. Groupings can be by *dev*, *production*, *test*, *app*, etc.
+By specifying group name and group password, you can separate your clusters in a simple way. Groupings can be by *dev*, *production*, *test*, *app*, etc. Here is a declarative declaration.
 
 ```xml
 <hazelcast>
@@ -164,7 +164,7 @@ By specifying group name and group password, you can separate your clusters in a
 </hazelcast>
 ```
 
-You can also set the `groupName` with programmatic configuration. JVM can host multiple Hazelcast instances. Each node can only participate in one group and it only joins to its own group, does not mess with others. Following code creates 3 separate Hazelcast nodes, `h1` belongs to `app1` cluster, while `h2` and `h3` belong to `app2` cluster.
+You can also set the `groupName` with programmatic configuration. JVM can host multiple Hazelcast instances. Each node can only participate in one group and it only joins to its own group, it does not mess with others. The following code example creates 3 separate Hazelcast nodes: `h1` belongs to the `app1` cluster, while `h2` and `h3` belong to the `app2` cluster.
 
 ```java
 Config configApp1 = new Config();
@@ -185,9 +185,9 @@ Yes. Hazelcast performed a successful test on Amazon EC2 with 200 nodes.
 
 ## Does Hazelcast support thousands of clients
 
-Yes. However, there are some points to be considered. First of all, the environment should be LAN with a high stability and the network speed should be 10 Gbps or higher. If number of nodes are high, client type should be selected as Dummy (not Smart Client). In the case of Smart Clients, since each client will open a connection to the nodes, these nodes should be powerful enough (e.g. more cores) to handle hundreds or thousands of connections and client requests. Also, using near caches in clients should be considered to lower the network traffic. And finally, the Hazelcast releases with the NIO implementation should be used (which starts with 3.2).
+Yes. However, there are some points you should consider. The environment should be LAN with a high stability and the network speed should be 10 Gbps or higher. If the number of nodes is high, the client type should be selected as Dummy, not Smart Client. In the case of Smart Clients, since each client will open a connection to the nodes, these nodes should be powerful enough (e.g. more cores) to handle hundreds or thousands of connections and client requests. Also, you should consider using near caches in clients to lower the network traffic. And you should use the Hazelcast releases with the NIO implementation (which starts with 3.2).
 
-Also, the clients should be configured attentively. Please refer to [Java Clients](#java-client) section for configuration notes.
+Also, you should configure the clients attentively. Please refer to [Java Clients](#java-client) section for configuration notes.
 
 ## What is the difference between old LiteMember and new Smart Client
 
@@ -199,15 +199,15 @@ Support services are divided into two: community and commercial support. Communi
 
 ## Does Hazelcast persist
 
-No. But, Hazelcast provides `MapStore` and `MapLoader` interfaces. When you implement, for example, `MapStore` interface, Hazelcast calls your store and load methods whenever needed.
+No. However, Hazelcast provides `MapStore` and `MapLoader` interfaces. For example, when you implement the `MapStore` interface, Hazelcast calls your store and load methods whenever needed.
 
 ## Can I use Hazelcast in a single server
 
-Yes. But, please note that, Hazelcast's main design focus is multi-node clusters to be used as a distribution platform. 
+Yes. But please note that Hazelcast's main design focus is multi-node clusters to be used as a distribution platform. 
 
 ## How can I monitor Hazelcast
 
-[Hazelcast Management Center](#management-center) is used to monitor and manage the nodes running Hazelcast. In addition to monitoring overall state of a cluster, data structures can be analyzed and browsed in detail, map configurations can be updated and thread dump from nodes can be taken. 
+[Hazelcast Management Center](#management-center) is what you use to monitor and manage the nodes running Hazelcast. In addition to monitoring the overall state of a cluster, you can analyze and browse data structures in detail, you can update map configurations, and you can take thread dumps from nodes. 
 
 Moreover, JMX monitoring is also provided. Please see [Monitoring with JMX](#monitoring-with-jmx) section for details.
 
@@ -225,7 +225,7 @@ System.setProperty( logging, "log4j" );
 System.setProperty( location, "file:/path/mylog4j.properties" );
 ```
 
-Then set the log level to "Debug" in properties file. Below is a sample content.
+Then set the log level to "Debug" in the properties file. Below is example content.
 
 
 `# direct log messages to stdout #`
@@ -258,9 +258,9 @@ The line `log4j.logger.com.hazelcast=debug` is used to see debug logs for all Ha
 
 In the embedded topology, nodes include both the data and application. This type of topology is the most useful if your application focuses on high performance computing and many task executions. Since application is close to data, this topology supports data locality. 
 
-In the client-server topology, you create a cluster of nodes and scale the cluster independently. And your applications are hosted on the clients, that communicate with the nodes in the cluster to reach data. 
+In the client-server topology, you create a cluster of nodes and scale the cluster independently. Your applications are hosted on the clients, and the clients communicate with the nodes in the cluster to reach data. 
 
-Client-server topology fits better, if there are multiple applications sharing the same data or if application deployment is significantly greater than the cluster size (e.g. 500 application servers vs. 10 node cluster).
+Client-server topology fits better if there are multiple applications sharing the same data or if application deployment is significantly greater than the cluster size (e.g. 500 application servers vs. 10 node cluster).
 
 ## How do I know it is safe to kill the second node
 
@@ -293,7 +293,7 @@ Native Memory solutions can be preferred;
 
 ## Is there any disadvantage of using near-cache
 
-The only disadvantage when using near-cache is that it may cause stale reads.
+The only disadvantage when using Near Cache is that it may cause stale reads.
 
 ## Is Hazelcast secure
 
@@ -303,7 +303,7 @@ Hazelcast supports symmetric encryption, secure sockets layer (SSL) and Java Aut
 
 ## How can I set socket options
 
-Hazelcast allows to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, `SO_RCVBUF` using Hazelcast configuration properties. Please see `hazelcast.socket.*` properties explained at [Advanced Configuration Properties](#advanced-configuration-properties).
+Hazelcast allows you to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, `SO_RCVBUF` using Hazelcast configuration properties. Please see `hazelcast.socket.*` properties explained at [Advanced Configuration Properties](#advanced-configuration-properties).
 
 ## I periodically see client disconnections during idle time
 
@@ -316,15 +316,15 @@ For additional information please see:
 
 ## How to get rid of "java.lang.OutOfMemoryError: unable to create new native thread"
 
-If you encounter an error of `java.lang.OutOfMemoryError: unable to create new native thread`, it may be caused by exceeding the available file descriptors on your operating system, especially if it is Linux. This exception is usually thrown on a running node, after a period of time when thread count exhausts file descriptor availability.
+If you encounter an error of `java.lang.OutOfMemoryError: unable to create new native thread`, it may be caused by exceeding the available file descriptors on your operating system, especially if it is Linux. This exception is usually thrown on a running node, after a period of time when the thread count exhausts the file descriptor availability.
 
-The JVM on Linux consumes a file descriptor for each thread created.  The default number of file descriptors available in Linux is usually 1024, so if you have many JVMs running on a single machine it is possible to exceed this.
+The JVM on Linux consumes a file descriptor for each thread created.  The default number of file descriptors available in Linux is usually 1024. If you have many JVMs running on a single machine it is possible to exceed this default number.
 
 You can view the limit using the following command
 
 `# ulimit -a`
 
-At operating system level, Linux users can control the amount of resources (and in particular file descriptors) used via one of the following options.
+At the operating system level, Linux users can control the amount of resources (and in particular, file descriptors) used via one of the following options.
 
 1 - Editing the `limits.conf` file:
 
@@ -335,7 +335,7 @@ testuser soft nofile 4096<br>
 testuser hard nofile 10240<br>
 ```
 
-2 - Or, using the `ulimit` command:
+2 - Or using the `ulimit` command:
 
 `# ulimit -Hn`
 
@@ -343,13 +343,13 @@ testuser hard nofile 10240<br>
 10240
 ```
 
-The default number of process per users is 1024. So adding the following to your `$HOME/.profile` could solve the issue:
+The default number of process per users is 1024. Adding the following to your `$HOME/.profile` could solve the issue:
 
 `# ulimit -u 4096`
 
 ## Which virtualization should I use on AWS
 
-AWS uses two virtualization types to launch the EC2 instances: Para-Virtualization (PV) and Hardware-assisted Virtual Machine (HVM). According to the tests we performed, HVM provided up to three times higher throughput than PV. Therefore, we recommend you to use HVM when you run Hazelcast on EC2.
+AWS uses two virtualization types to launch the EC2 instances: Para-Virtualization (PV) and Hardware-assisted Virtual Machine (HVM). According to the tests we performed, HVM provided up to three times higher throughput than PV. Therefore, we recommend you use HVM when you run Hazelcast on EC2.
 
 
 
