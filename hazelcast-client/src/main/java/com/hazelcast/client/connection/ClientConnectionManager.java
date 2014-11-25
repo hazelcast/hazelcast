@@ -63,7 +63,7 @@ public interface ClientConnectionManager {
      *
      * @param address to be connection to established
      * @return ownerConnection
-     * @throws Exception
+     * @throws java.io.IOException
      */
     ClientConnection ownerConnection(Address address) throws IOException;
 
