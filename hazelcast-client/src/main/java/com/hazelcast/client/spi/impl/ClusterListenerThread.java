@@ -11,8 +11,6 @@ import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.cluster.client.MemberAttributeChange;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -40,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
 
 class ClusterListenerThread extends Thread {
 
@@ -263,17 +262,10 @@ class ClusterListenerThread extends Thread {
                     final ClientConnection connection = connectionManager.ownerConnection(address);
                     clusterService.fireConnectionEvent(false);
                     return connection;
-                } catch (IOException e) {
-                    LOGGER.finest("IO error during initial connection to " + address, e);
-                } catch (HazelcastInstanceNotActiveException e) {
+                } catch (Exception e) {
                     lastError = e;
-                    LOGGER.finest("Instance not active during initial connection...", e);
-                } catch (AuthenticationException e) {
-                    lastError = e;
-                    LOGGER.warning("Authentication error on " + address, e);
-                } catch (HazelcastException e) {
-                    lastError = e;
-                    LOGGER.finest("Timeout during initial connection...", e);
+                    Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
+                    LOGGER.log(level, "Exception during initial connection to " + address, e);
                 }
             }
             if (attempt++ >= connectionAttemptLimit) {
