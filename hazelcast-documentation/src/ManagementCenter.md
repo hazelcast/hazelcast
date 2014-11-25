@@ -49,13 +49,13 @@ This page provides the fundamental properties of the selected cluster which are 
 #### Toolbar
 The toolbar has the following buttons:
 
--	**Home**: Loads the home page shown above. Please see [Home Page](#homepage).
--	**Scripting**: Loads the page used to write and execute user`s own scripts on the cluster. Please see [Scripting](#scripting).
--	**Console**: Loads the page used to execute commands on the cluster. Please see [Console](#console).
--	**Alerts**: Creates alerts by specifying filters. Please see [Alerts](#alerts).
--	**Documentation**: Opens the Management Center documentation in a window inside the tool. Please see [Documentation](#documentation).
--	**Administration**: Used by the admin users to manage users in the system. Please see [Administration](#administration).
--	**Time Travel**: Sees the cluster's situation at a time in the past. Please see [Time Travel](#time-travel).
+-	**Home**: Loads the home page shown above. Please see the [Home Page section](#homepage).
+-	**Scripting**: Loads the page used to write and execute user`s own scripts on the cluster. Please see the [Scripting section](#scripting).
+-	**Console**: Loads the page used to execute commands on the cluster. Please see the [Console section](#console).
+-	**Alerts**: Creates alerts by specifying filters. Please see the [Alerts section](#alerts).
+-	**Documentation**: Opens the Management Center documentation in a window inside the tool. Please see the [Documentation section](#documentation).
+-	**Administration**: Used by the admin users to manage users in the system. Please see the [Administration section](#administration).
+-	**Time Travel**: Sees the cluster's situation at a time in the past. Please see the [Time Travel section](#time-travel).
 -	**Cluster Selector**: Switches between clusters. When the mouse is moved onto this item, a drop down list of clusters appears.
 
   ![](images/4ChangeCluster.jpg)
@@ -64,7 +64,7 @@ The toolbar has the following buttons:
 -	**Logout**: Closes the current user's session.
 
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *Some of the above listed toolbar items are not visible to users who are not admin or who have **read-only** permission. Also, some of the operations explained in the later sections cannot be performed by users with read-only permission. Please see [Administration](#administration) for details.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Some of the above listed toolbar items are not visible to users who are not admin or who have **read-only** permission. Also, some of the operations explained in the later sections cannot be performed by users with read-only permission. Please see the [Administration section](#administration) for details.*
 
 
 #### Menu
@@ -133,7 +133,7 @@ This pie chart shows what percentage of partitions each node has, as shown below
 
 ![](images/Home-PartitionDistribution.jpg)
 
-You can see each node's partition percentages by placing the mouse cursor on the chart. In the above example, you can see the node "127.0.0.1:5708" has 5.64% of the total partition count (which is 271 by default and configurable, please see [Advanced Configuration Properties](http://hazelcast.org/docs/latest/manual/html-single/hazelcast-documentation.html#advanced-configuration-properties)).
+You can see each node's partition percentages by placing the mouse cursor on the chart. In the above example, you can see the node "127.0.0.1:5708" has 5.64% of the total partition count (which is 271 by default and configurable, please see the `hazelcast.partition.count` property explained in the [Advanced Configuration Properties section](#advanced-configuration-properties)).
 
 ---
 ### Caches
@@ -400,7 +400,7 @@ The **Admin** user can add, edit, and remove users and specify the permissions f
 
 To add a user to the system, specify the username, e-mail and password in the **Add/Edit User** part of the page. If the user to be added will have administrator privileges, select **isAdmin** checkbox. **Permissions** checkboxes have two values:
 
--	**Read Only**: If this permission is given to the user, only *Home*, *Documentation* and *Time Travel* items will be visible at the toolbar at that user's session. Also, users with this permission cannot update a [map configuration](#map-config), run a garbage collection and take a thread dump on a node, or shutdown a node (please see [Members](#members) section).
+-	**Read Only**: If this permission is given to the user, only *Home*, *Documentation* and *Time Travel* items will be visible at the toolbar at that user's session. Also, users with this permission cannot update a [map configuration](#map-config), run a garbage collection and take a thread dump on a node, or shutdown a node (please see the [Members](#members) section).
 -	**Read/Write**: If this permission is given to the user, *Home*, *Scripting*, *Console*, *Documentation* and *Time Travel* items will be visible. The users with this permission can update a map configuration and perform operations on the nodes.
 
 After you enter/select all fields, click **Save** button to create the user. You will see the newly created user's username on the left side, in the **Users** part of the page.

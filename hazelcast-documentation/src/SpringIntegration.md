@@ -205,7 +205,7 @@ Hazelcast Distributed Objects could be marked with @SpringAware if the object wa
 - to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware`,
 - to apply bean post-processing annotations such as `InitializingBean`, `@PostConstruct`.
 
-Hazelcast Distributed `ExecutorService`, or more generally any Hazelcast managed object, can benefit from these features. To enable SpringAware objects, you must first configure `HazelcastInstance` as explained in [Spring Configuration](#spring-configuration) section.
+Hazelcast Distributed `ExecutorService`, or more generally any Hazelcast managed object, can benefit from these features. To enable SpringAware objects, you must first configure `HazelcastInstance` as explained in the [Spring Configuration section](#spring-configuration).
 
 #### SpringAware Examples
 
@@ -435,7 +435,7 @@ If you are using Hibernate with Hazelcast as 2nd level cache provider, you can e
 - LOCAL
 - DISTRIBUTED 
 
-Please refer to Hibernate [RegionFactory Options](#regionfactory-options) section for more information.
+Please refer to the Hibernate [RegionFactory Options section](#regionfactory-options) for more information.
 
 ### Best Practices
 

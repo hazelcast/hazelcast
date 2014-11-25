@@ -42,18 +42,18 @@ public abstract class AbstractCacheService implements ICacheService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
+        protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
+            new ConcurrentHashMap<String, CacheOperationProvider>();
+    protected final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction =
+            new ConstructorFunction<String, CacheStatisticsImpl>() {
+                @Override
+                public CacheStatisticsImpl createNew(String name) {
+                    return new CacheStatisticsImpl();
+                }
+            };
+
     protected NodeEngine nodeEngine;
     protected CachePartitionSegment[] segments;
-    private final ConcurrentMap<String, CacheOperationProvider> operationProviderCache
-            = new ConcurrentHashMap<String, CacheOperationProvider>();
-
-    private final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction
-            = new ConstructorFunction<String, CacheStatisticsImpl>() {
-        @Override
-        public CacheStatisticsImpl createNew(String name) {
-            return new CacheStatisticsImpl();
-        }
-    };
 
     @Override
     public final void init(NodeEngine nodeEngine, Properties properties) {
@@ -64,6 +64,7 @@ public abstract class AbstractCacheService implements ICacheService {
             segments[i] = new CachePartitionSegment(this, i);
         }
     }
+
     protected abstract ICacheRecordStore createNewRecordStore(String name, int partitionId);
 
     @Override
@@ -76,7 +77,8 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
-    public void beforeMigration(PartitionMigrationEvent event) { /*empty*/ }
+    public void beforeMigration(PartitionMigrationEvent event) {
+    }
 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
@@ -358,5 +360,4 @@ public abstract class AbstractCacheService implements ICacheService {
         CacheOperationProvider current = operationProviderCache.putIfAbsent(nameWithPrefix, cacheOperationProvider);
         return current == null ? cacheOperationProvider : current;
     }
-
 }

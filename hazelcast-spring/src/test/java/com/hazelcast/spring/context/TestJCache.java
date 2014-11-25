@@ -16,16 +16,21 @@
 
 package com.hazelcast.spring.context;
 
+import com.hazelcast.config.CacheMaxSizeConfig;
 import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -34,6 +39,7 @@ import javax.annotation.Resource;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for jcache parser
@@ -49,7 +55,6 @@ public class TestJCache {
     @Resource(name = "instance1")
     private HazelcastInstance instance1;
 
-
     @BeforeClass
     @AfterClass
     public static void tearDown() {
@@ -64,10 +69,29 @@ public class TestJCache {
     @Test
     public void testConfig() {
         assertNotNull(instance1);
-        CacheSimpleConfig simpleConfig1 = instance1.getConfig().getCacheConfigs().get("cache1");
-        assertNotNull(simpleConfig1);
 
-        assertEquals(20, simpleConfig1.getEvictionPercentage());
+        CacheSimpleConfig simpleConfig = instance1.getConfig().getCacheConfigs().get("cache1");
+
+        assertNotNull(simpleConfig);
+
+        assertEquals(1, simpleConfig.getAsyncBackupCount());
+        assertEquals(2, simpleConfig.getBackupCount());
+        assertEquals("java.lang.Integer", simpleConfig.getKeyType());
+        assertEquals("java.lang.String", simpleConfig.getValueType());
+        assertTrue(simpleConfig.isStatisticsEnabled());
+        assertTrue(simpleConfig.isManagementEnabled());
+        assertTrue(simpleConfig.isReadThrough());
+        assertTrue(simpleConfig.isWriteThrough());
+        assertEquals("com.hazelcast.cache.MyCacheLoaderFactory", simpleConfig.getCacheLoaderFactory());
+        assertEquals("com.hazelcast.cache.MyCacheWriterFactory", simpleConfig.getCacheWriterFactory());
+        assertEquals("com.hazelcast.cache.MyExpiryPolicyFactory", simpleConfig.getExpiryPolicyFactory());
+        assertEquals(InMemoryFormat.OBJECT, simpleConfig.getInMemoryFormat());
+        assertNotNull(simpleConfig.getMaxSizeConfig());
+        assertEquals(50, simpleConfig.getMaxSizeConfig().getSize());
+        assertEquals(CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT,
+                simpleConfig.getMaxSizeConfig().getMaxSizePolicy());
+        assertEquals(20, simpleConfig.getEvictionPercentage());
+        assertEquals(EvictionPolicy.LRU, simpleConfig.getEvictionPolicy());
     }
 
 }

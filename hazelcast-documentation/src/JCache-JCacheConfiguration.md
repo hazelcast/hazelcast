@@ -22,7 +22,7 @@ Cache<Object, Object> cache = cacheManager
 ```
 
 Note that this section only describes the JCache provided standard properties. For the Hazelcast specific properties, please see the
-[ICache Configuration](#icache-configuration) section.
+[ICache Configuration section](#icache-configuration) section.
 
 ```xml
 <cache name="default">
@@ -92,8 +92,8 @@ your code only when you need to pass the configuration instance throughout your 
 <br></br>
 
 If you don't need to configure Hazelcast specific properties, it is recommended that you instantiate
-`javax.cache.configuration.MutableConfiguration` and that you use the setters to configure Hazelcast as shown in the example in
-[Quick Example](#quick-example). Since the configurable properties are the same as the ones explained in
-[JCache Declarative Configuration](#jcache-declarative-configuration), they are not mentioned here. For Hazelcast specific
-properties, please read the [ICache Configuration](#icache-configuration) section.
+`javax.cache.configuration.MutableConfiguration` and that you use the setters to configure Hazelcast as shown in the example in the
+[Quick Example section](#quick-example). Since the configurable properties are the same as the ones explained in the
+[JCache Declarative Configuration section](#jcache-declarative-configuration), they are not mentioned here. For Hazelcast specific
+properties, please read the [ICache Configuration section](#icache-configuration) section.
 

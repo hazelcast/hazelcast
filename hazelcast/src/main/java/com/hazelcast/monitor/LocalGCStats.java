@@ -16,18 +16,8 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalGCStats extends LocalInstanceStats {
+import com.hazelcast.memory.GarbageCollectorStats;
 
-    long getMajorCollectionCount();
-
-    long getMajorCollectionTime();
-
-    long getMinorCollectionCount();
-
-    long getMinorCollectionTime();
-
-    long getUnknownCollectionCount();
-
-    long getUnknownCollectionTime();
+public interface LocalGCStats extends GarbageCollectorStats, LocalInstanceStats {
 
 }

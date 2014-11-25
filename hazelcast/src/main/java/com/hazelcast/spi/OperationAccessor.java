@@ -55,10 +55,6 @@ public final class OperationAccessor {
         op.setCallId(callId);
     }
 
-    public static void setStartTime(Operation op, long startTime) {
-        op.setStartTime(startTime);
-    }
-
     public static void setInvocationTime(Operation op, long invocationTime) {
         op.setInvocationTime(invocationTime);
     }

@@ -1,9 +1,7 @@
 package com.hazelcast.client.impl.client;
 
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.core.ClientService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableCollection;

@@ -149,7 +149,7 @@ public class ListSetMapReduceTest
     public static class ListSetReducer
             extends Reducer<Integer, Integer> {
 
-        private volatile int value;
+        private int value;
 
         @Override
         public void reduce(Integer value) {

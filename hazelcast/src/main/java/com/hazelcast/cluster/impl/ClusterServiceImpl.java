@@ -734,8 +734,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
 
         if (node.getThisAddress().equals(masterAddress)) {
-            logger.finest("Ignoring master response: " + masterAddress + " from: " + callerAddress
-                    + ". This node is already master...");
+            if (node.isMaster()) {
+                logger.finest("Ignoring master response: " + masterAddress + " from: " + callerAddress
+                        + ". This node is already master...");
+            } else {
+                node.setAsMaster();
+            }
             return;
         }
 
@@ -1271,7 +1275,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public String addMembershipListener(MembershipListener listener) {
-        if(listener == null){
+        if (listener == null) {
             throw new NullPointerException("listener can't be null");
         }
 
@@ -1293,7 +1297,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public boolean removeMembershipListener(String registrationId) {
-        if(registrationId == null){
+        if (registrationId == null) {
             throw new NullPointerException("registrationId can't be null");
         }
 

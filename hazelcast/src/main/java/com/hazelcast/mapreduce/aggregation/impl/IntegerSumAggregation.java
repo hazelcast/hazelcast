@@ -129,7 +129,7 @@ public class IntegerSumAggregation<Key, Value>
     private static final class IntegerSumReducer
             extends Reducer<Integer, Integer> {
 
-        private volatile int sum;
+        private int sum;
 
         @Override
         public void reduce(Integer value) {

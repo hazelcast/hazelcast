@@ -73,6 +73,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final int socketLingerSeconds;
 
+    private final int socketConnectTimeoutSeconds;
+
     private final boolean socketKeepAlive;
 
     private final boolean socketNoDelay;
@@ -134,6 +136,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketReceiveBufferSize = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
         this.socketSendBufferSize = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
         this.socketLingerSeconds = ioService.getSocketLingerSeconds();
+        this.socketConnectTimeoutSeconds = ioService.getSocketConnectTimeoutSeconds();
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
         this.selectorThreadCount = ioService.getSelectorThreadCount();
@@ -222,6 +225,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     public IOService getIOHandler() {
         return ioService;
+    }
+
+    public int getSocketConnectTimeoutSeconds() {
+        return socketConnectTimeoutSeconds;
     }
 
     @Override

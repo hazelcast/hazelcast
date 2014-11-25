@@ -60,7 +60,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();

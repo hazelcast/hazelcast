@@ -187,6 +187,11 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public int getSocketConnectTimeoutSeconds() {
+        return this.node.getGroupProperties().SOCKET_CONNECT_TIMEOUT_SECONDS.getInteger();
+    }
+
+    @Override
     public boolean getSocketKeepAlive() {
         return this.node.getGroupProperties().SOCKET_KEEP_ALIVE.getBoolean();
     }

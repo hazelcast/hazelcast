@@ -159,4 +159,8 @@ public class HazelcastServerCacheManager
             hazelcastInstance.shutdown();
         }
     }
+
+    public ICacheService getCacheService() {
+        return cacheService;
+    }
 }

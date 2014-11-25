@@ -361,12 +361,20 @@ public final class BasicOperationScheduler {
     public void dumpPerformanceMetrics(StringBuffer sb) {
         for (int k = 0; k < partitionOperationThreads.length; k++) {
             OperationThread operationThread = partitionOperationThreads[k];
-            sb.append(operationThread.getName()).append(".processedCount=").append(operationThread.processedCount).append("\n");
+            sb.append(operationThread.getName())
+                    .append(" processedCount=").append(operationThread.processedCount)
+                    .append(" pendingCount=").append(operationThread.workQueue.size())
+                    .append('\n');
         }
+        sb.append("pending generic operations ").append(genericWorkQueue.size()).append('\n');
         for (int k = 0; k < genericOperationThreads.length; k++) {
             OperationThread operationThread = genericOperationThreads[k];
-            sb.append(operationThread.getName()).append(".processedCount=").append(operationThread.processedCount).append("\n");
+            sb.append(operationThread.getName())
+                    .append(" processedCount=").append(operationThread.processedCount).append('\n');
         }
+        sb.append(responseThread.getName())
+                .append(" processedCount: ").append(responseThread.processedResponses)
+                .append(" pendingCount: ").append(responseThread.workQueue.size()).append('\n');
     }
 
     private class GenericOperationThreadFactory implements ThreadFactory {
@@ -480,6 +488,8 @@ public final class BasicOperationScheduler {
 
     private class ResponseThread extends Thread {
         private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
+        // field is only written by the response-thread itself, but can be read by other threads.
+        private volatile long processedResponses;
 
         public ResponseThread() {
             super(node.threadGroup, node.getThreadNamePrefix("response"));
@@ -515,12 +525,14 @@ public final class BasicOperationScheduler {
             }
         }
 
-        private void process(Object task) {
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
+        private void process(Object response) {
+            processedResponses++;
             try {
-                dispatcher.dispatch(task);
+                dispatcher.dispatch(response);
             } catch (Throwable e) {
                 inspectOutputMemoryError(e);
-                logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
+                logger.severe("Failed to process response: " + response + " on response thread:" + getName());
             }
         }
     }

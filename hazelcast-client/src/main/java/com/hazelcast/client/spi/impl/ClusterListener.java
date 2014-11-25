@@ -27,7 +27,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 
 public class ClusterListener {
 
@@ -162,56 +162,7 @@ public class ClusterListener {
     }
 
     private EventHandler<ClientMembershipEvent> createEventHandler() {
-        return new EventHandler<ClientMembershipEvent>() {
-            @Override
-            public void handle(ClientMembershipEvent event) {
-                final MemberImpl member = (MemberImpl) event.getMember();
-                boolean membersUpdated = false;
-                if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                    members.add(member);
-                    membersUpdated = true;
-                } else if (event.getEventType() == ClientMembershipEvent.MEMBER_REMOVED) {
-                    members.remove(member);
-                    membersUpdated = true;
-                    connectionManager.removeEndpoint(member.getAddress());
-                } else if (event.getEventType() == ClientMembershipEvent.MEMBER_ATTRIBUTE_CHANGED) {
-                    MemberAttributeChange memberAttributeChange = event.getMemberAttributeChange();
-                    Map<Address, MemberImpl> memberMap = clusterService.getMembersRef();
-                    if (memberMap != null) {
-                        for (MemberImpl target : memberMap.values()) {
-                            if (target.getUuid().equals(memberAttributeChange.getUuid())) {
-                                final MemberAttributeOperationType operationType = memberAttributeChange.getOperationType();
-                                final String key = memberAttributeChange.getKey();
-                                final Object value = memberAttributeChange.getValue();
-                                target.updateAttribute(operationType, key, value);
-                                MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(
-                                        client.getCluster(), target, operationType, key, value);
-                                clusterService.fireMemberAttributeEvent(memberAttributeEvent);
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (membersUpdated) {
-                    ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
-                    updateMembersRef();
-                    LOGGER.info(clusterService.membersString());
-                    clusterService.fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
-                            Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
-                }
-            }
-
-            @Override
-            public void beforeListenerRegister() {
-
-            }
-
-            @Override
-            public void onListenerRegister() {
-
-            }
-        };
+        return new ClientMembershipEventEventHandler();
     }
 
 
@@ -244,12 +195,10 @@ public class ClusterListener {
                     final ClientConnection connection = connectionManager.ownerConnection(address);
                     clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                     return connection;
-                } catch (IOException e) {
+                } catch (Exception e) {
                     lastError = e;
-                    LOGGER.finest("IO error during initial connection to " + address, e);
-                } catch (AuthenticationException e) {
-                    lastError = e;
-                    LOGGER.warning("Authentication error on " + address, e);
+                    Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
+                    LOGGER.log(level, "Exception during initial connection to " + address, e);
                 }
             }
             if (attempt++ >= connectionAttemptLimit) {
@@ -271,6 +220,57 @@ public class ClusterListener {
         }
         throw new IllegalStateException("Unable to connect to any address in the config! The following addresses were tried:"
                 + triedAddresses, lastError);
+    }
+
+    private class ClientMembershipEventEventHandler implements EventHandler<ClientMembershipEvent> {
+        @Override
+        public void handle(ClientMembershipEvent event) {
+            final MemberImpl member = (MemberImpl) event.getMember();
+            boolean membersUpdated = false;
+            if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+                members.add(member);
+                membersUpdated = true;
+            } else if (event.getEventType() == ClientMembershipEvent.MEMBER_REMOVED) {
+                members.remove(member);
+                membersUpdated = true;
+                connectionManager.removeEndpoint(member.getAddress());
+            } else if (event.getEventType() == ClientMembershipEvent.MEMBER_ATTRIBUTE_CHANGED) {
+                MemberAttributeChange memberAttributeChange = event.getMemberAttributeChange();
+                Map<Address, MemberImpl> memberMap = clusterService.getMembersRef();
+                if (memberMap != null) {
+                    for (MemberImpl target : memberMap.values()) {
+                        if (target.getUuid().equals(memberAttributeChange.getUuid())) {
+                            final MemberAttributeOperationType operationType = memberAttributeChange.getOperationType();
+                            final String key = memberAttributeChange.getKey();
+                            final Object value = memberAttributeChange.getValue();
+                            target.updateAttribute(operationType, key, value);
+                            MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(
+                                    client.getCluster(), target, operationType, key, value);
+                            clusterService.fireMemberAttributeEvent(memberAttributeEvent);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (membersUpdated) {
+                ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
+                updateMembersRef();
+                LOGGER.info(clusterService.membersString());
+                clusterService.fireMembershipEvent(new MembershipEvent(client.getCluster(), member, event.getEventType(),
+                        Collections.unmodifiableSet(new LinkedHashSet<Member>(members))));
+            }
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
     }
 }
 

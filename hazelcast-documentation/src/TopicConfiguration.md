@@ -50,6 +50,6 @@ Topic related but not topic specific configuration parameters:
 <br></br>
 ***RELATED INFORMATION*** 
 
-*For description of these parameters, please see [Global Event Configuration](#global-event-configuration)*
+*For description of these parameters, please see the [Global Event Configuration section](#global-event-configuration)*
 
 

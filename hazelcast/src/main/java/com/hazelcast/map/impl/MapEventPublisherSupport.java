@@ -10,21 +10,25 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.EventServiceImpl;
+import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.WanReplicationPublisher;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 class MapEventPublisherSupport implements MapEventPublisher {
 
-    private MapServiceContext mapServiceContext;
+    private final MapServiceContext mapServiceContext;
 
     protected MapEventPublisherSupport(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
     }
 
+    @Override
     public void publishWanReplicationUpdate(String mapName, EntryView entryView) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         MapReplicationUpdate replicationEvent = new MapReplicationUpdate(mapName, mapContainer.getWanMergePolicy(),
@@ -32,78 +36,150 @@ class MapEventPublisherSupport implements MapEventPublisher {
         mapContainer.getWanReplicationPublisher().publishReplicationEvent(mapServiceContext.serviceName(), replicationEvent);
     }
 
+    @Override
     public void publishWanReplicationRemove(String mapName, Data key, long removeTime) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        MapReplicationRemove replicationEvent = new MapReplicationRemove(mapName, key, removeTime);
-        mapContainer.getWanReplicationPublisher().publishReplicationEvent(mapServiceContext.serviceName(), replicationEvent);
+        final MapReplicationRemove event = new MapReplicationRemove(mapName, key, removeTime);
+
+        publishWanReplicationEventInternal(mapName, event);
     }
 
-    public void publishMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected) {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final Collection<EventRegistration> registrations = nodeEngine.getEventService()
-                .getRegistrations(mapServiceContext.serviceName(), mapName);
+    @Override
+    public void publishMapEvent(Address caller, String mapName, EntryEventType eventType,
+                                int numberOfEntriesAffected) {
+
+        final Collection<EventRegistration> registrations = getRegistrations(mapName);
         if (registrations.isEmpty()) {
             return;
         }
-        final String source = nodeEngine.getThisAddress().toString();
+        final String source = getThisNodesAddress();
         final MapEventData mapEventData = new MapEventData(source, mapName, caller,
                 eventType.getType(), numberOfEntriesAffected);
-        nodeEngine.getEventService().publishEvent(mapServiceContext.serviceName(),
-                registrations, mapEventData, mapName.hashCode());
 
+        publishEventInternal(registrations, mapEventData, mapName.hashCode());
     }
 
+    @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType,
+                             Data dataKey, Data dataOldValue, Data dataValue) {
+        publishEvent(caller, mapName, eventType, false, dataKey, dataOldValue, dataValue);
+    }
+
+    @Override
+    public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
                              final Data dataKey, Data dataOldValue, Data dataValue) {
-        final Collection<EventRegistration> candidates = getCandidates(mapName);
-        if (candidates.isEmpty()) {
+        final Collection<EventRegistration> registrations = getRegistrations(mapName);
+        if (registrations.isEmpty()) {
             return;
         }
-        final Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
-        final Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
-        // iterate on candidates.
-        for (final EventRegistration candidate : candidates) {
-            Result result = Result.NONE;
+
+        List<EventRegistration> registrationsWithValue = null;
+        List<EventRegistration> registrationsWithoutValue = null;
+
+        for (final EventRegistration candidate : registrations) {
             final EventFilter filter = candidate.getFilter();
-            if (emptyFilter(filter)) {
-                result = processEmptyFilter();
-            } else if (queryEventFilter(filter)) {
-                result = processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue);
-            } else if (filter.eval(dataKey)) {
-                result = processEntryEventFilter(filter);
-            }
+            final Result result = applyEventFilter(filter, syntheticEvent, dataKey, dataOldValue, dataValue, eventType);
+
+            registrationsWithValue = initRegistrationsWithValue(registrationsWithValue, result);
+            registrationsWithoutValue = initRegistrationsWithoutValue(registrationsWithoutValue, result);
+
             registerCandidate(result, candidate, registrationsWithValue, registrationsWithoutValue);
         }
-        if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty()) {
+
+        final boolean withValueRegistrationExists = isNotEmpty(registrationsWithValue);
+        final boolean withoutValueRegistrationExists = isNotEmpty(registrationsWithoutValue);
+
+        if (!withValueRegistrationExists && !withoutValueRegistrationExists) {
             return;
         }
+
         final EntryEventData eventData = createEntryEventData(mapName, caller,
                 dataKey, dataValue, dataOldValue, eventType.getType());
         final int orderKey = pickOrderKey(dataKey);
-        publishWithValue(registrationsWithValue, eventData, orderKey);
-        publishWithoutValue(registrationsWithoutValue, eventData, orderKey);
+
+        if (withValueRegistrationExists) {
+            publishEventInternal(registrationsWithValue, eventData, orderKey);
+        }
+        if (withoutValueRegistrationExists) {
+            publishEventInternal(registrationsWithoutValue, eventData.cloneWithoutValues(), orderKey);
+        }
     }
 
-    private boolean emptyFilter(EventFilter filter) {
-        return filter instanceof EventServiceImpl.EmptyFilter;
+    private List<EventRegistration> initRegistrationsWithoutValue(List<EventRegistration> registrationsWithoutValue,
+                                                                  Result result) {
+        if (registrationsWithoutValue != null) {
+            return registrationsWithoutValue;
+        }
+
+        if (Result.NO_VALUE_INCLUDED.equals(result)) {
+            registrationsWithoutValue = new ArrayList<EventRegistration>();
+        }
+        return registrationsWithoutValue;
     }
 
-    private boolean queryEventFilter(EventFilter filter) {
-        return filter instanceof QueryEventFilter;
+    private List<EventRegistration> initRegistrationsWithValue(List<EventRegistration> registrationsWithValue,
+                                                               Result result) {
+        if (registrationsWithValue != null) {
+            return registrationsWithValue;
+        }
+
+        if (Result.VALUE_INCLUDED.equals(result)) {
+            registrationsWithValue = new ArrayList<EventRegistration>();
+        }
+
+        return registrationsWithValue;
     }
 
-    private Collection<EventRegistration> getCandidates(String mapName) {
+    private static <T> boolean isNotEmpty(Collection<T> collection) {
+        return !(collection == null || collection.isEmpty());
+    }
+
+    private Result applyEventFilter(EventFilter filter, boolean syntheticEvent, Data dataKey,
+                                    Data dataOldValue, Data dataValue, EntryEventType eventType) {
+
+        // below, order of ifs are important.
+        // QueryEventFilter is instance of EntryEventFilter.
+        // SyntheticEventFilter wraps an event filter.
+        if (filter instanceof SyntheticEventFilter) {
+            if (syntheticEvent) {
+                return Result.NONE;
+            }
+            final SyntheticEventFilter syntheticEventFilter = (SyntheticEventFilter) filter;
+            filter = syntheticEventFilter.getFilter();
+        }
+
+        if (filter instanceof EventServiceImpl.EmptyFilter) {
+            return Result.VALUE_INCLUDED;
+        }
+
+
+        if (filter instanceof QueryEventFilter) {
+            return processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue);
+        }
+
+        if (filter instanceof EntryEventFilter) {
+            return processEntryEventFilter(filter, dataKey);
+        }
+
+
+        throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
+    }
+
+    private Collection<EventRegistration> getRegistrations(String mapName) {
+        final MapServiceContext mapServiceContext = this.mapServiceContext;
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        return nodeEngine.getEventService().getRegistrations(mapServiceContext.serviceName(), mapName);
+        final EventService eventService = nodeEngine.getEventService();
+        final String serviceName = mapServiceContext.serviceName();
+
+        return eventService.getRegistrations(serviceName, mapName);
     }
 
     private int pickOrderKey(Data key) {
         return key == null ? -1 : key.hashCode();
     }
 
-
-    private void registerCandidate(Result result, EventRegistration candidate, Set<EventRegistration> registrationsWithValue,
-                                   Set<EventRegistration> registrationsWithoutValue) {
+    private void registerCandidate(Result result, EventRegistration candidate,
+                                   Collection<EventRegistration> registrationsWithValue,
+                                   Collection<EventRegistration> registrationsWithoutValue) {
         switch (result) {
             case VALUE_INCLUDED:
                 registrationsWithValue.add(candidate);
@@ -118,20 +194,33 @@ class MapEventPublisherSupport implements MapEventPublisher {
         }
     }
 
-    private void publishWithValue(Set<EventRegistration> registrationsWithValue, EntryEventData event, int orderKey) {
+    private void publishEventInternal(Collection<EventRegistration> registrations, Object eventData, int orderKey) {
+        final MapServiceContext mapServiceContext = this.mapServiceContext;
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        nodeEngine.getEventService().publishEvent(mapServiceContext.serviceName(),
-                registrationsWithValue, event, orderKey);
+        final EventService eventService = nodeEngine.getEventService();
+        final String serviceName = mapServiceContext.serviceName();
+
+        eventService.publishEvent(serviceName, registrations, eventData, orderKey);
     }
 
-    private void publishWithoutValue(Set<EventRegistration> registrationsWithoutValue, EntryEventData event, int orderKey) {
+    private String getThisNodesAddress() {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        nodeEngine.getEventService().publishEvent(mapServiceContext.serviceName(),
-                registrationsWithoutValue, event.cloneWithoutValues(), orderKey);
+        final Address thisAddress = nodeEngine.getThisAddress();
+        return thisAddress.toString();
     }
 
-    private Result processEmptyFilter() {
-        return Result.VALUE_INCLUDED;
+    private Result processEntryEventFilter(EventFilter filter, Data dataKey) {
+        final EntryEventFilter eventFilter = (EntryEventFilter) filter;
+
+        if (!eventFilter.eval(dataKey)) {
+            return Result.NONE;
+        }
+
+        if (eventFilter.isIncludeValue()) {
+            return Result.VALUE_INCLUDED;
+        }
+
+        return Result.NO_VALUE_INCLUDED;
     }
 
     private Result processQueryEventFilter(EventFilter filter, EntryEventType eventType,
@@ -144,33 +233,28 @@ class MapEventPublisherSupport implements MapEventPublisher {
         } else {
             testValue = serializationService.toObject(dataValue);
         }
-        Object key = serializationService.toObject(dataKey);
-        QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-        QueryEntry entry = new QueryEntry(serializationService, dataKey, key, testValue);
+        final Object key = serializationService.toObject(dataKey);
+        final QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
+        final QueryEntry entry = new QueryEntry(serializationService, dataKey, key, testValue);
         if (queryEventFilter.eval(entry)) {
-            if (queryEventFilter.isIncludeValue()) {
-                return Result.VALUE_INCLUDED;
-            } else {
-                return Result.NO_VALUE_INCLUDED;
-            }
+            return queryEventFilter.isIncludeValue() ? Result.VALUE_INCLUDED : Result.NO_VALUE_INCLUDED;
         }
         return Result.NONE;
     }
 
-    private Result processEntryEventFilter(EventFilter filter) {
-        EntryEventFilter eventFilter = (EntryEventFilter) filter;
-        if (eventFilter.isIncludeValue()) {
-            return Result.VALUE_INCLUDED;
-        } else {
-            return Result.NO_VALUE_INCLUDED;
-        }
+    private void publishWanReplicationEventInternal(String mapName, ReplicationEventObject event) {
+        final MapServiceContext mapServiceContext = this.mapServiceContext;
+        final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        final String serviceName = mapServiceContext.serviceName();
+        final WanReplicationPublisher wanReplicationPublisher = mapContainer.getWanReplicationPublisher();
+        wanReplicationPublisher.publishReplicationEvent(serviceName, event);
     }
 
-
     private EntryEventData createEntryEventData(String mapName, Address caller,
-                                                Data dataKey, Data dataNewValue, Data dataOldValue, int eventType) {
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        return new EntryEventData(nodeEngine.getThisAddress().toString(), mapName, caller,
+                                                Data dataKey, Data dataNewValue, Data dataOldValue,
+                                                int eventType) {
+        final String thisNodesAddress = getThisNodesAddress();
+        return new EntryEventData(thisNodesAddress, mapName, caller,
                 dataKey, dataNewValue, dataOldValue, eventType);
     }
 

@@ -54,10 +54,10 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.queue.impl.QueueService;
@@ -84,8 +84,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 @SuppressWarnings("unchecked")
 @PrivateApi
-public class HazelcastInstanceImpl
-        implements HazelcastInstance {
+public class HazelcastInstanceImpl implements HazelcastInstance {
 
     public final Node node;
 
@@ -99,8 +98,6 @@ public class HazelcastInstanceImpl
 
     final ManagedContext managedContext;
 
-    final ThreadMonitoringService threadMonitoringService;
-
     final ThreadGroup threadGroup;
 
     final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
@@ -109,7 +106,6 @@ public class HazelcastInstanceImpl
             throws Exception {
         this.name = name;
         this.threadGroup = new ThreadGroup(name);
-        threadMonitoringService = new ThreadMonitoringService(threadGroup);
         lifecycleService = new LifecycleServiceImpl(this);
         ManagedContext configuredManagedContext = config.getManagedContext();
         managedContext = new HazelcastManagedContext(this, configuredManagedContext);
@@ -425,6 +421,10 @@ public class HazelcastInstanceImpl
 
     public SerializationService getSerializationService() {
         return node.getSerializationService();
+    }
+
+    public MemoryStats getMemoryStats() {
+        return node.getNodeExtension().getMemoryStats();
     }
 
     @Override

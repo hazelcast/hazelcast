@@ -20,12 +20,12 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.memory.MemoryStatsSupport;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
@@ -89,7 +89,7 @@ public class DefaultTimedMemberStateFactory implements TimedMemberStateFactory {
     }
 
     protected LocalMemoryStats getMemoryStats() {
-         return MemoryStatsSupport.getMemoryStats();
+         return new LocalMemoryStatsImpl(instance.getMemoryStats());
     }
 
     private void createMemberState(MemberStateImpl memberState) {

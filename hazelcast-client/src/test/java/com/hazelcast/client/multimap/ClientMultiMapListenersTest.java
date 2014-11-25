@@ -17,8 +17,8 @@
 package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEvent;
@@ -287,7 +287,7 @@ public class ClientMultiMapListenersTest {
         assertOpenEventually(listener.clearLatch);
     }
 
-    static abstract class MyEntryListener implements EntryListener {
+    static abstract class MyEntryListener extends EntryAdapter {
 
         final public CountDownLatch addLatch;
         final public CountDownLatch removeLatch;

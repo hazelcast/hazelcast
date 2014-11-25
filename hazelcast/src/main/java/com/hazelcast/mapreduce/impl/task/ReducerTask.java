@@ -43,6 +43,10 @@ import static com.hazelcast.mapreduce.impl.MapReduceUtil.notifyRemoteException;
 public class ReducerTask<Key, Chunk>
         implements Runnable {
 
+    // This variable is used for piggybacking the internal state before
+    // suspension and continuation of the reducers
+    private volatile boolean visibility;
+
     private final AtomicBoolean cancelled = new AtomicBoolean();
 
     private final JobSupervisor supervisor;
@@ -89,6 +93,7 @@ public class ReducerTask<Key, Chunk>
 
     @Override
     public void run() {
+        boolean visibility = this.visibility;
         try {
             ReducerChunk<Key, Chunk> reducerChunk;
             while ((reducerChunk = reducerQueue.poll()) != null) {
@@ -105,6 +110,7 @@ public class ReducerTask<Key, Chunk>
                 ExceptionUtil.sneakyThrow(t);
             }
         } finally {
+            this.visibility = !visibility;
             active.compareAndSet(true, false);
         }
     }
