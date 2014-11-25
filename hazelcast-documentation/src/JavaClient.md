@@ -328,7 +328,7 @@ clientConfig.getNetworkConfig().setConnectionAttemptPeriod(5000);
 
 Default value is *3000*.
 
-#### Socket Interceptor
+#### Client Socket Interceptor
 
 ![](images/enterprise-onlycopy.jpg)
 
@@ -374,9 +374,9 @@ socketInterceptorConfig.setProperty("kerberos-config-file","kerb.conf");
 socketInterceptorConfig.setClassName(myClientSocketInterceptor);
 ```
 
-Please see the [Socket Interceptor](#socket-interceptor) section for more information.
+Please see the [Socket Interceptor section](#socket-interceptor) for more information.
 
-#### Socket Options
+#### Client Socket Options
 
 You can configure the network socket options using `SocketOptions`. It has the following methods.
 
@@ -400,12 +400,12 @@ socketOptions.setReuseAddress(true);
 socketOptions.setLingerSeconds(3);
 ```
 
-#### SSL
+#### Client SSL
 
 ![](images/enterprise-onlycopy.jpg)
 
 
-You can use SSL to secure the connection between the client and the nodes. Please see the [SSLConfig](#sslconfig) section on how to configure it.
+You can use SSL to secure the connection between the client and the nodes. Please see the [Client SSLConfig section](#client-sslconfig) on how to configure it.
 
 #### Configuration for AWS
 
@@ -459,7 +459,7 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 
 If the client is configured in smart mode, only the operations that are not key-based will be routed to the endpoint that is returned by the `LoadBalancer`. If the client is not a smart client, `LoadBalancer` will be ignored.
 
-To configure client load balance, please see  [Load Balancer Config](#loadbalancerconfig) and [Java Client Declarative Configuration](#java-client-declarative-configuration).
+To configure client load balance, please see the [Load Balancer Config section](#loadbalancerconfig) and [Java Client Declarative Configuration section](#java-client-declarative-configuration).
 
 
 ### Client Near Cache
@@ -559,7 +559,7 @@ Using the configuration API, you can configure a `ClientConfig` as required. Ple
 
 ##### ClientNetworkConfig
 
-`ClientNetworkConfig` includes the configuration options listed below, which are explained in the [Network Configuration Options](#network-configuration-options) section.
+`ClientNetworkConfig` includes the configuration options listed below, which are explained in the [Network Configuration Options section](#network-configuration-options).
 
 * addressList
 * smartRouting
@@ -581,7 +581,7 @@ You can configure them using `GroupConfig`, as shown below.
 clientConfig.setGroupConfig(new GroupConfig("dev","dev-pass"));
 ```
 
-#### LoadBalancerConfig
+##### LoadBalancerConfig
 The following code example shows the programmatic configuration of your load balancer.
 
 ```java
@@ -595,7 +595,7 @@ In the cases where the security established with `GroupConfig` is not enough and
 
 ##### SerializationConfig
 
-For the client side serialization, use Hazelcast configuration. Please refer to the [Serialization](#serialization) chapter.
+For the client side serialization, use Hazelcast configuration. Please refer to the [Serialization chapter](#serialization).
 
 
 ##### ListenerConfig
@@ -654,7 +654,7 @@ Hazelcast has an internal executor service (different from the data structure *E
 
 ##### Client Properties
 
-There are some advanced client configuration properties to tune some aspects of Hazelcast Client. You can set them as property name and value pairs through declarative configuration, programmatic configuration, or JVM system property. Please see the [Advanced Configuration Properties](#advanced-configuration-properties) section to learn how to set these properties.
+There are some advanced client configuration properties to tune some aspects of Hazelcast Client. You can set them as property name and value pairs through declarative configuration, programmatic configuration, or JVM system property. Please see the [Advanced Configuration Properties section](#advanced-configuration-properties) to learn how to set these properties.
 
 The table below lists the client configuration properties with their descriptions.
 

@@ -43,7 +43,7 @@ Instead of providing members line by line, you have the option to use the `membe
 
 If you do not provide ports for the members, Hazelcast automatically tries the ports 5701, 5702, and so on.
 
-By default, Hazelcast binds to all local network interfaces to accept incoming traffic. You can change this behavior using the system property `hazelcast.socket.bind.any`. If you set this property to `false`, Hazelcast uses the interfaces specified in the `interfaces` tag (please refer to *[Specifying Network Interfaces](#specifying-network-interfaces)* section). If no interfaces are provided, then it will try to resolve one interface to bind, given in the `member` tags.
+By default, Hazelcast binds to all local network interfaces to accept incoming traffic. You can change this behavior using the system property `hazelcast.socket.bind.any`. If you set this property to `false`, Hazelcast uses the interfaces specified in the `interfaces` tag (please refer to the [Specifying Network Interfaces section](#specifying-network-interfaces)). If no interfaces are provided, then it will try to resolve one interface to bind, given in the `member` tags.
 
 The `tcp-ip` tag accepts an attribute called `connection-timeout-seconds` whose default value is 5. Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster.
 

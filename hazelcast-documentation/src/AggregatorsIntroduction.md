@@ -131,8 +131,8 @@ int sum = personAgeMapping.aggregate( supplier, Aggregations.count() );
 
 The `com.hazelcast.mapreduce.aggregation.Aggregation` interface defines the aggregation operation itself. It contains a set of
 MapReduce API implementations like `Mapper`, `Combiner`, `Reducer`, and `Collator`. These implementations are normally unique to
-the chosen `Aggregation`. This interface can also be implemented with your aggregation operations based on MapReduce calls. To
-more information, refer to [Implementing Aggregations](#implementing-aggregations).
+the chosen `Aggregation`. This interface can also be implemented with your aggregation operations based on MapReduce calls. For
+more information, refer to [Implementing Aggregations section](#implementing-aggregations).
 
 The `com.hazelcast.mapreduce.aggregation.Aggregations` class provides a common predefined set of aggregations. This class
 contains type safe aggregations of the following types:
@@ -272,8 +272,8 @@ For `MultiMap` it is very similar:
 - `hz::aggregation-multimap-` and the concatenated name of the MultiMap.
 
 Knowing that (the specification of the name), we can configure the `JobTracker` as expected 
-(as described in the [Jobtracker](#jobtracker) section) using the naming spec we just learned. For more information on configuration of the 
-`JobTracker` please see [JobTracker Configuration](#jobtracker-configuration). 
+(as described in the [Jobtracker section](#jobtracker)) using the naming spec we just learned. For more information on configuration of the 
+`JobTracker`, please see the [JobTracker Configuration section](#jobtracker-configuration). 
 
 To finish this section, let's have a quick example for the above naming specs:
 

@@ -3,7 +3,7 @@
 
 Hazelcast seamlessly supports IPv6 addresses. (This support is switched off by default, please see the note at the end of this section.)
 
-You only need to define the IPv6 addresses or interfaces in [network configuration](#network-configuration). The only limitation at the moment is that you cannot define wildcard IPv6 addresses in the [TCP-IP](#configuring-tcp-ip-cluster) join configuration. The [Interfaces](#specifying-network-interfaces) section does not have this limitation, you can configure wildcard IPv6 interfaces the same as IPv4 interfaces.
+You only need to define the IPv6 addresses or interfaces in [network configuration](#network-configuration). The only limitation at the moment is that you cannot define wildcard IPv6 addresses in the [TCP-IP](#configuring-tcp-ip-cluster) join configuration. The [Interfaces section](#specifying-network-interfaces) section does not have this limitation, you can configure wildcard IPv6 interfaces the same as IPv4 interfaces.
 
 ```xml
 <hazelcast>
@@ -38,5 +38,5 @@ JVM has two system properties you can use to set the preferred protocol stack (I
 
 Also see additional [details on IPv6 support in Java](http://docs.oracle.com/javase/1.5.0/docs/guide/net/ipv6_guide/query.html#details).
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *IPv6 support is switched off by default, since some platforms have issues using IPv6 stack. Some other platforms, such as Amazon AWS, have no support at all. To enable IPv6 support, set configuration property `hazelcast.prefer.ipv4.stack` to *false*. See [Advanced Configuration Properties](#advanced-configuration-properties).*
+![image](images/NoteSmall.jpg) ***NOTE:*** *IPv6 support is switched off by default, since some platforms have issues using IPv6 stack. Some other platforms, such as Amazon AWS, have no support at all. To enable IPv6 support, set configuration property `hazelcast.prefer.ipv4.stack` to *false*. Please see the [Advanced Configuration Properties section](#advanced-configuration-properties).*
 <br></br>

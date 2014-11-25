@@ -26,7 +26,7 @@ optional operations and do not need to be implemented. If you can decide to impl
 to achieve.
 
 For more information on how you implement mappers, combiners, reducers, and collators, refer to the
-[MapReduce section](#mapreduce) section.
+[MapReduce section](#mapreduce).
 
 For best speed and traffic usage, as mentioned in the [MapReduce section](#mapreduce), you should add a `Combiner` to your aggregation
 whenever it is possible to do some kind of pre-reduction step.

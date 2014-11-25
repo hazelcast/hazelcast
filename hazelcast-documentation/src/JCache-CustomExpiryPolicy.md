@@ -2,7 +2,7 @@
 
 The JCache specification has an option to configure a single `ExpiryPolicy` per cache. Hazelcast ICache extension
 offers the possibility to define a custom `ExpiryPolicy` per key by providing a set of method overloads with an `expirePolicy`
-parameter, as in the list of asynchronous methods in the section [Async Methods](#async-methods). This means that custom expiry policies can passed to a cache operation.
+parameter, as in the list of asynchronous methods in the [Async Methods section](#async-methods). This means that custom expiry policies can passed to a cache operation.
 
 Here is how an `ExpirePolicy` is set on JCache configuration:
 
@@ -44,5 +44,5 @@ by `com.hazelcast.cache.ICache` featuring the `ExpiryPolicy` parameter:
  - `getAndReplace(key, value)`:
   - `getAndReplace(key, value, expirePolicy)`
 
-Asynchronous method overloads are not listed here. Please see [Async Operations](#async-operations) for the list of asynchronous method overloads.
+Asynchronous method overloads are not listed here. Please see the [Async Operations section](#async-operations) for the list of asynchronous method overloads.
 

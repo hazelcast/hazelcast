@@ -187,7 +187,7 @@ Yes. Hazelcast performed a successful test on Amazon EC2 with 200 nodes.
 
 Yes. However, there are some points you should consider. The environment should be LAN with a high stability and the network speed should be 10 Gbps or higher. If the number of nodes is high, the client type should be selected as Dummy, not Smart Client. In the case of Smart Clients, since each client will open a connection to the nodes, these nodes should be powerful enough (e.g. more cores) to handle hundreds or thousands of connections and client requests. Also, you should consider using near caches in clients to lower the network traffic. And you should use the Hazelcast releases with the NIO implementation (which starts with 3.2).
 
-Also, you should configure the clients attentively. Please refer to [Java Clients](#java-client) section for configuration notes.
+Also, you should configure the clients attentively. Please refer to the [Java Client section](#java-client) section for configuration notes.
 
 ## What is the difference between old LiteMember and new Smart Client
 
@@ -209,11 +209,11 @@ Yes. But please note that Hazelcast's main design focus is multi-node clusters t
 
 [Hazelcast Management Center](#management-center) is what you use to monitor and manage the nodes running Hazelcast. In addition to monitoring the overall state of a cluster, you can analyze and browse data structures in detail, you can update map configurations, and you can take thread dumps from nodes. 
 
-Moreover, JMX monitoring is also provided. Please see [Monitoring with JMX](#monitoring-with-jmx) section for details.
+Moreover, JMX monitoring is also provided. Please see the [Monitoring with JMX section](#monitoring-with-jmx) for details.
 
 ## How can I see debug level logs
 
-By changing the log level to "Debug". Below sample lines are for **log4j** logging framework. Please see [Logging Configuration](#logging-configuration) to learn how to set logging types.
+By changing the log level to "Debug". Below sample lines are for **log4j** logging framework. Please see the [Logging Configuration section](#logging-configuration) to learn how to set logging types.
 
 First, set the logging type as follows.
 
@@ -297,13 +297,13 @@ The only disadvantage when using Near Cache is that it may cause stale reads.
 
 ## Is Hazelcast secure
 
-Hazelcast supports symmetric encryption, secure sockets layer (SSL) and Java Authentication and Authorization Service (JAAS). Please see [Security](#security) chapter for more information.
+Hazelcast supports symmetric encryption, secure sockets layer (SSL) and Java Authentication and Authorization Service (JAAS). Please see the [Security chapter](#security) for more information.
 
 
 
 ## How can I set socket options
 
-Hazelcast allows you to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, `SO_RCVBUF` using Hazelcast configuration properties. Please see `hazelcast.socket.*` properties explained at [Advanced Configuration Properties](#advanced-configuration-properties).
+Hazelcast allows you to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, `SO_RCVBUF` using Hazelcast configuration properties. Please see `hazelcast.socket.*` properties explained at the [Advanced Configuration Properties section](#advanced-configuration-properties).
 
 ## I periodically see client disconnections during idle time
 

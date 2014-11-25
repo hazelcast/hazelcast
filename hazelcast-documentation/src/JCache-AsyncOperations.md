@@ -52,8 +52,8 @@ are available in asynchronous versions:
   - `getAndReplaceAsync(key, value)`
   - `getAndReplaceAsync(key, value, expiryPolicy)`
 
-The methods with a given `javax.cache.expiry.ExpiryPolicy` are further discussed in the section
-[Custom ExpiryPolicy](#custom-expirypolicy).
+The methods with a given `javax.cache.expiry.ExpiryPolicy` are further discussed in the
+[Custom ExpiryPolicy section](#custom-expirypolicy).
 
 <br></br>
 ![image](images/NoteSmall.jpg) ***NOTE:*** *Asynchronous versions of the methods are not compatible with synchronous events.*
