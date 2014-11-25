@@ -213,6 +213,7 @@ public class LocalRegionCache implements RegionCache {
     }
 
     public void clear() {
+        System.out.println("clear");
         cache.clear();
     }
 
@@ -261,7 +262,7 @@ public class LocalRegionCache implements RegionCache {
             if (v.getLock() == LOCK_SUCCESS) {
                 continue;
             }
-            if (v.getCreationTime() + timeToLive < now) {
+            if (timeToLive > 0 && v.getCreationTime() + timeToLive < now) {
                 iter.remove();
             } else if (limitSize) {
                 if (entries == null) {

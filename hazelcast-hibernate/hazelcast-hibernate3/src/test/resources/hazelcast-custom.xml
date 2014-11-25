@@ -26,12 +26,12 @@
     <network>
         <port auto-increment="true">5701</port>
         <join>
-            <multicast enabled="true">
+            <multicast enabled="false">
                 <multicast-group>224.2.2.3</multicast-group>
                 <multicast-port>54327</multicast-port>
             </multicast>
-            <tcp-ip enabled="false">
-                <interface>192.168.1.2</interface>
+            <tcp-ip enabled="true">
+                <interface>127.0.0.1</interface>
             </tcp-ip>
         </join>
         <interfaces enabled="false">
@@ -69,11 +69,9 @@
         <eviction-percentage>25</eviction-percentage>
     </map>
 
-    <map name="com.hazelcast.hibernate.entity.*">
-        <backup-count>1</backup-count>
-        <time-to-live-seconds>30</time-to-live-seconds>
-        <max-idle-seconds>30</max-idle-seconds>
-        <eviction-policy>LRU</eviction-policy>
+    <!-- Config for query cache -->
+    <map name="org.hibernate.cache.*">
+        <time-to-live-seconds>0</time-to-live-seconds>
         <max-size>50</max-size>
     </map>
 </hazelcast>
