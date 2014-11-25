@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
 
 class ClusterListenerThread extends Thread {
 
@@ -49,6 +51,7 @@ class ClusterListenerThread extends Thread {
     private HazelcastClient client;
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
+    private Exception exception;
 
 
     public ClusterListenerThread(ThreadGroup group, String name, Collection<AddressProvider> addressProviders) {
@@ -65,6 +68,9 @@ class ClusterListenerThread extends Thread {
 
     public void await() throws InterruptedException {
         latch.await();
+        if (exception != null) {
+            throw ExceptionUtil.rethrow(exception);
+        }
     }
 
     ClientConnection getConnection() {
@@ -80,6 +86,7 @@ class ClusterListenerThread extends Thread {
                     } catch (Exception e) {
                         if (client.getLifecycleService().isRunning()) {
                             LOGGER.severe("Error while connecting to cluster!", e);
+                            this.exception = e;
                         }
 
                         client.getLifecycleService().shutdown();
@@ -251,12 +258,10 @@ class ClusterListenerThread extends Thread {
                     final ClientConnection connection = connectionManager.ownerConnection(address);
                     clusterService.fireConnectionEvent(false);
                     return connection;
-                } catch (IOException e) {
+                } catch (Exception e) {
                     lastError = e;
-                    LOGGER.finest("IO error during initial connection...", e);
-                } catch (AuthenticationException e) {
-                    lastError = e;
-                    LOGGER.warning("Authentication error on " + address, e);
+                    Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
+                    LOGGER.log(level, "Exception during initial connection to " + address, e);
                 }
             }
             if (attempt++ >= connectionAttemptLimit) {
@@ -265,7 +270,7 @@ class ClusterListenerThread extends Thread {
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             LOGGER.warning(
                     String.format("Unable to get alive cluster connection,"
-                            + " try in %d ms later, attempt %d of %d.",
+                                    + " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
             if (remainingTime > 0) {
