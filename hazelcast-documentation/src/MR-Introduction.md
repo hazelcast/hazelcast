@@ -33,7 +33,7 @@ The next step will be to create a new `Job` and configure it to execute our firs
 
 #### Job
 
-As mentioned in the last section, a Job is created using the retrieved `JobTracker` instance. A Job defines exactly one configuration of a MapReduce task. Mapper, combiner and reducers will be defined per job but since the Job instance is only a configuration, it is possible to be submitted multiple times, no matter if executions happening in parallel or one after the other.
+As mentioned in the [JobTracker section](#jobtracker), a Job is created using the retrieved `JobTracker` instance. A Job defines exactly one configuration of a MapReduce task. Mapper, combiner and reducers will be defined per job but since the Job instance is only a configuration, it is possible to be submitted multiple times, no matter if executions happening in parallel or one after the other.
 
 A submitted job is always identified using a unique combination of the `JobTracker`'s name and a jobId generated on submit-time. The way for retrieving the jobId will be shown in one of the later sections.
 
