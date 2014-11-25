@@ -32,24 +32,24 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
     protected final TcpIpConnection connection;
     protected final TcpIpConnectionManager connectionManager;
     protected final Selector selector;
-    private final int ops;
-    private SelectionKey selectionKey;
     protected final IOSelector ioSelector;
+    private final int initialOps;
+    private SelectionKey selectionKey;
 
-    public AbstractSelectionHandler(TcpIpConnection connection, IOSelector ioSelector, int ops) {
+    public AbstractSelectionHandler(TcpIpConnection connection, IOSelector ioSelector, int initialOps) {
         this.connection = connection;
         this.ioSelector = ioSelector;
         this.selector = ioSelector.getSelector();
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
-        this.ops = ops;
+        this.initialOps = initialOps;
     }
 
     protected SelectionKey getSelectionKey() {
         if (selectionKey == null) {
             try {
-                selectionKey = socketChannel.register(selector, ops, AbstractSelectionHandler.this);
+                selectionKey = socketChannel.register(selector, initialOps, this);
             } catch (ClosedChannelException e) {
                 handleSocketException(e);
             }
