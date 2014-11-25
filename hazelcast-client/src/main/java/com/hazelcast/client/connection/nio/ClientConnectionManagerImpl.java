@@ -86,7 +86,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private static final int RETRY_COUNT = 20;
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
-    private  static final IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
+    private static final IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
             LOGGER.severe(error);
@@ -233,10 +233,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public ClientConnection ownerConnection(Address address) throws Exception {
+    public ClientConnection ownerConnection(Address address) throws IOException {
         final Address translatedAddress = addressTranslator.translate(address);
         if (translatedAddress == null) {
-            throw new RetryableIOException(address + " can not be translated! ");
+            throw new IOException(address + " can not be translated! ");
         }
         return ownerConnectionFuture.createNew(translatedAddress);
     }
@@ -330,7 +330,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         clientConnection = future.get(connectionTimeout, TimeUnit.MILLISECONDS);
                     } catch (Exception e) {
                         future.cancel(true);
-                        throw new RetryableIOException(e);
+                        throw ExceptionUtil.rethrow(e, IOException.class);
                     }
                     ClientConnection current = connections.putIfAbsent(address, clientConnection);
                     if (current != null) {
@@ -396,7 +396,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 if (socketChannel != null) {
                     socketChannel.close();
                 }
-                throw ExceptionUtil.rethrow(e);
+                throw ExceptionUtil.rethrow(e, IOException.class);
             }
         }
     }
@@ -466,7 +466,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         try {
             collectionWrapper = (SerializableCollection) sendAndReceive(auth, connection);
         } catch (Exception e) {
-            throw new RetryableIOException(e);
+            throw ExceptionUtil.rethrow(e, IOException.class);
         }
         final Iterator<Data> iter = collectionWrapper.iterator();
         if (iter.hasNext()) {
@@ -491,6 +491,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (response instanceof Throwable) {
             Throwable t = (Throwable) response;
             ExceptionUtil.fixRemoteStackTrace(t, Thread.currentThread().getStackTrace());
+            if(t instanceof Exception){
+                throw (Exception)t;
+            }
             throw new Exception(t);
         }
         return response;
@@ -590,7 +593,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
         }
 
-        private ClientConnection createNew(Address address) throws RetryableIOException {
+        private ClientConnection createNew(Address address) throws IOException {
             final ManagerAuthenticator authenticator = new ManagerAuthenticator();
             final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
             ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
@@ -603,7 +606,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return conn;
             } catch (Exception e) {
                 future.cancel(true);
-                throw new RetryableIOException(e);
+                throw ExceptionUtil.rethrow(e, IOException.class);
             }
         }
 
