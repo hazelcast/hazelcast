@@ -77,8 +77,8 @@ a `JobTracker` which is part of the MapReduce framework.
 
 If you implement your own aggregations, you will use a mixture of the Aggregations and
 the MapReduce API. If you will implement your own aggregation, e.g. to make the life of colleagues easier,
-please read [Implementing Aggregations](#implementing-aggregations).
+please read the [Implementing Aggregations section](#implementing-aggregations).
 
-For the full MapReduce documentation please see [MapReduce](#mapreduce).
+For the full MapReduce documentation please see the [MapReduce section](#mapreduce).
 
 

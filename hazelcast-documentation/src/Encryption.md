@@ -44,4 +44,4 @@ Hazelcast allows you to encrypt the entire socket level communication among all 
 
 ***RELATED INFORMATION***
 
-*Please see [SSL](#ssl).*
+*Please see the [SSL section](#ssl).*

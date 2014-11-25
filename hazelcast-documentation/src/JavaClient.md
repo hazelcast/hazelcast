@@ -31,7 +31,7 @@ If you prefer to use maven, add the following lines to your `pom.xml`.
 
 ### Getting Started with Client API
 
-The first step is configuration. You can configure the Java client declaratively or programmatically. We will use the programmatic approach throughout this tutorial. Please refer to [Java Client Declarative Configuration](#java-client-declarative-configuration) for details.
+The first step is configuration. You can configure the Java client declaratively or programmatically. We will use the programmatic approach throughout this tutorial. Please refer to the [Java Client Declarative Configuration section](#java-client-declarative-configuration) for details.
 
 ```java
 ClientConfig clientConfig = new ClientConfig();
@@ -89,16 +89,16 @@ There are two main failure cases you should be aware of, and configurations you 
 #### Client Connection Failure
 
 
-While the client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all the members might be not available. Instead of giving up, throwing an exception and stopping the client, the client will retry as many as `connectionAttemptLimit` times. Please see [Connection Attempt Limit](#connection-attempt-limit).
+While the client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all the members might be not available. Instead of giving up, throwing an exception and stopping the client, the client will retry as many as `connectionAttemptLimit` times. Please see the [Connection Attempt Limit section](#connection-attempt-limit).
 
 The client executes each operation through the already established connection to the cluster. If this connection(s) disconnects or drops, the client will try to reconnect as configured.
 
 
 #### Retry-able Operation Failure
 
-While sending the requests to related nodes, operation can fail due to various reasons. For any read-only operation, you can have your client retry sending the operation by enabling `redoOperation`. Please see [Redo Operation](#redo-operation).
+While sending the requests to related nodes, operation can fail due to various reasons. For any read-only operation, you can have your client retry sending the operation by enabling `redoOperation`. Please see the [Redo Operation section](#redo-operation).
 
-The number of retries is given with the property `hazelcast.client.request.retry.count` in `ClientProperties`. The client will resend the request as many as RETRY-COUNT, then it will throw an exception. Please see [Client Properties](#client-properties).
+The number of retries is given with the property `hazelcast.client.request.retry.count` in `ClientProperties`. The client will resend the request as many as RETRY-COUNT, then it will throw an exception. Please see the [Client Properties section](#client-properties).
 
 
 ### Supported Distributed Data Structures
@@ -119,7 +119,7 @@ String value= map.get(1);
 map.remove(1);
 ```
 
-Locality is ambiguous for the client, so `addEntryListener` and `localKeySet` are not supported. Please see [Distributed Map](#map) for more information.
+Locality is ambiguous for the client, so `addEntryListener` and `localKeySet` are not supported. Please see the [Distributed Map section](#map) for more information.
 
 #### MultiMap
 
@@ -135,7 +135,7 @@ multiMap.put(1,”veli”);
 Collection<String> values = multiMap.get(1);
 ```
 
-`addEntryListener`, `localKeySet` and  `getLocalMultiMapStats` are not supported because locality is ambiguous for the client. Please see [Distributed MultiMap](#multimap) for more information.
+`addEntryListener`, `localKeySet` and  `getLocalMultiMapStats` are not supported because locality is ambiguous for the client. Please see the [Distributed MultiMap section](#multimap) for more information.
 
 #### Queue
 
@@ -147,7 +147,7 @@ IQueue<String> myQueue = client.getQueue(“theQueue”);
 myQueue.offer(“ali”)
 ```
 
-`getLocalQueueStats` is not supported because locality is ambiguous for the client. Please see [Distributed Queue](#queue) for more information.
+`getLocalQueueStats` is not supported because locality is ambiguous for the client. Please see the [Distributed Queue section](#queue) for more information.
 
 #### Topic
 
@@ -176,14 +176,14 @@ Below services are provided for some common functionalities on the client side.
 
 #### Distributed Executor Service
 
-The distributed executor service is for distributed computing. It can be used to execute tasks on the cluster on a designated partition or on all the partitions. It can also be used to process entries. Please see [Distributed Executor Service](#executor-service) for more information.
+The distributed executor service is for distributed computing. It can be used to execute tasks on the cluster on a designated partition or on all the partitions. It can also be used to process entries. Please see the [Distributed Executor Service section](#executor-service) for more information.
 
 ```java
 IExecutorService executorService = client.getExecutorService("default");
 ```
 
 
-After getting an instance of `IExecutorService`, you can use the instance as the interface with the one provided on the server side. Please see [Distributed Computing](#distributed-computing) chapter for detailed usage.
+After getting an instance of `IExecutorService`, you can use the instance as the interface with the one provided on the server side. Please see the [Distributed Computing chapter](#distributed-computing) chapter for detailed usage.
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *This service is only supported by the Java client.*
 
@@ -252,7 +252,7 @@ You can configure listeners to listen to various event types on the client side.
 
 ### Client Transactions
 
-Transactional distributed objects are supported on the client side. Please see [Transactions](#transactions) chapter on how to use them.
+Transactional distributed objects are supported on the client side. Please see the [Transactions chapter](#transactions) on how to use them.
 
 
 ### Network Configuration Options

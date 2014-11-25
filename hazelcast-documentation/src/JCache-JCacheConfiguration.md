@@ -22,7 +22,7 @@ Cache<Object, Object> cache = cacheManager
 ```
 
 Note that this section only describes the JCache provided standard properties. For the Hazelcast specific properties, please see the
-[ICache Configuration section](#icache-configuration) section.
+[ICache Configuration section](#icache-configuration).
 
 ```xml
 <cache name="default">

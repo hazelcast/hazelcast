@@ -1,7 +1,7 @@
 
 ### ICache Configuration
 
-As mentioned in [JCache Declarative Configuration](#jcache-declarative-configuration), the Hazelcast ICache extension offers
+As mentioned in the [JCache Declarative Configuration section](#jcache-declarative-configuration), the Hazelcast ICache extension offers
 additional configuration properties over the default JCache configuration. These additional properties include internal storage format, backup counts
 and eviction policy.
 
@@ -21,7 +21,7 @@ The declarative configuration for ICache is a superset of the previously discuss
 
 - `backup-count`: The number of synchronous backups. Those backups are executed before the mutating cache operation is finished. The mutating operation is blocked. `backup-count` default value is 1.
 - `async-backup-count`: The number of asynchronous backups. Those backups are executed asynchronously so the mutating operation is not blocked and it will be done immediately. `async-backup-count` default value is 0.  
-- `in-memory-format`: Defines the internal storage format. For more information, please see [In Memory Format](#in-memory-format). Default is `BINARY`.
+- `in-memory-format`: Defines the internal storage format. For more information, please see the [In Memory Format section](#in-memory-format). Default is `BINARY`.
 - `eviction-policy`: The eviction policy **(currently available on High-Density Memory Store only)** defines which entries are evicted (removed) from the cache when the cache is low in space. Its default value is `RANDOM`. The following eviction policies are available:
   - `LRU`: Abbreviation for Least Recently Used. When `eviction-policy` is set to `LRU`, the longest unused (not accessed) entries are removed from the cache.  
   - `LFU`: Abbreviation for Least Frequently Used. When `eviction-policy` is set to `LFU`, the entries that are used (accessed) least frequently are removed from the cache.

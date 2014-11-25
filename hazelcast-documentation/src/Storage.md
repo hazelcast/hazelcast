@@ -17,7 +17,7 @@ This foundation includes, but is not limited to, storing keys and values next to
 <br></br>
 ***RELATED INFORMATION***
 
-*Please refer to [Hazelcast JCache](#hazelcast-jcache) chapter for the details of Hazelcast JCache implementation. As mentioned, High-Density Memory Store is used with Hazelcast JCache implementation.*
+*Please refer to the [Hazelcast JCache chapter](#hazelcast-jcache) chapter for the details of Hazelcast JCache implementation. As mentioned, High-Density Memory Store is used with Hazelcast JCache implementation.*
 <br></br>
 
 
