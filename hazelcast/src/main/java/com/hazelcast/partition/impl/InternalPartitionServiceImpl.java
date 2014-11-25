@@ -865,7 +865,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return result;
     }
 
-    @Override
     public MemberImpl getMember(Address address) {
         return node.clusterService.getMember(address);
     }

@@ -202,7 +202,7 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
             }
 
             //todo: why are we calling the partitionService twice, why don't we immediately get the member?
-            return partitionService.getMember(address);
+            return getNode().getClusterService().getMember(address);
         }
 
         @Override
