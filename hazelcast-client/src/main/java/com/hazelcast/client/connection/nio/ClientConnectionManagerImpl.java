@@ -42,6 +42,7 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -624,20 +625,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
             ownerConnection = null;
             IOUtil.closeResource(currentOwnerConnection);
-            executionService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    if (!client.getLifecycleService().isRunning()) {
-                        return;
+            if (client.getLifecycleService().isRunning()) {
+                executionService.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
+                            clusterService.getClusterListener().connectToCluster();
+                        } catch (Exception e) {
+                            LOGGER.severe("Error while connecting to cluster!", e);
+                        }
                     }
-                    try {
-
-                        clusterService.getClusterListener().connectToCluster();
-                    } catch (Exception e) {
-                        LOGGER.severe("Error while connecting to cluster!", e);
-                    }
-                }
-            });
+                });
+            }
         }
     }
 }

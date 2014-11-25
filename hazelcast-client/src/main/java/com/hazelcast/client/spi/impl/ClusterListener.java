@@ -53,7 +53,6 @@ public class ClusterListener {
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
     private ClientInvocationService clientInvocationService;
-    private String listenerRegistrationId;
 
     public ClusterListener(Collection<AddressProvider> addressProviders) {
         this.addressProviders = addressProviders;
@@ -89,7 +88,6 @@ public class ClusterListener {
                 }
             }
 
-            clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
             IOUtil.closeResource(conn);
         }
     }
@@ -161,7 +159,6 @@ public class ClusterListener {
         if (response instanceof Exception) {
             throw (Exception) response;
         }
-        listenerRegistrationId = (String) response;
     }
 
     private EventHandler<ClientMembershipEvent> createEventHandler() {

@@ -54,18 +54,17 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testClientReconnectOnClusterDown() throws Exception {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance client = HazelcastClient.newHazelcastClient();
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        final CountDownLatch disconnectAndReconnectLatch = new CountDownLatch(2);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_CONNECTED)
-                    connectedLatch.countDown();
+                disconnectAndReconnectLatch.countDown();
             }
         });
         IMap<String, String> m = client.getMap("default");
         h1.shutdown();
         Hazelcast.newHazelcastInstance();
-        assertOpenEventually(connectedLatch, 10);
+        assertOpenEventually(disconnectAndReconnectLatch, 10);
         assertNull(m.put("test", "test"));
         assertEquals("test", m.get("test"));
     }
@@ -78,13 +77,11 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setRedoOperation(true);
 
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        final CountDownLatch disconnectAndReconnectLatch = new CountDownLatch(2);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_CONNECTED) {
-                    connectedLatch.countDown();
-                }
+                disconnectAndReconnectLatch.countDown();
             }
         });
 
@@ -100,7 +97,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         h1.shutdown();
 
         Hazelcast.newHazelcastInstance();
-        assertOpenEventually(connectedLatch, 10);
+        assertOpenEventually(disconnectAndReconnectLatch, 10);
 
         assertTrueEventually(new AssertTask() {
             @Override

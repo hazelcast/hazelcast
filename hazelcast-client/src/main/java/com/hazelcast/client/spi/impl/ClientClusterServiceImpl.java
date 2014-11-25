@@ -220,7 +220,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         // started
     }
 
-    void fireConnectionEvent(LifecycleState state) {
+    public void fireConnectionEvent(LifecycleState state) {
         final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
         lifecycleService.fireLifecycleEvent(state);
     }
