@@ -81,9 +81,7 @@ public class TransactionImplTest {
         }
     }
 
-    @Test
-//    TODO: this test should throw TransactionException
-//    @Test(expected = TransactionException.class)
+    @Test(expected = TransactionException.class)
     public void testLocalTransaction_ThrowsExceptionDuringCommit() throws Exception {
         TransactionImpl transaction;
         TransactionManagerServiceImpl transactionManagerService = mock(TransactionManagerServiceImpl.class);
