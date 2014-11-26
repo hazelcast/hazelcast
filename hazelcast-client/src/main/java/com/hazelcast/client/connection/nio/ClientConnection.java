@@ -348,18 +348,10 @@ public class ClientConnection implements Connection, Closeable {
 //            logger.info("Received empty claim response from " + toString() + ". Next attempt in " + backoffState + " ms.");
         } else {
 //            logger.info("Received " + claimResponse + "slots for " + toString());
+            availableSlots.set(claimResponse);
             backoffState = BackoffPolicy.EMPTY_STATE;
         }
-
-        for (;;) {
-            int currentAvailableSlots = this.availableSlots.get();
-            if (currentAvailableSlots > 0) {
-                //we are going to ignore any claimResponses if the availableSlots is bigger than zero
-                break;
-            } else {
-                availableSlots.set(claimResponse);
-            }
-        }
+        waitingForSlotResponse.set(false);
     }
 
     public SocketChannelWrapper getSocketChannelWrapper() {
