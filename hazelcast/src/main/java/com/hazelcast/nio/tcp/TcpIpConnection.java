@@ -244,22 +244,10 @@ public final class TcpIpConnection implements Connection {
             //    logger.info("Received empty claim response from " + toString() + ". Next attempt in " + backoffState + " ms.");
         } else {
             //    logger.info("Received " + claimResponse + "slots for " + toString());
+            availableSlots.set(claimResponse);
             backoffState = BackoffPolicy.EMPTY_STATE;
         }
-
-        for (;;) {
-            int currentAvailableSlots = this.availableSlots.get();
-            if (currentAvailableSlots > 0) {
-                //we are going to ignore any claimResponses if the availableSlots is bigger than zero
-                break;
-            } else {
-                int newAvailableSlots = currentAvailableSlots + claimResponse;
-                if (availableSlots.compareAndSet(currentAvailableSlots, newAvailableSlots)) {
-                    waitingForSlotResponse.set(false);
-                    break;
-                }
-            }
-        }
+        waitingForSlotResponse.set(false);
     }
 
     @Override
