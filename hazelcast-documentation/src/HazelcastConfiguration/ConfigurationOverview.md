@@ -89,7 +89,7 @@ After creating `Config` object, you can use it to create a new Hazelcast instanc
 
 
 
-Rest of the chapter will first explain the configuration items listed below.
+Rest of the chapter first explains the configuration items listed below.
 
 - Network 
 - Group
@@ -108,7 +108,7 @@ Rest of the chapter will first explain the configuration items listed below.
 - Management Center
 
 
-Then, it will talk about Listener and Logging configurations. And finally, the chapter will end with the advanced system property definitions.
+Then, it talks about Listener and Logging configurations. And finally, the chapter ends with the advanced system property definitions.
 
 ***ATTENTION:*** *Most of the sections below use the tags used in declarative configuration when explaining configuration items. We are assuming that the reader is familiar with their programmatic equivalents, since both approaches have the similar tag/method names (e.g. `port-count` tag in declarative configuration is equivalent to `setPortCount` in programmatic configuration).*
 

@@ -34,7 +34,7 @@ Below is a configuration example.
 </join>
 ```
 
-The `aws` tag accepts an attribute called *connection-timeout-seconds* whose default value is 5. Increasing this value is recommended if you have many IPs listed and members cannot properly build up the cluster.
+The `aws` tag accepts an attribute called `connection-timeout-seconds` whose default value is 5. Increasing this value is recommended if you have many IPs listed and members cannot properly build up the cluster.
 
 The parameter `region` specifies where the members are running. Its default value is `us-east-1`. If the cluster is running on a different region, you must specify it here. Otherwise, the cluster will not be formed since the members will not discover each other.
 

@@ -201,7 +201,8 @@ It has below elements and attributes.
 - `tcp-ip`: It includes parameters to fine tune the TCP/IP join mechanism.
 	- `enabled`: Specifies whether the TCP/IP discovery is enabled or not. Values can be `true` or `false`.
 	- `required-member`: IP address of the required member. Cluster will only formed if the member with this IP address is found.
-	- `member`: IP address(es) of one or more well known members. Once members are connected to these well known ones, all member addresses will be communicated with each other. You can also give comma separated IP addresses using the `members` tag.
+	- `member`: IP address(es) of one or more well known members. Once members are connected to these well known ones, all member addresses will be communicated with each other. You can also give comma separated IP addresses using the `members` element.
+	- `connection-timeout-seconds`: Defines the connection timeout. This is the maximum amount of time Hazelcast is going to try to connect to a well known member before giving up. Setting it to a too low value could mean that a member is not able to connect to a cluster. Setting it to a too high value means that member startup could slow down because of longer timeouts (e.g. when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
 
 - `aws`: It includes parameters to allow the nodes form a cluster on Amazon EC2 environment.
 	- `enabled`: Specifies whether the EC2 discovery is enabled or not. Values can be `true` or `false`.
@@ -210,6 +211,7 @@ It has below elements and attributes.
 	- `host-header`: ???. It is optional.
 	- `security-group-name`:Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast nodes to be within this group. It is optional.
 	- `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast nodes, you can set these parameters as the ones you specified in the EC2 console. They are optional.
+		- `connection-timeout-seconds`: Defines the connection timeout. This is the maximum amount of time Hazelcast is going to try to connect to a well known member before giving up. Setting it to a too low value could mean that a member is not able to connect to a cluster. Setting it to a too high value means that member startup could slow down because of longer timeouts (e.g. when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
 
 ### Interfaces
 
