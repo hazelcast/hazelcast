@@ -59,7 +59,7 @@ String result = future.get();
 
 Please note that the Echo callable in the above code sample also implements a Serializable interface, since it may be sent to another JVM to be processed.
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *When a task is deserialized, HazelcastInstance needs to be accessed. To do this, the task should implement `HazelcastInstanceAware` interface. Please see [HazelcastInstanceAware Interface](#hazelcastinstanceaware-interface) for more information.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *When a task is deserialized, HazelcastInstance needs to be accessed. To do this, the task should implement `HazelcastInstanceAware` interface. Please see the [HazelcastInstanceAware Interface section](#hazelcastinstanceaware-interface) for more information.*
 <br></br>
 
 
@@ -119,7 +119,7 @@ By default, Executor is configured to have 8 threads in the pool. You can change
 Executor service can be scaled both vertically (scale up) and horizontally (scale out).
 
 
-To scale up, you should improve the processing capacity of the JVM. You can do this by increasing the `pool-size` property mentioned in [Executor Thread Configuration](#executor-thread-configuration) (i.e., increasing the thread count). However, please be aware of your JVM's capacity. If you think it cannot handle such an additional load caused by increasing the thread count, you may want to consider improving the JVM's resources (CPU, memory, etc.). As an example, set the `pool-size` to 5 and run the above `MasterMember`. You will see that `EchoTask` is run as soon as it is produced.
+To scale up, you should improve the processing capacity of the JVM. You can do this by increasing the `pool-size` property mentioned in the [Executor Thread Configuration section](#executor-thread-configuration) (i.e., increasing the thread count). However, please be aware of your JVM's capacity. If you think it cannot handle such an additional load caused by increasing the thread count, you may want to consider improving the JVM's resources (CPU, memory, etc.). As an example, set the `pool-size` to 5 and run the above `MasterMember`. You will see that `EchoTask` is run as soon as it is produced.
 
 
-To scale out, more JVMs should be added instead of increasing only one JVM's capacity. In reality, you may want to expand your cluster by adding more physical or virtual machines. For the EchoTask example in [Runnable](#runnable), you can create another Hazelcast instance. That instance will automatically get involved in the executions started in `MasterMember` and start processing.
+To scale out, more JVMs should be added instead of increasing only one JVM's capacity. In reality, you may want to expand your cluster by adding more physical or virtual machines. For the EchoTask example in the [Runnable section](#runnable), you can create another Hazelcast instance. That instance will automatically get involved in the executions started in `MasterMember` and start processing.

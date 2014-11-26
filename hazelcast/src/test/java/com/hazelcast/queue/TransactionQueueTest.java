@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -192,11 +193,11 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         final AtomicInteger count = new AtomicInteger();
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        String inQueueName = "in";
-        String outQueueName = "out";
+        final String inQueueName = "in";
+        final String outQueueName = "out";
 
         for (int i = 0; i < numberOfMessages; i++) {
             if (!instance1.getQueue(inQueueName).offer(i)) {
@@ -262,8 +263,15 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         moveMessage1.join(10000);
 
         try {
-            assertEquals(numberOfMessages, instance1.getQueue(outQueueName).size());
-            assertTrue(instance1.getQueue(inQueueName).isEmpty());
+            // When a node goes down, backup of the transaction commits all prepared stated transactions
+            // Since it relies on 'memberRemoved' event, it is async. That's why we should assert eventually
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(numberOfMessages, instance1.getQueue(outQueueName).size());
+                    assertTrue(instance1.getQueue(inQueueName).isEmpty());
+                }
+            }, 20);
         } finally {
             moveMessage1.active = false;
         }

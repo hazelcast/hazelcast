@@ -1,7 +1,7 @@
 
 ## Web Session Replication
 
-If you are using Tomcat as your web container, please see our [Tomcat based Web Session Replication](#tomcat-based-web-session-replication).
+If you are using Tomcat as your web container, please see the [Tomcat based Web Session Replication section](#tomcat-based-web-session-replication).
 
 
 ### Filter Based Web Session Replication

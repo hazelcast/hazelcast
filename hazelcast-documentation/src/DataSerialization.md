@@ -81,7 +81,7 @@ As you can see, since `address` field itself is `DataSerializable`, it is callin
 
 For a faster serialization of objects, avoiding reflection and long class names, Hazelcast recommends you implement `com.hazelcast.nio.serialization.IdentifiedDataSerializable` which is a slightly better version of `DataSerializable`.
 
-`DataSerializable` uses reflection to create a class instance, as mentioned in above section. But, `IdentifiedDataSerializable` uses a factory for this purpose and it is faster during deserialization which requires new instance creations.
+`DataSerializable` uses reflection to create a class instance, as mentioned in the [DataSerializable section](#dataserializable). But, `IdentifiedDataSerializable` uses a factory for this purpose and it is faster during deserialization which requires new instance creations.
 
 `IdentifiedDataSerializable` extends `DataSerializable` and introduces two new methods.
 

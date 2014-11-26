@@ -17,5 +17,5 @@ If event listeners are performing a computation that takes a long time, the even
 
 ***RELATED INFORMATION***
 
-*Please refer to [Listener Configurations](#listener-configurations) section on how to configure each listener.*
+*Please refer to the [Listener Configurations section](#listener-configurations) on how to configure each listener.*
 
