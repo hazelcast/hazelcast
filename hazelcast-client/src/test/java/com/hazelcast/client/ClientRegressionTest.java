@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
@@ -215,8 +216,9 @@ public class ClientRegressionTest
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
-        clientConfig.setSmartRouting(false);
+        final ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+        networkConfig.setRedoOperation(true);
+        networkConfig.setSmartRouting(false);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         final Thread thread = new Thread() {

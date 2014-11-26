@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
@@ -66,13 +67,13 @@ public class ClusterListener {
         this.clientInvocationService = client.getInvocationService();
     }
 
-    public void connectToCluster() throws Exception {
+    public void connectToCluster() {
         ClientConnection conn;
         try {
             conn = connectToOne();
         } catch (Exception e) {
             client.getLifecycleService().shutdown();
-            throw e;
+            throw ExceptionUtil.rethrow(e);
         }
 
         try {

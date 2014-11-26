@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
@@ -55,7 +56,7 @@ public class ClientConnection implements Connection, Closeable {
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
 
-    private volatile boolean live = true;
+    private final AtomicBoolean live = new AtomicBoolean(true);
 
     private final ILogger logger = Logger.getLogger(ClientConnection.class);
 
@@ -136,7 +137,7 @@ public class ClientConnection implements Connection, Closeable {
 
     @Override
     public boolean write(SocketWritable packet) {
-        if (!live) {
+        if (!live.get()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
             }
@@ -161,7 +162,7 @@ public class ClientConnection implements Connection, Closeable {
 
     @Override
     public boolean isAlive() {
-        return live;
+        return live.get();
     }
 
     @Override
@@ -229,10 +230,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     private void innerClose() throws IOException {
-        if (!live) {
-            return;
-        }
-        live = false;
+
         if (socketChannelWrapper.isOpen()) {
             socketChannelWrapper.close();
         }
@@ -294,7 +292,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public void close(Throwable t) {
-        if (!live) {
+        if (!live.compareAndSet(true, false)) {
             return;
         }
         try {

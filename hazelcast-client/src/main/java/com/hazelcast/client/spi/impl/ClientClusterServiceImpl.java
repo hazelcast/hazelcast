@@ -28,7 +28,6 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Cluster;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
@@ -67,14 +66,12 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     private static final ILogger LOGGER = Logger.getLogger(ClientClusterService.class);
 
     private final HazelcastClientInstanceImpl client;
-    private final ClientConnectionManager connectionManager;
     private final ClusterListener clusterListener;
     private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
 
     public ClientClusterServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
-        this.connectionManager = client.getConnectionManager();
         this.clusterListener = createClusterListener();
         final ClientConfig clientConfig = getClientConfig();
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
@@ -157,8 +154,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     @Override
     public Client getLocalClient() {
-        final String uuid = connectionManager.getUuid();
-        InetSocketAddress address = connectionManager.getLocalAddress();
+        final ClientConnectionManager cm = client.getConnectionManager();
+        final String uuid = cm.getUuid();
+        InetSocketAddress address = cm.getLocalAddress();
         return new ClientImpl(uuid, address);
     }
 
@@ -210,12 +208,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
 
     public void start() {
         clusterListener.init(client);
-
-        try {
-            clusterListener.connectToCluster();
-        } catch (Exception e) {
-            throw new HazelcastException(e);
-        }
+        clusterListener.connectToCluster();
         initMembershipListener();
         // started
     }

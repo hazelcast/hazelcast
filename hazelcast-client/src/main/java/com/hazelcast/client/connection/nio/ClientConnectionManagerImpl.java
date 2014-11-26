@@ -604,7 +604,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         private void closeIfAddressMatches(Address address) {
             final ClientConnection currentOwnerConnection = ownerConnection;
-            if (currentOwnerConnection == null || !currentOwnerConnection.isAlive()) {
+            if (currentOwnerConnection == null) {
                 return;
             }
             if (address.equals(currentOwnerConnection.getRemoteEndpoint())) {
@@ -624,12 +624,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 executionService.execute(new Runnable() {
                     @Override
                     public void run() {
-                        try {
-                            clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
-                            clusterService.getClusterListener().connectToCluster();
-                        } catch (Exception e) {
-                            LOGGER.severe("Error while connecting to cluster!", e);
-                        }
+                        clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
+                        clusterService.getClusterListener().connectToCluster();
                     }
                 });
             }
