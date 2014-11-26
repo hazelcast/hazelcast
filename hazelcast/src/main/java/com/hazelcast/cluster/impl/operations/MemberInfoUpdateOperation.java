@@ -16,8 +16,8 @@
 
 package com.hazelcast.cluster.impl.operations;
 
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
@@ -96,7 +96,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("MembersUpdateCall {\n");
+        StringBuilder sb = new StringBuilder("MemberInfoUpdateOperation {\n");
         for (MemberInfo address : memberInfos) {
             sb.append(address).append('\n');
         }
