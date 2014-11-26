@@ -20,6 +20,6 @@ package com.hazelcast.jca;
  * Connection events caused by the resource adapter.
  * Used for logging/debugging purposes only at the moment.
  */
-enum HzConnectionEvent {
+public enum HzConnectionEvent {
     FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP, DESTROY,
 }
