@@ -1044,7 +1044,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private Future invokeClusterOperation(Operation op, Address target) {
         return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
-                .setTryCount(50).invoke();
+                .setTryCount(100).invoke();
     }
 
     public NodeEngineImpl getNodeEngine() {
