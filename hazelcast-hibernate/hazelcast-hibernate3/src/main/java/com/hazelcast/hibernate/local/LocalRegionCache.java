@@ -213,7 +213,6 @@ public class LocalRegionCache implements RegionCache {
     }
 
     public void clear() {
-        System.out.println("clear");
         cache.clear();
     }
 

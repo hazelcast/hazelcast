@@ -253,7 +253,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         } finally {
             session.close();
         }
-        sleep(10);
         assertEquals(entityCount - 1, executeQuery(sf).size());
         assertEquals(entityCount - 1, executeQuery(sf2).size());
     }
