@@ -31,7 +31,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
+import com.hazelcast.spi.BackoffPolicy;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ExecutionTracingService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -46,6 +48,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
@@ -110,7 +113,10 @@ final class BasicOperationService implements InternalOperationService {
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
     private static final int CONCURRENCY_LEVEL = 16;
-    private static final int ASYNC_QUEUE_CAPACITY = 100000;
+
+    //todo: a temporary hack for the back pressure since icompletablefuture completion handler is going to be executed
+    //on this thread.
+    private static final int ASYNC_QUEUE_CAPACITY = Integer.MAX_VALUE;
 
     final ConcurrentMap<Long, BasicInvocation> invocations;
     final BasicOperationScheduler scheduler;
@@ -122,6 +128,7 @@ final class BasicOperationService implements InternalOperationService {
     private final Node node;
     private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(1);
+    private final AtomicLong backpressuredOpsCounter = new AtomicLong();
 
     private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
 
@@ -134,6 +141,8 @@ final class BasicOperationService implements InternalOperationService {
     private final ResponsePacketHandler responsePacketHandler;
     private final OperationTimeoutHandlerThread operationTimeoutHandlerThread;
     private volatile boolean shutdown;
+
+    private final BackoffPolicy backoffPolicy;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -156,6 +165,8 @@ final class BasicOperationService implements InternalOperationService {
         this.operationBackupHandler = new OperationBackupHandler();
         this.operationPacketHandler = new OperationPacketHandler();
         this.responsePacketHandler = new ResponsePacketHandler();
+
+        this.backoffPolicy = new ExponentialBackoffPolicy();
 
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
@@ -338,6 +349,13 @@ final class BasicOperationService implements InternalOperationService {
         if (target == null) {
             throw new IllegalArgumentException("Target is required!");
         }
+
+        // todo: a hack to prevent urgent backup operations be kicked out of this method.
+        if (op instanceof BackupOperation && !op.isUrgent()) {
+            System.out.println("Unexpected operation: " + op);
+            //throw new IllegalArgumentException("Can't send a Backup operation using the regular send method, op: " + op);
+        }
+
         if (nodeEngine.getThisAddress().equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
@@ -345,11 +363,62 @@ final class BasicOperationService implements InternalOperationService {
         int partitionId = scheduler.getPartitionIdForExecution(op);
         Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
+
         if (op instanceof UrgentSystemOperation) {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.send(packet, connection);
+
+        WriteResult sent = nodeEngine.send(packet, connection);
+        if (sent != WriteResult.FULL) {
+            return sent == WriteResult.SUCCESS;
+        }
+        backpressuredOpsCounter.incrementAndGet();
+        //TODO: Refactor it to GroupProperties
+        int maxAttempts = 1000;
+        int state = BackoffPolicy.EMPTY_STATE;
+        for (int i = 0; i < maxAttempts; i++) {
+            state = backoffPolicy.apply(state);
+            sent = nodeEngine.send(packet, connection);
+            if (sent != WriteResult.FULL) {
+                return sent == WriteResult.SUCCESS;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Writes the backup. The backup is ALWAYS going to be accepted by the connection because we can't apply back-pressure
+     * on the partition thread. But this method will return if the connection had enough capacity
+     *
+     * @param op
+     * @param target
+     * @return
+     */
+    private WriteResult sendBackup(Operation op, Address target) {
+        if (target == null) {
+            throw new IllegalArgumentException("Target is required!");
+        }
+
+        if (nodeEngine.getThisAddress().equals(target)) {
+            throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
+        }
+
+        if (!(op instanceof BackupOperation)) {
+            throw new IllegalArgumentException("Only BackupOperations are allowed to be executed using the sendBackup method. "
+                    + "Operation = " + op);
+        }
+
+        Data data = nodeEngine.toData(op);
+        int partitionId = scheduler.getPartitionIdForExecution(op);
+        Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
+        packet.setHeader(Packet.HEADER_OP);
+
+        if (op instanceof UrgentSystemOperation) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        Connection connection = node.getConnectionManager().getOrConnect(target);
+        return nodeEngine.sendBackup(packet, connection);
     }
 
     @Override
@@ -368,7 +437,7 @@ final class BasicOperationService implements InternalOperationService {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.send(packet, connection);
+        return nodeEngine.send(packet, connection) == WriteResult.SUCCESS;
     }
 
     public void registerInvocation(BasicInvocation invocation) {
@@ -441,6 +510,11 @@ final class BasicOperationService implements InternalOperationService {
         }
         invocations.clear();
         scheduler.shutdown();
+    }
+
+    @Override
+    public int getNoOfScheduledOperations() {
+        return scheduler.getNoOfScheduledOperations();
     }
 
     /**
@@ -872,10 +946,30 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+    @Override
+    public long getNoOfForcedSyncBackups() {
+        return operationBackupHandler.asyncDowngradedCounter.get();
+    }
+
+    @Override
+    public long getNoOfBackpressuredOperations() {
+        return backpressuredOpsCounter.get();
+    }
+
     /**
      * Responsible for creating a backups of an operation.
      */
     private final class OperationBackupHandler {
+
+        // just for debugging.
+        private final AtomicLong backupCounter = new AtomicLong();
+        private final AtomicLong fullCounter = new AtomicLong();
+        private final AtomicLong notFullCounter = new AtomicLong();
+
+        //a counter tracking how many times was async backup downgraded to sync to enforce back-pressure
+        private final AtomicLong asyncDowngradedCounter = new AtomicLong();
+
+        private volatile long lastFullTimeMs = System.currentTimeMillis();
 
         public int backup(BackupAwareOperation backupAwareOp) throws Exception {
             int requestedSyncBackupCount = backupAwareOp.getSyncBackupCount() > 0
@@ -909,14 +1003,39 @@ final class BasicOperationService implements InternalOperationService {
             }
 
             return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackupCount, totalBackupCount);
+
         }
 
+        /**
+         * Makes the actual backup.
+         *
+         * @param backupAwareOp
+         * @param partitionId
+         * @param replicaVersions
+         * @param desiredSyncBackups
+         * @param totalBackupCount
+         * @return the number of sync backups. If one of the connections is full, the number of sync backups is not determined
+         * based on the desiredSyncBackups, but by the total number of backups done. Because the future is going to wait for every
+         * backup to complete
+         */
         private int makeBackups(BackupAwareOperation backupAwareOp, int partitionId, long[] replicaVersions,
-                                int syncBackupCount, int totalBackupCount) {
+                                int desiredSyncBackups, int totalBackupCount) {
 
-            int sentSyncBackupCount = 0;
+            int syncBackups = 0;
+            int asyncBackups = 0;
+
+            boolean fullConnectionEncountered = false;
             InternalPartitionService partitionService = node.getPartitionService();
             InternalPartition partition = partitionService.getPartition(partitionId);
+
+            // bug:
+            // assuming a single async backup. So this operation is created and the Backup (operation) is marked as async since
+            // that is what you want. When the backup is send to the connection, the connection figures out that it is full
+            // and eventually the future will be notified that it needs to wait for one backup. The problem is that the backup
+            // was configured as sync, and therefor will never contact that future.
+            // fix:
+            // we should check the connection before we are going to send backup. If the connection is full, the backup and the
+            // future are now configured as sync. This way the backup and the future are always configured the same.
             for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
                 Address target = partition.getReplicaAddress(replicaIndex);
                 if (target == null) {
@@ -925,23 +1044,58 @@ final class BasicOperationService implements InternalOperationService {
 
                 assertNoBackupOnPrimaryMember(partition, target);
 
-                boolean isSyncBackup = replicaIndex <= syncBackupCount;
-                Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, isSyncBackup);
-                send(backup, target);
+                boolean syncBackup = replicaIndex <= desiredSyncBackups;
+                if (!syncBackup) {
+                    Connection connection = node.getConnectionManager().getOrConnect(target);
+                    //logger.severe("connection.isFull:"+connection.isFull());
 
-                if (isSyncBackup) {
-                    sentSyncBackupCount++;
+                    if (connection.isFull()) {
+                        syncBackup = true;
+                        fullConnectionEncountered = true;
+                        asyncDowngradedCounter.incrementAndGet();
+                    }
+                }
+                Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, syncBackup);
+
+                WriteResult result = sendBackup(backup, target);
+//
+//                if (result == WriteResult.FULL) {
+//                    fullConnectionEncountered = true;
+//                    if (lastFullTimeMs + 10000 < System.currentTimeMillis()) {
+//                        lastFullTimeMs = System.currentTimeMillis();
+//                        logger.severe("Back pressure applied on async backup calls");
+//                    }
+//                }
+
+                if (syncBackup) {
+                    syncBackups++;
+                } else {
+                    asyncBackups++;
                 }
             }
-            return sentSyncBackupCount;
+
+            if (fullConnectionEncountered) {
+                fullCounter.incrementAndGet();
+            } else {
+                notFullCounter.incrementAndGet();
+            }
+
+            if ((backupCounter.incrementAndGet() % 10000) == 0) {
+                logger.info(backupCounter.get() + "  Backups sync = " + syncBackups + " fullCounter: " + fullCounter
+                        + " notFullCounter: " + notFullCounter);
+            }
+
+            logger.severe("syncBackup:" + syncBackups);
+
+            return syncBackups;
         }
 
         private Backup newBackup(BackupAwareOperation backupAwareOp, long[] replicaVersions,
-                                 int replicaIndex, boolean isSyncBackup) {
+                                 int replicaIndex, boolean syncBackup) {
             Operation op = (Operation) backupAwareOp;
             Operation backupOp = initBackupOperation(backupAwareOp, replicaIndex);
             Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
-            Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, isSyncBackup);
+            Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, syncBackup);
             backup.setPartitionId(op.getPartitionId())
                     .setReplicaIndex(replicaIndex)
                     .setServiceName(op.getServiceName())

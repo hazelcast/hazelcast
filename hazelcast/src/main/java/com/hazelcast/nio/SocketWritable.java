@@ -45,4 +45,14 @@ public interface SocketWritable {
      * @return true if urgent, false otherwise.
      */
     boolean isUrgent();
+
+    /**
+     * Check if back-pressure can be applied to this SocketWritable.
+     *
+     * We aim to apply back-pressure on regular (non-urgent) operations only. We don't want to apply
+     * back-pressure to events, responses or any urgent operations.
+     *
+     * @return true if back-pressure is allowed to be applied
+     */
+    boolean isBackpressureAllowed();
 }

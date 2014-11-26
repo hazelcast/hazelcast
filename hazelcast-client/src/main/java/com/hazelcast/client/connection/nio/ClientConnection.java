@@ -19,17 +19,21 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.client.GetSlotsRequest;
 import com.hazelcast.client.impl.client.RemoveAllListeners;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
@@ -37,7 +41,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
+import com.hazelcast.spi.BackoffPolicy;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.impl.ExponentialBackoffPolicy;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.Closeable;
@@ -52,6 +60,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
@@ -88,11 +97,19 @@ public class ClientConnection implements Connection, Closeable {
     private final AtomicInteger packetCount = new AtomicInteger(0);
     private volatile boolean heartBeating = true;
 
+    private final boolean backPressureEnabled;
+    private final AtomicInteger availableSlots = new AtomicInteger();
+    private final AtomicBoolean waitingForSlotResponse = new AtomicBoolean();
+    private final BackoffPolicy backoffPolicy = new ExponentialBackoffPolicy();
+    private volatile int backoffState;
+    private volatile long dontAskForSlotsBefore;
+
     public ClientConnection(ClientConnectionManager connectionManager, IOSelector in, IOSelector out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper,
                             ClientExecutionService executionService,
                             ClientInvocationServiceImpl invocationService,
-                            SerializationService serializationService) throws IOException {
+                            SerializationService serializationService,
+                            boolean backPressureEnabled) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
         this.serializationService = serializationService;
@@ -103,6 +120,7 @@ public class ClientConnection implements Connection, Closeable {
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
         this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize());
         this.readBuffer = ByteBuffer.allocate(socket.getReceiveBufferSize());
+        this.backPressureEnabled = backPressureEnabled;
     }
 
     public void incrementPacketCount() {
@@ -143,15 +161,82 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
-    public boolean write(SocketWritable packet) {
+    public WriteResult writeBackup(Packet packet) {
+        throw new RuntimeException();
+    }
+
+    @Override
+    public boolean isFull() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public WriteResult write(SocketWritable packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
             }
-            return false;
+            return WriteResult.FAILURE;
+        }
+        if (backPressureEnabled) {
+            boolean backpressureAllowed = packet.isBackpressureAllowed();
+            if (backpressureAllowed) {
+                return enqueWithBackPressure(packet);
+            }
         }
         writeHandler.enqueueSocketWritable(packet);
-        return true;
+        return WriteResult.SUCCESS;
+    }
+
+    private WriteResult enqueWithBackPressure(SocketWritable packet) {
+        WriteResult result = writeIfSlotAvailable(packet);
+        if (result != WriteResult.FULL) {
+            return result;
+        }
+
+        if (waitingForSlotResponse.compareAndSet(false, true)) {
+            long askInMs = dontAskForSlotsBefore - Clock.currentTimeMillis();
+            if (askInMs <= 0) {
+                sendClaim();
+            } else {
+//                if (logger.isFinestEnabled()) {
+//                logger.info("No slots to " + toString() + " are available, but I can only ask for new ones in "
+//                      + askInMs + " ms.");
+//                }
+                waitingForSlotResponse.set(false);
+            }
+            return WriteResult.FULL;
+        } else {
+            return writeIfSlotAvailable(packet);
+        }
+    }
+
+    private void sendClaim() {
+        System.out.println("Asking for more slots, current capacity: " + availableSlots.get());
+        final GetSlotsRequest request = new GetSlotsRequest();
+        ICompletableFuture send = invocationService.send(request, this);
+        send.andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                System.out.println("Received response " + response);
+                int newSlot = (Integer)response;
+                setAvailableSlots((Integer) response);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                System.out.println("Failure while asking for slots!");
+            }
+        });
+    }
+
+    private WriteResult writeIfSlotAvailable(SocketWritable packet) {
+        int availSlotsNow = availableSlots.decrementAndGet();
+        if (availSlotsNow >= 0) {
+            writeHandler.enqueueSocketWritable(packet);
+            return WriteResult.SUCCESS;
+        }
+        return WriteResult.FULL;
     }
 
     public void init() throws IOException {
@@ -253,6 +338,20 @@ public class ClientConnection implements Connection, Closeable {
     @Override
     public int getPort() {
         return socketChannelWrapper.socket().getPort();
+    }
+
+    @Override
+    public void setAvailableSlots(int claimResponse) {
+        if (claimResponse == 0) {
+            backoffState = backoffPolicy.nextState(backoffState);
+            dontAskForSlotsBefore = Clock.currentTimeMillis() + backoffState;
+//            logger.info("Received empty claim response from " + toString() + ". Next attempt in " + backoffState + " ms.");
+        } else {
+//            logger.info("Received " + claimResponse + "slots for " + toString());
+            availableSlots.set(claimResponse);
+            backoffState = BackoffPolicy.EMPTY_STATE;
+        }
+        waitingForSlotResponse.set(false);
     }
 
     public SocketChannelWrapper getSocketChannelWrapper() {

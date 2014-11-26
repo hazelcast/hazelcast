@@ -98,6 +98,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private final AtomicInteger allTextConnections = new AtomicInteger();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
+    private final boolean backPressureEnabled;
 
     private volatile boolean live;
 
@@ -129,10 +130,13 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private final boolean selectorImbalanceWorkaroundEnabled;
     private final Map<String, Integer> selectorIndexPerHostMap;
 
-    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
+    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel, boolean backPressureEnabled) {
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(TcpIpConnectionManager.class.getName());
+
+        logger.info("Back-pressure enabled: " + backPressureEnabled);
+
         this.socketReceiveBufferSize = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
         this.socketSendBufferSize = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
         this.socketLingerSeconds = ioService.getSocketLingerSeconds();
@@ -142,6 +146,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.selectorThreadCount = ioService.getSelectorThreadCount();
         this.inSelectors = new InSelectorImpl[selectorThreadCount];
         this.outSelectors = new OutSelectorImpl[selectorThreadCount];
+        this.backPressureEnabled = backPressureEnabled;
         final Collection<Integer> ports = ioService.getOutboundPorts();
         this.outboundPortCount = ports == null ? 0 : ports.size();
         if (ports != null) {
@@ -342,14 +347,13 @@ public class TcpIpConnectionManager implements ConnectionManager {
         int index = getSelectorIndex(remoteHost);
 
         final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
-                outSelectors[index], connectionIdGen.incrementAndGet(), channel);
+                outSelectors[index], connectionIdGen.incrementAndGet(), channel, backPressureEnabled);
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
         connection.getReadHandler().register();
 
         logConnectionEstablished(channel, remoteSocketAddress, index);
-
         return connection;
     }
 

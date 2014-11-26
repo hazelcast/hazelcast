@@ -20,23 +20,32 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackoffPolicy;
+import com.hazelcast.spi.WriteResult;
+import com.hazelcast.spi.impl.ExponentialBackoffPolicy;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
- *
+ * <p/>
  * A Connection has 2 sides:
  * <ol>
- *     <li>the side where it receives data from the remote  machine</li>
- *     <li>the side where it sends data to the remote machine</li>
+ * <li>the side where it receives data from the remote  machine</li>
+ * <li>the side where it sends data to the remote machine</li>
  * </ol>
- *
+ * <p/>
  * The reading side is the {@link com.hazelcast.nio.tcp.ReadHandler} and the writing side of this connection
  * is the {@link com.hazelcast.nio.tcp.WriteHandler}.
  */
@@ -62,14 +71,22 @@ public final class TcpIpConnection implements Connection {
 
     private TcpIpConnectionMonitor monitor;
 
+    private final AtomicInteger availableSlots = new AtomicInteger();
+    private final AtomicBoolean waitingForSlotResponse = new AtomicBoolean();
+    private final BackoffPolicy backoffPolicy = new ExponentialBackoffPolicy();
+    private volatile int backoffState;
+    private volatile long dontAskForSlotsBefore;
+    private final boolean backPressureEnabled;
+
     public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
-                           int connectionId, SocketChannelWrapper socketChannel) {
+                           int connectionId, SocketChannelWrapper socketChannel, boolean backPressureEnabled) {
         this.connectionId = connectionId;
         this.logger = connectionManager.ioService.getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
         this.readHandler = new ReadHandler(this, in);
         this.writeHandler = new WriteHandler(this, out);
+        this.backPressureEnabled = backPressureEnabled;
     }
 
     @Override
@@ -82,15 +99,115 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
-    public boolean write(SocketWritable packet) {
+    public boolean isFull() {
+        logger.severe("availableSlots:" + availableSlots.get());
+        return availableSlots.get() <= 0;
+    }
+
+    @Override
+    public WriteResult writeBackup(Packet packet) {
         if (!live) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
             }
-            return false;
+            return WriteResult.FAILURE;
         }
-        writeHandler.enqueueSocketWritable(packet);
-        return true;
+
+        if (!backPressureEnabled) {
+            writeHandler.enque(packet);
+            return WriteResult.SUCCESS;
+        }
+
+        boolean full;
+        for (;;) {
+            int oldAvailableSlots = availableSlots.get();
+
+            full = oldAvailableSlots <= 0;
+
+            int newAvailableSlots = oldAvailableSlots - 1;
+            if (availableSlots.compareAndSet(oldAvailableSlots, newAvailableSlots)) {
+                break;
+            }
+        }
+
+        if (full) {
+            // if the connection is full, we are going to try to send a claim.
+            if (waitingForSlotResponse.compareAndSet(false, true)) {
+                long askInMs = dontAskForSlotsBefore - Clock.currentTimeMillis();
+                if (askInMs <= 0) {
+                    sendClaim();
+                } else {
+                    waitingForSlotResponse.set(false);
+                }
+            }
+        }
+
+        // we are going to the packet no matter the queue is full because we can't store it locally.
+        // because the future will not be waiting for all backups to complete, it will provide the back pressure
+        writeHandler.enque(packet);
+        return full ? WriteResult.FULL : WriteResult.SUCCESS;
+    }
+
+    @Override
+    public WriteResult write(SocketWritable packet) {
+        if (!live) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Connection is closed, won't write packet -> " + packet);
+            }
+            return WriteResult.FAILURE;
+        }
+
+        if (backPressureEnabled) {
+            if (packet.isBackpressureAllowed()) {
+                return enqueWithBackPressure(packet);
+            }
+
+        }
+        writeHandler.enque(packet);
+        return WriteResult.SUCCESS;
+    }
+
+    private WriteResult enqueWithBackPressure(SocketWritable packet) {
+        WriteResult result = writeIfSlotAvailable(packet);
+        if (result != WriteResult.FULL) {
+            return result;
+        }
+
+        if (waitingForSlotResponse.compareAndSet(false, true)) {
+            long askInMs = dontAskForSlotsBefore - Clock.currentTimeMillis();
+            if (askInMs <= 0) {
+                sendClaim();
+            } else {
+//                if (logger.isFinestEnabled()) {
+//                logger.info("No slots to " + toString() + " are available, but I can only ask for new ones in "
+//                      + askInMs + " ms.");
+//                }
+                waitingForSlotResponse.set(false);
+            }
+            return WriteResult.FULL;
+        } else {
+            return writeIfSlotAvailable(packet);
+        }
+    }
+
+    private WriteResult writeIfSlotAvailable(SocketWritable packet) {
+        int availSlotsNow = availableSlots.decrementAndGet();
+        if (availSlotsNow >= 0) {
+            writeHandler.enque(packet);
+            return WriteResult.SUCCESS;
+        }
+        return WriteResult.FULL;
+    }
+
+    private void sendClaim() {
+        //todo: needs to be removed or put under debug
+        //      logger.info("Sending claim for " + toString());
+        IOService ioService = connectionManager.ioService;
+        Data dummyData = ioService.toData(0);
+        Packet slotRequestPacket = new Packet(dummyData, ioService.getPortableContext());
+        slotRequestPacket.setHeader(Packet.HEADER_CLAIM);
+        slotRequestPacket.setHeader(Packet.HEADER_URGENT);
+        writeHandler.enque(slotRequestPacket);
     }
 
     @Override
@@ -117,6 +234,20 @@ public final class TcpIpConnection implements Connection {
     @Override
     public int getPort() {
         return socketChannel.socket().getPort();
+    }
+
+    @Override
+    public void setAvailableSlots(int claimResponse) {
+        if (claimResponse == 0) {
+            backoffState = backoffPolicy.nextState(backoffState);
+            dontAskForSlotsBefore = Clock.currentTimeMillis() + backoffState;
+            //    logger.info("Received empty claim response from " + toString() + ". Next attempt in " + backoffState + " ms.");
+        } else {
+            //    logger.info("Received " + claimResponse + "slots for " + toString());
+            availableSlots.set(claimResponse);
+            backoffState = BackoffPolicy.EMPTY_STATE;
+        }
+        waitingForSlotResponse.set(false);
     }
 
     @Override

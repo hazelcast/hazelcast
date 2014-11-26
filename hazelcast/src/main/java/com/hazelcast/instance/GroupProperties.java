@@ -79,12 +79,14 @@ public class GroupProperties {
     public static final String PROP_MERGE_FIRST_RUN_DELAY_SECONDS = "hazelcast.merge.first.run.delay.seconds";
     public static final String PROP_MERGE_NEXT_RUN_DELAY_SECONDS = "hazelcast.merge.next.run.delay.seconds";
     public static final String PROP_OPERATION_CALL_TIMEOUT_MILLIS = "hazelcast.operation.call.timeout.millis";
+    public static final String PROP_OPERATION_SKIP_RESPONSE_QUEUE = "hazelcast.operation.skip.response.queue";
 
     /**
      * If an operation has backups and the backups don't complete in time; then some cleanup logic can be executed. This
      * property specifies that timeout.
      */
     public static final String PROP_OPERATION_BACKUP_TIMEOUT_MILLIS = "hazelcast.operation.backup.timeout.millis";
+    public final GroupProperty OPERATION_SKIP_RESPONSE_QUEUE;
 
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_SERVER_BIND_ANY = "hazelcast.socket.server.bind.any";
@@ -153,6 +155,12 @@ public class GroupProperties {
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
+
+    //back-pressure related properties
+    public static final String PROP_BACKPRESSURE_TOTAL_CAPACITY = "hazelcast.backpressure.total.capacity";
+    public static final String PROP_BACKPRESSURE_MAX_CLAIM_SIZE = "hazelcast.backpressure.max.claim.size";
+    public static final String PROP_BACKPRESSURE_MIN_CLAIM_SIZE = "hazelcast.backpressure.min.claim.size";
+    public static final String PROP_BACKPRESSURE_ENABLED = "hazelcast.backpressure.enabled";
 
     /**
      * forces the jcache provider which can have values client or server to force provider type,
@@ -310,6 +318,14 @@ public class GroupProperties {
 
     public final GroupProperty MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS;
 
+    public final GroupProperty BACKPRESSURE_TOTAL_CAPACITY;
+
+    public final GroupProperty BACKPRESSURE_MAX_CLAIM_SIZE;
+
+    public final GroupProperty BACKPRESSURE_MIN_CLAIM_SIZE;
+
+    public final GroupProperty BACKPRESSURE_ENABLED;
+
     /**
      * @param config
      */
@@ -343,6 +359,7 @@ public class GroupProperties {
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
         OPERATION_CALL_TIMEOUT_MILLIS = new GroupProperty(config, PROP_OPERATION_CALL_TIMEOUT_MILLIS, "60000");
         OPERATION_BACKUP_TIMEOUT_MILLIS = new GroupProperty(config, PROP_OPERATION_BACKUP_TIMEOUT_MILLIS, "5000");
+        OPERATION_SKIP_RESPONSE_QUEUE = new GroupProperty(config, PROP_OPERATION_SKIP_RESPONSE_QUEUE, "false");
 
         final GroupProperty SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SOCKET_SERVER_BIND_ANY = new GroupProperty(config, PROP_SOCKET_SERVER_BIND_ANY, SOCKET_BIND_ANY);
@@ -402,6 +419,15 @@ public class GroupProperties {
         CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
+        BACKPRESSURE_TOTAL_CAPACITY = new GroupProperty(config, PROP_BACKPRESSURE_TOTAL_CAPACITY, "1000000");
+        BACKPRESSURE_MAX_CLAIM_SIZE = new GroupProperty(config, PROP_BACKPRESSURE_MAX_CLAIM_SIZE, "50000");
+        BACKPRESSURE_ENABLED = new GroupProperty(config, PROP_BACKPRESSURE_ENABLED, "true");
+        /* If calculated claim size is smaller than PROP_BACKPRESSURE_MIN_CLAIM_SIZE then Hazelcast will
+        * treat it as exhausted capacity and we return 0 slots. The purpose is to prevent issuing many small
+        * claims as it would cause extra over-head.*/
+        BACKPRESSURE_MIN_CLAIM_SIZE = new GroupProperty(config, PROP_BACKPRESSURE_MIN_CLAIM_SIZE, "10");
+
+
     }
 
     public static class GroupProperty {

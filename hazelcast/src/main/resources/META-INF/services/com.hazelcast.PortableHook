@@ -16,3 +16,4 @@ com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook
 com.hazelcast.mapreduce.impl.MapReducePortableHook
 com.hazelcast.replicatedmap.impl.client.ReplicatedMapPortableHook
 com.hazelcast.cache.impl.CachePortableHook
+com.hazelcast.client.impl.client.BackpressurePortableHook

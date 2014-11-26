@@ -88,7 +88,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     private static final AtomicIntegerFieldUpdater<BasicInvocation> BACKUPS_COMPLETED_FIELD_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(BasicInvocation.class, "backupsCompleted");
 
-
     static final class InternalResponse {
 
         private String toString;

@@ -21,6 +21,7 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
+import com.hazelcast.client.impl.client.GetSlotsRequest;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.client.ClientPingRequest;
@@ -31,7 +32,11 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.client.GetPartitionsRequest;
+import com.hazelcast.spi.BackoffPolicy;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.ExponentialBackoffPolicy;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
@@ -47,9 +52,11 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     private final ResponseThread responseThread;
     private volatile boolean isShutdown;
+    private final BackoffPolicy backoffPolicy;
 
     public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
+        this.backoffPolicy = new ExponentialBackoffPolicy();
         this.connectionManager = client.getConnectionManager();
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
                 client.getClientConfig().getClassLoader());
@@ -152,12 +159,26 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         final ClientRequest request = future.getRequest();
         final Data data = ss.toData(request);
         Packet packet = new Packet(data, partitionId, ss.getPortableContext());
-        if (!isAllowedToSendRequest(connection, request) || !connection.write(packet)) {
-            final int callId = request.getCallId();
-            connection.deRegisterCallId(callId);
-            connection.deRegisterEventHandler(callId);
-            future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
+        if (!(request instanceof GetSlotsRequest) && (!(request instanceof ClientPingRequest)) && (!(request instanceof GetPartitionsRequest))) {
+            packet.forceBackPressure();
         }
+
+        WriteResult wr = WriteResult.FAILURE;
+        int state = BackoffPolicy.EMPTY_STATE;
+        do {
+//            System.out.println(request);
+            if (!isAllowedToSendRequest(connection, request) || ((wr = connection.write(packet)) == WriteResult.FAILURE)) {
+                final int callId = request.getCallId();
+                connection.deRegisterCallId(callId);
+                connection.deRegisterEventHandler(callId);
+                future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
+            }
+            if (state != BackoffPolicy.EMPTY_STATE) {
+                state = backoffPolicy.apply(state);
+                System.out.println("Applying backpressure for " + request + ", state: "+state);
+            }
+        } while (wr == WriteResult.FULL);
+
     }
 
     private boolean isAllowedToSendRequest(ClientConnection connection, ClientRequest request) {

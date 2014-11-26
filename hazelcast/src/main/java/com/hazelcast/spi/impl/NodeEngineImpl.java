@@ -44,6 +44,7 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.WaitNotifyService;
+import com.hazelcast.spi.WriteResult;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.storage.DataRef;
 import com.hazelcast.storage.Storage;
@@ -72,6 +73,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
+    private final ClaimAccounting claimAccounting;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -84,6 +86,7 @@ public class NodeEngineImpl implements NodeEngine {
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
         wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
+        claimAccounting = new ClaimAccounting(operationService, node);
     }
 
     @PrivateApi
@@ -198,15 +201,27 @@ public class NodeEngineImpl implements NodeEngine {
         return node.hazelcastInstance;
     }
 
-    public boolean send(Packet packet, Connection connection) {
+    public WriteResult send(Packet packet, Connection connection) {
         if (connection == null || !connection.isAlive()) {
-            return false;
+            return WriteResult.FAILURE;
         }
         final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
         if (memberImpl != null) {
             memberImpl.didWrite();
         }
         return connection.write(packet);
+    }
+
+    public WriteResult sendBackup(Packet packet, Connection connection) {
+        if (connection == null || !connection.isAlive()) {
+            return WriteResult.FAILURE;
+        }
+
+        final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
+        if (memberImpl != null) {
+            memberImpl.didWrite();
+        }
+        return connection.writeBackup(packet);
     }
 
     /**
@@ -220,7 +235,7 @@ public class NodeEngineImpl implements NodeEngine {
         ConnectionManager connectionManager = node.getConnectionManager();
         Connection connection = connectionManager.getConnection(target);
         if (connection != null) {
-            return send(packet, connection);
+            return send(packet, connection) == WriteResult.SUCCESS;
         }
 
         if (sendTask == null) {
@@ -282,8 +297,28 @@ public class NodeEngineImpl implements NodeEngine {
             eventService.handleEvent(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
             wanReplicationService.handleEvent(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_CLAIM)) {
+            handleClaim(packet);
         } else {
             logger.severe("Unknown packet type! Header: " + packet.getHeader());
+        }
+    }
+
+    private void handleClaim(Packet packet) {
+        Connection connection = packet.getConn();
+        if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
+            //System.out.println("Received claim response");
+            Data claimResponseData = packet.getData();
+            int claimResponse = (Integer) toObject(claimResponseData);
+            connection.setAvailableSlots(claimResponse);
+        } else {
+            int newClaim = claimAccounting.claimSlots(connection);
+            Data claimResponseData = toData(newClaim);
+            Packet responsePacket = new Packet(claimResponseData, getSerializationService().getPortableContext());
+            responsePacket.setHeader(Packet.HEADER_CLAIM);
+            responsePacket.setHeader(Packet.HEADER_RESPONSE);
+            responsePacket.setHeader(Packet.HEADER_URGENT);
+            send(responsePacket, connection);
         }
     }
 
@@ -390,5 +425,9 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.shutdown();
         wanReplicationService.shutdown();
         executionService.shutdown();
+    }
+
+    public ClaimAccounting getClaimAccounting() {
+        return claimAccounting;
     }
 }

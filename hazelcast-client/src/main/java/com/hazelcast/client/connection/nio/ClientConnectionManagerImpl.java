@@ -108,6 +108,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final IOSelector outSelector;
     private final boolean smartRouting;
     private final OwnerConnectionFuture ownerConnectionFuture = new OwnerConnectionFuture();
+    private final boolean backPressureEnabled;
 
     private final Credentials credentials;
     private volatile ClientPrincipal principal;
@@ -128,12 +129,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         this.client = client;
         this.addressTranslator = addressTranslator;
         final ClientConfig config = client.getClientConfig();
+        ClientProperties clientProperties = client.getClientProperties();
+        this.backPressureEnabled = clientProperties.getBackpressureEnabled().getBoolean();
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
 
         final int connTimeout = networkConfig.getConnectionTimeout();
         connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
-        final ClientProperties clientProperties = client.getClientProperties();
         int timeout = clientProperties.getHeartbeatTimeout().getInteger();
         this.heartBeatTimeout = timeout > 0 ? timeout : Integer.parseInt(PROP_HEARTBEAT_TIMEOUT_DEFAULT);
 
@@ -380,7 +382,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 SocketChannelWrapper socketChannelWrapper = socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
                 final ClientConnection clientConnection = new ClientConnection(ClientConnectionManagerImpl.this, inSelector,
                         outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper,
-                        executionService, invocationService, client.getSerializationService());
+                        executionService, invocationService, client.getSerializationService(), backPressureEnabled);
                 socketChannel.configureBlocking(true);
                 if (socketInterceptor != null) {
                     socketInterceptor.onConnect(socket);

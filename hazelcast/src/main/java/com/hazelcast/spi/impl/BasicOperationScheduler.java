@@ -35,8 +35,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
 /**
  * The BasicOperationProcessor belongs to the BasicOperationService and is responsible for scheduling
@@ -79,7 +81,10 @@ public final class BasicOperationScheduler {
     private final BlockingQueue genericWorkQueue = new LinkedBlockingQueue();
     private final ConcurrentLinkedQueue genericPriorityWorkQueue = new ConcurrentLinkedQueue();
 
+    private final AtomicInteger noOfScheduledOperations = new AtomicInteger();
+
     private final ResponseThread responseThread;
+    private final boolean skipResponseQueue;
 
     private volatile boolean shutdown;
 
@@ -104,6 +109,7 @@ public final class BasicOperationScheduler {
         this.logger = node.getLogger(BasicOperationScheduler.class);
         this.node = node;
         this.dispatcher = dispatcher;
+        this.skipResponseQueue = node.getGroupProperties().OPERATION_SKIP_RESPONSE_QUEUE.getBoolean();
 
         this.genericOperationThreads = new OperationThread[getGenericOperationThreadCount()];
         initOperationThreads(genericOperationThreads, new GenericOperationThreadFactory());
@@ -111,11 +117,19 @@ public final class BasicOperationScheduler {
         this.partitionOperationThreads = new OperationThread[getPartitionOperationThreadCount()];
         initOperationThreads(partitionOperationThreads, new PartitionOperationThreadFactory());
 
-        this.responseThread = new ResponseThread();
-        responseThread.start();
+        this.responseThread = createResponseThreadIfNecessary();
 
         logger.info("Starting with " + genericOperationThreads.length + " generic operation threads and "
                 + partitionOperationThreads.length + " partition operation threads.");
+    }
+
+    private ResponseThread createResponseThreadIfNecessary() {
+        if (skipResponseQueue) {
+            return null;
+        }
+        ResponseThread t = new ResponseThread();
+        t.start();
+        return t;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings({"NP_NONNULL_PARAM_VIOLATION" })
@@ -235,10 +249,6 @@ public final class BasicOperationScheduler {
         return size;
     }
 
-    public int getResponseQueueSize() {
-        return responseThread.workQueue.size();
-    }
-
     public void execute(Operation op) {
         String executorName = op.getExecutorName();
         if (executorName == null) {
@@ -248,6 +258,10 @@ public final class BasicOperationScheduler {
         } else {
             executeOnExternalExecutor(op, executorName);
         }
+    }
+
+    public int getNoOfScheduledOperations() {
+        return noOfScheduledOperations.get();
     }
 
     public void execute(Runnable task, int partitionId) {
@@ -267,16 +281,25 @@ public final class BasicOperationScheduler {
             throw new IllegalStateException("UrgentSystemOperation " + op + " can't be executed on a custom "
                     + "executor with name: " + executorName);
         }
-        executor.execute(new LocalOperationProcessor(op));
+        noOfScheduledOperations.incrementAndGet();
+        try {
+            executor.execute(new LocalOperationProcessor(op));
+        } catch (RejectedExecutionException e) {
+            noOfScheduledOperations.decrementAndGet();
+        }
     }
 
     public void execute(Packet packet) {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-                //it is an response packet.
-                responseThread.process(packet);
+                // It is a response packet.
+                if (skipResponseQueue) {
+                    dispatcher.dispatch(packet);
+                } else {
+                    responseThread.workQueue.add(packet);
+                }
             } else {
-                //it is an must be an operation packet
+                // It is an operation packet.
                 int partitionId = packet.getPartitionId();
                 boolean hasPriority = packet.isUrgent();
                 execute(packet, partitionId, hasPriority);
@@ -313,10 +336,7 @@ public final class BasicOperationScheduler {
     }
 
     private void offerWork(Queue queue, Object task) {
-        //in 3.3 we are going to apply backpressure on overload and then we are going to do something
-        //with the return values of the offer methods.
-        //Currently the queues are all unbound, so this can't happen anyway.
-
+        noOfScheduledOperations.incrementAndGet();
         boolean offer = queue.offer(task);
         if (!offer) {
             logger.severe("Failed to offer " + task + " to BasicOperationScheduler due to overload");
@@ -375,6 +395,10 @@ public final class BasicOperationScheduler {
         sb.append(responseThread.getName())
                 .append(" processedCount: ").append(responseThread.processedResponses)
                 .append(" pendingCount: ").append(responseThread.workQueue.size()).append('\n');
+    }
+
+    public int getResponseQueueSize() {
+        return skipResponseQueue ? 0 : responseThread.workQueue.size();
     }
 
     private class GenericOperationThreadFactory implements ThreadFactory {
@@ -467,6 +491,8 @@ public final class BasicOperationScheduler {
             } catch (Throwable e) {
                 inspectOutputMemoryError(e);
                 logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
+            } finally {
+                noOfScheduledOperations.decrementAndGet();
             }
         }
 
@@ -488,7 +514,6 @@ public final class BasicOperationScheduler {
 
     private class ResponseThread extends Thread {
         private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
-        // field is only written by the response-thread itself, but can be read by other threads.
         private volatile long processedResponses;
 
         public ResponseThread() {
@@ -499,14 +524,15 @@ public final class BasicOperationScheduler {
         public void run() {
             try {
                 doRun();
+            } catch (OutOfMemoryError e) {
+                onOutOfMemory(e);
             } catch (Throwable t) {
-                inspectOutputMemoryError(t);
                 logger.severe(t);
             }
         }
 
         private void doRun() {
-            for (;;) {
+            for (; ; ) {
                 Object task;
                 try {
                     task = workQueue.take();
@@ -525,14 +551,12 @@ public final class BasicOperationScheduler {
             }
         }
 
-        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
-        private void process(Object response) {
+        private void process(Object task) {
             processedResponses++;
             try {
-                dispatcher.dispatch(response);
-            } catch (Throwable e) {
-                inspectOutputMemoryError(e);
-                logger.severe("Failed to process response: " + response + " on response thread:" + getName());
+                dispatcher.dispatch(task);
+            } catch (Exception e) {
+                logger.severe("Failed to process task: " + task + " on partitionThread:" + getName());
             }
         }
     }
@@ -549,7 +573,11 @@ public final class BasicOperationScheduler {
 
         @Override
         public void run() {
-            dispatcher.dispatch(op);
+            try {
+                dispatcher.dispatch(op);
+            } finally {
+                noOfScheduledOperations.decrementAndGet();
+            }
         }
     }
 }

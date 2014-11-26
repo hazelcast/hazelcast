@@ -34,6 +34,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public static final int HEADER_WAN_REPLICATION = 3;
     public static final int HEADER_URGENT = 4;
     public static final int HEADER_BIND = 5;
+    public static final int HEADER_CLAIM = 6;
 
     private static final int ST_VERSION = 10;
     private static final int ST_HEADER = 11;
@@ -43,6 +44,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     private int partitionId;
 
     private transient Connection conn;
+    private transient boolean forceBackPressure; //TODO: Hack, remove it!
 
     public Packet(PortableContext context) {
         super(context);
@@ -55,6 +57,15 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public Packet(Data value, int partitionId, PortableContext context) {
         super(value, context);
         this.partitionId = partitionId;
+    }
+
+    public void forceBackPressure() {
+        this.forceBackPressure = true;
+    }
+
+    @Override
+    public boolean isBackpressureAllowed() {
+        return forceBackPressure || (isHeaderSet(HEADER_OP) && !isHeaderSet(HEADER_RESPONSE) && !isUrgent());
     }
 
     /**
