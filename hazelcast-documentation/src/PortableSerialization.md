@@ -100,7 +100,7 @@ Note that the `id` that is passed to the `SerializationConfig` is the same as th
 
 More than one version of the same class may need to be serialized and deserialized.  For example, a client may have an older version of a class, and the node to which it is connected can have a newer version of the same class. 
 
-Portable serialization supports versioning. You can declare Version in the configuration file `hazelcast.xml` using the `portable-version` tag, as shown below.
+Portable serialization supports versioning. You can declare Version in the configuration file `hazelcast.xml` using the `portable-version` element, as shown below.
 
 ```xml
 <serialization>

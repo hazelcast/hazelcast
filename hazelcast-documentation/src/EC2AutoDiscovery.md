@@ -34,7 +34,7 @@ Below is a configuration example.
 </join>
 ```
 
-The `aws` tag accepts an attribute called `connection-timeout-seconds` whose default value is 5. Increasing this value is recommended if you have many IPs listed and members cannot properly build up the cluster.
+The `aws` element accepts an attribute called `connection-timeout-seconds` whose default value is 5. Increasing this value is recommended if you have many IPs listed and members cannot properly build up the cluster.
 
 The parameter `region` specifies where the members are running. Its default value is `us-east-1`. If the cluster is running on a different region, you must specify it here. Otherwise, the cluster will not be formed since the members will not discover each other.
 
@@ -46,7 +46,7 @@ You can use the parameter `security-group-name` to filter/group members.
 
 #### AWSClient
 
-To make sure EC2 instances are found correctly, you can use the `AWSClient` class. It determines the private IP addresses of EC2 instances to be connected. Just give the values of the parameters you specified in the `aws` tag to this class, as shown below. You will see whether your EC2 instances are found.
+To make sure EC2 instances are found correctly, you can use the `AWSClient` class. It determines the private IP addresses of EC2 instances to be connected. Just give the values of the parameters you specified in the `aws` element to this class, as shown below. You will see whether your EC2 instances are found.
 
 ```java
 public static void main( String[] args )throws Exception{ 
