@@ -121,10 +121,9 @@ src/IntegratedClustering.md
 	src/SpringIntegration.md
 src/Storage.md
 src/Clients.md
-#	src/ClientTypes.md
-		src/JavaClient.md
-		src/CPlusClient.md
-		src/CSharpClient.md
+	src/JavaClient.md
+	src/CPlusClient.md
+	src/CSharpClient.md
 	src/RestClient.md
 	src/MemcacheClient.md
 src/Serialization.md
