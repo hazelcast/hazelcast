@@ -315,8 +315,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
 
-        out.writeInt(inMemoryFormat.ordinal());
-        out.writeInt(evictionPolicy.ordinal());
+        out.writeUTF(inMemoryFormat.name());
+        out.writeUTF(evictionPolicy.name());
         out.writeObject(maxSizeConfig);
         out.writeInt(evictionPercentage);
 
@@ -354,11 +354,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
 
-        final int resultInMemoryFormat = in.readInt();
-        inMemoryFormat = InMemoryFormat.values()[resultInMemoryFormat];
+        String resultInMemoryFormat = in.readUTF();
+        inMemoryFormat = InMemoryFormat.valueOf(resultInMemoryFormat);
 
-        final int resultEvictionPolicy = in.readInt();
-        evictionPolicy = EvictionPolicy.values()[resultEvictionPolicy];
+        String resultEvictionPolicy = in.readUTF();
+        evictionPolicy = EvictionPolicy.valueOf(resultEvictionPolicy);
         maxSizeConfig = in.readObject();
         evictionPercentage = in.readInt();
 
