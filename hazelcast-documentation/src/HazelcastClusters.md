@@ -14,7 +14,7 @@ A Hazelcast cluster is a network of cluster members that run Hazelcast. Cluster 
 Each discovery mechanism is explained in the following sections.
 
 	
-![image](images/NoteSmall.jpg) ***NOTE:*** *After a cluster is formed, communication between cluster members is always via TCP/IP, no matter which discovery mechanism is used.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *After a cluster is formed, communication between cluster members is always via TCP/IP, regardless of the discovery mechanism used.*
 
 
 
@@ -49,7 +49,7 @@ You should pay attention to the `multicast-timeout-seconds` element. This elemen
 <br></br>
 ***RELATED INFORMATION***
 
-*Please refer to the *`multicast`* bulleted item in [Network Configuration section](#join) for the full description of of multicast discovery configuration.*
+*Please refer to the [multicast element section](#multicast-element) for the full description of multicast discovery configuration.*
 <br></br>
 
 ### Discovery by TCP/IP
@@ -94,7 +94,7 @@ By default, Hazelcast binds to all local network interfaces to accept incoming t
 <br></br>
 ***RELATED INFORMATION***
 
-*Please refer to the *`tcp-ip`* bulleted item in [Network Configuration section](#join) for the full description of discovery by TCP/IP configuration.*
+*Please refer to the [tcp-ip element section](#tcp-ip-element) for the full description of discovery by TCP/IP configuration.*
 <br></br>
 
 ### EC2 Cloud Auto-discovery
@@ -127,12 +127,12 @@ The following is an example declarative configuration.
 <br></br>
 ***RELATED INFORMATION***
 
-*Please refer to the *`aws`* bulleted item in [Network Configuration section](#join) for the full description of EC2 auto-discovery configuration.*
+*Please refer to the [aws element section](#aws-element) for the full description of EC2 auto-discovery configuration.*
 <br></br>
 
 #### Debugging
 
-When and if needed, Hazelcast can log the events for the instances that exist in a region. To see what has happened or to trace the activities while forming the cluster, change the log level in your logging mechanism to FINEST or DEBUG. After this change, you can also see whether the instances are accepted or rejected, and the reason the instances were rejected in the generated log. Note that changing the log level to one of the mentioned levels may affect the performance of the cluster.
+When and if needed, Hazelcast can log the events for the instances that exist in a region. To see what has happened or to trace the activities while forming the cluster, change the log level in your logging mechanism to FINEST or DEBUG. After this change, you can also see whether the instances are accepted or rejected, and the reason the instances were rejected in the generated log. Note that changing the log level to one of the mentioned levels may affect the performance of the cluster. Please see the [Logging Configuration section](#logging-configuration) for information on logging mechanisms.
 
 <br> </br>
 ***RELATED INFORMATION***
