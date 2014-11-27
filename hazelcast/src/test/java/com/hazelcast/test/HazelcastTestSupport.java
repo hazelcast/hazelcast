@@ -23,8 +23,6 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import org.junit.After;
-import org.junit.ComparisonFailure;
 
 import java.util.Collection;
 import java.util.Map;
@@ -34,10 +32,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import org.junit.After;
+import org.junit.ComparisonFailure;
 
 public abstract class HazelcastTestSupport {
 
@@ -370,5 +371,11 @@ public abstract class HazelcastTestSupport {
         return className + "<" + valueString + ">";
     }
 
-
+    public static void waitClusterForSafeState(final HazelcastInstance instance) {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertTrue(instance.getPartitionService().isClusterSafe());
+            }
+        });
+    }
 }

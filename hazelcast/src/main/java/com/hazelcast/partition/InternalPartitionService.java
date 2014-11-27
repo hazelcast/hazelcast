@@ -16,14 +16,12 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.CoreService;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -123,8 +121,6 @@ public interface InternalPartitionService extends CoreService {
 
     boolean removeMigrationListener(String registrationId);
 
-    Member getMember(Address address);
-
     long getMigrationQueueSize();
 
     void pauseMigration();
@@ -147,8 +143,6 @@ public interface InternalPartitionService extends CoreService {
 
     InternalPartition[] getPartitions();
 
-    Collection<MigrationInfo> getActiveMigrations();
-
     void firstArrangement();
 
     long[] getPartitionReplicaVersions(int partitionId);
@@ -162,5 +156,9 @@ public interface InternalPartitionService extends CoreService {
     void clearPartitionReplicaVersions(int partitionId);
 
     com.hazelcast.core.PartitionService getPartitionServiceProxy();
+
+    int getPartitionStateVersion();
+
+    boolean hasOnGoingMigrationLocal();
 
 }

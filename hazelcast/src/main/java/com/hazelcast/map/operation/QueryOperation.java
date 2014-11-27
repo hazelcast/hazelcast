@@ -76,12 +76,14 @@ public class QueryOperation extends AbstractMapOperation {
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         Collection<Integer> initialPartitions = mapService.getMapServiceContext().getOwnedPartitions();
+        int partitionStateVersion = partitionService.getPartitionStateVersion();
         IndexService indexService = mapService.getMapServiceContext().getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
-        // TODO: fix
-        if (!partitionService.hasOnGoingMigration()) {
+
+        if (!partitionService.hasOnGoingMigrationLocal()) {
             entries = indexService.query(predicate);
         }
+
         result = new QueryResult();
         if (entries != null) {
             for (QueryableEntry entry : entries) {
@@ -100,10 +102,17 @@ public class QueryOperation extends AbstractMapOperation {
             result.setPartitionIds(finalPartitions);
         }
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            final MapServiceContext mapServiceContext = ((MapService) getService())
-                    .getMapServiceContext();
+            final MapServiceContext mapServiceContext = ((MapService) getService()).getMapServiceContext();
             mapServiceContext
                     .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
+        }
+
+        checkPartitionStateChanges(partitionService, partitionStateVersion);
+    }
+
+    private void checkPartitionStateChanges(InternalPartitionService partitionService, int partitionStateVersion) {
+        if (partitionStateVersion != partitionService.getPartitionStateVersion()) {
+            getLogger().info("Partition assignments changed while executing query: " + predicate);
         }
     }
 
