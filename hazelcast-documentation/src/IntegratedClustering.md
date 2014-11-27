@@ -63,7 +63,7 @@ Then add the following properties into your Hibernate configuration file (e.g. `
 	
 ![image](images/NoteSmall.jpg) ***NOTE:*** *QueryCache is always LOCAL to the node and never distributed across Hazelcast Cluster.*
 
-### Hazelcast Configuration
+### Hazelcast Configuration for Hibernate
 
 -   To configure Hazelcast for Hibernate, put the configuration file named `hazelcast.xml` into the root of your classpath. If Hazelcast cannot find `hazelcast.xml`, then it will use the default configuration from `hazelcast.jar`.
 
