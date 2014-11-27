@@ -135,7 +135,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
     private volatile Boolean responseReceived = Boolean.FALSE;
 
-     //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
+    //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
     private volatile int invokeCount;
 
     private final String executorName;
@@ -363,7 +363,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     @Override
     public void sendCallTimeout() {
-        notifyBackupComplete();
+        notifyTimeout();
     }
 
     @Override
@@ -382,7 +382,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     /**
      * Notifies this BasicInvocation that a response has returned.
      *
-     * @param response the response content
+     * @param response    the response content
      * @param backupCount the number of backups that are going to call {@link #notifyBackupComplete()}
      */
     public void notifyNormalResponse(Object response, int backupCount) {
@@ -448,15 +448,15 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
         // todo:  byte.max_value-1 indicates exception and then we are going to do a deserialize
         // so we do a deserialize only for exceptions. This still sucks btw.
-        if(backupCount == Byte.MAX_VALUE-1){
+        if (backupCount == Byte.MAX_VALUE - 1) {
             obj = nodeEngine.toObject(obj);
         }
 
-        if(!(obj instanceof Throwable)){
+        if (!(obj instanceof Throwable)) {
             return obj;
         }
 
-        Throwable error = (Throwable)obj;
+        Throwable error = (Throwable) obj;
         ExceptionAction action = onException(error);
         int localInvokeCount = invokeCount;
         if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {

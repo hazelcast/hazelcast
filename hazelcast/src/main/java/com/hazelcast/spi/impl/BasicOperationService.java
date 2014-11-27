@@ -268,13 +268,6 @@ final class BasicOperationService implements InternalOperationService {
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
-    // =============================== processing response  ===============================
-
-    //@Override
-    public void notifyBackupComplete(long callId) {
-        responseHandler.notifyBackupComplete(callId);
-    }
-
     // =============================== processing operation  ===============================
 
     @PrivateApi
@@ -367,7 +360,7 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         if (nodeEngine.getThisAddress().equals(caller)) {
-            notifyBackupComplete(callId);
+            responseHandler.notifyBackupComplete(callId);
             return urgent;
         }
 
@@ -392,7 +385,7 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         if (nodeEngine.getThisAddress().equals(caller)) {
-            notifyBackupComplete(callId);
+            responseHandler.notifyTimeout(callId);
             return urgent;
         }
 
@@ -624,6 +617,7 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private void notifyTimeout(long callId) {
+            logger.severe("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
             BasicInvocation invocation = invocations.get(callId);
             if (invocation == null) {
                 if (nodeEngine.isActive()) {

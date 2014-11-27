@@ -126,7 +126,7 @@ public final class BasicOperationScheduler {
                 + partitionOperationThreads.length + " partition operation threads.");
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"NP_NONNULL_PARAM_VIOLATION"})
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"NP_NONNULL_PARAM_VIOLATION" })
     private static void initOperationThreads(OperationThread[] operationThreads, ThreadFactory threadFactory) {
         for (int threadId = 0; threadId < operationThreads.length; threadId++) {
             OperationThread operationThread = (OperationThread) threadFactory.newThread(null);
@@ -478,17 +478,17 @@ public final class BasicOperationScheduler {
 
     final class OperationThread extends HazelcastManagedThread {
 
+        // Contains the current operation. This field will be written by the OperationThread, and can be read
+        // by other thread. So the single-writer principle is applied here and there will not be any contention
+        // on this field.
+        volatile Operation currentOperation;
+
         private final int threadId;
         private final boolean isPartitionSpecific;
         private final BlockingQueue workQueue;
         private final Queue priorityWorkQueue;
         // This field is updated by this OperationThread (so a single writer) and can be read by other threads.
         private volatile long processedCount;
-
-        // Contains the current operation. This field will be written by the OperationThread, and can be read
-        // by other thread. So the single-writer principle is applied here and there will not be any contention
-        // on this field.
-        volatile Operation currentOperation;
 
         public OperationThread(String name, boolean isPartitionSpecific,
                                int threadId, BlockingQueue workQueue, Queue priorityWorkQueue) {
@@ -535,7 +535,7 @@ public final class BasicOperationScheduler {
         }
 
         private void processPriorityMessages() {
-            for (; ; ) {
+            for (;;) {
                 Object task = priorityWorkQueue.poll();
                 if (task == null) {
                     return;
@@ -545,7 +545,7 @@ public final class BasicOperationScheduler {
             }
         }
 
-        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT"})
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
         private void process(Object task) {
             processedCount++;
 
@@ -612,7 +612,7 @@ public final class BasicOperationScheduler {
         }
 
         private void doRun() {
-            for (; ; ) {
+            for (;;) {
                 Object task;
                 try {
                     task = workQueue.take();
@@ -631,7 +631,7 @@ public final class BasicOperationScheduler {
             }
         }
 
-        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT"})
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
         private void process(Object task) {
             processedResponses++;
             try {

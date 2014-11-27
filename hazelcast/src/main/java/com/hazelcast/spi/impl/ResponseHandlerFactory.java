@@ -122,7 +122,14 @@ public final class ResponseHandlerFactory {
 
         @Override
         public void sendCallTimeout() {
-            throw new RuntimeException("todo");
+            long callId = remotePropagatable.getCallId();
+            Connection conn = remotePropagatable.getConnection();
+            Address caller = remotePropagatable.getCallerAddress();
+            boolean urgent = remotePropagatable.isUrgent();
+            OperationService operationService = nodeEngine.getOperationService();
+            if (!operationService.sendTimeoutResponse(caller, callId, urgent)) {
+                throw new HazelcastException("Cannot send timeout response to " + conn.getEndPoint());
+            }
         }
 
         @Override

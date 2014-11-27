@@ -369,7 +369,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected boolean tryPutInternal(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
         TryPutOperation operation = new TryPutOperation(name, key, value, getTimeInMillis(timeout, timeunit));
-        Object result = invokeOperation(key,operation);
+        Object result = invokeOperation(key, operation);
         boolean putSuccessful = getNodeEngine().getSerializationService().toObject(result);
         invalidateNearCache(key);
         return putSuccessful;

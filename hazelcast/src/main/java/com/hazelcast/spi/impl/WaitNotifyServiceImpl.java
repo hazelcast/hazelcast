@@ -275,11 +275,9 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
 
         public boolean isCallTimedOut() {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            if (nodeEngine.operationService.isCallTimedOut(op)) {
-                if (true) {
-                    throw new RuntimeException("todo");
-                }
-                //cancel(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
+            InternalOperationService operationService = nodeEngine.operationService;
+            if (operationService.isCallTimedOut(op)) {
+                operationService.sendTimeoutResponse(op.getCallerAddress(), op.getCallId(), op.isUrgent());
                 return true;
             }
             return false;
