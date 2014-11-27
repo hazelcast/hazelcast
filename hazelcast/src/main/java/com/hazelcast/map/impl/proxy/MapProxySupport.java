@@ -369,8 +369,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected boolean tryPutInternal(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
         TryPutOperation operation = new TryPutOperation(name, key, value, getTimeInMillis(timeout, timeunit));
-        Object result = invokeOperation(key, operation);
-        boolean putSuccessful = getNodeEngine().getSerializationService().toObject(result);
+        boolean putSuccessful = (Boolean) invokeOperation(key, operation);
         invalidateNearCache(key);
         return putSuccessful;
     }
@@ -440,8 +439,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected boolean replaceInternal(final Data key, final Data expect, final Data update) {
         ReplaceIfSameOperation operation = new ReplaceIfSameOperation(name, key, expect, update);
-        Object result = invokeOperation(key, operation);
-        boolean replaceSuccessful = getNodeEngine().getSerializationService().toObject(result);
+        boolean replaceSuccessful = (Boolean) invokeOperation(key, operation);
         invalidateNearCache(key);
         return replaceSuccessful;
     }
@@ -461,8 +459,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected boolean evictInternal(final Data key) {
         EvictOperation operation = new EvictOperation(name, key, false);
-        Object result = invokeOperation(key, operation);
-        final boolean evictSuccess = getNodeEngine().getSerializationService().toObject(result);
+        final boolean evictSuccess = (Boolean) invokeOperation(key, operation);
         invalidateNearCache(key);
         return evictSuccess;
     }
@@ -527,16 +524,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected boolean removeInternal(final Data key, final Data value) {
         RemoveIfSameOperation operation = new RemoveIfSameOperation(name, key, value);
-        Object obj = getNodeEngine().getSerializationService().toObject(invokeOperation(key, operation));
-        boolean removed = (Boolean) obj;
+        boolean removed = (Boolean) invokeOperation(key, operation);
         invalidateNearCache(key);
         return removed;
     }
 
     protected boolean tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) {
         TryRemoveOperation operation = new TryRemoveOperation(name, key, getTimeInMillis(timeout, timeunit));
-        Object obj = getNodeEngine().getSerializationService().toObject(invokeOperation(key, operation));
-        boolean removed = (Boolean) obj;
+        boolean removed = (Boolean) invokeOperation(key, operation);
         invalidateNearCache(key);
         return removed;
     }
