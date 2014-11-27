@@ -311,15 +311,15 @@ interface.setEnabled( true )
 
 ### SSL
 
-This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
+This is a Hazelcast Enterprise feature, please see the [Security chapter](#security).
 
 ### Socket Interceptor
 
-This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
+This is a Hazelcast Enterprise feature, please see the [Security chapter](#security).
 
 ### Symmetric Encryption
 
-This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
+This is a Hazelcast Enterprise feature, please see the [Security chapter](#security).
 
 ### IPv6 Support
 
