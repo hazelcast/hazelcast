@@ -1641,7 +1641,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         ClientConfig clientConfig;
 
         try {
-            clientConfig = new XmlClientConfigBuilder("hazelcast-client.xml").build();
+            clientConfig = new XmlClientConfigBuilder().build();
         } catch (IllegalArgumentException e) {
             clientConfig = new ClientConfig();
         }
