@@ -509,7 +509,7 @@ public final class Packet implements SocketWritable, SocketReadable {
         return this.persistStatus >= status;
     }
 
-    private static int getDataSize(Data data, PortableContext context) {
+    public static int getDataSize(Data data, PortableContext context) {
         // type
         int total = INT_SIZE_IN_BYTES;
         // class def flag

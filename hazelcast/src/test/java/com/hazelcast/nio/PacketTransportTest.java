@@ -18,9 +18,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+/**
+ * Unit test that verifies that a packet can safely be stored in a byte-buffer and converted back
+ * again into a packet.
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class PacketTest extends HazelcastTestSupport {
+public class PacketTransportTest extends HazelcastTestSupport {
 
     // check if the packet can deal with a buffer that is very small, but the data is very large.
     // This means that repeated calls to packet.write/packet.read are needed.
