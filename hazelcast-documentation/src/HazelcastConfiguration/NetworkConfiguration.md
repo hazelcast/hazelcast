@@ -1,7 +1,7 @@
 
 ## Network Configuration
 
-All network related configuration is performed via `network` tag in the XML file or the class `NetworkConfig` when using programmatic configuration. Let's first give the samples for these two approaches. Then we will look at its parameters, which are a lot.
+All network related configuration is performed via `network` element in the Hazelcast XML configuration file or the class `NetworkConfig` when using programmatic configuration. Let's first give the examples for these two approaches. Then we will look at its sub-elements and attributes.
 
 **Declarative:**
 
@@ -53,7 +53,7 @@ config.setTagKey( "5551234" );
 config.setTagValue( "Node1234" )
 ```
 
-It has below parameters which are briefly described in the following subsections.
+It has below sub-elements which are described in the following sections.
 
 - public-address
 - port
@@ -137,7 +137,7 @@ networkConfig.addOutboundPort(37001);
 
 As you can see in the programmatic configuration, if you want to add only one port you use the method `addOutboundPort`. If a group of ports needs to be added, then the method `addOutboundPortDefinition` is used. 
 
-In the declarative one, the tag `ports` can be used for both (for single and multiple port definitions).
+In the declarative one, the element `ports` can be used for both (for single and multiple port definitions).
 
 
 ### Join
@@ -228,7 +228,7 @@ It includes parameters to allow the nodes form a cluster on Amazon EC2 environme
 
 ##### AWSClient Configuration
 
-To make sure EC2 instances are found correctly, you can use the `AWSClient` class. It determines the private IP addresses of EC2 instances to be connected. Give the values of the parameters you specified in the `aws` tag to this class, as shown below. You will see whether your EC2 instances are found.
+To make sure EC2 instances are found correctly, you can use the `AWSClient` class. It determines the private IP addresses of EC2 instances to be connected. Give the values of the parameters you specified in the `aws` element to this class, as shown below. You will see whether your EC2 instances are found.
 
 ```java
 public static void main( String[] args )throws Exception{ 
