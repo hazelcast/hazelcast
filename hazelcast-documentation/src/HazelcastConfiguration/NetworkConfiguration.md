@@ -142,7 +142,7 @@ In the declarative one, the tag `ports` can be used for both (for single and mul
 
 ### Join
 
-This configuration parameter is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: TCP/IP, multicast and AWS (EC2). Below are sample configurations.
+This configuration element is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: discovery by TCP/IP, multicast and AWS (EC2 auto-discovery). Below are example configurations.
 
 **Declarative:**
 
@@ -188,30 +188,67 @@ join.getTcpIpConfig().addMember( "10.45.67.32" ).addMember( "10.45.67.100" )
             .setRequiredMember( "192.168.10.100" ).setEnabled( true );
 ```
 
-It has below elements and attributes.
+The `join` element has below sub-elements and attributes.
 
-- `multicast`: It includes parameters to fine tune the multicast join mechanism.
-	- `enabled`: Specifies whether the multicast discovery is enabled or not. Values can be `true` or `false`.
-	- `multicast-group`: The multicast group IP address. Specify it when you want to create clusters within the same network. Values can be between 224.0.0.0 and 239.255.255.255. Default value is 224.2.2.3
-	- `multicast-port`: The multicast socket port which Hazelcast member listens to and sends discovery messages through it. Default value is 54327.
-	- `multicast-time-to-live`: Time-to-live value for multicast packets sent out to control the scope of multicasts. You can have more information [here](http://www.tldp.org/HOWTO/Multicast-HOWTO-2.html).
-	- `multicast-timeout-seconds`: Only when the nodes are starting up, this timeout (in seconds) specifies the period during which a node waits for a multicast response from another node. For example, if you set it as 60 seconds, each node will wait for 60 seconds until a leader node is selected. Its default value is 2 seconds. 
-	- `trusted-interfaces`: Includes IP addresses of trusted members. When a node wants to join to the cluster, its join request will be rejected if it is not a trusted member. You can give an IP addresses range using the wildcard (\*) on the last digit of IP address (e.g. 192.168.1.\* or 192.168.1.100-110).
+#### multicast element 
+
+It includes parameters to fine tune the multicast join mechanism.
+
+- `enabled`: Specifies whether the multicast discovery is enabled or not. Values can be `true` or `false`.
+- `multicast-group`: The multicast group IP address. Specify it when you want to create clusters within the same network. Values can be between 224.0.0.0 and 239.255.255.255. Default value is 224.2.2.3
+- `multicast-port`: The multicast socket port which Hazelcast member listens to and sends discovery messages through it. Default value is 54327.
+- `multicast-time-to-live`: Time-to-live value for multicast packets sent out to control the scope of multicasts. You can have more information [here](http://www.tldp.org/HOWTO/Multicast-HOWTO-2.html).
+- `multicast-timeout-seconds`: Only when the nodes are starting up, this timeout (in seconds) specifies the period during which a node waits for a multicast response from another node. For example, if you set it as 60 seconds, each node will wait for 60 seconds until a leader node is selected. Its default value is 2 seconds. 
+- `trusted-interfaces`: Includes IP addresses of trusted members. When a node wants to join to the cluster, its join request will be rejected if it is not a trusted member. You can give an IP addresses range using the wildcard (\*) on the last digit of IP address (e.g. 192.168.1.\* or 192.168.1.100-110).
 	
-- `tcp-ip`: It includes parameters to fine tune the TCP/IP join mechanism.
-	- `enabled`: Specifies whether the TCP/IP discovery is enabled or not. Values can be `true` or `false`.
-	- `required-member`: IP address of the required member. Cluster will only formed if the member with this IP address is found.
-	- `member`: IP address(es) of one or more well known members. Once members are connected to these well known ones, all member addresses will be communicated with each other. You can also give comma separated IP addresses using the `members` element.
-	- `connection-timeout-seconds`: Defines the connection timeout. This is the maximum amount of time Hazelcast is going to try to connect to a well known member before giving up. Setting it to a too low value could mean that a member is not able to connect to a cluster. Setting it to a too high value means that member startup could slow down because of longer timeouts (e.g. when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
+#### tcp-ip element 
 
-- `aws`: It includes parameters to allow the nodes form a cluster on Amazon EC2 environment.
-	- `enabled`: Specifies whether the EC2 discovery is enabled or not. Values can be `true` or `false`.
-	- `access-key`, `secret-key`: Access and secret keys of your account on EC2.
-	- `region`: The region where your nodes are running. Default value is `us-east-1`. Needs to be specified if the region is other than the default one.
-	- `host-header`: ???. It is optional.
-	- `security-group-name`:Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast nodes to be within this group. It is optional.
-	- `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast nodes, you can set these parameters as the ones you specified in the EC2 console. They are optional.
-		- `connection-timeout-seconds`: Defines the connection timeout. This is the maximum amount of time Hazelcast is going to try to connect to a well known member before giving up. Setting it to a too low value could mean that a member is not able to connect to a cluster. Setting it to a too high value means that member startup could slow down because of longer timeouts (e.g. when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
+It includes parameters to fine tune the TCP/IP join mechanism.
+
+- `enabled`: Specifies whether the TCP/IP discovery is enabled or not. Values can be `true` or `false`.
+- `required-member`: IP address of the required member. Cluster will only formed if the member with this IP address is found.
+- `member`: IP address(es) of one or more well known members. Once members are connected to these well known ones, all member addresses will be communicated with each other. You can also give comma separated IP addresses using the `members` element.
+- `connection-timeout-seconds`: Defines the connection timeout. This is the maximum amount of time Hazelcast is going to try to connect to a well known member before giving up. Setting it to a too low value could mean that a member is not able to connect to a cluster. Setting it to a too high value means that member startup could slow down because of longer timeouts (e.g. when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
+
+#### aws element 
+
+It includes parameters to allow the nodes form a cluster on Amazon EC2 environment.
+
+- `enabled`: Specifies whether the EC2 discovery is enabled or not. Values can be `true` or `false`.
+- `access-key`, `secret-key`: Access and secret keys of your account on EC2.
+- `region`: The region where your nodes are running. Default value is `us-east-1`. Needs to be specified if the region is other than the default one.
+- `host-header`: ???. It is optional.
+- `security-group-name`: Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast nodes to be within this group. It is optional.
+- `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast nodes, you can set these parameters as the ones you specified in the EC2 console. They are optional.
+- `connection-timeout-seconds`: Defines the connection timeout. This is the maximum amount of time Hazelcast is going to try to connect to a well known member before giving up. Setting it to a too low value could mean that a member is not able to connect to a cluster. Setting it to a too high value means that member startup could slow down because of longer timeouts (e.g. when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
+
+
+![image](images/NoteSmall.jpg) ***NOTE:*** *If you are using a cloud provider other than AWS, you can use the programmatic configuration to specify a TCP/IP cluster. The members will need to be retrieved from that provider (e.g. JClouds).*
+
+
+##### AWSClient Configuration
+
+To make sure EC2 instances are found correctly, you can use the `AWSClient` class. It determines the private IP addresses of EC2 instances to be connected. Give the values of the parameters you specified in the `aws` tag to this class, as shown below. You will see whether your EC2 instances are found.
+
+```java
+public static void main( String[] args )throws Exception{ 
+  AwsConfig config = new AwsConfig(); 
+  config.setSecretKey( ... ) ;
+  config.setSecretKey( ... );
+  config.setRegion( ... );
+  config.setSecurityGroupName( ... );
+  config.setTagKey( ... );
+  config.setTagValue( ... );
+  config.setEnabled("true");
+  AWSClient client = new AWSClient( config );
+  List<String> ipAddresses = client.getPrivateIpAddresses();
+  System.out.println( "addresses found:" + ipAddresses ); 
+  for ( String ip: ipAddresses ) {
+    System.out.println( ip ); 
+  }
+}
+```
+
 
 ### Interfaces
 
