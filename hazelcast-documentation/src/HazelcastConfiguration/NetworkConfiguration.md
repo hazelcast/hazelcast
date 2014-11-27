@@ -58,6 +58,7 @@ It has below sub-elements which are described in the following sections.
 - public-address
 - port
 - outbound-ports
+- reuse-address
 - join
 - interfaces
 - ssl
@@ -70,7 +71,7 @@ It is used to override public address of a node. By default, a node selects its 
 
 ### Port
 
-You can specify the ports which Hazelcast will use to communicate between cluster members. Its default value is `5701`. Sample configurations are shown below.
+You can specify the ports which Hazelcast will use to communicate between cluster members. Its default value is `5701`. Example configurations are shown below.
 
 **Declarative:**
 
@@ -139,6 +140,30 @@ As you can see in the programmatic configuration, if you want to add only one po
 
 In the declarative one, the element `ports` can be used for both (for single and multiple port definitions).
 
+### Reuse Address
+
+When you shutdown a cluster member, the server socket port will be in the `TIME_WAIT` state for the next couple of minutes. If you start the member right after shutting it down, you may not be able to bind it to the same port because it is in the `TIME_WAIT` state. If you set the `reuse-address` element to `true`, the `TIME_WAIT` state is ignored and you can bind the member to the same port again.
+
+Example configurations are shown below.
+
+**Declarative:**
+
+```xml
+  <network>
+    <reuse-address>true</reuse-address>
+  </network>
+```
+
+**Programmatic:**
+
+```java
+...
+NetworkConfig networkConfig = config.getNetworkConfig();
+
+networkConfig.setReuseAddress( "true" );
+...
+```
+
 
 ### Join
 
@@ -185,7 +210,7 @@ JoinConfig join = network.getJoin();
 join.getMulticastConfig().setEnabled( "false" )
             .addTrustedInterface( "192.168.1.102" );
 join.getTcpIpConfig().addMember( "10.45.67.32" ).addMember( "10.45.67.100" )
-            .setRequiredMember( "192.168.10.100" ).setEnabled( true );
+            .setRequiredMember( "192.168.10.100" ).setEnabled( "true" );
 ```
 
 The `join` element has the following sub-elements and attributes.
