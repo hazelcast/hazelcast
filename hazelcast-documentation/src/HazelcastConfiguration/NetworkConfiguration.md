@@ -86,7 +86,7 @@ You can specify the ports which Hazelcast will use to communicate between cluste
 ```java
 Config config = new Config();
 config.getNetworkConfig().setPort( "5900" ); 
-             .setPortCount( "20" ).setPortAutoIncrement( "false" );
+             .setPortCount( "20" ).setPortAutoIncrement( false );
 ```
 
 It has below attributes.
@@ -160,7 +160,7 @@ Example configurations are shown below.
 ...
 NetworkConfig networkConfig = config.getNetworkConfig();
 
-networkConfig.setReuseAddress( "true" );
+networkConfig.setReuseAddress( true );
 ...
 ```
 
@@ -207,10 +207,10 @@ This configuration element is used to enable the Hazelcast instances to form a c
 Config config = new Config();
 NetworkConfig network = config.getNetworkConfig();
 JoinConfig join = network.getJoin();
-join.getMulticastConfig().setEnabled( "false" )
+join.getMulticastConfig().setEnabled( false )
             .addTrustedInterface( "192.168.1.102" );
 join.getTcpIpConfig().addMember( "10.45.67.32" ).addMember( "10.45.67.100" )
-            .setRequiredMember( "192.168.10.100" ).setEnabled( "true" );
+            .setRequiredMember( "192.168.10.100" ).setEnabled( true );
 ```
 
 The `join` element has the following sub-elements and attributes.
@@ -264,7 +264,7 @@ public static void main( String[] args )throws Exception{
   config.setSecurityGroupName( ... );
   config.setTagKey( ... );
   config.setTagValue( ... );
-  config.setEnabled("true");
+  config.setEnabled( true );
   AWSClient client = new AWSClient( config );
   List<String> ipAddresses = client.getPrivateIpAddresses();
   System.out.println( "addresses found:" + ipAddresses ); 
@@ -302,7 +302,7 @@ You can specify which network interfaces that Hazelcast should use. Servers most
 Config config = new Config();
 NetworkConfig network = config.getNetworkConfig();
 InterfacesConfig interface = network.getInterfaces();
-interface.setEnabled( "true" )
+interface.setEnabled( true )
             .addInterface( "192.168.1.3" );
 ```
 
