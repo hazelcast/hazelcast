@@ -104,7 +104,8 @@ public abstract class AbstractCacheRecordStore<
         this.cacheService = cacheService;
         this.cacheConfig = cacheService.getCacheConfig(name);
         if (cacheConfig == null) {
-            throw new CacheNotExistsException("Cache already destroyed, node " + nodeEngine.getLocalMember());
+            throw new CacheNotExistsException("Cache is already destroyed or not created yet, on "
+                    + nodeEngine.getLocalMember());
         }
         this.records = createRecordCacheMap();
         if (cacheConfig.getCacheLoaderFactory() != null) {

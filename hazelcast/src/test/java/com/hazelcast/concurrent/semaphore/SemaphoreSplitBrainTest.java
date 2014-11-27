@@ -73,9 +73,15 @@ public class SemaphoreSplitBrainTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, h2);
         assertClusterSizeEventually(1, h3);
 
-        ISemaphore semaphore1 = h1.getSemaphore(key);
-        //when member is down, permits are released.
-        assertEquals(5, semaphore1.availablePermits());
+        final ISemaphore semaphore1 = h1.getSemaphore(key);
+        // when member is down, permits are released.
+        // since releasing the permits is async, we use assert eventually
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(5, semaphore1.availablePermits());
+            }
+        });
         semaphore1.acquire(4);
 
         assertOpenEventually(lifeCycleListener.latch);
