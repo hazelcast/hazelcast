@@ -97,7 +97,7 @@ It has below attributes.
 - `auto-increment`: According to the above example, Hazelcast will try to find free ports between 5781 and 5801. Normally, you will not need to change this value, but it will come very handy when needed. You may also want to choose to use only one port. In that case, you can disable the auto-increment feature of `port` by setting its value as `false`.
 
 
-Naturally, the parameter `port-count` is ignored when the above configuration is made.
+The parameter `port-count` is ignored when the above configuration is made.
 
 ### Outbound Ports
 
@@ -142,7 +142,7 @@ In the declarative one, the element `ports` can be used for both (for single and
 
 ### Join
 
-This configuration element is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: discovery by TCP/IP, multicast and AWS (EC2 auto-discovery). Below are example configurations.
+This configuration element is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: discovery by TCP/IP and multicast, and discovery on AWS (EC2 auto-discovery). Below are example configurations.
 
 **Declarative:**
 
@@ -188,7 +188,7 @@ join.getTcpIpConfig().addMember( "10.45.67.32" ).addMember( "10.45.67.100" )
             .setRequiredMember( "192.168.10.100" ).setEnabled( true );
 ```
 
-The `join` element has below sub-elements and attributes.
+The `join` element has the following sub-elements and attributes.
 
 #### multicast element 
 
