@@ -111,7 +111,7 @@ public final class BasicOperationScheduler {
         this.responseHandler = responseHandler;
 
         this.skipResponseQueue = node.getGroupProperties().OPERATION_SKIP_RESPONSE_QUEUE.getBoolean();
-        logger.severe("Skip Response Queue: "+skipResponseQueue);
+        logger.severe("Skip Response Queue: " + skipResponseQueue);
 
         this.genericOperationThreads = new OperationThread[getGenericOperationThreadCount()];
         initOperationThreads(genericOperationThreads, new GenericOperationThreadFactory());
@@ -340,9 +340,9 @@ public final class BasicOperationScheduler {
         try {
             if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
                 //it is an response packet.
-                if(skipResponseQueue){
+                if (skipResponseQueue) {
                     responseThread.process(packet);
-                }else{
+                } else {
                     responseThread.workQueue.add(packet);
                 }
             } else {
@@ -514,7 +514,7 @@ public final class BasicOperationScheduler {
         }
 
         private void doRun() {
-            for (; ; ) {
+            for (;;) {
                 Object task;
                 try {
                     task = workQueue.take();
@@ -631,7 +631,7 @@ public final class BasicOperationScheduler {
             }
         }
 
-        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT"})
         private void process(Object task) {
             processedResponses++;
             try {

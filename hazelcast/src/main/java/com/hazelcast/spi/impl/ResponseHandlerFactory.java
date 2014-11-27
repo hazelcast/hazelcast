@@ -57,6 +57,10 @@ public final class ResponseHandlerFactory {
             implements ResponseHandler {
 
         @Override
+        public void sendCallTimeout() {
+        }
+
+        @Override
         public void sendResponse(Object obj) {
         }
 
@@ -79,6 +83,11 @@ public final class ResponseHandlerFactory {
 
         private ErrorLoggingResponseHandler(ILogger logger) {
             this.logger = logger;
+        }
+
+        @Override
+        public void sendCallTimeout() {
+            logger.severe("Call timeout");
         }
 
         @Override
@@ -109,6 +118,11 @@ public final class ResponseHandlerFactory {
         private RemoteInvocationResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
             this.nodeEngine = nodeEngine;
             this.remotePropagatable = remotePropagatable;
+        }
+
+        @Override
+        public void sendCallTimeout() {
+            throw new RuntimeException("todo");
         }
 
         @Override

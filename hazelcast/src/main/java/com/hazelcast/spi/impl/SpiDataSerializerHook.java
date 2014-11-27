@@ -27,15 +27,12 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
 
     static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_DS_FACTORY, -1);
 
-    static final int NORMAL_RESPONSE = 0;
     static final int BACKUP = 1;
-    static final int BACKUP_RESPONSE = 2;
-    static final int PARTITION_ITERATOR = 3;
-    static final int PARTITION_RESPONSE = 4;
-    static final int PARALLEL_OPERATION_FACTORY = 5;
-    static final int EVENT_PACKET = 6;
-    static final int COLLECTION = 7;
-    static final int CALL_TIMEOUT_RESPONSE = 8;
+    static final int PARTITION_ITERATOR = 2;
+    static final int PARTITION_RESPONSE = 3;
+    static final int PARALLEL_OPERATION_FACTORY = 4;
+    static final int EVENT_PACKET = 5;
+    static final int COLLECTION = 6;
 
     @Override
     public DataSerializableFactory createFactory() {
@@ -43,12 +40,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-//                    case NORMAL_RESPONSE:
-//                        return new NormalResponse();
                     case BACKUP:
                         return new Backup();
-//                    case BACKUP_RESPONSE:
-//                        return new BackupResponse();
                     case PARTITION_ITERATOR:
                         return new PartitionIteratingOperation();
                     case PARTITION_RESPONSE:
@@ -59,8 +52,6 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new EventPacket();
                     case COLLECTION:
                         return new SerializableCollection();
-                    case CALL_TIMEOUT_RESPONSE:
-                        return new CallTimeoutResponse();
                     default:
                         return null;
                 }

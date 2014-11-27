@@ -26,5 +26,7 @@ public interface ResponseHandler {
 
     void sendResponse(Object obj, int backupCount);
 
+    void sendCallTimeout();
+
     boolean isLocal();
 }

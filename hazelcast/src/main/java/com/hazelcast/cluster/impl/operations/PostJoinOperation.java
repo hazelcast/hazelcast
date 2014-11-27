@@ -61,6 +61,11 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
                 op.setNodeEngine(nodeEngine)
                         .setResponseHandler(new ResponseHandler() {
                             @Override
+                            public void sendCallTimeout() {
+                                sendResponse(null);
+                            }
+
+                            @Override
                             public void sendResponse(Object obj) {
                                 sendResponse(obj, 0);
                             }

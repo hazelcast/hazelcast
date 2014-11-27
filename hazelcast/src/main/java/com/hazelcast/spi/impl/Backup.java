@@ -100,17 +100,16 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     @Override
     public void afterRun() throws Exception {
         if (valid && sync && getCallId() != 0 && originalCaller != null) {
-            final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            final long callId = getCallId();
-            final InternalOperationService operationService = nodeEngine.operationService;
-            operationService.sendBackupResponse(originalCaller, callId, backupOp.isUrgent());
+            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            InternalOperationService operationService = nodeEngine.operationService;
+            operationService.sendBackupResponse(originalCaller, getCallId(), backupOp.isUrgent());
 //
 //
 //            if (!nodeEngine.getThisAddress().equals(originalCaller)) {
 //                BackupResponse backupResponse = new BackupResponse(callId, backupOp.isUrgent());
 //                operationService.sendBackupResponse(backupResponse, originalCaller);
 //            } else {
-//                operationService.notifyBackupCall(callId);
+//                operationService.notifyBackupComplete(callId);
 //            }
         }
     }

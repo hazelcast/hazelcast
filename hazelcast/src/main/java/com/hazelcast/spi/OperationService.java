@@ -134,4 +134,6 @@ public interface OperationService {
     boolean sendNormalResponse(Address caller, long callId, boolean urgent, Object response, int backupCount);
 
     boolean sendBackupResponse(Address caller, long callId, boolean urgent);
+
+    boolean sendTimeoutResponse(Address caller, long callId, boolean urgent);
 }

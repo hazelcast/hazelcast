@@ -51,7 +51,6 @@ import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ExecutorType;
@@ -147,7 +146,7 @@ final class BasicOperationService implements InternalOperationService {
         this.operationHandler = new OperationHandler();
         this.responseHandler = new TheResponseHandler();
         this.operationBackupHandler = new OperationBackupHandler();
-        this.scheduler = new BasicOperationScheduler(node, executionService, operationHandler,responseHandler);
+        this.scheduler = new BasicOperationScheduler(node, executionService, operationHandler, responseHandler);
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
@@ -272,15 +271,8 @@ final class BasicOperationService implements InternalOperationService {
     // =============================== processing response  ===============================
 
     //@Override
-    public void notifyBackupCall(long callId) {
-        try {
-            final BasicInvocation invocation = invocations.get(callId);
-            if (invocation != null) {
-                invocation.signalOneBackupComplete();
-            }
-        } catch (Exception e) {
-            ReplicaErrorLogger.log(e, logger);
-        }
+    public void notifyBackupComplete(long callId) {
+        responseHandler.notifyBackupComplete(callId);
     }
 
     // =============================== processing operation  ===============================
@@ -358,7 +350,8 @@ final class BasicOperationService implements InternalOperationService {
         packet.setHeader(Packet.HEADER_OP);
         packet.setHeader(Packet.HEADER_RESPONSE);
         packet.setResponseCallId(callId);
-        byte trueBackupCount = value instanceof Throwable ? (byte)Byte.MAX_VALUE-1:(byte)backupCount;
+        //todo: hack to signal of the content is an exception
+        byte trueBackupCount = value instanceof Throwable ? (byte) Byte.MAX_VALUE - 1 : (byte) backupCount;
         packet.setResponseBackupCount(trueBackupCount);
         if (urgent) {
             packet.setHeader(Packet.HEADER_URGENT);
@@ -374,7 +367,7 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         if (nodeEngine.getThisAddress().equals(caller)) {
-            notifyBackupCall(callId);
+            notifyBackupComplete(callId);
             return urgent;
         }
 
@@ -382,7 +375,33 @@ final class BasicOperationService implements InternalOperationService {
         packet.setHeader(Packet.HEADER_OP);
         packet.setHeader(Packet.HEADER_RESPONSE);
         packet.setResponseCallId(callId);
+        //indicates it is a backup
         packet.setResponseBackupCount(Byte.MAX_VALUE);
+
+        if (urgent) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        Connection connection = node.getConnectionManager().getOrConnect(caller);
+        return nodeEngine.send(packet, connection);
+    }
+
+    @Override
+    public boolean sendTimeoutResponse(Address caller, long callId, boolean urgent) {
+        if (caller == null) {
+            throw new IllegalArgumentException("Target is required!");
+        }
+
+        if (nodeEngine.getThisAddress().equals(caller)) {
+            notifyBackupComplete(callId);
+            return urgent;
+        }
+
+        Packet packet = new Packet(null, nodeEngine.getPortableContext());
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setHeader(Packet.HEADER_RESPONSE);
+        packet.setResponseCallId(callId);
+        //indicates it is a timeout
+        packet.setResponseBackupCount((byte) (Byte.MAX_VALUE - 2));
 
         if (urgent) {
             packet.setHeader(Packet.HEADER_URGENT);
@@ -435,7 +454,7 @@ final class BasicOperationService implements InternalOperationService {
                     final BasicInvocation invocation = iter.next();
                     if (invocation.isCallTarget(member)) {
                         iter.remove();
-                        invocation.notify(new MemberLeftException(member), 0);
+                        invocation.notifyNormalResponse(new MemberLeftException(member), 0);
                     }
                 }
             }
@@ -449,7 +468,7 @@ final class BasicOperationService implements InternalOperationService {
         final Object response = new HazelcastInstanceNotActiveException();
         for (BasicInvocation invocation : invocations.values()) {
             try {
-                invocation.notify(response, 0);
+                invocation.notifyNormalResponse(response, 0);
             } catch (Throwable e) {
                 logger.warning(invocation + " could not be notified with shutdown message -> " + e.getMessage());
             }
@@ -562,7 +581,7 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Responsible for handling responses.
      */
-    private final class TheResponseHandler implements BasicResponseHandler{
+    private final class TheResponseHandler implements BasicResponseHandler {
 
         @Override
         public void process(Packet packet) throws Exception {
@@ -570,33 +589,57 @@ final class BasicOperationService implements InternalOperationService {
                 byte backupCount = packet.getResponseBackupCount();
                 long responseCallId = packet.getResponseCallId();
                 if (backupCount == Byte.MAX_VALUE) {
-                    notifyBackupCall(responseCallId);
+                    notifyBackupComplete(responseCallId);
+                } else if (backupCount == Byte.MAX_VALUE - 2) {
+                    notifyTimeout(responseCallId);
                 } else {
-                    notifyRemoteCall(responseCallId, packet.getData(), backupCount);
+                    notifyNormalResponse(responseCallId, packet.getData(), backupCount);
                 }
             } catch (Throwable e) {
                 logger.severe("While processing response...", e);
             }
         }
 
-        // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
-        private void notifyRemoteCall(long callId, Object response, int backupCount) {
+        public void notifyBackupComplete(long callId) {
+            try {
+                final BasicInvocation invocation = invocations.get(callId);
+                if (invocation != null) {
+                    invocation.notifyBackupComplete();
+                }
+            } catch (Exception e) {
+                ReplicaErrorLogger.log(e, logger);
+            }
+        }
+
+        private void notifyNormalResponse(long callId, Object response, int backupCount) {
             BasicInvocation invocation = invocations.get(callId);
             if (invocation == null) {
                 if (nodeEngine.isActive()) {
-                    throw new HazelcastException("No invocation for response: " + response);
+                    throw new HazelcastException("No invocation for response: " + callId);
                 }
                 return;
             }
 
-            invocation.notify(response, backupCount);
+            invocation.notifyNormalResponse(response, backupCount);
+        }
+
+        private void notifyTimeout(long callId) {
+            BasicInvocation invocation = invocations.get(callId);
+            if (invocation == null) {
+                if (nodeEngine.isActive()) {
+                    throw new HazelcastException("No invocation for response: " + callId);
+                }
+                return;
+            }
+
+            invocation.notifyTimeout();
         }
     }
 
     /**
      * Responsible for processing an Operation.
      */
-    private final class OperationHandler implements BasicOperationHandler{
+    private final class OperationHandler implements BasicOperationHandler {
 
         @Override
         public Operation deserialize(Packet packet) throws Exception {
@@ -612,7 +655,7 @@ final class BasicOperationService implements InternalOperationService {
                 setCallerUuidIfNotSet(caller, op);
                 setRemoteResponseHandler(nodeEngine, op);
 
-                if(!ensureValidMember(op)){
+                if (!ensureValidMember(op)) {
                     return null;
                 }
 
@@ -691,7 +734,7 @@ final class BasicOperationService implements InternalOperationService {
 
         private boolean timeout(Operation op) {
             if (isCallTimedOut(op)) {
-                op.getResponseHandler().sendResponse(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
+                op.getResponseHandler().sendCallTimeout();
                 return true;
             }
             return false;

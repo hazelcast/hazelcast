@@ -86,7 +86,6 @@ public class GroupProperties {
      * property specifies that timeout.
      */
     public static final String PROP_OPERATION_BACKUP_TIMEOUT_MILLIS = "hazelcast.operation.backup.timeout.millis";
-    public final GroupProperty OPERATION_SKIP_RESPONSE_QUEUE;
 
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_SERVER_BIND_ANY = "hazelcast.socket.server.bind.any";
@@ -165,6 +164,8 @@ public class GroupProperties {
     public final GroupProperty CLIENT_ENGINE_THREAD_COUNT;
 
     public final GroupProperty PARTITION_OPERATION_THREAD_COUNT;
+
+    public final GroupProperty OPERATION_SKIP_RESPONSE_QUEUE;
 
     public final GroupProperty GENERIC_OPERATION_THREAD_COUNT;
 

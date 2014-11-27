@@ -83,6 +83,11 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
 
     private class UnlockResponseHandler implements ResponseHandler {
         @Override
+        public void sendCallTimeout() {
+            throw new RuntimeException("todo");
+        }
+
+        @Override
         public void sendResponse(Object obj) {
             sendResponse(obj, 0);
         }
