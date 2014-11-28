@@ -8,11 +8,12 @@ All network related configuration is performed via `network` element in the Haze
 
 ```xml
    <network>
-        <public-address> ??? </public-address>
+        <public-address></public-address>
         <port auto-increment="true" port-count="100">5701</port>
         <outbound-ports>
             <ports>0</ports>
         </outbound-ports>
+        <reuse-address>false</reuse-address>
         <join>
             <multicast enabled="true">
                 <multicast-group>224.2.2.3</multicast-group>
@@ -48,9 +49,11 @@ All network related configuration is performed via `network` element in the Haze
 **Programmatic:**
 
 ```java
-AwsConfig config = new AwsConfig();
-config.setTagKey( "5551234" );
-config.setTagValue( "Node1234" )
+Network netConfig = new NetworkConfig();
+netConfig.setReuseAddress( false );
+
+AwsConfig awsConfig = new AwsConfig();
+awsConfig.setTagKey( "5551234" ).setTagValue( "Node1234" );
 ```
 
 It has below sub-elements which are described in the following sections.
@@ -71,7 +74,7 @@ It is used to override public address of a node. By default, a node selects its 
 
 ### Port
 
-You can specify the ports which Hazelcast will use to communicate between cluster members. Its default value is `5701`. Example configurations are shown below.
+You can specify the ports which Hazelcast will use to communicate between cluster members. Its default value is `5701`. The following are example configurations.
 
 **Declarative:**
 
@@ -85,7 +88,7 @@ You can specify the ports which Hazelcast will use to communicate between cluste
 
 ```java
 Config config = new Config();
-config.getNetworkConfig().setPort( "5900" ); 
+config.getNetworkConfig().setPort( "5701" ); 
              .setPortCount( "20" ).setPortAutoIncrement( false );
 ```
 
@@ -103,7 +106,7 @@ The parameter `port-count` is ignored when the above configuration is made.
 ### Outbound Ports
 
 
-By default, Hazelcast lets the system to pick up an ephemeral port during socket bind operation. But security policies/firewalls may require to restrict outbound ports to be used by Hazelcast enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports. Sample configurations are shown below.
+By default, Hazelcast lets the system to pick up an ephemeral port during socket bind operation. But security policies/firewalls may require to restrict outbound ports to be used by Hazelcast enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports. The following are example configurations.
 
 
 **Declarative:**
@@ -144,7 +147,7 @@ In the declarative one, the element `ports` can be used for both (for single and
 
 When you shutdown a cluster member, the server socket port will be in the `TIME_WAIT` state for the next couple of minutes. If you start the member right after shutting it down, you may not be able to bind it to the same port because it is in the `TIME_WAIT` state. If you set the `reuse-address` element to `true`, the `TIME_WAIT` state is ignored and you can bind the member to the same port again.
 
-Example configurations are shown below.
+The following are example configurations.
 
 **Declarative:**
 
@@ -167,7 +170,7 @@ networkConfig.setReuseAddress( true );
 
 ### Join
 
-This configuration element is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: discovery by TCP/IP and multicast, and discovery on AWS (EC2 auto-discovery). Below are example configurations.
+This configuration element is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: discovery by TCP/IP and multicast, and discovery on AWS (EC2 auto-discovery). The following are example configurations.
 
 **Declarative:**
 
@@ -278,6 +281,8 @@ public static void main( String[] args )throws Exception{
 ### Interfaces
 
 You can specify which network interfaces that Hazelcast should use. Servers mostly have more than one network interface so you may want to list the valid IPs. Range characters ('\*' and '-') can be used for simplicity. So 10.3.10.\*, for instance, refers to IPs between 10.3.10.0 and 10.3.10.255. Interface 10.3.10.4-18 refers to IPs between 10.3.10.4 and 10.3.10.18 (4 and 18 included). If network interface configuration is enabled (disabled by default) and if Hazelcast cannot find an matching interface, then it will print a message on console and will not start on that node.
+
+The following are example configurations.
 
 **Declarative:**
 
