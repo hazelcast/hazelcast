@@ -42,6 +42,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.map.impl.eviction.MaxSizeChecker.getApproximateMaxSize;
 import static com.hazelcast.map.impl.mapstore.MapStoreManagers.createWriteBehindManager;
 import static com.hazelcast.map.impl.mapstore.MapStoreManagers.createWriteThroughManager;
 import static com.hazelcast.map.impl.mapstore.StoreConstructor.createStore;
@@ -243,7 +244,8 @@ final class BasicMapStoreContext implements MapStoreContext {
         final Map<Data, Object> initialKeys = this.initialKeys;
         initialKeys.clear();
         final PartitioningStrategy partitioningStrategy = this.partitioningStrategy;
-        final int maxSizePerNode = getMaxSizePerNode();
+        int maxSizePerNode = getApproximateMaxSize(getMaxSizePerNode()) - 1;
+
         for (Object key : loadedKeys) {
             Data dataKey = mapServiceContext.toData(key, partitioningStrategy);
             // this node will load only owned keys

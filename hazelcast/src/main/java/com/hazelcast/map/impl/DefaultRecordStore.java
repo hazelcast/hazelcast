@@ -411,11 +411,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         mapDataStore.reset();
     }
 
-
     @Override
     public Object evict(Data key, boolean backup) {
-        checkIfLoaded();
-
         return evictInternal(key, backup);
     }
 
