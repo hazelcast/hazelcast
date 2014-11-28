@@ -16,15 +16,17 @@
 
 package com.hazelcast.cache.impl.record;
 
+import com.hazelcast.cache.impl.eviction.Evictable;
+
 /**
  * <p>
- * An expirable data object which represents a cache entry.
+ * An expirable and evictable data object which represents a cache entry.
  * </p>
  * Record of {@link com.hazelcast.cache.impl.ICacheRecordStore}.
  *
  * @param <V> the type of the value stored by this {@link CacheRecord}
  */
-public interface CacheRecord<V> extends Expirable {
+public interface CacheRecord<V> extends Expirable, Evictable {
 
     /**
      * Gets the value of this {@link CacheRecord}.
@@ -39,57 +41,5 @@ public interface CacheRecord<V> extends Expirable {
      * @param value the value for this {@link CacheRecord}
      */
     void setValue(V value);
-
-    /**
-     * Gets the creation time of this {@link CacheRecord} in milliseconds.
-     *
-     * @return the creation time of this {@link CacheRecord} in milliseconds
-     */
-    long getCreationTime();
-
-    /**
-     * Sets the creation time of this {@link CacheRecord} in milliseconds.
-     *
-     * @param time the creation time for this {@link CacheRecord} in milliseconds
-     */
-    void setCreationTime(long time);
-
-    /**
-     * Gets the latest access time difference of this {@link CacheRecord} in milliseconds.
-     *
-     * @return the latest access time of this {@link CacheRecord} in milliseconds
-     */
-    long getAccessTime();
-
-    /**
-     * Sets the access time of this {@link CacheRecord} in milliseconds.
-     *
-     * @param time the latest access time of this {@link CacheRecord} in milliseconds
-     */
-    void setAccessTime(long time);
-
-    /**
-     * Gets the access hit count of this {@link CacheRecord}.
-     *
-     * @return the access hit count of this {@link CacheRecord}
-     */
-    int getAccessHit();
-
-    /**
-     * Sets the access hit count of this {@link CacheRecord}.
-     *
-     * @param hit the access hit count for this {@link CacheRecord}
-     */
-    void setAccessHit(int hit);
-
-    /**
-     * Increases the access hit count of this {@link CacheRecord} as <code>1</code>.
-     */
-    void incrementAccessHit();
-
-    /**
-     * Resets the access hit count of this {@link CacheRecord} to <code>0</code>.
-     */
-    void resetAccessHit();
 
 }

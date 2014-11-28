@@ -16,15 +16,10 @@
 
 package com.hazelcast.cache.impl.record;
 
-import com.hazelcast.cache.impl.CacheKeyIteratorResult;
-import com.hazelcast.cache.impl.eviction.EvictableStore;
+import com.hazelcast.cache.impl.eviction.impl.strategy.sampling.SampleableEvictableStore;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.Map;
-
-public interface CacheRecordMap<K extends Data, V extends CacheRecord>
-        extends Map<K, V>, EvictableStore<K, V> {
-
-    CacheKeyIteratorResult fetchNext(int nextTableIndex, int size);
+public interface SampleableCacheRecordMap<K extends Data, V extends CacheRecord>
+        extends CacheRecordMap<K, V>, SampleableEvictableStore<K, V> {
 
 }
