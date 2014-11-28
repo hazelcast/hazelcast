@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.eviction.ExpirationTimeSetter.pickTTL;
 import static com.hazelcast.map.eviction.ExpirationTimeSetter.setExpirationTime;
+import static com.hazelcast.map.eviction.MaxSizeChecker.getApproximateMaxSize;
 import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteBehindManager;
 import static com.hazelcast.map.mapstore.MapStoreManagers.createWriteThroughManager;
 import static com.hazelcast.map.mapstore.MapStoreManagers.emptyMapStoreManager;
@@ -205,7 +206,7 @@ public class MapContainer extends MapContainerSupport {
             return;
         }
 
-        int maxSizePerNode = getMaxSizePerNode();
+        int maxSizePerNode = getApproximateMaxSize(getMaxSizePerNode()) - 1;
 
         for (Object key : keys) {
             Data dataKey = mapServiceContext.toData(key, partitioningStrategy);
