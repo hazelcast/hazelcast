@@ -936,9 +936,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 cacheConfig.setBackupCount(getIntegerValue("backup-count", value, CacheSimpleConfig.DEFAULT_BACKUP_COUNT));
             } else if ("async-backup-count".equals(nodeName)) {
                 cacheConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, CacheSimpleConfig.MIN_BACKUP_COUNT));
-            } else if ("eviction-percentage".equals(nodeName)) {
-                cacheConfig.setEvictionPercentage(
-                        getIntegerValue("eviction-percentage", value, CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE));
             } else if ("eviction-policy".equals(nodeName)) {
                 cacheConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
             } else if ("max-size".equals(nodeName)) {

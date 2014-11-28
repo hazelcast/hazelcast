@@ -30,13 +30,11 @@ import javax.cache.event.CacheEntryListener;
 import java.io.IOException;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
-import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_EVICTION_POLICY;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.MAX_BACKUP_COUNT;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
-
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}
@@ -55,7 +53,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
     // Default max size config, size = Integer.MAX_VALUE, policy = ENTRY_COUNT
     private CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
-    private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
 
     private NearCacheConfig nearCacheConfig;
 
@@ -109,7 +106,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         this.inMemoryFormat = simpleConfig.getInMemoryFormat();
         this.evictionPolicy = simpleConfig.getEvictionPolicy();
         this.maxSizeConfig = simpleConfig.getMaxSizeConfig();
-        this.evictionPercentage = simpleConfig.getEvictionPercentage();
         for (CacheSimpleEntryListenerConfig simpleListener : simpleConfig.getCacheEntryListeners()) {
             Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
             Factory<? extends CacheEntryEventFilter<? super K, ? super V>> filterFactory = null;
@@ -294,18 +290,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         return this;
     }
 
-    /**
-     * @return eviction percentage
-     */
-    public int getEvictionPercentage() {
-        return evictionPercentage;
-    }
-
-    public CacheConfig<K, V> setEvictionPercentage(int evictionPercentage) {
-        this.evictionPercentage = evictionPercentage;
-        return this;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
@@ -318,7 +302,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeUTF(inMemoryFormat.name());
         out.writeUTF(evictionPolicy.name());
         out.writeObject(maxSizeConfig);
-        out.writeInt(evictionPercentage);
 
         out.writeObject(nearCacheConfig);
 
@@ -360,7 +343,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         String resultEvictionPolicy = in.readUTF();
         evictionPolicy = EvictionPolicy.valueOf(resultEvictionPolicy);
         maxSizeConfig = in.readObject();
-        evictionPercentage = in.readInt();
 
         nearCacheConfig = in.readObject();
 

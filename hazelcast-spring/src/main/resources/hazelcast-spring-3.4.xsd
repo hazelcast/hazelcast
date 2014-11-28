@@ -495,16 +495,6 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="eviction-percentage" use="optional" type="xs:unsignedByte">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            When max. size is reached, specified percentage of the cache will be
-                                            evicted.
-                                            Any integer between 0 and 100. If 25 is set for example, 25% of the
-                                            entries will get evicted.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
                                 <xs:attribute name="eviction-policy" use="optional" type="xs:string">
                                     <xs:annotation>
                                         <xs:documentation>

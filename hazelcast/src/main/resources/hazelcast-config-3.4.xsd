@@ -344,21 +344,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="eviction-percentage" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        When max. size is reached, specified percentage of the cache will be evicted. Any integer between
-                        0 and 100.
-                        If 25 is set for example, 25% of the entries will get evicted.
-                    </xs:documentation>
-                </xs:annotation>
-                <xs:simpleType>
-                    <xs:restriction base="xs:byte">
-                        <xs:minInclusive value="0"/>
-                        <xs:maxInclusive value="100"/>
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:element>
             <xs:element name="eviction-policy" type="cache-eviction-policy" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>

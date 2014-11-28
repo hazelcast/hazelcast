@@ -46,26 +46,6 @@ public class CacheSimpleConfig {
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
 
-    /**
-     * The default value for percentage of max size
-     */
-    public static final int DEFAULT_MAX_MEMORY_SIZE_PERCENTAGE = 95;
-
-    /**
-     * Minimum eviction percentage
-     */
-    public static final  int MIN_EVICTION_PERCENTAGE = 0;
-
-    /**
-     * Default eviction percentage
-     */
-    public static final int DEFAULT_EVICTION_PERCENTAGE = 10;
-
-    /**
-     * Maximum eviction percentage
-     */
-    public static final int MAX_EVICTION_PERCENTAGE = 100;
-
     private String name;
 
     private String keyType;
@@ -89,7 +69,6 @@ public class CacheSimpleConfig {
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
     // Default max size config, size = Integer.MAX_VALUE, policy = ENTRY_COUNT
     private CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
-    private int evictionPercentage;
 
     private CacheSimpleConfig readOnly;
 
@@ -110,7 +89,6 @@ public class CacheSimpleConfig {
         this.inMemoryFormat = cacheSimpleConfig.inMemoryFormat;
         this.evictionPolicy = cacheSimpleConfig.evictionPolicy;
         this.maxSizeConfig = cacheSimpleConfig.maxSizeConfig;
-        this.evictionPercentage = cacheSimpleConfig.evictionPercentage;
     }
 
     public CacheSimpleConfig() {
@@ -273,15 +251,6 @@ public class CacheSimpleConfig {
 
     public CacheSimpleConfig setMaxSizeConfig(CacheMaxSizeConfig maxSizeConfig) {
         this.maxSizeConfig = maxSizeConfig;
-        return this;
-    }
-
-    public int getEvictionPercentage() {
-        return evictionPercentage;
-    }
-
-    public CacheSimpleConfig setEvictionPercentage(int evictionPercentage) {
-        this.evictionPercentage = evictionPercentage;
         return this;
     }
 }
