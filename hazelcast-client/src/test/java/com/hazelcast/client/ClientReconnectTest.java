@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,7 +45,6 @@ import static org.junit.Assert.assertTrue;
 public class ClientReconnectTest extends HazelcastTestSupport {
 
     @After
-    @Before
     public void cleanup() throws Exception {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
@@ -56,17 +54,17 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testClientReconnectOnClusterDown() throws Exception {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance client = HazelcastClient.newHazelcastClient();
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
+        final CountDownLatch disconnectAndReconnectLatch = new CountDownLatch(2);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-                connectedLatch.countDown();
+                disconnectAndReconnectLatch.countDown();
             }
         });
         IMap<String, String> m = client.getMap("default");
         h1.shutdown();
         Hazelcast.newHazelcastInstance();
-        assertOpenEventually(connectedLatch, 10);
+        assertOpenEventually(disconnectAndReconnectLatch, 10);
         assertNull(m.put("test", "test"));
         assertEquals("test", m.get("test"));
     }
@@ -79,11 +77,11 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setRedoOperation(true);
 
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
+        final CountDownLatch disconnectAndReconnectLatch = new CountDownLatch(2);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-                connectedLatch.countDown();
+                disconnectAndReconnectLatch.countDown();
             }
         });
 
@@ -99,7 +97,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         h1.shutdown();
 
         Hazelcast.newHazelcastInstance();
-        assertOpenEventually(connectedLatch, 10);
+        assertOpenEventually(disconnectAndReconnectLatch, 10);
 
         assertTrueEventually(new AssertTask() {
             @Override

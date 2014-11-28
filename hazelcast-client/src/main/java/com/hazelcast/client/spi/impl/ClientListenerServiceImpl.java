@@ -67,6 +67,20 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     }
 
     @Override
+    public String listenOnConnection(ClientRequest request, ClientConnection clientConnection, EventHandler handler) {
+        final Future future;
+        try {
+            handler.beforeListenerRegister();
+            future = invocationService.invokeOnConnection(request, clientConnection, handler);
+            String registrationId = serializationService.toObject(future.get());
+            registerListener(registrationId, request.getCallId());
+            return registrationId;
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    @Override
     public boolean stopListening(BaseClientRemoveListenerRequest request, String registrationId) {
         try {
             String realRegistrationId = deRegisterListener(registrationId);

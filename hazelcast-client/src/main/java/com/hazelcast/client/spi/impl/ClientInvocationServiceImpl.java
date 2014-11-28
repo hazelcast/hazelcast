@@ -72,18 +72,10 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
     }
 
     @Override
-    public <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler)
-            throws Exception {
-        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
-        int partitionId = partitionService.getPartitionId(key);
-        final Address owner = partitionService.getPartitionOwner(partitionId);
-        if (owner != null) {
-            final ClientConnection connection = connectionManager.tryToConnect(owner);
-            final ClientCallFuture future = new ClientCallFuture(client, request, handler);
-            sendInternal(future, connection, partitionId);
-            return future;
-        }
-        return invokeOnRandomTarget(request);
+    public <T> ICompletableFuture<T> invokeOnConnection(ClientRequest request,
+                                                        ClientConnection connection) throws Exception {
+        request.setSingleConnection();
+        return invokeOnConnection(request, connection, null);
     }
 
     @Override
@@ -94,7 +86,8 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
     }
 
     @Override
-    public <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception {
+    public <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request,
+                                                          EventHandler handler) throws Exception {
         return sendAndHandle(request, handler);
     }
 
@@ -103,6 +96,28 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         final ClientConnection clientConnection = connectionManager.connectToAddress(target);
         request.setSingleConnection();
         return doSend(request, clientConnection, handler);
+    }
+
+    @Override
+    public <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler)
+            throws Exception {
+        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
+        int partitionId = partitionService.getPartitionId(key);
+        final Address owner = partitionService.getPartitionOwner(partitionId);
+        if (owner != null) {
+            final ClientConnection connection = connectionManager.tryToConnect(owner);
+            final ClientCallFuture<T> future = new ClientCallFuture<T>(client, request, handler);
+            sendInternal(future, connection, partitionId);
+            return future;
+        }
+        return invokeOnRandomTarget(request);
+    }
+
+    @Override
+    public <T> ICompletableFuture<T> invokeOnConnection(ClientRequest request, ClientConnection connection,
+                                                        EventHandler handler) throws Exception {
+        request.setSingleConnection();
+        return doSend(request, connection, handler);
     }
 
     // NIO public
@@ -124,23 +139,23 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     //NIO private
 
-    private ICompletableFuture send(ClientRequest request) throws Exception {
+    private <T> ICompletableFuture<T> send(ClientRequest request) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(null);
         return doSend(request, connection, null);
     }
 
-    private ICompletableFuture send(ClientRequest request, Address target) throws Exception {
+    private <T> ICompletableFuture<T> send(ClientRequest request, Address target) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(target);
         return doSend(request, connection, null);
     }
 
-    private ICompletableFuture sendAndHandle(ClientRequest request, EventHandler handler) throws Exception {
+    private <T> ICompletableFuture<T> sendAndHandle(ClientRequest request, EventHandler handler) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(null);
         return doSend(request, connection, handler);
     }
 
-    private ICompletableFuture doSend(ClientRequest request, ClientConnection connection, EventHandler handler) {
-        final ClientCallFuture future = new ClientCallFuture(client, request, handler);
+    private <T> ICompletableFuture<T> doSend(ClientRequest request, ClientConnection connection, EventHandler handler) {
+        final ClientCallFuture<T> future = new ClientCallFuture<T>(client, request, handler);
         sendInternal(future, connection, -1);
         return future;
     }

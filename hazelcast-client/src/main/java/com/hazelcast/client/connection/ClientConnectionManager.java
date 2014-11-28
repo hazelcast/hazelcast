@@ -22,6 +22,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+
 
 /**
  * Responsible for managing {@link com.hazelcast.client.connection.nio.ClientConnection} objects.
@@ -68,11 +70,6 @@ public interface ClientConnectionManager {
     ClientConnection ownerConnection(Address address) throws IOException;
 
     /**
-     * Called when an owner connection is closed
-     */
-    void onCloseOwnerConnection();
-
-    /**
      * @return unique uuid of local client if available, null otherwise
      */
     String getUuid();
@@ -87,6 +84,7 @@ public interface ClientConnectionManager {
 
     /**
      * Called when a member left the cluster
+     *
      * @param address address of the member
      */
     void removeEndpoint(Address address);
@@ -121,7 +119,7 @@ public interface ClientConnectionManager {
      * @return response of request
      * @throws Exception if a network connection occurs or response is an exception
      */
-    Object sendAndReceive(ClientRequest request, ClientConnection connection) throws Exception;
+    <T> T sendAndReceive(ClientRequest request, ClientConnection connection) throws Exception;
 
     /**
      * Called heartbeat timeout is detected on a connection.
@@ -129,5 +127,7 @@ public interface ClientConnectionManager {
      * @param connection to be marked.
      */
     void onDetectingUnresponsiveConnection(ClientConnection connection);
+
+    InetSocketAddress getLocalAddress();
 
 }
