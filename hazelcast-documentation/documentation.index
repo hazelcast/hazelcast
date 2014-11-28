@@ -168,6 +168,7 @@ src/WAN.md
 src/HazelcastConfiguration/ConfigurationOverview.md
 #	src/NetworkConfig.md
 	src/HazelcastConfiguration/NetworkConfiguration.md
+	src/HazelcastConfiguration/GroupConfiguration.md
 #		src/ConfigSpecifyInterfaces.md
 #		src/EC2AutoDiscovery.md
 #		src/Ports.md
