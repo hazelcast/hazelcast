@@ -327,11 +327,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             throw new IOException("Address is required!");
         }
 
-        ClientConnection clientConnection = connections.get(address);
+        ClientConnection clientConnection = connections.get(target);
         if (clientConnection == null) {
-            final Object lock = getLock(address);
+            final Object lock = getLock(target);
             synchronized (lock) {
-                clientConnection = connections.get(address);
+                clientConnection = connections.get(target);
                 if (clientConnection == null) {
                     final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, false);
                     final ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
@@ -341,7 +341,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         future.cancel(true);
                         throw ExceptionUtil.rethrow(e, IOException.class);
                     }
-                    ClientConnection current = connections.putIfAbsent(address, clientConnection);
+                    ClientConnection current = connections.putIfAbsent(clientConnection.getRemoteEndpoint(), clientConnection);
                     if (current != null) {
                         clientConnection.close();
                         clientConnection = current;
