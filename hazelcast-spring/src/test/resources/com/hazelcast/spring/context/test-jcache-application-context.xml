@@ -62,7 +62,6 @@
                       cache-writer-factory="com.hazelcast.cache.MyCacheWriterFactory"
                       expiry-policy-factory="com.hazelcast.cache.MyExpiryPolicyFactory"
                       in-memory-format="OBJECT"
-                      eviction-percentage="20"
                       eviction-policy="LRU">
                     <hz:max-size size="50" policy="ENTRY_COUNT"/>
                     <hz:cache-entry-listeners>
