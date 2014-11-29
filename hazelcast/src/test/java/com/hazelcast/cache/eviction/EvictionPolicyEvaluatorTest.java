@@ -3,9 +3,9 @@ package com.hazelcast.cache.eviction;
 import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.eviction.impl.evaluator.LFUEvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.eviction.impl.evaluator.LRUEvictionPolicyEvaluator;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -54,7 +54,8 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         final int RECORD_COUNT = 100;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
 
-        EvictionPolicyEvaluator evictionPolicyEvaluator = new LRUEvictionPolicyEvaluator();
+        EvictionPolicyEvaluator evictionPolicyEvaluator =
+                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(EvictionPolicy.LRU);
         List<EvictionCandidate<Integer, CacheObjectRecord>> records =
                 new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
 
@@ -95,7 +96,8 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         final int RECORD_COUNT = 100;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
 
-        EvictionPolicyEvaluator evictionPolicyEvaluator = new LFUEvictionPolicyEvaluator();
+        EvictionPolicyEvaluator evictionPolicyEvaluator =
+                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(EvictionPolicy.LFU);
         List<EvictionCandidate<Integer, CacheObjectRecord>> records =
                 new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
 

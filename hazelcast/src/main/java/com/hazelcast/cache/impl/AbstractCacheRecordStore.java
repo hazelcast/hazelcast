@@ -19,10 +19,9 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.eviction.EvictionChecker;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.cache.impl.eviction.EvictionStrategy;
 import com.hazelcast.cache.impl.eviction.EvictionStrategyProvider;
-import com.hazelcast.cache.impl.eviction.impl.evaluator.LFUEvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.eviction.impl.evaluator.LRUEvictionPolicyEvaluator;
 import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
 import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
@@ -181,17 +180,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected EvictionPolicyEvaluator<Data, R> creatEvictionPolicyEvaluator(EvictionPolicy evictionPolicy) {
-        switch (evictionPolicy) {
-            case LRU:
-                return new LRUEvictionPolicyEvaluator();
-            case LFU:
-                return new LFUEvictionPolicyEvaluator();
-            case NONE:
-                return null;
-            default:
-                throw new IllegalArgumentException(evictionPolicy
-                        + " eviction policy is not supported for cache eviction !");
-        }
+        return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionPolicy);
     }
 
     protected EvictionChecker createEvictionChecker() {
