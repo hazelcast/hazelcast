@@ -617,7 +617,6 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private void notifyTimeout(long callId) {
-            logger.severe("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
             BasicInvocation invocation = invocations.get(callId);
             if (invocation == null) {
                 if (nodeEngine.isActive()) {
