@@ -133,7 +133,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         if (sampleCount < 0) {
             throw new IllegalArgumentException("Sample count cannot be a negative value.");
         }
-        if (sampleCount == 0) {
+        if (sampleCount == 0 || size() == 0) {
             return Collections.EMPTY_LIST;
         }
 

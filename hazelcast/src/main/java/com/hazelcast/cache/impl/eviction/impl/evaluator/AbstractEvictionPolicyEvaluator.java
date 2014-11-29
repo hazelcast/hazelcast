@@ -60,6 +60,10 @@ public abstract class AbstractEvictionPolicyEvaluator<A, E extends Evictable>
             } else {
                 Evictable evictable = candidate.getEvictable();
 
+                if (evictable == null) {
+                    continue;
+                }
+
                 // If evictable is also an expirable
                 if (evictable instanceof Expirable) {
                     Expirable expirable = (Expirable) evictable;
