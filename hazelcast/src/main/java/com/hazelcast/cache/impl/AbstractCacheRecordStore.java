@@ -186,8 +186,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 return new LRUEvictionPolicyEvaluator();
             case LFU:
                 return new LFUEvictionPolicyEvaluator();
-            default:
+            case NONE:
                 return null;
+            default:
+                throw new IllegalArgumentException(evictionPolicy
+                        + " eviction policy is not supported for cache eviction !");
         }
     }
 
