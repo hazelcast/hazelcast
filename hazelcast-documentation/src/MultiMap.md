@@ -47,7 +47,7 @@ After you run the first code sample, run the `PrintMember` sample. You will see 
 
 `a -> [2, 1]`
 
-### MultiMap Collection Types and Statistics
+### Configuring MultiMap
 
 When using MultiMap, the collection type of the values can be either **Set** or **List**. You configure the collection type with the `valueCollectionType` parameter. If you choose `Set`, duplicate and null values are not allowed in your collection and ordering is irrelevant. If you choose `List`, ordering is relevant and your collection can include duplicate and null values.
 
