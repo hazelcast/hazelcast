@@ -18,7 +18,7 @@ package com.hazelcast.executor.impl;
 
 import com.hazelcast.executor.impl.client.CancellationRequest;
 import com.hazelcast.executor.impl.client.IsShutdownRequest;
-import com.hazelcast.executor.impl.client.PartitionCallableRequest;
+import com.hazelcast.executor.impl.client.RetriableTargetCallableRequest;
 import com.hazelcast.executor.impl.client.ShutdownRequest;
 import com.hazelcast.executor.impl.client.TargetCallableRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -36,7 +36,7 @@ public final class ExecutorPortableHook implements PortableHook {
     public static final int IS_SHUTDOWN_REQUEST = 1;
     public static final int CANCELLATION_REQUEST = 2;
     public static final int TARGET_CALLABLE_REQUEST = 3;
-    public static final int PARTITION_CALLABLE_REQUEST = 4;
+    public static final int RETRIABLE_TARGET_CALLABLE_REQUEST = 4;
     public static final int SHUTDOWN_REQUEST = 5;
 
     @Override
@@ -56,8 +56,8 @@ public final class ExecutorPortableHook implements PortableHook {
                         return new CancellationRequest();
                     case TARGET_CALLABLE_REQUEST:
                         return new TargetCallableRequest();
-                    case PARTITION_CALLABLE_REQUEST:
-                        return new PartitionCallableRequest();
+                    case RETRIABLE_TARGET_CALLABLE_REQUEST:
+                        return new RetriableTargetCallableRequest();
                     case SHUTDOWN_REQUEST:
                         return new ShutdownRequest();
                     default:
