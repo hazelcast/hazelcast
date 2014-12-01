@@ -29,6 +29,7 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.executor.impl.client.IsShutdownRequest;
+import com.hazelcast.executor.impl.client.RetriableTargetCallableRequest;
 import com.hazelcast.executor.impl.client.ShutdownRequest;
 import com.hazelcast.executor.impl.client.TargetCallableRequest;
 import com.hazelcast.instance.MemberImpl;
@@ -389,7 +390,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         final String uuid = getUUID();
         final int partitionId = getPartitionId(key);
         final Address target = getPartitionOwner(partitionId);
-        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, target);
+        final RetriableTargetCallableRequest request = new RetriableTargetCallableRequest(name, uuid, task, target);
         final ICompletableFuture<T> future = invokeFuture(request);
         return checkSync(future, uuid, target, preventSync, defaultValue);
     }
@@ -400,7 +401,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         final String uuid = getUUID();
         final int partitionId = getPartitionId(key);
         final Address target = getPartitionOwner(partitionId);
-        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, target);
+        final RetriableTargetCallableRequest request = new RetriableTargetCallableRequest(name, uuid, task, target);
         final ICompletableFuture<T> f = invokeFuture(request);
         f.andThen(callback);
     }
@@ -411,7 +412,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         final String uuid = getUUID();
         final int partitionId = randomPartitionId();
         final Address target = getPartitionOwner(partitionId);
-        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, target);
+        final RetriableTargetCallableRequest request = new RetriableTargetCallableRequest(name, uuid, task, target);
         final ICompletableFuture<T> future = invokeFuture(request);
         return checkSync(future, uuid, target, preventSync, defaultValue);
     }
@@ -422,7 +423,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         final String uuid = getUUID();
         final int partitionId = randomPartitionId();
         final Address target = getPartitionOwner(partitionId);
-        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, target);
+        final RetriableTargetCallableRequest request = new RetriableTargetCallableRequest(name, uuid, task, target);
         final ICompletableFuture<T> f = invokeFuture(request);
         f.andThen(callback);
     }

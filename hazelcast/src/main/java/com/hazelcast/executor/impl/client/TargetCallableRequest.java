@@ -35,9 +35,11 @@ import java.security.Permission;
 import java.util.concurrent.Callable;
 
 /**
- * This class is used for sending the task to a particular target
+ * This class is used for sending the task to a particular target.
+ * And its operation is not retried in case of a {@link com.hazelcast.spi.exception.TargetNotMemberException}
+ * or {@link com.hazelcast.core.MemberLeftException}
  */
-public final class TargetCallableRequest extends TargetClientRequest {
+public class TargetCallableRequest extends TargetClientRequest {
 
     private String name;
     private String uuid;
@@ -63,6 +65,10 @@ public final class TargetCallableRequest extends TargetClientRequest {
             callable = securityContext.createSecureCallable(subject, callable);
         }
         Data callableData = serializationService.toData(callable);
+        return getOperation(name, uuid, callableData);
+    }
+
+    protected Operation getOperation(String name, String uuid, Data callableData) {
         return new MemberCallableTaskOperation(name, uuid, callableData);
     }
 
