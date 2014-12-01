@@ -1,7 +1,9 @@
 
 ## Group Configuration
 
-This configuration is used to create multiple Hazelcast clusters. Each cluster will have its own group and it will not interfere with other clusters. Sample configurations are shown below. The name of the element to configure cluster groups is `group`.
+This configuration is used to create multiple Hazelcast clusters. The cluster members (nodes) and clients having the same group configuration (i.e. same group name and password) forms a private cluster. 
+
+Each cluster will have its own group and it will not interfere with other clusters. The name of the element to configure cluster groups is `group`.
 
 The following are example configurations.
 
