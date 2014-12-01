@@ -19,9 +19,9 @@ package com.hazelcast.util;
 import com.hazelcast.cache.impl.record.Expirable;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -116,7 +116,6 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         return (E) new SamplingEntry(key, value);
     }
 
-    //CHECKSTYLE:OFF
     /**
      * Gets and returns samples as <code>sampleCount</code>.
      *
@@ -126,10 +125,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
      *
      * @return the sampled {@link SamplingEntry} list
      */
-    public <E extends SamplingEntry> List<E> getRandomSamples(int sampleCount) {
-        // TODO Samples can be returned as lazy so there will be no need to any collection
-        // such as List, Set, etc ... to hold sampling entries
-
+    public <E extends SamplingEntry> Iterable<E> getRandomSamples(int sampleCount) {
         if (sampleCount < 0) {
             throw new IllegalArgumentException("Sample count cannot be a negative value.");
         }
@@ -137,34 +133,119 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             return Collections.EMPTY_LIST;
         }
 
-        final List<E> samples = new ArrayList<E>(sampleCount);
         final int randomNumber = Math.abs(THREAD_LOCAL_RANDOM.get().nextInt());
-        final int firstSegmentIndex = randomNumber % segments.length;
-        int currentSegmentIndex = firstSegmentIndex;
+        return new LazySamplingEntryIterable<E>(sampleCount, randomNumber);
+    }
 
-        do {
-            Segment<K, V> segment = segments[currentSegmentIndex];
-            if (segment != null) {
-                HashEntry<K, V>[] table = segment.table;
-                int firstBucketIndex = randomNumber % table.length;
-                int currentBucketIndex = firstBucketIndex;
-                do {
-                    for (HashEntry<K, V> entry = table[currentBucketIndex]; entry != null; entry = entry.next) {
-                        V value = entry.value();
-                        if (value != null) {
-                            samples.add((E) createSamplingEntry(entry.key(), value));
-                            if (samples.size() == sampleCount) {
-                                return samples;
+    private final class LazySamplingEntryIterable<E extends SamplingEntry> implements Iterable<E> {
+
+        private final int maxEntryCount;
+        private final int randomNumber;
+
+        private LazySamplingEntryIterable(int maxEntryCount, int randomNumber) {
+            this.maxEntryCount = maxEntryCount;
+            this.randomNumber = randomNumber;
+        }
+
+        @Override
+        public Iterator<E> iterator() {
+            return new LazySamplingEntryIterator<E>(maxEntryCount, randomNumber);
+        }
+
+    }
+
+    // *** NOTE ***
+    //      Assumed it is not accessed by multiple threads. So there is synchronization.
+    private final class LazySamplingEntryIterator<E extends SamplingEntry> implements Iterator<E> {
+
+        private final int maxEntryCount;
+        private final int randomNumber;
+        private final int firstSegmentIndex;
+        private int currentSegmentIndex;
+        private int currentBucketIndex;
+        private HashEntry<K, V> currentEntry;
+        private int returnedEntryCount;
+        private boolean reachedToEnd;
+
+        private LazySamplingEntryIterator(int maxEntryCount, int randomNumber) {
+            this.maxEntryCount = maxEntryCount;
+            this.randomNumber = randomNumber;
+            this.firstSegmentIndex = randomNumber % segments.length;
+            this.currentSegmentIndex = firstSegmentIndex;
+            this.currentBucketIndex = -1;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return (returnedEntryCount < maxEntryCount) && !reachedToEnd;
+        }
+
+        //CHECKSTYLE:OFF
+
+        /**
+         * Originally taken by Jaromir Hamala's implementation and changed as incremental implementation.
+         * So kudos to Jaromir :)
+         */
+        @Override
+        public E next() {
+            if (!hasNext()) {
+                return null;
+            }
+            do {
+                Segment<K, V> segment = segments[currentSegmentIndex];
+                if (segment != null) {
+                    HashEntry<K, V>[] table = segment.table;
+                    // Pick up a starting point
+                    int firstBucketIndex = randomNumber % table.length;
+                    // If current bucket index is not initialized yet, initialize it with starting point
+                    if (currentBucketIndex == -1) {
+                        currentBucketIndex = firstBucketIndex;
+                    }
+                    do {
+                        // If current entry is not initialized yet, initialize it
+                        if (currentEntry == null) {
+                            currentEntry = table[currentBucketIndex];
+                        }
+                        while (currentEntry != null) {
+                            V value = currentEntry.value();
+                            K key = currentEntry.key();
+                            // Advance to next entry
+                            currentEntry = currentEntry.next;
+                            if (value != null) {
+                                E e = createSamplingEntry(key, value);
+                                // If we reached end of entries, advance current bucket index
+                                if (currentEntry == null) {
+                                    currentBucketIndex = ++currentBucketIndex < table.length ? currentBucketIndex : 0;
+                                }
+                                returnedEntryCount++;
+                                return e;
                             }
                         }
-                    }
-                    currentBucketIndex = ++currentBucketIndex < table.length ? currentBucketIndex : 0;
-                } while (currentBucketIndex != firstBucketIndex);
-            }
-            currentSegmentIndex = ++currentSegmentIndex < segments.length ? currentSegmentIndex : 0;
-        } while (currentSegmentIndex != firstSegmentIndex);
-        return samples;
+                        // Advance current bucket index
+                        currentBucketIndex = ++currentBucketIndex < table.length ? currentBucketIndex : 0;
+                        // Clear current entry index to initialize at next bucket
+                        currentEntry = null;
+                    } while (currentBucketIndex != firstBucketIndex);
+                }
+                // Advance current segment index
+                currentSegmentIndex = ++currentSegmentIndex < segments.length ? currentSegmentIndex : 0;
+                // Clear current bucket index to initialize at next segment
+                currentBucketIndex = -1;
+                // Clear current entry index to initialize at next segment
+                currentEntry = null;
+            } while (currentSegmentIndex != firstSegmentIndex);
+
+            reachedToEnd = true;
+
+            return null;
+        }
+        //CHECKSTYLE:ON
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Removing is not supported");
+        }
+
     }
-    //CHECKSTYLE:ON
 
 }
