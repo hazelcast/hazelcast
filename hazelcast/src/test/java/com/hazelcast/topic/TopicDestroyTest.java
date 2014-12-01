@@ -39,7 +39,7 @@ public class TopicDestroyTest extends HazelcastTestSupport {
     @Test
     public void testDestroyTopicRemovesListeners() {
 
-        String registrationId = topic.addMessageListener(new EmptyListener());
+        topic.addMessageListener(new EmptyListener());
 
         topic.destroy();
 
@@ -51,7 +51,6 @@ public class TopicDestroyTest extends HazelcastTestSupport {
 
         String registrationId = topic.addMessageListener(new EmptyListener());
         topic.removeMessageListener(registrationId);
-        topic.destroy();
 
         assertRegistrationSize(0);
     }
