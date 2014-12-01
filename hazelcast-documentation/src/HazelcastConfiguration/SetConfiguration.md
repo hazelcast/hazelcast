@@ -1,5 +1,8 @@
 
-### Set Configuration
+## Set Configuration
+
+The following are the example configurations.
+
 
 **Declarative:**
 
@@ -10,8 +13,10 @@
    <max-size>10</max-size>
    <statistics-enabled>true</statistics-enabled>
    <item-listeners>
-      <item-listener>???<item-listener>
-   </item-listeners>
+      <item-listener>
+          com.hazelcast.examples.ItemListener
+      </item-listener>
+   <item-listeners>
 </set>
 ```
 
@@ -32,7 +37,7 @@ It has below parameters.
 - `async-backup-count`: Count of asynchronous backups.
 - `statistics-enabled`: If set as `true`, you can retrieve statistics for this Set.
 - `max-size`: It is the maximum entry size for this Set.
-- `item-listeners`: ???
+- `item-listeners`: This element lets you add listeners (listener classes) for the list items. You can also set the attributes `include-value` to `true` if you want the item event to contain the item values and `local` to `true` if you want to listen the items on the local node.
 
 
 

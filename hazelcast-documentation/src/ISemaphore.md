@@ -75,3 +75,11 @@ A sample configuration is shown below.
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *If high performance is more important (than not losing the permit information), you can disable the backups by setting `backup-count` to 0.*
 
+<br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [Semaphore Configuration section](#semaphore-configuration) for a full description of Hazelcast Distributed Semaphore configuration.*
+
+

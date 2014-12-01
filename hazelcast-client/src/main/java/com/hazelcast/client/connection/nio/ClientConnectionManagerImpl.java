@@ -60,7 +60,6 @@ import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -318,11 +317,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             throw new IOException("Address is required!");
         }
 
-        ClientConnection clientConnection = connections.get(address);
+        ClientConnection clientConnection = connections.get(target);
         if (clientConnection == null) {
-            final Object lock = getLock(address);
+            final Object lock = getLock(target);
             synchronized (lock) {
-                clientConnection = connections.get(address);
+                clientConnection = connections.get(target);
                 if (clientConnection == null) {
                     final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, false);
                     final ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
@@ -332,7 +331,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         future.cancel(true);
                         throw ExceptionUtil.rethrow(e, IOException.class);
                     }
-                    ClientConnection current = connections.putIfAbsent(address, clientConnection);
+                    ClientConnection current = connections.putIfAbsent(clientConnection.getRemoteEndpoint(), clientConnection);
                     if (current != null) {
                         clientConnection.close();
                         clientConnection = current;
@@ -491,8 +490,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (response instanceof Throwable) {
             Throwable t = (Throwable) response;
             ExceptionUtil.fixRemoteStackTrace(t, Thread.currentThread().getStackTrace());
-            if(t instanceof Exception){
-                throw (Exception)t;
+            if (t instanceof Exception) {
+                throw (Exception) t;
             }
             throw new Exception(t);
         }

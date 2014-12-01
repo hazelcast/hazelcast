@@ -76,7 +76,6 @@ It has below attributes.
 PutIfAbsentMapMergePolicy causes the merging entry to be merged from source to destination map if it does not exist in the destination map.
 - `statistics-enabled`: You can retrieve statistics information like owned entry count, backup entry count, last update time, locked entry count by setting this element's value to `true`. The method for retrieving the statistics is `getLocalMapStats()`.
 - `wan-replication-ref`: Hazelcast can replicate some or all of the cluster data. For example, you can have 5 different maps but you want only one of these maps replicating across clusters. To achieve this you mark the maps to be replicated by adding this element in the map configuration.
-- `partition-strategy`: ???
 - `optimize-queries`: This element is used to increase the speed of query processes in the map. It only works when `in-memory-format` is set as `BINARY` and performs a pre-caching on the entries queried.
 
 ### Map Store
@@ -96,6 +95,6 @@ Most of map near cache properties have the same names and tasks explained in map
 This configuration lets you index the attributes of an object in the map and also order these attributes. See the example declarative and programmatic configuration.
 
 ### Entry Listeners
-This configuration lets you add listeners (listener classes) for the map entries. You can also set the attributes `include-value` to `true` if you want the entry event to contain the entry values and `local` to `true` if you want to listen the entries on the local node.
+This configuration lets you add listeners (listener classes) for the map entries. You can also set the attributes `include-value` to `true` if you want the entry event to contain the entry values and `local` to `true` if you want to listen to the entries on the local node.
 
 

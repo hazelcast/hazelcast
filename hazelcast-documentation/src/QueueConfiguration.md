@@ -1,4 +1,4 @@
-### Queue Configuration
+### Configuring Queue
 
 An example declarative configuration is shown below.
 
@@ -18,4 +18,10 @@ Hazelcast distributed queue has one synchronous backup by default. By having thi
 
 
 The `max-size` element defines the maximum size of the queue. You can use the `empty-queue-ttl` element when you want to purge unused or empty queues after a period of time. If you define a value (time in seconds) for this element, then your queue will be destroyed if it stays empty or unused for the time you give.
+
+<br></br>
+
+***RELATED INFORMATION***
+
+*Please refer to the [Queue Configuration section](#queue-configuration) for a full description of Hazelcast Distributed Queue configuration.*
 

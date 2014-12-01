@@ -29,5 +29,5 @@ You can also use wildcards while configuring Hazelcast. Please refer to the [Usi
 
 ***RELATED INFORMATION***
 
-*Please refer to the [Configuration chapter](#configuration) for more information.*
+*Please refer to the [Hazelcast Configuration chapter](#hazelcast-configuration) for more information.*
 
