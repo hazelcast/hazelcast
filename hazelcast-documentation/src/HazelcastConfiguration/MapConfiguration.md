@@ -96,6 +96,6 @@ Most of map near cache properties have the same names and tasks explained in map
 This configuration lets you index the attributes of an object in the map and also order these attributes. See the example declarative and programmatic configuration.
 
 ### Entry Listeners
-This configuration lets you add listeners (listener classes) for the map entries. You can also set the attributes `include-value` to `true` if you want the entry event to contain the entry values and `local` to `true` if you want to listen the entries on the local node.
+This configuration lets you add listeners (listener classes) for the map entries. You can also set the attributes `include-value` to `true` if you want the entry event to contain the entry values and `local` to `true` if you want to listen to the entries on the local node.
 
 
