@@ -173,6 +173,7 @@ src/HazelcastConfiguration/ConfigurationOverview.md
 	src/HazelcastConfiguration/MultiMapConfiguration.md
 	src/HazelcastConfiguration/QueueConfiguration.md
 	src/HazelcastConfiguration/TopicConfiguration.md
+	src/HazelcastConfiguration/ListConfiguration.md
 #		src/ConfigSpecifyInterfaces.md
 #		src/EC2AutoDiscovery.md
 #		src/Ports.md

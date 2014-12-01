@@ -1,6 +1,8 @@
 
 ## List Configuration
 
+The following are the example configurations.
+
 **Declarative:**
 
 ```xml
@@ -32,7 +34,7 @@ It has below parameters.
 - `async-backup-count`: Count of asynchronous backups.
 - `statistics-enabled`: If set as `true`, you can retrieve statistics for this List.
 - `max-size`: It is the maximum entry size for this List.
-- `item-listeners`: ???
+- `item-listeners`: This element lets you add listeners (listener classes) for the list items. You can also set the attributes `include-value` to `true` if you want the item event to contain the item values and `local` to `true` if you want to listen the items on the local node.
 
 
 

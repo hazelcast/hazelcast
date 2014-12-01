@@ -77,4 +77,11 @@ public class Sample implements ItemListener{
 
 *To learn more about the configuration of listeners please refer to the [Listener Configurations section](#listener-configurations).*
 
+<br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [List Configuration section](#list-configuration) for a full description of Hazelcast Distributed List configuration.*
+
 
