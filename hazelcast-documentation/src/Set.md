@@ -71,5 +71,9 @@ public class Sample implements ItemListener {
        
 ```
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *To learn more about the configuration of listeners please refer to the [Listener Configurations section](#listener-configurations).*
+<br></br>
+
+***RELATED INFORMATION***
+
+*To learn more about the configuration of listeners please refer to the [Listener Configurations section](#listener-configurations).*
 
