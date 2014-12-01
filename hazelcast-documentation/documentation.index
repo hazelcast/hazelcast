@@ -170,6 +170,7 @@ src/HazelcastConfiguration/ConfigurationOverview.md
 	src/HazelcastConfiguration/NetworkConfiguration.md
 	src/HazelcastConfiguration/GroupConfiguration.md
 	src/HazelcastConfiguration/MapConfiguration.md
+	src/HazelcastConfiguration/MultiMapConfiguration.md
 #		src/ConfigSpecifyInterfaces.md
 #		src/EC2AutoDiscovery.md
 #		src/Ports.md
