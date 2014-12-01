@@ -29,6 +29,7 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.executor.impl.client.IsShutdownRequest;
+import com.hazelcast.executor.impl.client.PartitionCallableRequest;
 import com.hazelcast.executor.impl.client.ShutdownRequest;
 import com.hazelcast.executor.impl.client.TargetCallableRequest;
 import com.hazelcast.instance.MemberImpl;
@@ -328,7 +329,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     public boolean isShutdown() {
         final IsShutdownRequest request = new IsShutdownRequest(name);
-        Boolean result = invoke(request);
+        final Boolean result = invoke(request);
         return result;
     }
 
@@ -388,10 +389,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         final int partitionId = getPartitionId(key);
-        final Address target = getPartitionOwner(partitionId);
-        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, target);
-        final ICompletableFuture<T> f = invokeFuture(request);
-        return checkSync(f, uuid, target, preventSync, defaultValue);
+        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId);
+        final ICompletableFuture<T> f = invokeFuture(request, partitionId);
+        return checkSync(f, uuid, request.getTargetOrNull(), preventSync, defaultValue);
     }
 
     private <T> void submitToKeyOwnerInternal(Callable<T> task, Object key, ExecutionCallback<T> callback) {
@@ -399,9 +399,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         final int partitionId = getPartitionId(key);
-        final Address target = getPartitionOwner(partitionId);
-        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, target);
-        final ICompletableFuture<T> f = invokeFuture(request);
+        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId);
+        final ICompletableFuture<T> f = invokeFuture(request, partitionId);
         f.andThen(callback);
     }
 
@@ -410,10 +409,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         final int partitionId = randomPartitionId();
-        final Address target = getPartitionOwner(partitionId);
-        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, target);
-        final ICompletableFuture<T> f = invokeFuture(request);
-        return checkSync(f, uuid, target, preventSync, defaultValue);
+        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId);
+        final ICompletableFuture<T> f = invokeFuture(request, partitionId);
+        return checkSync(f, uuid, request.getTargetOrNull(), preventSync, defaultValue);
     }
 
     private <T> void submitToRandomInternal(Callable<T> task, ExecutionCallback<T> callback) {
@@ -421,9 +419,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         final int partitionId = randomPartitionId();
-        final Address target = getPartitionOwner(partitionId);
-        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, target);
-        final ICompletableFuture<T> f = invokeFuture(request);
+        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId);
+        final ICompletableFuture<T> f = invokeFuture(request, partitionId);
         f.andThen(callback);
     }
 
@@ -552,6 +549,16 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         public void onComplete(Map<Member, Object> values) {
             multiExecutionCallback.onComplete(values);
+        }
+    }
+
+    private <T> ICompletableFuture<T> invokeFuture(PartitionCallableRequest request, int partitionId) {
+        try {
+            final Address partitionOwner = getPartitionOwner(partitionId);
+            request.setTarget(partitionOwner);
+            return getContext().getInvocationService().invokeOnTarget(request, partitionOwner);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
