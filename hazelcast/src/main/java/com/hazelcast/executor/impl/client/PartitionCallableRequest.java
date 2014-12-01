@@ -17,9 +17,10 @@
 package com.hazelcast.executor.impl.client;
 
 import com.hazelcast.client.impl.client.PartitionClientRequest;
-import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorPortableHook;
+import com.hazelcast.executor.impl.operations.CallableTaskOperation;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -41,6 +42,7 @@ public class PartitionCallableRequest extends PartitionClientRequest {
     private String uuid;
     private Callable callable;
     private int partitionId;
+    private transient Address target;
 
     public PartitionCallableRequest() {
     }
@@ -113,5 +115,13 @@ public class PartitionCallableRequest extends PartitionClientRequest {
                 + ", callable=" + callable
                 + ", partitionId=" + partitionId
                 + '}';
+    }
+
+    public Address getTargetOrNull() {
+        return target;
+    }
+
+    public void setTarget(Address target) {
+        this.target = target;
     }
 }
