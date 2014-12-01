@@ -1,5 +1,5 @@
 
-### Queue Configuration
+## Queue Configuration
 
 
 The following are example configurations.
