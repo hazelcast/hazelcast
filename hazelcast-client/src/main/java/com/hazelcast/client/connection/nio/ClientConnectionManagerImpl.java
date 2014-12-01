@@ -321,7 +321,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             target = ownerConnectionFuture.getOrWaitForCreation().getEndPoint();
         }
 
-        Address address = addressTranslator.translate(target);
+        final Address address = addressTranslator.translate(target);
 
         if (address == null) {
             throw new IOException("Address is required!");

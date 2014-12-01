@@ -38,15 +38,6 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
 
 
     public ClientCancellableDelegatingFuture(ICompletableFuture future, ClientContext context,
-                                             String uuid, Address target, int partitionId) {
-        super(future, context.getSerializationService());
-        this.context = context;
-        this.uuid = uuid;
-        this.target = target;
-        this.partitionId = partitionId;
-    }
-
-    public ClientCancellableDelegatingFuture(ICompletableFuture future, ClientContext context,
                                              String uuid, Address target, int partitionId, V defaultValue) {
         super(future, context.getSerializationService(), defaultValue);
         this.context = context;
@@ -84,7 +75,7 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
             request = new CancellationRequest(uuid, target, mayInterruptIfRunning);
         } else {
             final ClientPartitionService partitionService = context.getPartitionService();
-            address =  partitionService.getPartitionOwner(partitionId);
+            address = partitionService.getPartitionOwner(partitionId);
             request = new CancellationRequest(uuid, partitionId, mayInterruptIfRunning);
         }
         try {
