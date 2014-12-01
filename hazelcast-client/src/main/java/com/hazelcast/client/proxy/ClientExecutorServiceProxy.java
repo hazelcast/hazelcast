@@ -329,7 +329,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     public boolean isShutdown() {
         final IsShutdownRequest request = new IsShutdownRequest(name);
-        return invoke(request);
+        final Boolean result = invoke(request);
+        return result;
     }
 
     public boolean isTerminated() {
