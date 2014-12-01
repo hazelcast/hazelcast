@@ -17,7 +17,6 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.executor.impl.client.CancellationRequest;
 import com.hazelcast.nio.Address;
@@ -33,26 +32,15 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
     private final ClientContext context;
     private final String uuid;
     private final Address target;
-    private final int partitionId;
     private volatile boolean cancelled;
 
 
     public ClientCancellableDelegatingFuture(ICompletableFuture future, ClientContext context,
-                                             String uuid, Address target, int partitionId) {
-        super(future, context.getSerializationService());
-        this.context = context;
-        this.uuid = uuid;
-        this.target = target;
-        this.partitionId = partitionId;
-    }
-
-    public ClientCancellableDelegatingFuture(ICompletableFuture future, ClientContext context,
-                                             String uuid, Address target, int partitionId, V defaultValue) {
+                                             String uuid, Address target, V defaultValue) {
         super(future, context.getSerializationService(), defaultValue);
         this.context = context;
         this.uuid = uuid;
         this.target = target;
-        this.partitionId = partitionId;
     }
 
     @Override
@@ -78,17 +66,10 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
     }
 
     private Future invokeCancelRequest(boolean mayInterruptIfRunning) {
-        CancellationRequest request;
-        Address address = target;
-        if (target != null) {
-            request = new CancellationRequest(uuid, target, mayInterruptIfRunning);
-        } else {
-            final ClientPartitionService partitionService = context.getPartitionService();
-            address =  partitionService.getPartitionOwner(partitionId);
-            request = new CancellationRequest(uuid, partitionId, mayInterruptIfRunning);
-        }
+        final Address target = this.target;
+        CancellationRequest request = new CancellationRequest(uuid, target, mayInterruptIfRunning);
         try {
-            return context.getInvocationService().invokeOnTarget(request, address);
+            return context.getInvocationService().invokeOnTarget(request, target);
         } catch (Exception e) {
             throw rethrow(e);
         }

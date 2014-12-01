@@ -61,14 +61,19 @@ public class CancellationRequest extends InvocationClientRequest {
     @Override
     protected void invoke() {
         CancellationOperation op = new CancellationOperation(uuid, interrupt);
-        InvocationBuilder builder;
-        if (target != null) {
-            builder = createInvocationBuilder(getServiceName(), op, target);
-        } else {
-            builder = createInvocationBuilder(getServiceName(), op, partitionId);
-        }
+        InternalCompletableFuture future = invokeOperation(op);
+        final boolean result = getResult(future);
+        getEndpoint().sendResponse(result, getCallId());
+    }
+
+    private InternalCompletableFuture invokeOperation(CancellationOperation op) {
+        final InvocationBuilder builder = createInvocationBuilder(op);
         builder.setTryCount(CANCEL_TRY_COUNT).setTryPauseMillis(CANCEL_TRY_PAUSE_MILLIS);
-        InternalCompletableFuture future = builder.invoke();
+
+        return builder.invoke();
+    }
+
+    private boolean getResult(InternalCompletableFuture future) {
         boolean result = false;
         try {
             result = (Boolean) future.get();
@@ -77,7 +82,17 @@ public class CancellationRequest extends InvocationClientRequest {
         } catch (ExecutionException e) {
             logException(e);
         }
-        getEndpoint().sendResponse(result, getCallId());
+        return result;
+    }
+
+    private InvocationBuilder createInvocationBuilder(CancellationOperation op) {
+        final Address target = this.target;
+
+        if (target == null) {
+            return createInvocationBuilder(getServiceName(), op, partitionId);
+        }
+
+        return createInvocationBuilder(getServiceName(), op, target);
     }
 
     private void logException(Exception e) {
