@@ -44,7 +44,7 @@ public class CacheSimpleConfig {
     /**
      * Default Eviction Policy.
      */
-    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
+    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
 
     private String name;
 
