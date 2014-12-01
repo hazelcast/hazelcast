@@ -389,9 +389,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         final int partitionId = getPartitionId(key);
-        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId);
-        final ICompletableFuture<T> f = invokeFuture(request, partitionId);
-        return checkSync(f, uuid, request.getTargetOrNull(), partitionId, preventSync, defaultValue);
+        final Address target = getPartitionOwner(partitionId);
+        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, target);
+        final ICompletableFuture<T> f = invokeFuture(request);
+        return checkSync(f, uuid, target, preventSync, defaultValue);
     }
 
     private <T> void submitToKeyOwnerInternal(Callable<T> task, Object key, ExecutionCallback<T> callback) {
@@ -409,9 +410,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         final int partitionId = randomPartitionId();
-        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId);
-        final ICompletableFuture<T> f = invokeFuture(request, partitionId);
-        return checkSync(f, uuid, request.getTargetOrNull(), partitionId, preventSync, defaultValue);
+        final Address target = getPartitionOwner(partitionId);
+        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, target);
+        final ICompletableFuture<T> f = invokeFuture(request);
+        return checkSync(f, uuid, target, preventSync, defaultValue);
     }
 
     private <T> void submitToRandomInternal(Callable<T> task, ExecutionCallback<T> callback) {
@@ -430,7 +432,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         final String uuid = getUUID();
         final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, address);
         ICompletableFuture<T> f = invokeFuture(request);
-        return checkSync(f, uuid, address, -1, preventSync, defaultValue);
+        return checkSync(f, uuid, address, preventSync, defaultValue);
     }
 
     private <T> void submitToTargetInternal(Callable<T> task, final Address address, final ExecutionCallback<T> callback) {
@@ -450,7 +452,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
      * Used to prevent possible system overload which is caused by unprocessed tasks.
      */
     private <T> Future<T> checkSync(ICompletableFuture<T> future, String uuid,
-                                    Address address, int partitionId, boolean preventSync, T defaultValue) {
+                                    Address address, boolean preventSync, T defaultValue) {
 
         final boolean sync = isSyncComputation(preventSync);
 
@@ -460,7 +462,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             return new CompletedFuture<T>(getContext().getSerializationService(), response, asyncExecutor);
         }
 
-        return new ClientCancellableDelegatingFuture<T>(future, getContext(), uuid, address, partitionId, defaultValue);
+        return new ClientCancellableDelegatingFuture<T>(future, getContext(), uuid, address, defaultValue);
     }
 
     private <T> Object retrieveResult(Future<T> f) {
