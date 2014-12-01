@@ -12,7 +12,9 @@ The following are the example configurations.
    <max-size>10</max-size>
    <statistics-enabled>true</statistics-enabled>
    <item-listeners>
-      <item-listener>???<item-listener>
+      <item-listener>
+          com.hazelcast.examples.ItemListener
+      </item-listener>
    </item-listeners>
 </list>
 ```
