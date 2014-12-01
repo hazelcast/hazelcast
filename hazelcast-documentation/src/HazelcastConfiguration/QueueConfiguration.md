@@ -14,7 +14,9 @@ The following are example configurations.
     <async-backup-count>0</async-backup-count>
     <empty-queue-ttl>-1</empty-queue-ttl>
     <item-listeners>
-       <item-listener>???</item-listener>
+       <item-listener>
+          com.hazelcast.examples.ItemListener
+       </item-listener>
     <item-listeners>
 </queue>
 <queue-store>
