@@ -1,6 +1,6 @@
 
 
-### Topic Configuration
+### Configuring Topic
 
 **Declarative Configuration:**
 
@@ -50,6 +50,13 @@ Topic related but not topic specific configuration parameters:
 <br></br>
 ***RELATED INFORMATION*** 
 
-*For description of these parameters, please see the [Global Event Configuration section](#global-event-configuration)*
+*For description of these parameters, please see the [Global Event Configuration section](#global-event-configuration).*
+
+<br></br>
+
+***RELATED INFORMATION***
+
+*Please refer to the [Topic Configuration section](#topic-configuration) for a full description of Hazelcast Distributed Topic configuration.*
+
 
 
