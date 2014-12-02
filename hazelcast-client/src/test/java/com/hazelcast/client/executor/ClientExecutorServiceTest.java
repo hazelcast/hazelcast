@@ -59,6 +59,7 @@ public class ClientExecutorServiceTest {
     public static void beforeClass() {
         Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
