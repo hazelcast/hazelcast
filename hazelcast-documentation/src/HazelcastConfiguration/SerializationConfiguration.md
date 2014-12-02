@@ -1,5 +1,5 @@
 
-### Serialization Configuration
+## Serialization Configuration
 
 The following are the example configurations.
 
@@ -38,11 +38,15 @@ The following are the example configurations.
 Config config = new Config();
 SerializationConfig srzConfig = config.getSerializationConfig();
 srzConfig.setPortableVersion( "2" ).setUseNativeByteOrder( true );
-
 srzConfig.setAllowUnsafe( true ).setEnableCompression( true );
+srzConfig.setCheckClassDefErrors( true );
 
 GlobalSerializerConfig globSrzConfig = srzConfig.getGlobalSerializerConfig();
-globSrzConfig.
+globSrzConfig.setClassName( "abc.Class" );
+
+SerializerConfig serializerConfig = srzConfig.getSerializerConfig();
+serializerConfig.setTypeClass( "Employee" )
+                .setClassName( "com.EmployeeSerializer" );
 ```
 
 It has below attributes.
