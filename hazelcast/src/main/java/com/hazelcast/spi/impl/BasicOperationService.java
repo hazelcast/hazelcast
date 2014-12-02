@@ -431,10 +431,9 @@ final class BasicOperationService implements InternalOperationService {
     public void shutdown() {
         shutdown = true;
         logger.finest("Stopping operation threads...");
-        final Object response = new HazelcastInstanceNotActiveException();
         for (BasicInvocation invocation : invocations.values()) {
             try {
-                invocation.notify(response);
+                invocation.notify(new HazelcastInstanceNotActiveException());
             } catch (Throwable e) {
                 logger.warning(invocation + " could not be notified with shutdown message -> " + e.getMessage());
             }
