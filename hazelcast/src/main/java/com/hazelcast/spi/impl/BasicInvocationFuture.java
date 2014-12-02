@@ -38,7 +38,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             = AtomicReferenceFieldUpdater.newUpdater(BasicInvocationFuture.class, Object.class, "response");
 
     volatile boolean interrupted;
-    private BasicInvocation basicInvocation;
+    private final BasicInvocation basicInvocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
     private volatile Object response;
     private final BasicOperationService operationService;

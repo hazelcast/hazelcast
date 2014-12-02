@@ -391,7 +391,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     //this method is called by the operation service to signal the invocation that something has happened, e.g.
     //a response is returned.
-    //@Override
     public void notify(Object obj) {
         Object response = resolveResponse(obj);
 
