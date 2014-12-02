@@ -114,10 +114,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
             Factory<? extends CacheEntryEventFilter<? super K, ? super V>> filterFactory = null;
             if (simpleListener.getCacheEntryListenerFactory() != null) {
-                listenerFactory = FactoryBuilder.factoryOf(simpleListener.getCacheEntryListenerFactory());
+                listenerFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryListenerFactory());
             }
             if (simpleListener.getCacheEntryEventFilterFactory() != null) {
-                filterFactory = FactoryBuilder.factoryOf(simpleListener.getCacheEntryEventFilterFactory());
+                filterFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryEventFilterFactory());
             }
             boolean isOldValueRequired = simpleListener.isOldValueRequired();
             boolean synchronous = simpleListener.isSynchronous();
