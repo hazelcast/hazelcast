@@ -125,7 +125,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     final boolean resultDeserialized;
     boolean remote;
 
-    volatile NormalResponse pendingResponse;
+    volatile Object pendingResponse;
     volatile int backupsExpected;
     volatile int backupsCompleted;
 
@@ -135,7 +135,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
     private volatile Boolean responseReceived = Boolean.FALSE;
 
-     //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
+    //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
     private volatile int invokeCount;
 
     private final String executorName;
@@ -162,6 +162,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     }
 
     abstract ExceptionAction onException(Throwable t);
+
+    protected abstract Address getTarget();
 
     public String getServiceName() {
         return serviceName;
@@ -235,7 +237,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     private void handleInvocationException(Exception e) {
         if (e instanceof RetryableException) {
-            notify(e);
+            notifyNormalResponse(e, 0);
         } else {
             throw ExceptionUtil.rethrow(e);
         }
@@ -288,14 +290,14 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         boolean sent = operationService.send(op, invTarget);
         if (!sent) {
             operationService.deregisterInvocation(this);
-            notify(new RetryableIOException("Packet not send to -> " + invTarget));
+            notifyNormalResponse(new RetryableIOException("Packet not send to -> " + invTarget), 0);
         }
     }
 
     private boolean engineActive() {
         if (!nodeEngine.isActive()) {
             remote = false;
-            notify(new HazelcastInstanceNotActiveException());
+            notifyNormalResponse(new HazelcastInstanceNotActiveException(), 0);
             return false;
         }
         return true;
@@ -314,29 +316,29 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
-                notify(new WrongTargetException(thisAddress, null, partitionId
-                        , replicaIndex, op.getClass().getName(), serviceName));
+                notifyNormalResponse(new WrongTargetException(thisAddress, null, partitionId
+                        , replicaIndex, op.getClass().getName(), serviceName), 0);
             } else {
-                notify(new HazelcastInstanceNotActiveException());
+                notifyNormalResponse(new HazelcastInstanceNotActiveException(), 0);
             }
             return false;
         }
 
         invTargetMember = nodeEngine.getClusterService().getMember(invTarget);
         if (!isJoinOperation(op) && invTargetMember == null) {
-            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            notifyNormalResponse(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName), 0);
             return false;
         }
 
         if (op.getPartitionId() != partitionId) {
-            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId()
-                    + " is not equal to the partition id of invocation: " + partitionId));
+            notifyNormalResponse(new IllegalStateException("Partition id of operation: " + op.getPartitionId()
+                    + " is not equal to the partition id of invocation: " + partitionId), 0);
             return false;
         }
 
         if (op.getReplicaIndex() != replicaIndex) {
-            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex()
-                    + " is not equal to the replica index of invocation: " + replicaIndex));
+            notifyNormalResponse(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex()
+                    + " is not equal to the replica index of invocation: " + replicaIndex), 0);
             return false;
         }
 
@@ -344,34 +346,24 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         return true;
     }
 
-    private static Throwable getError(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-
-        if (obj instanceof Throwable) {
-            return (Throwable) obj;
-        }
-
-        if (!(obj instanceof NormalResponse)) {
-            return null;
-        }
-
-        NormalResponse response = (NormalResponse) obj;
-        if (!(response.getValue() instanceof Throwable)) {
-            return null;
-        }
-
-        return (Throwable) response.getValue();
+    @Override
+    public void sendResponse(Object obj) {
+        sendResponse(obj, 0);
     }
 
     @Override
-    public void sendResponse(Object obj) {
+    public void sendResponse(Object obj, int backupCount) {
         if (!RESPONSE_RECEIVED_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
                     + ", current-response: : " + obj);
         }
-        notify(obj);
+        notifyNormalResponse(obj, backupCount);
+    }
+
+
+    @Override
+    public void sendCallTimeout() {
+        notifyTimeout();
     }
 
     @Override
@@ -387,10 +379,14 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
     }
 
-    //this method is called by the operation service to signal the invocation that something has happened, e.g.
-    //a response is returned.
-    public void notify(Object obj) {
-        Object response = resolveResponse(obj);
+    /**
+     * Notifies this BasicInvocation that a response has returned.
+     *
+     * @param response    the response content
+     * @param backupCount the number of backups that are going to call {@link #notifyBackupComplete()}
+     */
+    public void notifyNormalResponse(Object response, int backupCount) {
+        response = resolveResponse(response, backupCount);
 
         if (response == RETRY_RESPONSE) {
             handleRetryResponse();
@@ -402,38 +398,19 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             return;
         }
 
-        if (response instanceof CallTimeoutResponse) {
-            handleTimeoutResponse();
-            return;
-        }
-
-        if (response instanceof NormalResponse) {
-            handleNormalResponse((NormalResponse) response);
-            return;
-        }
-
-        // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
-        invocationFuture.set(response);
-    }
-
-    private void handleNormalResponse(NormalResponse response) {
-        //if a regular response came and there are backups, we need to wait for the backs.
-        //when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
-
-        int backupsExpected = response.getBackupCount();
-        if (backupsExpected > backupsCompleted) {
+        if (backupCount > backupsCompleted) {
             // So the invocation has backups and since not all backups have completed, we need to wait.
             // It could be that backups arrive earlier than the response.
 
             this.pendingResponseReceivedMillis = Clock.currentTimeMillis();
 
-            this.backupsExpected = backupsExpected;
+            this.backupsExpected = backupCount;
 
             // It is very important that the response is set after the backupsExpected is set. Else the system
             // can assume the invocation is complete because there is a response and no backups need to respond.
             this.pendingResponse = response;
 
-            if (backupsCompleted != backupsExpected) {
+            if (backupsCompleted != backupCount) {
                 // We are done since not all backups have completed. Therefor we should not notify the future.
                 return;
             }
@@ -464,16 +441,22 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
     }
 
-    private Object resolveResponse(Object obj) {
+    private Object resolveResponse(Object obj, int backupCount) {
         if (obj == null) {
             return NULL_RESPONSE;
         }
 
-        Throwable error = getError(obj);
-        if (error == null) {
+        // todo:  byte.max_value-1 indicates exception and then we are going to do a deserialize
+        // so we do a deserialize only for exceptions. This still sucks btw.
+        if (backupCount == Byte.MAX_VALUE - 1) {
+            obj = nodeEngine.toObject(obj);
+        }
+
+        if (!(obj instanceof Throwable)) {
             return obj;
         }
 
+        Throwable error = (Throwable) obj;
         ExceptionAction action = onException(error);
         int localInvokeCount = invokeCount;
         if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
@@ -492,26 +475,29 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
-    private void handleTimeoutResponse() {
+    public void notifyTimeout() {
         if (logger.isFinestEnabled()) {
             logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
         }
+
         if (op instanceof WaitSupport) {
             // decrement wait-timeout by call-timeout
             long waitTimeout = op.getWaitTimeout();
             waitTimeout -= callTimeout;
             op.setWaitTimeout(waitTimeout);
         }
+
         invokeCount--;
         handleRetryResponse();
     }
 
-    protected abstract Address getTarget();
-
-    public void signalOneBackupComplete() {
+    /**
+     * Signals this BasicInvocation that one backup has completed.
+     */
+    public void notifyBackupComplete() {
         final int newBackupsCompleted = BACKUPS_COMPLETED_FIELD_UPDATER.incrementAndGet(this);
 
-        final NormalResponse pendingResponse = this.pendingResponse;
+        final Object pendingResponse = this.pendingResponse;
         if (pendingResponse == null) {
             // No pendingResponse has been set, so we are done since the invocation on the primary needs to complete first.
             return;
@@ -594,7 +580,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         }
 
         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
-        final Response pendingResponse = this.pendingResponse;
+        final Object pendingResponse = this.pendingResponse;
         if (pendingResponse != null) {
             invocationFuture.set(pendingResponse);
         }

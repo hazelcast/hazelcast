@@ -16,18 +16,29 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.nio.serialization.BinaryClassDefinition;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.ClassDefinitionSerializer;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataAdapter;
+import com.hazelcast.nio.serialization.DefaultData;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.PortableContext;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+
 /**
  * A Packet is a piece of data send over the line.
  */
-public final class Packet extends DataAdapter implements SocketWritable, SocketReadable {
+public final class Packet implements SocketWritable, SocketReadable {
 
-    public static final byte VERSION = 3;
+    /**
+     * Version 3 is Hazelcast 3.4.x
+     * Version 4 is Hazelcast 3.5.x
+     */
+    public static final byte VERSION = 4;
+
     public static final int HEADER_OP = 0;
     public static final int HEADER_RESPONSE = 1;
     public static final int HEADER_EVENT = 2;
@@ -35,26 +46,61 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public static final int HEADER_URGENT = 4;
     public static final int HEADER_BIND = 5;
 
-    private static final int ST_VERSION = 10;
-    private static final int ST_HEADER = 11;
-    private static final int ST_PARTITION = 12;
+    // The value of these constants is important. The order needs to match the order in the read/write process
+    private static final short PERSIST_VERSION = 1;
+    private static final short PERSIST_HEADER = 2;
+    private static final short PERSIST_SIZE = 3;
+    private static final short PERSIST_PARTITION = 4;
+    private static final short PERSIST_TYPE = 5;
+    private static final short PERSIST_HASH = 6;
+    private static final short PERSIST_RESPONSE_INFO = 7;
+    private static final short PERSIST_VALUE = 8;
+    private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
 
+    private Data data;
+    private PortableContext context;
     private short header;
     private int partitionId;
-
     private transient Connection conn;
+    private long responseCallId;
+    private byte responseBackupCount;
+
+    // These 2 fields are only used during read/write. Otherwise they have no meaning.
+    private int valueOffset;
+    private int valueSize;
+    // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
+    private short persistStatus;
+
+    private ClassDefinitionSerializer classDefinitionSerializer;
 
     public Packet(PortableContext context) {
-        super(context);
+        this.context = context;
     }
 
-    public Packet(Data value, PortableContext context) {
-        this(value, -1, context);
+    public Packet(Data data, PortableContext context) {
+        this(data, -1, context);
     }
 
-    public Packet(Data value, int partitionId, PortableContext context) {
-        super(value, context);
+    public Packet(Data data, int partitionId, PortableContext context) {
+        this.data = data;
+        this.context = context;
         this.partitionId = partitionId;
+    }
+
+    public long getResponseCallId() {
+        return responseCallId;
+    }
+
+    public void setResponseCallId(long responseCallId) {
+        this.responseCallId = responseCallId;
+    }
+
+    public byte getResponseBackupCount() {
+        return responseBackupCount;
+    }
+
+    public void setResponseBackupCount(byte responseBackupCount) {
+        this.responseBackupCount = responseBackupCount;
     }
 
     /**
@@ -74,7 +120,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
      *
      * @param conn the connection.
      */
-    public void setConn(final Connection conn) {
+    public void setConn(Connection conn) {
         this.conn = conn;
     }
 
@@ -112,58 +158,390 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
 
     @Override
     public boolean writeTo(ByteBuffer destination) {
-        if (!isStatusSet(ST_VERSION)) {
-            if (!destination.hasRemaining()) {
-                return false;
-            }
-            destination.put(VERSION);
-            setStatus(ST_VERSION);
+        if (!writeVersion(destination)) {
+            return false;
         }
-        if (!isStatusSet(ST_HEADER)) {
-            if (destination.remaining() < Bits.SHORT_SIZE_IN_BYTES) {
-                return false;
-            }
-            destination.putShort(header);
-            setStatus(ST_HEADER);
+
+        if (!writeHeader(destination)) {
+            return false;
         }
-        if (!isStatusSet(ST_PARTITION)) {
-            if (destination.remaining() < Bits.INT_SIZE_IN_BYTES) {
-                return false;
-            }
-            destination.putInt(partitionId);
-            setStatus(ST_PARTITION);
+
+        if (!writeSize(destination)) {
+            return false;
         }
-        return super.writeTo(destination);
+
+        if (!writePartition(destination)) {
+            return false;
+        }
+
+        if (!writeType(destination)) {
+            return false;
+        }
+
+        if (!writeClassDefinition(destination)) {
+            return false;
+        }
+
+        if (!writeHash(destination)) {
+            return false;
+        }
+
+        if (!writeResponseInfo(destination)) {
+            return false;
+        }
+
+        if (!writeValue(destination)) {
+            return false;
+        }
+
+        setPersistStatus(PERSIST_COMPLETED);
+        return true;
     }
 
     @Override
     public boolean readFrom(ByteBuffer source) {
-        if (!isStatusSet(ST_VERSION)) {
+        if (!readVersion(source)) {
+            return false;
+        }
+
+        if (!readHeader(source)) {
+            return false;
+        }
+
+        if (!readSize(source)) {
+            return false;
+        }
+
+        if (!readPartition(source)) {
+            return false;
+        }
+
+        if (!readType(source)) {
+            return false;
+        }
+
+        if (!readClassDefinition(source)) {
+            return false;
+        }
+
+        if (!readHash(source)) {
+            return false;
+        }
+
+        if (!readResponseInfo(source)) {
+            return false;
+        }
+
+        if (!readValue(source)) {
+            return false;
+        }
+
+        setPersistStatus(PERSIST_COMPLETED);
+        return true;
+    }
+
+    // ========================= version =================================================
+
+    private boolean readVersion(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_VERSION)) {
             if (!source.hasRemaining()) {
                 return false;
             }
             byte version = source.get();
-            setStatus(ST_VERSION);
+            setPersistStatus(PERSIST_VERSION);
             if (VERSION != version) {
-                throw new IllegalArgumentException("Packet versions are not matching! This -> "
+                throw new IllegalArgumentException("Packet versions are not matching! Expected -> "
                         + VERSION + ", Incoming -> " + version);
             }
         }
-        if (!isStatusSet(ST_HEADER)) {
+        return true;
+    }
+
+    private boolean writeVersion(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_VERSION)) {
+            if (!destination.hasRemaining()) {
+                return false;
+            }
+            destination.put(VERSION);
+            setPersistStatus(PERSIST_VERSION);
+        }
+        return true;
+    }
+
+    // ========================= header =================================================
+
+    private boolean readHeader(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_HEADER)) {
             if (source.remaining() < 2) {
                 return false;
             }
             header = source.getShort();
-            setStatus(ST_HEADER);
+            setPersistStatus(PERSIST_HEADER);
         }
-        if (!isStatusSet(ST_PARTITION)) {
+        return true;
+    }
+
+    private boolean writeHeader(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_HEADER)) {
+            if (destination.remaining() < Bits.SHORT_SIZE_IN_BYTES) {
+                return false;
+            }
+            destination.putShort(header);
+            setPersistStatus(PERSIST_HEADER);
+        }
+        return true;
+    }
+
+    // ========================= partition =================================================
+
+    private boolean readPartition(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_PARTITION)) {
             if (source.remaining() < 4) {
                 return false;
             }
             partitionId = source.getInt();
-            setStatus(ST_PARTITION);
+            setPersistStatus(PERSIST_PARTITION);
         }
-        return super.readFrom(source);
+        return true;
+    }
+
+
+    private boolean writePartition(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_PARTITION)) {
+            if (destination.remaining() < Bits.INT_SIZE_IN_BYTES) {
+                return false;
+            }
+            destination.putInt(partitionId);
+            setPersistStatus(PERSIST_PARTITION);
+        }
+        return true;
+    }
+
+    // ========================= type =================================================
+
+    private boolean readType(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_TYPE)) {
+            if (valueSize >= 0) {
+                if (source.remaining() < INT_SIZE_IN_BYTES + 1) {
+                    return false;
+                }
+
+                int type = source.getInt();
+                ((DefaultData) data).setType(type);
+
+                boolean hasClassDefinition = source.get() != 0;
+                if (hasClassDefinition) {
+                    classDefinitionSerializer = new ClassDefinitionSerializer(data, context);
+                }
+            }
+            setPersistStatus(PERSIST_TYPE);
+        }
+        return true;
+    }
+
+    private boolean writeType(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_TYPE)) {
+            if (valueSize >= 0) {
+                if (destination.remaining() < INT_SIZE_IN_BYTES + 1) {
+                    return false;
+                }
+
+                int type = data.getType();
+                destination.putInt(type);
+
+                boolean hasClassDefinition = context.hasClassDefinition(data);
+                destination.put((byte) (hasClassDefinition ? 1 : 0));
+
+                if (hasClassDefinition) {
+                    classDefinitionSerializer = new ClassDefinitionSerializer(data, context);
+                }
+            }
+
+            setPersistStatus(PERSIST_TYPE);
+        }
+        return true;
+    }
+
+    // ========================= class definition =================================================
+
+    private boolean readClassDefinition(ByteBuffer source) {
+        if (classDefinitionSerializer != null) {
+            if (!classDefinitionSerializer.read(source)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean writeClassDefinition(ByteBuffer destination) {
+        if (classDefinitionSerializer != null) {
+            if (!classDefinitionSerializer.write(destination)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // ========================= hash =================================================
+
+    private boolean readHash(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_HASH)) {
+            if (valueSize >= 0) {
+                if (source.remaining() < INT_SIZE_IN_BYTES) {
+                    return false;
+                }
+                ((DefaultData) data).setPartitionHash(source.getInt());
+            }
+            setPersistStatus(PERSIST_HASH);
+        }
+        return true;
+    }
+
+    private boolean writeHash(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_HASH)) {
+            if (valueSize >= 0) {
+                if (destination.remaining() < INT_SIZE_IN_BYTES) {
+                    return false;
+                }
+                destination.putInt(data.hasPartitionHash() ? data.getPartitionHash() : 0);
+            }
+            setPersistStatus(PERSIST_HASH);
+        }
+        return true;
+    }
+
+    // ========================= responseInfo =================================================
+
+    private boolean writeResponseInfo(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_RESPONSE_INFO)) {
+            if (isHeaderSet(HEADER_RESPONSE) && isHeaderSet(HEADER_OP)) {
+                if (destination.remaining() < Bits.LONG_SIZE_IN_BYTES + 1) {
+                    return false;
+                }
+                destination.putLong(responseCallId);
+                destination.put(responseBackupCount);
+            }
+            setPersistStatus(PERSIST_RESPONSE_INFO);
+        }
+        return true;
+    }
+
+    private boolean readResponseInfo(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_RESPONSE_INFO)) {
+            // bit checking can be simplified.
+            if (isHeaderSet(HEADER_RESPONSE) && isHeaderSet(HEADER_OP)) {
+                if (source.remaining() < Bits.LONG_SIZE_IN_BYTES + 1) {
+                    return false;
+                }
+
+                responseCallId = source.getLong();
+                responseBackupCount = source.get();
+            }
+            setPersistStatus(PERSIST_RESPONSE_INFO);
+        }
+        return true;
+    }
+
+    // ========================= size =================================================
+
+    private boolean readSize(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_SIZE)) {
+            if (source.remaining() < INT_SIZE_IN_BYTES) {
+                return false;
+            }
+
+            valueSize = source.getInt();
+            if (valueSize >= 0) {
+                data = new DefaultData(0, new byte[valueSize]);
+            }
+
+            setPersistStatus(PERSIST_SIZE);
+        }
+        return true;
+    }
+
+    private boolean writeSize(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_SIZE)) {
+            if (destination.remaining() < INT_SIZE_IN_BYTES) {
+                return false;
+            }
+
+            valueSize = data == null ? -1 : data.getData().length;
+            destination.putInt(valueSize);
+            setPersistStatus(PERSIST_SIZE);
+        }
+        return true;
+    }
+
+    // ========================= value =================================================
+
+    private boolean writeValue(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_VALUE)) {
+            if (valueSize > 0) {
+                // the number of bytes that can be written to the bb.
+                int bytesWritable = destination.remaining();
+
+                // the number of bytes that need to be written.
+                int bytesNeeded = valueSize - valueOffset;
+
+                int bytesWrite;
+                boolean done;
+                if (bytesWritable >= bytesNeeded) {
+                    // All bytes for the value are available.
+                    bytesWrite = bytesNeeded;
+                    done = true;
+                } else {
+                    // Not all bytes for the value are available. So lets write as much as is available.
+                    bytesWrite = bytesWritable;
+                    done = false;
+                }
+
+                byte[] byteArray = data.getData();
+                destination.put(byteArray, valueOffset, bytesWrite);
+                valueOffset += bytesWrite;
+
+                if (!done) {
+                    return false;
+                }
+            }
+            setPersistStatus(PERSIST_VALUE);
+        }
+        return true;
+    }
+
+    private boolean readValue(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_VALUE)) {
+            if (valueSize >= 0) {
+                if (valueSize > 0) {
+                    int bytesReadable = source.remaining();
+
+                    int bytesNeeded = valueSize - valueOffset;
+
+                    boolean done;
+                    int bytesRead;
+                    if (bytesReadable >= bytesNeeded) {
+                        bytesRead = bytesNeeded;
+                        done = true;
+                    } else {
+                        bytesRead = bytesReadable;
+                        done = false;
+                    }
+
+                    // read the data from the byte-buffer into the bytes-array.
+                    byte[] byteArray = data.getData();
+                    source.get(byteArray, valueOffset, bytesRead);
+                    valueOffset += bytesRead;
+
+
+                    if (!done) {
+                        return false;
+                    }
+                }
+            }
+
+            setPersistStatus(PERSIST_VALUE);
+        }
+        return true;
     }
 
     /**
@@ -174,6 +552,70 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public int size() {
         // 7 = byte(version) + short(header) + int(partitionId)
         return (data != null ? getDataSize(data, context) : 0) + 7;
+    }
+
+    public Data getData() {
+        return data;
+    }
+
+    public void setData(Data data) {
+        this.data = data;
+    }
+
+    public boolean done() {
+        return isPersistStatusSet(PERSIST_COMPLETED);
+    }
+
+    public void reset() {
+        data = null;
+        persistStatus = 0;
+        classDefinitionSerializer = null;
+    }
+
+    private void setPersistStatus(short persistStatus) {
+        this.persistStatus = persistStatus;
+    }
+
+    private boolean isPersistStatusSet(short status) {
+        return this.persistStatus >= status;
+    }
+
+    public static int getDataSize(Data data, PortableContext context) {
+        // type
+        int total = INT_SIZE_IN_BYTES;
+        // class def flag
+        total += 1;
+
+        if (context.hasClassDefinition(data)) {
+            ClassDefinition[] classDefinitions = context.getClassDefinitions(data);
+            if (classDefinitions == null || classDefinitions.length == 0) {
+                throw new HazelcastSerializationException("ClassDefinition could not be found!");
+            }
+            // class definitions count
+            total += INT_SIZE_IN_BYTES;
+
+            for (ClassDefinition classDef : classDefinitions) {
+                // classDefinition-classId
+                total += INT_SIZE_IN_BYTES;
+                // classDefinition-factory-id
+                total += INT_SIZE_IN_BYTES;
+                // classDefinition-version
+                total += INT_SIZE_IN_BYTES;
+                // classDefinition-binary-length
+                total += INT_SIZE_IN_BYTES;
+                byte[] bytes = ((BinaryClassDefinition) classDef).getBinary();
+                // classDefinition-binary
+                total += bytes.length;
+            }
+        }
+
+        // partition-hash
+        total += INT_SIZE_IN_BYTES;
+        // data-size
+        total += INT_SIZE_IN_BYTES;
+        // data
+        total += data.dataSize();
+        return total;
     }
 
     @Override

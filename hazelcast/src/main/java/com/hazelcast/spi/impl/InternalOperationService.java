@@ -34,7 +34,7 @@ public interface InternalOperationService extends OperationService {
 
     boolean isCallTimedOut(Operation op);
 
-    void notifyBackupCall(long callId);
+    //void notifyBackupComplete(long callId);
 
     /**
      * Executes a Runnable on a thread that is responsible for a given partition.

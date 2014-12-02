@@ -51,7 +51,6 @@ import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ExecutorType;
@@ -67,7 +66,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -123,16 +121,13 @@ final class BasicOperationService implements InternalOperationService {
     private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(1);
 
-    private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
-
     private final long defaultCallTimeoutMillis;
     private final long backupOperationTimeoutMillis;
     private final ExecutionService executionService;
     private final OperationHandler operationHandler;
     private final OperationBackupHandler operationBackupHandler;
-    private final OperationPacketHandler operationPacketHandler;
-    private final ResponsePacketHandler responsePacketHandler;
     private final OperationTimeoutHandlerThread operationTimeoutHandlerThread;
+    private final TheResponseHandler responseHandler;
     private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
@@ -142,21 +137,16 @@ final class BasicOperationService implements InternalOperationService {
         this.invocationLogger = nodeEngine.getLogger(BasicInvocation.class);
         this.defaultCallTimeoutMillis = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
         this.backupOperationTimeoutMillis = node.getGroupProperties().OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
-
         this.executionService = nodeEngine.getExecutionService();
 
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
-        this.executingCalls =
-                new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
         this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
-        this.scheduler = new BasicOperationScheduler(node, executionService, new BasicDispatcherImpl());
         this.operationHandler = new OperationHandler();
+        this.responseHandler = new TheResponseHandler();
         this.operationBackupHandler = new OperationBackupHandler();
-        this.operationPacketHandler = new OperationPacketHandler();
-        this.responsePacketHandler = new ResponsePacketHandler();
-
+        this.scheduler = new BasicOperationScheduler(node, executionService, operationHandler, responseHandler);
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
@@ -181,7 +171,7 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getRunningOperationsCount() {
-        return executingCalls.size();
+        return scheduler.getRunningOperationCount();
     }
 
     @Override
@@ -245,7 +235,7 @@ final class BasicOperationService implements InternalOperationService {
     //todo: move to BasicOperationScheduler
     public void runOperationOnCallingThread(Operation op) {
         if (scheduler.isAllowedToRunInCurrentThread(op)) {
-            operationHandler.handle(op);
+            operationHandler.process(op);
         } else {
             throw new IllegalThreadStateException("Operation: " + op + " cannot be run in current thread! -> "
                     + Thread.currentThread());
@@ -276,20 +266,6 @@ final class BasicOperationService implements InternalOperationService {
         return new BasicTargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
                 InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
-    }
-
-    // =============================== processing response  ===============================
-
-    @Override
-    public void notifyBackupCall(long callId) {
-        try {
-            final BasicInvocation invocation = invocations.get(callId);
-            if (invocation != null) {
-                invocation.signalOneBackupComplete();
-            }
-        } catch (Exception e) {
-            ReplicaErrorLogger.log(e, logger);
-        }
     }
 
     // =============================== processing operation  ===============================
@@ -353,21 +329,77 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
-    public boolean send(Response response, Address target) {
+    public boolean sendNormalResponse(Address target, long callId, boolean urgent, Object value, int backupCount) {
         if (target == null) {
             throw new IllegalArgumentException("Target is required!");
         }
+
         if (nodeEngine.getThisAddress().equals(target)) {
-            throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
+            throw new IllegalArgumentException("Target is this node! -> " + target + ", callId: " + callId);
         }
-        Data data = nodeEngine.toData(response);
+
+        Data data = nodeEngine.toData(value);
         Packet packet = new Packet(data, nodeEngine.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
         packet.setHeader(Packet.HEADER_RESPONSE);
-        if (response.isUrgent()) {
+        packet.setResponseCallId(callId);
+        //todo: hack to signal of the content is an exception
+        byte trueBackupCount = value instanceof Throwable ? (byte) Byte.MAX_VALUE - 1 : (byte) backupCount;
+        packet.setResponseBackupCount(trueBackupCount);
+        if (urgent) {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
+        return nodeEngine.send(packet, connection);
+    }
+
+    @Override
+    public boolean sendBackupResponse(Address caller, long callId, boolean urgent) {
+        if (caller == null) {
+            throw new IllegalArgumentException("Target is required!");
+        }
+
+        if (nodeEngine.getThisAddress().equals(caller)) {
+            responseHandler.notifyBackupComplete(callId);
+            return urgent;
+        }
+
+        Packet packet = new Packet(null, nodeEngine.getPortableContext());
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setHeader(Packet.HEADER_RESPONSE);
+        packet.setResponseCallId(callId);
+        //indicates it is a backup
+        packet.setResponseBackupCount(Byte.MAX_VALUE);
+
+        if (urgent) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        Connection connection = node.getConnectionManager().getOrConnect(caller);
+        return nodeEngine.send(packet, connection);
+    }
+
+    @Override
+    public boolean sendTimeoutResponse(Address caller, long callId, boolean urgent) {
+        if (caller == null) {
+            throw new IllegalArgumentException("Target is required!");
+        }
+
+        if (nodeEngine.getThisAddress().equals(caller)) {
+            responseHandler.notifyTimeout(callId);
+            return urgent;
+        }
+
+        Packet packet = new Packet(null, nodeEngine.getPortableContext());
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setHeader(Packet.HEADER_RESPONSE);
+        packet.setResponseCallId(callId);
+        //indicates it is a timeout
+        packet.setResponseBackupCount((byte) (Byte.MAX_VALUE - 2));
+
+        if (urgent) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        Connection connection = node.getConnectionManager().getOrConnect(caller);
         return nodeEngine.send(packet, connection);
     }
 
@@ -389,11 +421,6 @@ final class BasicOperationService implements InternalOperationService {
     @PrivateApi
     long getDefaultCallTimeoutMillis() {
         return defaultCallTimeoutMillis;
-    }
-
-    @PrivateApi
-    boolean isOperationExecuting(Address callerAddress, String callerUuid, long operationCallId) {
-        return executingCalls.containsKey(new RemoteCallKey(callerAddress, operationCallId));
     }
 
     @PrivateApi
@@ -420,7 +447,7 @@ final class BasicOperationService implements InternalOperationService {
                     final BasicInvocation invocation = iter.next();
                     if (invocation.isCallTarget(member)) {
                         iter.remove();
-                        invocation.notify(new MemberLeftException(member));
+                        invocation.notifyNormalResponse(new MemberLeftException(member), 0);
                     }
                 }
             }
@@ -434,7 +461,7 @@ final class BasicOperationService implements InternalOperationService {
         final Object response = new HazelcastInstanceNotActiveException();
         for (BasicInvocation invocation : invocations.values()) {
             try {
-                invocation.notify(response);
+                invocation.notifyNormalResponse(response, 0);
             } catch (Throwable e) {
                 logger.warning(invocation + " could not be notified with shutdown message -> " + e.getMessage());
             }
@@ -544,100 +571,87 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
-    public final class BasicDispatcherImpl implements BasicDispatcher {
-
-        @Override
-        public void dispatch(Object task) {
-            if (task == null) {
-                throw new IllegalArgumentException();
-            }
-
-            if (task instanceof Operation) {
-                operationHandler.handle((Operation) task);
-            } else if (task instanceof Packet) {
-                Packet packet = (Packet) task;
-                if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-                    responsePacketHandler.handle(packet);
-                } else {
-                    operationPacketHandler.handle(packet);
-                }
-            } else if (task instanceof Runnable) {
-                ((Runnable) task).run();
-            } else {
-                throw new IllegalArgumentException("Unrecognized task:" + task);
-            }
-        }
-    }
-
     /**
      * Responsible for handling responses.
      */
-    private final class ResponsePacketHandler {
-        private void handle(Packet packet) {
-            try {
-                Data data = packet.getData();
-                Response response = (Response) nodeEngine.toObject(data);
+    private final class TheResponseHandler implements BasicResponseHandler {
 
-                if (response instanceof NormalResponse || response instanceof CallTimeoutResponse) {
-                    notifyRemoteCall(response);
-                } else if (response instanceof BackupResponse) {
-                    notifyBackupCall(response.getCallId());
+        @Override
+        public void process(Packet packet) throws Exception {
+            try {
+                byte backupCount = packet.getResponseBackupCount();
+                long responseCallId = packet.getResponseCallId();
+                if (backupCount == Byte.MAX_VALUE) {
+                    notifyBackupComplete(responseCallId);
+                } else if (backupCount == Byte.MAX_VALUE - 2) {
+                    notifyTimeout(responseCallId);
                 } else {
-                    throw new IllegalStateException("Unrecognized response type: " + response);
+                    notifyNormalResponse(responseCallId, packet.getData(), backupCount);
                 }
             } catch (Throwable e) {
                 logger.severe("While processing response...", e);
             }
         }
 
-        // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data
-        private void notifyRemoteCall(Response response) {
-            BasicInvocation invocation = invocations.get(response.getCallId());
+        public void notifyBackupComplete(long callId) {
+            try {
+                final BasicInvocation invocation = invocations.get(callId);
+                if (invocation != null) {
+                    invocation.notifyBackupComplete();
+                }
+            } catch (Exception e) {
+                ReplicaErrorLogger.log(e, logger);
+            }
+        }
+
+        private void notifyNormalResponse(long callId, Object response, int backupCount) {
+            BasicInvocation invocation = invocations.get(callId);
             if (invocation == null) {
                 if (nodeEngine.isActive()) {
-                    throw new HazelcastException("No invocation for response: " + response);
+                    throw new HazelcastException("No invocation for response: " + callId);
                 }
                 return;
             }
 
-            invocation.notify(response);
+            invocation.notifyNormalResponse(response, backupCount);
+        }
+
+        private void notifyTimeout(long callId) {
+            BasicInvocation invocation = invocations.get(callId);
+            if (invocation == null) {
+                if (nodeEngine.isActive()) {
+                    throw new HazelcastException("No invocation for response: " + callId);
+                }
+                return;
+            }
+
+            invocation.notifyTimeout();
         }
     }
 
     /**
-     * Responsible for handling operation packets.
+     * Responsible for processing an Operation.
      */
-    private final class OperationPacketHandler {
+    private final class OperationHandler implements BasicOperationHandler {
 
-        /**
-         * Handles this packet.
-         */
-        private void handle(Packet packet) {
-            try {
-                Operation op = loadOperation(packet);
-
-                if (!ensureValidMember(op)) {
-                    return;
-                }
-
-                handle(op);
-            } catch (Throwable e) {
-                logger.severe(e);
-            }
-        }
-
-        private Operation loadOperation(Packet packet) throws Exception {
-            Connection conn = packet.getConn();
-            Address caller = conn.getEndPoint();
+        @Override
+        public Operation deserialize(Packet packet) throws Exception {
+            Connection connection = packet.getConn();
+            Address caller = connection.getEndPoint();
             Data data = packet.getData();
             try {
                 Object object = nodeEngine.toObject(data);
                 Operation op = (Operation) object;
                 op.setNodeEngine(nodeEngine);
                 setCallerAddress(op, caller);
-                setConnection(op, conn);
+                setConnection(op, connection);
                 setCallerUuidIfNotSet(caller, op);
                 setRemoteResponseHandler(nodeEngine, op);
+
+                if (!ensureValidMember(op)) {
+                    return null;
+                }
+
                 return op;
             } catch (Throwable throwable) {
                 // If exception happens we need to extract the callId from the bytes directly!
@@ -645,21 +659,10 @@ final class BasicOperationService implements InternalOperationService {
                 RemoteOperationExceptionHandler exceptionHandler = new RemoteOperationExceptionHandler(callId);
                 exceptionHandler.setNodeEngine(nodeEngine);
                 exceptionHandler.setCallerAddress(caller);
-                exceptionHandler.setConnection(conn);
+                exceptionHandler.setConnection(connection);
                 ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, exceptionHandler);
                 operationHandler.handleOperationError(exceptionHandler, throwable);
                 throw ExceptionUtil.rethrow(throwable);
-            }
-        }
-
-        private void setCallerUuidIfNotSet(Address caller, Operation op) {
-            if (op.getCallerUuid() != null) {
-                return;
-
-            }
-            MemberImpl callerMember = node.clusterService.getMember(caller);
-            if (callerMember != null) {
-                op.setCallerUuid(callerMember.getUuid());
             }
         }
 
@@ -673,50 +676,27 @@ final class BasicOperationService implements InternalOperationService {
             return true;
         }
 
-        private void handle(Operation op) {
-            String executorName = op.getExecutorName();
-            if (executorName == null) {
-                operationHandler.handle(op);
-            } else {
-                offloadOperationHandling(op);
+        private void setCallerUuidIfNotSet(Address caller, Operation op) {
+            if (op.getCallerUuid() != null) {
+                return;
+
+            }
+            MemberImpl callerMember = node.clusterService.getMember(caller);
+            if (callerMember != null) {
+                op.setCallerUuid(callerMember.getUuid());
             }
         }
-
-        private void offloadOperationHandling(final Operation op) {
-            String executorName = op.getExecutorName();
-
-            ExecutorService executor = executionService.getExecutor(executorName);
-            if (executor == null) {
-                throw new IllegalStateException("Could not found executor with name: " + executorName);
-            }
-
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    operationHandler.handle(op);
-                }
-            });
-        }
-    }
-
-    /**
-     * Responsible for processing an Operation.
-     */
-    private final class OperationHandler {
 
         /**
          * Runs operation in calling thread.
          */
-        private void handle(Operation op) {
+        public void process(Operation op) {
             executedOperationsCount.incrementAndGet();
 
-            RemoteCallKey callKey = null;
             try {
                 if (timeout(op)) {
                     return;
                 }
-
-                callKey = beforeCallExecution(op);
 
                 ensureNoPartitionProblems(op);
 
@@ -731,8 +711,6 @@ final class BasicOperationService implements InternalOperationService {
                 afterRun(op);
             } catch (Throwable e) {
                 handleOperationError(op, e);
-            } finally {
-                afterCallExecution(op, callKey);
             }
         }
 
@@ -749,7 +727,7 @@ final class BasicOperationService implements InternalOperationService {
 
         private boolean timeout(Operation op) {
             if (isCallTimedOut(op)) {
-                op.getResponseHandler().sendResponse(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
+                op.getResponseHandler().sendCallTimeout();
                 return true;
             }
             return false;
@@ -757,28 +735,25 @@ final class BasicOperationService implements InternalOperationService {
 
         private void handleResponse(Operation op) throws Exception {
             boolean returnsResponse = op.returnsResponse();
-            Object response = null;
+
+            int backupCount = 0;
             if (op instanceof BackupAwareOperation) {
                 BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
-                int syncBackupCount = 0;
                 if (backupAwareOp.shouldBackup()) {
-                    syncBackupCount = operationBackupHandler.backup(backupAwareOp);
-                }
-                if (returnsResponse) {
-                    response = new NormalResponse(op.getResponse(), op.getCallId(), syncBackupCount, op.isUrgent());
+                    backupCount = operationBackupHandler.backup(backupAwareOp);
                 }
             }
 
-            if (returnsResponse) {
-                if (response == null) {
-                    response = op.getResponse();
-                }
-                ResponseHandler responseHandler = op.getResponseHandler();
-                if (responseHandler == null) {
-                    throw new IllegalStateException("ResponseHandler should not be null!");
-                }
-                responseHandler.sendResponse(response);
+            if (!returnsResponse) {
+                return;
             }
+
+            Object response = op.getResponse();
+            ResponseHandler responseHandler = op.getResponseHandler();
+            if (responseHandler == null) {
+                throw new IllegalStateException("ResponseHandler should not be null!");
+            }
+            responseHandler.sendResponse(response, backupCount);
         }
 
         private void afterRun(Operation op) {
@@ -816,6 +791,8 @@ final class BasicOperationService implements InternalOperationService {
 
             Address owner = internalPartition.getReplicaAddress(op.getReplicaIndex());
             if (op.validatesTarget() && !node.getThisAddress().equals(owner)) {
+                //System.out.println("owner.address:"+owner);
+                //System.out.println("node.thisAddress:"+node.getThisAddress());
                 throw new WrongTargetException(node.getThisAddress(), owner, partitionId, op.getReplicaIndex(),
                         op.getClass().getName(), op.getServiceName());
             }
@@ -825,32 +802,12 @@ final class BasicOperationService implements InternalOperationService {
             return !(op instanceof ReadonlyOperation || OperationAccessor.isMigrationOperation(op));
         }
 
-        private RemoteCallKey beforeCallExecution(Operation op) {
-            RemoteCallKey callKey = null;
-            if (op.getCallId() != 0 && op.returnsResponse()) {
-                callKey = new RemoteCallKey(op);
-                RemoteCallKey current = executingCalls.put(callKey, callKey);
-                if (current != null) {
-                    logger.warning("Duplicate Call record! -> " + callKey + " / " + current + " == " + op.getClass().getName());
-                }
-            }
-            return callKey;
-        }
-
-        private void afterCallExecution(Operation op, RemoteCallKey callKey) {
-            if (callKey != null && op.getCallId() != 0 && op.returnsResponse()) {
-                if (executingCalls.remove(callKey) == null) {
-                    logger.severe("No Call record has been found: -> " + callKey + " == " + op.getClass().getName());
-                }
-            }
-        }
-
         private void handleOperationError(RemotePropagatable remotePropagatable, Throwable e) {
             if (e instanceof OutOfMemoryError) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
             }
             remotePropagatable.logError(e);
-            ResponseHandler responseHandler = remotePropagatable.getResponseHandler();
+            com.hazelcast.spi.ResponseHandler responseHandler = remotePropagatable.getResponseHandler();
             if (remotePropagatable.returnsResponse() && responseHandler != null) {
                 try {
                     if (node.isActive()) {
@@ -973,65 +930,6 @@ final class BasicOperationService implements InternalOperationService {
             }
         }
     }
-
-    private static final class RemoteCallKey {
-        private final long time = Clock.currentTimeMillis();
-        private final Address callerAddress;
-        private final long callId;
-
-        private RemoteCallKey(Address callerAddress, long callId) {
-            if (callerAddress == null) {
-                throw new IllegalArgumentException("Caller address is required!");
-            }
-            this.callerAddress = callerAddress;
-            this.callId = callId;
-        }
-
-        private RemoteCallKey(final Operation op) {
-            callerAddress = op.getCallerAddress();
-            if (callerAddress == null) {
-                throw new IllegalArgumentException("Caller address is required! -> " + op);
-            }
-            callId = op.getCallId();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            RemoteCallKey callKey = (RemoteCallKey) o;
-            if (callId != callKey.callId) {
-                return false;
-            }
-            if (!callerAddress.equals(callKey.callerAddress)) {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = callerAddress.hashCode();
-            result = 31 * result + (int) (callId ^ (callId >>> 32));
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("RemoteCallKey");
-            sb.append("{callerAddress=").append(callerAddress);
-            sb.append(", callId=").append(callId);
-            sb.append(", time=").append(time);
-            sb.append('}');
-            return sb.toString();
-        }
-    }
-
 
     /**
      * The OperationTimeoutHandlerThread periodically iterates over all invocations in this BasicOperationService and calls the

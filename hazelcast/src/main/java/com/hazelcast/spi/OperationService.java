@@ -17,7 +17,6 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.Response;
 
 import java.util.Collection;
 import java.util.Map;
@@ -129,8 +128,12 @@ public interface OperationService {
      * Sends a response to a remote machine.
      *
      * @param response the response to send.
-     * @param target   the address of the target machine
+     * @param caller the address of the target machine
      * @return true if send successfully, false otherwise.
      */
-    boolean send(Response response, Address target);
+    boolean sendNormalResponse(Address caller, long callId, boolean urgent, Object response, int backupCount);
+
+    boolean sendBackupResponse(Address caller, long callId, boolean urgent);
+
+    boolean sendTimeoutResponse(Address caller, long callId, boolean urgent);
 }

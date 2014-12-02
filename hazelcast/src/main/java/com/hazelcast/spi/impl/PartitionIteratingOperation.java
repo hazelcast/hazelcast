@@ -74,11 +74,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                 final ResponseQueue queue = responseQueueEntry.getValue();
                 final Integer key = responseQueueEntry.getKey();
                 final Object result = queue.get();
-                if (result instanceof NormalResponse) {
-                    results.put(key, ((NormalResponse) result).getValue());
-                } else {
-                    results.put(key, result);
-                }
+                results.put(key, result);
             }
         } catch (Exception e) {
             getLogger(nodeEngine).severe(e);
@@ -107,7 +103,17 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
 
         @Override
+        public void sendCallTimeout() {
+            throw new RuntimeException("todo");
+        }
+
+        @Override
         public void sendResponse(Object obj) {
+           sendResponse(obj, 0);
+        }
+
+        @Override
+        public void sendResponse(Object obj, int backupCount) {
             if (!b.offer(obj)) {
                 throw new HazelcastException("Response could not be queued for transportation");
             }

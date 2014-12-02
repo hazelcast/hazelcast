@@ -22,7 +22,30 @@ package com.hazelcast.spi;
  */
 public interface ResponseHandler {
 
+    /**
+     * Sends a response. The backupCount defaults to 0.
+     *
+     * @param obj the response.
+     */
     void sendResponse(Object obj);
 
+    /**
+     * Sends a response.
+     *
+     * @param obj the response content
+     * @param backupCount the number of backups the invoker needs to wait for.
+     */
+    void sendResponse(Object obj, int backupCount);
+
+    /**
+     * Send a call timeout. So when an invocation needs to be notified of a timeout.
+     */
+    void sendCallTimeout();
+
+    /**
+     * Checks if the invocation is a local invocation.
+     *
+     * @return true if local, false otherwise.
+     */
     boolean isLocal();
 }

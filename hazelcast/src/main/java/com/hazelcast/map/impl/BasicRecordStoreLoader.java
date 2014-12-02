@@ -270,7 +270,17 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         operation.setNodeEngine(nodeEngine);
         operation.setResponseHandler(new ResponseHandler() {
             @Override
+            public void sendCallTimeout() {
+                sendResponse(null, 0);
+            }
+
+            @Override
             public void sendResponse(Object obj) {
+                sendResponse(obj, 0);
+            }
+
+            @Override
+            public void sendResponse(Object obj, int backupCount) {
                 if (finishedBatchCounter.decrementAndGet() == 0) {
                     loaded.set(true);
                 }

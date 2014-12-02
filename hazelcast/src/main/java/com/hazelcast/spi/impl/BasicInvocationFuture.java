@@ -115,7 +115,9 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
      * @param offeredResponse
      */
     public void set(Object offeredResponse) {
-        offeredResponse = resolveInternalResponse(offeredResponse);
+        if (offeredResponse == null) {
+            throw new IllegalArgumentException("response can't be null: " + invocation);
+        }
 
         ExecutionCallbackNode<E> callbackChain;
         synchronized (this) {
@@ -150,21 +152,6 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             runAsynchronous(callbackChain.callback, callbackChain.executor);
             callbackChain = callbackChain.next;
         }
-    }
-
-    private Object resolveInternalResponse(Object rawResponse) {
-        if (rawResponse == null) {
-            throw new IllegalArgumentException("response can't be null: " + invocation);
-        }
-
-        if (rawResponse instanceof NormalResponse) {
-            rawResponse = ((NormalResponse) rawResponse).getValue();
-        }
-
-        if (rawResponse == null) {
-            rawResponse = BasicInvocation.NULL_RESPONSE;
-        }
-        return rawResponse;
     }
 
     @Override
@@ -364,23 +351,6 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             }
         }
 
-        if (response instanceof NormalResponse) {
-            NormalResponse responseObj = (NormalResponse) response;
-            response = responseObj.getValue();
-
-            if (response == null) {
-                return null;
-            }
-
-            //it could be that the value of the response is Data.
-            if (invocation.resultDeserialized && response instanceof Data) {
-                response = invocation.nodeEngine.toObject(response);
-                if (response == null) {
-                    return null;
-                }
-            }
-        }
-
         if (response instanceof Throwable) {
             Throwable throwable = ((Throwable) response);
             if (invocation.remote) {
@@ -427,11 +397,12 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private Operation createCheckOperation() {
-        if (invocation.op instanceof TraceableOperation) {
-            TraceableOperation traceable = (TraceableOperation) invocation.op;
+        Operation op = invocation.op;
+        if (op instanceof TraceableOperation) {
+            TraceableOperation traceable = (TraceableOperation) op;
             return new TraceableIsStillExecutingOperation(invocation.serviceName, traceable.getTraceIdentifier());
         } else {
-            return new IsStillExecutingOperation(invocation.op.getCallId());
+            return new IsStillExecutingOperation(op.getCallId(), op.getPartitionId());
         }
     }
 
