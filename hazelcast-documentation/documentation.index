@@ -13,7 +13,7 @@ src/GettingStarted.md
 	src/ConfiguringHazelcast.md
 	src/UseCases.md
 	src/Resources.md
-#src/HazelcastClusters.md
+src/HazelcastClusters.md
 src/Distributed_Data_Structures.md
 	src/Map.md
 		src/Map-Backups.md
@@ -29,6 +29,7 @@ src/Distributed_Data_Structures.md
 		src/SampleQueueCode.md
 		src/BoundedQueue.md
 		src/Queue-Persistence.md
+		src/QueueConfiguration.md
 	src/MultiMap.md
 	src/Set.md
 	src/List.md
@@ -120,10 +121,9 @@ src/IntegratedClustering.md
 	src/SpringIntegration.md
 src/Storage.md
 src/Clients.md
-#	src/ClientTypes.md
-		src/JavaClient.md
-		src/CPlusClient.md
-		src/CSharpClient.md
+	src/JavaClient.md
+	src/CPlusClient.md
+	src/CSharpClient.md
 	src/RestClient.md
 	src/MemcacheClient.md
 src/Serialization.md
@@ -164,12 +164,25 @@ src/Performance.md
 		src/ThreadingOperation.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
-src/Config.md
-	src/NetworkConfig.md
-		src/ConfigSpecifyInterfaces.md
-		src/EC2AutoDiscovery.md
-		src/Ports.md
-		src/IPv6.md
+#src/Config.md
+src/HazelcastConfiguration/ConfigurationOverview.md
+#	src/NetworkConfig.md
+	src/HazelcastConfiguration/NetworkConfiguration.md
+	src/HazelcastConfiguration/GroupConfiguration.md
+	src/HazelcastConfiguration/MapConfiguration.md
+	src/HazelcastConfiguration/MultiMapConfiguration.md
+	src/HazelcastConfiguration/QueueConfiguration.md
+	src/HazelcastConfiguration/TopicConfiguration.md
+	src/HazelcastConfiguration/ListConfiguration.md
+	src/HazelcastConfiguration/SetConfiguration.md
+	src/HazelcastConfiguration/SemaphoreConfiguration.md
+	src/HazelcastConfiguration/ExecServiceConfiguration.md
+	src/HazelcastConfiguration/SerializationConfiguration.md
+	src/HazelcastConfiguration/JobTrackerConfiguration.md
+#		src/ConfigSpecifyInterfaces.md
+#		src/EC2AutoDiscovery.md
+#		src/Ports.md
+#		src/IPv6.md
 		src/PartitionGroupConfig.md
 	src/ListenerConfig.md
 	src/Logging.md

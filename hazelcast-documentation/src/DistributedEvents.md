@@ -16,7 +16,7 @@ As a rule of thumb, your event listener should not implement heavy processes in 
 - **MigrationListener** for partition migration start and complete events
 - **LifecycleListener** for HazelcastInstance lifecycle events
 - **EntryListener** for IMap and MultiMap entry events
-- **ItemListener** for IQueue, ISet and IList item events (please refer to Event Registration and Configuration sections of [Set](#set) and [List](#list)).
+- **ItemListener** for IQueue, ISet and IList item events (please refer to the Event Registration and Configuration parts of the sections [Set](#set) and [List](#list)).
 - **MessageListener** for ITopic message events
 - **ClientListener** for client connection events
 

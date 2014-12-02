@@ -16,7 +16,8 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.management.TimedMemberStateFactory;
+import com.hazelcast.memory.GarbageCollectorStats;
+import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -78,9 +79,6 @@ public interface NodeExtension {
      */
     <T> T createService(Class<T> type);
 
-
-    TimedMemberStateFactory getTimedMemberStateFactory();
-
     /**
      * Returns <tt>MemberSocketInterceptor</tt> for this <tt>Node</tt> if available,
      * otherwise returns null.
@@ -131,6 +129,13 @@ public interface NodeExtension {
      * @param thread thread stopping
      */
     void onThreadStop(Thread thread);
+
+    /**
+     * Returns MemoryStats of for the JVM and current HazelcastInstance.
+     *
+     * @return memory statistics
+     */
+    MemoryStats getMemoryStats();
 
     /**
      * Destroys <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>

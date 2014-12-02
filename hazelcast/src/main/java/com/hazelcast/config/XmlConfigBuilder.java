@@ -838,6 +838,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         this.config.addReplicatedMapConfig(replicatedMapConfig);
     }
 
+    //CHECKSTYLE:OFF
     private void handleMap(final org.w3c.dom.Node node) throws Exception {
         final String name = getAttribute(node, "name");
         final MapConfig mapConfig = new MapConfig();
@@ -857,9 +858,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 final MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
                 final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");
                 if (maxSizePolicy != null) {
-                    msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy))));
+                    msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
+                            upperCaseInternal(getTextContent(maxSizePolicy))));
                 }
-                int size = sizeParser(value);
+                final int size = sizeParser(value);
                 msc.setSize(size);
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
@@ -898,6 +900,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
         this.config.addMapConfig(mapConfig);
     }
+    //CHECKSTYLE:ON
 
     private void handleCache(final org.w3c.dom.Node node)
             throws Exception {
@@ -936,11 +939,21 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("eviction-percentage".equals(nodeName)) {
                 cacheConfig.setEvictionPercentage(
                         getIntegerValue("eviction-percentage", value, CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE));
-            } else if ("eviction-threshold-percentage".equals(nodeName)) {
-                cacheConfig.setEvictionThresholdPercentage(
-                        getIntegerValue("eviction-threshold-percentage", value, CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE));
             } else if ("eviction-policy".equals(nodeName)) {
                 cacheConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
+            } else if ("max-size".equals(nodeName)) {
+                final CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
+                final Node size = n.getAttributes().getNamedItem("size");
+                final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");
+                if (size != null) {
+                    maxSizeConfig.setSize(Integer.parseInt(getTextContent(size)));
+                }
+                if (maxSizePolicy != null) {
+                    maxSizeConfig.setMaxSizePolicy(
+                            CacheMaxSizeConfig.CacheMaxSizePolicy.valueOf(
+                                    upperCaseInternal(getTextContent(maxSizePolicy))));
+                }
+                cacheConfig.setMaxSizeConfig(maxSizeConfig);
             }
         }
         this.config.addCacheConfig(cacheConfig);
@@ -1002,7 +1015,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
     }
-
 
     private int sizeParser(String value) {
         int size;

@@ -10,7 +10,7 @@ The Server Provider provides the same features as the Client provider, but it ke
 non-owned keys to other direct cluster members.
 
 Like the Client Provider, the Server Provider is able to connect to multiple clusters at the same time. This can be achieved by scoping the client side `CacheManager` with different Hazelcast configuration files. For more
-information please see [Scopes and Namespaces](#scopes-and-namespaces).
+information please see the [Scopes and Namespaces section](#scopes-and-namespaces).
 
 To request this `CachingProvider` using `Caching#getCachingProvider( String )` or
 `Caching#getCachingProvider( String, ClassLoader )`, use the following fully qualified class name:

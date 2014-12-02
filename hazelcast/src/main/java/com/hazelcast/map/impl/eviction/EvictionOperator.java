@@ -180,12 +180,12 @@ public final class EvictionOperator {
 
 
     public int evictableSize(int currentPartitionSize, MapConfig mapConfig) {
+        final int maxSize = mapConfig.getMaxSizeConfig().getSize();
         int evictableSize;
         final MaxSizeConfig.MaxSizePolicy maxSizePolicy = mapConfig.getMaxSizeConfig().getMaxSizePolicy();
         final int evictionPercentage = mapConfig.getEvictionPercentage();
         switch (maxSizePolicy) {
             case PER_PARTITION:
-                int maxSize = mapConfig.getMaxSizeConfig().getSize();
                 int targetSizePerPartition = Double.valueOf(maxSize
                         * ((ONE_HUNDRED_PERCENT - evictionPercentage) / (1D * ONE_HUNDRED_PERCENT))).intValue();
                 int diffFromTargetSize = currentPartitionSize - targetSizePerPartition;
@@ -193,7 +193,6 @@ public final class EvictionOperator {
                 evictableSize = Math.max(diffFromTargetSize, prunedSize);
                 break;
             case PER_NODE:
-                maxSize = mapConfig.getMaxSizeConfig().getSize();
                 int memberCount = mapServiceContext.getNodeEngine().getClusterService().getMembers().size();
                 int maxPartitionSize = (maxSize
                         * memberCount / mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount());

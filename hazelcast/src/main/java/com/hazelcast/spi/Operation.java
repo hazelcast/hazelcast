@@ -59,7 +59,6 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
     private transient Address callerAddress;
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
-    private transient long startTime;
 
     public boolean isUrgent() {
         return this instanceof UrgentSystemOperation;
@@ -196,16 +195,6 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         return responseHandler;
     }
 
-    public final long getStartTime() {
-        return startTime;
-    }
-
-    // Accessed using OperationAccessor
-    final Operation setStartTime(long startTime) {
-        this.startTime = startTime;
-        return this;
-    }
-
     public final long getInvocationTime() {
         return invocationTime;
     }
@@ -313,4 +302,16 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
     protected abstract void writeInternal(ObjectDataOutput out) throws IOException;
 
     protected abstract void readInternal(ObjectDataInput in) throws IOException;
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Operation{");
+        sb.append("serviceName='").append(serviceName).append('\'');
+        sb.append(", callId=").append(callId);
+        sb.append(", invocationTime=").append(invocationTime);
+        sb.append(", waitTimeout=").append(waitTimeout);
+        sb.append(", callTimeout=").append(callTimeout);
+        sb.append('}');
+        return sb.toString();
+    }
 }

@@ -31,7 +31,7 @@ If you prefer to use maven, add the following lines to your `pom.xml`.
 
 ### Getting Started with Client API
 
-The first step is configuration. You can configure the Java client declaratively or programmatically. We will use the programmatic approach throughout this tutorial. Please refer to [Java Client Declarative Configuration](#java-client-declarative-configuration) for details.
+The first step is configuration. You can configure the Java client declaratively or programmatically. We will use the programmatic approach throughout this tutorial. Please refer to the [Java Client Declarative Configuration section](#java-client-declarative-configuration) for details.
 
 ```java
 ClientConfig clientConfig = new ClientConfig();
@@ -89,16 +89,16 @@ There are two main failure cases you should be aware of, and configurations you 
 #### Client Connection Failure
 
 
-While the client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all the members might be not available. Instead of giving up, throwing an exception and stopping the client, the client will retry as many as `connectionAttemptLimit` times. Please see [Connection Attempt Limit](#connection-attempt-limit).
+While the client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all the members might be not available. Instead of giving up, throwing an exception and stopping the client, the client will retry as many as `connectionAttemptLimit` times. Please see the [Connection Attempt Limit section](#connection-attempt-limit).
 
 The client executes each operation through the already established connection to the cluster. If this connection(s) disconnects or drops, the client will try to reconnect as configured.
 
 
 #### Retry-able Operation Failure
 
-While sending the requests to related nodes, operation can fail due to various reasons. For any read-only operation, you can have your client retry sending the operation by enabling `redoOperation`. Please see [Redo Operation](#redo-operation).
+While sending the requests to related nodes, operation can fail due to various reasons. For any read-only operation, you can have your client retry sending the operation by enabling `redoOperation`. Please see the [Redo Operation section](#redo-operation).
 
-The number of retries is given with the property `hazelcast.client.request.retry.count` in `ClientProperties`. The client will resend the request as many as RETRY-COUNT, then it will throw an exception. Please see [Client Properties](#client-properties).
+The number of retries is given with the property `hazelcast.client.request.retry.count` in `ClientProperties`. The client will resend the request as many as RETRY-COUNT, then it will throw an exception. Please see the [Client Properties section](#client-properties).
 
 
 ### Supported Distributed Data Structures
@@ -119,7 +119,7 @@ String value= map.get(1);
 map.remove(1);
 ```
 
-Locality is ambiguous for the client, so `addEntryListener` and `localKeySet` are not supported. Please see [Distributed Map](#map) for more information.
+Locality is ambiguous for the client, so `addEntryListener` and `localKeySet` are not supported. Please see the [Distributed Map section](#map) for more information.
 
 #### MultiMap
 
@@ -135,7 +135,7 @@ multiMap.put(1,”veli”);
 Collection<String> values = multiMap.get(1);
 ```
 
-`addEntryListener`, `localKeySet` and  `getLocalMultiMapStats` are not supported because locality is ambiguous for the client. Please see [Distributed MultiMap](#multimap) for more information.
+`addEntryListener`, `localKeySet` and  `getLocalMultiMapStats` are not supported because locality is ambiguous for the client. Please see the [Distributed MultiMap section](#multimap) for more information.
 
 #### Queue
 
@@ -147,7 +147,7 @@ IQueue<String> myQueue = client.getQueue(“theQueue”);
 myQueue.offer(“ali”)
 ```
 
-`getLocalQueueStats` is not supported because locality is ambiguous for the client. Please see [Distributed Queue](#queue) for more information.
+`getLocalQueueStats` is not supported because locality is ambiguous for the client. Please see the [Distributed Queue section](#queue) for more information.
 
 #### Topic
 
@@ -176,14 +176,14 @@ Below services are provided for some common functionalities on the client side.
 
 #### Distributed Executor Service
 
-The distributed executor service is for distributed computing. It can be used to execute tasks on the cluster on a designated partition or on all the partitions. It can also be used to process entries. Please see [Distributed Executor Service](#executor-service) for more information.
+The distributed executor service is for distributed computing. It can be used to execute tasks on the cluster on a designated partition or on all the partitions. It can also be used to process entries. Please see the [Distributed Executor Service section](#executor-service) for more information.
 
 ```java
 IExecutorService executorService = client.getExecutorService("default");
 ```
 
 
-After getting an instance of `IExecutorService`, you can use the instance as the interface with the one provided on the server side. Please see [Distributed Computing](#distributed-computing) chapter for detailed usage.
+After getting an instance of `IExecutorService`, you can use the instance as the interface with the one provided on the server side. Please see the [Distributed Computing chapter](#distributed-computing) chapter for detailed usage.
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *This service is only supported by the Java client.*
 
@@ -252,7 +252,7 @@ You can configure listeners to listen to various event types on the client side.
 
 ### Client Transactions
 
-Transactional distributed objects are supported on the client side. Please see [Transactions](#transactions) chapter on how to use them.
+Transactional distributed objects are supported on the client side. Please see the [Transactions chapter](#transactions) on how to use them.
 
 
 ### Network Configuration Options
@@ -328,7 +328,7 @@ clientConfig.getNetworkConfig().setConnectionAttemptPeriod(5000);
 
 Default value is *3000*.
 
-#### Socket Interceptor
+#### Client Socket Interceptor
 
 ![](images/enterprise-onlycopy.jpg)
 
@@ -374,9 +374,9 @@ socketInterceptorConfig.setProperty("kerberos-config-file","kerb.conf");
 socketInterceptorConfig.setClassName(myClientSocketInterceptor);
 ```
 
-Please see the [Socket Interceptor](#socket-interceptor) section for more information.
+Please see the [Socket Interceptor section](#socket-interceptor) for more information.
 
-#### Socket Options
+#### Client Socket Options
 
 You can configure the network socket options using `SocketOptions`. It has the following methods.
 
@@ -400,12 +400,12 @@ socketOptions.setReuseAddress(true);
 socketOptions.setLingerSeconds(3);
 ```
 
-#### SSL
+#### Client SSL
 
 ![](images/enterprise-onlycopy.jpg)
 
 
-You can use SSL to secure the connection between the client and the nodes. Please see the [SSLConfig](#sslconfig) section on how to configure it.
+You can use SSL to secure the connection between the client and the nodes. Please see the [Client SSLConfig section](#client-sslconfig) on how to configure it.
 
 #### Configuration for AWS
 
@@ -459,7 +459,7 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 
 If the client is configured in smart mode, only the operations that are not key-based will be routed to the endpoint that is returned by the `LoadBalancer`. If the client is not a smart client, `LoadBalancer` will be ignored.
 
-To configure client load balance, please see  [Load Balancer Config](#loadbalancerconfig) and [Java Client Declarative Configuration](#java-client-declarative-configuration).
+To configure client load balance, please see the [Load Balancer Config section](#loadbalancerconfig) and [Java Client Declarative Configuration section](#java-client-declarative-configuration).
 
 
 ### Client Near Cache
@@ -559,7 +559,7 @@ Using the configuration API, you can configure a `ClientConfig` as required. Ple
 
 ##### ClientNetworkConfig
 
-`ClientNetworkConfig` includes the configuration options listed below, which are explained in the [Network Configuration Options](#network-configuration-options) section.
+`ClientNetworkConfig` includes the configuration options listed below, which are explained in the [Network Configuration Options section](#network-configuration-options).
 
 * addressList
 * smartRouting
@@ -581,7 +581,7 @@ You can configure them using `GroupConfig`, as shown below.
 clientConfig.setGroupConfig(new GroupConfig("dev","dev-pass"));
 ```
 
-#### LoadBalancerConfig
+##### LoadBalancerConfig
 The following code example shows the programmatic configuration of your load balancer.
 
 ```java
@@ -595,7 +595,7 @@ In the cases where the security established with `GroupConfig` is not enough and
 
 ##### SerializationConfig
 
-For the client side serialization, use Hazelcast configuration. Please refer to the [Serialization](#serialization) chapter.
+For the client side serialization, use Hazelcast configuration. Please refer to the [Serialization chapter](#serialization).
 
 
 ##### ListenerConfig
@@ -654,7 +654,7 @@ Hazelcast has an internal executor service (different from the data structure *E
 
 ##### Client Properties
 
-There are some advanced client configuration properties to tune some aspects of Hazelcast Client. You can set them as property name and value pairs through declarative configuration, programmatic configuration, or JVM system property. Please see the [Advanced Configuration Properties](#advanced-configuration-properties) section to learn how to set these properties.
+There are some advanced client configuration properties to tune some aspects of Hazelcast Client. You can set them as property name and value pairs through declarative configuration, programmatic configuration, or JVM system property. Please see the [Advanced Configuration Properties section](#advanced-configuration-properties) to learn how to set these properties.
 
 The table below lists the client configuration properties with their descriptions.
 

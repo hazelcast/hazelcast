@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.PreReplicationHook;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.ReplicationChannel;
@@ -343,7 +344,8 @@ public class ReplicationPublisher<K, V>
                         .applyAndIncrementVectorClock(updateVectorClockTimestamp, localMember);
 
                 Object key = update.getKey();
-                V value = localEntry.getValue();
+                V v = localEntry.getValue();
+                V value = v instanceof Data ? (V) nodeEngine.toObject(v) : v;
                 long ttlMillis = update.getTtlMillis();
                 int latestUpdateHash = localEntry.getLatestUpdateHash();
                 ReplicationMessage message = new ReplicationMessage(name, key, value, newTimestamp, localMember,

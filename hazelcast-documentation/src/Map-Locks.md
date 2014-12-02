@@ -126,7 +126,7 @@ Depending on the locking requirements, one locking strategy can be picked.
 Optimistic locking is better for mostly read only systems. It has a performance boost over pessimistic locking.
 
 Pessimistic locking is good if there are lots of updates on the same key. It is more robust than optimistic locking from the perspective of data consistency.
-In Hazelcast, use `IExecutorService` to submit a task to a key owner, or to a member or members. This is the recommended way to perform task executions that use pessimistic or optimistic locking techniques. `IExecutorService` will have less network hops and less data over wire, and tasks will be executed very near to the data. Please refer to [Data Affinity](#data-affinity).
+In Hazelcast, use `IExecutorService` to submit a task to a key owner, or to a member or members. This is the recommended way to perform task executions that use pessimistic or optimistic locking techniques. `IExecutorService` will have less network hops and less data over wire, and tasks will be executed very near to the data. Please refer to the [Data Affinity section](#data-affinity).
 
 #### ABA Problem
 

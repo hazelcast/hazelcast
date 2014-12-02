@@ -63,7 +63,7 @@ Then add the following properties into your Hibernate configuration file (e.g. `
 	
 ![image](images/NoteSmall.jpg) ***NOTE:*** *QueryCache is always LOCAL to the node and never distributed across Hazelcast Cluster.*
 
-### Hazelcast Configuration
+### Hazelcast Configuration for Hibernate
 
 -   To configure Hazelcast for Hibernate, put the configuration file named `hazelcast.xml` into the root of your classpath. If Hazelcast cannot find `hazelcast.xml`, then it will use the default configuration from `hazelcast.jar`.
 
@@ -138,7 +138,7 @@ Hibernate 2nd Level Cache can use Hazelcast in two modes: Peer-to-Peer and Clien
 
 ##### P2P (Peer-to-Peer)
 
-With P2P mode, each Hibernate deployment launches its own Hazelcast Instance. You can also configure Hibernate to use an existing instance, so instead of creating a new `HazelcastInstance` for each `SessionFactory`, you can use an existing instance by setting the `hibernate.cache.hazelcast.instance_name` Hibernate property to the `HazelcastInstance`'s name. For more information, please see [Named HazelcastInstance](#named-hazelcastinstance).
+With P2P mode, each Hibernate deployment launches its own Hazelcast Instance. You can also configure Hibernate to use an existing instance, so instead of creating a new `HazelcastInstance` for each `SessionFactory`, you can use an existing instance by setting the `hibernate.cache.hazelcast.instance_name` Hibernate property to the `HazelcastInstance`'s name. For more information, please see the [Named HazelcastInstance section](#named-hazelcastinstance).
 
 **Disabling shutdown during SessionFactory.close()**
 

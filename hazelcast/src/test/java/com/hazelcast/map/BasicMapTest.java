@@ -1142,7 +1142,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.destroy();
         loader.preloadValues = true;
         map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
-        assertFalse(map.isEmpty());
 
         final IMap<Integer, SampleIndexableObject> mapFinal = map;
         assertTrueEventually(new AssertTask() {

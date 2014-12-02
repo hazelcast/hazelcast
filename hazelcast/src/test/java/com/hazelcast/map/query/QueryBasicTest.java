@@ -25,6 +25,9 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,10 +46,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -780,6 +779,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         Object key = generateKeyOwnedBy(hz1);
         map.put(key, new ParentPortableObject(1L));
+        waitAllForSafeState();
 
         Collection<Object> values = map.values(new SqlPredicate("timestamp > 0"));
         assertEquals(1, values.size());
@@ -842,6 +842,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         Object key = generateKeyOwnedBy(hz1);
         map.put(key, new GrandParentPortableObject(1, new ParentPortableObject(1L, new ChildPortableObject(1L))));
+        waitAllForSafeState();
 
         Collection<Object> values = map.values(new SqlPredicate("child.timestamp > 0"));
         assertEquals(1, values.size());

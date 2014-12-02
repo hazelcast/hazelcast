@@ -54,7 +54,6 @@ public class QueryIndexingTest extends HazelcastTestSupport {
     @Before
     public void waitForCluster() {
         assertClusterSizeEventually(2, h1);
-        waitClusterForSafeState(h1);
     }
 
     @Test
@@ -62,6 +61,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
 
         IMap<Integer, Employee> imap1 = h1.getMap("employees");
         imap1.putAll(employees);
+        waitAllForSafeState();
 
         Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
 
@@ -80,6 +80,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         imap1.addIndex("city", true);
 
         imap1.putAll(employees);
+        waitAllForSafeState();
 
         Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
         assertEquals(count/2, matchingEntries.size());

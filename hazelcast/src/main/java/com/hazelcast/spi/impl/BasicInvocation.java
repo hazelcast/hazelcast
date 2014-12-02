@@ -33,6 +33,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.TimeUnit;
@@ -125,8 +126,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     boolean remote;
 
     volatile NormalResponse pendingResponse;
-
-
     volatile int backupsExpected;
     volatile int backupsCompleted;
 
@@ -426,7 +425,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             // So the invocation has backups and since not all backups have completed, we need to wait.
             // It could be that backups arrive earlier than the response.
 
-            this.pendingResponseReceivedMillis = System.currentTimeMillis();
+            this.pendingResponseReceivedMillis = Clock.currentTimeMillis();
 
             this.backupsExpected = backupsExpected;
 
@@ -535,6 +534,31 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         invocationFuture.set(pendingResponse);
     }
 
+    public void handleOperationTimeout() {
+        if (pendingResponse != null) {
+            return;
+        }
+
+        if (invocationFuture.getWaitingThreadsCount() > 0) {
+            // there are already waiting threads
+            // no need to check timeout implicitly
+            return;
+        }
+
+        long maxCallTimeout = invocationFuture.getMaxCallTimeout();
+        if (maxCallTimeout == Long.MAX_VALUE) {
+            return;
+        }
+        long expirationTime = op.getInvocationTime() + maxCallTimeout;
+        if (expirationTime < 0) {
+            // impossible to expire
+            return;
+        }
+        if (expirationTime < Clock.currentTimeMillis()) {
+            invocationFuture.set(invocationFuture.newOperationTimeoutException(maxCallTimeout));
+        }
+    }
+
     public void handleBackupTimeout(long timeoutMillis) {
         // If the backups have completed, we are done.
         // This check also filters out all non backup-aware operations since they backupsExpected will always be equal to the
@@ -550,7 +574,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             return;
         }
 
-        boolean expired = responseReceivedMillis + timeoutMillis < System.currentTimeMillis();
+        long expirationTime = responseReceivedMillis + timeoutMillis;
+        boolean expired = expirationTime > 0 && expirationTime < Clock.currentTimeMillis();
         if (!expired) {
             // This invocation has not yet expired (so has not been in the system for a too long period) we ignore it.
             return;

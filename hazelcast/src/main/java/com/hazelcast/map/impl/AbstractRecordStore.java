@@ -21,19 +21,30 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.map.impl.SizeEstimators.createMapSizeEstimator;
+
 /**
  * Contains record store common parts.
  */
 abstract class AbstractRecordStore implements RecordStore {
 
     protected static final long DEFAULT_TTL = -1L;
-    protected final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
+
+    // Concurrency level is 1 since at most one thread can write at a time.
+    protected final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000, 0.75f, 1);
+
     protected final RecordFactory recordFactory;
+
     protected final String name;
+
     protected final MapContainer mapContainer;
+
     protected final MapServiceContext mapServiceContext;
+
     protected final SerializationService serializationService;
+
     protected final int partitionId;
+
     private SizeEstimator sizeEstimator;
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
@@ -43,7 +54,7 @@ abstract class AbstractRecordStore implements RecordStore {
         this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         this.name = mapContainer.getName();
         this.recordFactory = mapContainer.getRecordFactory();
-        this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
+        this.sizeEstimator = createMapSizeEstimator();
     }
 
 

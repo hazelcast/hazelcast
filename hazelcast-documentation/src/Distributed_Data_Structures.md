@@ -2,7 +2,7 @@
 
 # Distributed Data Structures
 
-As mentioned in the [Overview](#hazelcast-overview) section, Hazelcast offers distributed implementations of Java interfaces. Below is the Java interface list with links to each section in this manual.
+As mentioned in the [Overview section](#hazelcast-overview), Hazelcast offers distributed implementations of Java interfaces. Below is the Java interface list with links to each section in this manual.
 
 - **Standard utility collections:**
 
@@ -12,7 +12,7 @@ As mentioned in the [Overview](#hazelcast-overview) section, Hazelcast offers di
 	- [List](#list): Very similar to Hazelcast List, except that it allows duplicate elements and preserves their order.
 	- [MultiMap](#multimap): This is a specialized Hazelcast map. It is distributed, where multiple values under a single key can be stored.
 	- [ReplicatedMap](#replicated-map): This does not partition data, i.e. it does not spread data to different cluster members. Instead, it replicates the data to all nodes.
-- **Topic**: Distributed mechanism for publishing messages that are delivered to multiple subscribers; this is also known as a publish/subscribe (pub/sub) messaging model. Please see [Topic](#topic) for more information.
+- **Topic**: Distributed mechanism for publishing messages that are delivered to multiple subscribers; this is also known as a publish/subscribe (pub/sub) messaging model. Please see the [Topic section](#topic) for more information.
 - **Concurrency utilities**:
 	- [Lock](#lock): Distributed implementation of `java.util.concurrent.locks.Lock`. When you lock using Hazelcast Lock, the critical section that it guards is guaranteed to be executed by only one thread in the entire cluster.
 	- [Semaphore](#isemaphore): Distributed implementation of `java.util.concurrent.Semaphore`. When performing concurrent activities, semaphores offer permits to control the thread counts.

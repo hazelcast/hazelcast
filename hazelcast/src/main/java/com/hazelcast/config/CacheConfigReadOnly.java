@@ -33,6 +33,15 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
+    public CacheMaxSizeConfig getMaxSizeConfig() {
+        final CacheMaxSizeConfig maxSizeConfig = super.getMaxSizeConfig();
+        if (maxSizeConfig == null) {
+            return null;
+        }
+        return maxSizeConfig.getAsReadOnly();
+    }
+
+    @Override
     public CacheConfig<K, V> addCacheEntryListenerConfiguration(
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());

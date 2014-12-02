@@ -17,9 +17,12 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
+import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.EntryCountCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordMap;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheMaxSizeConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.IOUtil;
@@ -71,6 +74,7 @@ public abstract class AbstractCacheRecordStore<
 
     protected final String name;
     protected final int partitionId;
+    protected final int partitionCount;
     protected final NodeEngine nodeEngine;
     protected final AbstractCacheService cacheService;
     protected final CacheConfig cacheConfig;
@@ -82,24 +86,28 @@ public abstract class AbstractCacheRecordStore<
     protected boolean isEventBatchingEnabled;
     protected ExpiryPolicy defaultExpiryPolicy;
     protected final EvictionPolicy evictionPolicy;
+    protected final CacheMaxSizeConfig maxSizeConfig;
     protected volatile boolean hasExpiringEntry;
     protected final boolean evictionEnabled;
     protected final int evictionPercentage;
-    protected final int evictionThresholdPercentage;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
     protected ScheduledFuture<?> expirationTaskScheduler;
+    protected final CacheMaxSizeChecker maxSizeChecker;
 
     //CHECKSTYLE:OFF
     public AbstractCacheRecordStore(final String name, final int partitionId, final NodeEngine nodeEngine,
             final AbstractCacheService cacheService) {
         this.name = name;
         this.partitionId = partitionId;
+        this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
         this.cacheConfig = cacheService.getCacheConfig(name);
         if (cacheConfig == null) {
-            throw new CacheNotExistsException("Cache already destroyed, node " + nodeEngine.getLocalMember());
+            throw new CacheNotExistsException("Cache is already destroyed or not created yet, on "
+                    + nodeEngine.getLocalMember());
         }
+        this.records = createRecordCacheMap();
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
@@ -111,14 +119,15 @@ public abstract class AbstractCacheRecordStore<
         if (cacheConfig.isStatisticsEnabled()) {
             this.statistics = cacheService.createCacheStatIfAbsent(name);
         }
-        Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
+        final Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
         this.defaultExpiryPolicy = expiryPolicyFactory.create();
         this.evictionPolicy = cacheConfig.getEvictionPolicy() != null
                 ? cacheConfig.getEvictionPolicy() : EvictionPolicy.NONE;
+        this.maxSizeConfig = cacheConfig.getMaxSizeConfig();
         this.evictionEnabled = evictionPolicy != EvictionPolicy.NONE;
         this.evictionPercentage = cacheConfig.getEvictionPercentage();
-        this.evictionThresholdPercentage = cacheConfig.getEvictionThresholdPercentage();
         this.expirationTaskScheduler = scheduleExpirationTask();
+        this.maxSizeChecker = createCacheMaxSizeChecker(maxSizeConfig);
     }
     //CHECKSTYLE:ON
 
@@ -155,7 +164,26 @@ public abstract class AbstractCacheRecordStore<
 
     protected abstract Data toHeapData(Object obj);
 
-    protected abstract boolean isEvictionRequired();
+    protected CacheMaxSizeChecker createCacheMaxSizeChecker(CacheMaxSizeConfig maxSizeConfig) {
+        if (maxSizeConfig == null) {
+            return null;
+        }
+
+        final CacheMaxSizeConfig.CacheMaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        if (maxSizePolicy == CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
+            return new EntryCountCacheMaxSizeChecker(maxSizeConfig, records, partitionCount);
+        }
+
+        return null;
+    }
+
+    protected boolean isEvictionRequired() {
+        if (maxSizeChecker != null) {
+            return maxSizeChecker.isReachedToMaxSize();
+        } else {
+            return false;
+        }
+    }
 
     protected void updateHasExpiringEntry(R record) {
         if (record != null) {
@@ -262,18 +290,8 @@ public abstract class AbstractCacheRecordStore<
         }
         records.remove(key);
         if (isEventsEnabled) {
-            final Data dataValue;
-            switch (cacheConfig.getInMemoryFormat()) {
-                case BINARY:
-                case OBJECT:
-                case NATIVE:
-                    dataValue = toEventData(record);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid storage format: "
-                            + cacheConfig.getInMemoryFormat());
-            }
-            publishEvent(CacheEventType.EXPIRED, key, null, dataValue, false, IGNORE_COMPLETION);
+            publishEvent(CacheEventType.EXPIRED, key, null,
+                    toEventData(record), false, IGNORE_COMPLETION);
         }
         return true;
     }
@@ -288,18 +306,8 @@ public abstract class AbstractCacheRecordStore<
         }
         records.remove(key);
         if (isEventsEnabled) {
-            final Data dataValue;
-            switch (cacheConfig.getInMemoryFormat()) {
-                case BINARY:
-                case OBJECT:
-                case NATIVE:
-                    dataValue = toEventData(record);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid storage format: "
-                            + cacheConfig.getInMemoryFormat());
-            }
-            publishEvent(CacheEventType.EXPIRED, key, null, dataValue, false, IGNORE_COMPLETION);
+            publishEvent(CacheEventType.EXPIRED, key, null,
+                    toEventData(record), false, IGNORE_COMPLETION);
         }
         return null;
     }
@@ -1403,10 +1411,12 @@ public abstract class AbstractCacheRecordStore<
      * Task to evict expired records
      */
     protected class ExpirationTask implements Runnable {
+
         @Override
         public void run() {
             onExpiry();
         }
+
     }
 
 }

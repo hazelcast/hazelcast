@@ -93,8 +93,10 @@ public class MapConfigAdapter implements JsonSerializable, DataSerializable {
         config.setMinEvictionCheckMillis(in.readLong());
         config.setTimeToLiveSeconds(in.readInt());
         config.setMaxIdleSeconds(in.readInt());
-        config.setMaxSizeConfig(new MaxSizeConfig().setSize(in.readInt())
-                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(in.readUTF())));
+        config.setMaxSizeConfig(
+                new MaxSizeConfig()
+                        .setSize(in.readInt())
+                        .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(in.readUTF())));
         config.setReadBackupData(in.readBoolean());
         config.setEvictionPolicy(EvictionPolicy.valueOf(in.readUTF()));
         config.setMergePolicy(in.readUTF());
