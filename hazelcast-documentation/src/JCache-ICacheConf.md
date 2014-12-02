@@ -13,19 +13,24 @@ The declarative configuration for ICache is a superset of the previously discuss
   <backup-count>1</backup-count>
   <async-backup-count>1</async-backup-count>
   <in-memory-format>BINARY</in-memory-format>
-  <eviction-policy>NONE</eviction-policy>
-  <eviction-threshold-percentage>25</eviction-threshold-percentage>
+  <eviction-policy>LRU</eviction-policy>
+  <max-size size="1000000" policy="ENTRY_COUNT"/>
 </cache>
 ```
 
 - `backup-count`: The number of synchronous backups. Those backups are executed before the mutating cache operation is finished. The mutating operation is blocked. `backup-count` default value is 1.
 - `async-backup-count`: The number of asynchronous backups. Those backups are executed asynchronously so the mutating operation is not blocked and it will be done immediately. `async-backup-count` default value is 0.  
 - `in-memory-format`: Defines the internal storage format. For more information, please see the [In Memory Format section](#in-memory-format). Default is `BINARY`.
-- `eviction-policy`: The eviction policy **(currently available on High-Density Memory Store only)** defines which entries are evicted (removed) from the cache when the cache is low in space. Its default value is `NONE`. The following eviction policies are available:
-  - `LRU`: Abbreviation for Least Recently Used. When `eviction-policy` is set to `LRU`, the longest unused (not accessed) entries are removed from the cache.  
-  - `LFU`: Abbreviation for Least Frequently Used. When `eviction-policy` is set to `LFU`, the entries that are used (accessed) least frequently are removed from the cache.
+- `eviction-policy`: The eviction policy defines which entries are evicted (removed) from the cache when the cache reaches its maximum size defined in `max-size` configuration. Its default value is `NONE`. The following eviction policies are available:
+  - `LRU`: Abbreviation for Least Recently Used. When `eviction-policy` is set to `LRU`, the longest unused (not accessed) entry is removed from the cache.  
+  - `LFU`: Abbreviation for Least Frequently Used. When `eviction-policy` is set to `LFU`, the entry that is used (accessed) least frequently is removed from the cache.
   - `NONE`: When `eviction-policy` is set to `NONE`, no entries are removed from the cache at all.
-- `eviction-threshold-percentage`: the eviction threshold property **(currently available on High-Density Memory Store only)** defines a threshold when reached to trigger the eviction process. Can be set to any integer number between 0 and 100, defaults to 0.
+- `max-size`: The max size property defines a maximum size maximum size is reached, cache is evicted based on the eviction policy. Size can be any integer between `0` and `Integer.MAX_VALUE`. `0` means `Integer.MAX_VALUE`. Default is `0`. The following eviction policies are available:
+  - `ENTRY_COUNT``: Maximum number of cache entries in the cache. **Available on heap based cache record store only.**
+  - `USED_NATIVE_MEMORY_SIZE`: Maximum used native memory size in megabytes for each instance. **Available on High-Density Memory cache record store only.**
+  - `USED_NATIVE_MEMORY_PERCENTAGE`: Maximum used native memory size percentage for each instance. **Available on High-Density Memory cache record store only.**
+  - `FREE_NATIVE_MEMORY_SIZE`: Maximum free native memory size in megabytes for each instance. **Available on High-Density Memory cache record store only.**
+  - `FREE_NATIVE_MEMORY_PERCENTAGE`: Maximum free native memory size percentage for each instance. **Available on High-Density Memory cache record store only.**
 
 Since `javax.cache.configuration.MutableConfiguration` misses the above additional configuration properties, Hazelcast ICache extension
 provides an extended configuration class called `com.hazelcast.config.CacheConfig`. This class is an implementation of `javax.cache.configuration.CompleteConfiguration` and all the properties shown above can be configured
