@@ -14,7 +14,6 @@ The declarative configuration for ICache is a superset of the previously discuss
   <async-backup-count>1</async-backup-count>
   <in-memory-format>BINARY</in-memory-format>
   <eviction-policy>NONE</eviction-policy>
-  <eviction-percentage>25</eviction-percentage>
   <eviction-threshold-percentage>25</eviction-threshold-percentage>
 </cache>
 ```
@@ -26,7 +25,6 @@ The declarative configuration for ICache is a superset of the previously discuss
   - `LRU`: Abbreviation for Least Recently Used. When `eviction-policy` is set to `LRU`, the longest unused (not accessed) entries are removed from the cache.  
   - `LFU`: Abbreviation for Least Frequently Used. When `eviction-policy` is set to `LFU`, the entries that are used (accessed) least frequently are removed from the cache.
   - `NONE`: When `eviction-policy` is set to `NONE`, no entries are removed from the cache at all.
-- `eviction-percentage`: The eviction percentage property **(currently available on High-Density Memory Store only)** defines the amount of percentage of the cache that will be evicted when the threshold is reached. Can be set to any integer number between 0 and 100, defaults to 0.
 - `eviction-threshold-percentage`: the eviction threshold property **(currently available on High-Density Memory Store only)** defines a threshold when reached to trigger the eviction process. Can be set to any integer number between 0 and 100, defaults to 0.
 
 Since `javax.cache.configuration.MutableConfiguration` misses the above additional configuration properties, Hazelcast ICache extension
