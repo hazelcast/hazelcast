@@ -204,7 +204,7 @@ Rest of the chapter first explains the configuration items listed below.
 - Executor Service
 - Serialization
 - Partition Group
-- Jobtracker
+- MapReduce Jobtracker
 - Services
 - Management Center
 

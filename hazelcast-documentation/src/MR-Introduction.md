@@ -329,3 +329,10 @@ being sent to the reducers. To prevent this, you might want to use a combiner to
 - **topology-changed-strategy:** Defines how the MapReduce framework will react on topology changes while executing a job. Currently, only CANCEL_RUNNING_OPERATION is fully supported, which throws an exception to the job emitter (will throw a `com.hazelcast.mapreduce.TopologyChangedException`).
 
 
+<br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [MapReduce Jobtracker Configuration section](#mapreduce-jobtracker-configuration) for a full description of Hazelcast MapReduce JobTracker configuration (includes an example programmatic configuration).*
+
