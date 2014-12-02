@@ -1,6 +1,8 @@
 
 ### Serialization Configuration
 
+The following are the example configurations.
+
 **Declarative:**
 
 ```xml
@@ -36,17 +38,17 @@ serializationConfig.setPortableVersion( "???" ).setUseNativeByteOrder( "???" )
 
 It has below attributes.
 
-- portable-version: Defines the versioning of the portable serialization. Portable version will be used to differentiate two same classes that have changes on it like adding/removing field or changing a type of a field.
-- use-native-byte-order: Set to true to use native byte order of the underlying platform. 
-- byte-order: Defines the byte order that the serialization will use. 
-- enable-compression: Enables compression if default Java serialization is used. 
-- enable-shared-object: Enables shared object if default Java serialization is used. 
-- allow-unsafe: Set to `true` to allow the usage of Unsafe. 
-- data-serializable-factory: DataSerializableFactory class to be registered.
-- portable-factory: PortableFactory class to be registered.
-- global-serializer: Global serializer class to be registered if no other serializer is applicable.
-- serializer: Defines the class name of the serializer implementation.
-- check-class-def-errors: When enabled, serialization system will check class definitions error at start and throw an Serialization Exception with error definition.
+- `portable-version`: Defines the versioning of the portable serialization. Portable version will be used to differentiate two same classes that have changes on it like adding/removing field or changing a type of a field.
+- `use-native-byte-order`: Set to true to use native byte order of the underlying platform. 
+- `byte-order`: Defines the byte order that the serialization will use. 
+- `enable-compression`: Enables compression if default Java serialization is used. 
+- `enable-shared-object`: Enables shared object if default Java serialization is used. 
+- `allow-unsafe`: Set to `true` to allow the usage of Unsafe. 
+- `data-serializable-factory`: DataSerializableFactory class to be registered.
+- `portable-factory`: PortableFactory class to be registered.
+- `global-serializer`: Global serializer class to be registered if no other serializer is applicable.
+- `serializer`: Defines the class name of the serializer implementation.
+- `check-class-def-errors`: When enabled, serialization system will check class definitions error at start and throw an Serialization Exception with error definition.
 
 
 

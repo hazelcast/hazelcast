@@ -176,6 +176,8 @@ src/HazelcastConfiguration/ConfigurationOverview.md
 	src/HazelcastConfiguration/ListConfiguration.md
 	src/HazelcastConfiguration/SetConfiguration.md
 	src/HazelcastConfiguration/SemaphoreConfiguration.md
+	src/HazelcastConfiguration/ExecServiceConfiguration.md
+	src/HazelcastConfiguration/SerializationConfiguration.md
 #		src/ConfigSpecifyInterfaces.md
 #		src/EC2AutoDiscovery.md
 #		src/Ports.md
