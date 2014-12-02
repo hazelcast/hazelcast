@@ -780,6 +780,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         Object key = generateKeyOwnedBy(hz1);
         map.put(key, new ParentPortableObject(1L));
+        waitAllForSafeState();
 
         Collection<Object> values = map.values(new SqlPredicate("timestamp > 0"));
         assertEquals(1, values.size());
