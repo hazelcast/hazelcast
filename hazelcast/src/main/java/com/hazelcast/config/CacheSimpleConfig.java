@@ -67,8 +67,7 @@ public class CacheSimpleConfig {
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    // Default max size config, size = Integer.MAX_VALUE, policy = ENTRY_COUNT
-    private CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
+    private CacheMaxSizeConfig maxSizeConfig;
 
     private CacheSimpleConfig readOnly;
 
