@@ -60,7 +60,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         }
         for (HazelcastInstance hz : instances) {
             try {
-                hz.shutdown();
+                hz.getLifecycleService().terminate();
             } catch (Exception e) {
                 e.printStackTrace();
             }

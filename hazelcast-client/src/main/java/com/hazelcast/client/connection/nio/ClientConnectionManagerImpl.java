@@ -41,6 +41,7 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
@@ -270,7 +271,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     public ClientConnection tryToConnect(Address target) throws Exception {
         Authenticator authenticator = new ClusterAuthenticator();
         int count = 0;
-        IOException lastError = null;
+        Exception lastError = null;
         while (count < RETRY_COUNT) {
             try {
                 if (target == null || !isMember(target)) {
@@ -280,6 +281,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     return getOrConnect(target, authenticator);
                 }
             } catch (IOException e) {
+                lastError = e;
+            } catch (HazelcastInstanceNotActiveException e) {
                 lastError = e;
             }
             target = null;
