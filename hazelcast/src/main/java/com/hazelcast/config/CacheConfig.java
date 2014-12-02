@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Factory;
-import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.CacheEntryListener;
