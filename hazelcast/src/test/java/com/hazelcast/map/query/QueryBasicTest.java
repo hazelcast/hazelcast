@@ -6,21 +6,25 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
+import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
+import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.query.SampleObjects.State;
+import com.hazelcast.query.SampleObjects.Value;
+import com.hazelcast.query.SampleObjects.ValueType;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -35,19 +39,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
-import static com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
-import static com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
-import static com.hazelcast.query.SampleObjects.Employee;
-import static com.hazelcast.query.SampleObjects.State;
-import static com.hazelcast.query.SampleObjects.Value;
-import static com.hazelcast.query.SampleObjects.ValueType;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -964,6 +965,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         Object key = generateKeyOwnedBy(hz1);
         map.put(key, new ParentPortableObject(1L));
+        waitAllForSafeState();
 
         Collection<Object> values = map.values(new SqlPredicate("timestamp > 0"));
         assertEquals(1, values.size());
