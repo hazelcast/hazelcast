@@ -21,6 +21,7 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.impl.client.TargetResettable;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -34,6 +35,7 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -53,10 +55,10 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     static final ILogger LOGGER = Logger.getLogger(ClientCallFuture.class);
 
     private final int heartBeatInterval;
-    private final int retryCount;
-    private final int retryWaitTime;
 
-    private volatile Object response;
+    private final int retryCount;
+
+    private final int retryWaitTime;
 
     private final ClientRequest request;
 
@@ -70,7 +72,9 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private final EventHandler handler;
 
-    private AtomicInteger reSendCount = new AtomicInteger();
+    private final AtomicInteger reSendCount = new AtomicInteger();
+
+    private volatile Object response;
 
     private volatile ClientConnection connection;
 
@@ -266,6 +270,11 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         if (handler != null) {
             handler.beforeListenerRegister();
         }
+
+        if (request instanceof TargetResettable) {
+            ((TargetResettable) request).reset();
+        }
+
         executionService.schedule(new ReSendTask(), retryWaitTime, TimeUnit.MILLISECONDS);
         return true;
     }

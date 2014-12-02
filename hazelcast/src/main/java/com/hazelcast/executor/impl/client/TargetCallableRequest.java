@@ -37,12 +37,15 @@ import java.util.concurrent.Callable;
 /**
  * This class is used for sending the task to a particular target
  */
-public final class TargetCallableRequest extends TargetClientRequest {
+public class TargetCallableRequest extends TargetClientRequest {
+
+    private Address target;
 
     private String name;
+
     private String uuid;
+
     private Callable callable;
-    private Address target;
 
     public TargetCallableRequest() {
     }
@@ -63,12 +66,20 @@ public final class TargetCallableRequest extends TargetClientRequest {
             callable = securityContext.createSecureCallable(subject, callable);
         }
         Data callableData = serializationService.toData(callable);
+        return getOperation(name, uuid, callableData);
+    }
+
+    protected Operation getOperation(String name, String uuid, Data callableData) {
         return new MemberCallableTaskOperation(name, uuid, callableData);
     }
 
     @Override
     public Address getTarget() {
         return target;
+    }
+
+    protected void setTarget(Address target) {
+        this.target = target;
     }
 
     @Override
