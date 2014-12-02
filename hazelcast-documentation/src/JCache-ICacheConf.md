@@ -26,7 +26,7 @@ The declarative configuration for ICache is a superset of the previously discuss
   - `LFU`: Abbreviation for Least Frequently Used. When `eviction-policy` is set to `LFU`, the entry that is used (accessed) least frequently is removed from the cache.
   - `NONE`: When `eviction-policy` is set to `NONE`, no entries are removed from the cache at all.
 - `max-size`: The max size property defines a maximum size maximum size is reached, cache is evicted based on the eviction policy. Size can be any integer between `0` and `Integer.MAX_VALUE`. `0` means `Integer.MAX_VALUE`. Default is `0`. The following eviction policies are available:
-  - `ENTRY_COUNT``: Maximum number of cache entries in the cache. **Available on heap based cache record store only.**
+  - `ENTRY_COUNT`: Maximum number of cache entries in the cache. **Available on heap based cache record store only.**
   - `USED_NATIVE_MEMORY_SIZE`: Maximum used native memory size in megabytes for each instance. **Available on High-Density Memory cache record store only.**
   - `USED_NATIVE_MEMORY_PERCENTAGE`: Maximum used native memory size percentage for each instance. **Available on High-Density Memory cache record store only.**
   - `FREE_NATIVE_MEMORY_SIZE`: Maximum free native memory size in megabytes for each instance. **Available on High-Density Memory cache record store only.**
