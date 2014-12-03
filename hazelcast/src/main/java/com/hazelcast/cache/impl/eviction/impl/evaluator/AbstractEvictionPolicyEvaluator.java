@@ -69,7 +69,11 @@ public abstract class AbstractEvictionPolicyEvaluator<A, E extends Evictable>
                     Expirable expirable = (Expirable) evictable;
                     // If there is an expired candidate, let's evict that one immediately
                     if (expirable.isExpiredAt(now)) {
-                        return Collections.singleton(candidate);
+                        if (candidate instanceof Iterable) {
+                            return (Iterable<C>) candidate;
+                        } else {
+                            return Collections.singleton(candidate);
+                        }
                     }
                 }
 
@@ -79,7 +83,15 @@ public abstract class AbstractEvictionPolicyEvaluator<A, E extends Evictable>
                 }
             }
         }
-        return evictionCandidate == null ? null : Collections.singleton(evictionCandidate);
+        if (evictionCandidate == null) {
+            return null;
+        } else {
+            if (evictionCandidate instanceof Iterable) {
+                return (Iterable<C>) evictionCandidate;
+            } else {
+                return Collections.singleton(evictionCandidate);
+            }
+        }
     }
 
 }
