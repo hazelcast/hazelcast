@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -37,6 +38,8 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
@@ -63,7 +66,12 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
+import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
+import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import org.junit.AfterClass;
@@ -77,9 +85,11 @@ import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
 import java.net.InetSocketAddress;
+import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -163,6 +173,9 @@ public class TestFullApplicationContext {
 
     @Resource
     private SocketInterceptor socketInterceptor;
+
+    @Resource
+    private StreamSerializer dummySerializer;
 
     @BeforeClass
     @AfterClass
@@ -530,5 +543,38 @@ public class TestFullApplicationContext {
         assertTrue(memberAttributeConfig.getBooleanAttribute("attribute.boolean"));
         assertEquals(0.0d, memberAttributeConfig.getDoubleAttribute("attribute.double"), 0.0001d);
         assertEquals(1234.5678, memberAttributeConfig.getFloatAttribute("attribute.float"), 0.0001);
+    }
+
+    @Test
+    public void testSerializationConfig() {
+        SerializationConfig serializationConfig = config.getSerializationConfig();
+        assertEquals(ByteOrder.BIG_ENDIAN, serializationConfig.getByteOrder());
+        assertEquals(false, serializationConfig.isCheckClassDefErrors());
+        assertEquals(13, serializationConfig.getPortableVersion());
+
+        Map<Integer, String> dataSerializableFactoryClasses = serializationConfig
+                .getDataSerializableFactoryClasses();
+        assertFalse(dataSerializableFactoryClasses.isEmpty());
+        assertEquals(DummyDataSerializableFactory.class.getName(), dataSerializableFactoryClasses.get(1));
+
+        Map<Integer, DataSerializableFactory> dataSerializableFactories = serializationConfig
+                .getDataSerializableFactories();
+        assertFalse(dataSerializableFactories.isEmpty());
+        assertEquals(DummyDataSerializableFactory.class, dataSerializableFactories.get(2).getClass());
+
+        Map<Integer, String> portableFactoryClasses = serializationConfig.getPortableFactoryClasses();
+        assertFalse(portableFactoryClasses.isEmpty());
+        assertEquals(DummyPortableFactory.class.getName(), portableFactoryClasses.get(1));
+
+        Map<Integer, PortableFactory> portableFactories = serializationConfig.getPortableFactories();
+        assertFalse(portableFactories.isEmpty());
+        assertEquals(DummyPortableFactory.class, portableFactories.get(2).getClass());
+
+        Collection<SerializerConfig> serializerConfigs = serializationConfig.getSerializerConfigs();
+        assertFalse(serializerConfigs.isEmpty());
+
+        GlobalSerializerConfig globalSerializerConfig = serializationConfig.getGlobalSerializerConfig();
+        assertNotNull(globalSerializerConfig);
+        assertEquals(dummySerializer, globalSerializerConfig.getImplementation());
     }
 }

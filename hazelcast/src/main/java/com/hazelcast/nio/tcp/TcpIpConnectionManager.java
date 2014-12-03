@@ -450,8 +450,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
                     }
                 });
             }
-        } else {
-            log(Level.SEVERE, "ENDPOINT NULL: " + connection);
         }
         if (connection.isAlive()) {
             connection.close();

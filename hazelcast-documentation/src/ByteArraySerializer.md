@@ -45,4 +45,12 @@ As usual, let's register the `EmployeeByteArraySerializer` in the configuration 
 </serialization>
 ```
 
+
 <br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [Serialization Configuration section](#serialization-configuration) for a full description of Hazelcast Serialization configuration.*
+
+ 

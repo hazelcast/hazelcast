@@ -55,6 +55,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -131,6 +132,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testQueryWithIndexesWhileMigrating() throws Exception {
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -158,6 +160,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
      * test for issue #359
      */
     @Test(timeout = MINUTE)
+    @Ignore
     public void testIndexCleanupOnMigration() throws Exception {
         final int n = 6;
         final int runCount = 500;

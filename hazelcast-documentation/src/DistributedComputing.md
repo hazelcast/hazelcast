@@ -113,6 +113,14 @@ By default, Executor is configured to have 8 threads in the pool. You can change
 </executor-service>
 ```
 
+<br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [Executor Service Configuration section](#executor-service-configuration) for a full description of Hazelcast Distributed Executor Service configuration.*
+
+
 #### Scaling
 
 
