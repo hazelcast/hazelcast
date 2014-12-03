@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * This {@link com.hazelcast.cache.ICache} interfaces is the {@link javax.cache.Cache} extension offered by
+ * This {@link com.hazelcast.cache.ICache} interface is the {@link javax.cache.Cache} extension offered by
  * Hazelcast JCache.<br>
  * In addition to the standard set of JCache methods defined in the JSR 107 specification, Hazelcast provides
  * additional operations to support a broader range of programing styles.<p>
