@@ -107,19 +107,58 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         }
 
         public final V setValue(V value) {
-            throw new UnsupportedOperationException("Setting value is not supported in SamplingEntry");
+            throw new UnsupportedOperationException("Setting value is not supported");
+        }
+
+    }
+
+    /**
+     * Iterable sampling entry to preventing from extra object creation for iteration.
+     *
+     * NOTE: Assumed that it is not accessed by multiple threads. So there is synchronization.
+     */
+    public class IterableSamplingEntry
+            extends SamplingEntry
+            implements Iterable<IterableSamplingEntry>, Iterator<IterableSamplingEntry> {
+
+        private boolean iterated;
+
+        public IterableSamplingEntry(K key, V value) {
+            super(key, value);
+        }
+
+        @Override
+        public Iterator<IterableSamplingEntry> iterator() {
+            return this;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !iterated;
+        }
+
+        @Override
+        public IterableSamplingEntry next() {
+            if (iterated) {
+                return null;
+            }
+            iterated = true;
+            return this;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Removing is supported");
         }
 
     }
 
     protected <E extends SamplingEntry> E createSamplingEntry(K key, V value) {
-        return (E) new SamplingEntry(key, value);
+        return (E) new IterableSamplingEntry(key, value);
     }
 
     /**
      * Gets and returns samples as <code>sampleCount</code>.
-     *
-     * NOTE: Originally taken by Jaromir Hamala's implementation. So kudos to Jaromir :)
      *
      * @param sampleCount Count of samples
      *
@@ -133,30 +172,17 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             return Collections.EMPTY_LIST;
         }
 
-        final int randomNumber = Math.abs(THREAD_LOCAL_RANDOM.get().nextInt());
-        return new LazySamplingEntryIterable<E>(sampleCount, randomNumber);
+        return new LazySamplingEntryIterableIterator<E>(sampleCount);
     }
 
-    private final class LazySamplingEntryIterable<E extends SamplingEntry> implements Iterable<E> {
-
-        private final int maxEntryCount;
-        private final int randomNumber;
-
-        private LazySamplingEntryIterable(int maxEntryCount, int randomNumber) {
-            this.maxEntryCount = maxEntryCount;
-            this.randomNumber = randomNumber;
-        }
-
-        @Override
-        public Iterator<E> iterator() {
-            return new LazySamplingEntryIterator<E>(maxEntryCount, randomNumber);
-        }
-
-    }
-
-    // *** NOTE ***
-    //      Assumed it is not accessed by multiple threads. So there is synchronization.
-    private final class LazySamplingEntryIterator<E extends SamplingEntry> implements Iterator<E> {
+    /**
+     * This class is implements both of "Iterable" and "Iterator" interfaces.
+     * So we can use only one object (instead of two) both for "Iterable" and "Iterator" interfaces.
+     *
+     * NOTE: Assumed that it is not accessed by multiple threads. So there is synchronization.
+     */
+    private final class LazySamplingEntryIterableIterator<E extends SamplingEntry>
+            implements Iterable<E>, Iterator<E> {
 
         private final int maxEntryCount;
         private final int randomNumber;
@@ -167,12 +193,17 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         private int returnedEntryCount;
         private boolean reachedToEnd;
 
-        private LazySamplingEntryIterator(int maxEntryCount, int randomNumber) {
+        private LazySamplingEntryIterableIterator(int maxEntryCount) {
             this.maxEntryCount = maxEntryCount;
-            this.randomNumber = randomNumber;
+            this.randomNumber = Math.abs(THREAD_LOCAL_RANDOM.get().nextInt());
             this.firstSegmentIndex = randomNumber % segments.length;
             this.currentSegmentIndex = firstSegmentIndex;
             this.currentBucketIndex = -1;
+        }
+
+        @Override
+        public Iterator<E> iterator() {
+            return this;
         }
 
         @Override
@@ -180,17 +211,17 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             return (returnedEntryCount < maxEntryCount) && !reachedToEnd;
         }
 
-        //CHECKSTYLE:OFF
-
         /**
          * Originally taken by Jaromir Hamala's implementation and changed as incremental implementation.
          * So kudos to Jaromir :)
          */
+        //CHECKSTYLE:OFF
         @Override
         public E next() {
             if (!hasNext()) {
                 return null;
             }
+
             do {
                 Segment<K, V> segment = segments[currentSegmentIndex];
                 if (segment != null) {
