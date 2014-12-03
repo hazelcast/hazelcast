@@ -192,6 +192,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         private HashEntry<K, V> currentEntry;
         private int returnedEntryCount;
         private boolean reachedToEnd;
+        private E currentSample;
 
         private LazySamplingEntryIterableIterator(int maxEntryCount) {
             this.maxEntryCount = maxEntryCount;
@@ -206,20 +207,15 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             return this;
         }
 
-        @Override
-        public boolean hasNext() {
-            return (returnedEntryCount < maxEntryCount) && !reachedToEnd;
-        }
-
         /**
          * Originally taken by Jaromir Hamala's implementation and changed as incremental implementation.
          * So kudos to Jaromir :)
          */
         //CHECKSTYLE:OFF
-        @Override
-        public E next() {
-            if (!hasNext()) {
-                return null;
+        private void iterate() {
+            if (returnedEntryCount >= maxEntryCount || reachedToEnd) {
+                currentSample = null;
+                return;
             }
 
             do {
@@ -243,13 +239,13 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
                             // Advance to next entry
                             currentEntry = currentEntry.next;
                             if (value != null) {
-                                E e = createSamplingEntry(key, value);
+                                currentSample = createSamplingEntry(key, value);
                                 // If we reached end of entries, advance current bucket index
                                 if (currentEntry == null) {
                                     currentBucketIndex = ++currentBucketIndex < table.length ? currentBucketIndex : 0;
                                 }
                                 returnedEntryCount++;
-                                return e;
+                                return;
                             }
                         }
                         // Advance current bucket index
@@ -267,10 +263,20 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             } while (currentSegmentIndex != firstSegmentIndex);
 
             reachedToEnd = true;
-
-            return null;
+            currentSample = null;
         }
         //CHECKSTYLE:ON
+
+        @Override
+        public boolean hasNext() {
+            iterate();
+            return currentSample != null;
+        }
+
+        @Override
+        public E next() {
+            return currentSample;
+        }
 
         @Override
         public void remove() {
