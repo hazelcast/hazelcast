@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Factory;
-import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.CacheEntryListener;
@@ -114,10 +113,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
             Factory<? extends CacheEntryEventFilter<? super K, ? super V>> filterFactory = null;
             if (simpleListener.getCacheEntryListenerFactory() != null) {
-                listenerFactory = FactoryBuilder.factoryOf(simpleListener.getCacheEntryListenerFactory());
+                listenerFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryListenerFactory());
             }
             if (simpleListener.getCacheEntryEventFilterFactory() != null) {
-                filterFactory = FactoryBuilder.factoryOf(simpleListener.getCacheEntryEventFilterFactory());
+                filterFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryEventFilterFactory());
             }
             boolean isOldValueRequired = simpleListener.isOldValueRequired();
             boolean synchronous = simpleListener.isSynchronous();
