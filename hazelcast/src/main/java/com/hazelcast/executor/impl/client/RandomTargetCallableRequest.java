@@ -36,7 +36,8 @@ public class RandomTargetCallableRequest extends TargetCallableRequest implement
     public RandomTargetCallableRequest() {
     }
 
-    public RandomTargetCallableRequest(String name, String uuid, Callable callable, ConstructorFunction<Object, Address> targetCreator) {
+    public RandomTargetCallableRequest(String name, String uuid, Callable callable,
+                                       ConstructorFunction<Object, Address> targetCreator) {
         super(name, uuid, callable, targetCreator.createNew(null));
         this.targetCreator = targetCreator;
     }
