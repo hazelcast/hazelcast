@@ -234,12 +234,18 @@
                 <hz:data-serializable-factories>
                     <hz:data-serializable-factory factory-id="1"
                                                   class-name="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
+
+                    <hz:data-serializable-factory factory-id="2" implementation="dummyDataSerializableFactory"/>
+
                 </hz:data-serializable-factories>
                 <hz:portable-factories>
-                    <hz:portable-factory factory-id="2"
+                    <hz:portable-factory factory-id="1"
                                          class-name="com.hazelcast.spring.serialization.DummyPortableFactory"/>
+
+                    <hz:portable-factory factory-id="2" implementation="dummyPortableFactory"/>
                 </hz:portable-factories>
                 <hz:serializers>
+                    <hz:global-serializer implementation="dummySerializer"/>
                     <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject1"
                                    class-name="com.hazelcast.spring.serialization.DummySerializer"/>
                     <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject2"
@@ -260,6 +266,8 @@
     </hz:hazelcast>
 
     <bean id="dummySerializer" class="com.hazelcast.spring.serialization.DummySerializer"/>
+    <bean id="dummyDataSerializableFactory" class="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
+    <bean id="dummyPortableFactory" class="com.hazelcast.spring.serialization.DummyPortableFactory"/>
 
     <hz:map id="map1" instance-ref="instance" name="map1"/>
     <hz:map id="map2" instance-ref="instance" name="map2"/>
