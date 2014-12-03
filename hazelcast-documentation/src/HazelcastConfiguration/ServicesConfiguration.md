@@ -2,7 +2,7 @@
 
 ### Services Configuration
 
-This configuration is used for SPI. 
+This configuration is used for Hazelcast Service Provider Interface (SPI). The following are the example configurations.
 
 
 **Declarative:**
