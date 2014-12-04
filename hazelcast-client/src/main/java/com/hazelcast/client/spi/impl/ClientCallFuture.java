@@ -25,6 +25,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.executor.impl.client.RefreshableRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
@@ -34,6 +35,7 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -258,6 +260,9 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         }
         if (handler != null) {
             handler.beforeListenerRegister();
+        }
+        if (request instanceof RefreshableRequest) {
+            ((RefreshableRequest) request).refresh();
         }
         executionService.schedule(new ReSendTask(), retryWaitTime, TimeUnit.MILLISECONDS);
         return true;
