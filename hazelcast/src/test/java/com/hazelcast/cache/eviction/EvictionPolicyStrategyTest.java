@@ -2,10 +2,10 @@ package com.hazelcast.cache.eviction;
 
 import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyStrategy;
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
-import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.CacheEvictionConfig;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.configuration.Factory;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -25,7 +26,8 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
+public class EvictionPolicyStrategyTest
+        extends HazelcastTestSupport {
 
     private class SimpleEvictionCandidate<K, V extends Evictable> implements EvictionCandidate<K, V> {
 
@@ -50,14 +52,14 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void evictionPolicyLRUSuccessfullyEvaluated() {
+    public void evictionPolicyLRUSuccessfullyEvaluated() throws Exception {
         final int RECORD_COUNT = 100;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
 
-        EvictionPolicyEvaluator evictionPolicyEvaluator =
-                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(EvictionPolicy.LRU);
-        List<EvictionCandidate<Integer, CacheObjectRecord>> records =
-                new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
+        String className = CacheEvictionConfig.LRU_EVICTION_POLICY_STRATEGY_FACTORY;
+        Factory<? extends EvictionPolicyStrategy> factory = ClassLoaderUtil.newInstance(null, className);
+        EvictionPolicyStrategy evictionPolicyStrategy = factory.create();
+        List<EvictionCandidate<Integer, CacheObjectRecord>> records = new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
 
         long baseTime = System.currentTimeMillis();
 
@@ -74,8 +76,7 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             records.add(new SimpleEvictionCandidate<Integer, CacheObjectRecord>(i, record));
         }
 
-        Iterable<EvictionCandidate<Integer, CacheObjectRecord>> evictedRecords =
-                evictionPolicyEvaluator.evaluate(records);
+        Iterable<EvictionCandidate<Integer, CacheObjectRecord>> evictedRecords = evictionPolicyStrategy.evaluate(records);
 
         assertNotNull(evictedRecords);
 
@@ -92,14 +93,14 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void evictionPolicyLFUSuccessfullyEvaluated() {
+    public void evictionPolicyLFUSuccessfullyEvaluated() throws Exception {
         final int RECORD_COUNT = 100;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
 
-        EvictionPolicyEvaluator evictionPolicyEvaluator =
-                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(EvictionPolicy.LFU);
-        List<EvictionCandidate<Integer, CacheObjectRecord>> records =
-                new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
+        String className = CacheEvictionConfig.LFU_EVICTION_POLICY_STRATEGY_FACTORY;
+        Factory<? extends EvictionPolicyStrategy> factory = ClassLoaderUtil.newInstance(null, className);
+        EvictionPolicyStrategy evictionPolicyStrategy = factory.create();
+        List<EvictionCandidate<Integer, CacheObjectRecord>> records = new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
 
         for (int i = 0; i < RECORD_COUNT; i++) {
             CacheObjectRecord record = new CacheObjectRecord(i, System.currentTimeMillis(), Long.MAX_VALUE);
@@ -114,7 +115,7 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         }
 
         Iterable<EvictionCandidate<Integer, CacheObjectRecord>> evictedRecords =
-                evictionPolicyEvaluator.evaluate(records);
+                evictionPolicyStrategy.evaluate(records);
 
         assertNotNull(evictedRecords);
 

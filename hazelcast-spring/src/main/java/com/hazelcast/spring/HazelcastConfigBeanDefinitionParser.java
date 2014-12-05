@@ -17,7 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.CacheMaxSizeConfig;
+import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
@@ -507,19 +507,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final String name = getTextContent(attName);
             fillAttributeValues(node, cacheConfigBuilder);
             for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
-                if ("max-size".equals(cleanNodeName(childNode))) {
-                    final CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
-                    final Node size = childNode.getAttributes().getNamedItem("size");
-                    final Node maxSizePolicy = childNode.getAttributes().getNamedItem("policy");
-                    if (size != null) {
-                        maxSizeConfig.setSize(Integer.parseInt(getTextContent(size)));
-                    }
-                    if (maxSizePolicy != null) {
-                        maxSizeConfig.setMaxSizePolicy(
-                                CacheMaxSizeConfig.CacheMaxSizePolicy.valueOf(
-                                        upperCaseInternal(getTextContent(maxSizePolicy))));
-                    }
-                    cacheConfigBuilder.addPropertyValue("maxSizeConfig", maxSizeConfig);
+                if ("eviction".equals(cleanNodeName(childNode))) {
+                    handleCacheEviction(childNode, cacheConfigBuilder);
                 }
                 if ("cache-entry-listeners".equals(cleanNodeName(childNode))) {
                     ManagedList listeners = new ManagedList();
@@ -532,6 +521,28 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             cacheConfigManagedMap.put(name, cacheConfigBuilder.getBeanDefinition());
+        }
+
+        public void handleCacheEviction(Node node, BeanDefinitionBuilder cacheConfigBuilder) {
+            final CacheEvictionConfig cacheEvictionConfig = new CacheEvictionConfig();
+            final Node size = node.getAttributes().getNamedItem("size");
+            final Node maxSizePolicy = node.getAttributes().getNamedItem("size-policy");
+            final Node evictionStrategyFactory = node.getAttributes().getNamedItem("eviction-strategy-factory");
+            final Node evictionPolicyStrategyFactory = node.getAttributes().getNamedItem("eviction-policy-strategy-factory");
+            if (size != null) {
+                cacheEvictionConfig.setSize(Integer.parseInt(getTextContent(size)));
+            }
+            if (maxSizePolicy != null) {
+                String maxSizePolicyName = upperCaseInternal(getTextContent(maxSizePolicy));
+                cacheEvictionConfig.setMaxSizePolicy(CacheEvictionConfig.CacheMaxSizePolicy.valueOf(maxSizePolicyName));
+            }
+            if (evictionStrategyFactory != null) {
+                cacheEvictionConfig.setEvictionStrategyFactory(getTextContent(evictionStrategyFactory));
+            }
+            if (evictionPolicyStrategyFactory != null) {
+                cacheEvictionConfig.setEvictionPolicyStrategyFactory(getTextContent(evictionPolicyStrategyFactory));
+            }
+            cacheConfigBuilder.addPropertyValue("evictionConfig", cacheEvictionConfig);
         }
 
         public void handleWanReplication(Node node) {

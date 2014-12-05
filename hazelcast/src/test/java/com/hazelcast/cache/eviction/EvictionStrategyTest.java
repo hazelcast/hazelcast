@@ -1,12 +1,11 @@
 package com.hazelcast.cache.eviction;
 
+import com.hazelcast.cache.impl.eviction.AbstractEvictionPolicyStrategy;
 import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
-import com.hazelcast.cache.impl.eviction.EvictionChecker;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyStrategy;
 import com.hazelcast.cache.impl.eviction.EvictionStrategy;
-import com.hazelcast.cache.impl.eviction.EvictionStrategyProvider;
-import com.hazelcast.cache.impl.eviction.EvictionStrategyType;
+import com.hazelcast.cache.impl.eviction.impl.sampling.SamplingBasedEvictionStrategy;
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
 import com.hazelcast.core.HazelcastInstance;
@@ -73,9 +72,8 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
 
         SerializationService serializationService = node.getSerializationService();
 
-        EvictionStrategy evictionStrategy =
-                EvictionStrategyProvider.getEvictionStrategy(EvictionStrategyType.SAMPLING_BASED_EVICTION);
-        CacheRecordHashMap cacheRecordMap = new CacheRecordHashMap(1000);
+        EvictionStrategy evictionStrategy = new SamplingBasedEvictionStrategy();
+        CacheRecordHashMap cacheRecordMap = new CacheRecordHashMap(1000, 1000);
         CacheObjectRecord expectedEvictedRecord = null;
         Data expectedData = null;
 
@@ -96,8 +94,8 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
                 new SimpleEvictionCandidate(expectedData, expectedEvictedRecord);
         // Mock "EvictionPolicyEvaluator", since we are testing it in other tests.
         // In this test, we are testing "EvictionStrategy".
-        EvictionPolicyEvaluator evictionPolicyEvaluator =
-                new EvictionPolicyEvaluator() {
+        EvictionPolicyStrategy evictionPolicyStrategy =
+                new AbstractEvictionPolicyStrategy() {
                     @Override
                     public Iterable<SimpleEvictionCandidate> evaluate(Iterable evictionCandidates) {
                         return Collections.singleton(evictionCandidate);
@@ -108,8 +106,7 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
         assertTrue(cacheRecordMap.containsKey(expectedData));
         assertTrue(cacheRecordMap.containsValue(expectedEvictedRecord));
 
-        int evictedCount = evictionStrategy.evict(cacheRecordMap, evictionPolicyEvaluator,
-                EvictionChecker.EVICT_ALWAYS);
+        int evictedCount = evictionStrategy.evict(cacheRecordMap, evictionPolicyStrategy, null);
         assertEquals(EXPECTED_EVICTED_COUNT, evictedCount);
         assertEquals(RECORD_COUNT - EXPECTED_EVICTED_COUNT, cacheRecordMap.size());
         assertFalse(cacheRecordMap.containsKey(expectedData));

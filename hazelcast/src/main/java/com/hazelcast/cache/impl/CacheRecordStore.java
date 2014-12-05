@@ -16,11 +16,11 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
+import com.hazelcast.cache.impl.eviction.EvictionEvaluator;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
-import com.hazelcast.config.CacheMaxSizeConfig;
+import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
@@ -64,28 +64,27 @@ public class CacheRecordStore
     }
 
     @Override
-    protected CacheMaxSizeChecker createCacheMaxSizeChecker(CacheMaxSizeConfig maxSizeConfig) {
-        if (maxSizeConfig == null) {
-            throw new IllegalArgumentException("Max-Size config cannot be null");
+    protected EvictionEvaluator createEvictionEvaluator(CacheEvictionConfig cacheEvictionConfig) {
+        if (cacheEvictionConfig == null) {
+            throw new IllegalArgumentException("Cache eviction config cannot be null");
         }
 
-        final CacheMaxSizeConfig.CacheMaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        CacheEvictionConfig.CacheMaxSizePolicy maxSizePolicy = cacheEvictionConfig.getMaxSizePolicy();
         if (maxSizePolicy == null) {
             throw new IllegalArgumentException("Max-Size policy cannot be null");
         }
 
-        if (maxSizePolicy != CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
-            throw new IllegalArgumentException("Invalid max-size policy "
-                    + "(" + maxSizePolicy + ") for " + getClass().getName() + " ! Only "
-                    + CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT + " is supported.");
-        } else {
-            return super.createCacheMaxSizeChecker(maxSizeConfig);
+        if (maxSizePolicy != CacheEvictionConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
+            throw new IllegalArgumentException("Invalid max-size policy '" + maxSizePolicy + "' for "
+                    + getClass().getName() + "! Only 'ENTRY_COUNT' is supported.");
         }
+
+        return super.createEvictionEvaluator(cacheEvictionConfig);
     }
 
     @Override
     protected CacheRecordHashMap createRecordCacheMap() {
-        return new CacheRecordHashMap(DEFAULT_INITIAL_CAPACITY);
+        return new CacheRecordHashMap(DEFAULT_INITIAL_CAPACITY, evictionConfig.getSize());
     }
 
     @Override

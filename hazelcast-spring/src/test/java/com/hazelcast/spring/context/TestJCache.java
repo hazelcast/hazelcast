@@ -16,7 +16,7 @@
 
 package com.hazelcast.spring.context;
 
-import com.hazelcast.config.CacheMaxSizeConfig;
+import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -86,11 +86,12 @@ public class TestJCache {
         assertEquals("com.hazelcast.cache.MyCacheWriterFactory", simpleConfig.getCacheWriterFactory());
         assertEquals("com.hazelcast.cache.MyExpiryPolicyFactory", simpleConfig.getExpiryPolicyFactory());
         assertEquals(InMemoryFormat.OBJECT, simpleConfig.getInMemoryFormat());
-        assertNotNull(simpleConfig.getMaxSizeConfig());
-        assertEquals(50, simpleConfig.getMaxSizeConfig().getSize());
-        assertEquals(CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT,
-                simpleConfig.getMaxSizeConfig().getMaxSizePolicy());
-        assertEquals(EvictionPolicy.LRU, simpleConfig.getEvictionPolicy());
+        assertNotNull(simpleConfig.getEvictionConfig());
+        assertEquals(50, simpleConfig.getEvictionConfig().getSize());
+        assertEquals(CacheEvictionConfig.CacheMaxSizePolicy.ENTRY_COUNT,
+                simpleConfig.getEvictionConfig().getMaxSizePolicy());
+        assertEquals(CacheEvictionConfig.LRU_EVICTION_POLICY_STRATEGY_FACTORY,
+                simpleConfig.getEvictionConfig().getEvictionPolicyStrategyFactory());
     }
 
 }

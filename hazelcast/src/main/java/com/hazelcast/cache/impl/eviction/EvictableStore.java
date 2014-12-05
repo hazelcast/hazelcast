@@ -17,18 +17,46 @@
 package com.hazelcast.cache.impl.eviction;
 
 /**
- * Interface for store implementations that holds {@link Evictable} entries to evict.
+ * An {@link com.hazelcast.cache.impl.eviction.EvictableStore} implementation is a storage for
+ * evictable entries such as records.
+ *
+ * @param <A> accessor (key) type of the evictable entry
+ * @param <E> {@link com.hazelcast.cache.impl.eviction.Evictable} type (value) of the entry
  */
 public interface EvictableStore<A, E extends Evictable> {
 
     /**
-     * The evict method is called by the {@link EvictionStrategy} to eventually evict, by the policy, selected
-     * candidates from the internal data structures.
+     * The evict method is called by the {@link EvictionStrategy} to eventually evict,
+     * by the {@link EvictionPolicyStrategy}, selected {@link EvictionCandidate}s from the internal
+     * data structures.
      *
      * @param evictionCandidates Multiple {@link EvictionCandidate} to be evicted
-     *
-     * @return evicted entry count
+     * @return The count of evicted entries
      */
-    <C extends EvictionCandidate<A, E>> int evict(Iterable<C> evictionCandidates);
+    int evict(Iterable<EvictionCandidate<A, E>> evictionCandidates);
 
+    /**
+     * Returns the current count of the partition
+     *
+     * @return The current number of entries in the partition
+     */
+    long getPartitionEntryCount();
+
+    /**
+     * Returns the defined capacity over all partitions in the cluster for that data structure.
+     * This is assumed to be equal to <tt>max := sum(partitionSize)</tt> in partitioned
+     * data structures.
+     *
+     * @return The globally set cluster-wide capacity of the storage
+     */
+    long getGlobalEntryCapacity();
+
+    /**
+     * Returns the memory consumption of the current partition in bytes. This is an optional feature.
+     * If the underlying storage engine doesn't support that feature it has to return <tt>-1</tt>.
+     *
+     * @return The current memory consumption of the storage in bytes or <tt>-1</tt> if this feature
+     * is not supported
+     */
+    long getPartitionMemoryConsumption();
 }

@@ -16,7 +16,9 @@
 
 /**
  * <p>
- *     Max-Size policy implementations for cache.
+ *     This package contains bundled implementations of
+ *     {@link com.hazelcast.cache.impl.eviction.EvictionPolicyStrategy}s such
+ *     as LRU (Less Recently Used) and LFU (Less Frequently Used).
  * </p>
  */
-package com.hazelcast.cache.impl.maxsize.impl;
+package com.hazelcast.cache.impl.eviction.policies;

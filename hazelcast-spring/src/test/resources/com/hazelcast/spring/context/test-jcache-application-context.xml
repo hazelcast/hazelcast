@@ -61,9 +61,8 @@
                       cache-loader-factory="com.hazelcast.cache.MyCacheLoaderFactory"
                       cache-writer-factory="com.hazelcast.cache.MyCacheWriterFactory"
                       expiry-policy-factory="com.hazelcast.cache.MyExpiryPolicyFactory"
-                      in-memory-format="OBJECT"
-                      eviction-policy="LRU">
-                    <hz:max-size size="50" policy="ENTRY_COUNT"/>
+                      in-memory-format="OBJECT">
+                    <hz:eviction size="50" size-policy="ENTRY_COUNT"/>
                     <hz:cache-entry-listeners>
                         <hz:cache-entry-listener cache-entry-event-filter-factory="om.hazelcast.cache.MyCacheFilterFactory"
                                                  cache-entry-listener-factory="om.hazelcast.cache.MyCacheListenerFactory"

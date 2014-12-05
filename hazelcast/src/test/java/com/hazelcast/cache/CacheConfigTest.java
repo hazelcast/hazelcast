@@ -17,7 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.config.CacheMaxSizeConfig;
+import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
@@ -87,10 +87,10 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertTrue(cacheConfig1.isStatisticsEnabled());
         assertTrue(cacheConfig1.isManagementEnabled());
 
-        assertNotNull(cacheConfig1.getMaxSizeConfig());
-        assertEquals(50, cacheConfig1.getMaxSizeConfig().getSize());
-        assertEquals(CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT,
-                cacheConfig1.getMaxSizeConfig().getMaxSizePolicy());
+        assertNotNull(cacheConfig1.getEvictionConfig());
+        assertEquals(50, cacheConfig1.getEvictionConfig().getSize());
+        assertEquals(CacheEvictionConfig.CacheMaxSizePolicy.ENTRY_COUNT,
+                cacheConfig1.getEvictionConfig().getMaxSizePolicy());
 
         List<CacheSimpleEntryListenerConfig> cacheEntryListeners = cacheConfig1.getCacheEntryListeners();
         assertEquals(2, cacheEntryListeners.size());

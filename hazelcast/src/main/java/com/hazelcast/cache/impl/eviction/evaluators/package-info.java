@@ -16,7 +16,8 @@
 
 /**
  * <p>
- *     {@link com.hazelcast.cache.impl.eviction.EvictionStrategy} implementations for cache.
+ *     This package contains the different evaluators to define if an eviction is
+ *     necessary or not
  * </p>
  */
-package com.hazelcast.cache.impl.eviction.impl.strategy;
+package com.hazelcast.cache.impl.eviction.evaluators;

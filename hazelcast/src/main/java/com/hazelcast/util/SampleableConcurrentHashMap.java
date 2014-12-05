@@ -19,6 +19,7 @@ package com.hazelcast.util;
 import com.hazelcast.cache.impl.record.Expirable;
 import com.hazelcast.nio.serialization.Data;
 
+import java.lang.ref.ReferenceQueue;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -32,7 +33,8 @@ import java.util.Random;
  * @param <K> Type of the key
  * @param <V> Type of the value
  */
-public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMap<K, V> {
+public class SampleableConcurrentHashMap<K, V>
+        extends ConcurrentReferenceHashMap<K, V> {
 
     private static final float LOAD_FACTOR = 0.91f;
 
@@ -97,110 +99,13 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     }
 
     /**
-     * Entry to define keys and values for sampling.
-     */
-    public class SamplingEntry extends SimpleEntry<K, V> {
-
-        public SamplingEntry(K key, V value) {
-            super(key, value);
-        }
-
-        public final V setValue(V value) {
-            throw new UnsupportedOperationException("Setting value is not supported");
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            // Because of "Illegal generic type for instanceof” compile error, check types via class instance.
-            // See "http://stackoverflow.com/questions/4001938/why-do-i-get-illegal-generic-type-for-instanceof"
-            // for more details.
-            if (SamplingEntry.class.isInstance(o)) {
-                return super.equals(o);
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return (key == null ? 0 : key.hashCode())
-                    ^ (value == null ? 0 : value.hashCode());
-        }
-
-    }
-
-    /**
-     * Iterable sampling entry to preventing from extra object creation for iteration.
-     *
-     * NOTE: Assumed that it is not accessed by multiple threads. So there is no synchronization.
-     */
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings("PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS")
-    public class IterableSamplingEntry
-            extends SamplingEntry
-            implements Iterable<IterableSamplingEntry>, Iterator<IterableSamplingEntry> {
-
-        private boolean iterated;
-
-        public IterableSamplingEntry(K key, V value) {
-            super(key, value);
-        }
-
-        @Override
-        public Iterator<IterableSamplingEntry> iterator() {
-            return this;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return !iterated;
-        }
-
-        @Override
-        public IterableSamplingEntry next() {
-            if (iterated) {
-                throw new NoSuchElementException();
-            }
-            iterated = true;
-            return this;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("Removing is supported");
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            // Because of "Illegal generic type for instanceof” compile error, check types via class instance.
-            // See "http://stackoverflow.com/questions/4001938/why-do-i-get-illegal-generic-type-for-instanceof"
-            // for more details.
-            if (IterableSamplingEntry.class.isInstance(o)) {
-                return super.equals(o);
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return (key == null ? 0 : key.hashCode())
-                    ^ (value == null ? 0 : value.hashCode());
-        }
-
-    }
-
-    protected <E extends SamplingEntry> E createSamplingEntry(K key, V value) {
-        return (E) new IterableSamplingEntry(key, value);
-    }
-
-    /**
      * Gets and returns samples as <code>sampleCount</code>.
      *
      * @param sampleCount Count of samples
      *
-     * @return the sampled {@link SamplingEntry} list
+     * @return the sampled {@link com.hazelcast.util.ConcurrentReferenceHashMap.HashEntry} list
      */
-    public <E extends SamplingEntry> Iterable<E> getRandomSamples(int sampleCount) {
+    public Iterable<HashEntry<K, V>> samplingIterator(int sampleCount) {
         if (sampleCount < 0) {
             throw new IllegalArgumentException("Sample count cannot be a negative value.");
         }
@@ -208,7 +113,26 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             return Collections.EMPTY_LIST;
         }
 
-        return new LazySamplingEntryIterableIterator<E>(sampleCount);
+        return new LazySamplingEntryIterableIterator(sampleCount);
+    }
+
+    @Override
+    Segment<K, V> newSegment(int initialCapacity, float lf, ReferenceType keyType, ReferenceType valueType,
+                             boolean identityComparisons) {
+        return new SampleableSegment<K, V>(initialCapacity, lf, keyType, valueType, identityComparisons);
+    }
+
+    static class SampleableSegment<K, V> extends Segment<K, V> {
+
+        protected SampleableSegment(int initialCapacity, float lf, ReferenceType keyType, ReferenceType valueType,
+                          boolean identityComparisons) {
+            super(initialCapacity, lf, keyType, valueType, identityComparisons);
+        }
+
+        @Override
+        protected HashEntry<K, V> newHashEntry(K key, int hash, HashEntry<K, V> next, V value) {
+            return new IterableSamplingEntry<K, V>(key, hash, next, value, keyType, valueType, refQueue);
+        }
     }
 
     /**
@@ -217,8 +141,8 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
      *
      * NOTE: Assumed that it is not accessed by multiple threads. So there is no synchronization.
      */
-    private final class LazySamplingEntryIterableIterator<E extends SamplingEntry>
-            implements Iterable<E>, Iterator<E> {
+    private final class LazySamplingEntryIterableIterator
+            implements Iterable<HashEntry<K, V>>, Iterator<HashEntry<K, V>> {
 
         private final int maxEntryCount;
         private final int randomNumber;
@@ -228,7 +152,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         private HashEntry<K, V> currentEntry;
         private int returnedEntryCount;
         private boolean reachedToEnd;
-        private E currentSample;
+        private HashEntry<K, V> currentSample;
 
         private LazySamplingEntryIterableIterator(int maxEntryCount) {
             this.maxEntryCount = maxEntryCount;
@@ -239,7 +163,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         }
 
         @Override
-        public Iterator<E> iterator() {
+        public Iterator<HashEntry<K, V>> iterator() {
             return this;
         }
 
@@ -270,12 +194,12 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
                             currentEntry = table[currentBucketIndex];
                         }
                         while (currentEntry != null) {
-                            V value = currentEntry.value();
-                            K key = currentEntry.key();
+                            HashEntry<K, V> selectedEntry = currentEntry;
+                            V value = selectedEntry.value();
                             // Advance to next entry
                             currentEntry = currentEntry.next;
                             if (value != null) {
-                                currentSample = createSamplingEntry(key, value);
+                                currentSample = selectedEntry;
                                 // If we reached end of entries, advance current bucket index
                                 if (currentEntry == null) {
                                     currentBucketIndex = ++currentBucketIndex < table.length ? currentBucketIndex : 0;
@@ -310,7 +234,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         }
 
         @Override
-        public E next() {
+        public HashEntry<K, V> next() {
             if (currentSample != null) {
                 return currentSample;
             } else {
@@ -322,7 +246,46 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         public void remove() {
             throw new UnsupportedOperationException("Removing is not supported");
         }
-
     }
 
+    /**
+     * Iterable sampling entry to preventing from extra object creation for iteration.
+     *
+     * NOTE: Assumed that it is not accessed by multiple threads. So there is synchronization.
+     */
+    protected static class IterableSamplingEntry<K, V>
+            extends HashEntry<K, V>
+            implements Iterable<IterableSamplingEntry>, Iterator<IterableSamplingEntry> {
+
+        private boolean iterated;
+
+        protected IterableSamplingEntry(K key, int hash, HashEntry<K, V> next, V value, ReferenceType keyType,
+                                        ReferenceType valueType, ReferenceQueue<Object> refQueue) {
+            super(key, hash, next, value, keyType, valueType, refQueue);
+        }
+
+        @Override
+        public Iterator<IterableSamplingEntry> iterator() {
+            return this;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !iterated;
+        }
+
+        @Override
+        public IterableSamplingEntry next() {
+            if (iterated) {
+                throw new NoSuchElementException();
+            }
+            iterated = true;
+            return this;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Removing is supported");
+        }
+    }
 }

@@ -16,7 +16,8 @@
 
 /**
  * <p>
- *     Eviction policy implementations for cache.
+ *     This package contains the eviction API used in Hazelcast JCache to
+ *     implement the a put-based eviction strategy
  * </p>
  */
 package com.hazelcast.cache.impl.eviction;

@@ -31,15 +31,6 @@ public class CacheSimpleConfigReadOnly
     }
 
     @Override
-    public CacheMaxSizeConfig getMaxSizeConfig() {
-        final CacheMaxSizeConfig maxSizeConfig = super.getMaxSizeConfig();
-        if (maxSizeConfig == null) {
-            return null;
-        }
-        return maxSizeConfig.getAsReadOnly();
-    }
-
-    @Override
     public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
@@ -76,12 +67,7 @@ public class CacheSimpleConfigReadOnly
     }
 
     @Override
-    public CacheSimpleConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
-    @Override
-    public CacheSimpleConfig setMaxSizeConfig(CacheMaxSizeConfig maxSizeConfig) {
+    public CacheSimpleConfig setEvictionConfig(CacheEvictionConfig evictionConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.eviction;
 
 /**
- * Interface for entries, records or whatever that can be evicted.
+ * This interface defines a common type for entries, records or whatever that can be evicted.
  */
 public interface Evictable {
 
@@ -33,13 +33,21 @@ public interface Evictable {
      *
      * @return the latest access time of this {@link Evictable} in milliseconds
      */
-    long getAccessTime();
+    long getLastAccessTime();
 
     /**
      * Gets the access hit count of this {@link Evictable}.
      *
      * @return the access hit count of this {@link Evictable}
      */
-    int getAccessHit();
+    int getAccessHits();
 
+    /**
+     * Returns true if the entry is expired at the given timestamp, otherwise false. Normally
+     * the given timestamp is the current point in time but is not required to be.
+     *
+     * @param timestamp The timestamp to evaluate the expiration with
+     * @return <tt>true</tt> if the evictable is expires otherwise <tt>false</tt>
+     */
+    boolean isExpired(long timestamp);
 }

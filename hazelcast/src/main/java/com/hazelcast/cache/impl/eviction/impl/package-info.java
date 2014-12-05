@@ -16,7 +16,7 @@
 
 /**
  * <p>
- *     Eviction implementations for cache.
+ *     Eviction implementations for Hazelcast JCache.
  * </p>
  */
 package com.hazelcast.cache.impl.eviction.impl;
