@@ -25,8 +25,6 @@ import java.util.Map;
 
 /**
  * Provider to get any kind ({@link EvictionPolicy}) of {@link EvictionPolicyEvaluator}.
- *
- * @author sozal 29/11/14
  */
 public final class EvictionPolicyEvaluatorProvider {
 

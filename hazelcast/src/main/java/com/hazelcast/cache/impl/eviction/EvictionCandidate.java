@@ -19,8 +19,6 @@ package com.hazelcast.cache.impl.eviction;
 /**
  * Interface for entries, records or whatever that can be evictable via its accessor (key or id).
  *
- * @author sozal 25/11/14
- *
  * @param <A> Type of the accessor
  * @param <E> Type of the {@link Evictable} value
  */

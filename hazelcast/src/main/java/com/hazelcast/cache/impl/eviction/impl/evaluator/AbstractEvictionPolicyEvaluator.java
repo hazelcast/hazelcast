@@ -26,8 +26,6 @@ import java.util.Collections;
 
 /**
  * Base class for evaluation implementations of {@link com.hazelcast.config.EvictionPolicy}.
- *
- * @author sozal 25/11/14
  */
 public abstract class AbstractEvictionPolicyEvaluator<A, E extends Evictable>
         implements EvictionPolicyEvaluator<A, E> {

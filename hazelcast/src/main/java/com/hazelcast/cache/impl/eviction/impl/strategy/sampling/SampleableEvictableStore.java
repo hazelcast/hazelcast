@@ -22,8 +22,6 @@ import com.hazelcast.cache.impl.eviction.EvictionCandidate;
 
 /**
  * Interface for sampleable store implementations that holds {@link Evictable} entries to evict.
- *
- * @author sozal 25/11/14
  */
 public interface SampleableEvictableStore<A, E extends Evictable> extends EvictableStore<A, E> {
 

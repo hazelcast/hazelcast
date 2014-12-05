@@ -18,8 +18,6 @@ package com.hazelcast.cache.impl.eviction;
 
 /**
  * Enum for types of {@link com.hazelcast.cache.impl.eviction.EvictionStrategy}
- *
- * @author sozal 28/11/14
  */
 public enum EvictionStrategyType {
 

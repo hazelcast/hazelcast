@@ -24,9 +24,7 @@ import com.hazelcast.cache.impl.eviction.EvictionStrategy;
 
 /**
  * Base class for eviction implementations to evict {@link EvictableStore} implementations as specified
- * {@link EvictionPolicyEvaluator} .
- *
- * @author sozal 25/11/14
+ * {@link EvictionPolicyEvaluator}.
  */
 public abstract class AbstractEvictionStrategy<A, E extends Evictable, S extends EvictableStore<A, E>>
         implements EvictionStrategy<A, E, S> {

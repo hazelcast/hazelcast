@@ -18,8 +18,6 @@ package com.hazelcast.cache.impl.eviction;
 
 /**
  * Interface for checking about if eviction is required or not.
- *
- * @author sozal 28/11/14
  */
 public interface EvictionChecker {
 

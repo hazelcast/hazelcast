@@ -7,8 +7,6 @@ import com.hazelcast.config.CacheMaxSizeConfig;
 /**
  * Cache max-size policy implementation for
  * {@link com.hazelcast.config.CacheMaxSizeConfig.CacheMaxSizePolicy#ENTRY_COUNT}
- *
- * @author sozal 20/11/14
  */
 public class EntryCountCacheMaxSizeChecker implements CacheMaxSizeChecker {
 

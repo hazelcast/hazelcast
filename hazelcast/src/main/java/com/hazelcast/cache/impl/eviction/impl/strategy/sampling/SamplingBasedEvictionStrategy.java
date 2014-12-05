@@ -25,8 +25,6 @@ import com.hazelcast.cache.impl.eviction.impl.strategy.AbstractEvictionStrategy;
 /**
  * Sampling based {@link EvictionStrategy} implementation.
  * This strategy select sample {@link Evictable} entries from {@link SampleableEvictableStore}.
- *
- * @author sozal 25/11/14
  */
 public class SamplingBasedEvictionStrategy<A, E extends Evictable, S extends SampleableEvictableStore<A, E>>
         extends AbstractEvictionStrategy<A, E, S> {

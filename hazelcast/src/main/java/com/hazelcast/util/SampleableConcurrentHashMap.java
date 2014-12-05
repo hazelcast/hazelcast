@@ -26,12 +26,10 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * ConcurrentHashMap to extend iterator capability
+ * ConcurrentHashMap to extend iterator capability.
  *
  * @param <K> Type of the key
  * @param <V> Type of the value
- *
- * @author sozal 26/11/14
  */
 public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMap<K, V> {
 

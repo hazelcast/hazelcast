@@ -18,8 +18,6 @@ package com.hazelcast.cache.impl.eviction;
 
 /**
  * Interface for store implementations that holds {@link Evictable} entries to evict.
- *
- * @author sozal 25/11/14
  */
 public interface EvictableStore<A, E extends Evictable> {
 

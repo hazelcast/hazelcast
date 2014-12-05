@@ -20,8 +20,6 @@ import com.hazelcast.cache.impl.eviction.Evictable;
 
 /**
  * Interface for evaluation implementations of {@link com.hazelcast.config.EvictionPolicy#LRU} policy.
- *
- * @author sozal 25/11/14
  */
 public class LRUEvictionPolicyEvaluator<A, E extends Evictable>
         extends AbstractEvictionPolicyEvaluator<A, E> {

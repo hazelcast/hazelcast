@@ -18,9 +18,7 @@ package com.hazelcast.cache.impl.eviction;
 
 /**
  * Interface for eviction implementations to evict {@link EvictableStore} implementations as specified
- * {@link EvictionPolicyEvaluator} .
- *
- * @author sozal 25/11/14
+ * {@link EvictionPolicyEvaluator}.
  */
 public interface EvictionStrategy<A, E extends Evictable, S extends EvictableStore<A, E>> {
 

@@ -23,8 +23,6 @@ import java.util.Map;
 
 /**
  * Provider to get any kind ({@link EvictionStrategyType}) of {@link EvictionStrategy}.
- *
- * @author sozal 28/11/14
  */
 public final class EvictionStrategyProvider {
 

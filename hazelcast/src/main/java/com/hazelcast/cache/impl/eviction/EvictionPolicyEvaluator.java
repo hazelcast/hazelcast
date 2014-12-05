@@ -18,8 +18,6 @@ package com.hazelcast.cache.impl.eviction;
 
 /**
  * Interface for evaluation implementations of {@link com.hazelcast.config.EvictionPolicy}.
- *
- * @author sozal 25/11/14
  */
 public interface EvictionPolicyEvaluator<A, E extends Evictable> {
 
