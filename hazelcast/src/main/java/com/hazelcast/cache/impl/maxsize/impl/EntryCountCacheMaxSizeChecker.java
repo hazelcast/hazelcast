@@ -19,12 +19,14 @@ public class EntryCountCacheMaxSizeChecker implements CacheMaxSizeChecker {
         this.maxPartitionSize = calculateMaxPartitionSize(maxSizeConfig.getSize(), partitionCount);
     }
 
+    //CHECKSTYLE:OFF
     protected int calculateMaxPartitionSize(int maxEntryCount, int partitionCount) {
         final double balancedPartitionSize = (double) maxEntryCount / (double) partitionCount;
         final double approximatedStdDev = Math.sqrt(balancedPartitionSize);
         final int stdDevMultiplier = maxEntryCount <= 4000 ? 5 : 3;
         return (int) ((approximatedStdDev * stdDevMultiplier) + balancedPartitionSize);
     }
+    //CHECKSTYLE:ON
 
     @Override
     public boolean isReachedToMaxSize() {
