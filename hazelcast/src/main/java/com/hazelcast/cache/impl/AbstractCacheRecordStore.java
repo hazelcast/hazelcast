@@ -130,6 +130,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         this.evictionPolicyEvaluator = creatEvictionPolicyEvaluator(evictionPolicy);
         this.evictionChecker = createEvictionChecker();
         this.evictionStrategy = creatEvictionStrategy();
+
+        if (maxSizeConfig == null) {
+            throw new IllegalStateException("Max-Size config must be configured");
+        }
+        if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
+            throw new IllegalStateException("Eviction policy cannot be null or NONE");
+        }
     }
     //CHECKSTYLE:ON
 
@@ -168,10 +175,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected CacheMaxSizeChecker createCacheMaxSizeChecker(CacheMaxSizeConfig maxSizeConfig) {
         if (maxSizeConfig == null) {
-            return null;
+            throw new IllegalArgumentException("Max-Size config cannot be null");
         }
 
         final CacheMaxSizeConfig.CacheMaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        if (maxSizePolicy == null) {
+            throw new IllegalArgumentException("Max-Size policy cannot be null");
+        }
         if (maxSizePolicy == CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
             return new EntryCountCacheMaxSizeChecker(maxSizeConfig, records, partitionCount);
         }
@@ -180,6 +190,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected EvictionPolicyEvaluator<Data, R> creatEvictionPolicyEvaluator(EvictionPolicy evictionPolicy) {
+        if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
+            throw new IllegalArgumentException("Eviction policy cannot be null or NONE");
+        }
+
         return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionPolicy);
     }
 

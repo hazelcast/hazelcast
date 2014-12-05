@@ -1290,7 +1290,7 @@
     </xs:simpleType>
 
     <xs:complexType name="cache-max-size">
-        <xs:attribute name="size" type="xs:nonNegativeInteger" default="0" use="optional" />
+        <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional" />
         <xs:attribute name="policy" type="cache-max-size-policy" default="ENTRY_COUNT" use="optional" />
     </xs:complexType>
 

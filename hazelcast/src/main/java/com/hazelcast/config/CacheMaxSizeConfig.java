@@ -30,15 +30,15 @@ import java.io.Serializable;
 public class CacheMaxSizeConfig implements DataSerializable, Serializable {
 
     /**
-     * Default maximum size of cache.
+     * Default maximum size of cache as maximum number of entry count.
      */
-    public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+    public static final int DEFAULT_MAX_ENTRY_COUNT = 10000;
 
     private CacheMaxSizeConfigReadOnly readOnly;
 
     private CacheMaxSizePolicy maxSizePolicy = CacheMaxSizePolicy.ENTRY_COUNT;
 
-    private int size = DEFAULT_MAX_SIZE;
+    private int size = DEFAULT_MAX_ENTRY_COUNT;
 
     public CacheMaxSizeConfig() {
     }
@@ -102,7 +102,10 @@ public class CacheMaxSizeConfig implements DataSerializable, Serializable {
     }
 
     public CacheMaxSizeConfig setMaxSizePolicy(CacheMaxSizePolicy maxSizePolicy) {
-        this.maxSizePolicy = maxSizePolicy;
+        // Max-Size policy cannot be null
+        if (maxSizePolicy != null) {
+            this.maxSizePolicy = maxSizePolicy;
+        }
         return this;
     }
 
