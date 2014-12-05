@@ -26,7 +26,7 @@ public class EntryCountCacheMaxSizeChecker implements CacheMaxSizeChecker {
     @Override
     public boolean isReachedToMaxSize() {
         /**
-         *  Estimated entry count can be calculated dynamically as "e = (s x p) x (1 + (sqrt(p / s)))"
+         *  Estimated entry count can be calculated dynamically as "e = (s x p) + sqrt(s)"
          *  where
          *      e : entry count
          *      s : size of current record store
@@ -35,11 +35,9 @@ public class EntryCountCacheMaxSizeChecker implements CacheMaxSizeChecker {
          * Like this:
          *      final int s = cacheRecordMap.size();
          *      final int p = partitionCount;
-         *      final int estimatedSize = (int) ((s * p) x (1 + (Math.sqrt((double) p / (double) s))))
+         *      final int estimatedSize = (int) ((s * p) + Math.sqrt(s));
          *
          * See discussion at "https://hazelcast.atlassian.net/wiki/display/EN/JCache+Eviction".
-         *
-         * TODO: Don't forget to remove this comments before release :)
          */
 
         final int estimatedSize = (int) ((cacheRecordMap.size() * partitionCount) * ENTRY_COUNT_FACTOR);

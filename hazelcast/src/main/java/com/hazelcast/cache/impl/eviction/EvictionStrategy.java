@@ -23,32 +23,18 @@ package com.hazelcast.cache.impl.eviction;
 public interface EvictionStrategy<A, E extends Evictable, S extends EvictableStore<A, E>> {
 
     /**
-     * The evict method is called by a storage to trigger eviction from the passed in {@link EvictableStore}.
-     * It is up to the implementation to provide a full set of entries as candidates to the
-     * {@link EvictionPolicyEvaluator} or to select just a subset to speed up eviction.
-     * The selection algorithm should execute in a constant time to deliver a predictable timing results of
-     * the eviction system.
-     *
-     * @param evictableStore            Store that holds {@link Evictable} entries
-     * @param evictionPolicyEvaluator   {@link EvictionPolicyEvaluator} to evaluate
-     *                                  {@link com.hazelcast.config.EvictionPolicy} on entries
-     *
-     * @return evicted entry count
-     */
-    int evict(S evictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator);
-
-    /**
      * Does eviction if eviction is required by given {@link EvictionChecker}.
      *
      * @param evictableStore            Store that holds {@link Evictable} entries
      * @param evictionPolicyEvaluator   {@link EvictionPolicyEvaluator} to evaluate
      *                                  {@link com.hazelcast.config.EvictionPolicy} on entries
      * @param evictionChecker           {@link EvictionChecker} to make a decision about if eviction is
-     *                                  required or not
+     *                                  required or not. If you want evict anyway,
+     *                                  you can use {@link EvictionChecker#EVICT_ALWAYS}
      *
      * @return evicted entry count
      */
-    int evictIfRequired(S evictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
+    int evict(S evictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
             EvictionChecker evictionChecker);
 
 }

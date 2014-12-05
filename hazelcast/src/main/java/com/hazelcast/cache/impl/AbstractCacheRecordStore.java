@@ -213,13 +213,14 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public int evictIfRequired() {
+        int evictedCount = 0;
         if (isEvictionEnabled()) {
-            int evictedCount = evictionStrategy.evictIfRequired(records, evictionPolicyEvaluator, evictionChecker);
+            evictedCount = evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker);
             if (isStatisticsEnabled() && evictedCount > 0) {
                 statistics.increaseCacheEvictions(evictedCount);
             }
         }
-        return 0;
+        return evictedCount;
     }
 
     protected Data toData(Object obj) {

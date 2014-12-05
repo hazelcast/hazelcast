@@ -21,6 +21,14 @@ package com.hazelcast.cache.impl.eviction;
  */
 public interface EvictionChecker {
 
+    EvictionChecker EVICT_ALWAYS = new EvictionChecker() {
+        @Override
+        public boolean isEvictionRequired() {
+            // Evict always at any case
+            return true;
+        }
+    };
+
     /**
      * Checks for if eviction is required or not.
      *

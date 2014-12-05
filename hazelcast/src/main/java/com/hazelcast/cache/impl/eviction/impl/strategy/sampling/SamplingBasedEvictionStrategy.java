@@ -40,7 +40,8 @@ public class SamplingBasedEvictionStrategy<A, E extends Evictable, S extends Sam
      * @return evicted entry count
      */
     @Override
-    public int evict(S sampleableEvictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator) {
+    protected int evictInternal(S sampleableEvictableStore,
+            EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator) {
         final Iterable<EvictionCandidate<A, E>> samples =
                 sampleableEvictableStore.sample(SAMPLE_COUNT);
         final Iterable<EvictionCandidate<A, E>> evictionCandidates =

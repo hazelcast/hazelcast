@@ -113,7 +113,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     /**
      * Iterable sampling entry to preventing from extra object creation for iteration.
      *
-     * NOTE: Assumed that it is not accessed by multiple threads. So there is synchronization.
+     * NOTE: Assumed that it is not accessed by multiple threads. So there is no synchronization.
      */
     public class IterableSamplingEntry
             extends SamplingEntry
@@ -177,7 +177,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
      * This class is implements both of "Iterable" and "Iterator" interfaces.
      * So we can use only one object (instead of two) both for "Iterable" and "Iterator" interfaces.
      *
-     * NOTE: Assumed that it is not accessed by multiple threads. So there is synchronization.
+     * NOTE: Assumed that it is not accessed by multiple threads. So there is no synchronization.
      */
     private final class LazySamplingEntryIterableIterator<E extends SamplingEntry>
             implements Iterable<E>, Iterator<E> {
