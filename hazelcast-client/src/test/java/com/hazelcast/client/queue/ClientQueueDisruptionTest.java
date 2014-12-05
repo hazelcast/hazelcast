@@ -44,7 +44,7 @@ public class ClientQueueDisruptionTest {
     }
 
     @Test
-    public void clientsConsume_withNodeTerminate() throws InterruptedException {
+    public void clientsConsume_withNodeShutdown() throws InterruptedException {
 
         final int inital = 2000, max = 8000;
 
@@ -57,7 +57,7 @@ public class ClientQueueDisruptionTest {
         for (int i = inital; i < max; i++) {
 
             if (i == max / 2) {
-                cluster.terminateRandomNode();
+                cluster.shutdownRandomNode();
             }
 
             assertTrue(cluster.getRandomNode().getQueue("Q1").offer(i));
