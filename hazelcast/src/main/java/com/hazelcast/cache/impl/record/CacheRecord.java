@@ -42,4 +42,35 @@ public interface CacheRecord<V> extends Expirable, Evictable {
      */
     void setValue(V value);
 
+    /**
+     * Sets the creation time of this {@link Evictable} in milliseconds.
+     *
+     * @param time the creation time for this {@link Evictable} in milliseconds
+     */
+    void setCreationTime(long time);
+
+    /**
+     * Sets the access time of this {@link Evictable} in milliseconds.
+     *
+     * @param time the latest access time of this {@link Evictable} in milliseconds
+     */
+    void setAccessTime(long time);
+
+    /**
+     * Sets the access hit count of this {@link Evictable}.
+     *
+     * @param hit the access hit count for this {@link Evictable}
+     */
+    void setAccessHit(int hit);
+
+    /**
+     * Increases the access hit count of this {@link Evictable} as <code>1</code>.
+     */
+    void incrementAccessHit();
+
+    /**
+     * Resets the access hit count of this {@link Evictable} to <code>0</code>.
+     */
+    void resetAccessHit();
+
 }
