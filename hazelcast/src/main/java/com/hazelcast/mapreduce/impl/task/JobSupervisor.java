@@ -34,9 +34,11 @@ import com.hazelcast.mapreduce.impl.operation.GetResultOperationFactory;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
+import com.hazelcast.util.executor.ManagedExecutorService;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -174,6 +176,7 @@ public class JobSupervisor {
     }
 
     // TODO Not yet fully supported
+    /*
     public boolean cancelNotifyAndRestart() {
         // Cancel all partition states
         jobProcessInformation.cancelPartitionState();
@@ -207,6 +210,7 @@ public class JobSupervisor {
 
         return true;
     }
+    */
 
     public TrackableJobFuture cancel() {
         String jobId = getConfiguration().getJobId();
@@ -294,41 +298,50 @@ public class JobSupervisor {
                 }
             }
 
-            String name = configuration.getName();
-            String jobId = configuration.getJobId();
-            NodeEngine nodeEngine = configuration.getNodeEngine();
-            GetResultOperationFactory operationFactory = new GetResultOperationFactory(name, jobId);
+            final String name = configuration.getName();
+            final String jobId = configuration.getJobId();
+            final NodeEngine nodeEngine = configuration.getNodeEngine();
+            final GetResultOperationFactory operationFactory = new GetResultOperationFactory(name, jobId);
 
             // Get the initial future object to eventually set the result and cleanup
-            TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
+            final TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
             if (future == null) {
                 // If already handled just return
                 return;
             }
 
-            Object finalResult = null;
-            try {
-                List<Map> results = MapReduceUtil.executeOperation(operationFactory, mapReduceService, nodeEngine, true);
-                boolean reducedResult = configuration.getReducerFactory() != null;
+            final JobSupervisor jobSupervisor = this;
+            Runnable runnable = new Runnable() {
+                public void run() {
+                    Object finalResult = null;
+                    try {
+                        List<Map> results = MapReduceUtil.executeOperation(operationFactory,
+                                mapReduceService, nodeEngine, true);
+                        boolean reducedResult = configuration.getReducerFactory() != null;
 
-                if (results != null) {
-                    Map<Object, Object> mergedResults = new HashMap<Object, Object>();
-                    for (Map<?, ?> map : results) {
-                        for (Map.Entry entry : map.entrySet()) {
-                            collectResults(reducedResult, mergedResults, entry);
+                        if (results != null) {
+                            Map<Object, Object> mergedResults = new HashMap<Object, Object>();
+                            for (Map<?, ?> map : results) {
+                                for (Map.Entry entry : map.entrySet()) {
+                                    collectResults(reducedResult, mergedResults, entry);
+                                }
+                            }
+
+                            finalResult = mergedResults;
                         }
+                    } catch (Exception e) {
+                        finalResult = e;
+                    } finally {
+                        jobTracker.unregisterMapCombineTask(jobId);
+                        jobTracker.unregisterReducerTask(jobId);
+                        mapReduceService.destroyJobSupervisor(jobSupervisor);
+                        future.setResult(finalResult);
                     }
-
-                    finalResult = mergedResults;
                 }
-            } catch (Exception e) {
-                finalResult = e;
-            } finally {
-                jobTracker.unregisterMapCombineTask(jobId);
-                jobTracker.unregisterReducerTask(jobId);
-                mapReduceService.destroyJobSupervisor(this);
-                future.setResult(finalResult);
-            }
+            };
+            ExecutionService executionService = nodeEngine.getExecutionService();
+            ManagedExecutorService executor = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR);
+            executor.submit(runnable);
         }
     }
 

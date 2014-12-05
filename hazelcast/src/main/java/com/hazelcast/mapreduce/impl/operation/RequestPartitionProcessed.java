@@ -33,7 +33,7 @@ import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.Resu
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 /**
- * This operation tells the job owner to mark a partition as cully processed
+ * This operation tells the job owner to mark a partition as fully processed
  */
 public class RequestPartitionProcessed
         extends ProcessingOperation {
