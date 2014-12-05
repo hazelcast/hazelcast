@@ -24,7 +24,7 @@ The declarative configuration for ICache is a superset of the previously discuss
 - `eviction-policy`: The eviction policy defines which entries are evicted (removed) from the cache when the cache reaches its maximum size defined in `max-size` configuration. Its default value is `LRU`. The following eviction policies are available:
   - `LRU`: Abbreviation for Least Recently Used. When `eviction-policy` is set to `LRU`, the longest unused (not accessed) entry is removed from the cache.  
   - `LFU`: Abbreviation for Least Frequently Used. When `eviction-policy` is set to `LFU`, the entry that is used (accessed) least frequently is removed from the cache.
-- `max-size`: The max size property defines a maximum size maximum size is reached, cache is evicted based on the eviction policy. Size can be any integer between `0` and `Integer.MAX_VALUE`. `0` means `Integer.MAX_VALUE`. Default is `0`. The following eviction policies are available:
+- `max-size`: The max size property defines a maximum size maximum size is reached, cache is evicted based on the eviction policy. Size can be any integer between `0` and `Integer.MAX_VALUE`. Default policy is `ENTRY_COUNT` and default size is `10.000`. The following eviction policies are available:
   - `ENTRY_COUNT`: Maximum number of cache entries in the cache. **Available on heap based cache record store only.**
   - `USED_NATIVE_MEMORY_SIZE`: Maximum used native memory size in megabytes for each instance. **Available on High-Density Memory cache record store only.**
   - `USED_NATIVE_MEMORY_PERCENTAGE`: Maximum used native memory size percentage for each instance. **Available on High-Density Memory cache record store only.**
