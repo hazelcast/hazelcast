@@ -34,7 +34,7 @@ public interface BaseMultiMap<K, V> extends DistributedObject {
      * @param key   the key to be stored
      * @param value the value to be stored
      * @return true if the size of the multimap is increased, false if the multimap
-     *         already contains the key-value pair
+     *         already contains the key-value pair.
      */
     boolean put(K key, V value);
 
