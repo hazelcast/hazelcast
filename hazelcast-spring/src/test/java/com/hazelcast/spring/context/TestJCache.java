@@ -90,7 +90,6 @@ public class TestJCache {
         assertEquals(50, simpleConfig.getMaxSizeConfig().getSize());
         assertEquals(CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT,
                 simpleConfig.getMaxSizeConfig().getMaxSizePolicy());
-        assertEquals(20, simpleConfig.getEvictionPercentage());
         assertEquals(EvictionPolicy.LRU, simpleConfig.getEvictionPolicy());
     }
 

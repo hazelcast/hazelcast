@@ -76,11 +76,6 @@ public class CacheSimpleConfigReadOnly
     }
 
     @Override
-    public CacheSimpleConfig setEvictionPercentage(int evictionPercentage) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
-    @Override
     public CacheSimpleConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }

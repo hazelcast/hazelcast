@@ -28,14 +28,17 @@ public class CacheSimpleConfig {
      * The number of minimum backup counter
      */
     public static final int MIN_BACKUP_COUNT = 0;
+
     /**
      * The number of maximum backup counter
      */
     public static final int MAX_BACKUP_COUNT = 6;
+
     /**
      * The number of default backup counter
      */
     public static final int DEFAULT_BACKUP_COUNT = 1;
+
     /**
      * Default InMemory Format.
      */
@@ -44,27 +47,7 @@ public class CacheSimpleConfig {
     /**
      * Default Eviction Policy.
      */
-    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
-
-    /**
-     * The default value for percentage of max size
-     */
-    public static final int DEFAULT_MAX_MEMORY_SIZE_PERCENTAGE = 95;
-
-    /**
-     * Minimum eviction percentage
-     */
-    public static final  int MIN_EVICTION_PERCENTAGE = 0;
-
-    /**
-     * Default eviction percentage
-     */
-    public static final int DEFAULT_EVICTION_PERCENTAGE = 10;
-
-    /**
-     * Maximum eviction percentage
-     */
-    public static final int MAX_EVICTION_PERCENTAGE = 100;
+    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
 
     private String name;
 
@@ -87,9 +70,8 @@ public class CacheSimpleConfig {
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    // Default max size config, size = Integer.MAX_VALUE, policy = ENTRY_COUNT
+    // Default value of max-size config is ENTRY_COUNT with 10.000 max entry count
     private CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
-    private int evictionPercentage;
 
     private CacheSimpleConfig readOnly;
 
@@ -108,9 +90,14 @@ public class CacheSimpleConfig {
         this.asyncBackupCount = cacheSimpleConfig.asyncBackupCount;
         this.backupCount = cacheSimpleConfig.backupCount;
         this.inMemoryFormat = cacheSimpleConfig.inMemoryFormat;
-        this.evictionPolicy = cacheSimpleConfig.evictionPolicy;
-        this.maxSizeConfig = cacheSimpleConfig.maxSizeConfig;
-        this.evictionPercentage = cacheSimpleConfig.evictionPercentage;
+        // Eviction policy cannot be null or NONE
+        if (cacheSimpleConfig.evictionPolicy != null && cacheSimpleConfig.evictionPolicy != EvictionPolicy.NONE) {
+            this.evictionPolicy = cacheSimpleConfig.evictionPolicy;
+        }
+        // Max-Size config cannot be null
+        if (cacheSimpleConfig.maxSizeConfig != null) {
+            this.maxSizeConfig = cacheSimpleConfig.maxSizeConfig;
+        }
     }
 
     public CacheSimpleConfig() {
@@ -263,7 +250,10 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        this.evictionPolicy = evictionPolicy;
+        // Eviction policy cannot be null or NONE
+        if (evictionPolicy != null && evictionPolicy != EvictionPolicy.NONE) {
+            this.evictionPolicy = evictionPolicy;
+        }
         return this;
     }
 
@@ -272,16 +262,10 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setMaxSizeConfig(CacheMaxSizeConfig maxSizeConfig) {
-        this.maxSizeConfig = maxSizeConfig;
-        return this;
-    }
-
-    public int getEvictionPercentage() {
-        return evictionPercentage;
-    }
-
-    public CacheSimpleConfig setEvictionPercentage(int evictionPercentage) {
-        this.evictionPercentage = evictionPercentage;
+        // Max-Size config cannot be null
+        if (maxSizeConfig != null) {
+            this.maxSizeConfig = maxSizeConfig;
+        }
         return this;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
+package com.hazelcast.cache.impl.eviction;
+
 /**
- * <p>
- *     Max-Size policy interfaces for cache.
- * </p>
+ * Enum for types of {@link com.hazelcast.cache.impl.eviction.EvictionStrategy}
  */
-package com.hazelcast.cache.impl.maxsize;
+public enum EvictionStrategyType {
+
+    SAMPLING_BASED_EVICTION;
+
+    public static final EvictionStrategyType DEFAULT_EVICTION_STRATEGY = SAMPLING_BASED_EVICTION;
+
+}

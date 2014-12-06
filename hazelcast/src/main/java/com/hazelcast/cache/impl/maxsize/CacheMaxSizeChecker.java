@@ -2,8 +2,6 @@ package com.hazelcast.cache.impl.maxsize;
 
 /**
  * Interface for implementations of {@link com.hazelcast.config.CacheMaxSizeConfig.CacheMaxSizePolicy}.
- *
- * @author sozal
  */
 public interface CacheMaxSizeChecker {
 

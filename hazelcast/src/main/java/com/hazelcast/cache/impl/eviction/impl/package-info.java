@@ -16,7 +16,7 @@
 
 /**
  * <p>
- *     Max-Size policy interfaces for cache.
+ *     Eviction implementations for cache.
  * </p>
  */
-package com.hazelcast.cache.impl.maxsize;
+package com.hazelcast.cache.impl.eviction.impl;

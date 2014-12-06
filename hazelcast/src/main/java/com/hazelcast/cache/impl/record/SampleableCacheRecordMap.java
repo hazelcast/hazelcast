@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-/**
- * <p>
- *     Max-Size policy interfaces for cache.
- * </p>
- */
-package com.hazelcast.cache.impl.maxsize;
+package com.hazelcast.cache.impl.record;
+
+import com.hazelcast.cache.impl.eviction.impl.strategy.sampling.SampleableEvictableStore;
+import com.hazelcast.nio.serialization.Data;
+
+public interface SampleableCacheRecordMap<K extends Data, V extends CacheRecord>
+        extends CacheRecordMap<K, V>, SampleableEvictableStore<K, V> {
+
+}

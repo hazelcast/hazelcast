@@ -29,13 +29,11 @@ import javax.cache.event.CacheEntryListener;
 import java.io.IOException;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
-import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_EVICTION_POLICY;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.MAX_BACKUP_COUNT;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
-
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}
@@ -52,9 +50,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    // Default max size config, size = Integer.MAX_VALUE, policy = ENTRY_COUNT
+    // Default value of max-size config is ENTRY_COUNT with 10.000 max entry count
     private CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
-    private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
 
     private NearCacheConfig nearCacheConfig;
 
@@ -72,17 +69,21 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             this.asyncBackupCount = config.asyncBackupCount;
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
-            this.evictionPolicy = config.evictionPolicy;
-            this.maxSizeConfig = config.maxSizeConfig;
+            // Eviction policy cannot be null or NONE
+            if (config.evictionPolicy != null && config.evictionPolicy != EvictionPolicy.NONE) {
+                this.evictionPolicy = config.evictionPolicy;
+            }
+            // Max-Size config cannot be null
+            if (config.maxSizeConfig != null) {
+                this.maxSizeConfig = config.maxSizeConfig;
+            }
             if (config.nearCacheConfig != null) {
                 this.nearCacheConfig = new NearCacheConfig(config.nearCacheConfig);
             }
         }
     }
 
-    public CacheConfig(CacheSimpleConfig simpleConfig)
-            throws Exception {
-        super();
+    public CacheConfig(CacheSimpleConfig simpleConfig) throws Exception {
         this.name = simpleConfig.getName();
         if (simpleConfig.getKeyType() != null) {
             this.keyType = (Class<K>) ClassLoaderUtil.loadClass(null, simpleConfig.getKeyType());
@@ -106,9 +107,14 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         this.asyncBackupCount = simpleConfig.getAsyncBackupCount();
         this.backupCount = simpleConfig.getBackupCount();
         this.inMemoryFormat = simpleConfig.getInMemoryFormat();
-        this.evictionPolicy = simpleConfig.getEvictionPolicy();
-        this.maxSizeConfig = simpleConfig.getMaxSizeConfig();
-        this.evictionPercentage = simpleConfig.getEvictionPercentage();
+        // Eviction policy cannot be null or NONE
+        if (simpleConfig.getEvictionPolicy() != null && simpleConfig.getEvictionPolicy() != EvictionPolicy.NONE) {
+            this.evictionPolicy = simpleConfig.getEvictionPolicy();
+        }
+        // Max-Size config cannot be null
+        if (simpleConfig.getMaxSizeConfig() != null) {
+            this.maxSizeConfig = simpleConfig.getMaxSizeConfig();
+        }
         for (CacheSimpleEntryListenerConfig simpleListener : simpleConfig.getCacheEntryListeners()) {
             Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
             Factory<? extends CacheEntryEventFilter<? super K, ? super V>> filterFactory = null;
@@ -122,7 +128,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             boolean synchronous = simpleListener.isSynchronous();
             MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration = new MutableCacheEntryListenerConfiguration<K, V>(
                     listenerFactory, filterFactory, isOldValueRequired, synchronous);
-            this.addCacheEntryListenerConfiguration(listenerConfiguration);
+            addCacheEntryListenerConfiguration(listenerConfiguration);
         }
     }
 
@@ -244,7 +250,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * @param evictionPolicy the evictionPolicy to set
      */
     public CacheConfig<K, V> setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        this.evictionPolicy = evictionPolicy;
+        // Eviction policy cannot be null or NONE
+        if (evictionPolicy != null && evictionPolicy != EvictionPolicy.NONE) {
+            this.evictionPolicy = evictionPolicy;
+        }
         return this;
     }
 
@@ -259,7 +268,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * @param maxSizeConfig the maxSizeConfig to set
      */
     public CacheConfig<K, V> setMaxSizeConfig(CacheMaxSizeConfig maxSizeConfig) {
-        this.maxSizeConfig = maxSizeConfig;
+        // Max-Size config cannot be null
+        if (maxSizeConfig != null) {
+            this.maxSizeConfig = maxSizeConfig;
+        }
         return this;
     }
 
@@ -293,18 +305,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         return this;
     }
 
-    /**
-     * @return eviction percentage
-     */
-    public int getEvictionPercentage() {
-        return evictionPercentage;
-    }
-
-    public CacheConfig<K, V> setEvictionPercentage(int evictionPercentage) {
-        this.evictionPercentage = evictionPercentage;
-        return this;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
@@ -317,7 +317,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeUTF(inMemoryFormat.name());
         out.writeUTF(evictionPolicy.name());
         out.writeObject(maxSizeConfig);
-        out.writeInt(evictionPercentage);
 
         out.writeObject(nearCacheConfig);
 
@@ -359,7 +358,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         String resultEvictionPolicy = in.readUTF();
         evictionPolicy = EvictionPolicy.valueOf(resultEvictionPolicy);
         maxSizeConfig = in.readObject();
-        evictionPercentage = in.readInt();
 
         nearCacheConfig = in.readObject();
 
