@@ -114,7 +114,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             // Because of "Illegal generic type for instanceof” compile error, check types via class instance.
             // See "http://stackoverflow.com/questions/4001938/why-do-i-get-illegal-generic-type-for-instanceof"
             // for more details.
-            if (o != null && o.getClass().equals(SamplingEntry.class)) {
+            if (SamplingEntry.class.isInstance(o)) {
                 return super.equals(o);
             } else {
                 return false;
@@ -174,7 +174,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             // Because of "Illegal generic type for instanceof” compile error, check types via class instance.
             // See "http://stackoverflow.com/questions/4001938/why-do-i-get-illegal-generic-type-for-instanceof"
             // for more details.
-            if (o != null && o.getClass().equals(IterableSamplingEntry.class)) {
+            if (IterableSamplingEntry.class.isInstance(o)) {
                 return super.equals(o);
             } else {
                 return false;
