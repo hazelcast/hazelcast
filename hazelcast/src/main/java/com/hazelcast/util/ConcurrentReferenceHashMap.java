@@ -1571,8 +1571,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             java.io.Serializable {
         private static final long serialVersionUID = -8499721149061103585L;
 
-        private final K key;
-        private V value;
+        protected final K key;
+        protected V value;
 
         public SimpleEntry(K key, V value) {
             this.key = key;

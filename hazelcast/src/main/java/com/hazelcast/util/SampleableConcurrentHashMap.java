@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Random;
 
 /**
@@ -108,6 +109,24 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
             throw new UnsupportedOperationException("Setting value is not supported");
         }
 
+        @Override
+        public boolean equals(Object o) {
+            // Because of "Illegal generic type for instanceof” compile error, check types via class instance.
+            // See "http://stackoverflow.com/questions/4001938/why-do-i-get-illegal-generic-type-for-instanceof"
+            // for more details.
+            if (o != null && o.getClass().equals(SamplingEntry.class)) {
+                return super.equals(o);
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return (key == null ? 0 : key.hashCode())
+                    ^ (value == null ? 0 : value.hashCode());
+        }
+
     }
 
     /**
@@ -115,6 +134,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
      *
      * NOTE: Assumed that it is not accessed by multiple threads. So there is no synchronization.
      */
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS")
     public class IterableSamplingEntry
             extends SamplingEntry
             implements Iterable<IterableSamplingEntry>, Iterator<IterableSamplingEntry> {
@@ -138,7 +158,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         @Override
         public IterableSamplingEntry next() {
             if (iterated) {
-                return null;
+                throw new NoSuchElementException();
             }
             iterated = true;
             return this;
@@ -147,6 +167,24 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
         @Override
         public void remove() {
             throw new UnsupportedOperationException("Removing is supported");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            // Because of "Illegal generic type for instanceof” compile error, check types via class instance.
+            // See "http://stackoverflow.com/questions/4001938/why-do-i-get-illegal-generic-type-for-instanceof"
+            // for more details.
+            if (o != null && o.getClass().equals(IterableSamplingEntry.class)) {
+                return super.equals(o);
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return (key == null ? 0 : key.hashCode())
+                    ^ (value == null ? 0 : value.hashCode());
         }
 
     }
@@ -194,7 +232,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
 
         private LazySamplingEntryIterableIterator(int maxEntryCount) {
             this.maxEntryCount = maxEntryCount;
-            this.randomNumber = Math.abs(THREAD_LOCAL_RANDOM.get().nextInt());
+            this.randomNumber = THREAD_LOCAL_RANDOM.get().nextInt(Integer.MAX_VALUE);
             this.firstSegmentIndex = randomNumber % segments.length;
             this.currentSegmentIndex = firstSegmentIndex;
             this.currentBucketIndex = -1;
@@ -273,7 +311,11 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
 
         @Override
         public E next() {
-            return currentSample;
+            if (currentSample != null) {
+                return currentSample;
+            } else {
+                throw new NoSuchElementException();
+            }
         }
 
         @Override
