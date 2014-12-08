@@ -63,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.String.format;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1147,11 +1148,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
+                final int mapSize = mapFinal.size();
+                final String message = format("Map size is %d", mapSize);
+
                 Set<Entry<Integer, SampleIndexableObject>> result = mapFinal.entrySet(predicate);
-                assertEquals(1, result.size());
-                assertEquals(5, (int) result.iterator().next().getValue().value);
+                assertEquals(message, 1, result.size());
+                assertEquals(message, 5, (int) result.iterator().next().getValue().value);
             }
-        });
+        }, 300);
 
     }
 
