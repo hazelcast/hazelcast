@@ -31,6 +31,13 @@ public class DistributedObjectEvent {
 
     private DistributedObject distributedObject;
 
+    /**
+     * Constructs a DistributedObject Event.
+     *
+     * @param eventType         The event type as an enum {@link EventType} integer.
+     * @param serviceName       The service name of the DistributedObject.
+     * @param distributedObject The DistributedObject for the event.
+     */
     public DistributedObjectEvent(EventType eventType, String serviceName, DistributedObject distributedObject) {
         this.eventType = eventType;
         this.serviceName = serviceName;
@@ -38,7 +45,7 @@ public class DistributedObjectEvent {
     }
 
     /**
-     * Returns service name of related DistributedObject
+     * Returns the service name of related DistributedObject.
      *
      * @return service name of DistributedObject
      */
@@ -47,32 +54,35 @@ public class DistributedObjectEvent {
     }
 
     /**
-     * Returns type of this event; one of {@link EventType#CREATED} or {@link EventType#DESTROYED}
+     * Returns the type of this event; one of {@link EventType#CREATED} or {@link EventType#DESTROYED}.
      *
-     * @return eventType
+     * @return The type of this event {@link EventType}.
      */
     public EventType getEventType() {
         return eventType;
     }
 
     /**
-     * Returns identifier of related DistributedObject
+     * Returns the identifier of related DistributedObject.
      *
-     * @return identifier of DistributedObject
+     * @return the identifier of DistributedObject
      */
     public Object getObjectId() {
         return distributedObject.getId();
     }
 
     /**
-     * Returns DistributedObject instance
+     * Returns the DistributedObject instance.
      *
-     * @return DistributedObject
+     * @return the DistributedObject instance
      */
     public DistributedObject getDistributedObject() {
         return distributedObject;
     }
 
+    /**
+     * Type of event.
+     */
     public enum EventType {
         CREATED, DESTROYED
     }
